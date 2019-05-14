@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -11,24 +11,8 @@ import Button from 'Containers/AccessControl/Roles/Permissions/Button';
 import Form from 'Containers/AccessControl/Roles/Permissions/Form';
 import Details from 'Containers/AccessControl/Roles/Permissions/Details';
 
-class Permissions extends Component {
-    static propTypes = {
-        selectedRole: PropTypes.shape({
-            name: PropTypes.string,
-            globalAccess: PropTypes.string,
-            resourceToAccess: PropTypes.shape({})
-        }),
-        isEditing: PropTypes.bool.isRequired,
-        onSave: PropTypes.func.isRequired,
-        onCancel: PropTypes.func.isRequired,
-        onEdit: PropTypes.func.isRequired
-    };
-
-    static defaultProps = {
-        selectedRole: null
-    };
-
-    addDefaultPermissions = initialValues => {
+const Permissions = ({ selectedRole, isEditing, onSave, onEdit, onCancel }) => {
+    function addDefaultPermissions(initialValues) {
         const modifiedInitialValues = { ...initialValues };
         const resourceToAccess = { ...initialValues.resourceToAccess };
         Object.keys(defaultPermissions).forEach(resource => {
@@ -44,43 +28,53 @@ class Permissions extends Component {
         });
         modifiedInitialValues.resourceToAccess = resourceToAccess;
         return modifiedInitialValues;
-    };
+    }
 
-    displayContent = () => {
-        const { selectedRole, isEditing, onSave } = this.props;
-        const modifiedSelectedRole = this.addDefaultPermissions(selectedRole);
+    function displayContent() {
+        const modifiedSelectedRole = addDefaultPermissions(selectedRole);
         const content = isEditing ? (
             <Form onSubmit={onSave} initialValues={modifiedSelectedRole} />
         ) : (
             <Details role={modifiedSelectedRole} />
         );
         return content;
-    };
-
-    render() {
-        const { selectedRole, isEditing, onSave, onEdit, onCancel } = this.props;
-        if (!selectedRole) return null;
-        const headerText = selectedRole.name
-            ? `"${selectedRole.name}" Permissions`
-            : 'Create New Role';
-        const headerComponents = defaultRoles[selectedRole.name] ? (
-            <span className="uppercase text-base-500 leading-normal font-700">system default</span>
-        ) : (
-            <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel} />
-        );
-        const panelHeaderClassName = `${headerClassName} bg-base-100`;
-        return (
-            <Panel
-                header={headerText}
-                className="border"
-                headerClassName={panelHeaderClassName}
-                headerComponents={headerComponents}
-            >
-                <div className="w-full h-full bg-base-100 flex flex-1">{this.displayContent()}</div>
-            </Panel>
-        );
     }
-}
+
+    if (!selectedRole) return null;
+    const headerText = selectedRole.name ? `"${selectedRole.name}" Permissions` : 'Create New Role';
+    const headerComponents = defaultRoles[selectedRole.name] ? (
+        <span className="uppercase text-base-500 leading-normal font-700">system default</span>
+    ) : (
+        <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel} />
+    );
+    const panelHeaderClassName = `${headerClassName} bg-base-100`;
+    return (
+        <Panel
+            header={headerText}
+            className="border"
+            headerClassName={panelHeaderClassName}
+            headerComponents={headerComponents}
+        >
+            <div className="w-full h-full bg-base-100 flex flex-1">{displayContent()}</div>
+        </Panel>
+    );
+};
+
+Permissions.propTypes = {
+    selectedRole: PropTypes.shape({
+        name: PropTypes.string,
+        globalAccess: PropTypes.string,
+        resourceToAccess: PropTypes.shape({})
+    }),
+    isEditing: PropTypes.bool.isRequired,
+    onSave: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    onEdit: PropTypes.func.isRequired
+};
+
+Permissions.defaultProps = {
+    selectedRole: null
+};
 
 const mapStateToProps = createStructuredSelector({
     selectedRole: selectors.getSelectedRole

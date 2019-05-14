@@ -1,34 +1,15 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { ResponsiveContainer, PieChart, Pie, Sector, Legend, Cell } from 'recharts';
 
-class TwoLevelPieChart extends Component {
-    static propTypes = {
-        data: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-                value: PropTypes.number.isRequired,
-                color: PropTypes.string.isRequired,
-                onClick: PropTypes.func.isRequired
-            })
-        ).isRequired
-    };
+const TwoLevelPieChart = ({ data }) => {
+    const [activeIndex, setActiveIndex] = useState(0);
 
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            activeIndex: 0
-        };
+    function onPieEnter(d, index) {
+        setActiveIndex(index);
     }
 
-    onPieEnter = (data, index) => {
-        this.setState({
-            activeIndex: index
-        });
-    };
-
-    renderActiveShape = properties => {
+    function renderActiveShape(properties) {
         const RADIAN = Math.PI / 180;
         const {
             cx,
@@ -54,7 +35,7 @@ class TwoLevelPieChart extends Component {
         const textAnchor = cos >= 0 ? 'start' : 'end';
         return (
             <g className="cursor-pointer" onClick={onClick}>
-                <text x={cx} y={cy} dy={8} textAnchor="middle" fill="#333">
+                <text x={cx} y={cy} dy={8} textAnchor="middle" fill="var(--base-600)">
                     {payload.name}
                 </text>
                 <Sector
@@ -81,37 +62,46 @@ class TwoLevelPieChart extends Component {
                     x={ex + (cos >= 0 ? 1 : -1) * 12}
                     y={ey}
                     textAnchor={textAnchor}
-                    fill="#333"
+                    fill="var(--base-600)"
                 >{`${payload.name} (${value})`}</text>
             </g>
         );
-    };
-
-    render() {
-        return (
-            <ResponsiveContainer>
-                <PieChart margin={{ top: -20 }}>
-                    <Pie
-                        startAngle={90}
-                        endAngle={500}
-                        sAnimationActive={false}
-                        activeIndex={this.state.activeIndex}
-                        activeShape={this.renderActiveShape}
-                        data={this.props.data}
-                        dataKey="value"
-                        innerRadius={70}
-                        outerRadius={80}
-                        onMouseEnter={this.onPieEnter}
-                    >
-                        {this.props.data.map(entry => (
-                            <Cell key={entry.name} fill={entry.color} />
-                        ))}
-                    </Pie>
-                    <Legend />
-                </PieChart>
-            </ResponsiveContainer>
-        );
     }
-}
+
+    return (
+        <ResponsiveContainer>
+            <PieChart margin={{ top: -20 }}>
+                <Pie
+                    startAngle={90}
+                    endAngle={500}
+                    sAnimationActive={false}
+                    activeIndex={activeIndex}
+                    activeShape={renderActiveShape}
+                    data={data}
+                    dataKey="value"
+                    innerRadius={70}
+                    outerRadius={80}
+                    onMouseEnter={onPieEnter}
+                >
+                    {data.map(entry => (
+                        <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                </Pie>
+                <Legend />
+            </PieChart>
+        </ResponsiveContainer>
+    );
+};
+
+TwoLevelPieChart.propTypes = {
+    data: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired,
+            value: PropTypes.number.isRequired,
+            color: PropTypes.string.isRequired,
+            onClick: PropTypes.func.isRequired
+        })
+    ).isRequired
+};
 
 export default TwoLevelPieChart;

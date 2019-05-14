@@ -3,5 +3,5 @@
     "chromeWebSecurity": false,
     "ignoreTestFiles": [ "**/constants/**/*", "**/helpers/**/*" ],
     "viewportWidth": 1440,
-    "viewportHeight": 725
+    "viewportHeight": 850
 }

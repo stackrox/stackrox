@@ -7,7 +7,7 @@ const ReduxTextAreaField = ({ name, disabled, placeholder, maxlength }) => (
         key={name}
         name={name}
         component="textarea"
-        className="border rounded-l py-3 px-2 border-base-300 text-base-600 w-full font-600 leading-normal"
+        className="bg-base-100 border rounded-l py-3 px-2 border-base-300 text-base-600 w-full font-600 leading-normal"
         disabled={disabled}
         rows={4}
         placeholder={placeholder}

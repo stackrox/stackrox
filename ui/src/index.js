@@ -12,6 +12,7 @@ import stringUtil from 'utils/string';
 
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
+import { ThemeProvider } from 'Containers/ThemeProvider';
 import configureStore from 'store/configureStore';
 import installRaven from 'installRaven';
 import configureApollo from './configureApolloClient';
@@ -27,9 +28,11 @@ ReactDOM.render(
     <Provider store={store}>
         <ApolloProvider client={apolloClient}>
             <ConnectedRouter history={history}>
-                <ErrorBoundary>
-                    <AppPage />
-                </ErrorBoundary>
+                <ThemeProvider>
+                    <ErrorBoundary>
+                        <AppPage />
+                    </ErrorBoundary>
+                </ThemeProvider>
             </ConnectedRouter>
         </ApolloProvider>
     </Provider>,

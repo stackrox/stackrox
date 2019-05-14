@@ -28,7 +28,10 @@ const Control = ({ className, ...props }) => (
 );
 
 const Menu = ({ className, ...props }) => (
-    <selectComponents.Menu className={`${className} z-60 font-600 text-left`} {...props} />
+    <selectComponents.Menu
+        className={`${className} bg-base-100 z-60 font-600 text-left`}
+        {...props}
+    />
 );
 
 const MultiValue = props => (
@@ -36,6 +39,12 @@ const MultiValue = props => (
 );
 
 const defaultComponents = { Control, Menu, MultiValue };
+export const defaultSelectStyles = {
+    option: (styles, { isFocused }) => ({
+        ...styles,
+        backgroundColor: isFocused ? 'var(--base-300)' : ''
+    })
+};
 
 /**
  * Adds the following changes to the react-select component:
@@ -61,7 +70,8 @@ function withAdjustedBehavior(SelectComponent) {
             /* The value of the select reflected by the values of the selected option(s), ignored if optionValue is passed */
             value: PropTypes.any, // eslint-disable-line react/forbid-prop-types
             /* See react-select docs */
-            options: PropTypes.arrayOf(PropTypes.object)
+            options: PropTypes.arrayOf(PropTypes.object),
+            styles: PropTypes.shape({})
         };
 
         static defaultProps = {
@@ -72,7 +82,8 @@ function withAdjustedBehavior(SelectComponent) {
             components: defaultComponents,
             optionValue: null,
             value: null,
-            options: []
+            options: [],
+            styles: defaultSelectStyles
         };
 
         state = {
@@ -143,6 +154,7 @@ function withAdjustedBehavior(SelectComponent) {
                 value,
                 optionValue,
                 options,
+                styles,
                 ...rest
             } = this.props;
             const valueToPass = this.transformValue(getOptionValue, options, value, optionValue);
@@ -158,6 +170,7 @@ function withAdjustedBehavior(SelectComponent) {
                     components={mergedComponents}
                     value={valueToPass}
                     options={options}
+                    styles={styles}
                     {...rest}
                 />
             );

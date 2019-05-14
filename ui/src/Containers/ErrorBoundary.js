@@ -31,7 +31,7 @@ class ErrorBoundary extends Component {
     render() {
         if (this.state.showError) {
             return (
-                <div className="flex h-full items-center justify-center">
+                <div className="flex h-full items-center justify-center bg-base-100 text-base-600">
                     <Icons.XSquare size="48" />
                     <div className="p-2 text-lg">
                         <p>

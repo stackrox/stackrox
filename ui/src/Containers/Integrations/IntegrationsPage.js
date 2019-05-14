@@ -187,7 +187,7 @@ class IntegrationsPage extends Component {
         const authProviders = this.renderIntegrationTiles('authProviders');
         const backups = this.renderIntegrationTiles('backups');
         return (
-            <div className="h-full flex flex-col md:w-full bg-base-200">
+            <div className="h-full flex flex-col md:w-full bg-base-200" id="integrationsPage">
                 <div className="flex flex-no-shrink">
                     <PageHeader header="Integrations" subHeader="Setup & Configuration" />
                 </div>

@@ -118,7 +118,7 @@ class ComplianceList extends Component {
             contents = this.getContentsForComplianceList();
         }
 
-        return <div className="flex flex-1 overflow-y-auto h-full">{contents}</div>;
+        return <div className="flex flex-1 overflow-y-auto h-full bg-base-100">{contents}</div>;
     }
 }
 

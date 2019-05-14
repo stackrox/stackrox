@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -10,131 +10,109 @@ import SideBar from 'Containers/AccessControl/SideBar';
 import Select from 'Containers/AccessControl/AuthProviders/Select';
 import AuthProvider from 'Containers/AccessControl/AuthProviders/AuthProvider/AuthProvider';
 
-class AuthProviders extends Component {
-    static propTypes = {
-        authProviders: PropTypes.arrayOf(PropTypes.shape({})),
-        selectedAuthProvider: PropTypes.shape({}),
-        selectAuthProvider: PropTypes.func.isRequired,
-        saveAuthProvider: PropTypes.func.isRequired,
-        deleteAuthProvider: PropTypes.func.isRequired,
-        groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        setAuthProviderEditingState: PropTypes.func.isRequired,
-        isEditing: PropTypes.bool
-    };
+const AuthProviders = ({
+    saveAuthProvider,
+    setAuthProviderEditingState,
+    selectAuthProvider,
+    selectedAuthProvider,
+    authProviders,
+    deleteAuthProvider,
+    groups,
+    isEditing
+}) => {
+    const [providerToDelete, setProviderToDelete] = useState(null);
 
-    static defaultProps = {
-        authProviders: [],
-        selectedAuthProvider: null,
-        isEditing: false
-    };
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            providerToDelete: null
-        };
+    function onEdit() {
+        setAuthProviderEditingState(true);
     }
 
-    onSave = data => {
-        const { saveAuthProvider } = this.props;
-        saveAuthProvider(data);
-    };
+    function onCreateNewAuthProvider(option) {
+        selectAuthProvider({ type: option.value });
+        setAuthProviderEditingState(true);
+    }
 
-    onEdit = () => {
-        this.props.setAuthProviderEditingState(true);
-    };
-
-    onCreateNewAuthProvider = option => {
-        this.props.selectAuthProvider({ type: option.value });
-        this.props.setAuthProviderEditingState(true);
-    };
-
-    onCancel = () => {
-        const {
-            selectedAuthProvider,
-            setAuthProviderEditingState,
-            selectAuthProvider,
-            authProviders
-        } = this.props;
+    function onCancel() {
         setAuthProviderEditingState(false);
         if (selectedAuthProvider && !selectedAuthProvider.id) {
             selectAuthProvider(authProviders[0]);
         }
-    };
+    }
 
-    onDelete = authProvider => {
-        this.setState({
-            providerToDelete: authProvider
-        });
-    };
+    function onDelete(authProvider) {
+        setProviderToDelete(authProvider);
+    }
 
-    deleteProvider = () => {
-        const providerId = this.state.providerToDelete && this.state.providerToDelete.id;
+    function deleteProvider() {
+        const providerId = providerToDelete && providerToDelete.id;
         if (!providerId) return;
 
-        this.props.deleteAuthProvider(providerId);
-        this.props.setAuthProviderEditingState(false);
-        this.setState({
-            providerToDelete: null
-        });
-    };
+        deleteAuthProvider(providerId);
+        setAuthProviderEditingState(false);
+        setProviderToDelete(null);
+    }
 
-    onCancelDeleteProvider = () => {
-        this.setState({
-            providerToDelete: null
-        });
-    };
+    function onCancelDeleteProvider() {
+        setProviderToDelete(null);
+    }
 
-    renderSideBar = () => {
-        const header = 'Auth Providers';
-        const { authProviders, selectedAuthProvider, selectAuthProvider } = this.props;
-        return (
-            <SideBar
-                header={header}
-                rows={authProviders}
-                selected={selectedAuthProvider}
-                onSelectRow={selectAuthProvider}
-                addRowButton={<Select onChange={this.onCreateNewAuthProvider} />}
-                onCancel={this.onCancel}
-                onDelete={this.onDelete}
-                type="auth provider"
-            />
-        );
-    };
+    const curProviderToDelete = providerToDelete && providerToDelete.name;
 
-    render() {
-        const { selectedAuthProvider, groups } = this.props;
-        const providerToDelete = this.state.providerToDelete && this.state.providerToDelete.name;
-
-        const className = this.props.isEditing
-            ? 'before before:absolute before:h-full before:opacity-50 before:bg-secondary-900 before:w-full before:z-10'
-            : '';
-        return (
-            <section className="flex flex-1 h-full">
-                <div className={`w-1/4 flex flex-col ${className}`}>
-                    <div className="m-4 h-full">{this.renderSideBar()}</div>
-                </div>
-                <div className="w-3/4 my-4 mr-4 z-10">
-                    <AuthProvider
-                        isEditing={this.props.isEditing}
-                        selectedAuthProvider={selectedAuthProvider}
-                        onSave={this.onSave}
-                        onEdit={this.onEdit}
-                        onCancel={this.onCancel}
-                        groups={groups}
+    const className = isEditing
+        ? 'before before:absolute before:h-full before:opacity-50 before:bg-base-400 before:w-full before:z-10'
+        : '';
+    return (
+        <section className="flex flex-1 h-full">
+            <div className={`w-1/4 flex flex-col ${className}`}>
+                <div className="m-4 h-full">
+                    <SideBar
+                        header="Auth Providers"
+                        rows={authProviders}
+                        selected={selectedAuthProvider}
+                        onSelectRow={selectAuthProvider}
+                        addRowButton={<Select onChange={onCreateNewAuthProvider} />}
+                        onCancel={onCancel}
+                        onDelete={onDelete}
+                        type="auth provider"
                     />
                 </div>
-                <Dialog
-                    isOpen={!!providerToDelete}
-                    text={`Deleting "${providerToDelete}" will cause users to be logged out. Are you sure you want to delete "${providerToDelete}"?`}
-                    onConfirm={this.deleteProvider}
-                    onCancel={this.onCancelDeleteProvider}
-                    confirmText="Delete"
+            </div>
+            <div className="w-3/4 my-4 mr-4 z-10">
+                <AuthProvider
+                    isEditing={isEditing}
+                    selectedAuthProvider={selectedAuthProvider}
+                    onSave={saveAuthProvider}
+                    onEdit={onEdit}
+                    onCancel={onCancel}
+                    groups={groups}
                 />
-            </section>
-        );
-    }
-}
+            </div>
+            <Dialog
+                isOpen={!!curProviderToDelete}
+                text={`Deleting "${curProviderToDelete}" will cause users to be logged out. Are you sure you want to delete "${curProviderToDelete}"?`}
+                onConfirm={deleteProvider}
+                onCancel={onCancelDeleteProvider}
+                confirmText="Delete"
+            />
+        </section>
+    );
+};
+
+AuthProviders.propTypes = {
+    authProviders: PropTypes.arrayOf(PropTypes.shape({})),
+    selectedAuthProvider: PropTypes.shape({}),
+    selectAuthProvider: PropTypes.func.isRequired,
+    saveAuthProvider: PropTypes.func.isRequired,
+    deleteAuthProvider: PropTypes.func.isRequired,
+    groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    setAuthProviderEditingState: PropTypes.func.isRequired,
+    isEditing: PropTypes.bool
+};
+
+AuthProviders.defaultProps = {
+    authProviders: [],
+    selectedAuthProvider: null,
+    isEditing: false
+};
 
 const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getAvailableAuthProviders,

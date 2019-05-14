@@ -15,7 +15,7 @@ const ReduxNumericInput = props => (
         placeholder={props.placeholder}
         onBlur={props.input.onChange}
         noStyle
-        className="border-2 rounded-l p-3 border-base-300 w-full font-600"
+        className="bg-base-100 border-2 rounded-l p-3 text-base-600 border-base-300 w-full font-600"
     />
 );
 

@@ -31,7 +31,8 @@ function highlightPathData(data, highlightedNames) {
 
 const LABEL_STYLE = {
     fontSize: '12px',
-    textAnchor: 'middle'
+    textAnchor: 'middle',
+    fill: 'var(--primary-800)'
 };
 
 export default class BasicSunburst extends React.Component {

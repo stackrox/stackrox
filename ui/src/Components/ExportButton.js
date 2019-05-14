@@ -8,7 +8,7 @@ import PDFExportButton from 'Components/PDFExportButton';
 import { format } from 'date-fns';
 
 const btnClassName =
-    'btn border-primary-800 bg-primary-800 text-base-100 w-48 hover:bg-primary-900 hover:border-primary-900';
+    'btn border-primary-600 bg-primary-600 text-base-100 w-48 hover:bg-primary-700 hover:border-primary-700';
 const queryParamMap = {
     CLUSTER: 'clusterId',
     STANDARD: 'standardId',
@@ -72,7 +72,7 @@ class ExportButton extends Component {
         return (
             <div className="absolute pin-r pin-r z-10 uppercase flex flex-col text-base-600 min-w-64">
                 <div className="arrow-up self-end mr-5" />
-                <ul className="list-reset bg-base-100 border-2 border-primary-800 rounded">
+                <ul className="list-reset bg-base-100 border-2 border-primary-600 rounded">
                     <li className="p-4 border-b border-base-400">
                         <div className="flex uppercase">
                             <PDFExportButton

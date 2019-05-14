@@ -104,29 +104,41 @@ class DashboardCompliance extends Component {
 
     render() {
         return (
-            <Query
-                query={AGGREGATED_RESULTS}
-                variables={{
-                    unit: entityTypes.CONTROL,
-                    groupBy: [entityTypes.STANDARD]
-                }}
-            >
-                {({ loading, data }) => {
-                    if (loading) return <Loader />;
-                    const results = this.processData(data);
-                    if (!results.length) return this.renderScanButton();
-                    return (
-                        <div className="flex w-full">
-                            <div className="pr-6 flex flex-1 flex-col">
-                                {this.renderStandardsData(results)}
-                            </div>
-                            <div className="flex items-start">
-                                <div className="flex flex-col">{this.renderLegend()}</div>
-                            </div>
-                        </div>
-                    );
-                }}
-            </Query>
+            <div className="w-full">
+                <h2 className="-ml-6 bg-base-100 inline-block leading-normal mb-6 px-3 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
+                    <Link
+                        className="text-base-600 hover:text-primary-600 flex items-center h-10"
+                        to="/main/compliance"
+                    >
+                        Compliance
+                    </Link>
+                </h2>
+                <div className="flex">
+                    <Query
+                        query={AGGREGATED_RESULTS}
+                        variables={{
+                            unit: entityTypes.CONTROL,
+                            groupBy: [entityTypes.STANDARD]
+                        }}
+                    >
+                        {({ loading, data }) => {
+                            if (loading) return <Loader />;
+                            const results = this.processData(data);
+                            if (!results.length) return this.renderScanButton();
+                            return (
+                                <div className="flex w-full">
+                                    <div className="pr-6 flex flex-1 flex-col">
+                                        {this.renderStandardsData(results)}
+                                    </div>
+                                    <div className="flex items-start">
+                                        <div className="flex flex-col">{this.renderLegend()}</div>
+                                    </div>
+                                </div>
+                            );
+                        }}
+                    </Query>
+                </div>
+            </div>
         );
     }
 }

@@ -137,7 +137,7 @@ const RiskPage = ({
                     />
                 </PageHeader>
                 <div className="flex flex-1 relative">
-                    <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
+                    <div className="shadow border-primary-300 bg-base-100 w-full overflow-hidden">
                         {renderPanel()}
                     </div>
                     {renderSidePanel()}

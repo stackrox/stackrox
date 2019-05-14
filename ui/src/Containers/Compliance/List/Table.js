@@ -299,7 +299,11 @@ const ListTable = ({
                     );
                 }
                 return (
-                    <Panel header={headerText} headerComponents={headerComponent}>
+                    <Panel
+                        header={headerText}
+                        headerComponents={headerComponent}
+                        className="bg-base-100 w-full"
+                    >
                         {contents}
                     </Panel>
                 );

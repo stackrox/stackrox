@@ -1,9 +1,12 @@
 import { connect } from 'react-redux';
 import React from 'react';
 import PropTypes from 'prop-types';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
 
 import { Line } from 'recharts';
 import Slider from 'react-slick';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import CustomLineChart from 'Components/visuals/CustomLineChart';
 import severityColorMap from 'constants/severityColors';
 import slickSettings from 'constants/slickSettings';
@@ -74,49 +77,54 @@ const formatTimeseriesData = clusterData => {
     return cluster;
 };
 
-const AlertsByTimeseriesChart = ({ clusterData }) => (
-    <div className="p-0 h-64 w-full overflow-hidden">
-        <Slider {...slickSettings}>
-            {clusterData.map(cluster => {
-                const { data, name } = formatTimeseriesData(cluster);
-                return (
-                    <div className="h-64" key={name}>
-                        <CustomLineChart
-                            data={data}
-                            name={name}
-                            xAxisDataKey="time"
-                            yAxisDataKey=""
-                        >
-                            <Line
-                                type="monotone"
-                                dataKey="low"
-                                stroke={severityColorMap.LOW_SEVERITY}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="medium"
-                                stroke={severityColorMap.MEDIUM_SEVERITY}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="high"
-                                stroke={severityColorMap.HIGH_SEVERITY}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="critical"
-                                stroke={severityColorMap.CRITICAL_SEVERITY}
-                            />
-                        </CustomLineChart>
-                    </div>
-                );
-            })}
-        </Slider>
-    </div>
-);
+const AlertsByTimeseriesChart = ({ alertsByTimeseries }) => {
+    if (!alertsByTimeseries || !alertsByTimeseries.length) {
+        return <NoResultsMessage />;
+    }
+    return (
+        <div className="p-0 h-64 w-full overflow-hidden">
+            <Slider {...slickSettings}>
+                {alertsByTimeseries.map(cluster => {
+                    const { data, name } = formatTimeseriesData(cluster);
+                    return (
+                        <div className="h-64" key={name}>
+                            <CustomLineChart
+                                data={data}
+                                name={name}
+                                xAxisDataKey="time"
+                                yAxisDataKey=""
+                            >
+                                <Line
+                                    type="monotone"
+                                    dataKey="low"
+                                    stroke={severityColorMap.LOW_SEVERITY}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="medium"
+                                    stroke={severityColorMap.MEDIUM_SEVERITY}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="high"
+                                    stroke={severityColorMap.HIGH_SEVERITY}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="critical"
+                                    stroke={severityColorMap.CRITICAL_SEVERITY}
+                                />
+                            </CustomLineChart>
+                        </div>
+                    );
+                })}
+            </Slider>
+        </div>
+    );
+};
 
 AlertsByTimeseriesChart.propTypes = {
-    clusterData: PropTypes.arrayOf(
+    alertsByTimeseries: PropTypes.arrayOf(
         PropTypes.shape({
             cluster: PropTypes.string.isRequired,
             severities: PropTypes.arrayOf(
@@ -136,7 +144,14 @@ AlertsByTimeseriesChart.propTypes = {
 };
 
 AlertsByTimeseriesChart.defaultProps = {
-    clusterData: []
+    alertsByTimeseries: []
 };
 
-export default connect()(AlertsByTimeseriesChart);
+const mapStateToProps = createStructuredSelector({
+    alertsByTimeseries: selectors.getAlertsByTimeseries
+});
+
+export default connect(
+    mapStateToProps,
+    null
+)(AlertsByTimeseriesChart);

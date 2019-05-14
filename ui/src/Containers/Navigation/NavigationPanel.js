@@ -53,7 +53,7 @@ class NavigationPanel extends Component {
 
     render() {
         return (
-            <div className="navigation-panel w-full flex">
+            <div className="navigation-panel w-full flex theme-light">
                 {this.panels[this.props.panelType]()}
                 <div
                     role="button"

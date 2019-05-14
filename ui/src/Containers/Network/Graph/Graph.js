@@ -120,7 +120,7 @@ class Graph extends Component {
 
         // Rendering.
         return (
-            <div className={`${simulatorMode} ${networkGraphStateClass} w-full h-full`}>
+            <div className={`${simulatorMode} ${networkGraphStateClass} w-full h-full theme-light`}>
                 {this.renderGraph(nodes)}
                 <Filters />
                 <Legend />

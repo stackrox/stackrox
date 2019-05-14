@@ -276,11 +276,11 @@ class HorizontalBarChart extends Component {
                     <HorizontalBarSeries data={sortedData} {...seriesProps} />
                     <LabelSeries
                         data={this.getLabelData()}
-                        className="text-xs pointer-events-none"
+                        className="text-xs pointer-events-none theme-light"
                         labelAnchorY="no-change"
                         labelAnchorX="end-alignment"
                         style={{
-                            fill: 'var(--base-700)',
+                            fill: 'var(--primary-800)',
                             cursor: `${minimal ? '' : 'pointer'}`
                         }}
                     />

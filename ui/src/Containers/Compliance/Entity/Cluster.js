@@ -52,7 +52,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                     contents = (
                         <section
                             id="capture-list"
-                            className="flex flex-col flex-1 overflow-y-auto h-full"
+                            className="flex flex-col flex-1 overflow-y-auto h-full bg-base-100"
                         >
                             <ComplianceList
                                 searchComponent={searchComponent}

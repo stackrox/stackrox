@@ -2,6 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import * as Icon from 'react-feather';
 import PropTypes from 'prop-types';
+import { selectors } from 'reducers';
+import { connect } from 'react-redux';
+import { createSelector, createStructuredSelector } from 'reselect';
+
 import dateFns from 'date-fns';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
@@ -46,23 +50,38 @@ const renderDeploymentsList = deployments => {
     return <ul className="list-reset h-full">{list}</ul>;
 };
 
-const TopRiskyDeployments = props => (
-    <div className="flex flex-col bg-base-100 rounded shadow h-full">
-        <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
-            <Icon.File className="h-4 w-4 m-3" />
-            <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">
-                Top Risky Deployments
-            </span>
-            <span className="flex flex-1 justify-end pr-2">
-                {renderMoreButton(props.deployments)}
-            </span>
-        </h2>
-        <div className="m-4 h-64">{renderDeploymentsList(props.deployments)}</div>
-    </div>
-);
+const TopRiskyDeployments = ({ deployments }) => {
+    if (!deployments) return '';
+    return (
+        <div className="flex flex-col bg-base-100 rounded shadow h-full">
+            <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
+                <Icon.File className="h-4 w-4 m-3" />
+                <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">
+                    Top Risky Deployments
+                </span>
+                <span className="flex flex-1 justify-end pr-2">
+                    {renderMoreButton(deployments)}
+                </span>
+            </h2>
+            <div className="m-4 h-64">{renderDeploymentsList(deployments)}</div>
+        </div>
+    );
+};
 
 TopRiskyDeployments.propTypes = {
     deployments: PropTypes.arrayOf(PropTypes.object).isRequired
 };
 
-export default TopRiskyDeployments;
+const getTopRiskyDeployments = createSelector(
+    [selectors.getFilteredDeployments],
+    deployments => deployments.sort((a, b) => a.priority - b.priority).slice(0, 5)
+);
+
+const mapStateToProps = createStructuredSelector({
+    deployments: getTopRiskyDeployments
+});
+
+export default connect(
+    mapStateToProps,
+    null
+)(TopRiskyDeployments);

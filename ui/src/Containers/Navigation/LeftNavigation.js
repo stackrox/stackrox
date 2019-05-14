@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTheme } from 'Containers/ThemeProvider';
 
-import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
 import { withRouter, NavLink as Link } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
@@ -10,53 +10,7 @@ import PropTypes from 'prop-types';
 import { selectors } from 'reducers';
 import NavigationPanel from './NavigationPanel';
 import ApiDocsNavigation from './ApiDocsNavigation';
-
-const linkClassName =
-    'flex flex-col font-condensed font-700 border-primary-900 text-primary-400 px-3 no-underline justify-center h-18 hover:bg-base-700 items-center border-b';
-const iconClassName = 'h-4 w-4 mb-1';
-const navLinks = [
-    {
-        text: 'Dashboard',
-        to: '/main/dashboard',
-        renderIcon: () => <Icon.BarChart2 className={iconClassName} />
-    },
-    {
-        text: 'Network',
-        to: '/main/network',
-        renderIcon: () => <Icon.Share2 className={iconClassName} />
-    },
-    {
-        text: 'Violations',
-        to: '/main/violations',
-        renderIcon: () => <Icon.AlertTriangle className={iconClassName} />
-    },
-    {
-        text: 'Compliance',
-        to: '/main/compliance',
-        renderIcon: () => <Icon.CheckSquare className={iconClassName} />
-    },
-    {
-        text: 'Risk',
-        to: '/main/risk',
-        renderIcon: () => <Icon.ShieldOff className={iconClassName} />
-    },
-    {
-        text: 'Images',
-        to: '/main/images',
-        renderIcon: () => <Icon.FileMinus className={iconClassName} />
-    },
-    {
-        text: 'Secrets',
-        to: '/main/secrets',
-        renderIcon: () => <Icon.Lock className={iconClassName} />
-    },
-    {
-        text: 'Configure',
-        to: '',
-        renderIcon: () => <Icon.Settings className={iconClassName} />,
-        panelType: 'configure'
-    }
-];
+import LeftSideNavLinks, { navLinks } from './LeftSideNavLinks';
 
 const versionString = metadata => {
     let result = `v${metadata.version}`;
@@ -66,46 +20,26 @@ const versionString = metadata => {
     return result;
 };
 
-class LeftNavigation extends Component {
-    static propTypes = {
-        location: ReactRouterPropTypes.location.isRequired,
-        metadata: PropTypes.shape({
-            version: PropTypes.string,
-            releaseBuild: PropTypes.bool,
-            licenseStatus: PropTypes.string
-        })
-    };
+export const darkModeLinkClassName = isDarkMode =>
+    isDarkMode ? 'hover:bg-primary-100' : 'border-primary-900 hover:bg-base-700';
 
-    static defaultProps = {
-        metadata: {
-            version: 'latest',
-            releaseBuild: false
-        }
-    };
+const LeftNavigation = ({ location, metadata }) => {
+    const { isDarkMode } = useTheme();
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            panelType: null,
-            clickOnPanelItem: false,
-            selectedPanel: ''
-        };
-    }
+    const [panelType, setPanelType] = useState(null);
+    const [clickOnPanelItem, setClickOnPanelItem] = useState(false);
+    const [selectedPanel, setSelectedPanel] = useState('');
 
-    componentDidMount() {
-        window.onpopstate = e => {
-            const url = e.srcElement.location.pathname;
-            const link = find(navLinks, navLink => url === navLink.to);
-            if (this.state.panelType || link) {
-                this.setState({ panelType: null });
-            }
-        };
-    }
+    const linkClassName = `flex flex-col font-condensed font-700 text-primary-400 px-3 no-underline justify-center h-18 items-center border-b ${darkModeLinkClassName(
+        isDarkMode
+    )}`;
 
-    getActiveClassName = navLink => {
-        const { pathname } = this.props.location;
+    function getActiveClassName(navLink) {
+        const { pathname } = location;
         const navText = navLink.text.toLowerCase();
-        const baseActiveClass = 'text-base-100 bg-primary-700 hover:bg-primary-700';
+        const baseActiveClass = isDarkMode
+            ? 'text-primary-500 bg-primary-200 hover:bg-primary-300'
+            : 'bg-primary-700 hover:bg-primary-700 text-base-100';
 
         if (
             (pathname.includes('policies') ||
@@ -120,88 +54,123 @@ class LeftNavigation extends Component {
             return baseActiveClass;
         }
         if (navLink.to === '') {
-            const baseFocusClass = 'text-base-100 bg-base-800 hover:bg-base-800';
-            if (this.state.panelType && this.state.panelType === navLink.panelType) {
+            const baseFocusClass = isDarkMode
+                ? 'text-primary-500 bg-primary-200 hover:bg-primary-300'
+                : 'text-base-100 bg-base-800 hover:bg-base-800';
+            if (panelType && panelType === navLink.panelType) {
                 return baseFocusClass;
             }
-            if (
-                !this.state.panelType &&
-                this.state.clickOnPanelItem &&
-                this.state.selectedPanel === navText
-            ) {
+            if (!panelType && clickOnPanelItem && selectedPanel === navText) {
                 return baseFocusClass;
             }
-            return 'bg-primary-800';
+            return isDarkMode ? 'bg-base-200' : 'bg-primary-800';
         }
         return '';
-    };
+    }
 
-    closePanel = (clickOnPanelItem, selectedPanel) => () => {
-        if (clickOnPanelItem) this.setState({ clickOnPanelItem, selectedPanel });
-        this.setState({ panelType: null });
-    };
-
-    showNavigationPanel = navLink => e => {
-        if (navLink.panelType && this.state.panelType !== navLink.panelType) {
-            e.preventDefault();
-            this.setState({ panelType: navLink.panelType });
-        } else {
-            if (this.state.panelType === navLink.panelType) {
-                e.preventDefault();
+    function closePanel(newClickOnPanelItem, newSelectedPanel) {
+        return () => {
+            if (newClickOnPanelItem) {
+                setClickOnPanelItem(newClickOnPanelItem);
+                setSelectedPanel(newSelectedPanel);
             }
-            this.setState({ panelType: null, clickOnPanelItem: false });
-        }
-    };
+            setPanelType(null);
+        };
+    }
 
-    renderLink = navLink => (
-        <Link
-            to={navLink.to}
-            activeClassName={this.getActiveClassName(navLink)}
-            onClick={this.showNavigationPanel(navLink)}
-            className={linkClassName}
-        >
-            <div className="text-center pb-1">{navLink.renderIcon()}</div>
-            <div className="text-center text-base-100">{navLink.text}</div>
-        </Link>
-    );
+    function showNavigationPanel(navLink) {
+        return e => {
+            if (navLink.panelType && panelType !== navLink.panelType) {
+                e.preventDefault();
+                setPanelType(navLink.panelType);
+            } else {
+                if (panelType === navLink.panelType) {
+                    e.preventDefault();
+                }
+                setPanelType(null);
+                setClickOnPanelItem(false);
+            }
+        };
+    }
 
-    renderLeftSideNavLinks = () => (
-        <ul className="flex flex-col list-reset uppercase text-sm tracking-wide">
-            {navLinks.map(navLink => (
-                <li key={navLink.text}>{this.renderLink(navLink)}</li>
-            ))}
-        </ul>
-    );
-
-    renderFooter = () => (
-        <div
-            className="flex flex-col flex-none text-center text-xs font-700"
-            data-test-id="nav-footer"
-        >
-            <ApiDocsNavigation onClick={this.closePanel()} />
-            <span className="left-navigation p-3 text-primary-400 word-break-all">
-                {versionString(this.props.metadata)}
-            </span>
-        </div>
-    );
-
-    renderNavigationPanel = () => {
-        if (!this.state.panelType) return '';
-        return <NavigationPanel panelType={this.state.panelType} onClose={this.closePanel} />;
-    };
-
-    render() {
+    function renderLink(navLink) {
         return (
-            <>
-                <div className="flex flex-col justify-between bg-primary-800 flex-none overflow-overlay z-60">
-                    <nav className="left-navigation">{this.renderLeftSideNavLinks()}</nav>
-                    {this.renderFooter()}
+            <Link
+                to={navLink.to}
+                activeClassName={getActiveClassName(navLink)}
+                onClick={showNavigationPanel(navLink)}
+                className={linkClassName}
+            >
+                <div className="text-center pb-1">{navLink.renderIcon()}</div>
+                <div className={`text-center ${isDarkMode ? 'text-base-600' : 'text-base-100'}`}>
+                    {navLink.text}
                 </div>
-                {this.renderNavigationPanel()}
-            </>
+            </Link>
         );
     }
-}
+
+    function renderNavigationPanel() {
+        if (!panelType) return '';
+        return <NavigationPanel panelType={panelType} onClose={closePanel} />;
+    }
+
+    function componentDidMount() {
+        window.onpopstate = e => {
+            const url = e.srcElement.location.pathname;
+            const link = find(navLinks, navLink => url === navLink.to);
+            if (panelType || link) {
+                setPanelType(null);
+            }
+        };
+    }
+
+    useEffect(componentDidMount, []);
+
+    const darkModeClasses = isDarkMode
+        ? 'bg-base-200 border-t border-r border-base-400'
+        : 'bg-primary-800';
+    return (
+        <>
+            <div
+                className={`flex flex-col justify-between flex-none overflow-auto z-60 ${darkModeClasses}`}
+            >
+                <nav className="left-navigation">
+                    <LeftSideNavLinks renderLink={renderLink} />
+                </nav>
+                <div
+                    className="flex flex-col h-full justify-end text-center text-xs font-700"
+                    data-test-id="nav-footer"
+                >
+                    <ApiDocsNavigation onClick={closePanel()} />
+                    <span
+                        className={`left-navigation p-3 ${
+                            isDarkMode ? 'text-base-600' : 'text-primary-400'
+                        } word-break-all`}
+                    >
+                        {versionString(metadata)}
+                    </span>
+                </div>
+            </div>
+            {renderNavigationPanel()}
+        </>
+    );
+};
+
+LeftNavigation.propTypes = {
+    location: ReactRouterPropTypes.location.isRequired,
+    metadata: PropTypes.shape({
+        version: PropTypes.string,
+        releaseBuild: PropTypes.bool,
+        licenseStatus: PropTypes.string
+    })
+};
+
+LeftNavigation.defaultProps = {
+    metadata: {
+        version: 'latest',
+        releaseBuild: false
+    }
+};
 
 const mapStateToProps = createStructuredSelector({
     metadata: selectors.getMetadata

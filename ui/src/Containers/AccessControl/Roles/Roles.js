@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector, createSelector } from 'reselect';
@@ -10,135 +10,117 @@ import SideBar from 'Containers/AccessControl/SideBar';
 import Permissions from 'Containers/AccessControl/Roles/Permissions/Permissions';
 import { defaultRoles, defaultSelectedRole } from 'constants/accessControl';
 
-class Roles extends Component {
-    static propTypes = {
-        roles: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string,
-                globalAccess: PropTypes.string
-            })
-        ).isRequired,
-        selectedRole: PropTypes.shape({
-            name: PropTypes.string,
-            globalAccess: PropTypes.string
-        }),
-        selectRole: PropTypes.func.isRequired,
-        saveRole: PropTypes.func.isRequired,
-        deleteRole: PropTypes.func.isRequired
-    };
+const Roles = ({ roles, selectRole, selectedRole, saveRole, deleteRole }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [roleToDelete, setRoleToDelete] = useState(null);
 
-    static defaultProps = {
-        selectedRole: null
-    };
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            isEditing: false
-        };
+    function onSave(data) {
+        saveRole(data);
+        setIsEditing(false);
     }
 
-    onSave = data => {
-        this.props.saveRole(data);
-        this.setState({ isEditing: false });
-    };
+    function onEdit() {
+        setIsEditing(true);
+    }
 
-    onEdit = () => {
-        this.setState({ isEditing: true });
-    };
+    function onCreateNewRole() {
+        selectRole(defaultSelectedRole);
+        setIsEditing(true);
+    }
 
-    onCreateNewRole = () => {
-        this.props.selectRole(defaultSelectedRole);
-        this.setState({ isEditing: true });
-    };
-
-    onCancel = () => {
-        this.setState({ isEditing: false });
-        const { selectedRole, selectRole, roles } = this.props;
+    function onCancel() {
+        setIsEditing(false);
         if (selectedRole && selectedRole.name === '') {
             selectRole(roles[0]);
         }
-    };
+    }
 
-    onDelete = role => {
-        this.setState({
-            roleToDelete: role
-        });
-    };
+    function onDelete(role) {
+        setRoleToDelete(role);
+    }
 
-    deleteRole = () => {
-        const roleName = this.state.roleToDelete && this.state.roleToDelete.name;
-        this.props.deleteRole(roleName);
-        this.setState({
-            isEditing: false,
-            roleToDelete: null
-        });
-    };
+    function deleteRoleHandler() {
+        const roleName = roleToDelete && roleToDelete.name;
+        deleteRole(roleName);
+        setIsEditing(false);
+        setRoleToDelete(null);
+    }
 
-    renderAddRoleButton = () => (
-        <button
-            className="border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase"
-            type="button"
-            onClick={this.onCreateNewRole}
-        >
-            Add New Role
-        </button>
-    );
-
-    onCancelDeleteRole = () => {
-        this.setState({
-            roleToDelete: null
-        });
-    };
-
-    renderSideBar = () => {
-        const header = 'StackRox Roles';
-        const { roles, selectedRole, selectRole } = this.props;
+    function renderAddRoleButton() {
         return (
-            <SideBar
-                header={header}
-                rows={roles}
-                selected={selectedRole}
-                onSelectRow={selectRole}
-                addRowButton={this.renderAddRoleButton()}
-                onCancel={this.onCancel}
-                onDelete={this.onDelete}
-                type="role"
-            />
-        );
-    };
-
-    render() {
-        const { selectedRole } = this.props;
-        const roleToDelete = this.state.roleToDelete && this.state.roleToDelete.name;
-        const className = this.state.isEditing
-            ? 'before before:absolute before:h-full before:opacity-50 before:bg-secondary-900 before:w-full before:z-10'
-            : '';
-        return (
-            <section className="flex flex-1 h-full">
-                <div className={`w-1/4 flex flex-col ${className}`}>
-                    <div className="m-4 h-full shadow-sm">{this.renderSideBar()}</div>
-                </div>
-                <div className="w-3/4 my-4 mr-4 z-10">
-                    <Permissions
-                        isEditing={this.state.isEditing}
-                        selectedRole={selectedRole}
-                        onSave={this.onSave}
-                        onEdit={this.onEdit}
-                        onCancel={this.onCancel}
-                    />
-                </div>
-                <Dialog
-                    isOpen={!!this.state.roleToDelete}
-                    text={`Deleting "${roleToDelete}" may cause users to lose access. Are you sure you want to delete "${roleToDelete}"?`}
-                    onConfirm={this.deleteRole}
-                    onCancel={this.onCancelDeleteRole}
-                    confirmText="Delete"
-                />
-            </section>
+            <button
+                className="border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase"
+                type="button"
+                onClick={onCreateNewRole}
+            >
+                Add New Role
+            </button>
         );
     }
-}
+
+    function onCancelDeleteRole() {
+        setRoleToDelete(null);
+    }
+
+    const curRoleToDelete = roleToDelete && roleToDelete.name;
+    const className = isEditing
+        ? 'before before:absolute before:h-full before:opacity-50 before:bg-base-400 before:w-full before:z-10'
+        : '';
+    return (
+        <section className="flex flex-1 h-full">
+            <div className={`w-1/4 flex flex-col ${className}`}>
+                <div className="m-4 h-full shadow-sm">
+                    <SideBar
+                        header="StackRox Roles"
+                        rows={roles}
+                        selected={selectedRole}
+                        onSelectRow={selectRole}
+                        addRowButton={renderAddRoleButton()}
+                        onCancel={onCancel}
+                        onDelete={onDelete}
+                        type="role"
+                    />
+                </div>
+            </div>
+            <div className="w-3/4 my-4 mr-4 z-10">
+                <Permissions
+                    isEditing={isEditing}
+                    selectedRole={selectedRole}
+                    onSave={onSave}
+                    onEdit={onEdit}
+                    onCancel={onCancel}
+                />
+            </div>
+            <Dialog
+                isOpen={!!curRoleToDelete}
+                text={`Deleting "${curRoleToDelete}" may cause users to lose access. Are you sure you want to delete "${curRoleToDelete}"?`}
+                onConfirm={deleteRoleHandler}
+                onCancel={onCancelDeleteRole}
+                confirmText="Delete"
+            />
+        </section>
+    );
+};
+
+Roles.propTypes = {
+    roles: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string,
+            globalAccess: PropTypes.string
+        })
+    ).isRequired,
+    selectedRole: PropTypes.shape({
+        name: PropTypes.string,
+        globalAccess: PropTypes.string
+    }),
+    selectRole: PropTypes.func.isRequired,
+    saveRole: PropTypes.func.isRequired,
+    deleteRole: PropTypes.func.isRequired
+};
+
+Roles.defaultProps = {
+    selectedRole: null
+};
 
 const getRolesWithDefault = createSelector(
     [selectors.getRoles],

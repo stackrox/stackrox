@@ -156,6 +156,126 @@
     --alert-900: hsla(341, 28%, 21%, 1);
 }
 
+.theme-dark {
+    --base-100: hsla(225, 25%, 20%, 1);
+    --base-200: hsla(225, 24%, 25%, 1);
+    --base-300: hsla(225, 18%, 32%, 1);
+    --base-400: hsla(225, 14%, 43%, 1);
+    --base-500: hsla(225, 17%, 63%, 1);
+    --base-600: hsla(225, 44%, 87%, 1);
+    --base-700: hsla(225, 43%, 94%, 1);
+    --base-800: hsla(225, 45%, 98%, 1);
+    --base-900: hsla(225, 0%, 100%, 1);
+
+    --primary-100: hsla(225, 28%, 21%, 1);
+    --primary-200: hsla(225, 37%, 36%, 1);
+    --primary-300: hsla(225, 36%, 45%, 1);
+    --primary-400: hsla(225, 45%, 58%, 1);
+    --primary-500: hsla(225, 65%, 68%, 1);
+    --primary-600: hsla(225, 68%, 78%, 1);
+    --primary-700: hsla(225, 80%, 92%, 1);
+    --primary-800: hsla(225, 100%, 96%, 1);
+    --primary-900: hsla(225, 100%, 99%, 1);
+
+    --secondary-100: hsla(257, 21%, 27%, 1);
+    --secondary-200: hsla(257, 28%, 36%, 1);
+    --secondary-300: hsla(257, 35%, 45%, 1);
+    --secondary-400: hsla(257, 40%, 67%, 1);
+    --secondary-500: hsla(257, 66%, 68%, 1);
+    --secondary-600: hsla(257, 68%, 78%, 1);
+    --secondary-700: hsla(257, 81%, 90%, 1);
+    --secondary-800: hsla(257, 100%, 96%, 1);
+    --secondary-900: hsla(257, 45%, 98%, 1);
+
+    --tertiary-100: hsla(210, 28%, 21%, 1);
+    --tertiary-200: hsla(210, 37%, 26%, 1);
+    --tertiary-300: hsla(210, 38%, 48%, 1);
+    --tertiary-400: hsla(210, 45%, 58%, 1);
+    --tertiary-500: hsla(210, 66%, 68%, 1);
+    --tertiary-600: hsla(210, 68%, 78%, 1);
+    --tertiary-700: hsla(210, 81%, 90%, 1);
+    --tertiary-800: hsla(210, 100%, 96%, 1);
+    --tertiary-900: hsla(210, 45%, 98%, 1);
+
+    --accent-100: hsla(293, 28%, 21%, 1);
+    --accent-200: hsla(293, 34%, 37%, 1);
+    --accent-300: hsla(293, 34%, 50%, 1);
+    --accent-400: hsla(293, 68%, 62%, 1);
+    --accent-500: hsla(293, 62%, 71%, 1);
+    --accent-600: hsla(293, 64%, 80%, 1);
+    --accent-700: hsla(293, 67%, 90%, 1);
+    --accent-800: hsla(293, 70%, 96%, 1);
+    --accent-900: hsla(293, 45%, 98%, 1);
+
+    --success-100: hsla(155, 28%, 21%, 1);
+    --success-200: hsla(155, 33%, 30%, 1);
+    --success-300: hsla(155, 62%, 37%, 1);
+    --success-400: hsla(155, 52%, 46%, 1);
+    --success-500: hsla(155, 66%, 68%, 1);
+    --success-600: hsla(155, 68%, 78%, 1);
+    --success-700: hsla(155, 81%, 90%, 1);
+    --success-800: hsla(155, 100%, 96%, 1);
+    --success-900: hsla(155, 45%, 98%, 1);
+
+    --warning-100: hsla(39, 28%, 21%, 1);
+    --warning-200: hsla(39, 22%, 51%, 1);
+    --warning-300: hsla(39, 38%, 52%, 1);
+    --warning-400: hsla(39, 50%, 66%, 1);
+    --warning-500: hsla(39, 62%, 71%, 1);
+    --warning-600: hsla(39, 64%, 80%, 1);
+    --warning-700: hsla(39, 80%, 90%, 1);
+    --warning-800: hsla(39, 100%, 96%, 1);
+    --warning-900: hsla(39, 45%, 98%, 1);
+
+    --caution-100: hsla(16, 28%, 21%, 1);
+    --caution-200: hsla(16, 37%, 36%, 1);
+    --caution-300: hsla(16, 47%, 48%, 1);
+    --caution-400: hsla(16, 50%, 65%, 1);
+    --caution-500: hsla(16, 66%, 68%, 1);
+    --caution-600: hsla(16, 68%, 78%, 1);
+    --caution-700: hsla(16, 81%, 90%, 1);
+    --caution-800: hsla(16, 100%, 96%, 1);
+    --caution-900: hsla(16, 45%, 98%, 1);
+
+    --alert-100: hsla(358, 28%, 21%, 1);
+    --alert-200: hsla(358, 37%, 36%, 1);
+    --alert-300: hsla(358, 50%, 52%, 1);
+    --alert-400: hsla(358, 55%, 67%, 1);
+    --alert-500: hsla(358, 66%, 68%, 1);
+    --alert-600: hsla(358, 68%, 78%, 1);
+    --alert-700: hsla(358, 81%, 90%, 1);
+    --alert-800: hsla(358, 100%, 96%, 1);
+    --alert-900: hsla(358, 45%, 98%, 1);
+}
+
+.theme-dark input[type="checkbox"] {
+    filter: invert(0.3);
+}
+
+.theme-dark #integrationsPage img,
+.theme-dark .login-bg img {
+    filter: invert(1) saturate(0) brightness(3);
+    opacity: 0.8;
+}
+
+.theme-dark .network-grid-bg {
+    filter: invert(1) hue-rotate(185deg) brightness(1.5) saturate(0.7);
+}
+
+.theme-dark .search-modal img {
+    filter: invert(1) brightness(2.5) hue-rotate(180deg) saturate(0.6);
+}
+
+.theme-dark #wave-bg,
+.theme-dark #wave-bg2 {
+    display: none;
+}
+
+.theme-dark .bg-gradient-horizontal,
+.theme-dark .bg-dashboard {
+    background-image: none !important;
+}
+
 @tailwind preflight;
 @tailwind utilities;
 
@@ -378,7 +498,7 @@ h6 {
 
 .navigation-panel {
     position: absolute;
-    left: 81px;
+    left: 80px;
     z-index: 1001;
     top: 0;
     height: 100%;
@@ -515,7 +635,7 @@ h6 {
 }
 
 .left-navigation {
-    width: 81px;
+    width: 80px;
 }
 
 .bg-global-search-empty-state {
@@ -574,7 +694,7 @@ h6 {
 }
 
 .top-navigation {
-    box-shadow: inset 0px -1px 0 0 #cfd4ec;
+    box-shadow: inset 0px -1px 0 0 var(--base-400);
 }
 
 .__react_component_tooltip.type-dark.place-top:after {
@@ -764,7 +884,7 @@ h6 {
 }
 
 .ReactTable .rt-thead.-header .rt-tr {
-    box-shadow: -10px 0 0 white, 10px 0 0 white,
+    box-shadow: -10px 0 0 var(--base-100), 10px 0 0 var(--base-100),
         0 2px 8px 0 hsla(230, 50%, 70%, 0.25) !important;
     @apply bg-base-100 !important;
 }
@@ -1098,7 +1218,7 @@ h6 {
     height: 0;
     border-top: 8px solid transparent;
     border-bottom: 8px solid transparent;
-    border-right: 8px solid var(--primary-800);
+    border-right: 8px solid var(--base-400);
     left: -8px;
 }
 
@@ -1137,7 +1257,7 @@ h6 {
     position: absolute;
     width: 100%;
     height: 1px;
-    background: #e9e9ec;
+    background: var(--base-300);
     bottom: 27px;
     z-index: 1;
     left: 0;
@@ -1158,11 +1278,12 @@ h6 {
     left: 50%;
 }
 
-
 /** Tippy tooltip **/
 .tippy-popper .tippy-tooltip {
-  border: 2px solid  var(--base-800);
-  background-color: var(--base-700);
-  opacity: 0.8 !important;
-  padding: 0.4rem !important;
+    opacity: 0.8 !important;
+    padding: 0.4rem !important;
+}
+
+.recharts-cartesian-axis text.recharts-cartesian-axis-tick-value {
+    fill: var(--base-600);
 }

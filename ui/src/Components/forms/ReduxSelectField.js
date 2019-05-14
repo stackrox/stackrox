@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Field } from 'redux-form';
-import Select from 'Components/ReactSelect';
+import Select, { defaultSelectStyles } from 'Components/ReactSelect';
 
 const ReduxSelect = ({
     input: { name, value, onChange },
@@ -39,7 +39,7 @@ ReduxSelect.propTypes = {
 ReduxSelect.defaultProps = {
     disabled: false,
     customComponents: {},
-    styles: {}
+    styles: defaultSelectStyles
 };
 
 const ReduxSelectField = ({ name, options, placeholder, disabled, customComponents, styles }) => (
@@ -69,7 +69,7 @@ ReduxSelectField.defaultProps = {
     placeholder: 'Select one...',
     disabled: false,
     customComponents: {},
-    styles: {}
+    styles: defaultSelectStyles
 };
 
 export default ReduxSelectField;

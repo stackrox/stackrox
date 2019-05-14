@@ -26,7 +26,7 @@ const ZoomButtons = ({ networkGraphRef: graph }) => {
     }
 
     return (
-        <div className="absolute pin-b pin-network-zoom-buttons-left">
+        <div className="theme-light absolute pin-b pin-network-zoom-buttons-left">
             <div className="m-4 border-2 border-base-400 mb-4">
                 <Button
                     className="btn-icon btn-base border-b border-base-300"

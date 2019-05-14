@@ -50,7 +50,7 @@ const TablePagination = ({ dataLength, setPage, page, searchOptions, location })
                     Page
                     <input
                         type="number"
-                        className="text-center border-2 border-base-300 px-1 py-1 mx-2 focus:border-primary-100 outline-none"
+                        className="text-center bg-base-100 text-base-900 border-2 border-base-300 px-1 py-1 mx-2 focus:border-primary-100 outline-none"
                         value={curPage}
                         min={1}
                         max={totalPages}

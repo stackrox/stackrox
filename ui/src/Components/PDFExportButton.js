@@ -60,7 +60,7 @@ class PDFExportButton extends Component {
         const cc = Array.from(el.getElementsByClassName(printClassName));
 
         const promises = [];
-        const div = `<div class="flex justify-between bg-primary-800 items-center text-primary-100 h-32">
+        const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
             <img alt="stackrox-logo" src=${StackroxLogo} class="h-24" />
             <div class="pr-4 text-right">
                 <div class="text-2xl">${this.props.pdfTitle} Report</div>
@@ -80,7 +80,7 @@ class PDFExportButton extends Component {
         for (let i = 0; i < cc.length; i += 1) {
             const clonedNode = cc[i].cloneNode(true);
             clonedNode.setAttribute('data-class-name', clonedNode.className);
-            clonedNode.className = `${clonedNode.className}  border border-base-400`;
+            clonedNode.className = `${clonedNode.className} theme-light border border-base-400`;
             cc[i].parentNode.appendChild(clonedNode);
             computedStyleToInlineStyle(clonedNode, {
                 recursive: true,
