@@ -125,8 +125,10 @@ const EvidenceResourceList = ({
                             rows={tableData.rows}
                             columns={tableData.columns}
                             onRowClick={updateSelectedRow}
-                            idAttribute="id"
-                            selectedRowId={selectedRow ? selectedRow.id : null}
+                            idAttribute="control.id"
+                            selectedRowId={
+                                selectedRow && selectedRow.control ? selectedRow.control.id : null
+                            }
                             noDataText="No results found. Please refine your search."
                             page={page}
                         />
