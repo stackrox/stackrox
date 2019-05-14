@@ -130,7 +130,10 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	tagLine := fmt.Sprintf("*Network policy YAML to be applied on cluster '%s'*", clusterName)
 	funcMap := template.FuncMap{
 		"codeBlock": func(s string) string {
-			return fmt.Sprintf("```\n%s\n```", s)
+			if len(s) > 0 {
+				return fmt.Sprintf("```\n%s\n```", s)
+			}
+			return "```\n<YAML is empty>\n```"
 		},
 	}
 	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, funcMap)
