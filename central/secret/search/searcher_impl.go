@@ -1,25 +1,31 @@
 package search
 
 import (
-	"github.com/blevesearch/bleve"
-	"github.com/pkg/errors"
+	"context"
+
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/secret/internal/index"
+	"github.com/stackrox/rox/central/secret/internal/store"
 	"github.com/stackrox/rox/central/secret/search/options"
-	"github.com/stackrox/rox/central/secret/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
+)
+
+var (
+	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(options.Map, true)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage store.Store
-	index   bleve.Index
+	indexer index.Indexer
 }
 
 // SearchSecrets returns the search results from indexed secrets for the query.
-func (ds *searcherImpl) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
-	results, err := ds.getSearchResults(q)
+func (ds *searcherImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	results, err := ds.getSearchResults(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -27,25 +33,21 @@ func (ds *searcherImpl) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
 }
 
 // Search returns the raw search results from the query
-func (ds *searcherImpl) Search(q *v1.Query) ([]search.Result, error) {
-	return ds.getSearchResults(q)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return ds.getSearchResults(ctx, q)
 }
 
 // SearchSecrets returns the secrets and relationships that match the query.
-func (ds *searcherImpl) SearchListSecrets(q *v1.Query) ([]*storage.ListSecret, error) {
-	results, err := ds.getSearchResults(q)
+func (ds *searcherImpl) SearchListSecrets(ctx context.Context, q *v1.Query) ([]*storage.ListSecret, error) {
+	results, err := ds.getSearchResults(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	return ds.resultsToListSecrets(results)
 }
 
-func (ds *searcherImpl) getSearchResults(q *v1.Query) ([]search.Result, error) {
-	results, err := blevesearch.RunSearchRequest(v1.SearchCategory_SECRETS, q, ds.index, options.Map)
-	if err != nil {
-		return nil, errors.Wrap(err, "running search request")
-	}
-	return results, nil
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return secretSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
 }
 
 // ToSecrets returns the secrets from the db for the given search results.

@@ -6,13 +6,15 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/secret/index"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/secret/internal/index"
+	"github.com/stackrox/rox/central/secret/internal/store"
 	secretSearch "github.com/stackrox/rox/central/secret/search"
-	"github.com/stackrox/rox/central/secret/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,6 +32,8 @@ type SecretDataStoreTestSuite struct {
 	searcher  secretSearch.Searcher
 	storage   store.Store
 	datastore DataStore
+
+	ctx context.Context
 }
 
 func (suite *SecretDataStoreTestSuite) SetupSuite() {
@@ -41,10 +45,15 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 
 	suite.storage = store.New(db)
-	suite.searcher = secretSearch.New(suite.storage, suite.bleveIndex)
 	suite.indexer = index.New(suite.bleveIndex)
+	suite.searcher = secretSearch.New(suite.storage, suite.indexer)
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
+
+	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Secret)))
 }
 
 func (suite *SecretDataStoreTestSuite) TearDownSuite() {
@@ -52,7 +61,7 @@ func (suite *SecretDataStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.Secret) {
-	results, err := suite.datastore.SearchSecrets(context.TODO(), q)
+	results, err := suite.datastore.SearchSecrets(suite.ctx, q)
 	suite.Require().NoError(err)
 	if s != nil {
 		suite.Len(results, 1)
@@ -61,7 +70,7 @@ func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *stora
 		suite.Len(results, 0)
 	}
 
-	secrets, err := suite.datastore.SearchListSecrets(context.TODO(), q)
+	secrets, err := suite.datastore.SearchListSecrets(suite.ctx, q)
 	suite.Require().NoError(err)
 	if s != nil {
 		suite.Len(secrets, 1)
@@ -74,15 +83,15 @@ func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *stora
 
 func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
 	secret := fixtures.GetSecret()
-	err := suite.datastore.UpsertSecret(context.TODO(), secret)
+	err := suite.datastore.UpsertSecret(suite.ctx, secret)
 	suite.Require().NoError(err)
 
-	foundSecret, found, err := suite.datastore.GetSecret(context.TODO(), secret.GetId())
+	foundSecret, found, err := suite.datastore.GetSecret(suite.ctx, secret.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
 	suite.Equal(secret, foundSecret)
 
-	_, found, err = suite.datastore.GetSecret(context.TODO(), "NONEXISTENT")
+	_, found, err = suite.datastore.GetSecret(suite.ctx, "NONEXISTENT")
 	suite.Require().NoError(err)
 	suite.False(found)
 
@@ -92,10 +101,10 @@ func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
 	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, "NONEXISTENT").ProtoQuery()
 	suite.assertSearchResults(invalidQ, nil)
 
-	err = suite.datastore.RemoveSecret(context.TODO(), secret.GetId())
+	err = suite.datastore.RemoveSecret(suite.ctx, secret.GetId())
 	suite.Require().NoError(err)
 
-	_, found, err = suite.datastore.GetSecret(context.TODO(), secret.GetId())
+	_, found, err = suite.datastore.GetSecret(suite.ctx, secret.GetId())
 	suite.Require().NoError(err)
 	suite.False(found)
 

@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
-	secretIndex "github.com/stackrox/rox/central/secret/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -316,11 +315,6 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		Labels: map[string]string{"email": "INVALIDEMAIL"},
 	}
 	suite.NoError(suite.indexer.AddDeployment(badEmailDep))
-
-	secretIndexer := secretIndex.New(suite.bleveIndex)
-	suite.NoError(secretIndexer.UpsertSecret(&storage.Secret{
-		Id: "ABC",
-	}))
 
 	processIndexer := processIndicatorIndex.New(suite.bleveIndex)
 	suite.NoError(processIndexer.AddProcessIndicator(fixtures.GetProcessIndicator()))

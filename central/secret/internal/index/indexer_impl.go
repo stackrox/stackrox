@@ -5,10 +5,13 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/secret/search/options"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 const batchSize = 5000
@@ -60,4 +63,9 @@ func (i *indexerImpl) UpsertSecrets(secrets ...*storage.Secret) error {
 func (i *indexerImpl) RemoveSecret(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Secret")
 	return i.index.Delete(id)
+}
+
+func (i *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Secret")
+	return blevesearch.RunSearchRequest(v1.SearchCategory_SECRETS, q, i.index, options.Map)
 }

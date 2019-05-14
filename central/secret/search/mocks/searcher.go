@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -36,40 +37,40 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 }
 
 // Search mocks base method
-func (m *MockSearcher) Search(arg0 *v1.Query) ([]search.Result, error) {
-	ret := m.ctrl.Call(m, "Search", arg0)
+func (m *MockSearcher) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search
-func (mr *MockSearcherMockRecorder) Search(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), arg0)
+func (mr *MockSearcherMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), arg0, arg1)
 }
 
 // SearchListSecrets mocks base method
-func (m *MockSearcher) SearchListSecrets(arg0 *v1.Query) ([]*storage.ListSecret, error) {
-	ret := m.ctrl.Call(m, "SearchListSecrets", arg0)
+func (m *MockSearcher) SearchListSecrets(arg0 context.Context, arg1 *v1.Query) ([]*storage.ListSecret, error) {
+	ret := m.ctrl.Call(m, "SearchListSecrets", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.ListSecret)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchListSecrets indicates an expected call of SearchListSecrets
-func (mr *MockSearcherMockRecorder) SearchListSecrets(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListSecrets", reflect.TypeOf((*MockSearcher)(nil).SearchListSecrets), arg0)
+func (mr *MockSearcherMockRecorder) SearchListSecrets(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListSecrets", reflect.TypeOf((*MockSearcher)(nil).SearchListSecrets), arg0, arg1)
 }
 
 // SearchSecrets mocks base method
-func (m *MockSearcher) SearchSecrets(arg0 *v1.Query) ([]*v1.SearchResult, error) {
-	ret := m.ctrl.Call(m, "SearchSecrets", arg0)
+func (m *MockSearcher) SearchSecrets(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	ret := m.ctrl.Call(m, "SearchSecrets", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchSecrets indicates an expected call of SearchSecrets
-func (mr *MockSearcherMockRecorder) SearchSecrets(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchSecrets", reflect.TypeOf((*MockSearcher)(nil).SearchSecrets), arg0)
+func (mr *MockSearcherMockRecorder) SearchSecrets(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchSecrets", reflect.TypeOf((*MockSearcher)(nil).SearchSecrets), arg0, arg1)
 }
