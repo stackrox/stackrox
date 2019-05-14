@@ -126,7 +126,7 @@ func (m *manager) createDomain(clusterID string) (framework.ComplianceDomain, er
 		return nil, errors.Wrapf(err, "could not get cluster with ID %q", clusterID)
 	}
 
-	clusterNodeStore, err := m.nodeStore.GetClusterNodeStore(context.TODO(), clusterID)
+	clusterNodeStore, err := m.nodeStore.GetClusterNodeStore(context.TODO(), clusterID, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get node store for cluster %s", clusterID)
 	}

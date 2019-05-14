@@ -1,11 +1,16 @@
 package datastore
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+)
+
+var (
+	errReadOnly = errors.New("data store does not allow write access")
 )
 
 // DataStore is a wrapper around a store that provides search functionality
@@ -14,18 +19,20 @@ type DataStore interface {
 }
 
 // New returns a new datastore
-func New(store store.Store, indexer index.Indexer) DataStore {
+func New(store store.Store, indexer index.Indexer, writeAccess bool) DataStore {
 	return &datastoreImpl{
-		store:      store,
-		indexer:    indexer,
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		store:       store,
+		indexer:     indexer,
+		keyedMutex:  concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		writeAccess: writeAccess,
 	}
 }
 
 type datastoreImpl struct {
-	indexer    index.Indexer
-	store      store.Store
-	keyedMutex *concurrency.KeyedMutex
+	indexer     index.Indexer
+	store       store.Store
+	keyedMutex  *concurrency.KeyedMutex
+	writeAccess bool
 }
 
 // ListNodes returns all nodes in the store
@@ -45,6 +52,10 @@ func (d *datastoreImpl) CountNodes() (int, error) {
 
 // UpsertNode adds a node to the store and the indexer
 func (d *datastoreImpl) UpsertNode(node *storage.Node) error {
+	if !d.writeAccess {
+		return errReadOnly
+	}
+
 	d.keyedMutex.Lock(node.GetId())
 	defer d.keyedMutex.Unlock(node.GetId())
 	if err := d.store.UpsertNode(node); err != nil {
@@ -55,6 +66,10 @@ func (d *datastoreImpl) UpsertNode(node *storage.Node) error {
 
 // RemoveNode deletes a node from the store and the indexer
 func (d *datastoreImpl) RemoveNode(id string) error {
+	if !d.writeAccess {
+		return errReadOnly
+	}
+
 	d.keyedMutex.Lock(id)
 	defer d.keyedMutex.Unlock(id)
 	if err := d.store.RemoveNode(id); err != nil {

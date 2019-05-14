@@ -44,7 +44,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	nodes := nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 	secrets := secretMocks.NewMockDataStore(suite.mockCtrl)
 
-	nodes.EXPECT().GetAllClusterNodeStores(gomock.Any()).AnyTimes().Return(nil, nil)
+	nodes.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 
 	suite.clusters.EXPECT().GetClusters().Return(([]*storage.Cluster)(nil), nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)

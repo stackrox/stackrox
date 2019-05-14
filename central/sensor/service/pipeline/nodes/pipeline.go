@@ -56,7 +56,7 @@ func (p *pipelineImpl) Reconcile(clusterID string) error {
 		return err
 	}
 
-	clusterStore, err := p.nodeStore.GetClusterNodeStore(ctx, clusterID)
+	clusterStore, err := p.nodeStore.GetClusterNodeStore(ctx, clusterID, true)
 	if err != nil {
 		return errors.Wrap(err, "getting cluster-local node store")
 	}
@@ -82,7 +82,7 @@ func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	event := msg.GetEvent()
 
-	store, err := p.nodeStore.GetClusterNodeStore(ctx, clusterID)
+	store, err := p.nodeStore.GetClusterNodeStore(ctx, clusterID, true)
 	if err != nil {
 		return errors.Wrap(err, "getting cluster-local node store")
 	}

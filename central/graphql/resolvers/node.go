@@ -31,7 +31,7 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 	}
 	var output *nodeResolver
 	for _, cluster := range clusters {
-		store, err := resolver.NodeGlobalDataStore.GetClusterNodeStore(ctx, cluster.GetId())
+		store, err := resolver.NodeGlobalDataStore.GetClusterNodeStore(ctx, cluster.GetId(), false)
 		if err != nil {
 			return nil, err
 		}

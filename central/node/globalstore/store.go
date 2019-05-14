@@ -9,7 +9,7 @@ import (
 // GlobalStore stores the nodes for all clusters.
 type GlobalStore interface {
 	GetAllClusterNodeStores() (map[string]store.Store, error)
-	GetClusterNodeStore(clusterID string) (store.Store, error)
+	GetClusterNodeStore(clusterID string, writeAccess bool) (store.Store, error)
 	RemoveClusterNodeStores(clusterIDs ...string) error
 
 	CountAllNodes() (int, error)
@@ -23,3 +23,5 @@ func NewGlobalStore(db *bolt.DB) GlobalStore {
 	}
 	return gsi
 }
+
+//go:generate mockgen-wrapper GlobalStore

@@ -52,7 +52,7 @@ func (s *nodeServiceImpl) AuthFuncOverride(ctx context.Context, fullMethodName s
 }
 
 func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesRequest) (*v1.ListNodesResponse, error) {
-	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(ctx, req.GetClusterId())
+	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(ctx, req.GetClusterId(), false)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
 	}
@@ -67,7 +67,7 @@ func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesReques
 }
 
 func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (*storage.Node, error) {
-	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(ctx, req.GetClusterId())
+	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(ctx, req.GetClusterId(), false)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
 	}

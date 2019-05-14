@@ -213,7 +213,7 @@ func (ds *datastoreImpl) cleanUpNodeStore(ctx context.Context) {
 }
 
 func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
-	clusterNodeStores, err := ds.ns.GetAllClusterNodeStores(ctx)
+	clusterNodeStores, err := ds.ns.GetAllClusterNodeStores(ctx, false)
 	if err != nil {
 		return errors.Wrap(err, "retrieving per-cluster node stores")
 	}

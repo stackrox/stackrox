@@ -12,8 +12,8 @@ import (
 
 // GlobalDataStore is the global datastore for all nodes across all clusters.
 type GlobalDataStore interface {
-	GetAllClusterNodeStores(ctx context.Context) (map[string]datastore.DataStore, error)
-	GetClusterNodeStore(ctx context.Context, clusterID string) (datastore.DataStore, error)
+	GetAllClusterNodeStores(ctx context.Context, writeAccess bool) (map[string]datastore.DataStore, error)
+	GetClusterNodeStore(ctx context.Context, clusterID string, writeAccess bool) (datastore.DataStore, error)
 	RemoveClusterNodeStores(ctx context.Context, clusterIDs ...string) error
 
 	CountAllNodes(ctx context.Context) (int, error)

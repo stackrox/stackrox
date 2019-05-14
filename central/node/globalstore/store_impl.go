@@ -41,9 +41,16 @@ func (s *globalStoreImpl) GetAllClusterNodeStores() (map[string]store.Store, err
 	return stores, nil
 }
 
-func (s *globalStoreImpl) GetClusterNodeStore(clusterID string) (store.Store, error) {
+func (s *globalStoreImpl) GetClusterNodeStore(clusterID string, writeAccess bool) (store.Store, error) {
 	err := s.bucketRef.Update(func(b *bolt.Bucket) error {
-		_, err := b.CreateBucketIfNotExists([]byte(clusterID))
+		var err error
+		if writeAccess {
+			_, err = b.CreateBucketIfNotExists([]byte(clusterID))
+		} else {
+			if b.Bucket([]byte(clusterID)) == nil {
+				err = errors.New("not found")
+			}
+		}
 		return err
 	})
 	if err != nil {

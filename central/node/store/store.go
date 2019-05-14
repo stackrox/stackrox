@@ -13,3 +13,5 @@ type Store interface {
 	UpsertNode(node *storage.Node) error
 	RemoveNode(id string) error
 }
+
+//go:generate mockgen-wrapper Store
