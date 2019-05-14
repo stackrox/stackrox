@@ -89,6 +89,17 @@ func (k ResourceSet) Union(other ResourceSet) ResourceSet {
 	return ResourceSet{underlying: k.underlying.Union(other.underlying)}
 }
 
+// Equal returns a bool if the sets are equal
+func (k ResourceSet) Equal(other ResourceSet) bool {
+	if k.underlying == nil && other.underlying == nil {
+		return true
+	}
+	if k.underlying == nil || other.underlying == nil {
+		return false
+	}
+	return k.underlying.Equal(other.underlying)
+}
+
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k ResourceSet) AsSlice() []Resource {
 	if k.underlying == nil {

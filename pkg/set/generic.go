@@ -91,6 +91,17 @@ func (k KeyTypeSet) Union(other KeyTypeSet) KeyTypeSet {
 	return KeyTypeSet{underlying: k.underlying.Union(other.underlying)}
 }
 
+// Equal returns a bool if the sets are equal
+func (k KeyTypeSet) Equal(other KeyTypeSet) bool {
+	if k.underlying == nil && other.underlying == nil {
+		return true
+	}
+	if k.underlying == nil || other.underlying == nil {
+		return false
+	}
+	return k.underlying.Equal(other.underlying)
+}
+
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k KeyTypeSet) AsSlice() []KeyType {
 	if k.underlying == nil {

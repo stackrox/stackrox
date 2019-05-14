@@ -28,6 +28,10 @@ func TestNewStringQuery(t *testing.T) {
 			expectedString: "hello",
 		},
 		{
+			query:          "!!hello",
+			expectedString: "hello",
+		},
+		{
 			query:          "!",
 			expectedString: "!",
 		},
@@ -45,8 +49,8 @@ func TestNewStringQuery(t *testing.T) {
 				switch typedQ := q.(type) {
 				case *MatchPhrasePrefixQuery:
 					assert.Equal(t, c.expectedString, typedQ.MatchPhrasePrefix)
-				case *query.BooleanQuery:
-					assert.Equal(t, c.expectedString, typedQ.MustNot.(*query.DisjunctionQuery).Disjuncts[0].(*MatchPhrasePrefixQuery).MatchPhrasePrefix)
+				case *NegationQuery:
+					assert.Equal(t, c.expectedString, typedQ.query.(*MatchPhrasePrefixQuery).MatchPhrasePrefix)
 				case *query.RegexpQuery:
 					assert.Equal(t, c.expectedString, typedQ.Regexp)
 				default:

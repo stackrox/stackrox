@@ -24,6 +24,9 @@ const (
 	// NegationPrefix is the prefix to negate a query.
 	NegationPrefix = "!"
 
+	// AtLeastOnePrefix is the prefix to require that all values match the query
+	AtLeastOnePrefix = "!!"
+
 	// EqualityPrefixSuffix is the prefix for an exact match
 	EqualityPrefixSuffix = `"`
 )

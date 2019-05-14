@@ -61,14 +61,21 @@ func newStringQuery(category v1.SearchCategory, field string, value string) (que
 		return nil, fmt.Errorf("value in search query cannot be empty")
 	}
 	switch {
-	case strings.HasPrefix(value, pkgSearch.NegationPrefix) && len(value) > 1:
-		boolQuery := newBooleanQuery(category)
+	// AtLeastOnePrefix is !! so it must come before negation prefix
+	case strings.HasPrefix(value, pkgSearch.AtLeastOnePrefix) && len(value) > len(pkgSearch.AtLeastOnePrefix):
+		subQuery, err := newStringQuery(category, field, value[len(pkgSearch.AtLeastOnePrefix):])
+		if err != nil {
+			return nil, errors.Wrapf(err, "error computing sub query under negation: %s %s", field, value)
+		}
+		nq := NewNegationQuery(typeQuery(category), subQuery, false)
+		return nq, nil
+	case strings.HasPrefix(value, pkgSearch.NegationPrefix) && len(value) > len(pkgSearch.NegationPrefix):
 		subQuery, err := newStringQuery(category, field, value[len(pkgSearch.NegationPrefix):])
 		if err != nil {
 			return nil, errors.Wrapf(err, "error computing sub query under negation: %s %s", field, value)
 		}
-		boolQuery.AddMustNot(subQuery)
-		return boolQuery, nil
+		nq := NewNegationQuery(typeQuery(category), subQuery, true)
+		return nq, nil
 	case strings.HasPrefix(value, pkgSearch.RegexPrefix) && len(value) > len(pkgSearch.RegexPrefix):
 		q := bleve.NewRegexpQuery(value[len(pkgSearch.RegexPrefix):])
 		q.SetField(field)

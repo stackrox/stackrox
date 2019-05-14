@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,6 +44,99 @@ func (suite *DeploymentIndexTestSuite) SetupTest() {
 
 func (suite *DeploymentIndexTestSuite) TearDownTest() {
 	suite.NoError(suite.bleveIndex.Close())
+}
+
+func getImage(id, registry, remote, tag string) *storage.Image {
+	return &storage.Image{
+		Id: id,
+		Name: &storage.ImageName{
+			Registry: registry,
+			Remote:   remote,
+			Tag:      tag,
+		},
+	}
+}
+
+func (suite *DeploymentIndexTestSuite) checkIDs(results []search.Result, ids ...string) {
+	s := set.NewStringSet(ids...)
+	resultSet := search.ResultsToIDSet(results)
+
+	suite.True(s.Equal(resultSet))
+}
+
+func (suite *DeploymentIndexTestSuite) TestNegatedLinkedQuery() {
+	var deployments = []struct {
+		id     string
+		images []*storage.Image
+	}{
+		{
+			id: "d1",
+			images: []*storage.Image{
+				getImage("id1", "docker.io", "srox/nginx", "latest"),
+				getImage("id2", "stackrox.io", "library/nginx", "latest"),
+			},
+		},
+		{
+			id: "d2",
+			images: []*storage.Image{
+				getImage("id2", "stackrox.io", "library/nginx", "latest"),
+			},
+		},
+	}
+	for _, d := range deployments {
+		dep := &storage.Deployment{Id: d.id}
+		for _, image := range d.images {
+			suite.NoError(suite.imageIndexer.AddImage(image))
+			dep.Containers = append(dep.Containers, &storage.Container{
+				Image: image,
+			})
+		}
+		suite.NoError(suite.indexer.AddDeployment(dep))
+	}
+
+	cases := []struct {
+		name        string
+		q           *v1.Query
+		expectedIds []string
+	}{
+		// TODO(cgorman) Partial match is currently not supported for linked query because the result is joined with the
+		// parent object
+		{
+			name: "match none",
+			q: search.NewQueryBuilder().
+				AddLinkedFieldsHighlighted([]search.FieldLabel{search.ImageRegistry, search.ImageTag}, []string{"stackrox", "!!latest"}).
+				ProtoQuery(),
+			expectedIds: []string{},
+		},
+		{
+			name: "match all",
+			q: search.NewQueryBuilder().
+				AddLinkedFieldsHighlighted([]search.FieldLabel{search.ImageRegistry, search.ImageTag}, []string{"stackrox", "!!lol"}).
+				ProtoQuery(),
+			expectedIds: []string{"d1", "d2"},
+		},
+		{
+			name: "required - match none",
+			q: search.NewQueryBuilder().
+				AddLinkedFieldsHighlighted([]search.FieldLabel{search.ImageRegistry, search.ImageTag}, []string{"stackrox", "!latest"}).
+				ProtoQuery(),
+			expectedIds: []string{},
+		},
+		{
+			name: "required - match all",
+			q: search.NewQueryBuilder().
+				AddLinkedFieldsHighlighted([]search.FieldLabel{search.ImageRegistry, search.ImageTag}, []string{"stackrox", "!lol"}).
+				ProtoQuery(),
+			expectedIds: []string{"d1", "d2"},
+		},
+	}
+	for _, c := range cases {
+		suite.Run(c.name, func() {
+			results, err := suite.indexer.Search(c.q)
+			suite.NoError(err)
+			suite.checkIDs(results, c.expectedIds...)
+		})
+	}
 }
 
 // This test makes sure that, when we search deployments by images,
@@ -273,10 +367,6 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!r/ngi.*"},
 			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
-		},
-		{
-			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!!nginx"},
-			expectedIDs: []string{deployment.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.Label: "com.docker.stack.namespace=prevent"},

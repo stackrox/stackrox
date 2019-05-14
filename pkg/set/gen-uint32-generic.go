@@ -89,6 +89,17 @@ func (k Uint32Set) Union(other Uint32Set) Uint32Set {
 	return Uint32Set{underlying: k.underlying.Union(other.underlying)}
 }
 
+// Equal returns a bool if the sets are equal
+func (k Uint32Set) Equal(other Uint32Set) bool {
+	if k.underlying == nil && other.underlying == nil {
+		return true
+	}
+	if k.underlying == nil || other.underlying == nil {
+		return false
+	}
+	return k.underlying.Equal(other.underlying)
+}
+
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k Uint32Set) AsSlice() []uint32 {
 	if k.underlying == nil {
