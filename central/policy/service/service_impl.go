@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
@@ -52,6 +53,7 @@ var (
 			"/v1.PolicyService/DryRunPolicy",
 			"/v1.PolicyService/RenamePolicyCategory",
 			"/v1.PolicyService/DeletePolicyCategory",
+			"/v1.PolicyService/EnablePolicyNotification",
 		},
 	})
 )
@@ -65,6 +67,7 @@ type serviceImpl struct {
 	policies    datastore.DataStore
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore
+	notifiers   notifierStore.Store
 	reprocessor reprocessor.Loop
 
 	buildTimePolicies detection.PolicySet
@@ -120,6 +123,7 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 			Severity:        p.GetSeverity(),
 			Disabled:        p.GetDisabled(),
 			LifecycleStages: p.GetLifecycleStages(),
+			Notifiers:       p.GetNotifiers(),
 		})
 	}
 	return listPolicies
@@ -365,4 +369,48 @@ func (s *serviceImpl) removeActivePolicy(policy *storage.Policy) error {
 	errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
 	errorList.AddError(s.lifecycleManager.RemovePolicy(policy.GetId()))
 	return errorList.ToError()
+}
+
+func (s *serviceImpl) EnablePolicyNotification(ctx context.Context, request *v1.EnablePolicyNotificationRequest) (*v1.Empty, error) {
+	if request.GetPolicyId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "Policy ID must be specified")
+	}
+	if len(request.GetNotifierIds()) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "Notifier IDs must be specified")
+	}
+
+	policy, exists, err := s.policies.GetPolicy(request.GetPolicyId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to retrieve policy: %v", err)
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "Policy '%q' not found", request.GetPolicyId())
+	}
+	notifierSet := set.NewStringSet(policy.Notifiers...)
+	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
+	for _, notifierID := range request.GetNotifierIds() {
+		_, exists, err := s.notifiers.GetNotifier(notifierID)
+		if err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		if !exists {
+			errorList.AddStringf("notifier with id:%s not found", notifierID)
+			continue
+		} else {
+			if notifierSet.Contains(notifierID) {
+				continue
+			}
+			policy.Notifiers = append(policy.Notifiers, notifierID)
+			_, err := s.PutPolicy(ctx, policy)
+			if err != nil {
+				errorList.AddStringf("policy could not be updated with notifier %s", err.Error())
+			}
+		}
+	}
+	err = errorList.ToError()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.Empty{}, nil
 }

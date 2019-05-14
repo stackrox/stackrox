@@ -74,6 +74,28 @@ export function deletePolicies(policyIds = []) {
 }
 
 /**
+ * Enable notification to notifiers given by notifierIds for policy given by policyId.
+ *
+ * @param {!string} policyId
+ * @param {!string[]} notifierIds
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function enablePolicyNotification(policyId, notifierIds) {
+    return axios.patch(`${baseUrl}/${policyId}/notifiers`, { notifierIds });
+}
+
+/**
+ * Enable notification to notifiers given by notifierIds for list of policies given by policyIds.
+ *
+ * @param {!string[]} policyIds
+ * @param {!string[]} notifierIds
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function enablePoliciesNotification(policyIds, notifierIds) {
+    return Promise.all(policyIds.map(policyId => enablePolicyNotification(policyId, notifierIds)));
+}
+
+/**
  * Saves a given policy.
  *
  * @param {!object} policy

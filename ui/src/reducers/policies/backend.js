@@ -14,7 +14,8 @@ export const types = {
     FETCH_POLICY_CATEGORIES: createFetchingActionTypes('policies/FETCH_POLICY_CATEGORIES'),
     UPDATE_POLICY: 'policies/UPDATE_POLICY',
     REASSESS_POLICIES: 'policies/REASSESS_POLICIES',
-    DELETE_POLICIES: 'policies/DELETE_POLICIES'
+    DELETE_POLICIES: 'policies/DELETE_POLICIES',
+    ENABLE_POLICIES_NOTIFICATION: 'policies/ENABLE_POLICIES_NOTIFICATION'
 };
 
 // Actions
@@ -26,7 +27,12 @@ export const actions = {
     fetchPolicyCategories: createFetchingActions(types.FETCH_POLICY_CATEGORIES),
     reassessPolicies: () => ({ type: types.REASSESS_POLICIES }),
     deletePolicies: policyIds => ({ type: types.DELETE_POLICIES, policyIds }),
-    updatePolicy: policy => ({ type: types.UPDATE_POLICY, policy })
+    updatePolicy: policy => ({ type: types.UPDATE_POLICY, policy }),
+    enablePoliciesNotification: (policyIds, notifierIds) => ({
+        type: types.ENABLE_POLICIES_NOTIFICATION,
+        policyIds,
+        notifierIds
+    })
 };
 
 // Reducers

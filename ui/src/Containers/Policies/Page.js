@@ -4,6 +4,7 @@ import ConfirmationDialogue from 'Containers/Policies/ConfirmationDialogue';
 import Header from 'Containers/Policies/Header';
 import Table from 'Containers/Policies/Table/Table';
 import Wizard from 'Containers/Policies/Wizard/Wizard';
+import NotifierDialogue from 'Containers/Policies/NotifierDialogue';
 
 // Top level policies page display in the APP frame.
 export default function Page() {
@@ -19,6 +20,7 @@ export default function Page() {
                 </div>
             </div>
             <ConfirmationDialogue />
+            <NotifierDialogue />
         </section>
     );
 }

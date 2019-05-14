@@ -39,11 +39,11 @@ func New(policies datastore.DataStore,
 	metadataCache expiringcache.Cache,
 	scanCache expiringcache.Cache) Service {
 	return &serviceImpl{
-		policies:    policies,
-		clusters:    clusters,
-		deployments: deployments,
-		reprocessor: reprocessor,
-
+		policies:          policies,
+		clusters:          clusters,
+		deployments:       deployments,
+		reprocessor:       reprocessor,
+		notifiers:         notifiers,
 		buildTimePolicies: buildTimePolicies,
 		testMatchBuilder:  deploymentMatcherBuilder,
 		lifecycleManager:  manager,

@@ -33,6 +33,11 @@ message RenamePolicyCategoryRequest {
     string new_category = 2;
 }
 
+message EnablePolicyNotificationRequest {
+    string                     policy_id   = 1;
+    repeated string            notifier_ids = 2;
+}
+
 message DeletePolicyCategoryRequest {
     string category = 1;
 }
@@ -93,6 +98,14 @@ service PolicyService {
     rpc DeletePolicy (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/policies/{id}"
+        };
+    }
+
+    // EnablePolicyNotification enables notifications for a policy by ID.
+    rpc EnablePolicyNotification (EnablePolicyNotificationRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/policies/{policy_id}/notifiers"
+            body: "*"
         };
     }
 

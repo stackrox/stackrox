@@ -36,6 +36,7 @@ message ListPolicy {
     Severity severity                           = 4;
     bool     disabled                           = 5;
     repeated LifecycleStage lifecycle_stages    = 6;
+    repeated string notifiers                   = 7;
 }
 
 enum EnforcementAction {

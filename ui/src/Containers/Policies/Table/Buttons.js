@@ -7,8 +7,10 @@ import { selectors } from 'reducers';
 import { actions as backendActions } from 'reducers/policies/backend';
 import { actions as pageActions } from 'reducers/policies/page';
 import { actions as wizardActions } from 'reducers/policies/wizard';
+import { actions as dialogueActions } from 'reducers/network/dialogue';
 import { createStructuredSelector } from 'reselect';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
+import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
 
 import * as Icon from 'react-feather';
 import PanelButton from 'Components/PanelButton';
@@ -25,7 +27,7 @@ class Buttons extends Component {
         openWizard: PropTypes.func.isRequired,
         setWizardStage: PropTypes.func.isRequired,
         setWizardPolicy: PropTypes.func.isRequired,
-
+        setDialogueStage: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired
     };
 
@@ -36,6 +38,10 @@ class Buttons extends Component {
         this.props.setWizardPolicy({ name: '' });
         this.props.setWizardStage(wizardStages.edit);
         this.props.openWizard();
+    };
+
+    showNotifierDialogue = () => {
+        this.props.setDialogueStage(dialogueStages.notification);
     };
 
     render() {
@@ -51,6 +57,16 @@ class Buttons extends Component {
                         className="btn btn-alert"
                         onClick={this.props.openDialogue}
                         disabled={buttonsDisabled}
+                    />
+                )}
+                {selectionCount !== 0 && (
+                    <PanelButton
+                        icon={<Icon.Bell className="h-4 w- ml-1" />}
+                        text="Enable Notification"
+                        className="btn btn-primary ml-1"
+                        onClick={this.showNotifierDialogue}
+                        disabled={buttonsDisabled}
+                        tooltip="Enable Notification"
                     />
                 )}
                 {selectionCount === 0 && (
@@ -88,7 +104,8 @@ const mapDispatchToProps = {
     reassessPolicies: backendActions.reassessPolicies,
 
     setWizardStage: wizardActions.setWizardStage,
-    setWizardPolicy: wizardActions.setWizardPolicy
+    setWizardPolicy: wizardActions.setWizardPolicy,
+    setDialogueStage: dialogueActions.setNetworkDialogueStage
 };
 
 export default withRouter(

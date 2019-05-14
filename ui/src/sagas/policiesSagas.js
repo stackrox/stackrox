@@ -164,6 +164,21 @@ function* reassessPolicies() {
     }
 }
 
+function* enablePoliciesNotification({ policyIds, notifierIds }) {
+    try {
+        yield call(service.enablePoliciesNotification, policyIds, notifierIds);
+        const successToastMessage = `Successfully enabled ${
+            policyIds.length === 1 ? 'policy' : 'policies'
+        } notification`;
+        yield put(notificationActions.addNotification(successToastMessage));
+        yield put(notificationActions.removeOldestNotification());
+        yield fork(filterPoliciesPageBySearch);
+    } catch (error) {
+        // TODO-ivan: use global user notification system to display the problem to the user as well
+        Raven.captureException(error);
+    }
+}
+
 function* getDryRun(policy) {
     try {
         const policyDryRun = yield call(service.getDryRun, policy);
@@ -216,6 +231,10 @@ function* watchDeletePolicies() {
     yield takeLatest(backendTypes.DELETE_POLICIES, deletePolicies);
 }
 
+function* watchEnablePoliciesNotification() {
+    yield takeLatest(backendTypes.ENABLE_POLICIES_NOTIFICATION, enablePoliciesNotification);
+}
+
 function* watchWizardState() {
     while (true) {
         const action = yield take(wizardTypes.SET_WIZARD_STAGE);
@@ -255,6 +274,7 @@ export default function* policies() {
         fork(watchWizardState),
         fork(watchReassessPolicies),
         fork(watchDeletePolicies),
+        fork(watchEnablePoliciesNotification),
         fork(watchUpdateRequest),
         fork(watchPoliciesSearchOptions),
         takeEvery(tableTypes.UPDATE_POLICY_DISABLED_STATE, updatePolicyDisabled)

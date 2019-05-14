@@ -21,6 +21,7 @@ export const actions = {
     }),
     selectPolicyId: policyId => ({ type: types.SELECT_POLICY, policyId }),
     selectPolicyIds: policyIds => ({ type: types.SELECT_POLICIES, policyIds }),
+    selectPolicies: policies => ({ type: types.SELECT_POLICIES, policies }),
     setTablePage: page => ({ type: types.SET_TABLE_PAGE, page })
 };
 
@@ -42,6 +43,13 @@ const selectedIds = (state = [], action) => {
     return state;
 };
 
+const selectedPolicies = (state = [], action) => {
+    if (action.type === types.SELECT_POLICIES) {
+        return action.policyIds;
+    }
+    return state;
+};
+
 const page = (state = 0, action) => {
     if (action.type === types.SET_TABLE_PAGE) {
         return action.page;
@@ -52,6 +60,7 @@ const page = (state = 0, action) => {
 const reducer = combineReducers({
     selectedId,
     selectedIds,
+    selectedPolicies,
     page
 });
 
@@ -65,10 +74,13 @@ const getSelectedPolicyId = state => state.selectedId;
 
 const getSelectedPolicyIds = state => state.selectedIds;
 
+const getSelectedPolicies = state => state.selectedPolicies;
+
 const getTablePage = state => state.page;
 
 export const selectors = {
     getSelectedPolicyId,
     getSelectedPolicyIds,
+    getSelectedPolicies,
     getTablePage
 };

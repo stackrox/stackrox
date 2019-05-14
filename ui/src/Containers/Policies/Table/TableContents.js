@@ -144,6 +144,23 @@ class TableContents extends Component {
                             }`}
                             data-test-id="enable-disable-icon"
                         />
+                        <div
+                            className={`pl-4 ${
+                                original.notifiers.length === 0
+                                    ? 'text-base-400'
+                                    : 'text-success-600'
+                            }`}
+                            title={`Notification ${original.notifiers.length === 0 ? 'Off' : 'On'}`}
+                        >
+                            <Icon.Bell
+                                className="h-2 w-2"
+                                hidden={original.notifiers.length === 0}
+                            />
+                            <Icon.BellOff
+                                className="h-2 w-2"
+                                hidden={original.notifiers.length !== 0}
+                            />
+                        </div>
                         <div className="pl-4" data-test-id="policy-name">
                             {original.name}
                         </div>
