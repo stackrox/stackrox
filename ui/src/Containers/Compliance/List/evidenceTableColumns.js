@@ -1,6 +1,8 @@
 import React from 'react';
 import ComplianceStateLabel from 'Containers/Compliance/ComplianceStateLabel';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { standardLabels } from 'messages/standards';
+import { sortValue } from 'sorters/sorters';
 
 const tableColumnData = {
     controlId: {
@@ -8,6 +10,21 @@ const tableColumnData = {
         headerClassName: 'hidden',
         className: 'hidden',
         accessor: 'control.id'
+    },
+    standardId: {
+        Header: `Standard`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        accessor: 'control.standardId',
+        Cell: ({ original }) => standardLabels[original.control.standardId]
+    },
+    controlName: {
+        Header: `Control`,
+        headerClassName: `w-1/4 ${defaultHeaderClassName}`,
+        className: `w-1/4 ${defaultColumnClassName}`,
+        accessor: 'control.name',
+        sortMethod: sortValue,
+        Cell: ({ original }) => `${original.control.name} - ${original.control.description}`
     },
     resourceId: {
         Header: `id`,
@@ -27,11 +44,31 @@ const tableColumnData = {
         className: `w-1/8 ${defaultColumnClassName}`,
         accessor: 'resource.name'
     },
+    namespaceName: {
+        Header: `Namespace`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        accessor: 'resource.namespace',
+        Cell: ({ original }) => original.resource.namespace || '-'
+    },
+    entityName: {
+        Header: `Entity`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        accessor: 'resource.name'
+    },
+    resourceType: {
+        Header: `Type`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        accessor: 'resource.__typename'
+    },
     clusterName: {
         Header: `Cluster`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'resource.clusterName'
+        accessor: 'resource.clusterName',
+        Cell: ({ original }) => original.resource.clusterName || '-'
     },
     state: {
         Header: `State`,
@@ -57,6 +94,18 @@ const tableColumnData = {
         }
     }
 };
+
+export const controlsTableColumns = [
+    tableColumnData.controlId,
+    tableColumnData.standardId,
+    tableColumnData.controlName,
+    tableColumnData.state,
+    tableColumnData.entityName,
+    tableColumnData.resourceType,
+    tableColumnData.namespaceName,
+    tableColumnData.clusterName,
+    tableColumnData.evidence
+];
 
 export const nodesTableColumns = [
     tableColumnData.resourceId,

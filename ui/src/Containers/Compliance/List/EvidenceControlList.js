@@ -9,85 +9,18 @@ import {
     COMPLIANCE_DATA_ON_NODE,
     COMPLIANCE_DATA_ON_DEPLOYMENT
 } from 'queries/table';
-import { standardLabels } from 'messages/standards';
 import URLService from 'modules/URLService';
 import queryService from 'modules/queryService';
-import { sortValue } from 'sorters/sorters';
 import uniq from 'lodash/uniq';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import Panel from 'Components/Panel';
-import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
-import ComplianceStateLabel from 'Containers/Compliance/ComplianceStateLabel';
 import entityTypes from 'constants/entityTypes';
 
-const tableColumns = [
-    {
-        Header: 'id',
-        headerClassName: 'hidden',
-        className: 'hidden',
-        accessor: 'control.id'
-    },
-    {
-        Header: `Standard`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'control.standardId',
-        Cell: ({ original }) => standardLabels[original.control.standardId]
-    },
-    {
-        Header: `Control`,
-        headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
-        accessor: 'control.name',
-        sortMethod: sortValue,
-        Cell: ({ original }) => `${original.control.name} - ${original.control.description}`
-    },
-    {
-        Header: `State`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'value.overallState',
-        // eslint-disable-next-line
-        Cell: ({ original }) => <ComplianceStateLabel state={original.value.overallState} />
-    },
-    {
-        Header: `Entity`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'resource.name'
-    },
-    {
-        Header: `Type`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'resource.__typename'
-    },
-    {
-        Header: `Namespace`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'resource.namespace',
-        Cell: ({ original }) => original.resource.namespace || '-'
-    },
-    {
-        Header: `Evidence`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'value.evidence',
-        // eslint-disable-next-line
-        Cell: ({ original }) => {
-            const { length } = original.value.evidence;
-            return length > 1 ? (
-                <div className="italic font-800">{`Inspect to view ${length} pieces of evidence`}</div>
-            ) : (
-                original.value.evidence[0].message
-            );
-        }
-    }
-];
+import { controlsTableColumns as tableColumns } from 'Containers/Compliance/List/evidenceTableColumns';
 
 const getQueryVariables = params => {
     const { entityType, entityId, query } = params;
