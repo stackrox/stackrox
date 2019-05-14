@@ -188,7 +188,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
     @Unroll
     @Category(BAT)
     def "Verify  processes risk indicators for the given key after soft-lock "() {
-        Assume.assumeTrue(false)
         when:
         "get process whitelists is called for a key"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }

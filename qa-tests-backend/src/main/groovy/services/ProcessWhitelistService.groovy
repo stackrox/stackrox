@@ -10,7 +10,7 @@ class ProcessWhitelistService extends BaseService {
         return ProcessWhitelistServiceGrpc.newBlockingStub(getChannel())
     }
     static  ProcessWhitelistOuterClass.ProcessWhitelist getProcessWhitelist(
-            String deploymentId, String containerName, int iterations = 15, int interval = 6) {
+            String deploymentId, String containerName, int iterations = 20, int interval = 6) {
         ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request = ProcessWhitelistServiceOuterClass.
                 GetProcessWhitelistRequest.newBuilder().
                 setKey(ProcessWhitelistOuterClass.ProcessWhitelistKey.newBuilder()
