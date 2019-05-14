@@ -1,24 +1,30 @@
 package search
 
 import (
-	"github.com/blevesearch/bleve"
-	"github.com/pkg/errors"
+	"context"
+
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/serviceaccount/internal/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	"github.com/stackrox/rox/central/serviceaccount/search/options"
-	"github.com/stackrox/rox/central/serviceaccount/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
+)
+
+var (
+	serviceAccountsSACSearchHelper = sac.ForResource(resources.ServiceAccount).MustCreateSearchHelper(options.Map, true)
 )
 
 type searcherImpl struct {
 	storage store.Store
-	index   bleve.Index
+	indexer index.Indexer
 }
 
 // SearchRawServiceAccounts returns the search results from indexed service accounts for the query.
-func (ds *searcherImpl) SearchRawServiceAccounts(q *v1.Query) ([]*storage.ServiceAccount, error) {
-	serviceAccounts, _, err := ds.searchServiceAccounts(q)
+func (ds *searcherImpl) SearchRawServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, error) {
+	serviceAccounts, _, err := ds.searchServiceAccounts(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -28,8 +34,8 @@ func (ds *searcherImpl) SearchRawServiceAccounts(q *v1.Query) ([]*storage.Servic
 }
 
 // SearchServiceAccounts returns the search results from indexed service accounts for the query.
-func (ds *searcherImpl) SearchServiceAccounts(q *v1.Query) ([]*v1.SearchResult, error) {
-	serviceAccounts, results, err := ds.searchServiceAccounts(q)
+func (ds *searcherImpl) SearchServiceAccounts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	serviceAccounts, results, err := ds.searchServiceAccounts(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -39,20 +45,16 @@ func (ds *searcherImpl) SearchServiceAccounts(q *v1.Query) ([]*v1.SearchResult, 
 }
 
 // Search returns the raw search results from the query
-func (ds *searcherImpl) Search(q *v1.Query) ([]search.Result, error) {
-	return ds.getSearchResults(q)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return ds.getSearchResults(ctx, q)
 }
 
-func (ds *searcherImpl) getSearchResults(q *v1.Query) ([]search.Result, error) {
-	results, err := blevesearch.RunSearchRequest(v1.SearchCategory_SERVICE_ACCOUNTS, q, ds.index, options.Map)
-	if err != nil {
-		return nil, errors.Wrap(err, "running search request")
-	}
-	return results, nil
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return serviceAccountsSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
 }
 
-func (ds *searcherImpl) searchServiceAccounts(q *v1.Query) ([]*storage.ServiceAccount, []search.Result, error) {
-	results, err := ds.getSearchResults(q)
+func (ds *searcherImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, []search.Result, error) {
+	results, err := ds.getSearchResults(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}

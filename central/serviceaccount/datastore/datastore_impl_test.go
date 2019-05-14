@@ -6,14 +6,16 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/serviceaccount/index"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/serviceaccount/internal/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	serviceAccountSearch "github.com/stackrox/rox/central/serviceaccount/search"
-	"github.com/stackrox/rox/central/serviceaccount/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -31,6 +33,8 @@ type ServiceAccountDataStoreTestSuite struct {
 	searcher  serviceAccountSearch.Searcher
 	storage   store.Store
 	datastore DataStore
+
+	ctx context.Context
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
@@ -42,10 +46,15 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 
 	suite.storage = store.New(db)
-	suite.searcher = serviceAccountSearch.New(suite.storage, suite.bleveIndex)
 	suite.indexer = index.New(suite.bleveIndex)
+	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
+
+	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.ServiceAccount)))
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) TearDownSuite() {
@@ -53,7 +62,7 @@ func (suite *ServiceAccountDataStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.ServiceAccount) {
-	results, err := suite.datastore.SearchServiceAccounts(context.TODO(), q)
+	results, err := suite.datastore.SearchServiceAccounts(suite.ctx, q)
 	suite.Require().NoError(err)
 	if s != nil {
 		suite.Len(results, 1)
@@ -69,15 +78,15 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	}
 
 	sa := fixtures.GetServiceAccount()
-	err := suite.datastore.UpsertServiceAccount(context.TODO(), sa)
+	err := suite.datastore.UpsertServiceAccount(suite.ctx, sa)
 	suite.Require().NoError(err)
 
-	foundSA, found, err := suite.datastore.GetServiceAccount(context.TODO(), sa.GetId())
+	foundSA, found, err := suite.datastore.GetServiceAccount(suite.ctx, sa.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
 	suite.Equal(sa, foundSA)
 
-	_, found, err = suite.datastore.GetServiceAccount(context.TODO(), "NONEXISTENT")
+	_, found, err = suite.datastore.GetServiceAccount(suite.ctx, "NONEXISTENT")
 	suite.Require().NoError(err)
 	suite.False(found)
 
@@ -87,10 +96,10 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, "NONEXISTENT").ProtoQuery()
 	suite.assertSearchResults(invalidQ, nil)
 
-	err = suite.datastore.RemoveServiceAccount(context.TODO(), sa.GetId())
+	err = suite.datastore.RemoveServiceAccount(suite.ctx, sa.GetId())
 	suite.Require().NoError(err)
 
-	_, found, err = suite.datastore.GetServiceAccount(context.TODO(), sa.GetId())
+	_, found, err = suite.datastore.GetServiceAccount(suite.ctx, sa.GetId())
 	suite.Require().NoError(err)
 	suite.False(found)
 

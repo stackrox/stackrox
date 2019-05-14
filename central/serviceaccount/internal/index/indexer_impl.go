@@ -5,10 +5,13 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/serviceaccount/search/options"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 const batchSize = 5000
@@ -56,4 +59,9 @@ func (i *indexerImpl) UpsertServiceAccounts(serviceAccounts ...*storage.ServiceA
 func (i *indexerImpl) RemoveServiceAccount(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ServiceAccount")
 	return i.index.Delete(id)
+}
+
+func (i *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ServiceAccount")
+	return blevesearch.RunSearchRequest(v1.SearchCategory_SERVICE_ACCOUNTS, q, i.index, options.Map)
 }

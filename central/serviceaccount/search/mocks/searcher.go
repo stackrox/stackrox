@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -36,40 +37,40 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 }
 
 // Search mocks base method
-func (m *MockSearcher) Search(arg0 *v1.Query) ([]search.Result, error) {
-	ret := m.ctrl.Call(m, "Search", arg0)
+func (m *MockSearcher) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search
-func (mr *MockSearcherMockRecorder) Search(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), arg0)
+func (mr *MockSearcherMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), arg0, arg1)
 }
 
 // SearchRawServiceAccounts mocks base method
-func (m *MockSearcher) SearchRawServiceAccounts(arg0 *v1.Query) ([]*storage.ServiceAccount, error) {
-	ret := m.ctrl.Call(m, "SearchRawServiceAccounts", arg0)
+func (m *MockSearcher) SearchRawServiceAccounts(arg0 context.Context, arg1 *v1.Query) ([]*storage.ServiceAccount, error) {
+	ret := m.ctrl.Call(m, "SearchRawServiceAccounts", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.ServiceAccount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRawServiceAccounts indicates an expected call of SearchRawServiceAccounts
-func (mr *MockSearcherMockRecorder) SearchRawServiceAccounts(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawServiceAccounts", reflect.TypeOf((*MockSearcher)(nil).SearchRawServiceAccounts), arg0)
+func (mr *MockSearcherMockRecorder) SearchRawServiceAccounts(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawServiceAccounts", reflect.TypeOf((*MockSearcher)(nil).SearchRawServiceAccounts), arg0, arg1)
 }
 
 // SearchServiceAccounts mocks base method
-func (m *MockSearcher) SearchServiceAccounts(arg0 *v1.Query) ([]*v1.SearchResult, error) {
-	ret := m.ctrl.Call(m, "SearchServiceAccounts", arg0)
+func (m *MockSearcher) SearchServiceAccounts(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	ret := m.ctrl.Call(m, "SearchServiceAccounts", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchServiceAccounts indicates an expected call of SearchServiceAccounts
-func (mr *MockSearcherMockRecorder) SearchServiceAccounts(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchServiceAccounts", reflect.TypeOf((*MockSearcher)(nil).SearchServiceAccounts), arg0)
+func (mr *MockSearcherMockRecorder) SearchServiceAccounts(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchServiceAccounts", reflect.TypeOf((*MockSearcher)(nil).SearchServiceAccounts), arg0, arg1)
 }

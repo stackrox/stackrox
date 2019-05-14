@@ -3,9 +3,9 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/serviceaccount/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	"github.com/stackrox/rox/central/serviceaccount/search"
-	"github.com/stackrox/rox/central/serviceaccount/store"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,8 +20,9 @@ var (
 
 func initialize() {
 	store := store.New(globaldb.GetGlobalDB())
+	indexer := index.New(globalindex.GetGlobalIndex())
 	var err error
-	ds, err = New(store, index.New(globalindex.GetGlobalIndex()), search.New(store, globalindex.GetGlobalIndex()))
+	ds, err = New(store, indexer, search.New(store, indexer))
 	if err != nil {
 		log.Panicf("Failed to initialize secrets datastore: %s", err)
 	}

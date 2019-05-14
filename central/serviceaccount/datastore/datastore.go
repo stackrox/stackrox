@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/serviceaccount/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	"github.com/stackrox/rox/central/serviceaccount/search"
-	"github.com/stackrox/rox/central/serviceaccount/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
