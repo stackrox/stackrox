@@ -10,8 +10,8 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
@@ -67,7 +67,7 @@ type serviceImpl struct {
 	policies    datastore.DataStore
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore
-	notifiers   notifierStore.Store
+	notifiers   notifierDataStore.DataStore
 	reprocessor reprocessor.Loop
 
 	buildTimePolicies detection.PolicySet
@@ -379,7 +379,7 @@ func (s *serviceImpl) EnablePolicyNotification(ctx context.Context, request *v1.
 		return nil, status.Errorf(codes.InvalidArgument, "Notifier IDs must be specified")
 	}
 
-	policy, exists, err := s.policies.GetPolicy(request.GetPolicyId())
+	policy, exists, err := s.policies.GetPolicy(ctx, request.GetPolicyId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve policy: %v", err)
 	}
@@ -389,7 +389,7 @@ func (s *serviceImpl) EnablePolicyNotification(ctx context.Context, request *v1.
 	notifierSet := set.NewStringSet(policy.Notifiers...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
 	for _, notifierID := range request.GetNotifierIds() {
-		_, exists, err := s.notifiers.GetNotifier(notifierID)
+		_, exists, err := s.notifiers.GetNotifier(ctx, notifierID)
 		if err != nil {
 			errorList.AddError(err)
 			continue
