@@ -7,9 +7,9 @@ import (
 	"github.com/stackrox/rox/central/deployment/search"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globaldb"
-	flowStore "github.com/stackrox/rox/central/networkflow/store"
-	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	piDS "github.com/stackrox/rox/central/processindicator/datastore"
+	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -40,14 +40,14 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, processDataStore processDataStore.DataStore, whitelistDataStore whitelistDataStore.DataStore, networkFlowStore flowStore.ClusterStore) DataStore {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) DataStore {
 	return &datastoreImpl{
 		deploymentStore:    storage,
 		deploymentIndexer:  indexer,
 		deploymentSearcher: searcher,
-		processDataStore:   processDataStore,
-		whitelistDataStore: whitelistDataStore,
-		networkFlowStore:   networkFlowStore,
+		indicators:         indicators,
+		whitelists:         whitelists,
+		networkFlows:       networkFlows,
 		keyedMutex:         concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 }

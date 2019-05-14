@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
-	flowStore "github.com/stackrox/rox/central/networkflow/store"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,10 +29,10 @@ func isGeneratedPolicy(policy *storage.NetworkPolicy) bool {
 }
 
 type generator struct {
-	networkPolicies npDS.DataStore
-	deploymentStore dDS.DataStore
-	namespacesStore nsDS.DataStore
-	globalFlowStore flowStore.ClusterStore
+	networkPolicies     npDS.DataStore
+	deploymentStore     dDS.DataStore
+	namespacesStore     nsDS.DataStore
+	globalFlowDataStore nfDS.ClusterDataStore
 }
 
 func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference) {
@@ -84,12 +84,12 @@ func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v
 }
 
 func (g *generator) generateGraph(ctx context.Context, clusterID string, since *types.Timestamp) (map[networkgraph.Entity]*node, error) {
-	clusterFlowStore := g.globalFlowStore.GetFlowStore(clusterID)
+	clusterFlowStore := g.globalFlowDataStore.GetFlowStore(ctx, clusterID)
 	if clusterFlowStore == nil {
 		return nil, fmt.Errorf("could not obtain flow store for cluster %q", clusterID)
 	}
 
-	allFlows, _, err := clusterFlowStore.GetAllFlows(since)
+	allFlows, _, err := clusterFlowStore.GetAllFlows(ctx, since)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}

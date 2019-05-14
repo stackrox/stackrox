@@ -228,8 +228,8 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 		return err
 	}
 
-	flowStore := f.networkFlowStore.GetFlowStore(domain.Cluster().ID())
-	r.networkFlows, _, err = flowStore.GetAllFlows(nil)
+	flowStore := f.networkFlowDataStore.GetFlowStore(ctx, domain.Cluster().ID())
+	r.networkFlows, _, err = flowStore.GetAllFlows(ctx, nil)
 	if err != nil {
 		return err
 	}

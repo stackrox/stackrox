@@ -2,7 +2,7 @@ package service
 
 import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -14,7 +14,7 @@ var (
 )
 
 func initialize() {
-	as = New(networkFlowStoreSingleton.Singleton(), deploymentDataStore.Singleton(), graph.Singleton())
+	as = New(nfDS.Singleton(), deploymentDataStore.Singleton(), graph.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

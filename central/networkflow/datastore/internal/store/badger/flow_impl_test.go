@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
-	"github.com/stackrox/rox/central/networkflow/store"
+	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/protoconv"

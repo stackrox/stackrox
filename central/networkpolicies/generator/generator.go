@@ -5,7 +5,7 @@ import (
 
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
-	flowStore "github.com/stackrox/rox/central/networkflow/store"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,11 +17,11 @@ type Generator interface {
 }
 
 // New creates and returns a new network policy generator.
-func New(networkPolicies npDS.DataStore, deploymentStore dDS.DataStore, namespacesStore nsDS.DataStore, globalFlowStore flowStore.ClusterStore) Generator {
+func New(networkPolicies npDS.DataStore, deploymentStore dDS.DataStore, namespacesStore nsDS.DataStore, globalFlowDataStore nfDS.ClusterDataStore) Generator {
 	return &generator{
-		networkPolicies: networkPolicies,
-		deploymentStore: deploymentStore,
-		namespacesStore: namespacesStore,
-		globalFlowStore: globalFlowStore,
+		networkPolicies:     networkPolicies,
+		deploymentStore:     deploymentStore,
+		namespacesStore:     namespacesStore,
+		globalFlowDataStore: globalFlowDataStore,
 	}
 }

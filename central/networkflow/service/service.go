@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	dDS "github.com/stackrox/rox/central/deployment/datastore"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -23,9 +23,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store networkFlowStore.ClusterStore, deployments deploymentDataStore.DataStore, graphEvaluator graph.Evaluator) Service {
+func New(store nfDS.ClusterDataStore, deployments dDS.DataStore, graphEvaluator graph.Evaluator) Service {
 	return &serviceImpl{
-		clusterStore: store,
+		clusterFlows: store,
 		deployments:  deployments,
 	}
 }

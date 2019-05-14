@@ -7,9 +7,9 @@ import (
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/search"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
-	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
-	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	piDS "github.com/stackrox/rox/central/processindicator/datastore"
+	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -22,12 +22,11 @@ type datastoreImpl struct {
 	deploymentIndexer  deploymentIndex.Indexer
 	deploymentSearcher deploymentSearch.Searcher
 
-	networkFlowStore networkFlowStore.ClusterStore
+	networkFlows nfDS.ClusterDataStore
+	indicators   piDS.DataStore
+	whitelists   pwDS.DataStore
 
-	whitelistDataStore whitelistDataStore.DataStore
-
-	processDataStore processDataStore.DataStore
-	keyedMutex       *concurrency.KeyedMutex
+	keyedMutex *concurrency.KeyedMutex
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -95,7 +94,7 @@ func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *stora
 		return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
 	}
 
-	if err := ds.processDataStore.RemoveProcessIndicatorsOfStaleContainers(ctx, deployment.GetId(), containerIds(deployment)); err != nil {
+	if err := ds.indicators.RemoveProcessIndicatorsOfStaleContainers(ctx, deployment.GetId(), containerIds(deployment)); err != nil {
 		log.Errorf("Failed to remove stale process indicators for deployment %s/%s: %s",
 			deployment.GetNamespace(), deployment.GetName(), err)
 	}
@@ -124,12 +123,12 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		return err
 	}
 
-	if err := ds.whitelistDataStore.RemoveProcessWhitelistsByDeployment(ctx, id); err != nil {
+	if err := ds.whitelists.RemoveProcessWhitelistsByDeployment(ctx, id); err != nil {
 		return err
 	}
-	if err := ds.processDataStore.RemoveProcessIndicatorsByDeployment(ctx, id); err != nil {
+	if err := ds.indicators.RemoveProcessIndicatorsByDeployment(ctx, id); err != nil {
 		return err
 	}
-	flowStore := ds.networkFlowStore.GetFlowStore(clusterID)
-	return flowStore.RemoveFlowsForDeployment(id)
+	flowStore := ds.networkFlows.GetFlowStore(ctx, clusterID)
+	return flowStore.RemoveFlowsForDeployment(ctx, id)
 }

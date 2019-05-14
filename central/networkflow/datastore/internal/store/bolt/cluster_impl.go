@@ -2,7 +2,7 @@ package bolt
 
 import (
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/central/networkflow/store"
+	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
 )

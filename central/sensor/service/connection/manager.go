@@ -16,7 +16,7 @@ type CheckInRecorder interface {
 // Manager is responsible for managing all active connections from sensors.
 //go:generate mockgen-wrapper Manager
 type Manager interface {
-	HandleConnection(clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder CheckInRecorder) error
+	HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder CheckInRecorder) error
 	GetConnection(clusterID string) SensorConnection
 
 	GetActiveConnections() []SensorConnection

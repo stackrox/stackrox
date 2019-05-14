@@ -1,12 +1,13 @@
 package networkflowupdate
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
-	flowStoreMocks "github.com/stackrox/rox/central/networkflow/store/mocks"
+	nfDSMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -20,16 +21,16 @@ func TestFlowStoreUpdater(t *testing.T) {
 type FlowStoreUpdaterTestSuite struct {
 	suite.Suite
 
-	mockFlowStore *flowStoreMocks.MockFlowStore
-	tested        flowStoreUpdater
+	mockFlows *nfDSMocks.MockFlowDataStore
+	tested    flowStoreUpdater
 
 	mockCtrl *gomock.Controller
 }
 
 func (suite *FlowStoreUpdaterTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.mockFlowStore = flowStoreMocks.NewMockFlowStore(suite.mockCtrl)
-	suite.tested = newFlowStoreUpdater(suite.mockFlowStore)
+	suite.mockFlows = nfDSMocks.NewMockFlowDataStore(suite.mockCtrl)
+	suite.tested = newFlowStoreUpdater(suite.mockFlows)
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TearDownSuite() {
@@ -112,10 +113,10 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}
 
 	// Return storedFlows on DB read.
-	suite.mockFlowStore.EXPECT().GetAllFlows(gomock.Any()).Return(storedFlows, *firstTimestamp, nil)
+	suite.mockFlows.EXPECT().GetAllFlows(context.TODO(), gomock.Any()).Return(storedFlows, *firstTimestamp, nil)
 
 	// Check that the given write matches expectations.
-	suite.mockFlowStore.EXPECT().UpsertFlows(testutils.PredMatcher("matches expected updates", func(actualUpdates []*storage.NetworkFlow) bool {
+	suite.mockFlows.EXPECT().UpsertFlows(context.TODO(), testutils.PredMatcher("matches expected updates", func(actualUpdates []*storage.NetworkFlow) bool {
 		if len(actualUpdates) != len(expectedUpdateProps) {
 			return false
 		}
@@ -134,6 +135,6 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}), gomock.Any()).Return(nil)
 
 	// Run test.
-	err := suite.tested.update(newFlows, secondTimestamp)
+	err := suite.tested.update(context.TODO(), newFlows, secondTimestamp)
 	suite.NoError(err, "update should succeed on first insert")
 }

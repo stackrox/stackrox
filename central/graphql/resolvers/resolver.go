@@ -20,8 +20,7 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
-	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
@@ -53,7 +52,7 @@ type Resolver struct {
 	ImageDataStore              imageDatastore.DataStore
 	GroupDataStore              groupDataStore.DataStore
 	NamespaceDataStore          namespaceDataStore.DataStore
-	NetworkFlowStore            networkFlowStore.ClusterStore
+	NetworkFlowDataStore        nfDS.ClusterDataStore
 	NetworkPoliciesStore        npDS.DataStore
 	NodeGlobalDataStore         nodeDataStore.GlobalDataStore
 	NotifierStore               notifierDataStore.DataStore
@@ -83,7 +82,7 @@ func New() *Resolver {
 		GroupDataStore:              groupDataStore.Singleton(),
 		NamespaceDataStore:          namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:        npDS.Singleton(),
-		NetworkFlowStore:            networkFlowStoreSingleton.Singleton(),
+		NetworkFlowDataStore:        nfDS.Singleton(),
 		NodeGlobalDataStore:         nodeDataStore.Singleton(),
 		NotifierStore:               notifierDataStore.Singleton(),
 		PolicyDataStore:             policyDatastore.Singleton(),

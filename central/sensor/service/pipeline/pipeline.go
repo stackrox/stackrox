@@ -1,6 +1,8 @@
 package pipeline
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
@@ -19,7 +21,7 @@ type ClusterPipeline interface {
 
 // Factory returns a ClusterPipeline for the given cluster.
 type Factory interface {
-	PipelineForCluster(clusterID string) (ClusterPipeline, error)
+	PipelineForCluster(ctx context.Context, clusterID string) (ClusterPipeline, error)
 }
 
 // Fragment is a component of a Pipeline that only processes specific messages.
@@ -35,5 +37,5 @@ type Fragment interface {
 
 // FragmentFactory returns a Fragment for the given cluster.
 type FragmentFactory interface {
-	GetFragment(clusterID string) (Fragment, error)
+	GetFragment(ctx context.Context, clusterID string) (Fragment, error)
 }

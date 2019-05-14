@@ -1,6 +1,8 @@
 package networkflowupdate
 
 import (
+	"context"
+
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -48,7 +50,7 @@ func (s *pipelineImpl) Run(_ string, msg *central.MsgFromSensor, _ common.Messag
 	}
 
 	defer countMetrics.IncrementTotalNetworkFlowsReceivedCounter(s.clusterID, len(update.Updated))
-	if err = s.storeUpdater.update(update.Updated, update.Time); err != nil {
+	if err = s.storeUpdater.update(context.TODO(), update.Updated, update.Time); err != nil {
 		return status.Errorf(codes.Internal, err.Error())
 	}
 	return nil

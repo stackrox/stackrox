@@ -6,8 +6,8 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	dDS "github.com/stackrox/rox/central/deployment/datastore"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,8 +33,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	clusterStore networkFlowStore.ClusterStore
-	deployments  deploymentDataStore.DataStore
+	clusterFlows nfDS.ClusterDataStore
+	deployments  dDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -76,13 +76,13 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	builder := newFlowGraphBuilder()
 	builder.AddDeployments(deployments)
 
-	flowStore := s.clusterStore.GetFlowStore(request.GetClusterId())
+	flowStore := s.clusterFlows.GetFlowStore(ctx, request.GetClusterId())
 
 	if flowStore == nil {
 		return nil, status.Errorf(codes.NotFound, "no flows found for cluster %s", request.GetClusterId())
 	}
 
-	flows, _, err := flowStore.GetAllFlows(since)
+	flows, _, err := flowStore.GetAllFlows(ctx, since)
 	if err != nil {
 		return nil, err
 	}

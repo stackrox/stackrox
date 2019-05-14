@@ -1,16 +1,18 @@
 package networkflowupdate
 
 import (
+	"context"
+
 	protobuf "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/networkflow/store"
+	"github.com/stackrox/rox/central/networkflow/datastore"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 type flowStoreUpdater interface {
-	update(newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) error
+	update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) error
 }
 
-func newFlowStoreUpdater(flowStore store.FlowStore) flowStoreUpdater {
+func newFlowStoreUpdater(flowStore datastore.FlowDataStore) flowStoreUpdater {
 	return &flowStoreUpdaterImpl{
 		flowStore: flowStore,
 		isFirst:   true,

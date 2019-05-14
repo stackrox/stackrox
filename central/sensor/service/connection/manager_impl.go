@@ -1,6 +1,8 @@
 package connection
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -30,8 +32,8 @@ func (m *manager) GetConnection(clusterID string) SensorConnection {
 	return conn
 }
 
-func (m *manager) HandleConnection(clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder CheckInRecorder) error {
-	conn, err := newConnection(clusterID, pf, recorder)
+func (m *manager) HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder CheckInRecorder) error {
+	conn, err := newConnection(ctx, clusterID, pf, recorder)
 
 	if err != nil {
 		return errors.Wrap(err, "creating sensor connection")

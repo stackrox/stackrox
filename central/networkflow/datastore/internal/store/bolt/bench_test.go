@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/stackrox/rox/central/networkflow/store"
+	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/networkgraph"

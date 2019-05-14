@@ -1,6 +1,8 @@
 package all
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
@@ -26,8 +28,8 @@ func NewFactory() pipeline.Factory {
 type factoryImpl struct{}
 
 // sendMessages grabs items from the queue, processes them, and sends them back to sensor.
-func (s *factoryImpl) PipelineForCluster(clusterID string) (pipeline.ClusterPipeline, error) {
-	flowUpdateFragment, err := networkflowupdate.Singleton().GetFragment(clusterID)
+func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) (pipeline.ClusterPipeline, error) {
+	flowUpdateFragment, err := networkflowupdate.Singleton().GetFragment(ctx, clusterID)
 	if err != nil {
 		return nil, err
 	}

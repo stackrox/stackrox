@@ -4,7 +4,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	flowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
+	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
@@ -26,7 +26,7 @@ func initialize() {
 		nsDataStore.Singleton(),
 		clusterDS.Singleton(),
 		notifierDS.Singleton(),
-		flowStoreSingleton.Singleton(),
+		nfDS.Singleton(),
 		connection.ManagerSingleton(),
 	)
 }

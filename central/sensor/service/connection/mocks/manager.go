@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	connection "github.com/stackrox/rox/central/sensor/service/connection"
 	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -60,13 +61,13 @@ func (mr *MockManagerMockRecorder) GetConnection(arg0 interface{}) *gomock.Call 
 }
 
 // HandleConnection mocks base method
-func (m *MockManager) HandleConnection(arg0 string, arg1 pipeline.Factory, arg2 central.SensorService_CommunicateServer, arg3 connection.CheckInRecorder) error {
-	ret := m.ctrl.Call(m, "HandleConnection", arg0, arg1, arg2, arg3)
+func (m *MockManager) HandleConnection(arg0 context.Context, arg1 string, arg2 pipeline.Factory, arg3 central.SensorService_CommunicateServer, arg4 connection.CheckInRecorder) error {
+	ret := m.ctrl.Call(m, "HandleConnection", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleConnection indicates an expected call of HandleConnection
-func (mr *MockManagerMockRecorder) HandleConnection(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleConnection", reflect.TypeOf((*MockManager)(nil).HandleConnection), arg0, arg1, arg2, arg3)
+func (mr *MockManagerMockRecorder) HandleConnection(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleConnection", reflect.TypeOf((*MockManager)(nil).HandleConnection), arg0, arg1, arg2, arg3, arg4)
 }

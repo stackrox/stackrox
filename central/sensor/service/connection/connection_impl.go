@@ -35,8 +35,8 @@ type sensorConnection struct {
 	checkInRecordRateLimiter *rate.Limiter
 }
 
-func newConnection(clusterID string, pf pipeline.Factory, recorder CheckInRecorder) (*sensorConnection, error) {
-	eventPipeline, err := pf.PipelineForCluster(clusterID)
+func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, recorder CheckInRecorder) (*sensorConnection, error) {
+	eventPipeline, err := pf.PipelineForCluster(ctx, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating event pipeline")
 	}

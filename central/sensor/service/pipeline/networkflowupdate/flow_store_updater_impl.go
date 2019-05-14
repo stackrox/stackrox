@@ -1,39 +1,39 @@
 package networkflowupdate
 
 import (
-	//"fmt"
+	"context"
 
 	"github.com/gogo/protobuf/types"
 	protobuf "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/networkflow/store"
+	"github.com/stackrox/rox/central/networkflow/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 type flowStoreUpdaterImpl struct {
-	flowStore store.FlowStore
+	flowStore datastore.FlowDataStore
 	isFirst   bool
 }
 
 // update updates the FlowStore with the given network flow updates.
-func (s *flowStoreUpdaterImpl) update(newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) error {
+func (s *flowStoreUpdaterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) error {
 	updatedFlows := make(map[networkFlowProperties]timestamp.MicroTS, len(newFlows))
 
 	// Add existing untermintated flows from the store if this is the first run.
 	if s.isFirst {
-		if err := s.addExistingNonTerminatedFlows(updatedFlows); err != nil {
+		if err := s.addExistingNonTerminatedFlows(ctx, updatedFlows); err != nil {
 			return err
 		}
 		s.isFirst = false
 	}
 	addNewFlows(updatedFlows, newFlows, updateTS)
 
-	return s.flowStore.UpsertFlows(convertToFlows(updatedFlows), timestamp.Now())
+	return s.flowStore.UpsertFlows(ctx, convertToFlows(updatedFlows), timestamp.Now())
 }
 
-func (s *flowStoreUpdaterImpl) addExistingNonTerminatedFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS) error {
-	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows(nil)
+func (s *flowStoreUpdaterImpl) addExistingNonTerminatedFlows(ctx context.Context, updatedFlows map[networkFlowProperties]timestamp.MicroTS) error {
+	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows(ctx, nil)
 	if err != nil {
 		return err
 	}
