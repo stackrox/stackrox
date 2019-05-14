@@ -3,9 +3,9 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/index"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/search"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/store"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )

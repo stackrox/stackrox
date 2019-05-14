@@ -1,8 +1,10 @@
 package search
 
 import (
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/index"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/store"
+	"context"
+
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -16,9 +18,9 @@ var (
 // Searcher provides search functionality on existing k8s role bindings.
 //go:generate mockgen-wrapper Searcher
 type Searcher interface {
-	Search(query *v1.Query) ([]search.Result, error)
-	SearchRoleBindings(*v1.Query) ([]*v1.SearchResult, error)
-	SearchRawRoleBindings(query *v1.Query) ([]*storage.K8SRoleBinding, error)
+	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
+	SearchRoleBindings(context.Context, *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawRoleBindings(ctx context.Context, query *v1.Query) ([]*storage.K8SRoleBinding, error)
 }
 
 // New returns a new instance of Searcher for the given storage and index.

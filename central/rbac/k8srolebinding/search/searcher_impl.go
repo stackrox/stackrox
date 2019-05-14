@@ -1,11 +1,20 @@
 package search
 
 import (
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/index"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/store"
+	"context"
+
+	"github.com/stackrox/rox/central/rbac/k8srole/search/options"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).MustCreateSearchHelper(options.Map, true)
 )
 
 // searcherImpl provides an search implementation for k8s role bindings
@@ -15,8 +24,8 @@ type searcherImpl struct {
 }
 
 // SearchRoleBindings returns the search results from indexed k8s role bindings for the query.
-func (ds *searcherImpl) SearchRoleBindings(q *v1.Query) ([]*v1.SearchResult, error) {
-	bindings, results, err := ds.searchRoleBindings(q)
+func (ds *searcherImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	bindings, results, err := ds.searchRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -24,21 +33,21 @@ func (ds *searcherImpl) SearchRoleBindings(q *v1.Query) ([]*v1.SearchResult, err
 }
 
 // Search returns the raw search results from the query
-func (ds *searcherImpl) Search(q *v1.Query) ([]search.Result, error) {
-	return ds.index.Search(q)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return k8sRoleBindingsSACSearchHelper.Apply(ds.index.Search)(ctx, q)
 }
 
 // SearchRawRoleBindings returns the rolebindings  that match the query.
-func (ds *searcherImpl) SearchRawRoleBindings(q *v1.Query) ([]*storage.K8SRoleBinding, error) {
-	bindings, _, err := ds.searchRoleBindings(q)
+func (ds *searcherImpl) SearchRawRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error) {
+	bindings, _, err := ds.searchRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	return bindings, nil
 }
 
-func (ds *searcherImpl) searchRoleBindings(q *v1.Query) ([]*storage.K8SRoleBinding, []search.Result, error) {
-	results, err := ds.index.Search(q)
+func (ds *searcherImpl) searchRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, []search.Result, error) {
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}

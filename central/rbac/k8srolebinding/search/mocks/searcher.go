@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -36,40 +37,40 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 }
 
 // Search mocks base method
-func (m *MockSearcher) Search(arg0 *v1.Query) ([]search.Result, error) {
-	ret := m.ctrl.Call(m, "Search", arg0)
+func (m *MockSearcher) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search
-func (mr *MockSearcherMockRecorder) Search(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), arg0)
+func (mr *MockSearcherMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), arg0, arg1)
 }
 
 // SearchRawRoleBindings mocks base method
-func (m *MockSearcher) SearchRawRoleBindings(arg0 *v1.Query) ([]*storage.K8SRoleBinding, error) {
-	ret := m.ctrl.Call(m, "SearchRawRoleBindings", arg0)
+func (m *MockSearcher) SearchRawRoleBindings(arg0 context.Context, arg1 *v1.Query) ([]*storage.K8SRoleBinding, error) {
+	ret := m.ctrl.Call(m, "SearchRawRoleBindings", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRawRoleBindings indicates an expected call of SearchRawRoleBindings
-func (mr *MockSearcherMockRecorder) SearchRawRoleBindings(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawRoleBindings", reflect.TypeOf((*MockSearcher)(nil).SearchRawRoleBindings), arg0)
+func (mr *MockSearcherMockRecorder) SearchRawRoleBindings(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawRoleBindings", reflect.TypeOf((*MockSearcher)(nil).SearchRawRoleBindings), arg0, arg1)
 }
 
 // SearchRoleBindings mocks base method
-func (m *MockSearcher) SearchRoleBindings(arg0 *v1.Query) ([]*v1.SearchResult, error) {
-	ret := m.ctrl.Call(m, "SearchRoleBindings", arg0)
+func (m *MockSearcher) SearchRoleBindings(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	ret := m.ctrl.Call(m, "SearchRoleBindings", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRoleBindings indicates an expected call of SearchRoleBindings
-func (mr *MockSearcherMockRecorder) SearchRoleBindings(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRoleBindings", reflect.TypeOf((*MockSearcher)(nil).SearchRoleBindings), arg0)
+func (mr *MockSearcherMockRecorder) SearchRoleBindings(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRoleBindings", reflect.TypeOf((*MockSearcher)(nil).SearchRoleBindings), arg0, arg1)
 }
