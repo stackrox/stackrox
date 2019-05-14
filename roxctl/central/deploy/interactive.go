@@ -9,9 +9,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -33,12 +35,28 @@ func readUserInput(prompt string) (string, error) {
 	return strings.TrimSpace(text), nil
 }
 
+func isOptional(f *pflag.Flag) bool {
+	optAnn := f.Annotations["optional"]
+	if len(optAnn) == 0 {
+		return false
+	}
+	return optAnn[0] == "true"
+}
+
 func readUserInputFromFlag(f *pflag.Flag) (string, error) {
 	var prompt string
 	if f.Value.String() != "" {
-		prompt = fmt.Sprintf("Enter %s (default: '%s'): ", f.Usage, f.Value)
+		optText := ""
+		if isOptional(f) {
+			optText = ", optional"
+		}
+		prompt = fmt.Sprintf("Enter %s (default: '%s'%s): ", f.Usage, f.Value, optText)
 	} else {
-		prompt = fmt.Sprintf("Enter %s: ", f.Usage)
+		optText := ""
+		if isOptional(f) {
+			optText = " (optional)"
+		}
+		prompt = fmt.Sprintf("Enter %s%s: ", f.Usage, optText)
 	}
 
 	text, err := readUserInput(prompt)
@@ -186,10 +204,31 @@ func flagGroups(flags []*pflag.Flag) []*flagGroup {
 }
 
 func processFlagWraps(fws []flagWrap) (args []string) {
+	flagsByName := make(map[string]*pflag.Flag)
+	for _, fw := range fws {
+		flagsByName[fw.Name] = fw.Flag
+	}
+
 	for _, fw := range fws {
 		if fw.Hidden {
-			return
+			continue
 		}
+
+		depUnmet := false
+		for _, dep := range fw.Annotations["dependencies"] {
+			flag := flagsByName[dep]
+			if flag == nil {
+				utils.Must(errors.Errorf("invalid flag dependency %q", dep))
+			}
+			if !flag.Changed {
+				depUnmet = true
+				break
+			}
+		}
+		if depUnmet {
+			continue
+		}
+
 		for {
 			if value, commandline := processFlag(fw.Flag); fw.NoOptDefVal == "" {
 				// Verify flag parsing

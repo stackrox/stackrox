@@ -179,6 +179,9 @@ type Config struct {
 
 	LicenseData []byte
 
+	DefaultTLSCertPEM []byte
+	DefaultTLSKeyPEM  []byte
+
 	SecretsByteMap   map[string][]byte
 	SecretsBase64Map map[string]string
 

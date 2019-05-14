@@ -66,6 +66,13 @@ secrets:
       license.lic: {{index .SecretsBase64Map "central-license"}}
   {{end -}}
 
+  {{ if ne (index .SecretsBase64Map "default-tls.crt") "" }}
+  defaulttlscert:
+    data:
+      tls.crt: {{ index .SecretsBase64Map "default-tls.crt" }}
+      tls.key: {{ index .SecretsBase64Map "default-tls.key" }}
+  {{end -}}
+
   {{if not .K8sConfig.Monitoring.Type.None}}
   monitoring:
     data:

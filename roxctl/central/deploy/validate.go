@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"crypto/tls"
 	"fmt"
 
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
@@ -11,7 +12,13 @@ var (
 )
 
 func validateConfig(c renderer.Config) error {
-	return validateHostPath(c.HostPath)
+	if err := validateHostPath(c.HostPath); err != nil {
+		return err
+	}
+	if err := validateDefaultTLSCert(c.DefaultTLSCertPEM, c.DefaultTLSKeyPEM); err != nil {
+		return err
+	}
+	return nil
 }
 
 func validateHostPath(hostpath *renderer.HostPathPersistence) error {
@@ -22,4 +29,13 @@ func validateHostPath(hostpath *renderer.HostPathPersistence) error {
 		return fmt.Errorf("Both node selector key and node selector value must be specified when using a hostpath")
 	}
 	return nil
+}
+
+func validateDefaultTLSCert(certPEM, keyPEM []byte) error {
+	if len(certPEM) == 0 && len(keyPEM) == 0 {
+		return nil
+	}
+
+	_, err := tls.X509KeyPair(certPEM, keyPEM)
+	return err
 }

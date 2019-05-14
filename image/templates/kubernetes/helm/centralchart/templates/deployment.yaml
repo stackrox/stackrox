@@ -47,6 +47,9 @@ spec:
         - name: central-certs-volume
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
+        - name: central-default-tls-cert-volume
+          mountPath: /run/secrets/stackrox.io/default-tls-cert/
+          readOnly: true
         - name: central-htpasswd-volume
           mountPath: /run/secrets/stackrox.io/htpasswd/
           readOnly: true
@@ -108,6 +111,10 @@ spec:
       - name: central-certs-volume
         secret:
           secretName: central-tls
+      - name: central-default-tls-cert-volume
+        secret:
+          secretName: central-default-tls-cert
+          optional: true
       - name: central-htpasswd-volume
         secret:
           secretName: central-htpasswd

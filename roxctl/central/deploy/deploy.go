@@ -118,6 +118,11 @@ func outputZip(config renderer.Config) error {
 		config.SecretsByteMap["central-license"] = config.LicenseData
 	}
 
+	if len(config.DefaultTLSCertPEM) > 0 {
+		config.SecretsByteMap["default-tls.crt"] = config.DefaultTLSCertPEM
+		config.SecretsByteMap["default-tls.key"] = config.DefaultTLSKeyPEM
+	}
+
 	config.Environment = make(map[string]string)
 	for _, flag := range features.Flags {
 		config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.Enabled())
@@ -231,6 +236,18 @@ func Command() *cobra.Command {
 
 	c.PersistentFlags().Var(&featureValue{&cfg.Features}, "flags", "Feature flags to enable")
 	utils.Must(c.PersistentFlags().MarkHidden("flags"))
+
+	c.PersistentFlags().Var(&flags.FileContentsVar{
+		Data: &cfg.DefaultTLSCertPEM,
+	}, "default-tls-cert", "PEM cert bundle file")
+	utils.Must(c.PersistentFlags().SetAnnotation("default-tls-cert", "optional", []string{"true"}))
+
+	c.PersistentFlags().Var(&flags.FileContentsVar{
+		Data: &cfg.DefaultTLSKeyPEM,
+	}, "default-tls-key", "PEM private key file")
+	utils.Must(c.PersistentFlags().SetAnnotation("default-tls-key", "dependencies", []string{"default-tls-cert"}))
+	utils.Must(c.PersistentFlags().SetAnnotation("default-tls-key", "optional", []string{"true"}))
+
 	c.AddCommand(interactive())
 
 	c.AddCommand(k8s())
