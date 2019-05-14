@@ -215,11 +215,7 @@ const NodePage = ({ match, location, nodeId, sidePanelMode, controlResult }) => 
                                 <ResourceTabs
                                     entityId={id}
                                     entityType={entityTypes.NODE}
-                                    resourceTabs={[
-                                        entityTypes.CONTROL,
-                                        entityTypes.CLUSTER,
-                                        entityTypes.NAMESPACE
-                                    ]}
+                                    resourceTabs={[entityTypes.CONTROL, entityTypes.NAMESPACE]}
                                 />
                             </>
                         )}
