@@ -16,7 +16,6 @@ import IconWidget from 'Components/IconWidget';
 import InfoWidget from 'Components/InfoWidget';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
-import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import Loader from 'Components/Loader';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
@@ -24,6 +23,8 @@ import URLService from 'modules/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
 import ComplianceList from 'Containers/Compliance/List/List';
 import PageNotFound from 'Components/PageNotFound';
+import ControlAssessment from 'Containers/Compliance/widgets/ControlAssessment';
+import ComplianceWidgetsGroup from 'Containers/Compliance/ComplianceWidgetsGroup';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 
@@ -43,7 +44,7 @@ function processData(data) {
     return result;
 }
 
-const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
+const NodePage = ({ match, location, nodeId, sidePanelMode, controlResult }) => {
     const params = URLService.getParams(match, location);
     const entityId = nodeId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
@@ -183,26 +184,18 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                <ComplianceByStandard
-                                    standardType={entityTypes.NIST_800_190}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.NODE}
-                                    className={pdfClassName}
+
+                                <ControlAssessment
+                                    className={`sx-2 ${pdfClassName}`}
+                                    controlResult={controlResult}
                                 />
-                                <ComplianceByStandard
-                                    standardType={entityTypes.CIS_Kubernetes_v1_2_0}
+
+                                <ComplianceWidgetsGroup
+                                    controlResult={controlResult}
+                                    entityType={entityTypes.NODE}
                                     entityName={name}
                                     entityId={id}
-                                    entityType={entityTypes.NODE}
-                                    className={pdfClassName}
-                                />
-                                <ComplianceByStandard
-                                    standardType={entityTypes.CIS_Docker_v1_1_0}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.NODE}
-                                    className={pdfClassName}
+                                    pdfClassName={pdfClassName}
                                 />
                             </div>
                         </div>
@@ -241,12 +234,14 @@ NodePage.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     nodeId: PropTypes.string,
-    sidePanelMode: PropTypes.bool
+    sidePanelMode: PropTypes.bool,
+    controlResult: PropTypes.shape({})
 };
 
 NodePage.defaultProps = {
     nodeId: null,
-    sidePanelMode: false
+    sidePanelMode: false,
+    controlResult: null
 };
 
 export default withRouter(NodePage);

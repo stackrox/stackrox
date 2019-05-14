@@ -1,13 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import uniq from 'lodash/uniq';
 
 import Widget from 'Components/Widget';
 import ComplianceStateLabel from 'Containers/Compliance/ComplianceStateLabel';
 
 const processEvidence = data => {
     const evidence = data.map(evidenceResult => evidenceResult.message);
-    return uniq(evidence).map(message => <li key={message}>{message}</li>);
+    return evidence.map((message, i) => <li key={i}>{message}</li>);
 };
 
 const ControlAssessment = ({ className, controlResult }) => {

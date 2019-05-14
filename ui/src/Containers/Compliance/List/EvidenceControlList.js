@@ -81,7 +81,7 @@ const tableColumns = [
         Cell: ({ original }) => {
             const { length } = original.value.evidence;
             return length > 1 ? (
-                <div className="italic font-800">{`Expand to view ${length} pieces of evidence`}</div>
+                <div className="italic font-800">{`Inspect to view ${length} pieces of evidence`}</div>
             ) : (
                 original.value.evidence[0].message
             );
@@ -148,7 +148,7 @@ const createTableData = data => {
     };
 };
 
-const ControlsList = ({ selectedRow, updateSelectedRow, match, location }) => {
+const EvidenceControlList = ({ selectedRow, updateSelectedRow, match, location }) => {
     const [page, setPage] = useState(0);
     const params = URLService.getParams(match, location);
     const variables = getQueryVariables(params);
@@ -186,15 +186,15 @@ const ControlsList = ({ selectedRow, updateSelectedRow, match, location }) => {
     );
 };
 
-ControlsList.propTypes = {
+EvidenceControlList.propTypes = {
     selectedRow: PropTypes.shape({}),
     updateSelectedRow: PropTypes.func.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired
 };
 
-ControlsList.defaultProps = {
+EvidenceControlList.defaultProps = {
     selectedRow: null
 };
 
-export default withRouter(ControlsList);
+export default withRouter(EvidenceControlList);

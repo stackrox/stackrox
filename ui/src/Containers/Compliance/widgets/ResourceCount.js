@@ -12,7 +12,7 @@ import CountWidget from 'Components/CountWidget';
 import contextTypes from 'constants/contextTypes';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'modules/queryService';
-import { getResourceCountFromResults } from 'modules/complianceUtils';
+import { getResourceCountFromAggregatedResults } from 'modules/complianceUtils';
 
 const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource, count }) => {
     function getUrl() {
@@ -72,7 +72,7 @@ const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource, c
                 const contents = <Loader />;
 
                 if (!loading && data && data.search) {
-                    const resourceCount = getResourceCountFromResults(
+                    const resourceCount = getResourceCountFromAggregatedResults(
                         entityType,
                         relatedToResourceType,
                         data

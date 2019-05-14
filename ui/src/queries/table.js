@@ -153,6 +153,58 @@ export const COMPLIANCE_DATA_ON_CLUSTERS = gql`
     ${evidenceFragment}
 `;
 
+export const COMPLIANCE_DATA_ON_NODES = gql`
+    query complianceDataOnNodes {
+        results: clusters {
+            nodes {
+                id
+                name
+                complianceResults {
+                    ...allData
+                }
+            }
+        }
+    }
+    ${evidenceFragment}
+`;
+
+export const COMPLIANCE_DATA_ON_DEPLOYMENTS = gql`
+    query complianceDataOnDeployments {
+        results: clusters {
+            id
+            deployments {
+                id
+                complianceResults {
+                    ...allData
+                }
+            }
+        }
+    }
+    ${evidenceFragment}
+`;
+
+export const COMPLIANCE_DATA_ON_DEPLOYMENTS_AND_NODES = gql`
+    query complianceDataOnDeploymentsAndNodes {
+        clusters {
+            id
+            deployments {
+                id
+                complianceResults {
+                    ...allData
+                }
+            }
+            nodes {
+                id
+                name
+                complianceResults {
+                    ...allData
+                }
+            }
+        }
+    }
+    ${evidenceFragment}
+`;
+
 export const COMPLIANCE_DATA_ON_CLUSTER = gql`
     query complianceDataOnCluster($id: ID!) {
         result: cluster(id: $id) {

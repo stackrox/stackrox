@@ -34,13 +34,19 @@ const ComplianceListSidePanel = ({
 
         switch (entityType) {
             case resourceTypes.NODE:
-                return <NodePage nodeId={entityId} sidePanelMode />;
+                return <NodePage nodeId={entityId} controlResult={controlResult} sidePanelMode />;
             case resourceTypes.NAMESPACE:
                 return <NamespacePage namespaceId={entityId} sidePanelMode />;
             case resourceTypes.CLUSTER:
                 return <ClusterPage clusterId={entityId} sidePanelMode />;
             case resourceTypes.DEPLOYMENT:
-                return <DeploymentPage deploymentId={entityId} sidePanelMode />;
+                return (
+                    <DeploymentPage
+                        deploymentId={entityId}
+                        controlResult={controlResult}
+                        sidePanelMode
+                    />
+                );
             default:
                 return null;
         }

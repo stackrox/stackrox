@@ -11,7 +11,7 @@ export function getIndicesFromAggregatedResults(results) {
     );
 }
 
-export function getResourceCountFromResults(type, data) {
+export function getResourceCountFromAggregatedResults(type, data) {
     const { nodeResults, deploymentResults, namespaceResults, clusterResults } = data;
     let source;
 
@@ -47,4 +47,23 @@ export function getResourceCountFromResults(type, data) {
     result = uniq(result.map(datum => datum.aggregationKeys[index].id));
 
     return result.length;
+}
+
+export function getResourceCountFromComplianceResults(type, data) {
+    const { clusters } = data;
+    let count = 0;
+    if (clusters && type === entityTypes.NODE) {
+        clusters.forEach(cluster => {
+            cluster.nodes.forEach(node => {
+                count += node.complianceResults.length;
+            });
+        });
+    } else if (clusters && type === entityTypes.DEPLOYMENT) {
+        clusters.forEach(cluster => {
+            cluster.deployments.forEach(deployment => {
+                count += deployment.complianceResults.length;
+            });
+        });
+    }
+    return count;
 }

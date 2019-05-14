@@ -10,7 +10,6 @@ import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
 import ComplianceList from 'Containers/Compliance/List/List';
-import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Cluster from 'images/cluster.svg';
 import Namespace from 'images/ns-icon.svg';
@@ -19,6 +18,8 @@ import pluralize from 'pluralize';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import contextTypes from 'constants/contextTypes';
 import PageNotFound from 'Components/PageNotFound';
+import ControlAssessment from 'Containers/Compliance/widgets/ControlAssessment';
+import ComplianceWidgetsGroup from 'Containers/Compliance/ComplianceWidgetsGroup';
 
 import pageTypes from 'constants/pageTypes';
 import Header from './Header';
@@ -31,7 +32,7 @@ function processData(data) {
     return result;
 }
 
-const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
+const DeploymentPage = ({ match, location, deploymentId, sidePanelMode, controlResult }) => {
     const params = URLService.getParams(match, location);
     const entityId = deploymentId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
@@ -144,26 +145,17 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
                                     <Labels labels={labels} />
                                 </Widget>
 
-                                <ComplianceByStandard
-                                    standardType={entityTypes.PCI_DSS_3_2}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
-                                    className={pdfClassName}
+                                <ControlAssessment
+                                    className={`sx-2 ${pdfClassName}`}
+                                    controlResult={controlResult}
                                 />
-                                <ComplianceByStandard
-                                    standardType={entityTypes.NIST_800_190}
+
+                                <ComplianceWidgetsGroup
+                                    controlResult={controlResult}
+                                    entityType={entityTypes.DEPLOYMENT}
                                     entityName={name}
                                     entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
-                                    className={pdfClassName}
-                                />
-                                <ComplianceByStandard
-                                    standardType={entityTypes.HIPAA_164}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
-                                    className={pdfClassName}
+                                    pdfClassName={pdfClassName}
                                 />
                             </div>
                         </div>
@@ -198,12 +190,14 @@ DeploymentPage.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     deploymentId: PropTypes.string,
-    sidePanelMode: PropTypes.bool
+    sidePanelMode: PropTypes.bool,
+    controlResult: PropTypes.shape({})
 };
 
 DeploymentPage.defaultProps = {
     deploymentId: null,
-    sidePanelMode: false
+    sidePanelMode: false,
+    controlResult: null
 };
 
 export default withRouter(DeploymentPage);

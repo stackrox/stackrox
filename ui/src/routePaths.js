@@ -39,7 +39,7 @@ const resourceMatcher = `(${Object.values(resourceTypesToUrl).join('|')})`;
 export const nestedCompliancePaths = {
     DASHBOARD: `${compliancePath}/`,
     LIST: `${compliancePath}/:entityType`,
-    CONTROL: `${compliancePath}/controls/:controlId/:listEntityType${resourceMatcher}?`,
+    CONTROL: `${compliancePath}/:entityType(controls)/:controlId/:listEntityType${resourceMatcher}?`,
     CLUSTER: `${compliancePath}/:entityType(clusters)/:entityId/:listEntityType${resourceMatcher}?`,
     NAMESPACE: `${compliancePath}/:entityType(namespaces)/:entityId/:listEntityType${resourceMatcher}?`,
     DEPLOYMENT: `${compliancePath}/:entityType(deployments)/:entityId/:listEntityType${resourceMatcher}?`,

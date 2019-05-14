@@ -8,11 +8,18 @@ import pageTypes from 'constants/pageTypes';
 import { resourceLabels } from 'messages/common';
 import pluralize from 'pluralize';
 import Query from 'Components/ThrowingQuery';
-import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
+import { SEARCH_WITH_CONTROLS } from 'queries/search';
+import { COMPLIANCE_DATA_ON_DEPLOYMENTS_AND_NODES } from 'queries/table';
 import queryService from 'modules/queryService';
-import { getResourceCountFromResults } from 'modules/complianceUtils';
+import {
+    getResourceCountFromAggregatedResults,
+    getResourceCountFromComplianceResults
+} from 'modules/complianceUtils';
+import entityTypes from 'constants/entityTypes';
 
-const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match }) => {
+const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match, location }) => {
+    const { entityType: pageType } = URLService.getParams(match, location);
+
     function getLinkToListType(listEntityType) {
         const urlParams = {
             entityId,
@@ -34,7 +41,12 @@ const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match })
 
         if (resourceTabs.length && data) {
             resourceTabs.forEach(type => {
-                const count = getResourceCountFromResults(type, data);
+                let count;
+                if (pageType === entityTypes.CONTROL) {
+                    count = getResourceCountFromComplianceResults(type, data);
+                } else {
+                    count = getResourceCountFromAggregatedResults(type, data);
+                }
                 if (count > 0)
                     tabData.push({
                         title: `${pluralize(resourceLabels[type], count)}`,
@@ -52,9 +64,17 @@ const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match })
         };
     }
 
+    function getQuery() {
+        if (pageType === entityTypes.CONTROL) {
+            return COMPLIANCE_DATA_ON_DEPLOYMENTS_AND_NODES;
+        }
+        return SEARCH_WITH_CONTROLS;
+    }
+
     const variables = getVariables();
+    const query = getQuery();
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={query} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return null;
                 const tabData = processData(data);
@@ -98,7 +118,8 @@ ResourceTabs.propTypes = {
     entityId: PropTypes.string.isRequired,
     standardId: PropTypes.string,
     resourceTabs: PropTypes.arrayOf(PropTypes.string),
-    match: ReactRouterPropTypes.match.isRequired
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired
 };
 
 ResourceTabs.defaultProps = {
