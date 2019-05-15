@@ -25,7 +25,7 @@ data:
     # Configuration for telegraf agent
     [agent]
       ## Default data collection interval for all inputs
-      interval = "10s"
+      interval = "60s"
       ## Rounds collection interval to 'interval'
       ## ie, if interval="10s" then always collect on :00, :10, :20, etc.
       round_interval = true
@@ -49,7 +49,7 @@ data:
 
       ## Default flushing interval for all outputs. You shouldn't set this below
       ## interval. Maximum flush_interval will be flush_interval + flush_jitter
-      flush_interval = "10s"
+      flush_interval = "60s"
       ## Jitter the flush interval by a random amount. This is primarily to avoid
       ## large write spikes for users running a large number of telegraf instances.
       ## ie, a jitter of 5s and interval 10s means flushes will happen every 10-15s
@@ -149,12 +149,6 @@ data:
     #                            INPUT PLUGINS                                    #
     ###############################################################################
 
-    # # Collect statistics about itself
-    [[inputs.internal]]
-      ## If true, collect telegraf memory stats.
-      collect_memstats = true
-
-
     # # Read metrics from one or many prometheus clients
     [[inputs.prometheus]]
        ## An array of urls to scrape metrics from.
@@ -168,16 +162,6 @@ data:
 
        insecure_skip_verify = true
 
-    [[inputs.logparser]]
-      ## files to tail.
-      files = ["/var/log/stackrox/log.txt"]
-      ## Read file from beginning.
-      from_beginning = true
-      ## For parsing logstash-style "grok" patterns:
-      [inputs.logparser.grok]
-        measurement_name = "logs"
-        patterns = ["%{DATA:module}: %{TIMESTAMP:time} %{WORD:file}.go:%{NUMBER:linenum}: %{LOGLEVEL}: %{GREEDYDATA:message}"]
-        custom_patterns = 'TIMESTAMP %{YEAR}[/-]%{MONTHNUM}[/-]%{MONTHDAY} %{TIME}'
 kind: ConfigMap
 metadata:
   name: telegraf
