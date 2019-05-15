@@ -25,10 +25,9 @@ export const selectors = {
         selectValue: 'form .react-select__multi-value__label'
     },
     configurationField: {
-        select: 'form [data-test-id="policyConfiguration"] select',
-        selectArrow:
-            '[data-test-id="policyConfiguration"] .react-select__control .react-select__dropdown-indicator',
-        options: '[data-test-id="policyConfiguration"] div[role="option"]',
+        select: '#policyConfigurationSelect',
+        selectArrow: '#policyConfigurationSelect .react-select__dropdown-indicator',
+        options: '#policyConfigurationSelect div[role="option"]',
         numericInput: '[data-test-id="policyConfiguration"] .react-numeric-input input'
     },
     imageRegistry: {
