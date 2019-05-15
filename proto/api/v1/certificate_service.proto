@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+
+import "api/v1/empty.proto";
+import "api/v1/common.proto";
+import "storage/certificates.proto";
+
+package v1;
+
+message GetClientCertificateAuthoritiesResponse {
+    repeated Certificate certificates = 1;
+}
+
+message GetClientCertificateAuthorityResponse {
+    Certificate certificate = 1;
+}
+
+message CreateClientCertificateAuthorityRequest {
+    Certificate certificate = 1;
+}
+
+message CreateClientCertificateAuthorityResponse {
+    Certificate certificate = 1;
+}
+
+service CertificateService {
+    rpc GetClientCertificateAuthorities(Empty) returns (GetClientCertificateAuthoritiesResponse) {
+        option (google.api.http) = {
+            get: "/v1/clientca"
+        };
+    }
+
+    rpc GetClientCertificateAuthority(ResourceByID) returns (GetClientCertificateAuthorityResponse) {
+        option (google.api.http) = {
+            get: "/v1/clientca/{id}"
+        };
+    }
+
+    rpc CreateClientCertificateAuthority(CreateClientCertificateAuthorityRequest) returns (CreateClientCertificateAuthorityResponse) {
+        option (google.api.http) = {
+            post: "/v1/clientca"
+        };
+    }
+    rpc DeleteClientCertificateAuthority(ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/clientca/{id}"
+        };
+    }
+}
