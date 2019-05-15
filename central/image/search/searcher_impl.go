@@ -18,11 +18,16 @@ type searcherImpl struct {
 
 func (ds *searcherImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
+	log.Info("[STARTUP] Indexing images")
 	images, err := ds.storage.GetImages()
 	if err != nil {
 		return err
 	}
-	return ds.indexer.AddImages(images)
+	if err := ds.indexer.AddImages(images); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed images")
+	return nil
 }
 
 // SearchImages retrieves SearchResults from the indexer and storage

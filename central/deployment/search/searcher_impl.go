@@ -19,11 +19,16 @@ type searcherImpl struct {
 
 func (ds *searcherImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
+	log.Info("[STARTUP] Indexing deployments")
 	deployments, err := ds.storage.GetDeployments()
 	if err != nil {
 		return err
 	}
-	return ds.indexer.AddDeployments(deployments)
+	if err := ds.indexer.AddDeployments(deployments); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed deployments")
+	return nil
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage

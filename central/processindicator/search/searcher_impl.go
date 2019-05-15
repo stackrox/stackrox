@@ -17,11 +17,16 @@ type searcherImpl struct {
 
 func (s *searcherImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
+	log.Info("[STARTUP] Indexing process indicators")
 	indicators, err := s.storage.GetProcessIndicators()
 	if err != nil {
 		return err
 	}
-	return s.indexer.AddProcessIndicators(indicators)
+	if err := s.indexer.AddProcessIndicators(indicators); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed process indicators")
+	return nil
 }
 
 // SearchRawIndicators retrieves Policies from the indexer and storage

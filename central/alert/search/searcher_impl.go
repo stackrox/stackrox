@@ -44,9 +44,11 @@ func (ds *searcherImpl) buildIndex() error {
 		}
 	}
 
+	log.Info("[STARTUP] Indexing alerts")
 	if err := ds.getAndIndexAlertsBatch(unresolvedIDs); err != nil {
 		return err
 	}
+	log.Info("[STARTUP] Successfully indexed all active alerts")
 
 	// Asynchronously index the resolved alerts because there is no hard
 	// dependency on resolved alerts being indexed
@@ -64,6 +66,7 @@ func (ds *searcherImpl) getAndIndexAlertsBatch(ids []string) error {
 		if err := ds.getAndIndexAlerts(ids[start:end]); err != nil {
 			return err
 		}
+		log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(ids))
 	}
 	return nil
 }
