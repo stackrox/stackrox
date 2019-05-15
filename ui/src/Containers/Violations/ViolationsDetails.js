@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 
 import ProcessesCollapsibleCard from 'Containers/Violations/ProcessesCollapsibleCard';
 
-import * as Icon from 'react-feather';
 import { getTime, format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
@@ -120,18 +119,9 @@ class ViolationsDetails extends Component {
     render() {
         const deploytimeMessages = this.getDeploytimeMessages();
         const runtimeMessage = this.getRuntimeMessage();
-        let separator = null;
-        if (deploytimeMessages.length && runtimeMessage) {
-            separator = (
-                <div className="flex justify-center items-center mt-4">
-                    <Icon.Plus className="h-8 w-8 text-base-400" />
-                </div>
-            );
-        }
         return (
             <div className="w-full px-3 pb-5 mt-5">
                 {runtimeMessage}
-                {separator}
                 {deploytimeMessages}
             </div>
         );

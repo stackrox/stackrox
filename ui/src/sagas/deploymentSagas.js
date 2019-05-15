@@ -41,7 +41,7 @@ function* filterPoliciesPageBySearch() {
     yield fork(getDeployments, { options });
 }
 
-function* filterRiskPageBySearch() {
+export function* filterRiskPageBySearch() {
     const options = yield select(selectors.getDeploymentsSearchOptions);
     if (options.length && options[options.length - 1].type) {
         return;

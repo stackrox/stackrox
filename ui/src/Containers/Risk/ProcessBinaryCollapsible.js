@@ -7,7 +7,7 @@ import 'rc-tooltip/assets/bootstrap.css';
 import CollapsibleCard from 'Components/CollapsibleCard';
 
 const titleClassName =
-    'border-b border-base-300 leading-normal cursor-pointer justify-between items-center hover:bg-primary-100 hover:border-primary-300';
+    'border-b border-base-300 leading-normal cursor-pointer justify-between items-center hover:border-primary-300';
 class ProcessBinaryCollapsible extends Component {
     static propTypes = {
         args: PropTypes.string.isRequired,

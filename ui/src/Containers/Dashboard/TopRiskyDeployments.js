@@ -69,12 +69,21 @@ const TopRiskyDeployments = ({ deployments }) => {
 };
 
 TopRiskyDeployments.propTypes = {
-    deployments: PropTypes.arrayOf(PropTypes.object).isRequired
+    deployments: PropTypes.arrayOf(
+        PropTypes.shape({
+            deployment: PropTypes.shape({})
+        })
+    ).isRequired
 };
 
 const getTopRiskyDeployments = createSelector(
     [selectors.getFilteredDeployments],
-    deployments => deployments.sort((a, b) => a.priority - b.priority).slice(0, 5)
+    deployments => {
+        const deploymentsOnly = deployments.map(
+            deploymentWithProcessInfo => deploymentWithProcessInfo.deployment
+        );
+        return deploymentsOnly.sort((a, b) => a.priority - b.priority).slice(0, 5);
+    }
 );
 
 const mapStateToProps = createStructuredSelector({

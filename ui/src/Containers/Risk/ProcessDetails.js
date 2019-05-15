@@ -5,6 +5,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import shave from 'shave';
 
 import ProcessDiscoveryCard from 'Containers/Risk/ProcessDiscoveryCard';
+import ProcessSpecificationWhitelists from 'Containers/Risk/ProcessSpecificationWhitelists';
 import ProcessBinaryCollapsible from 'Containers/Risk/ProcessBinaryCollapsible';
 import Table, {
     defaultHeaderClassName,
@@ -12,11 +13,13 @@ import Table, {
     wrapClassName
 } from 'Components/Table';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import orderBy from 'lodash/orderBy';
 
 const MAX_STRING_HEIGHT = 70;
 
 class ProcessDetails extends Component {
     static propTypes = {
+        deploymentId: PropTypes.string.isRequired,
         processGroup: PropTypes.shape({
             groups: PropTypes.arrayOf(PropTypes.object)
         }).isRequired
@@ -52,23 +55,17 @@ class ProcessDetails extends Component {
                 className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
             },
             {
-                Header: 'UID',
-                id: 'uid',
-                accessor: d => d.signal.uid,
-                headerClassName: `${defaultHeaderClassName} w-1/6 pointer-events-none`,
-                className: `${wrapClassName} ${defaultColumnClassName} w-1/6 cursor-auto`
-            },
-            {
                 Header: 'Pod ID',
                 accessor: 'podId',
                 headerClassName: `${defaultHeaderClassName} w-1/3 pointer-events-none`,
                 className: `${wrapClassName} ${defaultColumnClassName} w-1/3 cursor-auto`
             },
             {
-                Header: 'Container',
-                accessor: 'containerName',
-                headerClassName: `${defaultHeaderClassName} ${wrapClassName} w-1/4 pointer-events-none`,
-                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
+                Header: 'UID',
+                id: 'uid',
+                accessor: d => d.signal.uid,
+                headerClassName: `${defaultHeaderClassName} w-1/6 pointer-events-none`,
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/6 cursor-auto`
             }
         ];
         const rows = signals;
@@ -93,15 +90,16 @@ class ProcessDetails extends Component {
             </ProcessBinaryCollapsible>
         ));
 
-    renderProcessDiscoveryCard = ({ name, timesExecuted, groups }) => (
-        <ProcessDiscoveryCard name={name} timesExecuted={timesExecuted}>
-            {this.renderProcessBinaries(groups)}
+    renderProcessDiscoveryCard = process => (
+        <ProcessDiscoveryCard process={process} deploymentId={this.props.deploymentId}>
+            {this.renderProcessBinaries(process.groups)}
         </ProcessDiscoveryCard>
     );
 
     renderProcessDiscoveryCards = () => {
         const { groups: processGroups } = this.props.processGroup;
-        return processGroups.map((processGroup, i, list) => (
+        const sortedProcessGroups = orderBy(processGroups, ['suspicious', 'name'], ['desc', 'asc']);
+        return sortedProcessGroups.map((processGroup, i, list) => (
             <div
                 className={`px-3 pt-5 ${i === list.length - 1 ? 'pb-5' : ''}`}
                 key={processGroup.name}
@@ -112,7 +110,13 @@ class ProcessDetails extends Component {
     };
 
     render() {
-        return <div>{this.renderProcessDiscoveryCards()}</div>;
+        return (
+            <div>
+                <h3 className="border-b pb-2 mx-3 mt-5">Running Processes</h3>
+                {this.renderProcessDiscoveryCards()}
+                <ProcessSpecificationWhitelists />
+            </div>
+        );
     }
 }
 

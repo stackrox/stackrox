@@ -42,7 +42,7 @@ const RiskPage = ({
         }
     }
 
-    function updateSelectedDeployment(deployment) {
+    function updateSelectedDeployment({ deployment }) {
         const urlSuffix = deployment && deployment.id ? `/${deployment.id}` : '';
         history.push({
             pathname: `/main/risk${urlSuffix}`,
@@ -82,25 +82,28 @@ const RiskPage = ({
         }
 
         const content =
-            selectedDeployment && selectedDeployment.risk === undefined ? (
+            selectedDeployment && selectedDeployment.deployment.risk === undefined ? (
                 <Loader />
             ) : (
                 <Tabs headers={riskPanelTabs}>
                     <TabContent>
                         <div className="flex flex-1 flex-col pb-5">
-                            <RiskDetails risk={selectedDeployment.risk} />
+                            <RiskDetails risk={selectedDeployment.deployment.risk} />
                         </div>
                     </TabContent>
                     <TabContent>
                         <div className="flex flex-1 flex-col relative">
                             <div className="absolute w-full">
-                                <DeploymentDetails deployment={selectedDeployment} />
+                                <DeploymentDetails deployment={selectedDeployment.deployment} />
                             </div>
                         </div>
                     </TabContent>
                     <TabContent>
                         <div className="flex flex-1 flex-col relative">
-                            <ProcessDetails processGroup={processGroup} />
+                            <ProcessDetails
+                                processGroup={processGroup}
+                                deploymentId={selectedDeployment.deployment.id}
+                            />
                         </div>
                     </TabContent>
                 </Tabs>
@@ -108,7 +111,7 @@ const RiskPage = ({
 
         return (
             <Panel
-                header={selectedDeployment.name}
+                header={selectedDeployment.deployment.name}
                 className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
                 onClose={updateSelectedDeployment}
             >
@@ -149,9 +152,7 @@ const RiskPage = ({
 
 RiskPage.propTypes = {
     deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
-    selectedDeployment: PropTypes.shape({
-        id: PropTypes.string.isRequired
-    }),
+    selectedDeployment: PropTypes.shape({}),
     processGroup: PropTypes.shape({}),
     searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
     searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,

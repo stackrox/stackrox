@@ -3,9 +3,10 @@ import { normalize } from 'normalizr';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import axios from './instance';
 
-import { deployment as deploymentSchema } from './schemas';
+import { deployment as deploymentSchema, deploymentDetail } from './schemas';
 
-const deploymentsUrl = '/v1/deployments';
+const deploymentsUrl = '/v1/deploymentswithprocessinfo';
+const deploymentByIdUrl = '/v1/deployments';
 
 /**
  * Fetches list of registered deployments.
@@ -29,7 +30,7 @@ export function fetchDeployments(options) {
  */
 export function fetchDeployment(id) {
     if (!id) throw new Error('Deployment ID must be specified');
-    return axios
-        .get(`${deploymentsUrl}/${id}`)
-        .then(response => ({ response: normalize(response.data, deploymentSchema) }));
+    return axios.get(`${deploymentByIdUrl}/${id}`).then(response => ({
+        response: normalize({ deployment: response.data }, deploymentDetail)
+    }));
 }

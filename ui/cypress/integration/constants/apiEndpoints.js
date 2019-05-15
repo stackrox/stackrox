@@ -11,7 +11,8 @@ export const clusters = {
 };
 
 export const risks = {
-    riskyDeployments: 'v1/deployments*'
+    // The * at the end exists because sometimes we add ?query= at the end.
+    riskyDeployments: 'v1/deploymentswithprocessinfo*'
 };
 
 export const search = {

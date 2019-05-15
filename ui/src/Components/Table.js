@@ -95,6 +95,8 @@ class Table extends Component {
             useContext
             position="top"
             trigger="mouseenter"
+            animation="none"
+            duration={0}
             arrow
             html={headerTooltipContent}
             unmountHTMLWhenHide
