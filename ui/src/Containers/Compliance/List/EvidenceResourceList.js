@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import Raven from 'raven-js';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { COMPLIANCE_DATA_ON_NODES, COMPLIANCE_DATA_ON_DEPLOYMENTS } from 'queries/table';
@@ -7,6 +8,7 @@ import URLService from 'modules/URLService';
 import queryService from 'modules/queryService';
 import uniq from 'lodash/uniq';
 import upperCase from 'lodash/upperCase';
+import pluralize from 'pluralize';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -14,6 +16,7 @@ import Panel from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import entityTypes from 'constants/entityTypes';
+import { resourceLabels } from 'messages/common';
 import {
     nodesTableColumns,
     deploymentsTableColumns
@@ -93,6 +96,21 @@ const createTableData = (data, resourceType) => {
     };
 };
 
+const processNumResources = (data, resourceType) => {
+    try {
+        let key = '';
+        if (resourceType === entityTypes.DEPLOYMENT) {
+            key = 'deployments';
+        } else if (resourceType === entityTypes.NODE) {
+            key = 'nodes';
+        }
+        return data.results.reduce((acc, curr) => acc + curr[key].length, 0);
+    } catch (error) {
+        Raven.captureException(error);
+        return null;
+    }
+};
+
 const EvidenceResourceList = ({
     searchComponent,
     resourceType,
@@ -110,7 +128,8 @@ const EvidenceResourceList = ({
             {({ loading, data }) => {
                 if (loading) return <Loader />;
                 const tableData = createTableData(data, resourceType);
-                const header = `${tableData.numControls} Controls`;
+                const numResources = processNumResources(data, resourceType);
+                const header = `${numResources} ${pluralize(resourceLabels[resourceType])}`;
                 const headerComponents = (
                     <>
                         <div className="flex flex-1 justify-start">{searchComponent}</div>
