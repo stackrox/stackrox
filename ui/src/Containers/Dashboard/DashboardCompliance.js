@@ -122,7 +122,7 @@ class DashboardCompliance extends Component {
                         }}
                     >
                         {({ loading, data }) => {
-                            if (loading) return <Loader />;
+                            if (loading) return <Loader transparent />;
                             const results = this.processData(data);
                             if (!results.length) return this.renderScanButton();
                             return (

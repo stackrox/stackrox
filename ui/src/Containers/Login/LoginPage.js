@@ -167,8 +167,14 @@ class LoginPage extends Component {
     };
 
     render() {
+        const isDarkMode = localStorage.getItem('isDarkMode') === 'true';
+
         return (
-            <section className="flex flex-col items-center justify-center h-full bg-base-300">
+            <section
+                className={`flex flex-col items-center justify-center h-full ${
+                    isDarkMode ? 'bg-base-300' : 'bg-primary-800'
+                } `}
+            >
                 <div className="flex flex-col items-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative">
                     {this.renderAuthError()}
                 </div>

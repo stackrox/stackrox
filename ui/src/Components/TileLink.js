@@ -8,7 +8,7 @@ const TileLink = ({ value, caption, to, loading }) => {
     const { isDarkMode } = useTheme();
 
     const content = loading ? (
-        <Loader className="text-base-100" message="" />
+        <Loader className="text-base-100" message="" transparent />
     ) : (
         <>
             <div className="text-3xl tracking-widest" data-test-id="tile-link-value">

@@ -52,7 +52,7 @@ const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
             <div className="flex">
                 <GlobalSearchButton />
                 <CLIDownloadButton />
-                {process.env.NODE_ENV !== 'production' && <ThemeToggleButton />}
+                <ThemeToggleButton />
                 {renderNavBarMenu()}
             </div>
         </nav>
