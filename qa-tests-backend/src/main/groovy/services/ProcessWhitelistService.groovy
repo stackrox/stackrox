@@ -3,6 +3,8 @@ package services
 import io.stackrox.proto.api.v1.ProcessWhitelistServiceGrpc
 import io.stackrox.proto.api.v1.ProcessWhitelistServiceOuterClass
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass
+import io.stackrox.proto.storage.ProcessWhitelistOuterClass.ProcessWhitelistKey
+
 import util.Timer
 
 class ProcessWhitelistService extends BaseService {
@@ -46,6 +48,36 @@ class ProcessWhitelistService extends BaseService {
         }
     }
 
+    static List<ProcessWhitelistOuterClass.ProcessWhitelist> updateProcessWhitelists(
+            ProcessWhitelistKey[] keys,
+            String [] toBeAddedProcesses,
+            String[] toBeRemovedProcesses) {
+        try {
+            ProcessWhitelistServiceOuterClass.UpdateProcessWhitelistsRequest.Builder requestBuilder =
+                ProcessWhitelistServiceOuterClass.UpdateProcessWhitelistsRequest.newBuilder()
+            for ( ProcessWhitelistKey key : keys) {
+                requestBuilder.addKeys(key)
+            }
+            ProcessWhitelistOuterClass.WhitelistItemOrBuilder itemBuilder =
+                    ProcessWhitelistOuterClass.WhitelistItem.newBuilder()
+            for ( String processToBeAdded : toBeAddedProcesses) {
+                ProcessWhitelistOuterClass.WhitelistItem   item  =
+                        itemBuilder.setProcessName(processToBeAdded).build()
+                requestBuilder.addAddElements(item)
+            }
+
+            for ( String processToBeRemoved : toBeRemovedProcesses) {
+                ProcessWhitelistOuterClass.WhitelistItem   item  =
+                        itemBuilder.setProcessName(processToBeRemoved).build()
+                requestBuilder.addRemoveElements(item)
+            }
+            List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedLst = getProcessWhitelistService()
+                .updateProcessWhitelists(requestBuilder.build()).whitelistsList
+            return updatedLst
+    } catch (Exception e) {
+            println "Error updating process whitelists: ${e}"
+    }
+    }
     static boolean getWhitelistProcesses(ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request) {
         try {
             getProcessWhitelistService().getProcessWhitelist(request)

@@ -11,6 +11,7 @@ import groups.BAT
 
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass
 import objects.Deployment
+
 import org.apache.commons.lang.StringUtils
 import org.junit.Assume
 
@@ -27,6 +28,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_SOFTLOCK = "deploymentnginx-softlock"
     static final private String DEPLOYMENTNGINX_DELETE = "deploymentnginx-delete"
 
+    static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "deploymentnginx-removeprocess"
     static final private List<Deployment> DEPLOYMENTS =
             [
                     new Deployment()
@@ -64,6 +66,13 @@ class ProcessWhiteListsTest extends BaseSpecification {
                      .addAnnotation("test", "annotation")
                      .setEnv(["CLUSTER_NAME": "main"])
                      .addLabel("app", "test"),
+                    new Deployment()
+                          .setName(DEPLOYMENTNGINX_REMOVEPROCESS)
+                          .setImage("nginx:1.7.9")
+                          .addPort(22, "TCP")
+                          .addAnnotation("test", "annotation")
+                          .setEnv(["CLUSTER_NAME": "main"])
+                          .addLabel("app", "test"),
             ]
 
     def setupSpec() {
@@ -80,7 +89,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         //need to  delete whitelists for the container deployed after each test
     }
-
     @Unroll
     @Category(BAT)
     def "Verify  whitelist processes for the given key before and after locking "() {
@@ -115,10 +123,9 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         DEPLOYMENTNGINX    | "/usr/sbin/nginx"
     }
-
     @Unroll
     @Category(BAT)
-    def "Verify whitelist processes violations or no violations after resolving,whitelisting for the given key"() {
+    def "Verify whitelist process violation after resolve whitelist "() {
                /*
                     a)Lock the whitelists for the key
                     b)exec into the container and run a process
@@ -131,7 +138,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
                */
         Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
         when:
-        "get process whitelists is called for a key"
+        "exec into the container after locking whitelists and create a whitelist violation"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         String deploymentId = deployment.getDeploymentUid()
@@ -172,7 +179,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
             assert waitForViolation(containerName, "Unauthorized Process Execution", 90)
         }
         then:
-        "Verify for violation after removing the process from whitelists"
+        "Verify for violation or no violation after resolve/resolve and whitelist"
         List<AlertOuterClass.ListAlert> alertListAnother = AlertService
                  .getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
@@ -198,7 +205,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
     @Category(BAT)
     def "Verify  processes risk indicators for the given key after soft-lock "() {
         when:
-        "get process whitelists is called for a key"
+        "exec into the container and run a process and wait for soft lock to kick in"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         String deploymentId = deployment.getDeploymentUid()
@@ -211,6 +218,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         Thread.sleep(60000)
         orchestrator.execInContainer(deployment, "pwd")
         then:
+        "verify for suspicious process in risk indicator"
         DeploymentOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 60)
         assert (result != null)
         DeploymentOuterClass.Risk.Result.Factor factor =  result.factorsList.find { it.message.contains("pwd") }
@@ -249,6 +257,60 @@ class ProcessWhiteListsTest extends BaseSpecification {
         "Verify that all whitelists with that deployment ID have been deleted"
         def whitelistsDeleted = ProcessWhitelistService.waitForDeploymentWhitelistsDeleted(deploymentId)
         assert(whitelistsDeleted)
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify  removed whitelist process not getting added back to whitelist after rerun "() {
+        /*
+                1.run a process and verify if it exists in the whitelist
+                2.remove the process
+                3.rerun the process to verify it it does not get added to the whitelist
+         */
+        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
+        when:
+        "an added process is removed and whitelist is locked and the process is run"
+        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        assert deployment != null
+        def deploymentId = deployment.deploymentUid
+        def containerName = deploymentName
+
+        //Wait for whitelist to be created
+        def initialWhitelist = ProcessWhitelistService.getProcessWhitelist(deploymentId, containerName)
+        assert (initialWhitelist != null)
+
+        //Add the process to the whitelist
+        ProcessWhitelistOuterClass.ProcessWhitelistKey [] keys = [
+                new ProcessWhitelistOuterClass
+                .ProcessWhitelistKey().newBuilderForType().setContainerName(containerName)
+                .setDeploymentId(deploymentId).build(),
+        ]
+        String [] toBeAddedProcesses = ["pwd"]
+        String [] toBeRemovedProcesses = []
+        List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedList = ProcessWhitelistService
+                .updateProcessWhitelists(keys, toBeAddedProcesses, toBeRemovedProcesses)
+        assert ( updatedList!= null)
+        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+                getProcessWhitelist(deploymentId, containerName)
+        List<ProcessWhitelistOuterClass.WhitelistElement> elements = whitelist.elementsList
+        ProcessWhitelistOuterClass.WhitelistElement element = elements.find { it.element.processName.contains("pwd") }
+        assert ( element != null)
+
+        //Remove the process from the whitelist
+        toBeAddedProcesses = []
+        toBeRemovedProcesses = ["pwd"]
+        List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedListAfterRemoveProcess = ProcessWhitelistService
+                .updateProcessWhitelists(keys, toBeAddedProcesses, toBeRemovedProcesses)
+        assert ( updatedListAfterRemoveProcess!= null)
+        orchestrator.execInContainer(deployment, "pwd")
+        then:
+        "verify process is not added to the whitelist"
+        ProcessWhitelistOuterClass.ProcessWhitelist whitelistAfterReRun = ProcessWhitelistService.
+                getProcessWhitelist(deploymentId, containerName)
+        assert  ( whitelistAfterReRun.elementsList.find { it.element.processName.contains("pwd") } == null)
+        where:
+        deploymentName                                   | processName
+        DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
     }
