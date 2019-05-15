@@ -204,6 +204,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
     @Unroll
     @Category(BAT)
     def "Verify  processes risk indicators for the given key after soft-lock "() {
+        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
         when:
         "exec into the container and run a process and wait for soft lock to kick in"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }

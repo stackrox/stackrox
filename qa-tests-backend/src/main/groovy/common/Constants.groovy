@@ -6,7 +6,6 @@ class Constants {
     static final CHECK_CVES_IN_COMPLIANCE = false
     static final RUN_FLAKEY_TESTS = false
     static final RUN_PROCESS_WHITELIST_TESTS = true
-    static final RUN_SOFTLOCK_WHITELIST_TESTS = false
     static final Map<String, String> CSV_COLUMN_MAPPING = [
             "Standard" : "standard",
             "Cluster" : "cluster",
