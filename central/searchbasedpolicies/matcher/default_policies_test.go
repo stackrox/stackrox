@@ -20,14 +20,12 @@ import (
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
-	"github.com/stackrox/rox/central/searchbasedpolicies/fields"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/logging"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
@@ -38,10 +36,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 func TestDefaultPolicies(t *testing.T) {
@@ -81,7 +75,16 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	processSearcher, err := processIndicatorSearch.New(processStore, processIndexer)
 	suite.Require().NoError(err)
 	suite.processDataStore = processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
-	suite.matcherBuilder = NewBuilder(fields.NewRegistry(suite.processDataStore), deploymentMappings.OptionsMap)
+	suite.matcherBuilder = NewBuilder(
+		NewRegistry(
+			suite.processDataStore,
+			nil,
+			nil,
+			nil,
+			nil,
+		),
+		deploymentMappings.OptionsMap,
+	)
 
 	defaults.PoliciesPath = policies.Directory()
 

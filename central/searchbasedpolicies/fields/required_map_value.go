@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	requiredLabelQueryBuilder = builders.RequiredMapValueQueryBuilder{
+	// RequiredLabelQueryBuilder is a query builder for required labels on a deployment.
+	RequiredLabelQueryBuilder = builders.RequiredMapValueQueryBuilder{
 		FieldName:  "label",
 		FieldLabel: search.Label,
 		GetKeyValuePolicy: func(fields *storage.PolicyFields) *storage.KeyValuePolicy {
@@ -15,7 +16,8 @@ var (
 		},
 	}
 
-	requiredAnnotationQueryBuilder = builders.RequiredMapValueQueryBuilder{
+	// RequiredAnnotationQueryBuilder is a query builder for required annotations on a deployment.
+	RequiredAnnotationQueryBuilder = builders.RequiredMapValueQueryBuilder{
 		FieldName:  "annotation",
 		FieldLabel: search.Annotation,
 		GetKeyValuePolicy: func(fields *storage.PolicyFields) *storage.KeyValuePolicy {

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/image/index/mappings"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
-	"github.com/stackrox/rox/central/searchbasedpolicies/fields"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
@@ -30,7 +29,17 @@ func getPolicy(defaultPolicies []*storage.Policy, name string, t *testing.T) *st
 
 func TestDetector(t *testing.T) {
 	controller := gomock.NewController(t)
-	compilerWithoutProcessIndicators := detection.NewPolicyCompiler(matcher.NewBuilder(fields.NewRegistry(nil), mappings.OptionsMap))
+	compilerWithoutProcessIndicators := detection.NewPolicyCompiler(
+		matcher.NewBuilder(
+			matcher.NewRegistry(
+				nil,
+				nil,
+				nil,
+				nil,
+				nil),
+			mappings.OptionsMap,
+		),
+	)
 	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller), compilerWithoutProcessIndicators)
 	detector := NewDetector(policySet)
 

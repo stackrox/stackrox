@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	volumeQueryBuilder = builders.RegexQueryBuilder{
+	// VolumeQueryBuilder is a regex based query builder on the volumes mounted by a deployment.
+	VolumeQueryBuilder = builders.RegexQueryBuilder{
 		RegexFields: []builders.RegexField{
 			{
 				FieldLabel:     search.VolumeName,

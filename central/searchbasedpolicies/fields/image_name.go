@@ -6,7 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var imageNameQueryBuilder = builders.RegexQueryBuilder{
+// ImageNameQueryBuilder is a regex query builder on the name of an image a deployment uses.
+var ImageNameQueryBuilder = builders.RegexQueryBuilder{
 	RegexFields: []builders.RegexField{
 		{FieldLabel: search.ImageTag, FieldHumanName: "Image tag", RetrieveFieldValue: func(fields *storage.PolicyFields) string {
 			return fields.GetImageName().GetTag()

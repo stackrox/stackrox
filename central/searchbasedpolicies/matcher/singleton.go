@@ -1,29 +1,38 @@
 package matcher
 
 import (
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
 	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
-	"github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/searchbasedpolicies/fields"
+	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	once sync.Once
 
-	registry          fields.Registry
+	registry          Registry
 	deploymentBuilder Builder
 	imageBuilder      Builder
 )
 
 func intialize() {
-	registry = fields.NewRegistry(datastore.Singleton())
+	registry = NewRegistry(
+		processDataStore.Singleton(),
+		roleDataStore.Singleton(),
+		bindingDataStore.Singleton(),
+		serviceAccountDataStore.Singleton(),
+		clusterDataStore.Singleton(),
+	)
 	deploymentBuilder = NewBuilder(registry, deploymentMappings.OptionsMap)
 	imageBuilder = NewBuilder(registry, imageMappings.OptionsMap)
 }
 
 // RegistrySingleton returns the registry used by the singleton matcher builders.
-func RegistrySingleton() fields.Registry {
+func RegistrySingleton() Registry {
 	once.Do(intialize)
 	return registry
 }

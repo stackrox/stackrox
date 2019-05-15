@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	disallowedAnnotationQueryBuilder = builders.DisallowedMapValueQueryBuilder{
+	// DisallowedAnnotationQueryBuilder is a KeyValue query builder for disallowed annotations on deployments.
+	DisallowedAnnotationQueryBuilder = builders.DisallowedMapValueQueryBuilder{
 		FieldName:  "annotation",
 		FieldLabel: search.Annotation,
 		GetKeyValuePolicy: func(fields *storage.PolicyFields) *storage.KeyValuePolicy {

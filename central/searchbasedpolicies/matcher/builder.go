@@ -3,10 +3,10 @@ package matcher
 import (
 	"fmt"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
-	"github.com/stackrox/rox/central/searchbasedpolicies/fields"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -18,7 +18,7 @@ type Builder interface {
 }
 
 // NewBuilder returns a new MatcherBuilder instance using the input registry.
-func NewBuilder(registry fields.Registry, optionsMap search.OptionsMap) Builder {
+func NewBuilder(registry Registry, optionsMap search.OptionsMap) Builder {
 	return &builderImpl{
 		registry:   registry,
 		optionsMap: optionsMap,
@@ -26,12 +26,13 @@ func NewBuilder(registry fields.Registry, optionsMap search.OptionsMap) Builder 
 }
 
 type builderImpl struct {
-	registry   fields.Registry
+	registry   Registry
 	optionsMap search.OptionsMap
 }
 
 // ForPolicy returns a matcher for the given policy and options.
 func (mb *builderImpl) ForPolicy(policy *storage.Policy) (searchbasedpolicies.Matcher, error) {
+	log.Errorf("building %s", proto.MarshalTextString(policy))
 	if policy.GetName() == "" {
 		return nil, fmt.Errorf("policy %+v doesn't have a name", policy)
 	}

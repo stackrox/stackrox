@@ -64,113 +64,52 @@ func NewEvaluator(roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) 
 	}
 }
 
-type evaluator struct {
-	k8sroles    []*storage.K8SRole
-	k8sbindings []*storage.K8SRoleBinding
-	bindings    map[SubjectSet]*storage.K8SRole
-}
-
-// ForSubject returns the PolicyRules that apply to a subject based on the evaluator's roles and bindings.
-func (e *evaluator) ForSubject(subject *storage.Subject) PolicyRuleSet {
-	// Collect all of the rules for all of the roles that bind the deployment to a role.
-	policyRuleSet := NewPolicyRuleSet(CoreFields()...)
-	for subjectSet, role := range e.bindings {
-		if subjectSet.Contains(subject) {
-			policyRuleSet.Add(role.GetRules()...)
-		}
-	}
-	return policyRuleSet
-}
-
-// IsClusterAdmin returns true if the subject has cluster admin privs, false otherwise
-func (e *evaluator) IsClusterAdmin(subject *storage.Subject) bool {
-	clusterAdmins := getSubjectsGrantedClusterAdmin(e.k8sroles, e.k8sbindings)
-	for _, admin := range clusterAdmins {
-		if subjectsAreEqual(admin, subject) {
-			return true
-		}
-	}
-	return false
-}
-
-// RolesForSubject returns the roles assigned to the subject based on the evaluator's bindings
-func (e *evaluator) RolesForSubject(subject *storage.Subject) []*storage.K8SRole {
-	// Collect all of the rules for all of the roles that bind the deployment to a role.
-	roles := make([]*storage.K8SRole, 0)
-	for subjectSet, role := range e.bindings {
-		if subjectSet.Contains(subject) {
-			roles = append(roles, role)
-		}
-	}
-	return roles
-}
-
-// Static helper functions.
-///////////////////////////
-
-func subjectsAreEqual(subject1 *storage.Subject, subject2 *storage.Subject) bool {
-	return subject1.GetKind() == subject2.GetKind() &&
-		subject1.GetName() == subject2.GetName() &&
-		subject1.GetNamespace() == subject2.GetNamespace()
-}
-
-func getSubjectsGrantedClusterAdmin(roles []*storage.K8SRole, roleBindings []*storage.K8SRoleBinding) []*storage.Subject {
-	// Collect the id of cluster admin roles. Expected to be 1.
-	clusterAdminRoleIDs := set.NewStringSet()
+// MakeClusterEvaluator creates an evaluator for cluster level permissions from the given roles and bindings.
+func MakeClusterEvaluator(roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) Evaluator {
+	// Collect cluster roles.
+	var clusterRoles []*storage.K8SRole
 	for _, role := range roles {
-		if role.GetName() == clusterAdmin {
-			clusterAdminRoleIDs.Add(role.GetId())
-		} else if role.GetClusterRole() && grantsAllCoreAPIAccess(role) {
-			clusterAdminRoleIDs.Add(role.GetId())
+		if role.GetClusterRole() {
+			clusterRoles = append(clusterRoles, role)
 		}
 	}
-	if clusterAdminRoleIDs.Cardinality() == 0 {
-		return nil
-	}
 
-	// For every binding that binds to a cluster admin role, collects all of it's subjects.
-	subjectsWithClusterAdmin := NewSubjectSet()
-	for _, binding := range roleBindings {
-		if !IsDefaultRoleBinding(binding) && clusterAdminRoleIDs.Contains(binding.GetRoleId()) {
-			subjectsWithClusterAdmin.Add(binding.GetSubjects()...)
-		}
-	}
-	return subjectsWithClusterAdmin.ToSlice()
-}
-
-func grantsAllCoreAPIAccess(role *storage.K8SRole) bool {
-	ruleSet := NewPolicyRuleSet(CoreFields()...)
-	ruleSet.Add(role.GetRules()...)
-	return ruleSet.Grants(&storage.PolicyRule{
-		ApiGroups: []string{
-			"",
-		},
-		Resources: []string{
-			"*",
-		},
-		Verbs: []string{
-			"*",
-		},
-	})
-}
-
-func buildMap(roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) map[SubjectSet]*storage.K8SRole {
-	// Map role id to all of the subjects granted that role.
-	roleIDToSubjects := make(map[string]SubjectSet)
+	// Collect cluster role bindings.
+	var clusterBindings []*storage.K8SRoleBinding
 	for _, binding := range bindings {
-		if _, hasEntry := roleIDToSubjects[binding.GetRoleId()]; !hasEntry {
-			roleIDToSubjects[binding.GetRoleId()] = NewSubjectSet()
+		if binding.GetClusterRole() {
+			clusterBindings = append(clusterBindings, binding)
 		}
-		roleIDToSubjects[binding.GetRoleId()].Add(binding.GetSubjects()...)
+	}
+	return NewEvaluator(clusterRoles, clusterBindings)
+}
+
+// MakeNamespaceEvaluators creates an evaluator per namespace with a binding present.
+func MakeNamespaceEvaluators(roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) map[string]Evaluator {
+	// Collect cluster roles.
+	namespaces := set.NewStringSet()
+	for _, binding := range bindings {
+		namespaces.Add(binding.GetNamespace())
+		for _, subject := range binding.GetSubjects() {
+			namespaces.Add(subject.GetNamespace())
+		}
 	}
 
-	// Complete the map so that we can test subjects and get the role for it.
-	subjectsToRole := make(map[SubjectSet]*storage.K8SRole)
-	for _, role := range roles {
-		if subjectSet, hasEntry := roleIDToSubjects[role.GetId()]; hasEntry {
-			subjectsWithRole := subjectSet
-			subjectsToRole[subjectsWithRole] = role
+	evaluators := make(map[string]Evaluator)
+	for _, namespace := range namespaces.AsSlice() {
+		evaluators[namespace] = MakeNamespaceEvaluator(namespace, roles, bindings)
+	}
+	return evaluators
+}
+
+// MakeNamespaceEvaluator creates an evaluator for the given namespace with the given roles and bindings.
+func MakeNamespaceEvaluator(namespace string, roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) Evaluator {
+	// Collect role bindings.
+	var namespacedBindings []*storage.K8SRoleBinding
+	for _, binding := range bindings {
+		if binding.GetClusterRole() || binding.GetNamespace() == namespace {
+			namespacedBindings = append(namespacedBindings, binding)
 		}
 	}
-	return subjectsToRole
+	return NewEvaluator(roles, namespacedBindings)
 }

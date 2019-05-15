@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	portQueryBuilder = builders.RegexQueryBuilder{
+	// PortQueryBuilder is a regex query builder for the ports used in a deployment.
+	PortQueryBuilder = builders.RegexQueryBuilder{
 		RegexFields: []builders.RegexField{
 			{
 				FieldLabel:     search.Port,

@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	componentQueryBuilder = builders.RegexQueryBuilder{
+	// ComponentQueryBuilder is a regex query builder for the components of a deployments image.
+	ComponentQueryBuilder = builders.RegexQueryBuilder{
 		RegexFields: []builders.RegexField{
 			{
 				FieldLabel:     search.Component,

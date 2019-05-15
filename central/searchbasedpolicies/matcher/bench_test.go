@@ -1,4 +1,4 @@
-package search
+package matcher
 
 import (
 	"context"
@@ -14,8 +14,6 @@ import (
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
-	"github.com/stackrox/rox/central/searchbasedpolicies/fields"
-	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -98,7 +96,16 @@ func BenchmarkPolicies(b *testing.B) {
 			processDatastore, _, indexer := setup(b)
 			require.NoError(b, indexer.AddDeployments(getDeployments(dNum)))
 			require.NoError(b, processDatastore.AddProcessIndicators(context.TODO(), getProcesses(dNum, pNum)...))
-			matcherBuilder := matcher.NewBuilder(fields.NewRegistry(processDatastore), mappings.OptionsMap)
+			matcherBuilder := NewBuilder(
+				NewRegistry(
+					processDatastore,
+					nil,
+					nil,
+					nil,
+					nil,
+				),
+				mappings.OptionsMap,
+			)
 			searcher := search.WrapContextLessSearcher(indexer)
 			for _, p := range policies {
 				b.Run(fmt.Sprintf("%s %dd %dp", p.GetName(), dNum, pNum), func(b *testing.B) {

@@ -6,7 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var resourcePolicy = builders.NewDisjunctionQueryBuilder(
+// ResourcePolicy is a query builder for the resources configured for use by a deployment.
+var ResourcePolicy = builders.NewDisjunctionQueryBuilder(
 	builders.NewResourcePolicyBuilder(func(fields *storage.PolicyFields) *storage.NumericalPolicy {
 		return fields.GetContainerResourcePolicy().GetCpuResourceLimit()
 	}, search.CPUCoresLimit, "CPU resource limit"),
