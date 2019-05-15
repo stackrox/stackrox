@@ -51,9 +51,18 @@ func (c *backendImpl) RevokeToken(ctx context.Context, tokenID string) (bool, er
 	if t.Revoked {
 		return true, nil
 	}
+
 	expiry := protoconv.ConvertTimestampToTimeOrDefault(t.GetExpiration(), timeutil.Max)
+	exists, err := c.tokenStore.RevokeToken(ctx, tokenID)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
+		return false, nil
+	}
+
 	c.source.Revoke(tokenID, expiry)
-	return c.tokenStore.RevokeToken(ctx, tokenID)
+	return true, nil
 }
 
 func metadataFromTokenInfo(name string, info *tokens.TokenInfo) *storage.TokenMetadata {
