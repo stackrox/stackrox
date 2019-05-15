@@ -13,7 +13,8 @@ describe('Compliance dashboard page', () => {
         cy.wait(5000);
     });
 
-    it('should show the same amount of clusters between the Dashboard and List Page', () => {
+    // TODO(ROX-2232): Fix and re-enable
+    xit('should show the same amount of clusters between the Dashboard and List Page', () => {
         cy.get(selectors.dashboard.tileLinks.cluster.value)
             .invoke('text')
             .then(text => {
