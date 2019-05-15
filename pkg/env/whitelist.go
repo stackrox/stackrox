@@ -6,5 +6,5 @@ import (
 
 var (
 	// WhitelistGenerationDuration will set the duration for which a new whitelist remains unlocked
-	WhitelistGenerationDuration = registerDurationSetting("ROX_WHITELIST_GENERATION_DURATION", time.Minute*5)
+	WhitelistGenerationDuration = registerDurationSetting("ROX_WHITELIST_GENERATION_DURATION", time.Hour)
 )

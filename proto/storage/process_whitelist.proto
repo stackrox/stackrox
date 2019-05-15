@@ -9,7 +9,6 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
-// @protolock:skip
 message ProcessWhitelistKey {
     // The idea is for the keys to be flexible.
     // Only certain combinations of these will be supported.
@@ -17,7 +16,6 @@ message ProcessWhitelistKey {
     string container_name    = 2;
 }
 
-// @protolock:skip
 message ProcessWhitelist {
     string              id  = 1;
     ProcessWhitelistKey key = 2;
@@ -31,21 +29,18 @@ message ProcessWhitelist {
     google.protobuf.Timestamp last_update                = 7;
 }
 
-// @protolock:skip
 message WhitelistElement {
     WhitelistItem element = 1;
     bool          auto    = 2;
 }
 
-// @protolock:skip
 message WhitelistItem {
     oneof item {
         string process_name = 1 [(gogoproto.moretags) = "search:\"Process Name\""];
     }
 }
 
-// COntainerNameAndWhitelistStatus represents a cached result of process evaluation on a specific container name.
-// @protolock:skip
+// ContainerNameAndWhitelistStatus represents a cached result of process evaluation on a specific container name.
 message ContainerNameAndWhitelistStatus {
     enum WhitelistStatus {
         INVALID       = 0;
@@ -60,7 +55,6 @@ message ContainerNameAndWhitelistStatus {
 
 
 // ProcessWhitelistResults represent cached results of process whitelist evaluation.
-// @protolock:skip
 message ProcessWhitelistResults {
     string                                   deployment_id      = 1;
     repeated ContainerNameAndWhitelistStatus whitelist_statuses = 2;

@@ -10,14 +10,17 @@ var (
 	PerformDeploymentReconciliation = registerFeature("Reconciliation", "ROX_PERFORM_DEPLOYMENT_RECONCILIATION", true)
 
 	// K8sRBAC is used to enable k8s rbac collection and processing
+	// NB: When removing this feature flag, please also remove references to it in .circleci/config.yml
 	K8sRBAC = registerFeature("Enable k8s RBAC objects collection and processing", "ROX_K8S_RBAC", false)
 
 	// CentralTLSSecretLoader will read secrets from the orchestrator to configure TLS.
 	CentralTLSSecretLoader = registerFeature("Enable Central TLS secret loading from orchestrator", "ROX_CENTRAL_TLS", false)
 
 	// ProcessWhitelist will enable the process whitelist API
-	ProcessWhitelist = registerFeature("Enable Process Whitelist API", "ROX_PROCESS_WHITELIST", false)
+	// NB: When removing this feature flag, please also remove references to it in .circleci/config.yml
+	ProcessWhitelist = registerFeature("Enable Process Whitelist API", "ROX_PROCESS_WHITELIST", true)
 
 	// ScopedAccessControl controls whether scoped access control is enabled.
+	// NB: When removing this feature flag, please also remove references to it in .circleci/config.yml
 	ScopedAccessControl = registerFeature("Scoped Access Control", "ROX_SCOPED_ACCESS_CONTROL", false)
 )
