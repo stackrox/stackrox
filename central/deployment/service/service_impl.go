@@ -75,9 +75,14 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 		if err != nil {
 			return nil, err
 		}
+
+		var whitelistStatuses []*storage.ContainerNameAndWhitelistStatus
+		if whitelistResults != nil {
+			whitelistStatuses = whitelistResults.WhitelistStatuses
+		}
 		resp.Deployments = append(resp.Deployments, &v1.ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{
 			Deployment:        deployment,
-			WhitelistStatuses: whitelistResults.WhitelistStatuses,
+			WhitelistStatuses: whitelistStatuses,
 		})
 	}
 	return resp, nil
