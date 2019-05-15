@@ -33,6 +33,11 @@ spec:
         ports:
           - name: api
             containerPort: 8443
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /v1/ping
+            port: 8443
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         securityContext:
