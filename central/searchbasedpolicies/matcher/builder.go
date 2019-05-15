@@ -3,7 +3,6 @@ package matcher
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
@@ -32,7 +31,6 @@ type builderImpl struct {
 
 // ForPolicy returns a matcher for the given policy and options.
 func (mb *builderImpl) ForPolicy(policy *storage.Policy) (searchbasedpolicies.Matcher, error) {
-	log.Errorf("building %s", proto.MarshalTextString(policy))
 	if policy.GetName() == "" {
 		return nil, fmt.Errorf("policy %+v doesn't have a name", policy)
 	}
