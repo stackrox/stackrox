@@ -9,7 +9,7 @@ const ReduxToggleField = ({ name, disabled, reverse }) => {
     const label = <label className="form-switch-label" key={`{name}-label`} htmlFor={name} />;
 
     return (
-        <div className={`${classNames} mr-0 inline-block align-middle`}>
+        <div className={`${classNames} mr-0 inline-block align-middle h-6`}>
             <Field
                 key={name}
                 id={name}

@@ -40,6 +40,9 @@ class FieldGroupCards extends Component {
             if (field) fieldToAdd = field;
         });
         this.setState(prevState => ({ fields: prevState.fields.concat(fieldToAdd.jsonpath) }));
+        if (fieldToAdd.defaultValue !== undefined && fieldToAdd.defaultValue !== null) {
+            this.props.change(fieldToAdd.jsonpath, fieldToAdd.defaultValue);
+        }
     };
 
     removeField = jsonpath => {
@@ -89,7 +92,7 @@ class FieldGroupCards extends Component {
                             required={field.required}
                             onRemove={removeField}
                         >
-                            <Field key={field.jsonpath} field={field} />
+                            <Field field={field} />
                         </FormField>
                     );
                 })}

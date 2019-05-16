@@ -463,6 +463,7 @@ const policyConfigurationDescriptor = [
         type: 'toggle',
         required: false,
         default: false,
+        defaultValue: false,
         reverse: true
     },
     {
@@ -568,6 +569,7 @@ const policyConfigurationDescriptor = [
         type: 'toggle',
         required: false,
         default: false,
+        defaultValue: false,
         reverse: true
     }
 ];
