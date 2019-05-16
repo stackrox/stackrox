@@ -50,6 +50,7 @@ func NewRegistry(processIndicators processDataStore.DataStore,
 		builders.ReadOnlyRootFSQueryBuilder{},
 		builders.PortExposureQueryBuilder{},
 		builders.ProcessWhitelistingBuilder{},
+		builders.HostMountQueryBuilder{},
 	}
 	if features.K8sRBAC.Enabled() {
 		reg = append(reg, builders.K8sRBACQueryBuilder{
