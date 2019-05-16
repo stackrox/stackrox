@@ -130,6 +130,30 @@ func (k ResourceSet) IsInitialized() bool {
 	return k.underlying != nil
 }
 
+// Iter returns a range of elements you can iterate over.
+// Note that in most cases, this is actually slower than pulling out a slice
+// and ranging over that.
+// NOTE THAT YOU MUST DRAIN THE RETURNED CHANNEL, OR THE SET WILL BE DEADLOCKED FOREVER.
+func (k ResourceSet) Iter() <-chan Resource {
+	ch := make(chan Resource)
+	if k.underlying != nil {
+		go func() {
+			for elem := range k.underlying.Iter() {
+				ch <- elem.(Resource)
+			}
+			close(ch)
+		}()
+	} else {
+		close(ch)
+	}
+	return ch
+}
+
+// Freeze returns a new, frozen version of the set.
+func (k ResourceSet) Freeze() FrozenResourceSet {
+	return NewFrozenResourceSet(k.AsSlice()...)
+}
+
 // NewResourceSet returns a new set with the given key type.
 func NewResourceSet(initial ...Resource) ResourceSet {
 	k := ResourceSet{underlying: mapset.NewSet()}
@@ -154,4 +178,72 @@ func (s *sortableresourceSlice) Less(i, j int) bool {
 
 func (s *sortableresourceSlice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
+}
+
+// A FrozenResourceSet is a frozen set of Resource elements, which
+// cannot be modified after creation. This allows users to use it as if it were
+// a "const" data structure, and also makes it slightly more optimal since
+// we don't have to lock accesses to it.
+type FrozenResourceSet struct {
+	underlying map[Resource]struct{}
+}
+
+// NewFrozenResourceSetFromChan returns a new frozen set from the provided channel.
+// It drains the channel.
+// This can be useful to avoid unnecessary slice allocations.
+func NewFrozenResourceSetFromChan(elementC <-chan Resource) FrozenResourceSet {
+	underlying := make(map[Resource]struct{})
+	for elem := range elementC {
+		underlying[elem] = struct{}{}
+	}
+	return FrozenResourceSet{
+		underlying: underlying,
+	}
+}
+
+// NewFrozenResourceSet returns a new frozen set with the provided elements.
+func NewFrozenResourceSet(elements ...Resource) FrozenResourceSet {
+	underlying := make(map[Resource]struct{}, len(elements))
+	for _, elem := range elements {
+		underlying[elem] = struct{}{}
+	}
+	return FrozenResourceSet{
+		underlying: underlying,
+	}
+}
+
+// Contains returns whether the set contains the element.
+func (k FrozenResourceSet) Contains(elem Resource) bool {
+	_, ok := k.underlying[elem]
+	return ok
+}
+
+// Cardinality returns the cardinality of the set.
+func (k FrozenResourceSet) Cardinality() int {
+	return len(k.underlying)
+}
+
+// AsSlice returns the elements of the set. The order is unspecified.
+func (k FrozenResourceSet) AsSlice() []Resource {
+	if len(k.underlying) == 0 {
+		return nil
+	}
+	slice := make([]Resource, 0, len(k.underlying))
+	for elem := range k.underlying {
+		slice = append(slice, elem)
+	}
+	return slice
+}
+
+// AsSortedSlice returns the elements of the set as a sorted slice.
+func (k FrozenResourceSet) AsSortedSlice(less func(i, j Resource) bool) []Resource {
+	slice := k.AsSlice()
+	if len(slice) < 2 {
+		return slice
+	}
+	// Since we're generating the code, we might as well use sort.Sort
+	// and avoid paying the reflection penalty of sort.Slice.
+	sortable := &sortableresourceSlice{slice: slice, less: less}
+	sort.Sort(sortable)
+	return sortable.slice
 }

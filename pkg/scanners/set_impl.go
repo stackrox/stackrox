@@ -16,7 +16,7 @@ type setImpl struct {
 	integrations map[string]types.ImageScanner
 }
 
-var registryDependentScanners = set.NewStringSet("clair", "clairify")
+var registryDependentScanners = set.NewFrozenStringSet("clair", "clairify")
 
 // GetAll returns the set of integrations that are active.
 func (e *setImpl) GetAll() []types.ImageScanner {

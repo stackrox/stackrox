@@ -5,12 +5,8 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 )
 
-var (
-	namespaceSet = kubernetes.GetSystemNamespaceSet()
-)
-
 func isSystemDeployment(deployment *storage.Deployment) bool {
-	return namespaceSet.Contains(deployment.GetNamespace())
+	return kubernetes.SystemNamespaceSet.Contains(deployment.GetNamespace())
 }
 
 func labelSelectorForDeployment(deployment *storage.Deployment) *storage.LabelSelector {

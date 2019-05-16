@@ -20,7 +20,7 @@ const (
 
 var (
 	// These are proto types returned from Stores which are not stored there, and so don't have to be in storage.
-	whitelist = set.NewStringSet(
+	whitelist = set.NewFrozenStringSet(
 		"v1.SearchResult",
 		"v1.HostResults",
 	)

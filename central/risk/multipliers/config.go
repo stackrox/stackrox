@@ -87,7 +87,7 @@ func (s *serviceConfigMultiplier) scoreSecrets(deployment *storage.Deployment) s
 	return ""
 }
 
-var relevantCapAdds = set.NewStringSet(
+var relevantCapAdds = set.NewFrozenStringSet(
 	"ALL",
 	"CAP_SYS_ADMIN",
 	"CAP_NET_ADMIN",

@@ -26,8 +26,8 @@ var (
 
 	// whitelist contains functions from the standard library where we're okay with not
 	// checking returned errors.
-	whitelist = map[string]set.StringSet{
-		"fmt": set.NewStringSet(
+	whitelist = map[string]set.FrozenStringSet{
+		"fmt": set.NewFrozenStringSet(
 			"Println",
 			"Printf",
 			"Fprint",

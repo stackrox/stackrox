@@ -33,7 +33,7 @@ var (
 		Replicas: 0,
 	}
 
-	deploymentResourceSet = set.NewStringSet(
+	deploymentResourceSet = set.NewFrozenStringSet(
 		Deployment,
 		DaemonSet,
 		Pod,

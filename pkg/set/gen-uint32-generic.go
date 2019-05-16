@@ -130,6 +130,30 @@ func (k Uint32Set) IsInitialized() bool {
 	return k.underlying != nil
 }
 
+// Iter returns a range of elements you can iterate over.
+// Note that in most cases, this is actually slower than pulling out a slice
+// and ranging over that.
+// NOTE THAT YOU MUST DRAIN THE RETURNED CHANNEL, OR THE SET WILL BE DEADLOCKED FOREVER.
+func (k Uint32Set) Iter() <-chan uint32 {
+	ch := make(chan uint32)
+	if k.underlying != nil {
+		go func() {
+			for elem := range k.underlying.Iter() {
+				ch <- elem.(uint32)
+			}
+			close(ch)
+		}()
+	} else {
+		close(ch)
+	}
+	return ch
+}
+
+// Freeze returns a new, frozen version of the set.
+func (k Uint32Set) Freeze() FrozenUint32Set {
+	return NewFrozenUint32Set(k.AsSlice()...)
+}
+
 // NewUint32Set returns a new set with the given key type.
 func NewUint32Set(initial ...uint32) Uint32Set {
 	k := Uint32Set{underlying: mapset.NewSet()}
@@ -154,4 +178,72 @@ func (s *sortableuint32Slice) Less(i, j int) bool {
 
 func (s *sortableuint32Slice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
+}
+
+// A FrozenUint32Set is a frozen set of uint32 elements, which
+// cannot be modified after creation. This allows users to use it as if it were
+// a "const" data structure, and also makes it slightly more optimal since
+// we don't have to lock accesses to it.
+type FrozenUint32Set struct {
+	underlying map[uint32]struct{}
+}
+
+// NewFrozenUint32SetFromChan returns a new frozen set from the provided channel.
+// It drains the channel.
+// This can be useful to avoid unnecessary slice allocations.
+func NewFrozenUint32SetFromChan(elementC <-chan uint32) FrozenUint32Set {
+	underlying := make(map[uint32]struct{})
+	for elem := range elementC {
+		underlying[elem] = struct{}{}
+	}
+	return FrozenUint32Set{
+		underlying: underlying,
+	}
+}
+
+// NewFrozenUint32Set returns a new frozen set with the provided elements.
+func NewFrozenUint32Set(elements ...uint32) FrozenUint32Set {
+	underlying := make(map[uint32]struct{}, len(elements))
+	for _, elem := range elements {
+		underlying[elem] = struct{}{}
+	}
+	return FrozenUint32Set{
+		underlying: underlying,
+	}
+}
+
+// Contains returns whether the set contains the element.
+func (k FrozenUint32Set) Contains(elem uint32) bool {
+	_, ok := k.underlying[elem]
+	return ok
+}
+
+// Cardinality returns the cardinality of the set.
+func (k FrozenUint32Set) Cardinality() int {
+	return len(k.underlying)
+}
+
+// AsSlice returns the elements of the set. The order is unspecified.
+func (k FrozenUint32Set) AsSlice() []uint32 {
+	if len(k.underlying) == 0 {
+		return nil
+	}
+	slice := make([]uint32, 0, len(k.underlying))
+	for elem := range k.underlying {
+		slice = append(slice, elem)
+	}
+	return slice
+}
+
+// AsSortedSlice returns the elements of the set as a sorted slice.
+func (k FrozenUint32Set) AsSortedSlice(less func(i, j uint32) bool) []uint32 {
+	slice := k.AsSlice()
+	if len(slice) < 2 {
+		return slice
+	}
+	// Since we're generating the code, we might as well use sort.Sort
+	// and avoid paying the reflection penalty of sort.Slice.
+	sortable := &sortableuint32Slice{slice: slice, less: less}
+	sort.Sort(sortable)
+	return sortable.slice
 }

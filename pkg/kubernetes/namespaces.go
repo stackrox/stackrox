@@ -3,7 +3,8 @@ package kubernetes
 import "github.com/stackrox/rox/pkg/set"
 
 var (
-	systemNamespaceSet = []string{
+	// SystemNamespaceSet is a frozen set of system-specific namespaces in different orchestrators.
+	SystemNamespaceSet = set.NewFrozenStringSet(
 		"kube-system",
 		"kube-public",
 
@@ -23,10 +24,5 @@ var (
 		"openshift-sdn",
 		"openshift-template-service-broker",
 		"openshift-web-console",
-	}
+	)
 )
-
-// GetSystemNamespaceSet returns all the namespaces we know are for system services
-func GetSystemNamespaceSet() set.StringSet {
-	return set.NewStringSet(systemNamespaceSet...)
-}

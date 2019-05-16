@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	allowedCNs = set.NewStringSet(
+	allowedCNs = set.NewFrozenStringSet(
 		"metadata.azure.com",
 		"metadata.azure.us",
 		"metadata.azure.cn",
@@ -52,11 +52,6 @@ func getAttestedVMID(ctx context.Context) (string, error) {
 		return "", err
 	}
 	req = req.WithContext(ctx)
-
-	if err != nil {
-		errorhelpers.PanicOnDevelopment(err)
-		return "", err
-	}
 
 	// It would be nice to add the nonce here, but that doesn't work. It will just be ignored, even
 	// if you just run the example `curl` command line from

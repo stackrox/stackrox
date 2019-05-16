@@ -95,7 +95,7 @@ func AdministratorUsersPresent(ctx framework.ComplianceContext) {
 	framework.Pass(ctx, "No shared administrator USERs found.")
 }
 
-var adminNames = setPkg.NewStringSet("admin", "administrator", "root")
+var adminNames = setPkg.NewFrozenStringSet("admin", "administrator", "root")
 
 // CheckDeploymentsDoNotHaveClusterAccess checks that no deployments are launched with effective cluster admin access.
 func CheckDeploymentsDoNotHaveClusterAccess(ctx framework.ComplianceContext, pr *storage.PolicyRule) {

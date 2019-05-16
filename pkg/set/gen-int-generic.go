@@ -130,6 +130,30 @@ func (k IntSet) IsInitialized() bool {
 	return k.underlying != nil
 }
 
+// Iter returns a range of elements you can iterate over.
+// Note that in most cases, this is actually slower than pulling out a slice
+// and ranging over that.
+// NOTE THAT YOU MUST DRAIN THE RETURNED CHANNEL, OR THE SET WILL BE DEADLOCKED FOREVER.
+func (k IntSet) Iter() <-chan int {
+	ch := make(chan int)
+	if k.underlying != nil {
+		go func() {
+			for elem := range k.underlying.Iter() {
+				ch <- elem.(int)
+			}
+			close(ch)
+		}()
+	} else {
+		close(ch)
+	}
+	return ch
+}
+
+// Freeze returns a new, frozen version of the set.
+func (k IntSet) Freeze() FrozenIntSet {
+	return NewFrozenIntSet(k.AsSlice()...)
+}
+
 // NewIntSet returns a new set with the given key type.
 func NewIntSet(initial ...int) IntSet {
 	k := IntSet{underlying: mapset.NewSet()}
@@ -154,4 +178,72 @@ func (s *sortableintSlice) Less(i, j int) bool {
 
 func (s *sortableintSlice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
+}
+
+// A FrozenIntSet is a frozen set of int elements, which
+// cannot be modified after creation. This allows users to use it as if it were
+// a "const" data structure, and also makes it slightly more optimal since
+// we don't have to lock accesses to it.
+type FrozenIntSet struct {
+	underlying map[int]struct{}
+}
+
+// NewFrozenIntSetFromChan returns a new frozen set from the provided channel.
+// It drains the channel.
+// This can be useful to avoid unnecessary slice allocations.
+func NewFrozenIntSetFromChan(elementC <-chan int) FrozenIntSet {
+	underlying := make(map[int]struct{})
+	for elem := range elementC {
+		underlying[elem] = struct{}{}
+	}
+	return FrozenIntSet{
+		underlying: underlying,
+	}
+}
+
+// NewFrozenIntSet returns a new frozen set with the provided elements.
+func NewFrozenIntSet(elements ...int) FrozenIntSet {
+	underlying := make(map[int]struct{}, len(elements))
+	for _, elem := range elements {
+		underlying[elem] = struct{}{}
+	}
+	return FrozenIntSet{
+		underlying: underlying,
+	}
+}
+
+// Contains returns whether the set contains the element.
+func (k FrozenIntSet) Contains(elem int) bool {
+	_, ok := k.underlying[elem]
+	return ok
+}
+
+// Cardinality returns the cardinality of the set.
+func (k FrozenIntSet) Cardinality() int {
+	return len(k.underlying)
+}
+
+// AsSlice returns the elements of the set. The order is unspecified.
+func (k FrozenIntSet) AsSlice() []int {
+	if len(k.underlying) == 0 {
+		return nil
+	}
+	slice := make([]int, 0, len(k.underlying))
+	for elem := range k.underlying {
+		slice = append(slice, elem)
+	}
+	return slice
+}
+
+// AsSortedSlice returns the elements of the set as a sorted slice.
+func (k FrozenIntSet) AsSortedSlice(less func(i, j int) bool) []int {
+	slice := k.AsSlice()
+	if len(slice) < 2 {
+		return slice
+	}
+	// Since we're generating the code, we might as well use sort.Sort
+	// and avoid paying the reflection penalty of sort.Slice.
+	sortable := &sortableintSlice{slice: slice, less: less}
+	sort.Sort(sortable)
+	return sortable.slice
 }

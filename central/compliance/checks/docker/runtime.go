@@ -321,7 +321,7 @@ func selinux(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	}
 }
 
-var sensitiveMounts = set.NewStringSet(
+var sensitiveMounts = set.NewFrozenStringSet(
 	"/",
 	"/boot",
 	"/dev",

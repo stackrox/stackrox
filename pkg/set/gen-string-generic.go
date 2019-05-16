@@ -130,6 +130,30 @@ func (k StringSet) IsInitialized() bool {
 	return k.underlying != nil
 }
 
+// Iter returns a range of elements you can iterate over.
+// Note that in most cases, this is actually slower than pulling out a slice
+// and ranging over that.
+// NOTE THAT YOU MUST DRAIN THE RETURNED CHANNEL, OR THE SET WILL BE DEADLOCKED FOREVER.
+func (k StringSet) Iter() <-chan string {
+	ch := make(chan string)
+	if k.underlying != nil {
+		go func() {
+			for elem := range k.underlying.Iter() {
+				ch <- elem.(string)
+			}
+			close(ch)
+		}()
+	} else {
+		close(ch)
+	}
+	return ch
+}
+
+// Freeze returns a new, frozen version of the set.
+func (k StringSet) Freeze() FrozenStringSet {
+	return NewFrozenStringSet(k.AsSlice()...)
+}
+
 // NewStringSet returns a new set with the given key type.
 func NewStringSet(initial ...string) StringSet {
 	k := StringSet{underlying: mapset.NewSet()}
@@ -154,4 +178,72 @@ func (s *sortablestringSlice) Less(i, j int) bool {
 
 func (s *sortablestringSlice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
+}
+
+// A FrozenStringSet is a frozen set of string elements, which
+// cannot be modified after creation. This allows users to use it as if it were
+// a "const" data structure, and also makes it slightly more optimal since
+// we don't have to lock accesses to it.
+type FrozenStringSet struct {
+	underlying map[string]struct{}
+}
+
+// NewFrozenStringSetFromChan returns a new frozen set from the provided channel.
+// It drains the channel.
+// This can be useful to avoid unnecessary slice allocations.
+func NewFrozenStringSetFromChan(elementC <-chan string) FrozenStringSet {
+	underlying := make(map[string]struct{})
+	for elem := range elementC {
+		underlying[elem] = struct{}{}
+	}
+	return FrozenStringSet{
+		underlying: underlying,
+	}
+}
+
+// NewFrozenStringSet returns a new frozen set with the provided elements.
+func NewFrozenStringSet(elements ...string) FrozenStringSet {
+	underlying := make(map[string]struct{}, len(elements))
+	for _, elem := range elements {
+		underlying[elem] = struct{}{}
+	}
+	return FrozenStringSet{
+		underlying: underlying,
+	}
+}
+
+// Contains returns whether the set contains the element.
+func (k FrozenStringSet) Contains(elem string) bool {
+	_, ok := k.underlying[elem]
+	return ok
+}
+
+// Cardinality returns the cardinality of the set.
+func (k FrozenStringSet) Cardinality() int {
+	return len(k.underlying)
+}
+
+// AsSlice returns the elements of the set. The order is unspecified.
+func (k FrozenStringSet) AsSlice() []string {
+	if len(k.underlying) == 0 {
+		return nil
+	}
+	slice := make([]string, 0, len(k.underlying))
+	for elem := range k.underlying {
+		slice = append(slice, elem)
+	}
+	return slice
+}
+
+// AsSortedSlice returns the elements of the set as a sorted slice.
+func (k FrozenStringSet) AsSortedSlice(less func(i, j string) bool) []string {
+	slice := k.AsSlice()
+	if len(slice) < 2 {
+		return slice
+	}
+	// Since we're generating the code, we might as well use sort.Sort
+	// and avoid paying the reflection penalty of sort.Slice.
+	sortable := &sortablestringSlice{slice: slice, less: less}
+	sort.Sort(sortable)
+	return sortable.slice
 }
