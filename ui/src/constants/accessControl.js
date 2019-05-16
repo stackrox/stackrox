@@ -65,6 +65,7 @@ export const defaultPermissions = {
     ImageIntegration: NO_ACCESS,
     ImbuedLogs: NO_ACCESS,
     Indicator: NO_ACCESS,
+    Licenses: NO_ACCESS,
     Node: NO_ACCESS,
     Notifier: NO_ACCESS,
     NetworkPolicy: NO_ACCESS,
