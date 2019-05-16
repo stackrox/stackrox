@@ -208,7 +208,9 @@ class ViolationsPage extends Component {
                         <Tooltip
                             placement="top"
                             mouseLeaveDelay={0}
-                            overlay={<div>Whitelist and resolve</div>}
+                            overlay={
+                                <div>Resolve violation and add all processes to whitelist</div>
+                            }
                             overlayClassName="pointer-events-none"
                         >
                             <button
@@ -217,7 +219,7 @@ class ViolationsPage extends Component {
                                 className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
                                 onClick={this.resolveAlertHandler(alert.id, true)}
                             >
-                                <Icon.BellOff className="mt-1 h-4 w-4" />
+                                <Icon.ShieldOff className="mt-1 h-4 w-4" />
                             </button>
                         </Tooltip>
                         <Tooltip
