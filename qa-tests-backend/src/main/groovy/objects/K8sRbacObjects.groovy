@@ -21,6 +21,7 @@ class K8sPolicyRule {
 class K8sRoleBinding  {
     def name
     def namespace
+    def clusterBinding = false
     Map<String, String> labels = [:]
     Map<String, String> annotations = [:]
     List<K8sSubject> subjects = []
@@ -29,13 +30,14 @@ class K8sRoleBinding  {
     K8sRoleBinding() {
     }
 
-    K8sRoleBinding(K8sRole role, List<K8sSubject> subjects = []) {
+    K8sRoleBinding(K8sRole role, List<K8sSubject> subjects = [], boolean clusterScope) {
         this.name = role.name
         this.namespace = role.namespace
         this.labels = role.labels
         this.annotations = role.annotations
         this.roleRef = role
         this.subjects = subjects
+        this.clusterBinding = clusterScope
     }
 }
 

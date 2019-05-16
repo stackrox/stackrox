@@ -68,6 +68,7 @@ class K8sRbacTest extends BaseSpecification {
         stackroxSAs.size() == orchestratorSAs.size()
         for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
             def sa = s.serviceAccount
+
             println "Looking for SR Service Account: ${sa}"
             assert orchestratorSAs.find {
                 it.name == sa.name &&
@@ -104,6 +105,12 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
 
+        orchestrator.createRole(NEW_ROLE)
+        assert RbacService.waitForRole(NEW_ROLE)
+
+        orchestrator.createRoleBinding(NEW_ROLE_BINDING_ROLE_REF)
+        assert RbacService.waitForRoleBinding(NEW_ROLE_BINDING_ROLE_REF)
+
         expect:
         "SR should have the service account and its relationship to the deployment"
         def stackroxSAs = ServiceAccountService.getServiceAccounts()
@@ -112,6 +119,9 @@ class K8sRbacTest extends BaseSpecification {
             if ( sa.name == NEW_SA.name && sa.namespace == NEW_SA.namespace ) {
                 assert(s.deploymentRelationshipsCount == 1)
                 assert(s.deploymentRelationshipsList[0].name == DEPLOYMENT_NAME)
+                assert(s.clusterRolesCount == 0)
+                assert(s.scopedRolesCount == 1)
+                assert(s.scopedRolesList[0].getRoles(0).name == ROLE_NAME)
             }
         }
 
