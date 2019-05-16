@@ -5,21 +5,22 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/docker/client"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/time/rate"
 )
 
-const timeout = 30 * time.Second
+const (
+	timeout = 30 * time.Second
+)
 
 var (
 	pathsForDockerSocket = []string{
@@ -29,16 +30,13 @@ var (
 
 	log = logging.LoggerForModule()
 
-	dockerRateLimiter = rate.NewLimiter(rate.Every(50*time.Millisecond), 1)
-)
+	dockerRateLimiter = rate.NewLimiter(rate.Every(10*time.Millisecond), 1)
 
-func marshalAndUnmarshal(in, out interface{}) error {
-	bytes, err := json.Marshal(in)
-	if err != nil {
-		return err
+	// filter out all the containers with these labels
+	whiteListContainersWithLabels = map[string]string{
+		"com.stackrox.io/service": "compliance", // Ref: sensor/common/compliance/command_handler_impl.go:189
 	}
-	return json.Unmarshal(bytes, out)
-}
+)
 
 func getContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), timeout)
@@ -54,7 +52,7 @@ func checkClient(c *client.Client) error {
 func getClient() (*client.Client, error) {
 	errorList := errorhelpers.NewErrorList("Docker client")
 	for _, p := range pathsForDockerSocket {
-		log.Infof("Trying to create client with: %s", p)
+		log.Infof("Trying to create client with path %q", p)
 		client, err := docker.NewClientWithPath(p)
 		if err != nil {
 			errorList.AddError(err)
@@ -64,14 +62,15 @@ func getClient() (*client.Client, error) {
 			errorList.AddError(err)
 			continue
 		}
+		log.Infof("Successfully created docker client with path %q", p)
 		return client, nil
 	}
 	return nil, errorList.ToError()
 }
 
 // GetDockerData returns the marshaled JSON from scraping Docker
-func GetDockerData(whiteListContainersWithLabels map[string]string) (*compliance.GZIPDataChunk, error) {
-	var dockerData docker.Data
+func GetDockerData() (*compliance.GZIPDataChunk, error) {
+	var dockerData internalTypes.Data
 
 	client, err := getClient()
 	if err != nil {
@@ -83,7 +82,7 @@ func GetDockerData(whiteListContainersWithLabels map[string]string) (*compliance
 		return nil, err
 	}
 
-	dockerData.Containers, err = getContainers(client, whiteListContainersWithLabels)
+	dockerData.Containers, err = getContainers(client)
 	if err != nil {
 		return nil, err
 	}
@@ -122,31 +121,44 @@ func getInfo(c *client.Client) (types.Info, error) {
 	return c.Info(ctx)
 }
 
-func inspectContainer(client *client.Client, id string) (types.ContainerJSON, error) {
+func inspectContainer(client *client.Client, id string) (*internalTypes.ContainerJSON, error) {
 	ctx, cancel := getContext()
 	defer cancel()
-	return client.ContainerInspect(ctx, id)
+
+	return client.ContainerInspect(ctx, id, false)
 }
 
-func getContainers(c *client.Client, whiteListContainersWithLabels map[string]string) ([]docker.ContainerJSON, error) {
+func containerMatchesWhitelist(container *internalTypes.ContainerList) bool {
+	for k, v := range whiteListContainersWithLabels {
+		if container.Labels[k] == v {
+			return true
+		}
+	}
+	return false
+}
+
+func getContainers(c *client.Client) ([]internalTypes.ContainerJSON, error) {
 	ctx, cancel := getContext()
 	defer cancel()
 
-	if err := dockerRateLimiter.Wait(context.Background()); err != nil {
-		return nil, err
-	}
-	filterArgs := filters.NewArgs()
-	for key, val := range whiteListContainersWithLabels {
-		keyVal := fmt.Sprintf("%s=%s", key, val)
-		filterArgs.Add("label", keyVal)
-	}
-	containerList, err := c.ContainerList(ctx, types.ContainerListOptions{Filters: filterArgs})
+	containerList, err := c.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	containers := make([]docker.ContainerJSON, 0, len(containerList))
-	for _, container := range containerList {
+	log.Infof("Listed %d containers", len(containerList))
+	segmentSize := len(containerList) / 10
+	containers := make([]internalTypes.ContainerJSON, 0, len(containerList))
+	for i, container := range containerList {
+		if err := dockerRateLimiter.Wait(context.Background()); err != nil {
+			return nil, err
+		}
+		if i != 0 && i%segmentSize == 0 {
+			log.Infof("Processed %d/%d containers", i, len(containerList))
+		}
+		if containerMatchesWhitelist(container) {
+			continue
+		}
 		containerJSON, err := inspectContainer(c, container.ID)
 		if client.IsErrContainerNotFound(err) {
 			continue
@@ -154,13 +166,9 @@ func getContainers(c *client.Client, whiteListContainersWithLabels map[string]st
 		if err != nil {
 			return nil, err
 		}
-
-		var containerJSONType docker.ContainerJSON
-		if err := marshalAndUnmarshal(&containerJSON, &containerJSONType); err != nil {
-			return nil, err
-		}
-		containers = append(containers, containerJSONType)
+		containers = append(containers, *containerJSON)
 	}
+	log.Infof("Successfully listed all containers")
 	return containers, nil
 }
 
@@ -170,14 +178,13 @@ func getImageHistory(c *client.Client, id string) ([]image.HistoryResponseItem, 
 	return c.ImageHistory(ctx, id)
 }
 
-func inspectImage(c *client.Client, id string) (types.ImageInspect, error) {
+func inspectImage(c *client.Client, id string) (*internalTypes.ImageInspect, error) {
 	ctx, cancel := getContext()
 	defer cancel()
-	i, _, err := c.ImageInspectWithRaw(ctx, id)
-	return i, err
+	return c.ImageInspect(ctx, id)
 }
 
-func getImages(c *client.Client) ([]docker.ImageWrap, error) {
+func getImages(c *client.Client) ([]internalTypes.ImageWrap, error) {
 	ctx, cancel := getContext()
 	defer cancel()
 
@@ -187,12 +194,18 @@ func getImages(c *client.Client) ([]docker.ImageWrap, error) {
 		return nil, err
 	}
 
-	images := make([]docker.ImageWrap, 0, len(imageList))
-	for _, i := range imageList {
+	log.Infof("Listed %d images", len(imageList))
+	segmentSize := len(imageList) / 10
+
+	images := make([]internalTypes.ImageWrap, 0, len(imageList))
+	for i, img := range imageList {
+		if i != 0 && i%segmentSize == 0 {
+			log.Infof("Processed %d/%d containers", i, len(imageList))
+		}
 		if err := dockerRateLimiter.Wait(context.Background()); err != nil {
 			return nil, err
 		}
-		image, err := inspectImage(c, i.ID)
+		image, err := inspectImage(c, img.ID)
 		if client.IsErrImageNotFound(err) {
 			continue
 		}
@@ -200,27 +213,20 @@ func getImages(c *client.Client) ([]docker.ImageWrap, error) {
 			return nil, err
 		}
 
-		histories, err := getImageHistory(c, i.ID)
+		histories, err := getImageHistory(c, img.ID)
 		if client.IsErrImageNotFound(err) {
 			continue
 		}
 		if err != nil {
 			return nil, err
 		}
-
-		var imageType docker.ImageInspect
-		if err := marshalAndUnmarshal(&image, &imageType); err != nil {
-			return nil, err
-		}
-
-		images = append(images, docker.ImageWrap{Image: imageType, History: histories})
+		images = append(images, internalTypes.ImageWrap{Image: *image, History: histories})
 	}
+	log.Infof("Successfully collected all images")
 	return images, nil
 }
 
 func getBridgeNetwork(c *client.Client) (types.NetworkResource, error) {
-	listFilters := filters.NewArgs()
-	listFilters.Add("Name", "bridge")
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	return c.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})

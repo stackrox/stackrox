@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,23 +24,23 @@ import (
 func TestDockerImagesChecks(t *testing.T) {
 	cases := []struct {
 		name   string
-		image  docker.ImageWrap
+		image  types.ImageWrap
 		status framework.Status
 	}{
 		{
 			name: "CIS_Docker_v1_1_0:4_6",
-			image: docker.ImageWrap{
-				Image: docker.ImageInspect{
-					Config: &docker.Config{},
+			image: types.ImageWrap{
+				Image: types.ImageInspect{
+					Config: &types.Config{},
 				},
 			},
 			status: framework.FailStatus,
 		},
 		{
 			name: "CIS_Docker_v1_1_0:4_6",
-			image: docker.ImageWrap{
-				Image: docker.ImageInspect{
-					Config: &docker.Config{
+			image: types.ImageWrap{
+				Image: types.ImageInspect{
+					Config: &types.Config{
 						Healthcheck: &container.HealthConfig{},
 					},
 				},
@@ -49,7 +49,7 @@ func TestDockerImagesChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:4_9",
-			image: docker.ImageWrap{
+			image: types.ImageWrap{
 				History: []image.HistoryResponseItem{
 					{
 						CreatedBy: "/bin/sh -c #(nop) WORKDIR /usr/share/grafana",
@@ -63,7 +63,7 @@ func TestDockerImagesChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:4_9",
-			image: docker.ImageWrap{
+			image: types.ImageWrap{
 				History: []image.HistoryResponseItem{
 					{
 						CreatedBy: "/bin/sh -c #(nop) WORKDIR /usr/share/grafana",
@@ -74,7 +74,7 @@ func TestDockerImagesChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:4_7",
-			image: docker.ImageWrap{
+			image: types.ImageWrap{
 				History: []image.HistoryResponseItem{
 					{
 						CreatedBy: "/bin/sh -c #(nop) WORKDIR /usr/share/grafana",
@@ -85,7 +85,7 @@ func TestDockerImagesChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:4_7",
-			image: docker.ImageWrap{
+			image: types.ImageWrap{
 				History: []image.HistoryResponseItem{
 					{
 						CreatedBy: "/bin/sh -c #(nop) apk update",
@@ -127,8 +127,8 @@ func TestDockerImagesChecks(t *testing.T) {
 
 			var buf bytes.Buffer
 			gz := gzip.NewWriter(&buf)
-			err := json.NewEncoder(gz).Encode(&docker.Data{
-				Images: []docker.ImageWrap{
+			err := json.NewEncoder(gz).Encode(&types.Data{
+				Images: []types.ImageWrap{
 					c.image,
 				},
 			})

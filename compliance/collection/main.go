@@ -22,10 +22,6 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-	// filter out all the containers with these labels
-	whiteListContainerWithLabels = map[string]string{
-		"com.stackrox.io/service": "compliance", // Ref: sensor/common/compliance/command_handler_impl.go:189
-	}
 )
 
 const requestTimeout = time.Second * 5
@@ -44,26 +40,37 @@ func main() {
 		ScrapeId: thisScrapeID,
 	}
 
+	log.Infof("Running compliance scrape %q for node %q", thisScrapeID, thisNodeName)
+
+	log.Infof("Starting to collect Docker data")
 	var err error
-	msgReturn.DockerData, err = docker.GetDockerData(whiteListContainerWithLabels)
+	msgReturn.DockerData, err = docker.GetDockerData()
 	if err != nil {
 		log.Error(err)
 	}
 
+	log.Infof("Successfully collected relevant Docker data")
+
+	log.Infof("Starting to collect systemd files")
 	msgReturn.SystemdFiles, err = file.CollectSystemdFiles()
 	if err != nil {
 		log.Error(err)
 	}
+	log.Infof("Successfully collected relevant systemd files")
 
+	log.Infof("Starting to collect configuration files")
 	msgReturn.Files, err = file.CollectFiles()
 	if err != nil {
 		log.Error(err)
 	}
+	log.Infof("Successfully collected relevant configuration files")
 
+	log.Infof("Starting to collect command lines")
 	msgReturn.CommandLines, err = command.RetrieveCommands()
 	if err != nil {
 		log.Error(err)
 	}
+	log.Infof("Successfully collected relevant command lines")
 
 	msgReturn.Time = types.TimestampNow()
 

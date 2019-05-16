@@ -1,4 +1,4 @@
-package docker
+package types
 
 import (
 	"github.com/docker/docker/api/types/container"
@@ -8,7 +8,15 @@ import (
 	"github.com/docker/go-units"
 )
 
+// ContainerList is a trimmed down version of Docker types.Container
+// easyjson:json
+type ContainerList struct {
+	ID     string `json:"Id"`
+	Labels map[string]string
+}
+
 // ContainerJSON is a trimmed down version of Docker ContainerJSON
+// easyjson:json
 type ContainerJSON struct {
 	*ContainerJSONBase `json:",omitempty"`
 	Mounts             []MountPoint     `json:",omitempty"`

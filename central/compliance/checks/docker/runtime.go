@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -53,7 +53,7 @@ func init() {
 	)
 }
 
-func runningContainerCheck(name string, f func(ctx framework.ComplianceContext, container docker.ContainerJSON), desc string) framework.Check {
+func runningContainerCheck(name string, f func(ctx framework.ComplianceContext, container types.ContainerJSON), desc string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
 		Scope:              framework.NodeKind,
@@ -63,8 +63,8 @@ func runningContainerCheck(name string, f func(ctx framework.ComplianceContext, 
 	return framework.NewCheckFromFunc(md, containerCheckWrapper(f, true))
 }
 
-func containerCheckWrapper(f func(ctx framework.ComplianceContext, container docker.ContainerJSON), runningOnly bool) framework.CheckFunc {
-	return common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
+func containerCheckWrapper(f func(ctx framework.ComplianceContext, container types.ContainerJSON), runningOnly bool) framework.CheckFunc {
+	return common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *types.Data) {
 		for _, c := range data.Containers {
 			if runningOnly && (c.State == nil || !c.State.Running) {
 				continue
@@ -77,7 +77,7 @@ func containerCheckWrapper(f func(ctx framework.ComplianceContext, container doc
 	})
 }
 
-func acquiringPrivileges(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func acquiringPrivileges(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	var pass bool
 	for _, o := range container.HostConfig.SecurityOpt {
 		if strings.Contains(o, "no-new-privileges") {
@@ -90,7 +90,7 @@ func acquiringPrivileges(ctx framework.ComplianceContext, container docker.Conta
 	}
 }
 
-func appArmor(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func appArmor(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.AppArmorProfile == "unconfined" {
 		framework.Failf(ctx, "Container %q has app armor configured as unconfined", container.Name)
 	} else {
@@ -98,7 +98,7 @@ func appArmor(ctx framework.ComplianceContext, container docker.ContainerJSON) {
 	}
 }
 
-func specificHostInterface(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func specificHostInterface(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.NetworkSettings == nil {
 		framework.Pass(ctx, "Container %q has no values set for network settings")
 		return
@@ -118,7 +118,7 @@ func specificHostInterface(ctx framework.ComplianceContext, container docker.Con
 	}
 }
 
-func bridgeNetwork(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func bridgeNetwork(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.NetworkSettings == nil {
 		framework.Passf(ctx, "Container %q has no network settings", container.Name)
 		return
@@ -130,7 +130,7 @@ func bridgeNetwork(ctx framework.ComplianceContext, container docker.ContainerJS
 	}
 }
 
-func capabilities(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func capabilities(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if len(container.HostConfig.CapAdd) > 0 {
 		framework.Notef(ctx, "Container %q adds capabilities: %s", container.Name, strings.Join(container.HostConfig.CapAdd, ", "))
 	} else {
@@ -138,7 +138,7 @@ func capabilities(ctx framework.ComplianceContext, container docker.ContainerJSO
 	}
 }
 
-func cgroup(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func cgroup(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.CgroupParent != "docker" && container.HostConfig.CgroupParent != "" {
 		framework.Failf(ctx, "Container %q has the cgroup parent set to %s", container.Name, container.HostConfig.CgroupParent)
 	} else {
@@ -146,7 +146,7 @@ func cgroup(ctx framework.ComplianceContext, container docker.ContainerJSON) {
 	}
 }
 
-func cpuShares(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func cpuShares(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.CPUShares == 0 {
 		framework.Failf(ctx, "Container %q does not have CPU shares set", container.Name)
 	} else {
@@ -154,7 +154,7 @@ func cpuShares(ctx framework.ComplianceContext, container docker.ContainerJSON) 
 	}
 }
 
-func healthcheck(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func healthcheck(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.State.Health == nil {
 		framework.Failf(ctx, "Container %q does not have health configured", container.Name)
 	} else if container.State.Health.Status == "" {
@@ -164,7 +164,7 @@ func healthcheck(ctx framework.ComplianceContext, container docker.ContainerJSON
 	}
 }
 
-func hostDevices(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func hostDevices(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if len(container.HostConfig.Devices) > 0 {
 		devices := make([]string, 0, len(container.HostConfig.Devices))
 		for _, device := range container.HostConfig.Devices {
@@ -176,7 +176,7 @@ func hostDevices(ctx framework.ComplianceContext, container docker.ContainerJSON
 	}
 }
 
-func ipcNamespace(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func ipcNamespace(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.IpcMode.IsHost() {
 		framework.Failf(ctx, "Container %q has IPC mode set to 'host'", container.Name)
 	} else {
@@ -184,7 +184,7 @@ func ipcNamespace(ctx framework.ComplianceContext, container docker.ContainerJSO
 	}
 }
 
-func memoryLimit(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func memoryLimit(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.Memory == 0 {
 		framework.Failf(ctx, "Container %q does not have a memory limit", container.Name)
 	} else {
@@ -192,7 +192,7 @@ func memoryLimit(ctx framework.ComplianceContext, container docker.ContainerJSON
 	}
 }
 
-func mountPropagation(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func mountPropagation(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	var failed bool
 	for _, containerMount := range container.Mounts {
 		if containerMount.Propagation == mount.PropagationShared {
@@ -205,7 +205,7 @@ func mountPropagation(ctx framework.ComplianceContext, container docker.Containe
 	}
 }
 
-func necessaryPorts(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func necessaryPorts(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.NetworkSettings == nil {
 		framework.Passf(ctx, "Container %q does not have any network settings", container.Name)
 		return
@@ -223,20 +223,20 @@ func necessaryPorts(ctx framework.ComplianceContext, container docker.ContainerJ
 }
 
 // Docker socket
-func noDockerSocket(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func noDockerSocket(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	var failed bool
 	for _, containerMount := range container.Mounts {
-		if strings.Contains(containerMount.Source, "docker.sock") {
+		if strings.Contains(containerMount.Source, "types.sock") {
 			failed = true
-			framework.Failf(ctx, "Container %q has mounted docker.sock", container.Name)
+			framework.Failf(ctx, "Container %q has mounted types.sock", container.Name)
 		}
 	}
 	if !failed {
-		framework.Passf(ctx, "Container %q has not mounted docker.sock", container.Name)
+		framework.Passf(ctx, "Container %q has not mounted types.sock", container.Name)
 	}
 }
 
-func pidNamespace(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func pidNamespace(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.PidMode.IsHost() {
 		framework.Failf(ctx, "Container %q has PID mode set to 'host'", container.Name)
 	} else {
@@ -244,7 +244,7 @@ func pidNamespace(ctx framework.ComplianceContext, container docker.ContainerJSO
 	}
 }
 
-func pidCgroup(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func pidCgroup(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.PidsLimit <= 0 {
 		framework.Failf(ctx, "Container %q does not have PIDs limit set", container.Name)
 	} else {
@@ -252,7 +252,7 @@ func pidCgroup(ctx framework.ComplianceContext, container docker.ContainerJSON) 
 	}
 }
 
-func privileged(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func privileged(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.Privileged {
 		framework.Failf(ctx, "Container %q is running as privileged", container.Name)
 	} else {
@@ -260,7 +260,7 @@ func privileged(ctx framework.ComplianceContext, container docker.ContainerJSON)
 	}
 }
 
-func privilegedPorts(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func privilegedPorts(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	var failed bool
 	for containerPort, hostBinding := range container.NetworkSettings.Ports {
 		for _, binding := range hostBinding {
@@ -279,7 +279,7 @@ func privilegedPorts(ctx framework.ComplianceContext, container docker.Container
 	}
 }
 
-func readonlyFS(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func readonlyFS(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if !container.HostConfig.ReadonlyRootfs {
 		framework.Failf(ctx, "Container %q does not have a readonly rootFS", container.Name)
 	} else {
@@ -287,7 +287,7 @@ func readonlyFS(ctx framework.ComplianceContext, container docker.ContainerJSON)
 	}
 }
 
-func restartPolicy(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func restartPolicy(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.RestartPolicy.Name != "on-failure" || container.HostConfig.RestartPolicy.MaximumRetryCount != 5 {
 		framework.Failf(ctx, "Container %q has a restart policy %q with max retries '%d'", container.Name, container.HostConfig.RestartPolicy.Name, container.HostConfig.RestartPolicy.MaximumRetryCount)
 	} else {
@@ -295,7 +295,7 @@ func restartPolicy(ctx framework.ComplianceContext, container docker.ContainerJS
 	}
 }
 
-func seccomp(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func seccomp(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	var fail bool
 	for _, opt := range container.HostConfig.SecurityOpt {
 		if strings.EqualFold(opt, "seccomp:unconfined") {
@@ -308,7 +308,7 @@ func seccomp(ctx framework.ComplianceContext, container docker.ContainerJSON) {
 	}
 }
 
-func selinux(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func selinux(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	var pass bool
 	for _, opt := range container.HostConfig.SecurityOpt {
 		if strings.Contains(opt, "selinux") {
@@ -332,7 +332,7 @@ var sensitiveMounts = set.NewStringSet(
 	"/usr",
 )
 
-func sensitiveHostMounts(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func sensitiveHostMounts(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	var fail bool
 	for _, mount := range container.Mounts {
 		if sensitiveMounts.Contains(mount.Source) {
@@ -345,7 +345,7 @@ func sensitiveHostMounts(ctx framework.ComplianceContext, container docker.Conta
 	}
 }
 
-func sharedNetwork(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func sharedNetwork(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.NetworkMode.IsHost() {
 		framework.Failf(ctx, "Container %q has network mode set to 'host'", container.Name)
 	} else {
@@ -353,7 +353,7 @@ func sharedNetwork(ctx framework.ComplianceContext, container docker.ContainerJS
 	}
 }
 
-func ulimit(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func ulimit(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if len(container.HostConfig.Ulimits) > 0 {
 		var ulimits []string
 		for _, u := range container.HostConfig.Ulimits {
@@ -365,7 +365,7 @@ func ulimit(ctx framework.ComplianceContext, container docker.ContainerJSON) {
 	}
 }
 
-func userNamespace(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func userNamespace(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.UsernsMode.IsHost() {
 		framework.Failf(ctx, "Container %q has user namespace mode set to 'host'", container.Name)
 	} else {
@@ -373,7 +373,7 @@ func userNamespace(ctx framework.ComplianceContext, container docker.ContainerJS
 	}
 }
 
-func utsNamespace(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func utsNamespace(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.UTSMode.IsHost() {
 		framework.Failf(ctx, "Container %q has UTS namespace mode set to 'host'", container.Name)
 	} else {
@@ -381,7 +381,7 @@ func utsNamespace(ctx framework.ComplianceContext, container docker.ContainerJSO
 	}
 }
 
-func usersInContainer(ctx framework.ComplianceContext, container docker.ContainerJSON) {
+func usersInContainer(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.Config != nil && (container.Config.User == "" || container.Config.User == "root") {
 		framework.Failf(ctx, "Container %q is running as the root user", container.Name)
 	} else {

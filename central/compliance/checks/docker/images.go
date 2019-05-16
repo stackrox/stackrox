@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/docker/types"
 )
 
 func init() {
@@ -26,7 +26,7 @@ func init() {
 	)
 }
 
-func imageCheck(name string, f func(ctx framework.ComplianceContext, wrap docker.ImageWrap), desc string) framework.Check {
+func imageCheck(name string, f func(ctx framework.ComplianceContext, wrap types.ImageWrap), desc string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
 		Scope:              framework.NodeKind,
@@ -36,15 +36,15 @@ func imageCheck(name string, f func(ctx framework.ComplianceContext, wrap docker
 	return framework.NewCheckFromFunc(md, imageCheckWrapper(f))
 }
 
-func imageCheckWrapper(f func(ctx framework.ComplianceContext, wrap docker.ImageWrap)) framework.CheckFunc {
-	return common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
+func imageCheckWrapper(f func(ctx framework.ComplianceContext, wrap types.ImageWrap)) framework.CheckFunc {
+	return common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *types.Data) {
 		for _, i := range data.Images {
 			f(ctx, i)
 		}
 	})
 }
 
-func healthcheckInstruction(ctx framework.ComplianceContext, wrap docker.ImageWrap) {
+func healthcheckInstruction(ctx framework.ComplianceContext, wrap types.ImageWrap) {
 	if wrap.Config().Healthcheck == nil {
 		framework.Failf(ctx, "Image %q does not have healthcheck configured", wrap.Name())
 	} else {
@@ -52,7 +52,7 @@ func healthcheckInstruction(ctx framework.ComplianceContext, wrap docker.ImageWr
 	}
 }
 
-func copyInstruction(ctx framework.ComplianceContext, wrap docker.ImageWrap) {
+func copyInstruction(ctx framework.ComplianceContext, wrap types.ImageWrap) {
 	var fail bool
 	for _, h := range wrap.History {
 		cmd := strings.ToLower(h.CreatedBy)
@@ -73,7 +73,7 @@ var updateCmds = []string{
 	"yum update",
 }
 
-func noUpdateInstruction(ctx framework.ComplianceContext, wrap docker.ImageWrap) {
+func noUpdateInstruction(ctx framework.ComplianceContext, wrap types.ImageWrap) {
 	var fail bool
 	for _, h := range wrap.History {
 		cmd := strings.ToLower(h.CreatedBy)

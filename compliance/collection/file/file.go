@@ -70,6 +70,7 @@ func CollectSystemdFiles() (map[string]*compliance.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Close()
 	systemdUnitFiles, err := conn.ListUnitFiles()
 	if err != nil {
 		return nil, err
@@ -131,6 +132,7 @@ func EvaluatePath(path string, withContents bool) (*compliance.File, bool, error
 			return nil, false, err
 		}
 		for _, f := range files {
+
 			child, exists, err := EvaluatePath(filepath.Join(path, f.Name()), withContents)
 			if err != nil {
 				return nil, false, err

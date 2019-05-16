@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/api"
-	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/docker/client"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -28,9 +28,6 @@ func NewClient() (*client.Client, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to create docker client")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	cli.NegotiateAPIVersion(ctx)
 	return cli, nil
 }
 

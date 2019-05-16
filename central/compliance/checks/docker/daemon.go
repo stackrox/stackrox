@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/docker"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -56,7 +56,7 @@ func networkRestrictionCheck() framework.Check {
 		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheckWithDockerData(
-		func(ctx framework.ComplianceContext, data *docker.Data) {
+		func(ctx framework.ComplianceContext, data *internalTypes.Data) {
 			if data.BridgeNetwork.Options["com.docker.network.bridge.enable_icc"] == "true" {
 				framework.Failf(ctx, "Enable icc is true on bridge network")
 			} else {
@@ -78,7 +78,7 @@ func dockerInfoCheck(name string, f func(ctx framework.ComplianceContext, info t
 	}
 	return framework.NewCheckFromFunc(
 		md, common.PerNodeCheckWithDockerData(
-			func(ctx framework.ComplianceContext, data *docker.Data) {
+			func(ctx framework.ComplianceContext, data *internalTypes.Data) {
 				f(ctx, data.Info)
 			}))
 }

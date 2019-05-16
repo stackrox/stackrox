@@ -5,7 +5,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/docker"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 )
 
 func hostOperatingSystem(ctx framework.ComplianceContext, info types.Info) {
@@ -17,7 +17,7 @@ func hostOperatingSystem(ctx framework.ComplianceContext, info types.Info) {
 
 // CheckKHostOperatingSystem verifies if the host is running minimal OS.
 func CheckKHostOperatingSystem(ctx framework.ComplianceContext) {
-	PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
+	PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *internalTypes.Data) {
 		hostOperatingSystem(ctx, data.Info)
 	})(ctx)
 }

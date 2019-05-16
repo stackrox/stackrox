@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,14 +26,14 @@ import (
 func TestDockerRuntimeChecks(t *testing.T) {
 	cases := []struct {
 		name      string
-		container docker.ContainerJSON
+		container types.ContainerJSON
 		status    framework.Status
 	}{
 		{
 			name: "CIS_Docker_v1_1_0:5_25",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						SecurityOpt: []string{"hello"},
 					},
 				},
@@ -42,9 +42,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_25",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						SecurityOpt: []string{"hello", "no-new-privileges"},
 					},
 				},
@@ -53,8 +53,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_1",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
 					AppArmorProfile: "default",
 				},
 			},
@@ -62,8 +62,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_1",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
 					AppArmorProfile: "unconfined",
 				},
 			},
@@ -71,9 +71,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_13",
-			container: docker.ContainerJSON{
-				NetworkSettings: &docker.NetworkSettings{
-					NetworkSettingsBase: docker.NetworkSettingsBase{
+			container: types.ContainerJSON{
+				NetworkSettings: &types.NetworkSettings{
+					NetworkSettingsBase: types.NetworkSettingsBase{
 						Ports: nat.PortMap{
 							"80/tcp": []nat.PortBinding{{}},
 						},
@@ -84,9 +84,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_13",
-			container: docker.ContainerJSON{
-				NetworkSettings: &docker.NetworkSettings{
-					NetworkSettingsBase: docker.NetworkSettingsBase{
+			container: types.ContainerJSON{
+				NetworkSettings: &types.NetworkSettings{
+					NetworkSettingsBase: types.NetworkSettingsBase{
 						Ports: nat.PortMap{
 							"80/tcp": []nat.PortBinding{{HostIP: "0.0.0.0"}},
 						},
@@ -101,8 +101,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_29",
-			container: docker.ContainerJSON{
-				NetworkSettings: &docker.NetworkSettings{
+			container: types.ContainerJSON{
+				NetworkSettings: &types.NetworkSettings{
 					Networks: map[string]struct{}{
 						"bridge": {},
 					},
@@ -112,9 +112,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_3",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						CapAdd: []string{"CAP_SYS_ADMIN"},
 					},
 				},
@@ -123,9 +123,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_3",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						CapAdd: []string{},
 					},
 				},
@@ -134,10 +134,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_24",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							CgroupParent: "docker",
 						},
 					},
@@ -147,10 +147,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_24",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							CgroupParent: "random",
 						},
 					},
@@ -160,10 +160,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_11",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							CPUShares: 0,
 						},
 					},
@@ -173,10 +173,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_11",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							CPUShares: 10,
 						},
 					},
@@ -186,9 +186,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_26",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					State: &docker.ContainerState{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					State: &types.ContainerState{
 						Health: nil,
 					},
 				},
@@ -197,10 +197,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_26",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					State: &docker.ContainerState{
-						Health: &docker.Health{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					State: &types.ContainerState{
+						Health: &types.Health{
 							Status: "",
 						},
 					},
@@ -210,10 +210,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_26",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					State: &docker.ContainerState{
-						Health: &docker.Health{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					State: &types.ContainerState{
+						Health: &types.Health{
 							Status: "yay",
 						},
 					},
@@ -223,10 +223,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_17",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							Devices: []container.DeviceMapping{},
 						},
 					},
@@ -236,10 +236,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_17",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							Devices: []container.DeviceMapping{
 								{
 									PathOnHost: "/dev/sda",
@@ -253,9 +253,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_16",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						IpcMode: container.IpcMode("private"),
 					},
 				},
@@ -264,9 +264,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_16",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						IpcMode: container.IpcMode("host"),
 					},
 				},
@@ -275,10 +275,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_10",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							Memory: 0,
 						},
 					},
@@ -288,10 +288,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_10",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							Memory: 100,
 						},
 					},
@@ -301,8 +301,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_19",
-			container: docker.ContainerJSON{
-				Mounts: []docker.MountPoint{
+			container: types.ContainerJSON{
+				Mounts: []types.MountPoint{
 					{
 						Propagation: mount.PropagationShared,
 					},
@@ -312,8 +312,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_19",
-			container: docker.ContainerJSON{
-				Mounts: []docker.MountPoint{
+			container: types.ContainerJSON{
+				Mounts: []types.MountPoint{
 					{
 						Propagation: mount.PropagationPrivate,
 					},
@@ -323,9 +323,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_8",
-			container: docker.ContainerJSON{
-				NetworkSettings: &docker.NetworkSettings{
-					NetworkSettingsBase: docker.NetworkSettingsBase{
+			container: types.ContainerJSON{
+				NetworkSettings: &types.NetworkSettings{
+					NetworkSettingsBase: types.NetworkSettingsBase{
 						Ports: nat.PortMap{
 							"80/tcp": []nat.PortBinding{{}},
 						},
@@ -336,10 +336,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_31",
-			container: docker.ContainerJSON{
-				Mounts: []docker.MountPoint{
+			container: types.ContainerJSON{
+				Mounts: []types.MountPoint{
 					{
-						Source: "/var/run/docker.sock",
+						Source: "/var/run/types.sock",
 					},
 				},
 			},
@@ -347,8 +347,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_31",
-			container: docker.ContainerJSON{
-				Mounts: []docker.MountPoint{
+			container: types.ContainerJSON{
+				Mounts: []types.MountPoint{
 					{
 						Source: "/etc/passwd",
 					},
@@ -358,9 +358,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_15",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						PidMode: container.PidMode("private"),
 					},
 				},
@@ -369,9 +369,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_15",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						PidMode: container.PidMode("host"),
 					},
 				},
@@ -380,10 +380,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_28",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							PidsLimit: 0,
 						},
 					},
@@ -393,10 +393,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_28",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							PidsLimit: 10,
 						},
 					},
@@ -406,9 +406,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_4",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						Privileged: false,
 					},
 				},
@@ -417,9 +417,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_4",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						Privileged: true,
 					},
 				},
@@ -428,9 +428,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_7",
-			container: docker.ContainerJSON{
-				NetworkSettings: &docker.NetworkSettings{
-					NetworkSettingsBase: docker.NetworkSettingsBase{
+			container: types.ContainerJSON{
+				NetworkSettings: &types.NetworkSettings{
+					NetworkSettingsBase: types.NetworkSettingsBase{
 						Ports: nat.PortMap{
 							"80/tcp": []nat.PortBinding{{HostPort: "1025"}},
 						},
@@ -441,9 +441,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_7",
-			container: docker.ContainerJSON{
-				NetworkSettings: &docker.NetworkSettings{
-					NetworkSettingsBase: docker.NetworkSettingsBase{
+			container: types.ContainerJSON{
+				NetworkSettings: &types.NetworkSettings{
+					NetworkSettingsBase: types.NetworkSettingsBase{
 						Ports: nat.PortMap{
 							"80/tcp": []nat.PortBinding{{HostPort: "80"}},
 						},
@@ -454,9 +454,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_12",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						ReadonlyRootfs: true,
 					},
 				},
@@ -465,9 +465,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_12",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						ReadonlyRootfs: false,
 					},
 				},
@@ -476,9 +476,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_14",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						RestartPolicy: container.RestartPolicy{
 							Name:              "on-failure",
 							MaximumRetryCount: 5,
@@ -490,9 +490,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_14",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						RestartPolicy: container.RestartPolicy{
 							Name:              "lol",
 							MaximumRetryCount: 5,
@@ -504,9 +504,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_21",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						SecurityOpt: []string{
 							"seccomp:unconfined",
 						},
@@ -517,9 +517,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_21",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						SecurityOpt: []string{
 							"seccomp:default",
 						},
@@ -530,9 +530,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_2",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						SecurityOpt: []string{
 							"",
 						},
@@ -543,9 +543,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_2",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						SecurityOpt: []string{
 							"selinux",
 						},
@@ -556,8 +556,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_5",
-			container: docker.ContainerJSON{
-				Mounts: []docker.MountPoint{
+			container: types.ContainerJSON{
+				Mounts: []types.MountPoint{
 					{
 						Source: "/etc",
 					},
@@ -567,8 +567,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_5",
-			container: docker.ContainerJSON{
-				Mounts: []docker.MountPoint{
+			container: types.ContainerJSON{
+				Mounts: []types.MountPoint{
 					{
 						Source: "/opt",
 					},
@@ -578,9 +578,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_9",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						NetworkMode: container.NetworkMode("host"),
 					},
 				},
@@ -589,9 +589,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_9",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						NetworkMode: container.NetworkMode("private"),
 					},
 				},
@@ -600,10 +600,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_18",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							Ulimits: []*units.Ulimit{},
 						},
 					},
@@ -613,10 +613,10 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_18",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
-						Resources: docker.Resources{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
+						Resources: types.Resources{
 							Ulimits: []*units.Ulimit{
 								{
 									Name: "abc",
@@ -632,9 +632,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_30",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						UsernsMode: container.UsernsMode("private"),
 					},
 				},
@@ -643,9 +643,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_30",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						UsernsMode: container.UsernsMode("host"),
 					},
 				},
@@ -654,9 +654,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_20",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						UTSMode: container.UTSMode("private"),
 					},
 				},
@@ -665,9 +665,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:5_20",
-			container: docker.ContainerJSON{
-				ContainerJSONBase: &docker.ContainerJSONBase{
-					HostConfig: &docker.HostConfig{
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					HostConfig: &types.HostConfig{
 						UTSMode: container.UTSMode("host"),
 					},
 				},
@@ -676,8 +676,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:4_1",
-			container: docker.ContainerJSON{
-				Config: &docker.Config{
+			container: types.ContainerJSON{
+				Config: &types.Config{
 					User: "stackrox",
 				},
 			},
@@ -685,8 +685,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 		{
 			name: "CIS_Docker_v1_1_0:4_1",
-			container: docker.ContainerJSON{
-				Config: &docker.Config{
+			container: types.ContainerJSON{
+				Config: &types.Config{
 					User: "root",
 				},
 			},
@@ -726,25 +726,25 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			// Must set the containers to running
 			if c.container.ContainerJSONBase != nil {
 				if c.container.ContainerJSONBase.State == nil {
-					c.container.State = &docker.ContainerState{
+					c.container.State = &types.ContainerState{
 						Running: true,
 					}
 				} else {
 					c.container.State.Running = true
 				}
 			} else {
-				c.container.ContainerJSONBase = &docker.ContainerJSONBase{
-					State: &docker.ContainerState{
+				c.container.ContainerJSONBase = &types.ContainerJSONBase{
+					State: &types.ContainerState{
 						Running: true,
 					},
 				}
 			}
 			if c.container.HostConfig == nil {
-				c.container.HostConfig = &docker.HostConfig{}
+				c.container.HostConfig = &types.HostConfig{}
 			}
 
-			jsonData, err := json.Marshal(&docker.Data{
-				Containers: []docker.ContainerJSON{
+			jsonData, err := json.Marshal(&types.Data{
+				Containers: []types.ContainerJSON{
 					c.container,
 				},
 			})

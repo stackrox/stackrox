@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	scrapeTimeout = 5 * time.Minute
+	scrapeTimeout = 10 * time.Minute
 )
 
 var (

@@ -3,7 +3,7 @@ package docker
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -27,7 +27,7 @@ func init() {
 }
 
 func imageSprawl(funcCtx framework.ComplianceContext) {
-	common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
+	common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *types.Data) {
 		imageSet := set.NewStringSet()
 		for _, c := range data.Containers {
 			imageSet.Add(c.Image)
@@ -37,7 +37,7 @@ func imageSprawl(funcCtx framework.ComplianceContext) {
 }
 
 func containerSprawl(funcCtx framework.ComplianceContext) {
-	common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
+	common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *types.Data) {
 		var runningContainers int
 		for _, c := range data.Containers {
 			if c.State != nil && c.State.Running {

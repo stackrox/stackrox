@@ -5,7 +5,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/docker"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/netutil"
 )
 
@@ -51,7 +51,7 @@ func insecureRegistries(ctx framework.ComplianceContext, info types.Info) {
 
 // CheckNoInsecureRegistries checks that only registries in private subnets are configured as insecure.
 func CheckNoInsecureRegistries(ctx framework.ComplianceContext) {
-	PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
+	PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *internalTypes.Data) {
 		insecureRegistries(ctx, data.Info)
 	})(ctx)
 }

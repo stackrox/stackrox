@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -144,7 +144,7 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 
 			var buf bytes.Buffer
 			gz := gzip.NewWriter(&buf)
-			err := json.NewEncoder(gz).Encode(&docker.Data{
+			err := json.NewEncoder(gz).Encode(&internalTypes.Data{
 				Info: c.info,
 			})
 			require.NoError(t, err)

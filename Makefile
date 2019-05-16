@@ -204,8 +204,12 @@ $(EASYJSON_BIN):
 .PHONY: go-easyjson-srcs
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
-	@easyjson -pkg pkg/docker/types.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types_easyjson.go
+	@easyjson -pkg pkg/docker/types/types.go
+	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/types_easyjson.go
+	@easyjson -pkg pkg/docker/types/container.go
+	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/container_easyjson.go
+	@easyjson -pkg pkg/docker/types/image.go
+	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
