@@ -1309,7 +1309,7 @@ jobs:
   provision-openshift:
     machine: true
     environment:
-      - OPENSHIFT_AUTOMATION_VERSION: 0.4.1-1-g1e9c69d
+      - OPENSHIFT_AUTOMATION_VERSION: 0.4.2-2-g35e2610
     steps:
       - checkout
       - *checkOpenshiftLabel
@@ -1383,7 +1383,7 @@ jobs:
     environment:
       - OPENSHIFT_AUTOMATION_VERSION: 0.4.1-1-g1e9c69d
       - LOCAL_PORT: 8000
-      - RUNTIME_SUPPORT: kernel-module
+      - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true

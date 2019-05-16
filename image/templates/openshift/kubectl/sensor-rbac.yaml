@@ -314,14 +314,7 @@ metadata:
 users:
 - system:serviceaccount:stackrox:collector
 allowHostDirVolumePlugin: true
-{{if eq .CollectionMethod "EBPF"}}
-allowedCapabilities:
-- SYS_ADMIN
-- SYS_PTRACE
-- SYS_RESOURCE
-{{- else}}
 allowPrivilegedContainer: true
-{{- end}}
 defaultAddCapabilities: null
 fsGroup:
   type: RunAsAny
