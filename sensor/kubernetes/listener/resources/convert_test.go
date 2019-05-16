@@ -47,8 +47,10 @@ func TestConvert(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							UID:  types.UID("SomeDeploymentID"),
-							Name: "SomeDeployment",
+							UID:        types.UID("SomeDeploymentID"),
+							Name:       "SomeDeployment",
+							APIVersion: "v1beta1/deployments",
+							Kind:       "Deployment",
 						},
 					},
 				},

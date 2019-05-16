@@ -7,20 +7,20 @@ import (
 )
 
 // Supported kubernetes resource types.
-const (
-	Deployment            = `Deployment`
-	DaemonSet             = `DaemonSet`
-	Pod                   = `Pod`
-	ReplicationController = `ReplicationController`
-	ReplicaSet            = `ReplicaSet`
-	StatefulSet           = `StatefulSet`
-	CronJob               = `CronJob`
-	Job                   = `Job`
+var (
+	Deployment            = newDeploymentResource(`Deployment`)
+	DaemonSet             = newDeploymentResource(`DaemonSet`)
+	Pod                   = newDeploymentResource(`Pod`)
+	ReplicationController = newDeploymentResource(`ReplicationController`)
+	ReplicaSet            = newDeploymentResource(`ReplicaSet`)
+	StatefulSet           = newDeploymentResource(`StatefulSet`)
+	CronJob               = newDeploymentResource(`CronJob`)
+	Job                   = newDeploymentResource(`Job`)
 
 	Service = `Service`
 
 	// OpenShift specific
-	DeploymentConfig = `DeploymentConfig`
+	DeploymentConfig = newDeploymentResource(`DeploymentConfig`)
 )
 
 // Kubernetes delete options that ensure that dependent objects (e.g. pods) are deleted when
@@ -33,18 +33,13 @@ var (
 		Replicas: 0,
 	}
 
-	deploymentResourceSet = set.NewFrozenStringSet(
-		Deployment,
-		DaemonSet,
-		Pod,
-		ReplicaSet,
-		ReplicationController,
-		StatefulSet,
-		CronJob,
-		Job,
-		DeploymentConfig,
-	)
+	deploymentResourceSet = set.NewStringSet()
 )
+
+func newDeploymentResource(s string) string {
+	deploymentResourceSet.Add(s)
+	return s
+}
 
 // IsDeploymentResource will return true if the passed string is a type we can convert to our concept of Deployment
 func IsDeploymentResource(s string) bool {

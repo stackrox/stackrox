@@ -1,11 +1,14 @@
 package resources
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGetVolumeSourceMap(t *testing.T) {
@@ -54,4 +57,52 @@ func TestGetVolumeSourceMap(t *testing.T) {
 	}
 	w := &DeploymentWrap{}
 	assert.Equal(t, expectedMap, w.getVolumeSourceMap(spec))
+}
+
+func TestIsTrackedReference(t *testing.T) {
+	cases := []struct {
+		ref       metav1.OwnerReference
+		isTracked bool
+	}{
+		{
+			ref: metav1.OwnerReference{
+				APIVersion: "v1",
+				Kind:       "not a resource",
+			},
+			isTracked: false,
+		},
+		{
+			ref: metav1.OwnerReference{
+				APIVersion: "v1",
+				Kind:       kubernetes.Deployment,
+			},
+			isTracked: true,
+		},
+		{
+			ref: metav1.OwnerReference{
+				APIVersion: "policy/v1beta1",
+				Kind:       kubernetes.Deployment,
+			},
+			isTracked: true,
+		},
+		{
+			ref: metav1.OwnerReference{
+				APIVersion: "rbac.authorization.k8s.io/v1",
+				Kind:       kubernetes.Deployment,
+			},
+			isTracked: true,
+		},
+		{
+			ref: metav1.OwnerReference{
+				APIVersion: "serving.knative.dev/v1alpha1",
+				Kind:       kubernetes.Deployment,
+			},
+			isTracked: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("%s-%s", c.ref.APIVersion, c.ref.Kind), func(t *testing.T) {
+			assert.Equal(t, isTrackedOwnerReference(c.ref), c.isTracked)
+		})
+	}
 }

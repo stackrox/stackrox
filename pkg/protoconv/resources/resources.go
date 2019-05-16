@@ -45,6 +45,14 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
+func isTrackedOwnerReference(reference metav1.OwnerReference) bool {
+	// Validate that the object is one that we are tracking as a Deployment
+	if !kubernetes.IsDeploymentResource(reference.Kind) {
+		return false
+	}
+	return kubernetes.IsNativeAPI(reference.APIVersion)
+}
+
 // NewDeploymentFromStaticResource returns a storage.Deployment from a k8s object
 func NewDeploymentFromStaticResource(obj interface{}, deploymentType string) (*storage.Deployment, error) {
 	objMeta, err := meta.Accessor(obj)
@@ -53,10 +61,11 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType string) (*s
 	}
 	kind := deploymentType
 
-	// Ignore resources that are owned by another resource.
-	// DeploymentConfigs can be owned by TemplateInstance which we don't care about
-	if len(objMeta.GetOwnerReferences()) > 0 && kind != kubernetes.DeploymentConfig {
-		return nil, nil
+	// Ignore resources that are owned by another tracked resource.
+	for _, ref := range objMeta.GetOwnerReferences() {
+		if isTrackedOwnerReference(ref) {
+			return nil, nil
+		}
 	}
 
 	// This only applies to OpenShift
