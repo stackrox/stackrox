@@ -876,7 +876,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				},
 				},
 				nginx110Dep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
-					Message:   "Detected execution of binary '/usr/bin/nmap' with UID '1'",
+					Message:   "Detected execution of binary '/usr/bin/nmap' without arguments with UID '1'",
 					Processes: []*storage.ProcessIndicator{nmapIndicatorNginx110Dep},
 				},
 				},
@@ -896,7 +896,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Ubuntu Package Manager Execution",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				fixtureDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
-					Message:   "Detected execution of binary '/usr/bin/apt' with UID '1'",
+					Message:   "Detected execution of binary '/usr/bin/apt' without arguments with UID '1'",
 					Processes: []*storage.ProcessIndicator{fixtureDepAptIndicator},
 				},
 				},

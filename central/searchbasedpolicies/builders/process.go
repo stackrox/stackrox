@@ -149,11 +149,10 @@ func UpdateRuntimeAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 	pathSet := set.NewStringSet()
 	argsSet := set.NewStringSet()
 	uidSet := set.NewIntSet()
+
 	for _, process := range processes {
 		pathSet.Add(process.GetSignal().GetExecFilePath())
-		if process.GetSignal().GetArgs() != "" {
-			argsSet.Add(process.GetSignal().GetArgs())
-		}
+		argsSet.Add(process.GetSignal().GetArgs())
 		uidSet.Add(int(process.GetSignal().GetUid()))
 	}
 
@@ -171,7 +170,12 @@ func UpdateRuntimeAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 	}
 
 	if argsSet.Cardinality() == 1 {
-		argsMessage = fmt.Sprintf(" with arguments '%s'", processes[0].GetSignal().GetArgs())
+		arg := argsSet.AsSlice()[0]
+		if arg != "" {
+			argsMessage = fmt.Sprintf(" with arguments '%s'", processes[0].GetSignal().GetArgs())
+		} else {
+			argsMessage = fmt.Sprintf(" without arguments")
+		}
 	} else if argsSet.Cardinality() > 0 {
 		argsMessage = fmt.Sprintf(" with %d different arguments", argsSet.Cardinality())
 	}
