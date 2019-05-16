@@ -31,5 +31,5 @@ webhooks:
       caBundle: {{.CABundle}}
       service:
         namespace: stackrox
-        name: sensor
+        name: sensor-webhook
         path: /admissioncontroller

@@ -31,9 +31,16 @@ spec:
       containers:
       - image: {{.Image}}
         name: sensor
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /admissioncontroller
+            port: 9443
         ports:
           - containerPort: 8443
             name: api
+          - containerPort: 9443
+            name: webhook
         command:
           - kubernetes-sensor
         resources:
@@ -129,6 +136,20 @@ spec:
   - name: https
     port: 443
     targetPort: api
+  selector:
+    app: sensor
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-webhook
+  namespace: stackrox
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: webhook
   selector:
     app: sensor
   type: ClusterIP

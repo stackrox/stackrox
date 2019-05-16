@@ -63,8 +63,12 @@ func (s Subject) Hostname() string {
 
 // AllHostnames returns all of the hostnames: e.g. central.stackrox.svc
 func (s Subject) AllHostnames() []string {
-	// Admission Controllers require the .svc suffic
-	return []string{s.Hostname(), fmt.Sprintf("%s.svc", s.Hostname())}
+	// Admission Controllers require the .svc suffix
+	hostnames := []string{s.Hostname(), fmt.Sprintf("%s.svc", s.Hostname())}
+	if s.ServiceType == storage.ServiceType_SENSOR_SERVICE {
+		hostnames = append(hostnames, fmt.Sprintf("%s-webhook.stackrox.svc", hostname(s.ServiceType)))
+	}
+	return hostnames
 }
 
 func hostname(t storage.ServiceType) string {

@@ -18,6 +18,10 @@ spec:
     ports:
     - port: 8443
       protocol: TCP
+  - from:
+    ports:
+    - port: 9443
+      protocol: TCP
   podSelector:
     matchLabels:
       app: sensor

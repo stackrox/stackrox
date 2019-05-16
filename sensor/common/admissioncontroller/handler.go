@@ -141,8 +141,13 @@ func parseIntoDeployment(ar *admission.AdmissionReview) (*storage.Deployment, er
 
 // ServeHTTP serves the admission controller endpoint
 func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		_, _ = w.Write([]byte("{}"))
+		return
+	}
+
 	if r.Method != http.MethodPost {
-		http.Error(w, "Endpoint only supports POST requests", http.StatusBadRequest)
+		http.Error(w, "Endpoint only supports GET and POST requests", http.StatusBadRequest)
 		return
 	}
 

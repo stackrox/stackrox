@@ -36,6 +36,11 @@ import (
 const (
 	// The 127.0.0.1 ensures we do not expose it externally and must be port-forwarded to
 	pprofServer = "127.0.0.1:6060"
+
+	publicAPIEndpoint = ":8443"
+	localAPIEndpoint  = "127.0.0.1:8444"
+
+	publicWebhookEndpoint = ":9443"
 )
 
 var (
@@ -127,23 +132,37 @@ func (s *Sensor) Start() {
 	s.profilingServer = s.startProfilingServer()
 
 	var centralReachable concurrency.Flag
-	customRoutes = append(customRoutes, routes.CustomRoute{
+
+	admissionControllerRoute := routes.CustomRoute{
 		Route:         "/admissioncontroller",
 		Authorizer:    allow.Anonymous(),
 		ServerHandler: admissioncontroller.NewHandler(s.centralConnection, &centralReachable),
 		Compression:   false,
-	})
+	}
+
+	customRoutes = append(customRoutes, admissionControllerRoute)
 
 	// Create grpc server with custom routes
 	config := pkgGRPC.Config{
-		TLS:                verifier.NonCA{},
-		CustomRoutes:       customRoutes,
-		IdentityExtractors: []authn.IdentityExtractor{serviceAuthn.NewExtractor()},
+		TLS:                   verifier.NonCA{},
+		CustomRoutes:          customRoutes,
+		IdentityExtractors:    []authn.IdentityExtractor{serviceAuthn.NewExtractor()},
+		PublicEndpoint:        publicAPIEndpoint,
+		InsecureLocalEndpoint: localAPIEndpoint,
 	}
 	s.server = pkgGRPC.NewAPI(config)
 
 	s.registerAPIServices()
 	s.server.Start()
+
+	webhookConfig := pkgGRPC.Config{
+		TLS:            verifier.NonCA{},
+		CustomRoutes:   []routes.CustomRoute{admissionControllerRoute},
+		PublicEndpoint: publicWebhookEndpoint,
+	}
+
+	webhookServer := pkgGRPC.NewAPI(webhookConfig)
+	webhookServer.Start()
 
 	// Start all of our channels and listeners
 	if s.listener != nil {

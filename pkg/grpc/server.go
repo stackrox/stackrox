@@ -31,9 +31,6 @@ import (
 )
 
 const (
-	publicAPIEndpoint     = ":8443"
-	insecureLocalEndpoint = "127.0.0.1:8444"
-
 	maxMsgSize = 8 * 1024 * 1024
 )
 
@@ -76,6 +73,9 @@ type Config struct {
 
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
+
+	InsecureLocalEndpoint string
+	PublicEndpoint        string
 }
 
 // NewAPI returns an API object.
@@ -145,12 +145,12 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 }
 
 func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) error {
-	lis, err := net.Listen("tcp", insecureLocalEndpoint)
+	lis, err := net.Listen("tcp", a.config.InsecureLocalEndpoint)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Launching backend GRPC listener on %v", insecureLocalEndpoint)
+	log.Infof("Launching backend GRPC listener on %v", a.config.InsecureLocalEndpoint)
 	// Launch the GRPC listener
 	go func() {
 		if err := server.Serve(lis); err != nil {
@@ -162,7 +162,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) error {
 }
 
 func (a *apiImpl) connectToLocalEndpoint() (*grpc.ClientConn, error) {
-	return grpc.Dial(insecureLocalEndpoint, grpc.WithInsecure())
+	return grpc.Dial(a.config.InsecureLocalEndpoint, grpc.WithInsecure())
 }
 
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
@@ -187,9 +187,11 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	gwMux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}),
 		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD))
-	for _, service := range a.apiServices {
-		if err := service.RegisterServiceHandler(context.Background(), gwMux, localConn); err != nil {
-			log.Panicf("failed to register API service: %v", err)
+	if localConn != nil {
+		for _, service := range a.apiServices {
+			if err := service.RegisterServiceHandler(context.Background(), gwMux, localConn); err != nil {
+				log.Panicf("failed to register API service: %v", err)
+			}
 		}
 	}
 	mux.Handle("/v1/", gziphandler.GzipHandler(gwMux))
@@ -224,15 +226,18 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		service.RegisterServiceServer(grpcServer)
 	}
 
-	if err := a.listenOnLocalEndpoint(grpcServer); err != nil {
-		log.Panicf("Could not listen on local endpoint: %v", err)
-	}
-	localConn, err := a.connectToLocalEndpoint()
-	if err != nil {
-		log.Panicf("Could not connect to local endpoint: %v", err)
+	var localConn *grpc.ClientConn
+	if a.config.InsecureLocalEndpoint != "" {
+		if err := a.listenOnLocalEndpoint(grpcServer); err != nil {
+			log.Panicf("Could not listen on local endpoint: %v", err)
+		}
+		localConn, err = a.connectToLocalEndpoint()
+		if err != nil {
+			log.Panicf("Could not connect to local endpoint: %v", err)
+		}
 	}
 
-	listener, err := tls.Listen("tcp", publicAPIEndpoint, tlsConf)
+	listener, err := tls.Listen("tcp", a.config.PublicEndpoint, tlsConf)
 	if err != nil {
 		log.Panicf("Could not listen on public API endpoint: %v", err)
 	}

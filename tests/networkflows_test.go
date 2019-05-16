@@ -40,19 +40,29 @@ func TestStackroxNetworkFlows(t *testing.T) {
 
 	service := v1.NewNetworkGraphServiceClient(conn)
 
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	var graph *v1.NetworkGraph
-
-	for !hasEdges(graph) {
-		time.Sleep(5 * time.Second)
-		graph, err = service.GetNetworkGraph(ctx, &v1.NetworkGraphRequest{
-			ClusterId: clusterID,
-			Query:     "namespace:stackrox",
-			Since:     types.TimestampNow(),
-		})
+	timeout := time.NewTimer(5 * time.Minute)
+	ticker := time.NewTicker(5 * time.Second)
+	for {
+		select {
+		case <-timeout.C:
+			t.Fatal("Failed to get the correct edges in 5 minutes")
+		case <-ticker.C:
+			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+			graph, err = service.GetNetworkGraph(ctx, &v1.NetworkGraphRequest{
+				ClusterId: clusterID,
+				Query:     "namespace:stackrox",
+				Since:     types.TimestampNow(),
+			})
+			cancel()
+			if err != nil {
+				log.Errorf("error getting graph: %v", err)
+			}
+		}
+		if hasEdges(graph) {
+			break
+		}
 	}
-
-	cancel()
 
 	require.NoError(t, err)
 

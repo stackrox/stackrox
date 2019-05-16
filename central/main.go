@@ -117,6 +117,9 @@ const (
 	tokenRedirectURLPath = "/auth/response/generic"
 
 	grpcServerWatchdogTimeout = 20 * time.Second
+
+	publicAPIEndpoint     = ":8443"
+	insecureLocalEndpoint = "127.0.0.1:8444"
 )
 
 func main() {
@@ -306,10 +309,12 @@ func startGRPCServer(factory serviceFactory) {
 	}
 
 	config := pkgGRPC.Config{
-		CustomRoutes:       factory.CustomRoutes(),
-		TLS:                tlsconfig.NewCentralTLSConfigurer(),
-		IdentityExtractors: idExtractors,
-		AuthProviders:      registry,
+		CustomRoutes:          factory.CustomRoutes(),
+		TLS:                   tlsconfig.NewCentralTLSConfigurer(),
+		IdentityExtractors:    idExtractors,
+		AuthProviders:         registry,
+		InsecureLocalEndpoint: insecureLocalEndpoint,
+		PublicEndpoint:        publicAPIEndpoint,
 	}
 
 	if features.AuditLogging.Enabled() {
@@ -323,7 +328,6 @@ func startGRPCServer(factory serviceFactory) {
 	}
 
 	server := pkgGRPC.NewAPI(config)
-
 	server.Register(factory.ServicesToRegister(registry)...)
 
 	factory.StartServices()
