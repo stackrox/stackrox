@@ -785,10 +785,11 @@ class Kubernetes implements OrchestratorMain {
                     ),
                     it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace) }
             )
-            def uid = client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid ?:
+            def uid = it.roleRef.kind == "Role" ?
                     client.rbac().roles()
                             .inNamespace(it.metadata.namespace)
-                            .withName(it.roleRef.name).get()?.metadata?.uid
+                            .withName(it.roleRef.name).get()?.metadata?.uid :
+                    client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid
             b.roleRef.uid = uid ?: ""
             bindings.add(b)
         }
@@ -887,7 +888,7 @@ class Kubernetes implements OrchestratorMain {
                             labels: it.metadata.labels ? it.metadata.labels : [:],
                             annotations: it.metadata.annotations ? it.metadata.annotations : [:]
                     ),
-                    it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace) }
+                    it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace ?: "") }
             )
             def uid = client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid ?:
                     client.rbac().roles()

@@ -1,10 +1,13 @@
+import com.google.common.base.CaseFormat
 import common.Constants
 import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
 import io.stackrox.proto.storage.Rbac
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
+import objects.K8sRoleBinding
 import objects.K8sServiceAccount
+import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
 import spock.lang.Stepwise
@@ -20,8 +23,21 @@ class K8sRbacTest extends BaseSpecification {
     private static final K8sServiceAccount NEW_SA = new K8sServiceAccount(
             name: SERVICE_ACCOUNT_NAME,
             namespace: Constants.ORCHESTRATOR_NAMESPACE)
-    private static final K8sRole NEW_ROLE = new K8sRole(name: ROLE_NAME, namespace: Constants.ORCHESTRATOR_NAMESPACE)
-    private static final K8sRole NEW_CLUSTER_ROLE = new K8sRole(name: CLUSTER_ROLE_NAME, clusterRole: true)
+
+    private static final K8sRole NEW_ROLE =
+            new K8sRole(name: ROLE_NAME, namespace: Constants.ORCHESTRATOR_NAMESPACE)
+
+    private static final K8sRole NEW_CLUSTER_ROLE =
+            new K8sRole(name: CLUSTER_ROLE_NAME, clusterRole: true)
+
+    private static final K8sRoleBinding NEW_ROLE_BINDING_ROLE_REF =
+            new K8sRoleBinding(NEW_ROLE, [new K8sSubject(NEW_SA)])
+
+    private static final K8sRoleBinding NEW_ROLE_BINDING_CLUSTER_ROLE_REF =
+            new K8sRoleBinding(NEW_CLUSTER_ROLE, [new K8sSubject(NEW_SA)])
+
+    private static final K8sRoleBinding NEW_CLUSTER_ROLE_BINDING =
+            new K8sRoleBinding(NEW_CLUSTER_ROLE, [new K8sSubject(NEW_SA)])
 
     def cleanupSpec() {
         orchestrator.deleteServiceAccount(NEW_SA)
@@ -119,10 +135,15 @@ class K8sRbacTest extends BaseSpecification {
         def orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
 
         expect:
-        "SR should have the same service accounts"
+        "SR should have the same roles"
         def stackroxRoles = RbacService.getRoles()
+        Timer t = new Timer(15, 2)
+        while (t.IsValid() && stackroxRoles.size() != orchestratorRoles.size()) {
+            stackroxRoles = RbacService.getRoles()
+        }
 
         stackroxRoles.size() == orchestratorRoles.size()
+        println "All roles scraped in ${t.SecondsSince()}s"
         for (Rbac.K8sRole r : stackroxRoles) {
             println "Looking for SR Role: ${r.name} (${r.namespace})"
             K8sRole role =  orchestratorRoles.find {
@@ -152,37 +173,156 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.createRole(NEW_ROLE)
 
         expect:
-        "SR should detect the new service account"
+        "SR should detect the new role"
         RbacService.waitForRole(NEW_ROLE)
     }
 
     def "Remove Role and verify it is removed"() {
         given:
-        "delete the created service account"
+        "delete the created role"
         orchestrator.deleteRole(NEW_ROLE)
 
         expect:
-        "SR should not show the service account"
+        "SR should not show the role"
         RbacService.waitForRoleRemoved(NEW_ROLE)
     }
 
     def "Add Cluster Role and verify it gets scraped"() {
         given:
-        "create a new role"
+        "create a new cluster role"
         orchestrator.createClusterRole(NEW_CLUSTER_ROLE)
 
         expect:
-        "SR should detect the new service account"
+        "SR should detect the new cluster role"
         RbacService.waitForRole(NEW_CLUSTER_ROLE)
     }
 
     def "Remove Cluster Role and verify it is removed"() {
         given:
-        "delete the created service account"
+        "delete the created cluster role"
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
 
         expect:
-        "SR should not show the service account"
+        "SR should not show the cluster role"
         RbacService.waitForRoleRemoved(NEW_CLUSTER_ROLE)
+    }
+
+    def "Verify scraped bindings"() {
+        given:
+        "list of bindings from the orchestrator"
+        def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
+
+        expect:
+        "SR should have the same bindings"
+        def stackroxBindings = RbacService.getRoleBindings()
+        Timer t = new Timer(15, 2)
+        while (t.IsValid() && stackroxBindings.size() != orchestratorBindings.size()) {
+            stackroxBindings = RbacService.getRoles()
+        }
+
+        stackroxBindings.size() == orchestratorBindings.size()
+        println "All bindings scraped in ${t.SecondsSince()}s"
+        for (Rbac.K8sRoleBinding b : stackroxBindings) {
+            println "Looking for SR Bindings: ${b.name} (${b.namespace})"
+            K8sRoleBinding binding =  orchestratorBindings.find {
+                it.name == b.name &&
+                        it.namespace == b.namespace
+            }
+            assert binding
+            assert b.labelsMap == binding.labels
+            assert b.annotationsMap == binding.annotations
+            assert b.roleId == binding.roleRef.uid
+            assert b.subjectsCount == binding.subjects.size()
+            for (int i = 0; i < binding.subjects.size(); i++) {
+                def oSubject = binding.subjects.get(i) as K8sSubject
+                def sSubject = b.subjectsList.get(i) as Rbac.Subject
+                assert sSubject.name == oSubject.name &&
+                        oSubject.namespace == null ?
+                                sSubject.namespace == "" :
+                                sSubject.namespace == oSubject.namespace &&
+                        CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, sSubject.kind.toString()) ==
+                        oSubject.kind
+            }
+            assert RbacService.getRoleBinding(b.id) == b
+        }
+    }
+
+    def "Add Binding with role ref and verify it gets scraped"() {
+        given:
+        "create a new role binding"
+        orchestrator.createRole(NEW_ROLE)
+        orchestrator.createServiceAccount(NEW_SA)
+        orchestrator.createRoleBinding(NEW_ROLE_BINDING_ROLE_REF)
+
+        expect:
+        "SR should detect the new role binding"
+        RbacService.waitForRoleBinding(NEW_ROLE_BINDING_ROLE_REF)
+    }
+
+    def "Remove Binding with role ref and verify it is removed"() {
+        given:
+        "delete the created role binding"
+        orchestrator.deleteRoleBinding(NEW_ROLE_BINDING_ROLE_REF)
+
+        expect:
+        "SR should not show the role binding"
+        RbacService.waitForRoleBindingRemoved(NEW_ROLE_BINDING_ROLE_REF)
+
+        cleanup:
+        orchestrator.deleteServiceAccount(NEW_SA)
+        orchestrator.deleteRole(NEW_ROLE)
+    }
+
+    def "Add Binding with cluster role ref and verify it gets scraped"() {
+        given:
+        "create a new role binding"
+        orchestrator.createClusterRole(NEW_CLUSTER_ROLE)
+        orchestrator.createServiceAccount(NEW_SA)
+        NEW_ROLE_BINDING_CLUSTER_ROLE_REF.setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+        orchestrator.createRoleBinding(NEW_ROLE_BINDING_CLUSTER_ROLE_REF)
+
+        expect:
+        "SR should detect the new role binding"
+        RbacService.waitForRoleBinding(NEW_ROLE_BINDING_CLUSTER_ROLE_REF)
+    }
+
+    def "Remove Binding with clsuter role ref and verify it is removed"() {
+        given:
+        "delete the created role binding"
+        orchestrator.deleteRoleBinding(NEW_ROLE_BINDING_CLUSTER_ROLE_REF)
+
+        expect:
+        "SR should not show the role binding"
+        RbacService.waitForRoleBindingRemoved(NEW_ROLE_BINDING_CLUSTER_ROLE_REF)
+
+        cleanup:
+        orchestrator.deleteServiceAccount(NEW_SA)
+        orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
+    }
+
+    def "Add cluster Binding and verify it gets scraped"() {
+        given:
+        "create a new cluster role binding"
+        orchestrator.createClusterRole(NEW_CLUSTER_ROLE)
+        orchestrator.createServiceAccount(NEW_SA)
+        orchestrator.createClusterRoleBinding(NEW_CLUSTER_ROLE_BINDING)
+
+        expect:
+        "SR should detect the new cluster role binding"
+        RbacService.waitForRoleBinding(NEW_CLUSTER_ROLE_BINDING)
+    }
+
+    def "Remove cluster Binding and verify it is removed"() {
+        given:
+        "delete the created cluster role binding"
+        orchestrator.deleteClusterRoleBinding(NEW_CLUSTER_ROLE_BINDING)
+
+        expect:
+        "SR should not show the cluster role binding"
+        RbacService.waitForRoleBindingRemoved(NEW_CLUSTER_ROLE_BINDING)
+
+        cleanup:
+        orchestrator.createServiceAccount(NEW_SA)
+        orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
     }
 }
