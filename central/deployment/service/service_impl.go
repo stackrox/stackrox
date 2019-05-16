@@ -27,6 +27,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	maxDeploymentsReturned = 1000
+)
+
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
@@ -69,6 +73,7 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 	if err != nil {
 		return nil, err
 	}
+
 	resp := &v1.ListDeploymentsWithProcessInfoResponse{}
 	for _, deployment := range deployments.Deployments {
 		whitelistResults, err := s.whitelistResultsForDeployment(ctx, deployment)
@@ -137,6 +142,9 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	sort.SliceStable(deployments, func(i, j int) bool {
 		return deployments[i].GetPriority() < deployments[j].GetPriority()
 	})
+	if len(deployments) > maxDeploymentsReturned {
+		deployments = deployments[:maxDeploymentsReturned]
+	}
 	return &v1.ListDeploymentsResponse{
 		Deployments: deployments,
 	}, nil

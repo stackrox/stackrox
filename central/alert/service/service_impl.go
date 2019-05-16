@@ -26,6 +26,8 @@ import (
 
 const (
 	badSnoozeErrorMsg = "'snooze_till' timestamp must be at a future time"
+
+	maxListAlertsReturned = 1000
 )
 
 var (
@@ -92,6 +94,11 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 
 // ListAlerts returns ListAlerts according to the request.
 func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
+	if request.GetPagination() == nil {
+		request.Pagination = &v1.Pagination{
+			Limit: maxListAlertsReturned,
+		}
+	}
 	alerts, err := s.dataStore.ListAlerts(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

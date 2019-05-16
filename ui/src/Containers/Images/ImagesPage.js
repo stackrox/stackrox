@@ -7,7 +7,7 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as imagesActions, types } from 'reducers/images';
 
-import PageHeader from 'Components/PageHeader';
+import PageHeader, { PageHeaderComponent } from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import ImageDetails from 'Containers/Images/ImageDetails';
 import Panel from 'Components/Panel';
@@ -55,9 +55,10 @@ const ImagesPage = ({
     const paginationComponent = (
         <TablePagination page={page} dataLength={length} setPage={setPage} />
     );
-    const headerText = `${length} Image${length === 1 ? '' : 's'} ${
-        isViewFiltered ? 'Matched' : ''
-    }`;
+
+    const headerComponent = (
+        <PageHeaderComponent length={length} type="Image" isViewFiltered={isViewFiltered} />
+    );
     return (
         <section className="flex flex-1 flex-col h-full">
             <div className="flex flex-1 flex-col">
@@ -78,7 +79,10 @@ const ImagesPage = ({
                 </PageHeader>
                 <div className="flex flex-1 relative">
                     <div className="shadow border-primary-300 bg-base-100 w-full overflow-hidden">
-                        <Panel header={headerText} headerComponents={paginationComponent}>
+                        <Panel
+                            headerTextComponent={headerComponent}
+                            headerComponents={paginationComponent}
+                        >
                             <div className="w-full">
                                 <ImagesTable
                                     rows={images}

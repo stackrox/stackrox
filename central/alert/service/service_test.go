@@ -44,19 +44,23 @@ func TestAlertService(t *testing.T) {
 	suite.Run(t, new(patchAlertTests))
 }
 
-func newEmptyQuery() *v1.Query {
+func newEmptyQuery(withLimit bool) *v1.Query {
 	return &v1.Query{
-		Pagination: newListAlertPagination(),
+		Pagination: newListAlertPagination(withLimit),
 	}
 }
 
-func newListAlertPagination() *v1.Pagination {
-	return &v1.Pagination{
+func newListAlertPagination(withLimit bool) *v1.Pagination {
+	p := &v1.Pagination{
 		SortOption: &v1.SortOption{
 			Field:    search.ViolationTime.String(),
 			Reversed: true,
 		},
 	}
+	if withLimit {
+		p.Limit = maxListAlertsReturned
+	}
+	return p
 }
 
 type baseSuite struct {
@@ -191,7 +195,7 @@ func (s *listAlertsTests) TestListAlerts() {
 	fakeQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, "field1", "field12").AddStrings(search.Category, "field2")
 
 	fakeQueryProto := fakeQuery.ProtoQuery()
-	fakeQueryProto.Pagination = newListAlertPagination()
+	fakeQueryProto.Pagination = newListAlertPagination(true)
 
 	s.searcher.EXPECT().SearchListAlerts(fakeQueryProto).Return(s.fakeListAlertSlice, nil)
 
@@ -205,7 +209,7 @@ func (s *listAlertsTests) TestListAlerts() {
 
 func (s *listAlertsTests) TestListAlertsWhenTheQueryIsEmpty() {
 	var q v1.Query
-	q.Pagination = newListAlertPagination()
+	q.Pagination = newListAlertPagination(true)
 	s.searcher.EXPECT().SearchListAlerts(&q).Return(s.fakeListAlertSlice, nil)
 
 	result, err := s.service.ListAlerts(context.Background(), &v1.ListAlertsRequest{
@@ -226,7 +230,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheQueryIsInvalid() {
 }
 
 func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
-	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery(true)).Return(nil, errFake)
 
 	result, err := s.service.ListAlerts(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -380,7 +384,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 }
 
 func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*storage.ListAlert, expected *v1.GetAlertsGroupResponse) {
-	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery(false)).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsGroup(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -391,7 +395,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
-	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery(false)).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsGroup(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -712,7 +716,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 }
 
 func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*storage.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
-	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery(false)).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -800,7 +804,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		},
 	}
 
-	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery(false)).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -811,7 +815,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
-	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery(false)).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -929,7 +933,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	}
 
 	var q v1.Query
-	q.Pagination = newListAlertPagination()
+	q.Pagination = newListAlertPagination(false)
 	s.searcher.EXPECT().SearchListAlerts(&q).Return(alerts, nil)
 
 	result, err := s.service.GetAlertTimeseries(context.Background(), &v1.ListAlertsRequest{
@@ -941,7 +945,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
-	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery(false)).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(context.Background(), &v1.ListAlertsRequest{
 		Query: "",

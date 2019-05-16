@@ -13,7 +13,7 @@ import Table, {
 } from 'Components/Table';
 
 import Panel from 'Components/Panel';
-import PageHeader from 'Components/PageHeader';
+import PageHeader, { PageHeaderComponent } from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import TablePagination from 'Components/TablePagination';
 
@@ -78,11 +78,16 @@ class SecretPage extends Component {
                 setPage={this.setTablePage}
             />
         );
-        const headerText = `${length} Secret${length === 1 ? '' : 's'} ${
-            this.props.isViewFiltered ? 'Matched' : ''
-        }`;
+
+        const headerComponent = (
+            <PageHeaderComponent
+                length={length}
+                type="Secret"
+                isViewFiltered={this.props.isViewFiltered}
+            />
+        );
         return (
-            <Panel header={headerText} headerComponents={paginationComponent}>
+            <Panel headerTextComponent={headerComponent} headerComponents={paginationComponent}>
                 <div className="w-full">{this.renderTable()}</div>
             </Panel>
         );

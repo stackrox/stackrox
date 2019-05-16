@@ -19,6 +19,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	maxImagesReturned = 1000
+)
+
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Image)): {
@@ -81,6 +85,9 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	}
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if len(images) > maxImagesReturned {
+		images = images[:maxImagesReturned]
 	}
 	return &v1.ListImagesResponse{
 		Images: images,

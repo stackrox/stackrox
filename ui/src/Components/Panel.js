@@ -7,7 +7,7 @@ import CloseButton from './CloseButton';
 
 export const headerClassName = 'flex w-full h-12';
 
-const TooltipDiv = ({ header, isUpperCase }) => {
+export const TooltipDiv = ({ header, isUpperCase }) => {
     const titleClassName = isUpperCase ? 'uppercase' : 'capitalize';
     const tooltipContent = <span className="text-sm">{header}</span>;
 

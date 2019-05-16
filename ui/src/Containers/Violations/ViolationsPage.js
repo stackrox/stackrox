@@ -23,7 +23,7 @@ import {
 } from 'Components/Table';
 import CheckboxTable from 'Components/CheckboxTable';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
-import PageHeader from 'Components/PageHeader';
+import PageHeader, { PageHeaderComponent } from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
@@ -87,15 +87,19 @@ class ViolationsPage extends Component {
 
     isRunTimeViolation = violation => violation && violation.lifecycleStage === 'RUNTIME';
 
-    getTableHeaderText = () => {
+    getTableHeaderTextComponent = () => {
         const { violations, isViewFiltered } = this.props;
         const { length: selectionCount } = this.state.selection;
         const { length: rowCount } = Object.keys(violations);
-        return selectionCount !== 0
-            ? `${selectionCount} Violation${selectionCount === 1 ? '' : 's'} Selected`
-            : `${rowCount} Violation${rowCount === 1 ? '' : 's'} ${
-                  isViewFiltered ? 'Matched' : ''
-              }`;
+
+        return (
+            <PageHeaderComponent
+                length={rowCount}
+                selectionCount={selectionCount}
+                type="Violation"
+                isViewFiltered={isViewFiltered}
+            />
+        );
     };
 
     clearSelection = () => this.setState({ selection: [] });
@@ -300,7 +304,10 @@ class ViolationsPage extends Component {
             </>
         );
         return (
-            <Panel header={this.getTableHeaderText()} headerComponents={headerComponents}>
+            <Panel
+                headerTextComponent={this.getTableHeaderTextComponent()}
+                headerComponents={headerComponents}
+            >
                 <div className="w-full">{this.renderSelectTable()}</div>
             </Panel>
         );

@@ -19,6 +19,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	maxSecretsReturned = 1000
+)
+
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Secret)): {
@@ -100,6 +104,8 @@ func (s *serviceImpl) ListSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve secrets: %s", err)
 	}
-
+	if len(secrets) > maxSecretsReturned {
+		secrets = secrets[:maxSecretsReturned]
+	}
 	return &v1.ListSecretsResponse{Secrets: secrets}, nil
 }

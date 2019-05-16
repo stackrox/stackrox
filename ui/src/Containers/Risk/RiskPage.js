@@ -7,7 +7,7 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as deploymentsActions } from 'reducers/deployments';
 
-import PageHeader from 'Components/PageHeader';
+import PageHeader, { PageHeaderComponent } from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
@@ -56,11 +56,12 @@ const RiskPage = ({
             <TablePagination page={page} dataLength={length} setPage={setPage} />
         );
         const isFiltering = searchOptions.length;
-        const headerText = `${length} Deployment${length === 1 ? '' : 's'} ${
-            isFiltering ? 'Matched' : ''
-        }`;
+
+        const headerComponent = (
+            <PageHeaderComponent length={length} type="Deployment" isViewFiltered={isFiltering} />
+        );
         return (
-            <Panel header={headerText} headerComponents={paginationComponent}>
+            <Panel headerTextComponent={headerComponent} headerComponents={paginationComponent}>
                 <div className="w-full">
                     <RiskTable
                         rows={deployments}
