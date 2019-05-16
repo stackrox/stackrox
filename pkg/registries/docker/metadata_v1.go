@@ -133,6 +133,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 	}
 
 	var metadata = &storage.V1Metadata{
+		Digest:  ref.String(),
 		Created: protoconv.ConvertTimeToTimestamp(img.Created),
 	}
 

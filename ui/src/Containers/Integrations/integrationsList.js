@@ -16,6 +16,7 @@ import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
 import s3 from 'images/s3.svg';
 import pagerduty from 'images/pagerduty.svg';
+import tenable from 'images/tenable.svg';
 
 const integrationsList = {
     authProviders: [
@@ -113,6 +114,14 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: nexus,
+            disabled: false
+        },
+        {
+            label: 'Tenable.io',
+            type: 'tenable',
+            categories: 'Registry + Scanner',
+            source: 'imageIntegrations',
+            image: tenable,
             disabled: false
         }
     ],

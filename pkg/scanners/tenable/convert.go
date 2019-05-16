@@ -2,6 +2,7 @@ package tenable
 
 import (
 	"strconv"
+	"strings"
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -55,49 +56,53 @@ func convertScanToImageScan(image *storage.Image, s *scanResult) *storage.ImageS
 }
 
 func getImpact(i string) storage.CVSSV2_Impact {
-	switch i {
-	case "None":
+	i = strings.ToLower(i)
+	switch {
+	case strings.Contains(i, "none"):
 		return storage.CVSSV2_IMPACT_NONE
-	case "Partial":
+	case strings.Contains(i, "partial"):
 		return storage.CVSSV2_IMPACT_PARTIAL
-	case "Complete":
+	case strings.Contains(i, "complete"):
 		return storage.CVSSV2_IMPACT_COMPLETE
 	default:
-		log.Errorf("Impact could not parse: %v", i)
+		log.Errorf("Impact could not be parsed: %v", i)
 		return storage.CVSSV2_IMPACT_COMPLETE
 	}
 }
 
 func convertCVSS(nvd nvdFinding) *storage.CVSSV2 {
 	var cvss storage.CVSSV2
-	switch nvd.AccessVector {
-	case "Network":
+	av := strings.ToLower(nvd.AccessVector)
+	switch {
+	case strings.Contains(av, "network"):
 		cvss.AttackVector = storage.CVSSV2_ATTACK_NETWORK
-	case "Adjacent":
+	case strings.Contains(av, "adjacent"):
 		cvss.AttackVector = storage.CVSSV2_ATTACK_ADJACENT
-	case "Local":
+	case strings.Contains(av, "local"):
 		cvss.AttackVector = storage.CVSSV2_ATTACK_LOCAL
 	default:
 		log.Errorf("Could not parse access vector %v", nvd.AccessVector)
 		cvss.AttackVector = storage.CVSSV2_ATTACK_NETWORK
 	}
-	switch nvd.Auth {
-	case "None required":
+	auth := strings.ToLower(nvd.Auth)
+	switch {
+	case strings.Contains(auth, "none"):
 		cvss.Authentication = storage.CVSSV2_AUTH_NONE
-	case "Single":
+	case strings.Contains(auth, "single"):
 		cvss.Authentication = storage.CVSSV2_AUTH_SINGLE
-	case "Multiple":
+	case strings.Contains(auth, "multiple"):
 		cvss.Authentication = storage.CVSSV2_AUTH_MULTIPLE
 	default:
 		log.Errorf("Could not parse auth vector %v", nvd.Auth)
 		cvss.Authentication = storage.CVSSV2_AUTH_MULTIPLE
 	}
-	switch nvd.AccessComplexity {
-	case "Low":
+	access := strings.ToLower(nvd.AccessComplexity)
+	switch {
+	case strings.Contains(access, "low"):
 		cvss.AccessComplexity = storage.CVSSV2_ACCESS_LOW
-	case "Medium":
+	case strings.Contains(access, "med"):
 		cvss.AccessComplexity = storage.CVSSV2_ACCESS_MEDIUM
-	case "High":
+	case strings.Contains(access, "high"):
 		cvss.AccessComplexity = storage.CVSSV2_ACCESS_HIGH
 	default:
 		log.Errorf("Could not parse access complexity %v", nvd.AccessComplexity)

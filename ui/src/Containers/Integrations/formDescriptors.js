@@ -407,7 +407,7 @@ const formDescriptors = {
             {
                 label: 'Secret Key',
                 jsonpath: 'tenable.secretKey',
-                type: 'text',
+                type: 'password',
                 placeholder: ''
             }
         ],

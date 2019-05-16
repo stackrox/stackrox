@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/transports"
@@ -114,11 +114,19 @@ func (d *tenable) Test() error {
 	body, status, err := d.sendRequest("GET", "/container-security/api/v1/container/list")
 	if err != nil {
 		return err
-	} else if status != 200 {
-		return fmt.Errorf("Unexpected status code '%v' when calling %v. Body: %v",
+	} else if status != http.StatusOK {
+		return fmt.Errorf("unexpected status code '%d' when calling %s. Body: %s",
 			status, apiEndpoint+"/container-security/api/v1/container/list", string(body))
 	}
 	return nil
+}
+
+func getShortenedDigest(s string) string {
+	s = strings.TrimPrefix(s, "sha256:")
+	if len(s) > 12 {
+		return s[:12]
+	}
+	return s
 }
 
 // GetLastScan retrieves the most recent scan
@@ -127,13 +135,17 @@ func (d *tenable) GetLastScan(image *storage.Image) (*storage.ImageScan, error) 
 		return nil, nil
 	}
 
-	getScanURL := fmt.Sprintf("/container-security/api/v1/reports/by_image?image_id=%v",
-		imageTypes.Wrapper{Image: image}.ShortRegistrySHA())
+	v1Digest := image.GetMetadata().GetV1().GetDigest()
+	if v1Digest == "" {
+		return nil, fmt.Errorf("could not get scan for image %q as we have not retrieved a valid v1 digest", image.GetName().GetFullName())
+	}
+
+	getScanURL := fmt.Sprintf("/container-security/api/v1/reports/by_image?image_id=%s", getShortenedDigest(v1Digest))
 
 	body, status, err := d.sendRequest("GET", getScanURL)
 	if err != nil {
 		return nil, err
-	} else if status != 200 {
+	} else if status != http.StatusOK {
 		return nil, fmt.Errorf("Unexpected status code %v when retrieving image scan: %v", status, string(body))
 	}
 	scan, err := parseImageScan(body)
