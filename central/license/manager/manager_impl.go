@@ -461,11 +461,21 @@ func (m *manager) addLicenseNoLock(deploymentEnvsByClusterID map[string][]string
 		return nil, licenseErr
 	}
 
-	m.licenses[license.licenseProto.GetMetadata().GetId()] = license
+	id := license.licenseProto.GetMetadata().GetId()
+	oldLicense := m.licenses[id]
+	m.licenses[id] = license
+
+	delete(m.dirty, oldLicense)
 	m.dirty[license] = struct{}{}
 
+	// If we're replacing the old license, we definitely want to activate the replacement. Also
+	// try activating it if we don't have a currently active license (note: these conditions might
+	// collapse into one if there is no active license and we are not replacing a license, but that is
+	// perfectly fine).
+	activate = activate || m.activeLicense == oldLicense || m.activeLicense == nil
+
 	var newLicenseInfo *v1.LicenseInfo
-	if licenseErr == nil && (m.activeLicense == nil || activate) {
+	if licenseErr == nil && activate {
 		newLicenseInfo, _, _ = m.makeLicenseActiveNoLock(license, deploymentEnvsByClusterID)
 	} else {
 		newLicenseInfo = m.getLicenseInfoNoLock(license, deploymentEnvsByClusterID)
