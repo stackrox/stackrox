@@ -57,7 +57,7 @@ func (g *garbageCollectorImpl) runImageGC() {
 		case <-t.C:
 			g.collectImages()
 		case <-g.stopSig.Done():
-			g.stoppedSig.Done()
+			g.stoppedSig.Signal()
 			return
 		}
 	}
