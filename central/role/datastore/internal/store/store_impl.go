@@ -65,7 +65,7 @@ func (s *storeImpl) GetRolesBatch(names []string) ([]*storage.Role, error) {
 	return roles, err
 }
 
-// GetRoles returns all of the roles in the store.
+// GetAllRoles returns all of the roles in the store.
 // Returns nil without an error if no roles exist in the store (default roles cannot be deleted, so never)
 func (s *storeImpl) GetAllRoles() ([]*storage.Role, error) {
 	msgs, err := s.roleCrud.ReadAll()
