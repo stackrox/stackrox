@@ -15,6 +15,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddQuery("serviceAccount(id: ID!): ServiceAccount"),
 		schema.AddType("StringListEntry", []string{"key: String!", "values: [String!]!"}),
 		schema.AddType("ScopedPermissions", []string{"scope: String!", "permissions: [StringListEntry!]!"}),
 		schema.AddExtraResolver("ServiceAccount", `roles: [K8SRole!]!`),
@@ -22,6 +23,14 @@ func init() {
 		schema.AddExtraResolver("ServiceAccount", `deployments: [Deployment!]!`),
 		schema.AddExtraResolver("ServiceAccount", `saNamespace: Namespace!`),
 	)
+}
+
+// ServiceAccount gets a service account by ID.
+func (resolver *Resolver) ServiceAccount(ctx context.Context, args struct{ graphql.ID }) (*serviceAccountResolver, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.wrapServiceAccount(resolver.ServiceAccountsDataStore.GetServiceAccount(ctx, string(args.ID)))
 }
 
 func (resolver *serviceAccountResolver) Roles(ctx context.Context) ([]*k8SRoleResolver, error) {
