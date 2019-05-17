@@ -330,6 +330,14 @@
   revision = "dd17fb852690c5b0068b26995fb4e63a2f7cb1c1"
 
 [[projects]]
+  digest = "1:60abec4c812fc39cf7e66571da9e1758c586c258af815c4062b20d136542ff19"
+  name = "github.com/dave/jennifer"
+  packages = ["jen"]
+  pruneopts = "NUT"
+  revision = "14e399b6b5e8456c66c45c955fc27b568bacb5c9"
+  version = "v1.3.0"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -1912,6 +1920,7 @@
     "github.com/coreos/clair/api/v1",
     "github.com/coreos/go-oidc",
     "github.com/coreos/go-systemd/dbus",
+    "github.com/dave/jennifer/jen",
     "github.com/deckarep/golang-set",
     "github.com/dgraph-io/badger",
     "github.com/docker/distribution/manifest/schema1",
