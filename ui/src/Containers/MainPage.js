@@ -39,6 +39,7 @@ import LicenseReminder from 'Containers/License/LicenseReminder';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import Loader from 'Components/Loader';
+import AppWrapper from './AppWrapper';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
@@ -154,22 +155,24 @@ class MainPage extends Component {
 
     render() {
         return (
-            <section className="flex flex-1 flex-col h-full relative">
-                <Notifications />
-                <LicenseReminder />
-                <div className="navigation-gradient" />
-                {this.renderVersionOutOfDate()}
-                <UnreachableWarning />
-                <header className="flex z-20">
-                    <TopNavigation />
-                </header>
-                <section className="flex flex-1 flex-row">
-                    <LeftNavigation />
-                    {this.renderRouter()}
+            <AppWrapper>
+                <section className="flex flex-1 flex-col h-full relative">
+                    <Notifications />
+                    <LicenseReminder />
+                    <div className="navigation-gradient" />
+                    {this.renderVersionOutOfDate()}
+                    <UnreachableWarning />
+                    <header className="flex z-20">
+                        <TopNavigation />
+                    </header>
+                    <section className="flex flex-1 flex-row">
+                        <LeftNavigation />
+                        {this.renderRouter()}
+                    </section>
+                    {this.renderSearchModal()}
+                    {this.renderCLIDownload()}
                 </section>
-                {this.renderSearchModal()}
-                {this.renderCLIDownload()}
-            </section>
+            </AppWrapper>
         );
     }
 }

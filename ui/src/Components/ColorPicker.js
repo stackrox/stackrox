@@ -7,8 +7,15 @@ import { Manager, Target, Popper } from 'react-popper';
 
 class ColorPickerComponent extends Component {
     static propTypes = {
-        color: PropTypes.string.isRequired,
-        onChange: PropTypes.func.isRequired
+        color: PropTypes.string,
+        onChange: PropTypes.func,
+        disabled: PropTypes.bool
+    };
+
+    static defaultProps = {
+        color: null,
+        onChange: () => {},
+        disabled: false
     };
 
     constructor(props) {
@@ -43,7 +50,9 @@ class ColorPickerComponent extends Component {
                     <button
                         type="button"
                         onClick={this.onClickHandler}
-                        className="p-1 h-5 w-full border border-base-300 ignore-react-onclickoutside"
+                        className={`p-1 h-5 w-full border border-base-300 ignore-react-onclickoutside ${
+                            this.props.disabled ? 'pointer-events-none' : ''
+                        }`}
                     >
                         <div
                             style={{ backgroundColor: this.props.color }}

@@ -1195,7 +1195,7 @@
             ]
           },
           {
-            "name": "Config",
+            "name": "PublicConfig",
             "fields": [
               {
                 "id": 1,
@@ -1211,6 +1211,16 @@
                 "id": 3,
                 "name": "footer",
                 "type": "BannerConfig"
+              }
+            ]
+          },
+          {
+            "name": "Config",
+            "fields": [
+              {
+                "id": 1,
+                "name": "public_config",
+                "type": "PublicConfig"
               }
             ]
           }

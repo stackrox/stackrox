@@ -17,9 +17,9 @@ message PutConfigRequest {
 // ConfigService APIs can be used to manage Central config.
 service ConfigService {
 
-    rpc GetLoginConfig(Empty) returns (storage.LoginNotice) {
+    rpc GetPublicConfig(Empty) returns (storage.PublicConfig) {
         option (google.api.http) = {
-            get: "/v1/config/login"
+            get: "/v1/config/public"
         };
     }
 

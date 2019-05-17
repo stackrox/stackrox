@@ -492,7 +492,6 @@ h6 {
     );
     top: 0;
     z-index: 2;
-    position: absolute;
     width: 100%;
 }
 

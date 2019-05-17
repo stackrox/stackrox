@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import SaveButton from 'Containers/AccessControl/SaveButton';
+import SaveButton from 'Components/SaveButton';
 
 function Button(props) {
     if (!props.isEditing)

@@ -15,6 +15,8 @@ import { selectors } from 'reducers';
 import * as Icon from 'react-feather';
 import Tooltip from 'rc-tooltip';
 
+import AppWrapper from '../AppWrapper';
+
 class LoginPage extends Component {
     static propTypes = {
         authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map(key => AUTH_STATUS[key]))
@@ -170,24 +172,26 @@ class LoginPage extends Component {
         const isDarkMode = localStorage.getItem('isDarkMode') === 'true';
 
         return (
-            <section
-                className={`flex flex-col items-center justify-center h-full ${
-                    isDarkMode ? 'bg-base-300' : 'bg-primary-800'
-                } `}
-            >
-                <div className="flex flex-col items-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative">
-                    {this.renderAuthError()}
-                </div>
-                <div className="flex flex-col items-center justify-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative login-bg">
-                    <UnreachableWarning />
-                    <div className="login-border-t h-1 w-full" />
-                    <div className="flex flex-col items-center justify-center w-full">
-                        <img className="h-40 h-40 py-6" src={logoPlatform} alt="StackRox" />
-                        {this.renderAuthProviders()}
+            <AppWrapper>
+                <section
+                    className={`flex flex-col items-center justify-center h-full ${
+                        isDarkMode ? 'bg-base-300' : 'bg-primary-800'
+                    } `}
+                >
+                    <div className="flex flex-col items-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative">
+                        {this.renderAuthError()}
                     </div>
-                    {this.renderLoginButton()}
-                </div>
-            </section>
+                    <div className="flex flex-col items-center justify-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative login-bg">
+                        <UnreachableWarning />
+                        <div className="login-border-t h-1 w-full" />
+                        <div className="flex flex-col items-center justify-center w-full">
+                            <img className="h-40 h-40 py-6" src={logoPlatform} alt="StackRox" />
+                            {this.renderAuthProviders()}
+                        </div>
+                        {this.renderLoginButton()}
+                    </div>
+                </section>
+            </AppWrapper>
         );
     }
 }

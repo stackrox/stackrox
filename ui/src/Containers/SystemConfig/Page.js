@@ -1,46 +1,99 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
+import { actions } from 'reducers/systemConfig';
 
 import PageHeader from 'Components/PageHeader';
+import SaveButton from 'Components/SaveButton';
 import Form from './Form';
+import Detail from './Detail';
 
-const mockInitialValues = {
-    header: false,
-    headerText: 'hello this is sample header text',
-    headerTextColor: 'red',
-    headerBackgroundColor: 'pink',
-    footer: false,
-    footerTextColor: 'blue',
-    footerBackgroundColor: 'black'
+export const keyClassName = 'py-2 text-base-600 font-700 capitalize';
+
+const Page = ({ systemConfig, saveSystemConfig }) => {
+    const [isEditing, setIsEditing] = useState(false);
+
+    function setEditingTrue() {
+        setIsEditing(true);
+    }
+
+    function setEditingFalse() {
+        setIsEditing(false);
+    }
+
+    function saveHandler(config) {
+        saveSystemConfig(config);
+        setIsEditing(false);
+    }
+
+    function getHeaderButtons() {
+        if (isEditing) {
+            return (
+                <>
+                    <button className="btn btn-base mr-2" type="button" onClick={setEditingFalse}>
+                        Cancel
+                    </button>
+                    <SaveButton formName="system-config-form" />
+                </>
+            );
+        }
+        return (
+            <button
+                className="btn btn-base"
+                type="button"
+                onClick={setEditingTrue}
+                disabled={isEditing}
+            >
+                Edit
+            </button>
+        );
+    }
+
+    function getContent() {
+        if (isEditing) {
+            return <Form initialValues={systemConfig} onSubmit={saveHandler} />;
+        }
+        return <Detail config={systemConfig} />;
+    }
+
+    return (
+        <section className="flex flex-1 h-full w-full">
+            <div className="flex flex-1 flex-col w-full">
+                <PageHeader header="System Configuration">
+                    <div className="flex flex-1 justify-end">{getHeaderButtons()}</div>
+                </PageHeader>
+                <div className="w-full h-full flex pb-0 bg-base-200">{getContent()}</div>
+            </div>
+        </section>
+    );
 };
 
-const Page = () => (
-    <section className="flex flex-1 h-full w-full">
-        <div className="flex flex-1 flex-col w-full">
-            <PageHeader header="System Configuration" />
-            <div className="w-full h-full flex pb-0 bg-base-200">
-                <Form initialValues={mockInitialValues} />
-            </div>
-        </div>
-    </section>
-);
-
 Page.propTypes = {
-    license: PropTypes.shape({})
+    systemConfig: PropTypes.shape({}),
+    saveSystemConfig: PropTypes.func.isRequired
 };
 
 Page.defaultProps = {
-    license: null
+    systemConfig: {
+        publicConfig: {
+            header: null,
+            footer: null,
+            loginNotice: null
+        }
+    }
 };
 
 const mapStateToProps = createStructuredSelector({
-    license: selectors.getLicense
+    systemConfig: selectors.getSystemConfig
 });
+
+const mapDispatchToProps = {
+    saveSystemConfig: actions.saveSystemConfig
+};
 
 export default connect(
     mapStateToProps,
-    null
+    mapDispatchToProps
 )(Page);

@@ -21,8 +21,10 @@ func TestStore(t *testing.T) {
 	assert.NotNil(t, config)
 
 	newConfig := &storage.Config{
-		LoginNotice: &storage.LoginNotice{
-			Text: "text",
+		PublicConfig: &storage.PublicConfig{
+			LoginNotice: &storage.LoginNotice{
+				Text: "text",
+			},
 		},
 	}
 	assert.NoError(t, store.UpdateConfig(newConfig))

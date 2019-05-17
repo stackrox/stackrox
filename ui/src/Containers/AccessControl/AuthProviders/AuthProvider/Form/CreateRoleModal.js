@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 import { actions } from 'reducers/roles';
 import Modal from 'Components/Modal';
 import Form from 'Containers/AccessControl/Roles/Permissions/Form';
-import SaveButton from 'Containers/AccessControl/SaveButton';
+import SaveButton from 'Components/SaveButton';
 import { defaultNewRolePermissions } from 'constants/accessControl';
 
 class CreateRoleModal extends Component {

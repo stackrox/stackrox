@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
@@ -20,8 +21,8 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
-			"/v1.ConfigService/GetLoginConfig",
+		allow.Anonymous(): {
+			"/v1.ConfigService/GetPublicConfig",
 		},
 		user.With(permissions.View(resources.Config)): {
 			"/v1.ConfigService/GetConfig",
@@ -67,16 +68,16 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetLoginConfig returns the specific config for the login page
-func (s *serviceImpl) GetLoginConfig(ctx context.Context, _ *v1.Empty) (*storage.LoginNotice, error) {
+// GetPublicConfig returns the publicly available config
+func (s *serviceImpl) GetPublicConfig(ctx context.Context, _ *v1.Empty) (*storage.PublicConfig, error) {
 	config, err := s.datastore.GetConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if config.GetLoginNotice() == nil {
-		return &storage.LoginNotice{}, nil
+	if config.GetPublicConfig() == nil {
+		return &storage.PublicConfig{}, nil
 	}
-	return config.GetLoginNotice(), nil
+	return config.GetPublicConfig(), nil
 }
 
 // GetConfig returns Central's config

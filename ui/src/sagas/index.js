@@ -21,6 +21,7 @@ import groups from './groupSagas';
 import attributes from './attributesSagas';
 import cli from './cliSagas';
 import license from './licenseSagas';
+import systemConfig from './systemConfig';
 
 export default function* root() {
     yield all([
@@ -44,6 +45,7 @@ export default function* root() {
         fork(metadata),
         fork(processes),
         fork(groups),
-        fork(attributes)
+        fork(attributes),
+        fork(systemConfig)
     ]);
 }
