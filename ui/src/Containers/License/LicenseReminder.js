@@ -21,13 +21,10 @@ const LicenseReminder = ({ expirationDate, shouldHaveReadPermission }) => {
 
     useEffect(
         () => {
-            setExpirationMessage(createExpirationMessage(expirationDate));
-        },
-        [createExpirationMessage, expirationDate]
-    );
-
-    useEffect(
-        () => {
+            if (!expirationDate) {
+                setExpirationMessage(null);
+                return;
+            }
             setExpirationMessage(createExpirationMessage(expirationDate));
         },
         [createExpirationMessage, expirationDate]
