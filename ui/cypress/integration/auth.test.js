@@ -22,6 +22,8 @@ describe('Authentication', () => {
 
     const stubAPIs = () => {
         cy.server();
+        // Cypress routes have an override behaviour, so defining this first makes it the fallback.
+        cy.route(/.*/, {}).as('everythingElse');
         cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
         cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
             'searchOptions'
@@ -32,7 +34,7 @@ describe('Authentication', () => {
         cy.route('GET', api.dashboard.timeseries, {}).as('alertsByTimeseries');
         cy.route('GET', api.risks.riskyDeployments, {}).as('deployments');
         cy.route('GET', api.licenses.list, { response: { licenses: [{ status: 'VALIDs' }] } }).as(
-            'deployments'
+            'licenses'
         );
         cy.route('POST', api.logs, {}).as('logs');
     };
@@ -85,11 +87,7 @@ describe('Authentication', () => {
          *   3. Response comes back with 401, but token changed, so it should retry with a new token
          */
         localStorage.setItem('access_token', 'first-token');
-        cy.server();
-        cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
-        cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
-            'searchOptions'
-        );
+        stubAPIs();
         cy.route({
             method: 'GET',
             url: api.summary.counts,
@@ -99,15 +97,14 @@ describe('Authentication', () => {
             onRequest: () => {
                 localStorage.setItem('access_token', 'new-token');
             }
-        }).as('summaryCounts');
+        }).as('summaryCountsTokenChanging');
         setupAuth(dashboardURL);
-        stubAPIs();
 
-        cy.wait('@summaryCounts').then(xhr => {
+        cy.wait('@summaryCountsTokenChanging').then(xhr => {
             expect(xhr.request.headers.Authorization).to.eq('Bearer first-token');
         });
         // should retry request with a new token
-        cy.wait('@summaryCounts').then(xhr => {
+        cy.wait('@summaryCountsTokenChanging').then(xhr => {
             expect(xhr.request.headers.Authorization).to.eq('Bearer new-token');
         });
     });
