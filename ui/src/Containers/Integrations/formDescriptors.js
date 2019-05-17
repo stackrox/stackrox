@@ -373,7 +373,7 @@ const formDescriptors = {
                 placeholder: 'PagerDuty Integration'
             },
             {
-                label: 'API Key',
+                label: 'PagerDuty Integration Key',
                 jsonpath: 'pagerduty.apiKey',
                 type: 'password',
                 placeholder: ''
