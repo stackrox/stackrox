@@ -227,10 +227,10 @@ class K8sRbacTest extends BaseSpecification {
         def stackroxBindings = RbacService.getRoleBindings()
         Timer t = new Timer(15, 2)
         while (t.IsValid() && stackroxBindings.size() != orchestratorBindings.size()) {
-            stackroxBindings = RbacService.getRoles()
+            stackroxBindings = RbacService.getRoleBindings()
         }
 
-        stackroxBindings.size() == orchestratorBindings.size()
+        assert stackroxBindings.size() == orchestratorBindings.size()
         println "All bindings scraped in ${t.SecondsSince()}s"
         for (Rbac.K8sRoleBinding b : stackroxBindings) {
             println "Looking for SR Bindings: ${b.name} (${b.namespace})"
