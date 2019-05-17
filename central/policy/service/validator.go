@@ -260,7 +260,7 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy) error {
 	if m == nil {
 		return errors.New("run time policy contains no constraints")
 	}
-	if policy.GetFields().GetProcessPolicy() == nil {
+	if policy.GetFields().GetProcessPolicy() == nil && !policy.GetFields().GetWhitelistEnabled() {
 		return errors.New("run time policy must contain runtime specific constraints")
 	}
 	return nil

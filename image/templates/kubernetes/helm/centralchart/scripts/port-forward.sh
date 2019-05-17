@@ -15,8 +15,6 @@
 #     $ export KUBE_COMMAND='kubectl --context prod-cluster'
 #     $ ./port-forward.sh 8443
 
-set -ex
-
 if [ -z "$1" ]; then
 	echo "usage: $0 8443"
 	echo "The above would forward localhost:8443 to central:443."

@@ -571,6 +571,15 @@ const policyConfigurationDescriptor = [
         default: false,
         defaultValue: false,
         reverse: true
+    },
+    {
+        label: 'Whitelists Enabled',
+        jsonpath: 'fields.whitelistEnabled',
+        type: 'toggle',
+        required: false,
+        default: false,
+        defaultValue: false,
+        reverse: false
     }
 ];
 

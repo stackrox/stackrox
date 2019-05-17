@@ -276,6 +276,10 @@ const fieldsMap = {
     hostMountPolicy: {
         label: 'Host Mount Policy',
         formatValue: d => (d.readOnly ? 'Not Enabled' : 'Writable: Yes')
+    },
+    whitelistEnabled: {
+        label: 'Whitelists Enabled',
+        formatValue: d => (d ? 'Yes' : 'No')
     }
 };
 

@@ -251,6 +251,10 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 	}
 
 	var resp v1.DryRunResponse
+	// Dry runs do not apply to policies with whitelists because they are evaluated through the process indicator pipeline
+	if request.GetFields().GetWhitelistEnabled() {
+		return &resp, nil
+	}
 	searchBasedMatcher, err := s.testMatchBuilder.ForPolicy(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
