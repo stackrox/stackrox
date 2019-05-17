@@ -23,6 +23,7 @@ import (
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -188,7 +189,8 @@ func TestAutocompleteForEnums(t *testing.T) {
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
-	results, err := service.autocomplete(context.TODO(), fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	results, err := service.autocomplete(ctx, fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
 	require.NoError(t, err)
 	assert.Equal(t, []string{fixtures.GetPolicy().GetSeverity().String()}, results)
 }

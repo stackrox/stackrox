@@ -65,12 +65,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 func (s *groupDataStoreTestSuite) TestAllowsGet() {
 	s.storage.EXPECT().Get(gomock.Any()).Return(nil, nil)
 
-	_, err := s.dataStore.Get(s.hasNoneCtx, &storage.GroupProperties{})
+	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{})
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().Get(gomock.Any()).Return(nil, nil)
 
-	_, err = s.dataStore.Get(s.hasNoneCtx, &storage.GroupProperties{})
+	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{})
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
@@ -105,12 +105,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesWalk() {
 func (s *groupDataStoreTestSuite) TestAllowsWalk() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil, nil)
 
-	_, err := s.dataStore.Walk(s.hasNoneCtx, "provider", nil)
+	_, err := s.dataStore.Walk(s.hasReadCtx, "provider", nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil, nil)
 
-	_, err = s.dataStore.Walk(s.hasNoneCtx, "provider", nil)
+	_, err = s.dataStore.Walk(s.hasWriteCtx, "provider", nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 

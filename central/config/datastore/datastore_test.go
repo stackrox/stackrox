@@ -65,12 +65,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 func (s *groupDataStoreTestSuite) TestAllowsGet() {
 	s.storage.EXPECT().GetConfig().Return(nil, nil)
 
-	_, err := s.dataStore.GetConfig(s.hasNoneCtx)
+	_, err := s.dataStore.GetConfig(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().GetConfig().Return(nil, nil)
 
-	_, err = s.dataStore.GetConfig(s.hasNoneCtx)
+	_, err = s.dataStore.GetConfig(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 

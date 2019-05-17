@@ -65,12 +65,12 @@ func (s *userDataStoreTestSuite) TestEnforcesGet() {
 func (s *userDataStoreTestSuite) TestAllowsGet() {
 	s.storage.EXPECT().GetUser(gomock.Any()).Return(nil, nil)
 
-	_, err := s.dataStore.GetUser(s.hasNoneCtx, "user")
+	_, err := s.dataStore.GetUser(s.hasReadCtx, "user")
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().GetUser(gomock.Any()).Return(nil, nil)
 
-	_, err = s.dataStore.GetUser(s.hasNoneCtx, "user")
+	_, err = s.dataStore.GetUser(s.hasWriteCtx, "user")
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
