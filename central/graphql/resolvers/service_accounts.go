@@ -7,6 +7,7 @@ import (
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	pkgRbacUtils "github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -22,6 +23,7 @@ func init() {
 		schema.AddExtraResolver("ServiceAccount", `scopedPermissions: [ScopedPermissions!]!`),
 		schema.AddExtraResolver("ServiceAccount", `deployments: [Deployment!]!`),
 		schema.AddExtraResolver("ServiceAccount", `saNamespace: Namespace!`),
+		schema.AddExtraResolver("ServiceAccount", `clusterAdmin: Boolean!`),
 	)
 }
 
@@ -112,6 +114,26 @@ func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) (
 	return wrapPermissions(permissionScopeMap), nil
 }
 
+// SaNamespace returns the namespace of the service account
+func (resolver *serviceAccountResolver) SaNamespace(ctx context.Context) (*namespaceResolver, error) {
+	sa := resolver.data
+	r, err := resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(sa.GetClusterId()), sa.GetNamespace()})
+
+	if err != nil {
+		return resolver.root.wrapNamespace(r.data, false, err)
+	}
+
+	return resolver.root.wrapNamespace(r.data, true, err)
+}
+
+// ClusterAdmin returns if the service account is a cluster admin or not
+func (resolver *serviceAccountResolver) ClusterAdmin(ctx context.Context) (bool, error) {
+	sa := pkgRbacUtils.GetSubjectForServiceAccount(resolver.data)
+	evaluator := resolver.getClusterEvaluator(ctx)
+
+	return evaluator.IsClusterAdmin(sa), nil
+}
+
 func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.Evaluator, error) {
 	evaluators := make(map[string]k8srbac.Evaluator)
 	saClusterID := resolver.data.GetClusterId()
@@ -133,14 +155,9 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 	return evaluators, nil
 }
 
-// SaNamespace returns the namespace of the service account
-func (resolver *serviceAccountResolver) SaNamespace(ctx context.Context) (*namespaceResolver, error) {
-	sa := resolver.data
-	r, err := resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(sa.GetClusterId()), sa.GetNamespace()})
+func (resolver *serviceAccountResolver) getClusterEvaluator(ctx context.Context) k8srbac.Evaluator {
+	saClusterID := resolver.data.GetClusterId()
 
-	if err != nil {
-		return resolver.root.wrapNamespace(r.data, false, err)
-	}
-
-	return resolver.root.wrapNamespace(r.data, true, err)
+	return rbacUtils.NewClusterPermissionEvaluator(saClusterID,
+		resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 }

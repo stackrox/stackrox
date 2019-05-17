@@ -21,6 +21,7 @@ func init() {
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `roles: [K8SRole!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `scopedPermissions: [ScopedPermissions!]!`),
+		schema.AddExtraResolver("SubjectWithClusterID", `clusterAdmin: Boolean!`),
 	)
 }
 
@@ -108,6 +109,14 @@ func (resolver *subjectWithClusterIDResolver) ScopedPermissions(ctx context.Cont
 	return wrapPermissions(permissionScopeMap), nil
 }
 
+// ClusterAdmin returns if the service account is a cluster admin or not
+func (resolver *subjectWithClusterIDResolver) ClusterAdmin(ctx context.Context) (bool, error) {
+	subject := resolver.subject.data
+	evaluator := resolver.getClusterEvaluator(ctx)
+
+	return evaluator.IsClusterAdmin(subject), nil
+}
+
 func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.Evaluator, error) {
 	evaluators := make(map[string]k8srbac.Evaluator)
 	clusterID := resolver.clusterID
@@ -128,4 +137,10 @@ func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context)
 	}
 
 	return evaluators, nil
+}
+
+func (resolver *subjectWithClusterIDResolver) getClusterEvaluator(ctx context.Context) k8srbac.Evaluator {
+	rootResolver := resolver.subject.root
+	return rbacUtils.NewClusterPermissionEvaluator(resolver.clusterID,
+		rootResolver.K8sRoleStore, rootResolver.K8sRoleBindingStore)
 }

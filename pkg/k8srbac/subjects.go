@@ -22,6 +22,15 @@ func GetSubjectForDeployment(deployment *storage.Deployment) *storage.Subject {
 	}
 }
 
+// GetSubjectForServiceAccount returns the subject represented by a service account.
+func GetSubjectForServiceAccount(sa *storage.ServiceAccount) *storage.Subject {
+	return &storage.Subject{
+		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+		Name:      sa.GetName(),
+		Namespace: sa.GetNamespace(),
+	}
+}
+
 // GetAllSubjects get the subjects of the specified types in the referenced in a set of bindings.
 func GetAllSubjects(bindings []*storage.K8SRoleBinding, kinds ...storage.SubjectKind) []*storage.Subject {
 	subjectsSet := NewSubjectSet()
