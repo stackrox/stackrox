@@ -36,6 +36,9 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.DoneableDaemonSet
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment
+import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet
+import io.fabric8.kubernetes.api.model.apps.StatefulSetList
+import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder
@@ -90,12 +93,16 @@ class Kubernetes implements OrchestratorMain {
     MixedOperation<K8sDeployment, DeploymentList, DoneableDeployment,
             ScalableResource<K8sDeployment, DoneableDeployment>> deployments
 
+    MixedOperation<K8sStatefulSet, StatefulSetList, DoneableStatefulSet,
+            ScalableResource<K8sStatefulSet, DoneableStatefulSet>> statefulsets
+
     Kubernetes(String ns) {
         this.namespace = ns
         this.client = new DefaultKubernetesClient()
         this.client.configuration.setRollingTimeout(60 * 60 * 1000)
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
+        this.statefulsets = this.client.apps().statefulSets()
     }
 
     Kubernetes() {
@@ -328,6 +335,14 @@ class Kubernetes implements OrchestratorMain {
 
     def getDaemonSetCount(String ns = null) {
         return this.daemonsets.inNamespace(ns).list().getItems().collect { it.metadata.name }
+    }
+
+    /*
+        StatefulSet Methods
+    */
+
+    def getStatefulSetCount(String ns = null) {
+        return this.statefulsets.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
     /*
@@ -672,7 +687,8 @@ class Kubernetes implements OrchestratorMain {
                     labels: it.metadata.labels,
                     deploymentCount: getDeploymentCount(it.metadata.name) +
                             getDaemonSetCount(it.metadata.name) +
-                            getStaticPodCount(it.metadata.name),
+                            getStaticPodCount(it.metadata.name) +
+                            getStatefulSetCount(it.metadata.name),
                     secretsCount: getSecretCount(it.metadata.name),
                     networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
             )

@@ -40,6 +40,9 @@ interface OrchestratorMain {
     def getDaemonSetCount(String ns)
     def waitForDaemonSetDeletion(String name)
 
+    // StatefulSets
+    def getStatefulSetCount()
+
     //Containers
     def deleteContainer(String containerName, String namespace)
     def wasContainerKilled(String containerName, String namespace)
