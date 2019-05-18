@@ -69,6 +69,13 @@ func (e HostMountQueryBuilder) Query(fields *storage.PolicyFields, optionsMap ma
 		}
 
 		for i := range readOnlyMatches {
+			if i >= len(nameMatches) || i >= len(sourceMatches) {
+				log.Errorf("Writable Host Mount policy: "+
+					"readOnlyMatches %+v, nameMatches %+v and sourceMatches %+v not of equal length",
+					readOnlyMatches, nameMatches, sourceMatches)
+				break
+			}
+
 			violations = append(violations, &storage.Alert_Violation{
 				Message: fmt.Sprintf(
 					"Volume '%s' with host mount '%s' is writable", nameMatches[i], sourceMatches[i]),
