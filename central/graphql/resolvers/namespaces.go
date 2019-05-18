@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +16,7 @@ func init() {
 		schema.AddQuery("namespaces: [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
-		schema.AddExtraResolver("Namespace", "complianceResults: [ControlResult!]!"),
+		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
 	)
 }
 
@@ -50,17 +49,18 @@ func (resolver *Resolver) NamespaceByClusterIDAndName(ctx context.Context, args 
 	return resolver.wrapNamespace(namespace.ResolveByClusterIDAndName(ctx, string(args.ClusterID), args.Name, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
 }
 
-func (resolver *namespaceResolver) ComplianceResults(ctx context.Context) ([]*controlResultResolver, error) {
+func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch([]string{resolver.data.GetMetadata().GetClusterId()}, allStandards(resolver.root.ComplianceStandardStore), store.RequireMessageStrings)
+
+	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
 	if err != nil {
 		return nil, err
 	}
 	output := newBulkControlResults()
 	nsID := resolver.data.GetMetadata().GetId()
-	output.addDeploymentData(resolver.root, data, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
+	output.addDeploymentData(resolver.root, runResults, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
 		return d.GetNamespaceId() == nsID
 	})
 

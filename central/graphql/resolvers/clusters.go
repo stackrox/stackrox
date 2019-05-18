@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
@@ -25,7 +24,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `node(node: ID!): Node`),
 		schema.AddExtraResolver("Cluster", `namespaces: [Namespace!]!`),
 		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
-		schema.AddExtraResolver("Cluster", "complianceResults: [ControlResult!]!"),
+		schema.AddExtraResolver("Cluster", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Cluster", `k8sroles: [K8SRole!]!`),
 		schema.AddExtraResolver("Cluster", `k8srole(role: ID!): K8SRole`),
 		schema.AddExtraResolver("Cluster", `serviceAccounts: [ServiceAccount!]!`),
@@ -114,18 +113,19 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 	})
 }
 
-func (resolver *clusterResolver) ComplianceResults(ctx context.Context) ([]*controlResultResolver, error) {
+func (resolver *clusterResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch([]string{resolver.data.GetId()}, allStandards(resolver.root.ComplianceStandardStore), store.RequireMessageStrings)
+
+	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
 	if err != nil {
 		return nil, err
 	}
 	output := newBulkControlResults()
-	output.addClusterData(resolver.root, data, nil)
-	output.addDeploymentData(resolver.root, data, nil)
-	output.addNodeData(resolver.root, data, nil)
+	output.addClusterData(resolver.root, runResults, nil)
+	output.addDeploymentData(resolver.root, runResults, nil)
+	output.addNodeData(resolver.root, runResults, nil)
 	return *output, nil
 }
 

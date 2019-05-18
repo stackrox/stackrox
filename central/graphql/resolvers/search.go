@@ -30,6 +30,13 @@ func (r rawQuery) AsV1Query() (*v1.Query, error) {
 	return search.ParseRawQuery(*r.Query)
 }
 
+func (r rawQuery) String() string {
+	if r.Query == nil {
+		return ""
+	}
+	return *r.Query
+}
+
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
 		v1.SearchCategory_ALERTS:      resolver.ViolationsDataStore,

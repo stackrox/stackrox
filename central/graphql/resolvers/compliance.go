@@ -4,9 +4,6 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/compliance"
-	"github.com/stackrox/rox/central/compliance/standards"
-	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -42,8 +39,8 @@ func InitCompliance() {
 			schema.AddExtraResolver("ComplianceAggregation_Result", "keys: [ComplianceDomainKey!]!"),
 			schema.AddUnionType("Resource", []string{"Deployment", "Cluster", "Node"}),
 			schema.AddType("ControlResult", []string{"resource: Resource", "control: ComplianceControl", "value: ComplianceResultValue"}),
-			schema.AddExtraResolver("ComplianceStandardMetadata", "complianceResults: [ControlResult!]!"),
-			schema.AddExtraResolver("ComplianceControl", "complianceResults: [ControlResult!]!"),
+			schema.AddExtraResolver("ComplianceStandardMetadata", "complianceResults(query: String): [ControlResult!]!"),
+			schema.AddExtraResolver("ComplianceControl", "complianceResults(query: String): [ControlResult!]!"),
 		)
 	})
 }
@@ -251,18 +248,6 @@ func (resolver *complianceStandardMetadataResolver) Groups(ctx context.Context) 
 		resolver.root.ComplianceStandardStore.Groups(resolver.data.GetId()))
 }
 
-func allStandards(repository standards.Repository) []string {
-	s, err := repository.Standards()
-	if err != nil {
-		return nil
-	}
-	ids := make([]string, len(s))
-	for i, st := range s {
-		ids[i] = st.GetId()
-	}
-	return ids
-}
-
 type controlResultResolver struct {
 	root       *Resolver
 	controlID  string
@@ -279,10 +264,10 @@ func newBulkControlResults() *bulkControlResults {
 	return &output
 }
 
-func (container *bulkControlResults) addDeploymentData(root *Resolver, data map[compliance.ClusterStandardPair]store.ResultsWithStatus, filter func(*storage.Deployment, *v1.ComplianceControl) bool) {
-	for _, v := range data {
-		for did, res := range v.LastSuccessfulResults.GetDeploymentResults() {
-			deployment := v.LastSuccessfulResults.GetDomain().GetDeployments()[did]
+func (container *bulkControlResults) addDeploymentData(root *Resolver, results []*storage.ComplianceRunResults, filter func(*storage.Deployment, *v1.ComplianceControl) bool) {
+	for _, runResult := range results {
+		for did, res := range runResult.GetDeploymentResults() {
+			deployment := runResult.GetDomain().GetDeployments()[did]
 			results := res.GetControlResults()
 			for controlID, result := range results {
 				if filter == nil || filter(deployment, root.ComplianceStandardStore.Control(controlID)) {
@@ -298,9 +283,9 @@ func (container *bulkControlResults) addDeploymentData(root *Resolver, data map[
 	}
 }
 
-func (container *bulkControlResults) addClusterData(root *Resolver, data map[compliance.ClusterStandardPair]store.ResultsWithStatus, filter func(control *v1.ComplianceControl) bool) {
-	for _, v := range data {
-		res := v.LastSuccessfulResults.GetClusterResults()
+func (container *bulkControlResults) addClusterData(root *Resolver, results []*storage.ComplianceRunResults, filter func(control *v1.ComplianceControl) bool) {
+	for _, runResult := range results {
+		res := runResult.GetClusterResults()
 		results := res.GetControlResults()
 		for controlID, result := range results {
 			if filter == nil || filter(root.ComplianceStandardStore.Control(controlID)) {
@@ -308,17 +293,17 @@ func (container *bulkControlResults) addClusterData(root *Resolver, data map[com
 					root:      root,
 					controlID: controlID,
 					value:     result,
-					cluster:   v.LastSuccessfulResults.GetDomain().GetCluster(),
+					cluster:   runResult.GetDomain().GetCluster(),
 				})
 			}
 		}
 	}
 }
 
-func (container *bulkControlResults) addNodeData(root *Resolver, data map[compliance.ClusterStandardPair]store.ResultsWithStatus, filter func(node *storage.Node, control *v1.ComplianceControl) bool) {
-	for _, v := range data {
-		for nodeID, res := range v.LastSuccessfulResults.GetNodeResults() {
-			node := v.LastSuccessfulResults.GetDomain().GetNodes()[nodeID]
+func (container *bulkControlResults) addNodeData(root *Resolver, results []*storage.ComplianceRunResults, filter func(node *storage.Node, control *v1.ComplianceControl) bool) {
+	for _, runResult := range results {
+		for nodeID, res := range runResult.GetNodeResults() {
+			node := runResult.GetDomain().GetNodes()[nodeID]
 			results := res.GetControlResults()
 			for controlID, result := range results {
 				if filter == nil || filter(node, root.ComplianceStandardStore.Control(controlID)) {
@@ -370,50 +355,39 @@ func (resolver *controlResultResolver) Value(ctx context.Context) *complianceRes
 	}
 }
 
-func allClusters(ctx context.Context, resolver *Resolver) []string {
-	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
-	if err != nil {
-		return nil
-	}
-	output := make([]string, 0, len(clusters))
-	for _, cl := range clusters {
-		output = append(output, cl.GetId())
-	}
-	return output
-}
-
-func (resolver *complianceStandardMetadataResolver) ComplianceResults(ctx context.Context) ([]*controlResultResolver, error) {
+func (resolver *complianceStandardMetadataResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch(allClusters(ctx, resolver.root), []string{resolver.data.GetId()}, store.RequireMessageStrings)
+
+	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
 	if err != nil {
 		return nil, err
 	}
 	output := newBulkControlResults()
-	output.addClusterData(resolver.root, data, nil)
-	output.addDeploymentData(resolver.root, data, nil)
-	output.addNodeData(resolver.root, data, nil)
+	output.addClusterData(resolver.root, runResults, nil)
+	output.addDeploymentData(resolver.root, runResults, nil)
+	output.addNodeData(resolver.root, runResults, nil)
 
 	return *output, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceResults(ctx context.Context) ([]*controlResultResolver, error) {
+func (resolver *complianceControlResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch(allClusters(ctx, resolver.root), []string{resolver.data.GetStandardId()}, store.RequireMessageStrings)
+	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
 	if err != nil {
 		return nil, err
 	}
 	output := newBulkControlResults()
-	output.addClusterData(resolver.root, data, func(control *v1.ComplianceControl) bool {
+	output.addClusterData(resolver.root, runResults, func(control *v1.ComplianceControl) bool {
 		return control.GetId() == resolver.data.GetId()
 	})
-	output.addDeploymentData(resolver.root, data, func(deployment *storage.Deployment, control *v1.ComplianceControl) bool {
+	output.addDeploymentData(resolver.root, runResults, func(deployment *storage.Deployment, control *v1.ComplianceControl) bool {
 		return control.GetId() == resolver.data.GetId()
 	})
-	output.addNodeData(resolver.root, data, func(node *storage.Node, control *v1.ComplianceControl) bool {
+	output.addNodeData(resolver.root, runResults, func(node *storage.Node, control *v1.ComplianceControl) bool {
 		return control.GetId() == resolver.data.GetId()
 	})
 

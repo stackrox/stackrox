@@ -45,6 +45,8 @@ const (
 type Aggregator interface {
 	Aggregate(ctx context.Context, query string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
 
+	GetResultsWithEvidence(ctx context.Context, queryString string) ([]*storage.ComplianceRunResults, error)
+
 	// Search runs search requests in the context of the aggregator.
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 }
@@ -156,38 +158,92 @@ func getSpecifiedFieldsFromQuery(q *v1.Query) []string {
 	return querySpecifiedFields
 }
 
-// Aggregate takes in a search query, groupby scopes and unit scope and returns the results of the aggregation
-func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+func (a *aggregatorImpl) filterOnRunResult(runResults *storage.ComplianceRunResults, mask [numScopes]set.StringSet) {
+	domain := runResults.GetDomain()
+	clusterID := runResults.GetDomain().GetCluster().GetId()
+	standardID := runResults.GetRunMetadata().GetStandardId()
+
+	for control, r := range runResults.GetClusterResults().GetControlResults() {
+		fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, "", "", r.GetOverallState())
+		if !isValidCheck(mask, fc) {
+			delete(runResults.GetClusterResults().GetControlResults(), control)
+		}
+	}
+	for n, controlResults := range runResults.GetNodeResults() {
+		for control, r := range controlResults.GetControlResults() {
+			fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, n, "", r.GetOverallState())
+			if !isValidCheck(mask, fc) {
+				delete(controlResults.GetControlResults(), control)
+			}
+		}
+	}
+	for d, controlResults := range runResults.GetDeploymentResults() {
+		deployment, ok := domain.Deployments[d]
+		if !ok {
+			log.Errorf("Okay that's not good, we have a result for a deployment that isn't even in the domain?")
+			continue
+		}
+		for control, r := range controlResults.GetControlResults() {
+			fc := newFlatCheck(clusterID, deployment.GetNamespaceId(), standardID, a.getCategoryID(control), control, "", deployment.GetId(), r.GetOverallState())
+			if !isValidCheck(mask, fc) {
+				delete(controlResults.GetControlResults(), control)
+			}
+		}
+	}
+}
+
+func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString string) ([]*storage.ComplianceRunResults, []*v1.ComplianceAggregation_Source, [numScopes]set.StringSet, error) {
+	var mask [numScopes]set.StringSet
 	query, err := search.ParseRawQueryOrEmpty(queryString)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, mask, err
 	}
 	querySpecifiedFields := getSpecifiedFieldsFromQuery(query)
 
 	standardIDs, err := a.getStandardsToRun(ctx, query, querySpecifiedFields)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, mask, err
 	}
 
 	clusterIDs, clusterQueryWasApplicable, err := a.getClustersToRun(ctx, query, querySpecifiedFields)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, mask, err
 	}
 
-	runResults, err := a.compliance.GetLatestRunResultsBatch(clusterIDs, standardIDs, 0)
+	runResults, err := a.compliance.GetLatestRunResultsBatch(clusterIDs, standardIDs, complianceStore.RequireMessageStrings)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, mask, err
 	}
 
 	validResults, sources := complianceStore.ValidResultsAndSources(runResults)
 
-	mask, err := a.getCheckMask(ctx, query, querySpecifiedFields)
+	mask, err = a.getCheckMask(ctx, query, querySpecifiedFields)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, mask, err
 	}
 
 	if clusterQueryWasApplicable {
 		mask[getMaskIndex(v1.ComplianceAggregation_CLUSTER)] = set.NewStringSet(clusterIDs...)
+	}
+	return validResults, sources, mask, err
+}
+
+func (a *aggregatorImpl) GetResultsWithEvidence(ctx context.Context, queryString string) ([]*storage.ComplianceRunResults, error) {
+	validResults, _, mask, err := a.getResultsAndMask(ctx, queryString)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range validResults {
+		a.filterOnRunResult(r, mask)
+	}
+	return validResults, nil
+}
+
+// Aggregate takes in a search query, groupby scopes and unit scope and returns the results of the aggregation
+func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+	validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	results, domainMap := a.getAggregatedResults(groupBy, unit, validResults, mask)

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,7 +17,7 @@ func init() {
 		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
 		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
 		schema.AddExtraResolver("Deployment", `alerts: [Alert!]!`),
-		schema.AddExtraResolver("Deployment", "complianceResults: [ControlResult!]!"),
+		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String): [Deployment!]!"),
 	)
@@ -81,17 +80,18 @@ func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage
 	return deployment
 }
 
-func (resolver *deploymentResolver) ComplianceResults(ctx context.Context) ([]*controlResultResolver, error) {
+func (resolver *deploymentResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch([]string{resolver.data.GetClusterId()}, allStandards(resolver.root.ComplianceStandardStore), store.RequireMessageStrings)
+
+	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
 	if err != nil {
 		return nil, err
 	}
 	output := newBulkControlResults()
 	deploymentID := resolver.data.GetId()
-	output.addDeploymentData(resolver.root, data, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
+	output.addDeploymentData(resolver.root, runResults, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
 		return d.GetId() == deploymentID
 	})
 

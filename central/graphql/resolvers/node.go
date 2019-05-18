@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/compliance/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
@@ -16,7 +15,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("node(id:ID!): Node"),
-		schema.AddExtraResolver("Node", "complianceResults: [ControlResult!]!"),
+		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
 	)
 }
 
@@ -50,17 +49,18 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 	return output, nil
 }
 
-func (resolver *nodeResolver) ComplianceResults(ctx context.Context) ([]*controlResultResolver, error) {
+func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch([]string{resolver.data.GetClusterId()}, allStandards(resolver.root.ComplianceStandardStore), store.RequireMessageStrings)
+
+	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
 	if err != nil {
 		return nil, err
 	}
 	output := newBulkControlResults()
 	nodeID := resolver.data.GetId()
-	output.addNodeData(resolver.root, data, func(node *storage.Node, _ *v1.ComplianceControl) bool {
+	output.addNodeData(resolver.root, runResults, func(node *storage.Node, _ *v1.ComplianceControl) bool {
 		return node.GetId() == nodeID
 	})
 	return *output, nil
