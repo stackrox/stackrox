@@ -2,7 +2,7 @@ package manager
 
 import (
 	"github.com/stackrox/rox/central/deploymentenvs"
-	"github.com/stackrox/rox/central/license/store"
+	"github.com/stackrox/rox/central/license/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -27,6 +27,6 @@ type LicenseManager interface {
 }
 
 // New creates and returns a new license manager, using the given license key store and validator.
-func New(store store.Store, validator validator.Validator, deploymentEnvsMgr deploymentenvs.Manager) LicenseManager {
-	return newManager(store, validator, deploymentEnvsMgr)
+func New(dataStore datastore.DataStore, validator validator.Validator, deploymentEnvsMgr deploymentenvs.Manager) LicenseManager {
+	return newManager(dataStore, validator, deploymentEnvsMgr)
 }

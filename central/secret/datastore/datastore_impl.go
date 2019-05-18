@@ -66,7 +66,7 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 }
 
 func (d *datastoreImpl) CountSecrets(ctx context.Context) (int, error) {
-	if ok, err := secretSAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := secretSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if ok {
 		return d.storage.CountSecrets()

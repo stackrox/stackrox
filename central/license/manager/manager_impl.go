@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"io/ioutil"
 	"sort"
 	"time"
@@ -8,7 +9,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deploymentenvs"
-	"github.com/stackrox/rox/central/license/store"
+	"github.com/stackrox/rox/central/license/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/license/validator"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -30,6 +33,11 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkPolicy)))
 )
 
 func licenseStatusToMetadataStatus(status v1.LicenseInfo_Status) v1.Metadata_LicenseStatus {
@@ -59,7 +67,7 @@ func (d *licenseData) getLicenseProto() *licenseproto.License {
 }
 
 type manager struct {
-	store     store.Store
+	dataStore datastore.DataStore
 	validator validator.Validator
 
 	mutex         sync.RWMutex
@@ -79,9 +87,9 @@ type manager struct {
 	licenseStatus v1.Metadata_LicenseStatus
 }
 
-func newManager(store store.Store, validator validator.Validator, deploymentEnvsMgr deploymentenvs.Manager) *manager {
+func newManager(dataStore datastore.DataStore, validator validator.Validator, deploymentEnvsMgr deploymentenvs.Manager) *manager {
 	return &manager{
-		store:     store,
+		dataStore: dataStore,
 		validator: validator,
 
 		dirty: make(map[*licenseData]struct{}),
@@ -167,7 +175,7 @@ func (m *manager) populateLicenseFromSecretNoLock() {
 }
 
 func (m *manager) populateFromStoreNoLock() error {
-	storedLicenseKeys, err := m.store.ListLicenseKeys()
+	storedLicenseKeys, err := m.dataStore.ListLicenseKeys(ctx)
 	if err != nil {
 		return err
 	}
@@ -399,7 +407,7 @@ func (m *manager) updateStore() error {
 	}
 	m.dirty = make(map[*licenseData]struct{})
 
-	return m.store.UpsertLicenseKeys(toUpsert)
+	return m.dataStore.UpsertLicenseKeys(ctx, toUpsert)
 }
 
 func (m *manager) GetActiveLicense() *licenseproto.License {
