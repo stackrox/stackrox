@@ -67,6 +67,7 @@ export const SEARCH_WITH_CONTROLS = gql`
                 unit
             }
         }
+
         nodeResults: aggregatedResults(groupBy: [NODE], unit: CONTROL, where: $query) {
             results {
                 aggregationKeys {

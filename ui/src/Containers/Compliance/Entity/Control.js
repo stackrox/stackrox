@@ -151,7 +151,11 @@ const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult 
                                     entityId={entityId}
                                     entityType={entityTypes.CONTROL}
                                     standardId={standardId}
-                                    resourceTabs={[entityTypes.NODE, entityTypes.DEPLOYMENT]}
+                                    resourceTabs={[
+                                        entityTypes.NODE,
+                                        entityTypes.DEPLOYMENT,
+                                        entityTypes.CLUSTER
+                                    ]}
                                 />
                             </>
                         )}

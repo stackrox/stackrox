@@ -3,7 +3,11 @@ import PropTypes from 'prop-types';
 import Raven from 'raven-js';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
-import { COMPLIANCE_DATA_ON_NODES, COMPLIANCE_DATA_ON_DEPLOYMENTS } from 'queries/table';
+import {
+    COMPLIANCE_DATA_ON_NODES,
+    COMPLIANCE_DATA_ON_DEPLOYMENTS,
+    COMPLIANCE_DATA_ON_CLUSTERS
+} from 'queries/table';
 import URLService from 'modules/URLService';
 import queryService from 'modules/queryService';
 import uniq from 'lodash/uniq';
@@ -19,7 +23,8 @@ import entityTypes from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import {
     nodesTableColumns,
-    deploymentsTableColumns
+    deploymentsTableColumns,
+    clustersTableColumns
 } from 'Containers/Compliance/List/evidenceTableColumns';
 
 const getQueryVariables = params => {
@@ -37,6 +42,9 @@ const getQueryVariables = params => {
 const getQuery = resourceType => {
     let query;
     switch (resourceType) {
+        case entityTypes.CLUSTER:
+            query = COMPLIANCE_DATA_ON_CLUSTERS;
+            break;
         case entityTypes.DEPLOYMENT:
             query = COMPLIANCE_DATA_ON_DEPLOYMENTS;
             break;
@@ -50,6 +58,9 @@ const getQuery = resourceType => {
 const createTableColumn = resourceType => {
     let tableColumn;
     switch (resourceType) {
+        case entityTypes.CLUSTER:
+            tableColumn = clustersTableColumns;
+            break;
         case entityTypes.DEPLOYMENT:
             tableColumn = deploymentsTableColumns;
             break;
@@ -63,6 +74,16 @@ const createTableColumn = resourceType => {
 const createTableRows = (data, resourceType) => {
     if (!data || !data.results) return [];
     let rows = [];
+    if (resourceType === entityTypes.CLUSTER) {
+        data.results.forEach(cluster => {
+            cluster.complianceResults.forEach(result => {
+                // eslint-disable-next-line
+                if (upperCase(result.resource.__typename) === resourceType) {
+                    rows.push(result);
+                }
+            });
+        });
+    }
     if (resourceType === entityTypes.DEPLOYMENT) {
         data.results.forEach(cluster => {
             cluster.deployments.forEach(deployment => {
@@ -98,13 +119,17 @@ const createTableData = (data, resourceType) => {
 
 const processNumResources = (data, resourceType) => {
     try {
-        let key = '';
+        let result = 0;
         if (resourceType === entityTypes.DEPLOYMENT) {
-            key = 'deployments';
-        } else if (resourceType === entityTypes.NODE) {
-            key = 'nodes';
+            result = data.results.reduce((acc, curr) => acc + curr.deployments.length, 0);
         }
-        return data.results.reduce((acc, curr) => acc + curr[key].length, 0);
+        if (resourceType === entityTypes.NODE) {
+            result = data.results.reduce((acc, curr) => acc + curr.nodes.length, 0);
+        }
+        if (resourceType === entityTypes.CLUSTER) {
+            result = data.results.length;
+        }
+        return result;
     } catch (error) {
         Raven.captureException(error);
         return null;

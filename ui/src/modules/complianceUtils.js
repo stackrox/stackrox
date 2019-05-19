@@ -64,6 +64,10 @@ export function getResourceCountFromComplianceResults(type, data) {
                 count += deployment.complianceResults.length;
             });
         });
+    } else if (clusters && type === entityTypes.CLUSTER) {
+        clusters.forEach(cluster => {
+            count += cluster.complianceResults.length;
+        });
     }
     return count;
 }

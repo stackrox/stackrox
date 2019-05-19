@@ -3,6 +3,8 @@ import ComplianceStateLabel from 'Containers/Compliance/ComplianceStateLabel';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { standardLabels } from 'messages/standards';
 import { sortValue } from 'sorters/sorters';
+import entityTypes from 'constants/entityTypes';
+import upperCase from 'lodash/upperCase';
 
 const tableColumnData = {
     controlId: {
@@ -68,7 +70,13 @@ const tableColumnData = {
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         accessor: 'resource.clusterName',
-        Cell: ({ original }) => original.resource.clusterName || '-'
+        Cell: ({ original }) => {
+            // eslint-disable-next-line
+            if (upperCase(original.resource.__typename) === entityTypes.CLUSTER) {
+                return original.resource.name || '-';
+            }
+            return original.resource.clusterName || '-';
+        }
     },
     state: {
         Header: `State`,
@@ -104,6 +112,13 @@ export const controlsTableColumns = [
     tableColumnData.resourceType,
     tableColumnData.namespaceName,
     tableColumnData.clusterName,
+    tableColumnData.evidence
+];
+
+export const clustersTableColumns = [
+    tableColumnData.resourceId,
+    tableColumnData.clusterName,
+    tableColumnData.state,
     tableColumnData.evidence
 ];
 

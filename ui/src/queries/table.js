@@ -201,6 +201,9 @@ export const COMPLIANCE_DATA_ON_DEPLOYMENTS_AND_NODES = gql`
                     ...allData
                 }
             }
+            complianceResults {
+                ...allData
+            }
         }
     }
     ${evidenceFragment}
