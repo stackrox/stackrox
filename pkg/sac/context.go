@@ -2,6 +2,8 @@ package sac
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/features"
@@ -24,7 +26,12 @@ func GlobalAccessScopeChecker(ctx context.Context) ScopeChecker {
 
 	core, _ := ctx.Value(globalAccessScopeContextKey{}).(ScopeCheckerCore)
 	if core == nil {
-		core = ErrorAccessScopeCheckerCore(errors.New("global access scope was not found in context"))
+		if strings.HasPrefix(fmt.Sprint(ctx), "context.TODO") {
+			// TODO(ROX-2214): Remove this!
+			core = AllowAllAccessScopeChecker()
+		} else {
+			core = ErrorAccessScopeCheckerCore(errors.New("global access scope was not found in context"))
+		}
 	}
 	return NewScopeChecker(core)
 }

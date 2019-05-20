@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
@@ -46,6 +47,13 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	if token.Permissions != nil {
 		return e.withPermissions(token)
 	}
+
+	// We need all access for retrieving roles and upserting user info. Note that this context
+	// is not propagated to the user, so the user itself does not get any escalated privileges.
+	// Conversely, the context can't contain any access scope information because the identity has
+	// not yet been extracted, so all code called with this context *must not* depend on a user
+	// identity.
+	ctx = sac.WithAllAccess(ctx)
 
 	// Anonymous role-based tokens.
 	if token.RoleName != "" {

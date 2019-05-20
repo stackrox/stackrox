@@ -874,7 +874,7 @@ jobs:
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
-      - ROX_SCOPED_ACCESS_CONTROL: false
+      - ROX_SCOPED_ACCESS_CONTROL: true
 
     steps:
       - checkout
@@ -961,7 +961,7 @@ jobs:
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SCOPED_ACCESS_CONTROL: false
+      - ROX_SCOPED_ACCESS_CONTROL: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
 
@@ -1039,7 +1039,7 @@ jobs:
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SCOPED_ACCESS_CONTROL: false
+      - ROX_SCOPED_ACCESS_CONTROL: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
 
@@ -1390,7 +1390,7 @@ jobs:
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SCOPED_ACCESS_CONTROL: false
+      - ROX_SCOPED_ACCESS_CONTROL: true
 
     steps:
       - checkout
@@ -1573,7 +1573,7 @@ jobs:
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SCOPED_ACCESS_CONTROL: false
+      - ROX_SCOPED_ACCESS_CONTROL: true
 
     steps:
       - checkout

@@ -166,13 +166,16 @@ func (a *apiImpl) connectToLocalEndpoint() (*grpc.ClientConn, error) {
 }
 
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
+	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
+	contextUpdaters = append(contextUpdaters, a.config.ContextEnrichers...)
+
 	// Interceptors for HTTP/1.1 requests (in order of processing):
 	// - RequestInfo handler (consumed by other handlers)
 	// - IdentityExtractor
 	// - AuthConfigChecker
 	httpInterceptors := httputil.ChainInterceptors(
 		a.requestInfoHandler.HTTPIntercept,
-		contextutil.HTTPInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
+		contextutil.HTTPInterceptor(contextUpdaters...),
 	)
 
 	mux := http.NewServeMux()
