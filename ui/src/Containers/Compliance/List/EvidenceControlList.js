@@ -11,7 +11,6 @@ import {
 } from 'queries/table';
 import URLService from 'modules/URLService';
 import queryService from 'modules/queryService';
-import uniq from 'lodash/uniq';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -26,7 +25,7 @@ const getQueryVariables = params => {
     const { entityType, entityId, query } = params;
     const variables = {
         id: entityType === entityTypes.CONTROL ? null : entityId,
-        where: queryService.objectToWhereClause(query)
+        query: queryService.objectToWhereClause(query)
     };
     return variables;
 };
@@ -73,7 +72,7 @@ const createTableRows = data => {
 const createTableData = data => {
     const rows = createTableRows(data);
     const columns = tableColumns;
-    const numControls = uniq(rows.map(row => row.control.id)).length;
+    const numControls = rows.length;
     return {
         numControls,
         rows,
@@ -97,7 +96,7 @@ const EvidenceControlList = ({
             {({ loading, data }) => {
                 if (loading) return <Loader />;
                 const tableData = createTableData(data);
-                const header = `${tableData.numControls} Controls`;
+                const header = `${tableData.numControls} Checks`;
                 const headerComponents = (
                     <>
                         <div className="flex flex-1 justify-start">{searchComponent}</div>

@@ -33,7 +33,7 @@ export const searchCategories = {
     NAMESPACE: 'NAMESPACES',
     NODE: 'NODES',
     CLUSTER: 'CLUSTERS',
-    CONTROL: 'COMPLIANCE_CONTROL',
+    CONTROL: 'COMPLIANCE',
     DEPLOYMENT: 'DEPLOYMENTS',
     SECRET: 'SECRETS'
 };

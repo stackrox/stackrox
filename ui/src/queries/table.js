@@ -142,10 +142,10 @@ const evidenceFragment = gql`
 `;
 
 export const COMPLIANCE_DATA_ON_CLUSTERS = gql`
-    query complianceDataOnClusters {
+    query complianceDataOnClusters($query: String) {
         results: clusters {
             id
-            complianceResults {
+            complianceResults(query: $query) {
                 ...allData
             }
         }
@@ -154,13 +154,13 @@ export const COMPLIANCE_DATA_ON_CLUSTERS = gql`
 `;
 
 export const COMPLIANCE_DATA_ON_NODES = gql`
-    query complianceDataOnNodes {
+    query complianceDataOnNodes($query: String) {
         results: clusters {
             id
             nodes {
                 id
                 name
-                complianceResults {
+                complianceResults(query: $query) {
                     ...allData
                 }
             }
@@ -170,12 +170,12 @@ export const COMPLIANCE_DATA_ON_NODES = gql`
 `;
 
 export const COMPLIANCE_DATA_ON_DEPLOYMENTS = gql`
-    query complianceDataOnDeployments {
+    query complianceDataOnDeployments($query: String) {
         results: clusters {
             id
             deployments {
                 id
-                complianceResults {
+                complianceResults(query: $query) {
                     ...allData
                 }
             }
@@ -185,19 +185,19 @@ export const COMPLIANCE_DATA_ON_DEPLOYMENTS = gql`
 `;
 
 export const COMPLIANCE_DATA_ON_DEPLOYMENTS_AND_NODES = gql`
-    query complianceDataOnDeploymentsAndNodes {
+    query complianceDataOnDeploymentsAndNodes($query: String) {
         clusters {
             id
             deployments {
                 id
-                complianceResults {
+                complianceResults(query: $query) {
                     ...allData
                 }
             }
             nodes {
                 id
                 name
-                complianceResults {
+                complianceResults(query: $query) {
                     ...allData
                 }
             }
@@ -210,10 +210,10 @@ export const COMPLIANCE_DATA_ON_DEPLOYMENTS_AND_NODES = gql`
 `;
 
 export const COMPLIANCE_DATA_ON_CLUSTER = gql`
-    query complianceDataOnCluster($id: ID!) {
+    query complianceDataOnCluster($id: ID!, $query: String) {
         result: cluster(id: $id) {
             id
-            complianceResults {
+            complianceResults(query: $query) {
                 ...allData
             }
         }
@@ -222,12 +222,12 @@ export const COMPLIANCE_DATA_ON_CLUSTER = gql`
 `;
 
 export const COMPLIANCE_DATA_ON_NAMESPACE = gql`
-    query complianceDataOnNamespace($id: ID!) {
+    query complianceDataOnNamespace($id: ID!, $query: String) {
         result: namespace(id: $id) {
             metadata {
                 id
             }
-            complianceResults {
+            complianceResults(query: $query) {
                 ...allData
             }
         }
@@ -236,10 +236,10 @@ export const COMPLIANCE_DATA_ON_NAMESPACE = gql`
 `;
 
 export const COMPLIANCE_DATA_ON_NODE = gql`
-    query complianceDataOnNode($id: ID!) {
+    query complianceDataOnNode($id: ID!, $query: String) {
         result: node(id: $id) {
             id
-            complianceResults {
+            complianceResults(query: $query) {
                 ...allData
             }
         }
@@ -248,10 +248,10 @@ export const COMPLIANCE_DATA_ON_NODE = gql`
 `;
 
 export const COMPLIANCE_DATA_ON_DEPLOYMENT = gql`
-    query complianceDataOnDeployment($id: ID!) {
+    query complianceDataOnDeployment($id: ID!, $query: String) {
         result: deployment(id: $id) {
             id
-            complianceResults {
+            complianceResults(query: $query) {
                 ...allData
             }
         }

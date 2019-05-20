@@ -1,6 +1,7 @@
 import React from 'react';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
+import { standardLabels } from 'messages/standards';
 import URLService from 'modules/URLService';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
@@ -47,8 +48,7 @@ function processData(data, type) {
         const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
             entityType: entityTypes.CONTROL,
             query: {
-                Standard: standard.id,
-                Type: type
+                Standard: standardLabels[standard.id]
             }
         });
         const dataPoint = {

@@ -26,6 +26,7 @@ const ComplianceWidgetsGroup = ({
     if (controlResult) return null;
     const complianceByStandardWidgets = standardsMap[entityType].map(standard => (
         <ComplianceByStandard
+            key={standard}
             standardType={standard}
             entityName={entityName}
             entityId={entityId}
