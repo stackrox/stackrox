@@ -10,8 +10,8 @@ class Deployment {
     Map<String, String> labels = [:]
     Map<Integer, String> ports = [:]
     Integer targetport
-    Map<String, String> volumes = [:]
-    Map<String, String> volumeMounts = [:]
+    List<Volume> volumes = []
+    List<VolumeMount> volumeMounts = []
     Map<String, String> secretNames = [:]
     List<String> imagePullSecret = []
     Map<String,String> annotation = [:]
@@ -66,9 +66,24 @@ class Deployment {
         return this
     }
 
-    Deployment addVolume(String v, String p, boolean enableHostPath = false) {
-        enableHostPath ? this.volumes.put(v, p) : this.volumes.put(v, null)
-        this.volumeMounts.put(v, p)
+    Deployment addVolume( String name, String path, boolean enableHostPath = false) {
+        this.volumes.add(new Volume ( name: name,
+                hostPath: enableHostPath,
+                mountPath: path))
+        this.volumeMounts.add(new VolumeMount(name: name,
+                mountPath:path,
+                readOnly : false
+        ))
+        return this
+    }
+
+    Deployment addVolume( Volume v) {
+        this.volumes.add(v)
+        this.volumeMounts.add(new VolumeMount(
+                mountPath: v.mountPath,
+                name: v.name,
+                readOnly: false
+        ))
         return this
     }
 

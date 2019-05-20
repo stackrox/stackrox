@@ -1,9 +1,11 @@
+
 import static Services.waitForViolation
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Service
 
 import common.Constants
+import objects.Volume
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyFields
 import io.stackrox.proto.storage.PolicyOuterClass.ImageNamePolicy
@@ -44,7 +46,12 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addLimits("memory", "0")
                     .addRequest("memory", "0")
                     .addRequest("cpu", "0")
-                    .addVolume("test", "/tmp"),
+                    .addVolume( new Volume ( name: "test-writable-volumemount",
+                            hostPath:  true,
+                            mountPath : "/tmp"))
+                    .addVolume( new Volume ( name: "test-writable-volume",
+                            hostPath:  false,
+                            mountPath: "/tmp/test")),
             new Deployment()
                     .setName(STRUTS)
                     .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
@@ -381,7 +388,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setSeverityValue(2)
                         .setFields(PolicyFields.newBuilder()
                         .setVolumePolicy(VolumePolicy.newBuilder()
-                        .setName("test").build()))
+                        .setName("test-writable-volume").build()))
                         .build()            | DEPLOYMENTNGINX
 
         /*"VolumeType" | @Bug : ROX-884
@@ -397,6 +404,33 @@ class PolicyConfigurationTest extends BaseSpecification {
                            .setVolumePolicy(VolumePolicy.newBuilder()
                            .setType("Directory").build()))
                           .build() | DEPLOYMENTNGINX*/
+        "HostMount Writable Volume"               |
+                Policy.newBuilder()
+                        .setName("TestwritableHostmountPolicy")
+                        .setDescription("TestWritableHostMount")
+                        .setRationale("TestWritableHostMount")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("Security Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setHostMountPolicy(PolicyOuterClass.HostMountPolicy.newBuilder()
+                                        .setReadOnly(false)).build())
+                        .build()            | DEPLOYMENTNGINX
+        "Writable Volume"               |
+                Policy.newBuilder()
+                        .setName("TestWritableVolumePolicy")
+                        .setDescription("TestWritableVolumePolicy")
+                        .setRationale("TestWritableVolumePolicy")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("Security Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setVolumePolicy(
+                                        PolicyOuterClass.VolumePolicy.newBuilder().setReadOnly(false).build())
+                                .build())
+                        .build()            | DEPLOYMENTNGINX
     }
 
     @Unroll

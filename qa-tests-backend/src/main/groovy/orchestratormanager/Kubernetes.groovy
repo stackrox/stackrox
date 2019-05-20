@@ -1276,14 +1276,14 @@ class Kubernetes implements OrchestratorMain {
 
         List<Volume> volumes = []
         deployment.volumes.each {
-            k, v -> Volume vol = new Volume(
-                    name: k,
-                    hostPath: v ? new HostPathVolumeSource(
-                            path: v,
+            v -> Volume vol = new Volume(
+                    name: v.name,
+                    hostPath: v.hostPath ? new HostPathVolumeSource(
+                            path: v.mountPath,
                             type: "Directory") :
                             null,
-                    secret: deployment.secretNames.get(k) ?
-                            new SecretVolumeSource(secretName: deployment.secretNames.get(k)) :
+                    secret: deployment.secretNames.get(v.name) ?
+                            new SecretVolumeSource(secretName: deployment.secretNames.get(v.name)) :
                             null
             )
             volumes.add(vol)
@@ -1291,9 +1291,10 @@ class Kubernetes implements OrchestratorMain {
 
         List<VolumeMount> volMounts = []
         deployment.volumeMounts.each {
-            k, v -> VolumeMount volMount = new VolumeMount(
-                    mountPath: v,
-                    name: k
+            v -> VolumeMount volMount = new VolumeMount(
+                    mountPath: v.mountPath,
+                    name: v.name,
+                    readOnly: v.readOnly
             )
             volMounts.add(volMount)
         }
