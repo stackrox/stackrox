@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +38,7 @@ var (
 	}
 )
 
-func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest) {
+func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultValue bool) {
 	t.Run(fmt.Sprintf("%s/%s", feature.Name(), test.env), func(t *testing.T) {
 		oldValue, exists := os.LookupEnv(feature.EnvVar())
 
@@ -56,7 +57,10 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest) {
 		}
 
 		got := feature.Enabled()
-		if got != test.expected {
+		if buildinfo.ReleaseBuild && got != defaultValue {
+			t.Errorf("%s set to %s", feature.EnvVar(), test.env)
+			t.Errorf("Expected %t; got %t", test.expected, got)
+		} else if got != test.expected {
 			t.Errorf("%s set to %s", feature.EnvVar(), test.env)
 			t.Errorf("Expected %t; got %t", test.expected, got)
 		}
@@ -66,10 +70,10 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest) {
 func TestFlags(t *testing.T) {
 	defaultTrueFeature := registerFeature("default_true", "DEFAULT_TRUE", true)
 	for _, test := range defaultTrueCases {
-		testFlagEnabled(t, defaultTrueFeature, test)
+		testFlagEnabled(t, defaultTrueFeature, test, true)
 	}
 	defaultFalseFeature := registerFeature("default_false", "DEFAULT_FALSE", false)
 	for _, test := range defaultFalseCases {
-		testFlagEnabled(t, defaultFalseFeature, test)
+		testFlagEnabled(t, defaultFalseFeature, test, false)
 	}
 }
