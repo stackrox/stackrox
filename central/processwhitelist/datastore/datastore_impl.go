@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -11,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -35,7 +37,7 @@ func (ds *datastoreImpl) GetProcessWhitelist(ctx context.Context, key *storage.P
 }
 
 func (ds *datastoreImpl) GetProcessWhitelists(ctx context.Context) ([]*storage.ProcessWhitelist, error) {
-	return ds.storage.GetWhitelists()
+	return ds.storage.ListWhitelists()
 }
 
 func (ds *datastoreImpl) AddProcessWhitelist(ctx context.Context, whitelist *storage.ProcessWhitelist) (string, error) {
@@ -50,12 +52,19 @@ func (ds *datastoreImpl) AddProcessWhitelist(ctx context.Context, whitelist *sto
 
 func (ds *datastoreImpl) addProcessWhitelistUnlocked(id string, whitelist *storage.ProcessWhitelist) (string, error) {
 	whitelist.Id = id
+	whitelist.Created = types.TimestampNow()
+	whitelist.LastUpdate = whitelist.GetCreated()
+	genDuration := env.WhitelistGenerationDuration.DurationSetting()
+	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
+	if err == nil {
+		whitelist.StackRoxLockedTimestamp = lockTimestamp
+	}
 	if err := ds.storage.AddWhitelist(whitelist); err != nil {
 		return id, errors.Wrapf(err, "inserting whitelist %q into store", whitelist.GetId())
 	}
 	if err := ds.indexer.AddWhitelist(whitelist); err != nil {
 		err = errors.Wrapf(err, "inserting whitelist %q into index", whitelist.GetId())
-		_, subErr := ds.storage.DeleteWhitelist(id)
+		subErr := ds.storage.DeleteWhitelist(id)
 		if subErr != nil {
 			err = errors.Wrapf(err, "error rolling back process whitelist addition")
 		}
@@ -70,7 +79,7 @@ func (ds *datastoreImpl) removeProcessWhitelistByID(id string) error {
 	if err := ds.indexer.DeleteWhitelist(id); err != nil {
 		return errors.Wrap(err, "error removing whitelist from index")
 	}
-	if _, err := ds.storage.DeleteWhitelist(id); err != nil {
+	if err := ds.storage.DeleteWhitelist(id); err != nil {
 		return errors.Wrap(err, "error removing whitelist from store")
 	}
 	return nil
@@ -133,6 +142,11 @@ func makeElementList(elementMap map[string]*storage.WhitelistElement) []*storage
 	return elementList
 }
 
+func (ds *datastoreImpl) updateProcessWhitelistAndSetTimestamp(whitelist *storage.ProcessWhitelist) error {
+	whitelist.LastUpdate = types.TimestampNow()
+	return ds.storage.UpdateWhitelist(whitelist)
+}
+
 func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *storage.ProcessWhitelist, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
 	whitelistMap := makeElementMap(whitelist.GetElements())
 	graveyardMap := makeElementMap(whitelist.GetElementGraveyard())
@@ -166,7 +180,7 @@ func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *stora
 	whitelist.Elements = makeElementList(whitelistMap)
 	whitelist.ElementGraveyard = makeElementList(graveyardMap)
 
-	err := ds.storage.UpdateWhitelist(whitelist)
+	err := ds.updateProcessWhitelistAndSetTimestamp(whitelist)
 	if err != nil {
 		return nil, err
 	}
@@ -246,10 +260,10 @@ func (ds *datastoreImpl) UserLockProcessWhitelist(ctx context.Context, key *stor
 
 	if locked && whitelist.GetUserLockedTimestamp() == nil {
 		whitelist.UserLockedTimestamp = types.TimestampNow()
-		err = ds.storage.UpdateWhitelist(whitelist)
+		err = ds.updateProcessWhitelistAndSetTimestamp(whitelist)
 	} else if !locked && whitelist.GetUserLockedTimestamp() != nil {
 		whitelist.UserLockedTimestamp = nil
-		err = ds.storage.UpdateWhitelist(whitelist)
+		err = ds.updateProcessWhitelistAndSetTimestamp(whitelist)
 	}
 	if err != nil {
 		return nil, err
@@ -272,10 +286,10 @@ func (ds *datastoreImpl) RoxLockProcessWhitelist(ctx context.Context, key *stora
 
 	if locked && whitelist.GetStackRoxLockedTimestamp() == nil {
 		whitelist.StackRoxLockedTimestamp = types.TimestampNow()
-		err = ds.storage.UpdateWhitelist(whitelist)
+		err = ds.updateProcessWhitelistAndSetTimestamp(whitelist)
 	} else if !locked && whitelist.GetStackRoxLockedTimestamp() != nil {
 		whitelist.StackRoxLockedTimestamp = nil
-		err = ds.storage.UpdateWhitelist(whitelist)
+		err = ds.updateProcessWhitelistAndSetTimestamp(whitelist)
 	}
 	if err != nil {
 		return nil, err

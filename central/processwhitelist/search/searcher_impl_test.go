@@ -46,7 +46,7 @@ func (suite *ProcessWhitelistSearchTestSuite) SetupTest() {
 	suite.store = storeMock.NewMockStore(suite.controller)
 
 	var noWhitelists []*storage.ProcessWhitelist
-	suite.store.EXPECT().GetWhitelists().Return(noWhitelists, nil)
+	suite.store.EXPECT().ListWhitelists().Return(noWhitelists, nil)
 	suite.indexer.EXPECT().AddWhitelists(noWhitelists).Return(nil)
 	searcher, err := New(suite.store, suite.indexer)
 

@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	"github.com/stackrox/rox/central/processwhitelist/search"
@@ -19,7 +18,7 @@ var (
 )
 
 func initialize() {
-	storage := store.New(globaldb.GetGlobalDB())
+	storage := store.Singleton()
 	indexer := index.New(globalindex.GetGlobalIndex())
 
 	searcher, err := search.New(storage, indexer)

@@ -35,7 +35,8 @@ type ProcessWhitelistDataStoreTestSuite struct {
 func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
 	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
 	suite.NoError(err)
-	suite.storage = store.New(db)
+	suite.storage, err = store.New(db)
+	suite.NoError(err)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.NoError(err)
@@ -60,6 +61,9 @@ func (suite *ProcessWhitelistDataStoreTestSuite) createAndStoreWhitelist(key *st
 	id, err := suite.datastore.AddProcessWhitelist(context.TODO(), whitelist)
 	suite.NoError(err)
 	suite.NotNil(id)
+	suite.NotNil(whitelist.Created)
+	suite.Equal(whitelist.Created, whitelist.LastUpdate)
+	suite.True(whitelist.StackRoxLockedTimestamp.Compare(whitelist.Created) >= 0)
 
 	suite.Equal(suite.mustSerializeKey(key), id)
 	suite.Equal(id, whitelist.Id)
@@ -109,6 +113,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) testUpdate(key *storage.Process
 	updated, err := suite.datastore.UpdateProcessWhitelistElements(context.TODO(), key, fixtures.MakeWhitelistItems(addProcesses...), fixtures.MakeWhitelistItems(removeProcesses...), auto)
 	suite.NoError(err)
 	suite.NotNil(updated)
+	suite.True(updated.GetLastUpdate().Compare(updated.GetCreated()) > 0)
 	suite.NotNil(updated.Elements)
 	suite.Equal(expectedResults.Cardinality(), len(updated.Elements))
 	actualResults := set.NewStringSet()
@@ -152,11 +157,13 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestLockAndUnlockWhitelist() {
 	suite.NoError(err)
 	suite.NotNil(updatedWhitelist.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedWhitelist)
+	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
 
 	updatedWhitelist, err = suite.datastore.UserLockProcessWhitelist(context.TODO(), key, false)
 	suite.NoError(err)
 	suite.Nil(updatedWhitelist.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedWhitelist)
+	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist() {
@@ -170,6 +177,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist()
 	suite.NoError(err)
 	suite.Nil(updatedWhitelist.GetStackRoxLockedTimestamp())
 	suite.doGet(key, true, updatedWhitelist)
+	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
 
 	updatedWhitelist, err = suite.datastore.RoxLockProcessWhitelist(context.TODO(), key, true)
 	suite.NoError(err)
@@ -177,6 +185,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist()
 	// Test that current time is after or equal to the StackRox locked time.
 	suite.True(types.TimestampNow().Compare(updatedWhitelist.GetStackRoxLockedTimestamp()) >= 0)
 	suite.doGet(key, true, updatedWhitelist)
+	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TestUpdateProcessWhitelist() {
@@ -218,6 +227,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestUpsertProcessWhitelist() {
 	suite.Equal(1, len(whitelist.GetElements()))
 	suite.Equal(firstProcess, whitelist.GetElements()[0].GetElement().GetProcessName())
 	suite.Equal(key, whitelist.GetKey())
+	suite.True(whitelist.GetLastUpdate().Compare(whitelist.GetCreated()) == 0)
 
 	secondProcess := "Joseph is the Best"
 	newItem = []*storage.WhitelistItem{{Item: &storage.WhitelistItem_ProcessName{ProcessName: secondProcess}}}
@@ -230,6 +240,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestUpsertProcessWhitelist() {
 	}
 	suite.ElementsMatch([]string{firstProcess, secondProcess}, processNames)
 	suite.Equal(key, whitelist.GetKey())
+	suite.True(whitelist.GetLastUpdate().Compare(whitelist.GetCreated()) > 0)
 }
 
 func makeItemList(elementList []*storage.WhitelistElement) []*storage.WhitelistItem {

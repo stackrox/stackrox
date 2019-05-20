@@ -58,7 +58,8 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 	var err error
 	suite.db, err = bolthelper.NewTemp("process_whitelist_service_test.db")
 	suite.NoError(err)
-	wlStore := store.New(suite.db)
+	wlStore, err := store.New(suite.db)
+	suite.NoError(err)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.NoError(err)

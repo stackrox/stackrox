@@ -16,7 +16,7 @@ type searcherImpl struct {
 
 func (s *searcherImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
-	whitelists, err := s.storage.GetWhitelists()
+	whitelists, err := s.storage.ListWhitelists()
 	if err != nil {
 		return err
 	}
