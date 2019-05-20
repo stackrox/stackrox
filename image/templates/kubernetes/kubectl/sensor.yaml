@@ -197,6 +197,8 @@ spec:
           value: "sensor.stackrox:443"
         - name: MODULE_DOWNLOAD_BASE_URL
           value: {{.CollectorModuleDownloadBaseURL}}
+        - name: {{.OfflineModeEnv}}
+          value: "{{.OfflineMode}}"
         resources:
           limits:
             cpu: 750m

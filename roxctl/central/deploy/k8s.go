@@ -21,6 +21,11 @@ func (w *persistentFlagsWrapper) StringVarP(p *string, name, shorthand, value, u
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
+func (w *persistentFlagsWrapper) BoolVar(p *bool, name string, value bool, usage string, groups ...string) {
+	w.FlagSet.BoolVar(p, name, value, usage)
+	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
+}
+
 func (w *persistentFlagsWrapper) Var(value pflag.Value, name, usage string, groups ...string) {
 	w.FlagSet.Var(value, name, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
@@ -60,6 +65,7 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 
 	// Adds k8s specific flags
 	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", defaults.MainImage(), "main image to use", "central")
+	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "run StackRox in offline mode which avoids reaching out to the internet", "central")
 
 	// Monitoring Flags
 	flagWrap.StringVarP(&k8sConfig.Monitoring.Endpoint, "monitoring-endpoint", "", "monitoring.stackrox:443", "monitoring endpoint", "monitoring", "monitoring-type=on-prem")

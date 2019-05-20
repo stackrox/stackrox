@@ -64,6 +64,8 @@ function launch_central {
 
     add_args "--lb-type=$LOAD_BALANCER"
 
+    add_args "--offline=$OFFLINE_MODE"
+
     add_args "--license"
     add_maybe_file_arg "${ROX_LICENSE_KEY:-${k8s_dir}/../common/dev-license.lic}"
 

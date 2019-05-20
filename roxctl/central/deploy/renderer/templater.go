@@ -161,6 +161,8 @@ type K8sConfig struct {
 	Command string
 
 	Monitoring MonitoringConfig
+
+	OfflineMode bool
 }
 
 // Config configures the deployer for the central service.

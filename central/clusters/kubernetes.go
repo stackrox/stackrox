@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -45,6 +46,8 @@ func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
 		fields["CABundle"] = base64.StdEncoding.EncodeToString(ca)
 		filenames = append(filenames, admissionController)
 	}
+	fields["OfflineModeEnv"] = env.OfflineModeEnv.EnvVar()
+	fields["OfflineMode"] = env.OfflineModeEnv.Setting()
 
 	return renderFilenames(filenames, fields, dockerAuthFile)
 }

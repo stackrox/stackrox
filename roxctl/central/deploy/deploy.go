@@ -135,6 +135,9 @@ func outputZip(config renderer.Config) error {
 			config.Environment[setting.EnvVar()] = setting.Setting()
 		}
 	}
+	if config.K8sConfig != nil {
+		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
+	}
 
 	config.SecretsByteMap["htpasswd"] = htpasswd
 	wrapper.AddFiles(zip.NewFile("password", []byte(config.Password+"\n"), zip.Sensitive))
