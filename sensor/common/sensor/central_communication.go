@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	complianceLogic "github.com/stackrox/rox/sensor/common/compliance"
+	"github.com/stackrox/rox/sensor/common/config"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
 	"github.com/stackrox/rox/sensor/common/signal"
@@ -14,7 +15,7 @@ import (
 
 // CentralCommunication interface allows you to start and stop the consumption/production loops.
 type CentralCommunication interface {
-	Start(centralConn *grpc.ClientConn, centralReachable *concurrency.Flag)
+	Start(centralConn *grpc.ClientConn, centralReachable *concurrency.Flag, handler config.Handler)
 
 	Stop(error)
 	Stopped() concurrency.ReadOnlyErrorSignal
@@ -28,10 +29,11 @@ func NewCentralCommunication(
 	signalService signal.Service,
 	networkConnManager networkConnManager.Manager,
 	networkPoliciesCommandHandler networkpolicies.CommandHandler,
-	clusterStatusUpdater clusterstatus.Updater) CentralCommunication {
+	clusterStatusUpdater clusterstatus.Updater,
+	configCommandHandler config.Handler) CentralCommunication {
 	return &centralCommunicationImpl{
-		receiver: NewCentralReceiver(scrapeCommandHandler, enforcer, networkPoliciesCommandHandler),
-		sender:   NewCentralSender(listener, signalService, networkConnManager, scrapeCommandHandler, networkPoliciesCommandHandler, clusterStatusUpdater),
+		receiver: NewCentralReceiver(scrapeCommandHandler, enforcer, networkPoliciesCommandHandler, configCommandHandler),
+		sender:   NewCentralSender(listener, signalService, networkConnManager, scrapeCommandHandler, networkPoliciesCommandHandler, clusterStatusUpdater, configCommandHandler),
 
 		stopC:    concurrency.NewErrorSignal(),
 		stoppedC: concurrency.NewErrorSignal(),

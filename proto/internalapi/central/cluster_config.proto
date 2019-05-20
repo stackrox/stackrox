@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "storage/cluster.proto";
+
+package central;
+
+message ClusterConfig {
+    storage.DynamicClusterConfig config = 1;
+}

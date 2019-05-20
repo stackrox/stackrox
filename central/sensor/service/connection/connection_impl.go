@@ -31,11 +31,11 @@ type sensorConnection struct {
 	eventQueue    *dedupingQueue
 	eventPipeline pipeline.ClusterPipeline
 
-	checkInRecorder          CheckInRecorder
+	clusterMgr               ClusterManager
 	checkInRecordRateLimiter *rate.Limiter
 }
 
-func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, recorder CheckInRecorder) (*sensorConnection, error) {
+func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, clusterMgr ClusterManager) (*sensorConnection, error) {
 	eventPipeline, err := pf.PipelineForCluster(ctx, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating event pipeline")
@@ -48,8 +48,8 @@ func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, r
 		eventPipeline: eventPipeline,
 		eventQueue:    newDedupingQueue(),
 
-		clusterID:       clusterID,
-		checkInRecorder: recorder,
+		clusterID:  clusterID,
+		clusterMgr: clusterMgr,
 
 		checkInRecordRateLimiter: rate.NewLimiter(rate.Every(10*time.Second), 1),
 	}
@@ -70,7 +70,7 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 // Record the check-in if the rate limiter allows it.
 func (c *sensorConnection) recordCheckInRateLimited() {
 	if c.checkInRecordRateLimiter.Allow() {
-		err := c.checkInRecorder.UpdateClusterContactTime(context.TODO(), c.clusterID, time.Now())
+		err := c.clusterMgr.UpdateClusterContactTime(context.TODO(), c.clusterID, time.Now())
 		if err != nil {
 			log.Warnf("Could not record cluster contact: %v", err)
 		}
@@ -150,13 +150,41 @@ func (c *sensorConnection) handleMessage(msg *central.MsgFromSensor) error {
 	}
 }
 
+func (c *sensorConnection) getClusterConfigMsg() (*central.MsgToSensor, error) {
+	cluster, exists, err := c.clusterMgr.GetCluster(context.TODO(), c.clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Errorf("could not pull config for cluster %q because it does not exist", c.clusterID)
+	}
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ClusterConfig{
+			ClusterConfig: &central.ClusterConfig{
+				Config: cluster.GetDynamicConfig(),
+			},
+		},
+	}, nil
+}
+
 func (c *sensorConnection) Run(server central.SensorService_CommunicateServer) error {
 	if err := server.SendHeader(metadata.MD{}); err != nil {
 		return errors.Wrap(err, "sending initial metadata")
 	}
 
+	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
+	msg, err := c.getClusterConfigMsg()
+	if err != nil {
+		return errors.Wrapf(err, "unable to get cluster config for %q", c.clusterID)
+	}
+
+	if err := server.Send(msg); err != nil {
+		return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
+	}
+
 	go c.runSend(server)
 	go c.handleMessages()
+
 	c.runRecv(server)
 	return c.stopSig.Err()
 }

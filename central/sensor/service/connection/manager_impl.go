@@ -32,9 +32,9 @@ func (m *manager) GetConnection(clusterID string) SensorConnection {
 	return conn
 }
 
-func (m *manager) HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder CheckInRecorder) error {
-	conn, err := newConnection(ctx, clusterID, pf, recorder)
-
+func (m *manager) HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer,
+	clusterMgr ClusterManager) error {
+	conn, err := newConnection(ctx, clusterID, pf, clusterMgr)
 	if err != nil {
 		return errors.Wrap(err, "creating sensor connection")
 	}

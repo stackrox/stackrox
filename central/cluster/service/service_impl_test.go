@@ -38,7 +38,7 @@ func TestNormalizeCluster(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			normalizeCluster(c.cluster)
+			assert.NoError(t, normalizeCluster(c.cluster))
 			assert.Equal(t, c.expected, c.cluster.GetCentralApiEndpoint())
 		})
 	}

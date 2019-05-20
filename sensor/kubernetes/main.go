@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -34,6 +35,7 @@ func main() {
 		roxmetadata.Singleton(),
 		networkpolicies.NewCommandHandler(),
 		clusterstatus.NewUpdater(),
+		config.NewCommandHandler(),
 	)
 	s.Start()
 

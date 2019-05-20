@@ -55,6 +55,17 @@ enum CollectionMethod {
     EBPF             = 3;
 }
 
+message AdmissionControllerConfig {
+    bool                  enabled                              = 1;
+    int32                 timeout_seconds                      = 2;
+    bool                  scan_inline                          = 3;
+    bool                  disableBypass                        = 4;
+}
+
+message DynamicClusterConfig {
+    AdmissionControllerConfig admission_controller_config = 1;
+}
+
 message Cluster {
     string                    id                          = 1 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
     string                    name                        = 2 [(gogoproto.moretags) = "search:\"Cluster\""];
@@ -74,6 +85,7 @@ message Cluster {
     OrchestratorMetadata      DEPRECATED_orchestrator_metadata = 14;
 
     ClusterStatus             status                      = 15;
+    DynamicClusterConfig      dynamic_config              = 18;
 }
 
 message ClusterStatus {

@@ -5,10 +5,16 @@ import { ClipLoader } from 'react-spinners';
 
 const baseClass = 'py-6 border-b border-base-300 border-solid';
 
-const YamlDownloadSection = ({ onFileDownload }) => (
+const YamlDownloadSection = ({ onFileDownload, editing, clusterCheckedIn }) => (
     <div className="px-4">
+        {editing && clusterCheckedIn && (
+            <div className="pt-3 font-700">Dynamic configuration has been synced to Sensor</div>
+        )}
         <div className={baseClass}>
-            1) Download the required Configuration files
+            1){' '}
+            {editing
+                ? 'If static configuration was updated, download the new configuration files'
+                : 'Download the required configuration files'}
             <div className="flex justify-center p-3">
                 <button
                     type="button"
@@ -30,7 +36,9 @@ const YamlDownloadSection = ({ onFileDownload }) => (
     </div>
 );
 YamlDownloadSection.propTypes = {
-    onFileDownload: PropTypes.func.isRequired
+    onFileDownload: PropTypes.func.isRequired,
+    clusterCheckedIn: PropTypes.bool.isRequired,
+    editing: PropTypes.bool.isRequired
 };
 
 const WaitingForCheckinMessage = () => (
@@ -48,8 +56,7 @@ const SuccessfulCheckinMessage = () => (
             <Icon.CheckCircle />
         </div>
         <div className="flex-3 pl-2">
-            Success! The cluster has been recognized properly by StackRox. You may now save the
-            configuration.
+            Success! The cluster has been recognized properly by StackRox.
         </div>
     </div>
 );
@@ -63,15 +70,22 @@ ClusterCheckinSection.propTypes = {
     clusterCheckedIn: PropTypes.bool.isRequired
 };
 
-const ClusterDeploymentPage = ({ onFileDownload, clusterCheckedIn }) => (
+const ClusterDeploymentPage = ({ onFileDownload, clusterCheckedIn, editing }) => (
     <div className="w-full">
-        <YamlDownloadSection onFileDownload={onFileDownload} />
-        <ClusterCheckinSection clusterCheckedIn={clusterCheckedIn} />
+        <YamlDownloadSection
+            onFileDownload={onFileDownload}
+            editing={editing}
+            clusterCheckedIn={clusterCheckedIn}
+        />
+        {(!editing || !clusterCheckedIn) && (
+            <ClusterCheckinSection clusterCheckedIn={clusterCheckedIn} />
+        )}
     </div>
 );
 ClusterDeploymentPage.propTypes = {
     onFileDownload: PropTypes.func.isRequired,
-    clusterCheckedIn: PropTypes.bool.isRequired
+    clusterCheckedIn: PropTypes.bool.isRequired,
+    editing: PropTypes.bool.isRequired
 };
 
 export default ClusterDeploymentPage;

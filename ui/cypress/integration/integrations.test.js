@@ -138,28 +138,6 @@ describe('Cluster Creation Flow', () => {
         cy.get(selectors.clusters.k8sCluster0);
     });
 
-    it('Should show a disabled form when viewing a specific cluster', () => {
-        cy.get(selectors.kubernetesTile).click();
-
-        cy.get(selectors.clusters.k8sCluster0).click();
-
-        cy.get(selectors.labeledValue)
-            .eq(0)
-            .should('have.text', 'Name:Kubernetes Cluster 0');
-
-        cy.get(selectors.labeledValue)
-            .eq(1)
-            .should('have.text', 'Cluster Type:Kubernetes');
-
-        cy.get(selectors.labeledValue)
-            .eq(2)
-            .should('have.text', 'Main Image:stackrox/main:latest');
-
-        cy.get(selectors.labeledValue)
-            .eq(3)
-            .should('have.text', 'Central API Endpoint:central.stackrox:443');
-    });
-
     it.skip('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
         cy.get(selectors.kubernetesTile).click();
 

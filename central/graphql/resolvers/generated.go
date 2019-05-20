@@ -19,6 +19,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"accountId: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
+	utils.Must(builder.AddType("AdmissionControllerConfig", []string{
+		"disableBypass: Boolean!",
+		"enabled: Boolean!",
+		"scanInline: Boolean!",
+		"timeoutSeconds: Int!",
+	}))
 	utils.Must(builder.AddType("Alert", []string{
 		"deployment: Deployment",
 		"enforcement: Alert_Enforcement",
@@ -88,6 +94,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
 		"collectorImage: String!",
+		"dynamicConfig: DynamicClusterConfig",
 		"id: ID!",
 		"mainImage: String!",
 		"monitoringEndpoint: String!",
@@ -293,6 +300,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("DockerfileLineRuleField", []string{
 		"instruction: String!",
 		"value: String!",
+	}))
+	utils.Must(builder.AddType("DynamicClusterConfig", []string{
+		"admissionControllerConfig: AdmissionControllerConfig",
 	}))
 	utils.Must(builder.AddType("Email", []string{
 		"disableTLS: Boolean!",
@@ -897,6 +907,49 @@ func toAccesses(values *[]string) []storage.Access {
 	return output
 }
 
+type admissionControllerConfigResolver struct {
+	root *Resolver
+	data *storage.AdmissionControllerConfig
+}
+
+func (resolver *Resolver) wrapAdmissionControllerConfig(value *storage.AdmissionControllerConfig, ok bool, err error) (*admissionControllerConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &admissionControllerConfigResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapAdmissionControllerConfigs(values []*storage.AdmissionControllerConfig, err error) ([]*admissionControllerConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*admissionControllerConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &admissionControllerConfigResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *admissionControllerConfigResolver) DisableBypass(ctx context.Context) bool {
+	value := resolver.data.GetDisableBypass()
+	return value
+}
+
+func (resolver *admissionControllerConfigResolver) Enabled(ctx context.Context) bool {
+	value := resolver.data.GetEnabled()
+	return value
+}
+
+func (resolver *admissionControllerConfigResolver) ScanInline(ctx context.Context) bool {
+	value := resolver.data.GetScanInline()
+	return value
+}
+
+func (resolver *admissionControllerConfigResolver) TimeoutSeconds(ctx context.Context) int32 {
+	value := resolver.data.GetTimeoutSeconds()
+	return value
+}
+
 type alertResolver struct {
 	root *Resolver
 	data *storage.Alert
@@ -1464,6 +1517,11 @@ func (resolver *clusterResolver) CollectionMethod(ctx context.Context) string {
 func (resolver *clusterResolver) CollectorImage(ctx context.Context) string {
 	value := resolver.data.GetCollectorImage()
 	return value
+}
+
+func (resolver *clusterResolver) DynamicConfig(ctx context.Context) (*dynamicClusterConfigResolver, error) {
+	value := resolver.data.GetDynamicConfig()
+	return resolver.root.wrapDynamicClusterConfig(value, true, nil)
 }
 
 func (resolver *clusterResolver) Id(ctx context.Context) graphql.ID {
@@ -3003,6 +3061,34 @@ func (resolver *dockerfileLineRuleFieldResolver) Instruction(ctx context.Context
 func (resolver *dockerfileLineRuleFieldResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
+}
+
+type dynamicClusterConfigResolver struct {
+	root *Resolver
+	data *storage.DynamicClusterConfig
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfig(value *storage.DynamicClusterConfig, ok bool, err error) (*dynamicClusterConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &dynamicClusterConfigResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapDynamicClusterConfigs(values []*storage.DynamicClusterConfig, err error) ([]*dynamicClusterConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*dynamicClusterConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &dynamicClusterConfigResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *dynamicClusterConfigResolver) AdmissionControllerConfig(ctx context.Context) (*admissionControllerConfigResolver, error) {
+	value := resolver.data.GetAdmissionControllerConfig()
+	return resolver.root.wrapAdmissionControllerConfig(value, true, nil)
 }
 
 type emailResolver struct {

@@ -61,7 +61,7 @@ func (mr *MockManagerMockRecorder) GetConnection(arg0 interface{}) *gomock.Call 
 }
 
 // HandleConnection mocks base method
-func (m *MockManager) HandleConnection(arg0 context.Context, arg1 string, arg2 pipeline.Factory, arg3 central.SensorService_CommunicateServer, arg4 connection.CheckInRecorder) error {
+func (m *MockManager) HandleConnection(arg0 context.Context, arg1 string, arg2 pipeline.Factory, arg3 central.SensorService_CommunicateServer, arg4 connection.ClusterManager) error {
 	ret := m.ctrl.Call(m, "HandleConnection", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0

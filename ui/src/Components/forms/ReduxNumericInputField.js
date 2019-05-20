@@ -15,7 +15,7 @@ const ReduxNumericInput = props => (
         placeholder={props.placeholder}
         onBlur={props.input.onChange}
         noStyle
-        className="bg-base-100 border-2 rounded-l p-3 text-base-600 border-base-300 w-full font-600"
+        className={props.className}
     />
 );
 
@@ -27,10 +27,11 @@ ReduxNumericInput.propTypes = {
     placeholder: PropTypes.string.isRequired,
     min: PropTypes.number.isRequired,
     max: PropTypes.number.isRequired,
-    step: PropTypes.number.isRequired
+    step: PropTypes.number.isRequired,
+    className: PropTypes.string.isRequired
 };
 
-const ReduxNumericInputField = ({ name, min, max, placeholder, step }) => (
+const ReduxNumericInputField = ({ name, min, max, placeholder, step, className }) => (
     <Field
         key={name}
         name={name}
@@ -40,7 +41,7 @@ const ReduxNumericInputField = ({ name, min, max, placeholder, step }) => (
         max={max}
         step={step}
         component={ReduxNumericInput}
-        className="border bg-base-100 border-base-300 text-base-600 p-3 pr-8 rounded-r-sm cursor-pointer z-1 focus:border-base-300 w-full font-600"
+        className={className}
     />
 );
 
@@ -49,14 +50,16 @@ ReduxNumericInputField.propTypes = {
     min: PropTypes.number,
     max: PropTypes.number,
     step: PropTypes.number,
-    placeholder: PropTypes.string
+    placeholder: PropTypes.string,
+    className: PropTypes.string
 };
 
 ReduxNumericInputField.defaultProps = {
     min: 1,
     max: Number.MAX_SAFE_INTEGER,
     step: 1,
-    placeholder: ''
+    placeholder: '',
+    className: 'bg-base-100 border-2 rounded-l p-3 text-base-600 border-base-300 w-full font-600'
 };
 
 export default ReduxNumericInputField;

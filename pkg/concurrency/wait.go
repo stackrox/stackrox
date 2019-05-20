@@ -2,6 +2,12 @@ package concurrency
 
 import "time"
 
+// Never satisfies the Waitable interface, but will never be signaled
+// Waiting will block indefinitely
+func Never() Waitable {
+	return WaitableChan(nil)
+}
+
 // Wait waits indefinitely until the condition represented by the given Waitable is fulfilled.
 func Wait(w Waitable) {
 	<-w.Done()

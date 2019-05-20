@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/common/compliance"
+	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
@@ -21,6 +22,7 @@ type centralSenderImpl struct {
 	signalService                 signal.Service
 	networkConnManager            networkConnManager.Manager
 	scrapeCommandHandler          compliance.CommandHandler
+	configCommandHandler          config.Handler
 	networkPoliciesCommandHandler networkpolicies.CommandHandler
 	clusterStatusUpdater          clusterstatus.Updater
 

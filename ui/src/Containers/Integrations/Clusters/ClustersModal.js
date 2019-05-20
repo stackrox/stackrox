@@ -18,7 +18,8 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import PanelButton from 'Components/PanelButton';
 import { clusterTypeLabels } from 'messages/common';
 import ClusterWizardPanel from './ClusterWizardPanel';
-import ClusterDetails, {
+import ClusterEditForm from './ClusterEditForm';
+import {
     checkInLabel,
     formatCollectionMethod,
     formatAdmissionController,
@@ -55,7 +56,9 @@ class ClustersModal extends Component {
         this.props.selectCluster(null);
     }
 
-    onClusterRowClick = cluster => this.props.selectCluster(cluster.id);
+    onClusterRowClick = cluster => {
+        this.props.startWizard(cluster.id);
+    };
 
     onAddCluster = () => this.props.startWizard();
 
@@ -233,7 +236,7 @@ class ClustersModal extends Component {
                 header={selectedCluster.name}
                 onClose={this.onClusterDetailsClose}
             >
-                <ClusterDetails cluster={selectedCluster} />
+                <ClusterEditForm clusterType={selectedCluster.type} cluster={selectedCluster} />
             </Panel>
         );
     }

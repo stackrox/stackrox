@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	complianceLogic "github.com/stackrox/rox/sensor/common/compliance"
+	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
 )
 
@@ -16,6 +17,7 @@ type centralReceiverImpl struct {
 	scrapeCommandHandler          complianceLogic.CommandHandler
 	networkPoliciesCommandHandler networkpolicies.CommandHandler
 	enforcer                      enforcers.Enforcer
+	configCommandHandler          config.Handler
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal
@@ -72,9 +74,15 @@ func (s *centralReceiverImpl) processMsg(msg *central.MsgToSensor) {
 		s.processScrapeCommand(m.ScrapeCommand)
 	case *central.MsgToSensor_NetworkPoliciesCommand:
 		s.processNetworkPoliciesCommand(m.NetworkPoliciesCommand)
+	case *central.MsgToSensor_ClusterConfig:
+		s.processConfigChangeCommand(m.ClusterConfig)
 	default:
 		log.Errorf("Unsupported message from central of type %T: %+v", m, m)
 	}
+}
+
+func (s *centralReceiverImpl) processConfigChangeCommand(cluster *central.ClusterConfig) {
+	s.configCommandHandler.SendCommand(cluster)
 }
 
 func (s *centralReceiverImpl) processNetworkPoliciesCommand(command *central.NetworkPoliciesCommand) {

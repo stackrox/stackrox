@@ -8,16 +8,19 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/templates"
+	"github.com/stackrox/rox/sensor/common/config"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1beta1"
 	apps "k8s.io/api/apps/v1"
@@ -27,12 +30,11 @@ import (
 )
 
 const (
-	timeout = 3 * time.Second
-
 	// This purposefully leaves a newline at the top for formatting when using kubectl
 	kubectlTemplate = `
 Policy: {{.Title}}
-In case of emergency, add the annotation {"admission.stackrox.io/break-glass": "ticket-1234"} to your deployment with an updated ticket number
+{{if not .DisableBypass}}In case of emergency, add the annotation {"admission.stackrox.io/break-glass": "ticket-1234"} to your deployment with an updated ticket number
+{{- end}}
 {{range .Alerts}}
 {{.Policy.Name}}
 - Description:
@@ -59,16 +61,18 @@ var (
 )
 
 // NewHandler returns a handler that proxies admission controllers to Central
-func NewHandler(conn *grpc.ClientConn, centralReachable *concurrency.Flag) http.Handler {
+func NewHandler(conn *grpc.ClientConn, centralReachable *concurrency.Flag, configHandler config.Handler) http.Handler {
 	return &handlerImpl{
 		client:           v1.NewDetectionServiceClient(conn),
 		centralReachable: centralReachable,
+		configHandler:    configHandler,
 	}
 }
 
 type handlerImpl struct {
 	client           v1.DetectionServiceClient
 	centralReachable *concurrency.Flag
+	configHandler    config.Handler
 }
 
 func admissionPass(w http.ResponseWriter, id types.UID) {
@@ -128,8 +132,7 @@ func parseIntoDeployment(ar *admission.AdmissionReview) (*storage.Deployment, er
 	case kubernetes.ReplicaSet:
 		objType = &apps.ReplicaSet{}
 	default:
-		log.Errorf("Currently do not recognize kind %q in admission controller", ar.Request.Kind.Kind)
-		return nil, nil
+		return nil, errors.Errorf("currently do not recognize kind %q in admission controller", ar.Request.Kind.Kind)
 	}
 
 	if err := json.Unmarshal(ar.Request.Object.Raw, &objType); err != nil {
@@ -164,39 +167,51 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deployment, err := parseIntoDeployment(&admissionReview)
-	if err != nil {
-		log.Errorf("Error parsing into deployment: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	// Can guarantee that there is an admission controller config because we receive it between central reachable is set to true
+	conf := s.configHandler.GetConfig().GetAdmissionControllerConfig()
+
+	// If admission controller is not enabled in dynamic config, then always pass
+	if !conf.GetEnabled() {
+		admissionPass(w, admissionReview.Request.UID)
 		return
 	}
+
+	deployment, err := parseIntoDeployment(&admissionReview)
+	if err != nil {
+		log.Errorf("error parsing into deployment: %v", err)
+		admissionPass(w, admissionReview.Request.UID)
+		return
+	}
+
+	// A nil deployment implies that it does not need to be processed. For example,
+	// if there is an owner reference then we are assuming that we ran the admission controller
+	// on the higher level object
 	if deployment == nil {
 		admissionPass(w, admissionReview.Request.UID)
 		return
 	}
 
-	if !enforcers.ShouldEnforce(deployment.GetAnnotations()) {
-		log.Warnf("Deployment %s/%s of type %s was deployed without being checked due to emergency annotations",
-			deployment.GetNamespace(), deployment.GetName(), deployment.GetType())
+	// This checks to see if the deployment has a bypass annotation only if the bypass is not disabled
+	if !conf.GetDisableBypass() && !enforcers.ShouldEnforce(deployment.GetAnnotations()) {
+		log.Warnf("deployment %s/%s of type %s was deployed without being checked due to matching bypass annotation %q",
+			deployment.GetNamespace(), deployment.GetName(), deployment.GetType(), enforcers.EnforcementBypassAnnotationKey)
 		admissionPass(w, admissionReview.Request.UID)
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(conf.GetTimeoutSeconds())*time.Second)
 	defer cancel()
 
 	resp, err := s.client.DetectDeployTime(ctx, &v1.DeployDetectionRequest{
 		Resource: &v1.DeployDetectionRequest_Deployment{
 			Deployment: deployment,
 		},
-		NoExternalMetadata: true,
+		NoExternalMetadata: !conf.GetScanInline(),
 		EnforcementOnly:    true,
 		ClusterId:          env.ClusterID.Setting(),
 	})
 	if err != nil {
-		log.Warnf("Deployment %s/%s of type %s was deployed without being checked due to detection error: %v",
-			deployment.GetNamespace(), deployment.GetName(), deployment.GetType(), err)
-		admissionPass(w, admissionReview.Request.UID)
+		log.Errorf("Deployment %s/%s of type %s was deployed without being checked due to detection error: %v", deployment.GetNamespace(), deployment.GetName(), deployment.GetType(), err)
 		return
 	}
 
@@ -228,13 +243,13 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	msg, err := templates.ExecuteToString(msgTemplate, map[string]interface{}{
-		"Title":  topMsg,
-		"Alerts": enforcedAlerts,
+		"Title":         topMsg,
+		"Alerts":        enforcedAlerts,
+		"DisableBypass": conf.GetDisableBypass(),
 	})
 	if err != nil {
-		log.Errorf("Error executing msg template: %v", err)
-		admissionPass(w, admissionReview.Request.UID)
-		return
+		msg = fmt.Sprintf("internal failure executing admission controller msg template: %v", err)
+		errorhelpers.PanicOnDevelopment(errors.New(msg))
 	}
 	writeResponse(w, admissionReview.Request.UID, false, msg)
 }

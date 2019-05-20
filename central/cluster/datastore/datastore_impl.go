@@ -15,6 +15,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -84,7 +85,25 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 	if err := ds.storage.UpdateCluster(cluster); err != nil {
 		return err
 	}
-	return ds.indexer.AddCluster(cluster)
+	if err := ds.indexer.AddCluster(cluster); err != nil {
+		return err
+	}
+	conn := ds.cm.GetConnection(cluster.GetId())
+	if conn == nil {
+		return nil
+	}
+	err := conn.InjectMessage(concurrency.Never(), &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ClusterConfig{
+			ClusterConfig: &central.ClusterConfig{
+				Config: cluster.GetDynamicConfig(),
+			},
+		},
+	})
+	if err != nil {
+		// This is just logged because the connection could have been broken during the config send and we should handle it gracefully
+		log.Error(err)
+	}
+	return nil
 }
 
 // GetCluster is a pass through function to the underlying storage.

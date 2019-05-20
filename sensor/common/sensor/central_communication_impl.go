@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/common/config"
 	"google.golang.org/grpc"
 )
 
@@ -19,8 +20,8 @@ type centralCommunicationImpl struct {
 	stoppedC concurrency.ErrorSignal
 }
 
-func (s *centralCommunicationImpl) Start(conn *grpc.ClientConn, centralReachable *concurrency.Flag) {
-	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, s.receiver.Stop, s.sender.Stop)
+func (s *centralCommunicationImpl) Start(conn *grpc.ClientConn, centralReachable *concurrency.Flag, configHandler config.Handler) {
+	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, configHandler, s.receiver.Stop, s.sender.Stop)
 }
 
 func (s *centralCommunicationImpl) Stop(err error) {
@@ -31,7 +32,7 @@ func (s *centralCommunicationImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &s.stoppedC
 }
 
-func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, onStops ...func(error)) {
+func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, onStops ...func(error)) {
 	defer func() {
 		s.stoppedC.SignalWithError(s.stopC.Err())
 		runAll(s.stopC.Err(), onStops...)
@@ -49,6 +50,15 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial metadata"))
 		return
 	}
+
+	msg, err := stream.Recv()
+	if err != nil {
+		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial cluster config"))
+		return
+	}
+
+	// Send the initial cluster config to the config handler
+	configHandler.SendCommand(msg.GetClusterConfig())
 
 	defer func() {
 		if err := stream.CloseSend(); err != nil {

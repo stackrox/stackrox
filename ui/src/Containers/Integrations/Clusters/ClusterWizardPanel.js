@@ -32,6 +32,17 @@ class ClusterWizardPanel extends Component {
         cluster: null
     };
 
+    constructor(props) {
+        super(props);
+        this.state = {
+            editing: false
+        };
+    }
+
+    componentDidMount() {
+        this.setState({ editing: !!this.props.cluster });
+    }
+
     componentWillUnmount() {
         this.props.onFinish();
     }
@@ -64,12 +75,23 @@ class ClusterWizardPanel extends Component {
 
     renderPage() {
         const { currentPage, clusterType, cluster, onDownload } = this.props;
+        const { editing } = this.state;
         switch (currentPage) {
             case wizardPages.FORM:
+                if (cluster) {
+                    return (
+                        <ClusterEditForm
+                            clusterType={clusterType}
+                            cluster={cluster}
+                            initialValues={cluster}
+                        />
+                    );
+                }
                 return <ClusterEditForm clusterType={clusterType} initialValues={cluster} />;
             case wizardPages.DEPLOYMENT:
                 return (
                     <ClusterDeploymentPage
+                        editing={editing}
                         onFileDownload={onDownload}
                         clusterCheckedIn={
                             !!(cluster && cluster.status && cluster.status.lastContact)

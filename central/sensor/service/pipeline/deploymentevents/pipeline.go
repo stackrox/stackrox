@@ -53,6 +53,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 
 		graphEvaluator: graphEvaluator,
 		deployments:    deployments,
+		clusters:       clusters,
 		reconcileStore: reconciliation.NewStore(),
 	}
 }
@@ -66,6 +67,7 @@ type pipelineImpl struct {
 	createResponse    *createResponseImpl
 
 	deployments deploymentDataStore.DataStore
+	clusters    clusterDataStore.DataStore
 
 	graphEvaluator graph.Evaluator
 

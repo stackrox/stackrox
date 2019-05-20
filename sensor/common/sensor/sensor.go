@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/common/compliance"
+	"github.com/stackrox/rox/sensor/common/config"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	networkFlowService "github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
@@ -70,6 +71,7 @@ type Sensor struct {
 	commandHandler                compliance.CommandHandler
 	networkPoliciesCommandHandler networkpolicies.CommandHandler
 	clusterStatusUpdater          clusterstatus.Updater
+	configHandler                 config.Handler
 
 	server          pkgGRPC.API
 	profilingServer *http.Server
@@ -82,7 +84,8 @@ type Sensor struct {
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
 func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager,
-	m roxmetadata.Metadata, networkPoliciesCommandHandler networkpolicies.CommandHandler, clusterStatusUpdater clusterstatus.Updater) *Sensor {
+	m roxmetadata.Metadata, networkPoliciesCommandHandler networkpolicies.CommandHandler, clusterStatusUpdater clusterstatus.Updater,
+	configHandler config.Handler) *Sensor {
 	return &Sensor{
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
@@ -95,6 +98,7 @@ func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orche
 		commandHandler:                compliance.NewCommandHandler(o, m),
 		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
 		clusterStatusUpdater:          clusterStatusUpdater,
+		configHandler:                 configHandler,
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -136,7 +140,7 @@ func (s *Sensor) Start() {
 	admissionControllerRoute := routes.CustomRoute{
 		Route:         "/admissioncontroller",
 		Authorizer:    allow.Anonymous(),
-		ServerHandler: admissioncontroller.NewHandler(s.centralConnection, &centralReachable),
+		ServerHandler: admissioncontroller.NewHandler(s.centralConnection, &centralReachable, s.configHandler),
 		Compression:   false,
 	}
 
@@ -211,7 +215,7 @@ func (s *Sensor) Stop() {
 	}
 
 	for _, toStop := range []stoppable{s.listener, s.enforcer, s.networkConnManager,
-		s.networkPoliciesCommandHandler, s.clusterStatusUpdater} {
+		s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.configHandler} {
 		if toStop != nil {
 			toStop.Stop()
 		}
@@ -279,8 +283,9 @@ func pollMetadataWithTimeout(svc v1.MetadataServiceClient) error {
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(),
-		s.networkConnManager, s.networkPoliciesCommandHandler, s.clusterStatusUpdater)
-	s.centralCommunication.Start(s.centralConnection, centralReachable)
+		s.networkConnManager, s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.configHandler)
+
+	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {
 		log.Errorf("Sensor reported an error: %v", err)

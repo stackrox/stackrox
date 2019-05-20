@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "central";
 
+import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_status.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/sensor_events.proto";
@@ -33,12 +34,12 @@ message MsgFromSensor {
 
 message MsgToSensor {
     oneof msg {
-        SensorEnforcement           enforcement                    = 1;
-        ScrapeCommand               scrape_command                 = 2;
-        NetworkPoliciesCommand      network_policies_command       = 3;
+        SensorEnforcement            enforcement                    = 1;
+        ScrapeCommand                scrape_command                 = 2;
+        NetworkPoliciesCommand       network_policies_command       = 3;
+        ClusterConfig                cluster_config                 = 4;
     }
 }
-
 
 service SensorService {
 

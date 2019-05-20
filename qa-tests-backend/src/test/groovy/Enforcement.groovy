@@ -4,7 +4,6 @@ import groups.PolicyEnforcement
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.DaemonSet
 import objects.Deployment
-import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.CreatePolicyService
@@ -31,41 +30,6 @@ class Enforcement extends BaseSpecification {
 
     def cleanupSpec() {
         assert Services.deleteGcrRegistryAndScanner(gcrId)
-    }
-
-    @Category([BAT, Integration, PolicyEnforcement])
-    def "Test Admission Controller Enforcement - Integration"() {
-        // This test verifies enforcement by triggering a enforcement via admission controller
-
-        given:
-        "ignore test until we get admission control in fabric8 lib"
-        Assume.assumeTrue(false)
-
-        and:
-        "Add deployment time enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                CONTAINER_PORT_22_POLICY,
-                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
-        )
-
-        when:
-        "Create Deployment to test scale-down enforcement"
-        def count = orchestrator.getDeploymentCount().size()
-        Deployment d = new Deployment()
-                .setName("admission-controller-enforcement")
-                .setImage("nginx")
-                .addPort(22)
-                .addLabel("app", "admission-controller-enforcement")
-                .setSkipReplicaWait(true)
-
-        orchestrator.createDeploymentNoWait(d)
-
-        then:
-        assert count == orchestrator.getDeploymentCount().size()
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
@@ -132,10 +96,6 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test scale-down enforcement"
-        def ac = orchestrator.getAdmissionController()
-        if (ac != null) {
-            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
-        }
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-int")
                 .setImage("busybox")
@@ -173,7 +133,6 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d)
     }
@@ -214,10 +173,6 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test scale-down enforcement"
-        def ac = orchestrator.getAdmissionController()
-        if (ac != null) {
-            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
-        }
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-build-deploy-image")
                 .setImage("apollo-dtr.rox.systems/qa/enforcement:testing")
@@ -254,10 +209,6 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        orchestrator.createAdmissionController(ac)
-        if (d) {
-            orchestrator.deleteDeployment(d)
-        }
         if (policyID) {
             CreatePolicyService.deletePolicy(policyID)
         }
@@ -286,10 +237,6 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test scale-down enforcement"
-        def ac = orchestrator.getAdmissionController()
-        if (ac != null) {
-            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
-        }
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-build-deploy-cvss")
                 .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
@@ -327,7 +274,6 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CVSS, startEnforcements)
         Services.updatePolicyLifecycleStage(CVSS, startlifeCycle)
         orchestrator.deleteDeployment(d)
@@ -347,11 +293,6 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test node constraint enforcement"
-        def ac = orchestrator.getAdmissionController()
-        if (ac != null) {
-            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
-        }
-
         Deployment d = new Deployment()
                 .setName("node-constraint-enforcement-int")
                 .setImage("busybox")
@@ -391,7 +332,6 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d)
     }
@@ -492,10 +432,6 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test scale-down and Node Selection enforcement"
-        def ac = orchestrator.getAdmissionController()
-        if (ac != null) {
-            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
-        }
         Deployment d = new Deployment()
                 .setName("scale-node-deployment-enforcement-int")
                 .setImage("busybox")
@@ -536,7 +472,6 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d)
     }
@@ -557,11 +492,6 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create DaemonSet to test scale-down and Node Selection enforcement"
-        def ac = orchestrator.getAdmissionController()
-        if (ac != null) {
-            print ac
-            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
-        }
         DaemonSet d = new DaemonSet()
                 .setName("scale-node-daemonset-enforcement-int")
                 .setImage("busybox")
@@ -601,7 +531,6 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         d.delete()
     }
