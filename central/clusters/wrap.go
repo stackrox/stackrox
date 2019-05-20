@@ -128,6 +128,9 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 		"ClusterType":        c.Type.String(),
 
 		"AdmissionController": c.AdmissionController,
+
+		"OfflineModeEnv": env.OfflineModeEnv.EnvVar(),
+		"OfflineMode":    env.OfflineModeEnv.Setting(),
 	}
 	return fields, nil
 }
