@@ -75,22 +75,33 @@ password="${REGISTRY_PASSWORD}"
 
 function print_auth() {
 	local auth_token="$1"
+	if [[ -z $auth_token ]]; then
+		return
+	fi
 	if [[ -z "$output_mode" ]]; then
 		echo "$auth_token"
-		exit 0
+		return
 	fi
 	if [[ "$output_mode" == "k8s" ]]; then
 		local auth_token_std="$(url2std <<<"$auth_token")"
 		local auths_str="{\"auths\":{\"$registry_url\":{\"auth\":\"${auth_token_std}\"}}}"
 		b64enc "$auths_str"
 	fi
-    exit 0
 }
 
 function mkauth() {
 	local username="$1"
 	local password="$2"
 
+	# Lots of registries have different auth mechanisms, but we know how to auth against stackrox.io, which is the most
+	# common case so verify it
+	if [[ "$registry_url" == "https://stackrox.io" || "$registry_url" == "https://collector.stackrox.io" ]]; then
+		STATUS_CODE=$(curl -o /dev/null -s "https://auth.stackrox.io/token/?scope=repository%3Amain%3Apull&service=auth.stackrox.io" -w "%{http_code}" -K - <<< "-u ${username}:${password}")
+		if [[ "$STATUS_CODE" != 200 ]]; then
+			echo >&2  "Unable authenticate against "$registry_url": HTTP Status $STATUS_CODE"
+			return
+	    fi
+	fi
 	b64enc "${username}:${password}" | std2url
 }
 
@@ -120,7 +131,7 @@ function try_dockercfg_credstore() {
     local helper_cmd="docker-credential-${credstore}"
     if ! type "$helper_cmd" >/dev/null 2>&1 ; then
         echo >&2 "Not using keychain '${credstore}' as credentials helper is unavailable."
-        return
+        return 1
     fi
     local creds_output
     creds_output="$("$helper_cmd" get <<<"$registry_url" 2>/dev/null)"
@@ -133,19 +144,24 @@ function try_dockercfg_credstore() {
     if [[ -n "${components[0]}" && "${components[0]}" != "<token>" && -n "${components[1]}" ]]; then
         echo >&2 "Using login for ${components[0]} @ ${registry_url} from keychain '${credstore}'."
         print_auth "$(mkauth "${components[0]}" "${components[1]}")"
+        return $?
     fi
 }
-
 
 if [[ -n "$username" && -n "$password" ]]; then
 	echo >&2 "Warning: providing passwords via (exported) environment variables is unsafe."
 	print_auth "$(mkauth "${REGISTRY_USERNAME}" "${REGISTRY_PASSWORD}")"
+	exit $?
 fi
 
 if [[ -f ~/.docker/config.json || ! -x "$(command -v jq)" ]]; then
 	dockercfg="$(< ~/.docker/config.json)"
-	try_dockercfg_plain "$dockercfg"
-	try_dockercfg_credstore "$dockercfg"
+	if [[ ! try_dockercfg_plain "$dockercfg" ]]; then
+		exit 0
+	fi
+	if [[ ! try_dockercfg_credstore "$dockercfg" ]]; then
+		exit 0
+	fi
 fi
 
 if [[ -z "$username" ]]; then
@@ -156,3 +172,4 @@ read -s -p "Enter password for ${username} @ ${registry_url}: " password
 [[ -n "$password" ]] || { echo >&2 "Aborted." ; exit 1 ; }
 
 print_auth "$(mkauth "$username" "$password")"
+exit $?
