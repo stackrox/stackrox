@@ -76,8 +76,8 @@ GATEWAY_M_ARGS_STR := $(subst $(space),$(comma),$(strip $(GATEWAY_M_ARGS)))
 
 $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go:
 	@echo "+ $@"
-# This pins protoc-gen-go to v1.0.0, which is the same version of golang/protobuf that we vendor.
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/protobuf/protoc-gen-go v1.1.0
+# keep in sync with Gopkg.toml
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/protobuf/protoc-gen-go v1.3.1
 
 $(PROTOC_FILE):
 	@echo "+ $@"
@@ -151,9 +151,10 @@ PROTOC_GEN_GRPC_GATEWAY := $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway
 
 $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway:
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh google.golang.org/genproto/googleapis 7bb2a897381c9c5ab2aeb8614f758d7766af68ff --skip-install
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... c2b051dd2f71ce445909aab7b28479fd84d00086
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... c2b051dd2f71ce445909aab7b28479fd84d00086
+	@$(BASE_PATH)/scripts/go-get-version.sh google.golang.org/genproto/googleapis bb713bdc0e5239f2b68e560efbe1c701a6fe78f9 --skip-install
+# keep in sync with Gopkg.toml
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... v1.9.0
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... v1.9.0
 
 $(GENERATED_DOC_PATH):
 	@echo "+ $@"
@@ -197,7 +198,7 @@ $(GENERATED_DOC_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--swagger_out=logtostderr=true:$(GENERATED_DOC_PATH) \
+		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_DOC_PATH) \
 		$(dir $<)/*.proto
 
 # Generate the docs from the merged swagger specs.
