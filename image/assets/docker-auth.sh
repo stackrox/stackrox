@@ -76,17 +76,19 @@ password="${REGISTRY_PASSWORD}"
 function print_auth() {
 	local auth_token="$1"
 	if [[ -z $auth_token ]]; then
-		return
+		return 1
 	fi
 	if [[ -z "$output_mode" ]]; then
 		echo "$auth_token"
-		return
+		return 1
 	fi
 	if [[ "$output_mode" == "k8s" ]]; then
 		local auth_token_std="$(url2std <<<"$auth_token")"
 		local auths_str="{\"auths\":{\"$registry_url\":{\"auth\":\"${auth_token_std}\"}}}"
 		b64enc "$auths_str"
+		return $?
 	fi
+	return 1
 }
 
 function mkauth() {
@@ -99,10 +101,11 @@ function mkauth() {
 		STATUS_CODE=$(curl -o /dev/null -s "https://auth.stackrox.io/token/?scope=repository%3Amain%3Apull&service=auth.stackrox.io" -w "%{http_code}" -K - <<< "-u ${username}:${password}")
 		if [[ "$STATUS_CODE" != 200 ]]; then
 			echo >&2  "Unable authenticate against "$registry_url": HTTP Status $STATUS_CODE"
-			return
+			return 1
 	    fi
 	fi
 	b64enc "${username}:${password}" | std2url
+	return $?
 }
 
 function try_dockercfg_plain() {
@@ -114,20 +117,23 @@ function try_dockercfg_plain() {
     if [[ -n "$auth_str" ]]; then
         echo >&2 "Using authentication token for ${registry_url} from ~/.docker/config.json."
         print_auth "$auth_str"
+        return $?
     fi
-    [[ -z "$username" || "$username" == "${components[1]}" ]] || return
+    [[ -z "$username" || "$username" == "${components[1]}" ]] || return 1
     # stackrox.io returns a refresh token instead of a username and password so we should fall back to
     # user input username and password
     if [[ -n "${components[1]}" && "${components[1]}" != "<token>" && -n "${components[2]}" ]]; then
         echo >&2 "Using login for ${components[0]} @ ${registry_url} from ~/.docker/config.json"
         print_auth "$(mkauth "${components[0]}" "${components[1]}")"
+        return $?
     fi
+    return 1
 }
 
 function try_dockercfg_credstore() {
 	local dockercfg="$1"
 	credstore="$(jq -r <<<"$dockercfg" '.credsStore // ""')"
-    [[ -n "$credstore" ]] || return
+    [[ -n "$credstore" ]] || return 1
     local helper_cmd="docker-credential-${credstore}"
     if ! type "$helper_cmd" >/dev/null 2>&1 ; then
         echo >&2 "Not using keychain '${credstore}' as credentials helper is unavailable."
@@ -135,7 +141,7 @@ function try_dockercfg_credstore() {
     fi
     local creds_output
     creds_output="$("$helper_cmd" get <<<"$registry_url" 2>/dev/null)"
-    [[ $? == 0 && -n "$creds_output" ]] || return
+    [[ $? == 0 && -n "$creds_output" ]] || return 1
     local components=()
     IFS=$'\n' read -d '' -r -a components < <(jq -r <<<"$creds_output" '(.Username // "", .Secret // "")')
     [[ -z "$username" || "$username" == "${components[0]}" ]] || return
@@ -146,6 +152,7 @@ function try_dockercfg_credstore() {
         print_auth "$(mkauth "${components[0]}" "${components[1]}")"
         return $?
     fi
+    return 1
 }
 
 if [[ -n "$username" && -n "$password" ]]; then
@@ -156,10 +163,10 @@ fi
 
 if [[ -f ~/.docker/config.json || ! -x "$(command -v jq)" ]]; then
 	dockercfg="$(< ~/.docker/config.json)"
-	if [[ ! try_dockercfg_plain "$dockercfg" ]]; then
+	if try_dockercfg_plain "$dockercfg"; then
 		exit 0
 	fi
-	if [[ ! try_dockercfg_credstore "$dockercfg" ]]; then
+	if try_dockercfg_credstore "$dockercfg"; then
 		exit 0
 	fi
 fi
