@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/mode"
 )
 
 func init() {
@@ -32,10 +33,6 @@ func init() {
 	// we adjust the log level to exclude them.
 	cflog.Level = cflog.LevelWarning
 }
-
-var (
-	isInteractive bool
-)
 
 func generateJWTSigningKey(fileMap map[string][]byte) error {
 	// Generate the private key that we will use to sign JWTs for API keys.
@@ -224,7 +221,7 @@ func Command() *cobra.Command {
 		Short: "Generate creates the required YAML files to deploy StackRox Central.",
 		Long:  "Generate creates the required YAML files to deploy StackRox Central.",
 		Run: func(c *cobra.Command, _ []string) {
-			if !isInteractive {
+			if !mode.IsInInteractiveMode() {
 				_ = c.Help()
 			}
 		},
@@ -234,19 +231,26 @@ func Command() *cobra.Command {
 		Data: &cfg.LicenseData,
 	}, "license", flags.LicenseUsage)
 
+	utils.Must(
+		c.PersistentFlags().SetAnnotation("license", flags.InteractiveUsageKey, []string{flags.LicenseUsageInteractive}),
+		c.PersistentFlags().SetAnnotation("license", flags.OptionalKey, []string{"true"}),
+	)
+
 	c.PersistentFlags().Var(&featureValue{&cfg.Features}, "flags", "Feature flags to enable")
 	utils.Must(c.PersistentFlags().MarkHidden("flags"))
 
 	c.PersistentFlags().Var(&flags.FileContentsVar{
 		Data: &cfg.DefaultTLSCertPEM,
 	}, "default-tls-cert", "PEM cert bundle file")
-	utils.Must(c.PersistentFlags().SetAnnotation("default-tls-cert", "optional", []string{"true"}))
+	utils.Must(c.PersistentFlags().SetAnnotation("default-tls-cert", flags.OptionalKey, []string{"true"}))
 
 	c.PersistentFlags().Var(&flags.FileContentsVar{
 		Data: &cfg.DefaultTLSKeyPEM,
 	}, "default-tls-key", "PEM private key file")
-	utils.Must(c.PersistentFlags().SetAnnotation("default-tls-key", "dependencies", []string{"default-tls-cert"}))
-	utils.Must(c.PersistentFlags().SetAnnotation("default-tls-key", "optional", []string{"true"}))
+	utils.Must(
+		c.PersistentFlags().SetAnnotation("default-tls-key", flags.DependenciesKey, []string{"default-tls-cert"}),
+		c.PersistentFlags().SetAnnotation("default-tls-key", flags.OptionalKey, []string{"true"}),
+	)
 
 	c.AddCommand(interactive())
 
@@ -256,7 +260,7 @@ func Command() *cobra.Command {
 }
 
 func runInteractive(cmd *cobra.Command) error {
-	isInteractive = true
+	mode.SetInteractiveMode()
 	// Overwrite os.Args because cobra uses them
 	os.Args = walkTree(cmd)
 	return cmd.Execute()

@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 const (
@@ -36,27 +37,37 @@ func readUserInput(prompt string) (string, error) {
 }
 
 func isOptional(f *pflag.Flag) bool {
-	optAnn := f.Annotations["optional"]
+	optAnn := f.Annotations[flags.OptionalKey]
 	if len(optAnn) == 0 {
 		return false
 	}
 	return optAnn[0] == "true"
 }
 
+func getInteractiveUsage(f *pflag.Flag) string {
+	usageAnn := f.Annotations[flags.InteractiveUsageKey]
+	if len(usageAnn) == 0 || usageAnn[0] == "" {
+		return f.Usage
+	}
+	return usageAnn[0]
+}
+
 func readUserInputFromFlag(f *pflag.Flag) (string, error) {
+	usage := getInteractiveUsage(f)
+
 	var prompt string
 	if f.Value.String() != "" {
 		optText := ""
 		if isOptional(f) {
 			optText = ", optional"
 		}
-		prompt = fmt.Sprintf("Enter %s (default: '%s'%s): ", f.Usage, f.Value, optText)
+		prompt = fmt.Sprintf("Enter %s (default: '%s'%s): ", usage, f.Value, optText)
 	} else {
 		optText := ""
 		if isOptional(f) {
 			optText = " (optional)"
 		}
-		prompt = fmt.Sprintf("Enter %s%s: ", f.Usage, optText)
+		prompt = fmt.Sprintf("Enter %s%s: ", usage, optText)
 	}
 
 	text, err := readUserInput(prompt)
