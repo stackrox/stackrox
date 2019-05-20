@@ -1043,6 +1043,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
 
     steps:
       - checkout

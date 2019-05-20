@@ -2,10 +2,13 @@ import groups.BAT
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
+import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import spock.lang.Shared
 import spock.lang.Unroll
+import util.Env
 
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
@@ -76,6 +79,8 @@ class AdmissionControllerTest extends BaseSpecification {
     @Category([BAT])
     def "Verify Admission Controller Config"() {
         when:
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                                 .setEnabled(true)
                                 .setDisableBypass(!bypassable)
