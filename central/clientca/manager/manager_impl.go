@@ -1,0 +1,98 @@
+package manager
+
+import (
+	"context"
+	"crypto/x509"
+	"errors"
+
+	"github.com/cloudflare/cfssl/helpers"
+	"github.com/stackrox/rox/central/clientca/store"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	errCertLacksSKI = errors.New("Certificate lacks ID")
+)
+
+type managerImpl struct {
+	store store.Store
+
+	mutex    sync.RWMutex
+	allCerts map[string]*storage.Certificate
+}
+
+func (m *managerImpl) Initialize() error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	all, err := m.store.ListCertificates(context.TODO())
+	if err != nil {
+		return err
+	}
+	for _, cert := range all {
+		m.allCerts[cert.GetId()] = cert
+	}
+	return nil
+}
+
+func (m *managerImpl) GetAllClientCAs(ctx context.Context) []*storage.Certificate {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+	output := make([]*storage.Certificate, len(m.allCerts))
+	i := 0
+	for _, v := range m.allCerts {
+		output[i] = v
+		i++
+	}
+	return output
+}
+
+func (m *managerImpl) GetClientCA(ctx context.Context, id string) (*storage.Certificate, bool) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+	val, ok := m.allCerts[id]
+	return val, ok
+}
+
+func (m *managerImpl) RemoveClientCA(ctx context.Context, id string) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	_, ok := m.allCerts[id]
+	if !ok {
+		return dberrors.ErrNotFound{Type: "ClientCA", ID: id}
+	}
+	err := m.store.DeleteCertificate(ctx, id)
+	delete(m.allCerts, id)
+	return err
+}
+
+func (m *managerImpl) AddClientCA(ctx context.Context, certificate *storage.Certificate) (*storage.Certificate, error) {
+	data := []byte(certificate.GetPem())
+	c, err := helpers.ParseCertificatePEM(data)
+	if err != nil {
+		return nil, err
+	}
+	err = validateCACert(c)
+	if err != nil {
+		return nil, err
+	}
+	certificate.Id = formatID(c.SubjectKeyId)
+	stored := protoutils.CloneStorageCertificate(certificate)
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	err = m.store.UpsertCertificates(ctx, []*storage.Certificate{stored})
+	m.allCerts[stored.Id] = stored
+	return certificate, err
+}
+
+func validateCACert(cert *x509.Certificate) error {
+	errorList := errorhelpers.NewErrorList("Validating CA certificate")
+	if len(cert.SubjectKeyId) == 0 {
+		errorList.AddError(errCertLacksSKI)
+	}
+	return errorList.ToError()
+}
