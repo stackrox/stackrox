@@ -2,19 +2,10 @@ package matcher
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/compiledpolicies/container/predicate"
 )
 
 // Matcher is a function that provides alert violations.
 type Matcher func(*storage.Container) []*storage.Alert_Violation
-
-// ProcessIf adds a predicate to the matcher, only executing it if the predicate passes (returns true).
-func (c Matcher) ProcessIf(pred predicate.Predicate) Matcher {
-	if pred == nil {
-		return c
-	}
-	return predicatedMatcher(pred, c)
-}
 
 // CanAlsoViolate adds the input matchers output to this matchers output.
 func (c Matcher) CanAlsoViolate(gen Matcher) Matcher {
@@ -82,22 +73,4 @@ func (f andMatcherImpl) do(container *storage.Container) []*storage.Alert_Violat
 		return nil
 	}
 	return append(violations1, violations2...)
-}
-
-// predicatedMatcherImpl returns nil if the given predicate matches.
-////////////////////////////////////////////////////////////////////
-type predicatedMatcherImpl struct {
-	p predicate.Predicate
-	m Matcher
-}
-
-func predicatedMatcher(p predicate.Predicate, m Matcher) Matcher {
-	return predicatedMatcherImpl{p, m}.do
-}
-
-func (f predicatedMatcherImpl) do(container *storage.Container) []*storage.Alert_Violation {
-	if f.p(container) {
-		return f.m(container)
-	}
-	return nil
 }

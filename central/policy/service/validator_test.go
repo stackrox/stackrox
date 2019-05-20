@@ -510,10 +510,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 	suite.NoError(err, "valid to whitelist by deployment name")
 
 	imageWhitelist := &storage.Whitelist{
-		Container: &storage.Whitelist_Container{
-			ImageName: &storage.ImageName{
-				Registry: "stackrox.io",
-			},
+		Image: &storage.Whitelist_Image{
+			Name: "stackrox.io",
 		},
 	}
 	policy = &storage.Policy{

@@ -209,19 +209,23 @@ message PortExposurePolicy {
 }
 
 message Whitelist {
+    string                    name       = 1;
+
     message Container {
         ImageName image_name = 3 [(gogoproto.moretags) = "search:\"-\""];
     }
+    reserved 2; // formally Container container
+
     message Deployment {
         string                name       = 3;
         Scope                 scope      = 4;
     }
+    Deployment                deployment = 5;
+
     message Image {
         string name = 1;
     }
-    string                    name       = 1;
-    Container                 container  = 2;
-    Deployment                deployment = 5;
-    google.protobuf.Timestamp expiration = 6;
     Image                     image      = 7;
+
+    google.protobuf.Timestamp expiration = 6;
 }

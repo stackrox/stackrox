@@ -2,7 +2,6 @@ package matcher
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/compiledpolicies/container/predicate"
 )
 
 // Compiler is a function that turns a policy into a matcher.
@@ -21,13 +20,5 @@ func Compile(policy *storage.Policy) (Matcher, error) {
 		}
 		matcher = matcher.MustAlsoViolate(matcherFunction)
 	}
-	if matcher == nil {
-		return nil, nil
-	}
-
-	pred, err := predicate.Compile(policy)
-	if err != nil {
-		return nil, err
-	}
-	return matcher.ProcessIf(pred), nil
+	return matcher, nil
 }

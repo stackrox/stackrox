@@ -837,14 +837,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"summary: String!",
 	}))
 	utils.Must(builder.AddType("Whitelist", []string{
-		"container: Whitelist_Container",
 		"deployment: Whitelist_Deployment",
 		"expiration: Time",
 		"image: Whitelist_Image",
 		"name: String!",
-	}))
-	utils.Must(builder.AddType("Whitelist_Container", []string{
-		"imageName: ImageName",
 	}))
 	utils.Must(builder.AddType("Whitelist_Deployment", []string{
 		"name: String!",
@@ -7038,11 +7034,6 @@ func (resolver *Resolver) wrapWhitelists(values []*storage.Whitelist, err error)
 	return output, nil
 }
 
-func (resolver *whitelistResolver) Container(ctx context.Context) (*whitelist_ContainerResolver, error) {
-	value := resolver.data.GetContainer()
-	return resolver.root.wrapWhitelist_Container(value, true, nil)
-}
-
 func (resolver *whitelistResolver) Deployment(ctx context.Context) (*whitelist_DeploymentResolver, error) {
 	value := resolver.data.GetDeployment()
 	return resolver.root.wrapWhitelist_Deployment(value, true, nil)
@@ -7061,34 +7052,6 @@ func (resolver *whitelistResolver) Image(ctx context.Context) (*whitelist_ImageR
 func (resolver *whitelistResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
-}
-
-type whitelist_ContainerResolver struct {
-	root *Resolver
-	data *storage.Whitelist_Container
-}
-
-func (resolver *Resolver) wrapWhitelist_Container(value *storage.Whitelist_Container, ok bool, err error) (*whitelist_ContainerResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &whitelist_ContainerResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapWhitelist_Containers(values []*storage.Whitelist_Container, err error) ([]*whitelist_ContainerResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*whitelist_ContainerResolver, len(values))
-	for i, v := range values {
-		output[i] = &whitelist_ContainerResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *whitelist_ContainerResolver) ImageName(ctx context.Context) (*imageNameResolver, error) {
-	value := resolver.data.GetImageName()
-	return resolver.root.wrapImageName(value, true, nil)
 }
 
 type whitelist_DeploymentResolver struct {

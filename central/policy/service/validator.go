@@ -169,16 +169,8 @@ func (s *policyValidator) validateWhitelists(policy *storage.Policy) error {
 
 func (s *policyValidator) validateWhitelist(policy *storage.Policy, whitelist *storage.Whitelist) error {
 	// TODO(cgorman) once we have real whitelist support in UI, add validation for whitelist name
-	if whitelist.GetContainer() == nil && whitelist.GetDeployment() == nil && whitelist.GetImage() == nil {
+	if whitelist.GetDeployment() == nil && whitelist.GetImage() == nil {
 		return errors.New("all whitelists must have some criteria to match on")
-	}
-	if whitelist.GetContainer() != nil {
-		if !policies.AppliesAtBuildTime(policy) {
-			return errors.New("whitelisting an image is only valid during the BUILD lifecycle")
-		}
-		if err := s.validateContainerWhitelist(whitelist); err != nil {
-			return err
-		}
 	}
 	if whitelist.GetDeployment() != nil {
 		if !policies.AppliesAtDeployTime(policy) && !policies.AppliesAtRunTime(policy) {
@@ -189,20 +181,12 @@ func (s *policyValidator) validateWhitelist(policy *storage.Policy, whitelist *s
 		}
 	}
 	if whitelist.GetImage() != nil {
+		if !policies.AppliesAtBuildTime(policy) {
+			return errors.New("whitelisting an image is only valid during the BUILD lifecycle")
+		}
 		if whitelist.GetImage().GetName() == "" {
 			return fmt.Errorf("image whitelist must have nonempty name")
 		}
-	}
-	return nil
-}
-
-func (s *policyValidator) validateContainerWhitelist(whitelist *storage.Whitelist) error {
-	imageName := whitelist.GetContainer().GetImageName()
-	if imageName == nil {
-		return errors.New("if container whitelist is defined, then image name must also be defined")
-	}
-	if imageName.GetRegistry() == "" && imageName.GetRemote() == "" && imageName.GetTag() == "" {
-		return errors.New("at least one field of image name must be populated (registry, remote, tag)")
 	}
 	return nil
 }
