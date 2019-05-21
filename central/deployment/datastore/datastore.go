@@ -3,16 +3,16 @@ package datastore
 import (
 	"context"
 
+	"github.com/blevesearch/bleve"
+	"github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/deployment/search"
 	"github.com/stackrox/rox/central/deployment/store"
-	"github.com/stackrox/rox/central/globaldb"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -39,15 +39,23 @@ type DataStore interface {
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) DataStore {
-	return &datastoreImpl{
-		deploymentStore:    storage,
-		deploymentIndexer:  indexer,
-		deploymentSearcher: searcher,
-		indicators:         indicators,
-		whitelists:         whitelists,
-		networkFlows:       networkFlows,
-		keyedMutex:         concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+// New returns a new instance of DataStore using the input DB and index.
+func New(db *bbolt.DB, bleveIndex bleve.Index, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) (DataStore, error) {
+	storage, err := store.New(db)
+	if err != nil {
+		return nil, err
 	}
+	indexer := index.New(bleveIndex)
+	searcher, err := search.New(storage, indexer)
+	if err != nil {
+		return nil, err
+	}
+
+	return newDatastoreImpl(
+		storage,
+		indexer,
+		searcher,
+		indicators,
+		whitelists,
+		networkFlows), nil
 }

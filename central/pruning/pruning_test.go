@@ -7,9 +7,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
-	deploymentSearcher "github.com/stackrox/rox/central/deployment/search"
-	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
@@ -20,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +43,7 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 }
 
 func generateDataStructures(t *testing.T) (imageStore.Store, imageIndexer.Indexer, imageDatastore.DataStore, deploymentDatastore.DataStore) {
-	db, err := bolthelper.NewTemp(t.Name() + ".db")
+	db, err := bolthelper.NewTemp(testutils.DBFileNameForT(t))
 	require.NoError(t, err)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
@@ -58,20 +56,14 @@ func generateDataStructures(t *testing.T) (imageStore.Store, imageIndexer.Indexe
 	require.NoError(t, err)
 	images := imageDatastore.New(imageStore, imageIndexer, imageSearcher)
 
-	deploymentIndexer := deploymentIndexer.New(bleveIndex)
-	deploymentStore, err := deploymentStore.New(db)
-	require.NoError(t, err)
-
-	deploymentSearcher, err := deploymentSearcher.New(deploymentStore, deploymentIndexer)
-	require.NoError(t, err)
-
 	ctrl := gomock.NewController(t)
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).Return((error)(nil))
 
 	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments := deploymentDatastore.New(deploymentStore, deploymentIndexer, deploymentSearcher, mockProcessDataStore, mockWhitelistDataStore, nil)
+	deployments, err := deploymentDatastore.New(db, bleveIndex, mockProcessDataStore, mockWhitelistDataStore, nil)
+	require.NoError(t, err)
 	return imageStore, imageIndexer, images, deployments
 }
 

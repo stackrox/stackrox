@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/deployment/index/mappings"
+	"github.com/stackrox/rox/central/deployment/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

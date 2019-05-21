@@ -1,10 +1,13 @@
 package search
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -13,9 +16,11 @@ var (
 
 // Searcher provides search functionality on existing alerts
 type Searcher interface {
-	SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawDeployments(q *v1.Query) ([]*storage.Deployment, error)
-	SearchListDeployments(q *v1.Query) ([]*storage.ListDeployment, error)
+	SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error)
+	SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error)
+
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 }
 
 type store interface {

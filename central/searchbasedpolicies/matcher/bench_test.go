@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/deployment/index/mappings"
+	"github.com/stackrox/rox/central/deployment/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"

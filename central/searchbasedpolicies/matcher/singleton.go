@@ -2,7 +2,7 @@ package matcher
 
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
+	deploymentMappings "github.com/stackrox/rox/central/deployment/mappings"
 	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"

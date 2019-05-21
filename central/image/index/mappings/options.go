@@ -1,7 +1,7 @@
 package mappings
 
 import (
-	"github.com/stackrox/rox/central/deployment/index/mappings"
+	"github.com/stackrox/rox/central/deployment/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"

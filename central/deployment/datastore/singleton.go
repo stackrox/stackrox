@@ -1,9 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/deployment/search"
-	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
@@ -22,19 +19,11 @@ var (
 )
 
 func initialize() {
-	indexer := index.New(globalindex.GetGlobalIndex())
-
-	storage, err := store.New(globaldb.GetGlobalDB())
+	var err error
+	ad, err = New(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton())
 	if err != nil {
-		log.Panicf("Failed to initialize deployment store: %s", err)
+		log.Panicf("Failed to create deployments datastore: %v", err)
 	}
-
-	searcher, err := search.New(storage, indexer)
-	if err != nil {
-		log.Panicf("Failed to load deployment index %s", err)
-	}
-
-	ad = New(storage, indexer, searcher, piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

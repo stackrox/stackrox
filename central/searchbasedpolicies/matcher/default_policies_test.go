@@ -12,7 +12,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	gogoTypes "github.com/gogo/protobuf/types"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
+	deploymentMappings "github.com/stackrox/rox/central/deployment/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"

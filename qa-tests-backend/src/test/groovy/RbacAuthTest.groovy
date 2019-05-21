@@ -134,9 +134,11 @@ class RbacAuthTest extends BaseSpecification {
         ["Cluster": RoleOuterClass.Access.READ_ACCESS]              | ["Cluster"]
         ["Cluster": RoleOuterClass.Access.READ_WRITE_ACCESS]        | ["Cluster"]
         ["Cluster": RoleOuterClass.Access.READ_ACCESS,
+         "Deployment": RoleOuterClass.Access.READ_ACCESS,
          "NetworkGraph": RoleOuterClass.Access.READ_ACCESS,
          "NetworkPolicy": RoleOuterClass.Access.READ_ACCESS,]       | ["NetworkPolicy"]
         ["Cluster": RoleOuterClass.Access.READ_ACCESS,
+         "Deployment": RoleOuterClass.Access.READ_ACCESS,
          "NetworkGraph": RoleOuterClass.Access.READ_ACCESS,
          "NetworkPolicy": RoleOuterClass.Access.READ_WRITE_ACCESS,] | ["NetworkPolicy"]
     }

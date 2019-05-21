@@ -16,7 +16,7 @@ import (
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	"github.com/stackrox/rox/central/compliance/standards/index"
-	deploymentMapping "github.com/stackrox/rox/central/deployment/index/mappings"
+	deploymentMapping "github.com/stackrox/rox/central/deployment/mappings"
 	imageMapping "github.com/stackrox/rox/central/image/index/mappings"
 	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"

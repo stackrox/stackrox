@@ -9,7 +9,6 @@ import (
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -17,15 +16,19 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"
+	"github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -75,32 +78,42 @@ func TestAutocomplete(t *testing.T) {
 	// Create Deployment Indexer
 	idx, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
-	deploymentIndexer := deploymentIndex.New(idx)
+
+	testDB, err := bolthelper.NewTemp(testutils.DBFileNameForT(t))
+	require.NoError(t, err)
+	defer utils.IgnoreError(testDB.Close)
+
+	mockIndicators := mocks.NewMockDataStore(mockCtrl)
+	// This gets called as a side effect of `UpsertDeployment`.
+	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	deploymentDS, err := deploymentDatastore.New(testDB, idx, mockIndicators, nil, nil)
+	require.NoError(t, err)
+
+	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	deploymentNameOneOff := fixtures.GetDeployment()
-	require.NoError(t, deploymentIndexer.AddDeployment(deploymentNameOneOff))
+	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentNameOneOff))
 
 	deploymentName1 := fixtures.GetDeployment()
 	deploymentName1.Id = "name1"
 	deploymentName1.Name = "name1"
-	require.NoError(t, deploymentIndexer.AddDeployment(deploymentName1))
+	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1))
 
 	deploymentName1Duplicate := fixtures.GetDeployment()
 	deploymentName1Duplicate.Id = "name1Dup"
 	deploymentName1Duplicate.Name = "name1"
-	require.NoError(t, deploymentIndexer.AddDeployment(deploymentName1Duplicate))
+	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1Duplicate))
 
 	deploymentName2 := fixtures.GetDeployment()
 	deploymentName2.Id = "name12"
 	deploymentName2.Name = "name12"
 	deploymentName2.Labels = map[string]string{"hello": "hi", "hey": "ho"}
-	require.NoError(t, deploymentIndexer.AddDeployment(deploymentName2))
-
-	ds := deploymentDatastore.New(nil, deploymentIndexer, nil, nil, nil, nil)
+	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentName2))
 
 	service := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
-		WithDeploymentStore(ds).
+		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(mockCtrl)).
 		WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).

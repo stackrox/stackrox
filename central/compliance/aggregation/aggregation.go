@@ -12,7 +12,7 @@ import (
 	standardsIndex "github.com/stackrox/rox/central/compliance/standards/index"
 	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
+	deploymentMappings "github.com/stackrox/rox/central/deployment/mappings"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
