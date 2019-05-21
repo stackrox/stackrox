@@ -4,7 +4,7 @@ export const AGGREGATED_RESULTS = gql`
     query getAggregatedResults(
         $groupBy: [ComplianceAggregation_Scope!]
         $unit: ComplianceAggregation_Scope!
-        $where: String!
+        $where: String
     ) {
         results: aggregatedResults(groupBy: $groupBy, unit: $unit, where: $where) {
             results {
