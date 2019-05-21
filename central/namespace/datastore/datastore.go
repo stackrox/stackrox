@@ -88,7 +88,7 @@ func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.Namespace
 		return nil, err
 	}
 
-	allowedNamespaces := make([]*storage.NamespaceMetadata, len(namespaces))
+	allowedNamespaces := make([]*storage.NamespaceMetadata, 0, len(namespaces))
 	for _, namespace := range namespaces {
 		scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
 		if ok, err := namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
