@@ -148,6 +148,9 @@ func getContainers(c *client.Client) ([]internalTypes.ContainerJSON, error) {
 
 	log.Infof("Listed %d containers", len(containerList))
 	segmentSize := len(containerList) / 10
+	if segmentSize == 0 {
+		segmentSize = 1
+	}
 	containers := make([]internalTypes.ContainerJSON, 0, len(containerList))
 	for i, container := range containerList {
 		if err := dockerRateLimiter.Wait(context.Background()); err != nil {
@@ -196,6 +199,9 @@ func getImages(c *client.Client) ([]internalTypes.ImageWrap, error) {
 
 	log.Infof("Listed %d images", len(imageList))
 	segmentSize := len(imageList) / 10
+	if segmentSize == 0 {
+		segmentSize = 1
+	}
 
 	images := make([]internalTypes.ImageWrap, 0, len(imageList))
 	for i, img := range imageList {
