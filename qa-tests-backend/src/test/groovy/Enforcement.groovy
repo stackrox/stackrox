@@ -209,6 +209,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
+        orchestrator.deleteDeployment(d)
         if (policyID) {
             CreatePolicyService.deletePolicy(policyID)
         }
