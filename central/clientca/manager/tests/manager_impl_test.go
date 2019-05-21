@@ -75,9 +75,17 @@ func (s *managerTestSuite) TestAddClientCA() {
 	s.mockStore.EXPECT().ListCertificates(s.ctx).Return(nil, nil)
 	s.mockStore.EXPECT().UpsertCertificates(s.ctx, []*storage.Certificate{validCA}).Return(nil)
 	s.Assert().NoError(s.mgr.Initialize())
-	ret, err := s.mgr.AddClientCA(s.ctx, validCA)
+	ret, err := s.mgr.AddClientCA(s.ctx, validCA.GetPem())
 	s.Assert().NoError(err)
 	s.Assert().Equal(validCA.GetId(), ret.GetId())
+	all := s.mgr.GetAllClientCAs(s.ctx)
+	s.Assert().Equal([]*storage.Certificate{validCA}, all)
+}
+
+func (s *managerTestSuite) TestAddEmptyInput() {
+	ret, err := s.mgr.AddClientCA(s.ctx, "")
+	s.Assert().Nil(ret)
+	s.Assert().NotNil(err)
 }
 
 func (s *managerTestSuite) TestRemoveClientCA() {

@@ -12,7 +12,7 @@ import (
 type ClientCAManager interface {
 	GetClientCA(ctx context.Context, id string) (*storage.Certificate, bool)
 	GetAllClientCAs(ctx context.Context) []*storage.Certificate
-	AddClientCA(ctx context.Context, certificate *storage.Certificate) (*storage.Certificate, error)
+	AddClientCA(ctx context.Context, certificatePEM string) (*storage.Certificate, error)
 	RemoveClientCA(ctx context.Context, id string) error
 	Initialize() error
 }

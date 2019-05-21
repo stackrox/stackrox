@@ -12,19 +12,19 @@ import "storage/certificates.proto";
 package v1;
 
 message GetClientCertificateAuthoritiesResponse {
-    repeated Certificate certificates = 1;
+    repeated storage.Certificate certificates = 1;
 }
 
 message GetClientCertificateAuthorityResponse {
-    Certificate certificate = 1;
+    storage.Certificate certificate = 1;
 }
 
 message CreateClientCertificateAuthorityRequest {
-    Certificate certificate = 1;
+    string pem = 1;
 }
 
 message CreateClientCertificateAuthorityResponse {
-    Certificate certificate = 1;
+    storage.Certificate certificate = 1;
 }
 
 service CertificateService {
@@ -43,6 +43,7 @@ service CertificateService {
     rpc CreateClientCertificateAuthority(CreateClientCertificateAuthorityRequest) returns (CreateClientCertificateAuthorityResponse) {
         option (google.api.http) = {
             post: "/v1/clientca"
+            body: "*"
         };
     }
     rpc DeleteClientCertificateAuthority(ResourceByID) returns (Empty) {

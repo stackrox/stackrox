@@ -23,4 +23,7 @@ var (
 	// ScopedAccessControl controls whether scoped access control is enabled.
 	// NB: When removing this feature flag, please also remove references to it in .circleci/config.yml
 	ScopedAccessControl = registerFeature("Scoped Access Control", "ROX_SCOPED_ACCESS_CONTROL", false)
+
+	// ClientCAAuth will enable authenticating to central via client certificate authentication
+	ClientCAAuth = registerFeature("Client Certificate Authentication", "ROX_CLIENT_CA_AUTH", false)
 )

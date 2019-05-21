@@ -69,9 +69,8 @@ func (m *managerImpl) RemoveClientCA(ctx context.Context, id string) error {
 	return err
 }
 
-func (m *managerImpl) AddClientCA(ctx context.Context, certificate *storage.Certificate) (*storage.Certificate, error) {
-	data := []byte(certificate.GetPem())
-	c, err := helpers.ParseCertificatePEM(data)
+func (m *managerImpl) AddClientCA(ctx context.Context, certificatePEM string) (*storage.Certificate, error) {
+	c, err := helpers.ParseCertificatePEM([]byte(certificatePEM))
 	if err != nil {
 		return nil, err
 	}
@@ -79,13 +78,15 @@ func (m *managerImpl) AddClientCA(ctx context.Context, certificate *storage.Cert
 	if err != nil {
 		return nil, err
 	}
-	certificate.Id = formatID(c.SubjectKeyId)
-	stored := protoutils.CloneStorageCertificate(certificate)
-
+	stored := &storage.Certificate{
+		Id:  formatID(c.SubjectKeyId),
+		Pem: string(certificatePEM),
+	}
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	err = m.store.UpsertCertificates(ctx, []*storage.Certificate{stored})
 	m.allCerts[stored.Id] = stored
+	certificate := protoutils.CloneStorageCertificate(stored)
 	return certificate, err
 }
 

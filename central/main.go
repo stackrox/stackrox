@@ -18,6 +18,9 @@ import (
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
 	authProviderStore "github.com/stackrox/rox/central/authprovider/store"
 	"github.com/stackrox/rox/central/cli"
+	clientCAManager "github.com/stackrox/rox/central/clientca/manager"
+	clientCAService "github.com/stackrox/rox/central/clientca/service"
+	clientCAStore "github.com/stackrox/rox/central/clientca/store"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
@@ -260,6 +263,10 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 
 	if features.ProcessWhitelist.Enabled() {
 		servicesToRegister = append(servicesToRegister, processWhitelistService.Singleton())
+	}
+	if features.ClientCAAuth.Enabled() {
+		caManager := clientCAManager.New(clientCAStore.Singleton())
+		servicesToRegister = append(servicesToRegister, clientCAService.New(caManager))
 	}
 	return servicesToRegister
 }

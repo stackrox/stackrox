@@ -13,6 +13,7 @@ var (
 	Alert                 = newResource("Alert")
 	AuthProvider          = newResource("AuthProvider")
 	BackupPlugins         = newResource("BackupPlugins")
+	ClientTrustCerts      = newResource("ClientTrustCerts")
 	Cluster               = newResource("Cluster")
 	Compliance            = newResource("Compliance")
 	ComplianceRunSchedule = newResource("ComplianceRunSchedule")
