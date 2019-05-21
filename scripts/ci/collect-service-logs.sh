@@ -22,7 +22,6 @@ usage() {
 }
 
 main() {
-    set -x
     namespace="$1"
     if [ -z "${namespace}" ]; then
         usage
