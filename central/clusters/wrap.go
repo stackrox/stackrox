@@ -129,9 +129,9 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 
 		"AdmissionController": c.AdmissionController,
 
-		"OfflineModeEnv": env.OfflineModeEnv.EnvVar(),
-		"OfflineMode":    env.OfflineModeEnv.Setting(),
+		"OfflineMode": env.OfflineModeEnv.Setting(),
 	}
+
 	return fields, nil
 }
 

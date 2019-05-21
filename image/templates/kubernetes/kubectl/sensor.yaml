@@ -195,10 +195,10 @@ spec:
           value: {{ .CollectionMethod }}
         - name: GRPC_SERVER
           value: "sensor.stackrox:443"
+        {{if ne .OfflineMode "true"}}
         - name: MODULE_DOWNLOAD_BASE_URL
           value: {{.CollectorModuleDownloadBaseURL}}
-        - name: {{.OfflineModeEnv}}
-          value: "{{.OfflineMode}}"
+        {{- end}}
         resources:
           limits:
             cpu: 750m
