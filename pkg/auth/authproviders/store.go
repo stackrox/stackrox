@@ -11,5 +11,4 @@ type Store interface {
 	AddAuthProvider(authProvider *storage.AuthProvider) error
 	UpdateAuthProvider(authProvider *storage.AuthProvider) error
 	RemoveAuthProvider(id string) error
-	RecordAuthSuccess(id string) error
 }

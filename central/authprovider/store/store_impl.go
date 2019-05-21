@@ -6,7 +6,6 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,18 +26,10 @@ func (b *storeImpl) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
 	var authProviders []*storage.AuthProvider
 	err := b.View(func(tx *bolt.Tx) error {
 		provB := tx.Bucket(authProviderBucket)
-		valB := tx.Bucket(authValidatedBucket)
-
 		return provB.ForEach(func(k, v []byte) error {
 			var authProvider storage.AuthProvider
 			if err := proto.Unmarshal(v, &authProvider); err != nil {
 				return err
-			}
-
-			// load whether or not it has been validated.
-			val := valB.Get(k)
-			if val != nil {
-				authProvider.Validated = true
 			}
 
 			authProviders = append(authProviders, &authProvider)
@@ -105,28 +96,6 @@ func (b *storeImpl) RemoveAuthProvider(id string) error {
 		if err := secondarykey.RemoveUniqueKey(tx, authProviderBucket, id); err != nil {
 			return err
 		}
-		if err := ab.Delete(key); err != nil {
-			return err
-		}
-
-		vb := tx.Bucket(authValidatedBucket)
-		return vb.Delete(key)
-	})
-}
-
-// RecordAuthSuccess adds an entry in the validated bucket for the provider, which indicates the provider
-// has been successfully used at least once previously.
-func (b *storeImpl) RecordAuthSuccess(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "AuthValidated")
-
-	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(authValidatedBucket)
-
-		timestamp := ptypes.TimestampNow()
-		bytes, err := proto.Marshal(timestamp)
-		if err != nil {
-			return err
-		}
-		return bucket.Put([]byte(id), bytes)
+		return ab.Delete(key)
 	})
 }

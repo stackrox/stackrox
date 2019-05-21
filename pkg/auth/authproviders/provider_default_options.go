@@ -94,13 +94,12 @@ func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFa
 //////////////////////////////////
 
 // DefaultOptionsForStoredProvider returns the default options that should be run for providers loaded from the store on initialization.
-func DefaultOptionsForStoredProvider(store Store, backendFactoryPool map[string]BackendFactory, issuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory, loginURLFn func(authProviderID string) string) []ProviderOption {
+func DefaultOptionsForStoredProvider(backendFactoryPool map[string]BackendFactory, issuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory, loginURLFn func(authProviderID string) string) []ProviderOption {
 	return []ProviderOption{
 		DefaultLoginURL(loginURLFn),
 		LogOptionError(DefaultBackend(context.Background(), backendFactoryPool)), // Its ok to fail to load a backend on providers loaded from the store.
 		LogOptionError(DefaultTokenIssuerFromFactory(issuerFactory)),             // Its ok to not have a token issuer.
 		DefaultRoleMapperOption(roleMapperFactory.GetRoleMapper),
-		WithSuccessCallback(RecordSuccess(store)),
 	}
 }
 
@@ -113,7 +112,6 @@ func DefaultOptionsForNewProvider(ctx context.Context, store Store, backendFacto
 		LogOptionError(DefaultTokenIssuerFromFactory(issuerFactory)), // Its ok to not have a token issuer.
 		DefaultRoleMapperOption(roleMapperFactory.GetRoleMapper),
 		DefaultAddToStore(store),
-		WithSuccessCallback(RecordSuccess(store)),
 	}
 }
 

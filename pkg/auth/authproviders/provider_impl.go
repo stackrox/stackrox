@@ -53,13 +53,6 @@ func (p *providerImpl) Enabled() bool {
 	return p.backend != nil && p.storedInfo.Enabled
 }
 
-func (p *providerImpl) Validated() bool {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
-
-	return p.storedInfo.Validated
-}
-
 func (p *providerImpl) StorageView() *storage.AuthProvider {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()

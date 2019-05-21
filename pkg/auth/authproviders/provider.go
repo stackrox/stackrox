@@ -15,7 +15,6 @@ type Provider interface {
 	Name() string
 	Type() string
 	Enabled() bool
-	Validated() bool
 
 	// StorageView returns a description of the authentication provider in protobuf format.
 	StorageView() *storage.AuthProvider

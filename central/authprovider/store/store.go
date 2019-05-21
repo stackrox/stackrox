@@ -7,14 +7,12 @@ import (
 )
 
 var (
-	authProviderBucket  = []byte("authProviders")
-	authValidatedBucket = []byte("authValidated")
+	authProviderBucket = []byte("authProviders")
 )
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB) authproviders.Store {
 	bolthelper.RegisterBucketOrPanic(db, authProviderBucket)
-	bolthelper.RegisterBucketOrPanic(db, authValidatedBucket)
 	return &storeImpl{
 		DB: db,
 	}

@@ -68,7 +68,7 @@ func (r *registryImpl) Init() error {
 		options := []ProviderOption{
 			WithStorageView(storedValue),
 		}
-		options = append(options, DefaultOptionsForStoredProvider(r.store, r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
+		options = append(options, DefaultOptionsForStoredProvider(r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
 
 		// Use the options to build the provider.
 		provider, err := NewProvider(options...)

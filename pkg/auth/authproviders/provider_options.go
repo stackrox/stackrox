@@ -101,11 +101,3 @@ func WithConfig(config map[string]string) ProviderOption {
 		return nil
 	}
 }
-
-// WithSuccessCallback sets the option to execute when OnSuccess is called.
-func WithSuccessCallback(onSuccess ProviderOption) ProviderOption {
-	return func(pr *providerImpl) error {
-		pr.onSuccess = onSuccess
-		return nil
-	}
-}

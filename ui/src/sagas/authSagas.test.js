@@ -19,7 +19,7 @@ const createStateSelectors = (authProviders = [], authStatus = AUTH_STATUS.LOADI
 
 describe('Auth Sagas', () => {
     it('should get and put auth providers when on integrations page', () => {
-        const authProviders = [{ name: 'ap1', validated: true }, { name: 'ap1', validated: false }];
+        const authProviders = [{ name: 'ap1', validated: true }];
         const fetchMock = jest
             .fn()
             .mockReturnValueOnce({ response: [] })
@@ -57,14 +57,8 @@ describe('Auth Sagas', () => {
     it('should log out the anonymous user if auth provider was added', () =>
         expectSaga(saga)
             .provide([
-                ...createStateSelectors(
-                    [{ name: 'ap1', validated: true }],
-                    AUTH_STATUS.ANONYMOUS_ACCESS
-                ),
-                [
-                    call(AuthService.fetchAuthProviders),
-                    { response: [{ name: 'ap1', validated: true }] }
-                ],
+                ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.ANONYMOUS_ACCESS),
+                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), false],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
@@ -72,38 +66,11 @@ describe('Auth Sagas', () => {
             .dispatch(createLocationChange('/'))
             .silentRun());
 
-    it('should not log out the anonymous user if unvalidated auth provider was added', () => {
-        const logoutMock = jest.fn();
-
-        return expectSaga(saga)
-            .provide([
-                ...createStateSelectors(
-                    [{ name: 'ap1', validated: false }],
-                    AUTH_STATUS.ANONYMOUS_ACCESS
-                ),
-                [
-                    call(AuthService.fetchAuthProviders),
-                    { response: [{ name: 'ap1', validated: false }] }
-                ],
-                [call(AuthService.isTokenPresent), false],
-                [call(actions.logout), dynamic(logoutMock)],
-                [call(fetchUserRolePermissions), { response: {} }]
-            ])
-            .dispatch(createLocationChange('/'))
-            .silentRun()
-            .then(() => {
-                expect(logoutMock.mock.calls.length).toBe(0);
-            });
-    });
-
     it('should check auth status with existing valid token and login the user', () =>
         expectSaga(saga)
             .provide([
-                ...createStateSelectors([{ name: 'ap1', validated: true }]),
-                [
-                    call(AuthService.fetchAuthProviders),
-                    { response: [{ name: 'ap1', validated: true }] }
-                ],
+                ...createStateSelectors([{ name: 'ap1' }]),
+                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(AuthService.fetchAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }]
@@ -115,11 +82,8 @@ describe('Auth Sagas', () => {
     it('should check auth status with existing invalid token and logout the user', () =>
         expectSaga(saga)
             .provide([
-                ...createStateSelectors([{ name: 'ap1', validated: true }]),
-                [
-                    call(AuthService.fetchAuthProviders),
-                    { response: [{ name: 'ap1', validated: true }] }
-                ],
+                ...createStateSelectors([{ name: 'ap1' }]),
+                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(AuthService.fetchAuthStatus), throwError(new Error('401'))],
                 [call(fetchUserRolePermissions), { response: {} }]
@@ -128,51 +92,12 @@ describe('Auth Sagas', () => {
             .dispatch(createLocationChange('/'))
             .silentRun());
 
-    it('should grant anonymous access w/o auth providers and clear any existing token', () => {
-        const clearTokenMock = jest.fn();
-        return expectSaga(saga)
-            .provide([
-                ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), { response: [] }],
-                [call(AuthService.isTokenPresent), true],
-                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)],
-                [call(fetchUserRolePermissions), { response: {} }]
-            ])
-            .put(actions.grantAnonymousAccess())
-            .dispatch(createLocationChange('/'))
-            .silentRun()
-            .then(() => {
-                expect(clearTokenMock.mock.calls.length).toBe(1);
-            });
-    });
-
-    it('should grant anonymous access w/o auth providers and clear the token', () => {
-        const clearTokenMock = jest.fn();
-        return expectSaga(saga)
-            .provide([
-                ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), { response: [] }],
-                [call(AuthService.isTokenPresent), true],
-                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)],
-                [call(fetchUserRolePermissions), { response: {} }]
-            ])
-            .put(actions.grantAnonymousAccess())
-            .dispatch(createLocationChange('/'))
-            .silentRun()
-            .then(() => {
-                expect(clearTokenMock.mock.calls.length).toBe(1);
-            });
-    });
-
     it('should clear the token when user logs out', () => {
         const clearTokenMock = jest.fn();
         return expectSaga(saga)
             .provide([
-                ...createStateSelectors([{ name: 'ap1', validated: true }], AUTH_STATUS.LOGGED_IN),
-                [
-                    call(AuthService.fetchAuthProviders),
-                    { response: [{ name: 'ap1', validated: true }] }
-                ],
+                ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
+                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(AuthService.clearAccessToken), dynamic(clearTokenMock)],
                 [call(fetchUserRolePermissions), { response: {} }]
@@ -244,11 +169,8 @@ describe('Auth Sagas', () => {
     it('should logout in case of 401 HTTP error', () =>
         expectSaga(saga)
             .provide([
-                ...createStateSelectors([{ name: 'ap1', validated: true }], AUTH_STATUS.LOGGED_IN),
-                [
-                    call(AuthService.fetchAuthProviders),
-                    { response: [{ name: 'ap1', validated: true }] }
-                ],
+                ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
+                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
@@ -260,11 +182,8 @@ describe('Auth Sagas', () => {
     it('should ignore 403 HTTP error', () =>
         expectSaga(saga)
             .provide([
-                ...createStateSelectors([{ name: 'ap1', validated: true }], AUTH_STATUS.LOGGED_IN),
-                [
-                    call(AuthService.fetchAuthProviders),
-                    { response: [{ name: 'ap1', validated: true }] }
-                ],
+                ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
+                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])

@@ -27,21 +27,8 @@ function* getUserPermissions() {
 }
 
 function* evaluateUserAccess() {
-    const authProviders = yield select(selectors.getAuthProviders);
     const authStatus = yield select(selectors.getAuthStatus);
     const tokenExists = yield call(AuthService.isTokenPresent);
-
-    // No providers? Or no token and providers that aren't validated?
-    // Just grant anonymous access.
-    const validatedProviders = authProviders.filter(pro => pro.validated);
-    if (authProviders.length === 0 || (!tokenExists && validatedProviders.length === 0)) {
-        if (authStatus !== AUTH_STATUS.ANONYMOUS_ACCESS) {
-            // whatever auth status was before, no auth providers mean anonymous access is allowed
-            yield call(AuthService.clearAccessToken);
-            yield put(actions.grantAnonymousAccess());
-        }
-        return;
-    }
 
     // No token but validated providers present? Log out the user since they
     // can't have access.

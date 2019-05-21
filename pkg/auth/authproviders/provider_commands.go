@@ -1,8 +1,6 @@
 package authproviders
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/pkg/dberrors"
 )
 
@@ -28,25 +26,6 @@ func UpdateStore(store Store) ProviderOption {
 			return nil
 		}
 		return store.UpdateAuthProvider(&pr.storedInfo)
-	}
-}
-
-// RecordSuccess sets the 'validated' flag both for the provider and in the store.
-func RecordSuccess(store Store) ProviderOption {
-	return func(pr *providerImpl) error {
-		if pr.doNotStore {
-			return fmt.Errorf("provider '%s' is not stored, cannot record success", pr.storedInfo.Name)
-		}
-		if !pr.storedInfo.Enabled {
-			return fmt.Errorf("cannot record success for disabled auth provider: %s", pr.storedInfo.Id)
-		}
-
-		err := store.RecordAuthSuccess(pr.storedInfo.Id)
-		if err != nil {
-			return err
-		}
-		pr.storedInfo.Validated = true
-		return nil
 	}
 }
 
