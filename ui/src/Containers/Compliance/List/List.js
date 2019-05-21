@@ -71,6 +71,7 @@ class ComplianceList extends Component {
                     searchComponent={searchComponent}
                     selectedRow={selectedRow}
                     updateSelectedRow={this.updateSelectedRow}
+                    resourceType={entityType}
                 />
                 {sidePanel}
             </div>

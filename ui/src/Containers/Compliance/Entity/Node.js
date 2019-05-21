@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import { NODE_QUERY } from 'queries/node';
@@ -44,10 +44,13 @@ function processData(data) {
     return result;
 }
 
+const types = ['namespaces', 'clusters', 'deployments', 'controls'];
+
 const NodePage = ({ match, location, nodeId, sidePanelMode, controlResult }) => {
     const params = URLService.getParams(match, location);
     const entityId = nodeId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
+    const [listType, setListType] = useState(listEntityType);
 
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
@@ -202,13 +205,21 @@ const NodePage = ({ match, location, nodeId, sidePanelMode, controlResult }) => 
                     );
                 }
 
+                function modifyListType(type) {
+                    if (types.includes(type)) {
+                        setListType(type);
+                    } else {
+                        setListType(null);
+                    }
+                }
+
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
                                 <Header
                                     entityType={entityTypes.NODE}
-                                    listEntityType={listEntityType}
+                                    listEntityType={listType}
                                     entityName={name}
                                     entityId={id}
                                 />
@@ -216,6 +227,7 @@ const NodePage = ({ match, location, nodeId, sidePanelMode, controlResult }) => 
                                     entityId={id}
                                     entityType={entityTypes.NODE}
                                     resourceTabs={[entityTypes.CONTROL, entityTypes.NAMESPACE]}
+                                    onClick={modifyListType}
                                 />
                             </>
                         )}

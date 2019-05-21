@@ -22,6 +22,7 @@ const EntityHeader = ({
     const exportFilename = listEntityType
         ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entityName.toUpperCase()}"`
         : `${entityType} "${entityId}"`;
+
     const pdfId = listEntityType ? 'capture-list' : 'capture-dashboard';
 
     const scanCluster = entityType === entityTypes.CLUSTER ? entityId : null;

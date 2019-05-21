@@ -18,7 +18,8 @@ const tableColumnData = {
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         accessor: 'control.standardId',
-        Cell: ({ original }) => standardLabels[original.control.standardId]
+        // eslint-disable-next-line
+        Cell: ({ original }) => <span>{standardLabels[original.control.standardId]}</span>
     },
     controlName: {
         Header: `Control`,
@@ -70,12 +71,13 @@ const tableColumnData = {
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         accessor: 'resource.clusterName',
+        // eslint-disable-next-line
         Cell: ({ original }) => {
             // eslint-disable-next-line
             if (upperCase(original.resource.__typename) === entityTypes.CLUSTER) {
-                return original.resource.name || '-';
+                return <span>{original.resource.name || '-'}</span>;
             }
-            return original.resource.clusterName || '-';
+            return <span>{original.resource.clusterName || '-'}</span>;
         }
     },
     state: {
@@ -97,7 +99,7 @@ const tableColumnData = {
             return length > 1 ? (
                 <div className="italic font-800">{`Inspect to view ${length} pieces of evidence`}</div>
             ) : (
-                original.value.evidence[0].message
+                <span>{original.value.evidence[0].message}</span>
             );
         }
     }

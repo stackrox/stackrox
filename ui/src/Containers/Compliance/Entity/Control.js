@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { standardLabels } from 'messages/standards';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
@@ -19,10 +19,13 @@ import Header from './Header';
 import SearchInput from '../SearchInput';
 import EntitiesAssessed from '../widgets/EntitiesAssessed';
 
+const types = ['nodes', 'namespaces', 'clusters', 'deployments'];
+
 const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult }) => {
     const params = URLService.getParams(match, location);
     const entityId = controlId || params.controlId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
+    const [listType, setListType] = useState(null);
 
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
@@ -137,15 +140,23 @@ const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult 
                     );
                 }
 
+                function modifyListType(type) {
+                    if (types.includes(type)) {
+                        setListType(type);
+                    } else {
+                        setListType(null);
+                    }
+                }
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
                                 <Header
                                     entityType={entityTypes.CONTROL}
-                                    listEntityType={null}
+                                    listEntityType={listType}
                                     entity={control}
                                     headerText={`${standardLabels[standardId]} ${name}`}
+                                    entityName={`${standardLabels[standardId]} ${name}`}
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
@@ -156,6 +167,7 @@ const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult 
                                         entityTypes.DEPLOYMENT,
                                         entityTypes.CLUSTER
                                     ]}
+                                    onClick={modifyListType}
                                 />
                             </>
                         )}

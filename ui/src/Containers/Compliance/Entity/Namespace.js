@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import PropTypes from 'prop-types';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
@@ -22,10 +22,13 @@ import Loader from 'Components/Loader';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 
+const types = ['nodes', 'clusters', 'deployments', 'controls'];
+
 const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
     const entityId = namespaceId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
+    const [listType, setListType] = useState(listEntityType);
 
     function processData(data) {
         const defaultValue = {
@@ -177,13 +180,21 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
                     );
                 }
 
+                function modifyListType(type) {
+                    if (types.includes(type)) {
+                        setListType(type);
+                    } else {
+                        setListType(null);
+                    }
+                }
+
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
                                 <Header
                                     entityType={entityTypes.NAMESPACE}
-                                    listEntityType={listEntityType}
+                                    listEntityType={listType}
                                     entityName={name}
                                     entityId={id}
                                 />
@@ -191,6 +202,7 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
                                     entityId={id}
                                     entityType={entityTypes.NAMESPACE}
                                     resourceTabs={[entityTypes.CONTROL, entityTypes.DEPLOYMENT]}
+                                    onClick={modifyListType}
                                 />
                             </>
                         )}

@@ -43,7 +43,7 @@ class PDFExportButton extends Component {
         id: 'capture',
         options: {
             paperSize: 'a4',
-            mode: 'p',
+            mode: 'l',
             marginType: 'mm'
         },
         tableOptions: null,
@@ -58,7 +58,6 @@ class PDFExportButton extends Component {
     beforePDFPrinting = () => {
         const el = document.getElementById(this.props.id);
         const cc = Array.from(el.getElementsByClassName(printClassName));
-
         const promises = [];
         const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
             <img alt="stackrox-logo" src=${StackroxLogo} class="h-24" />
@@ -129,12 +128,13 @@ class PDFExportButton extends Component {
         } = this.props;
         setPDFRequestState();
         if (onClick) onClick();
-        const { paperSize, mode, marginType } = options;
+        const { paperSize, marginType } = options;
         const element = document.getElementById(id);
-        const imgElements = element.getElementsByClassName(imagesClassName);
+        const imgElements = element && element.getElementsByClassName(imagesClassName);
         const printElements = Array.from(element.getElementsByClassName(printClassName));
 
-        let imgWidth = options.mode === 'l' ? defaultPageLandscapeWidth : defaultPagePotraitWidth;
+        const mode = id === 'capture-dashboard' ? 'p' : 'l';
+        let imgWidth = mode === 'l' ? defaultPageLandscapeWidth : defaultPagePotraitWidth;
         // eslint-disable-next-line
         const doc = new jsPDF(mode, marginType, paperSize, true);
         let positionX = 0;

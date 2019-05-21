@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import { DEPLOYMENT_QUERY } from 'queries/deployment';
@@ -32,10 +32,13 @@ function processData(data) {
     return result;
 }
 
+const types = ['nodes', 'namespaces', 'clusters', 'controls'];
+
 const DeploymentPage = ({ match, location, deploymentId, sidePanelMode, controlResult }) => {
     const params = URLService.getParams(match, location);
     const entityId = deploymentId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
+    const [listType, setListType] = useState(listEntityType);
 
     return (
         <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
@@ -162,13 +165,21 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode, controlR
                     );
                 }
 
+                function modifyListType(type) {
+                    if (types.includes(type)) {
+                        setListType(type);
+                    } else {
+                        setListType(null);
+                    }
+                }
+
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
                                 <Header
                                     entityType={entityTypes.DEPLOYMENT}
-                                    listEntityType={listEntityType}
+                                    listEntityType={listType}
                                     entityName={name}
                                     entityId={id}
                                 />
@@ -176,6 +187,7 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode, controlR
                                     entityId={id}
                                     entityType={entityTypes.DEPLOYMENT}
                                     resourceTabs={[entityTypes.CONTROL]}
+                                    onClick={modifyListType}
                                 />
                             </>
                         )}

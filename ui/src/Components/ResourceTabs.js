@@ -17,7 +17,15 @@ import {
 } from 'modules/complianceUtils';
 import entityTypes from 'constants/entityTypes';
 
-const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match, location }) => {
+const ResourceTabs = ({
+    entityType,
+    entityId,
+    standardId,
+    resourceTabs,
+    match,
+    location,
+    onClick
+}) => {
     const { entityType: pageType } = URLService.getParams(match, location);
 
     function getLinkToListType(listEntityType) {
@@ -92,10 +100,21 @@ const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match, l
                                 textColor = 'text-primary-600';
                                 style.borderTopColor = 'hsla(225, 90%, 67%, 1)';
                                 style.borderTopWidth = '1px';
+                                if (onClick) onClick(datum.title);
                             }
 
+                            const onTabClick = title => evt => {
+                                evt.stopPropagation();
+                                if (onClick) onClick(title);
+                            };
+
                             return (
-                                <li key={datum.title} className="inline-block">
+                                // eslint-disable-next-line
+                                <li
+                                    key={datum.title}
+                                    className="inline-block"
+                                    onClick={onTabClick(datum.title)}
+                                >
                                     <Link
                                         style={style}
                                         className={`no-underline ${textColor} ${borderLeft} ${bgColor} border-r min-w-32 px-3 text-center pt-3 pb-3 uppercase tracking-widest inline-block`}
@@ -119,12 +138,14 @@ ResourceTabs.propTypes = {
     standardId: PropTypes.string,
     resourceTabs: PropTypes.arrayOf(PropTypes.string),
     match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    location: ReactRouterPropTypes.location.isRequired,
+    onClick: PropTypes.func
 };
 
 ResourceTabs.defaultProps = {
     resourceTabs: [],
-    standardId: null
+    standardId: null,
+    onClick: null
 };
 
 export default withRouter(ResourceTabs);

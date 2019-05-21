@@ -18,6 +18,7 @@ import Panel from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import entityTypes from 'constants/entityTypes';
+import createPDFTable from 'utils/pdfUtils';
 
 import { controlsTableColumns as tableColumns } from 'Containers/Compliance/List/evidenceTableColumns';
 
@@ -85,7 +86,8 @@ const EvidenceControlList = ({
     selectedRow,
     updateSelectedRow,
     match,
-    location
+    location,
+    resourceType
 }) => {
     const [page, setPage] = useState(0);
     const params = URLService.getParams(match, location);
@@ -107,6 +109,7 @@ const EvidenceControlList = ({
                         />
                     </>
                 );
+                createPDFTable(tableData, params.entityType, null, 'capture-list', resourceType);
                 return (
                     <Panel header={header} headerComponents={headerComponents}>
                         <Table
@@ -130,12 +133,14 @@ EvidenceControlList.propTypes = {
     selectedRow: PropTypes.shape({}),
     updateSelectedRow: PropTypes.func.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    location: ReactRouterPropTypes.location.isRequired,
+    resourceType: PropTypes.string
 };
 
 EvidenceControlList.defaultProps = {
     searchComponent: null,
-    selectedRow: null
+    selectedRow: null,
+    resourceType: null
 };
 
 export default withRouter(EvidenceControlList);

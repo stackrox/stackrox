@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
@@ -17,6 +17,8 @@ import PageNotFound from 'Components/PageNotFound';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 
+const types = ['nodes', 'namespaces', 'deployments', 'controls'];
+
 function processData(data) {
     if (!data || !data.results) return {};
     return data.results;
@@ -27,6 +29,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
 
     const entityId = clusterId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
+    const [listType, setListType] = useState(listEntityType);
 
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
@@ -163,13 +166,21 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                     );
                 }
 
+                function modifyListType(type) {
+                    if (types.includes(type)) {
+                        setListType(type);
+                    } else {
+                        setListType(null);
+                    }
+                }
+
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
                                 <Header
                                     entityType={entityTypes.CLUSTER}
-                                    listEntityType={listEntityType}
+                                    listEntityType={listType}
                                     entityName={name}
                                     entityId={id}
                                 />
@@ -182,6 +193,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                                         entityTypes.NODE,
                                         entityTypes.DEPLOYMENT
                                     ]}
+                                    onClick={modifyListType}
                                 />
                             </>
                         )}

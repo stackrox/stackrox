@@ -13,6 +13,7 @@ import queryService from 'modules/queryService';
 import uniq from 'lodash/uniq';
 import upperCase from 'lodash/upperCase';
 import pluralize from 'pluralize';
+import createPDFTable from 'utils/pdfUtils';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -165,6 +166,7 @@ const EvidenceResourceList = ({
                         />
                     </>
                 );
+                createPDFTable(tableData, params.entityType, null, 'capture-list', resourceType);
                 return (
                     <Panel header={header} headerComponents={headerComponents}>
                         <Table
