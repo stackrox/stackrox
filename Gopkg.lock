@@ -119,7 +119,7 @@
   revision = "ca021399b1a6796ecb758292c6311ce0b28857fc"
 
 [[projects]]
-  digest = "1:9fb5bbf2af6c060c644fc7250aff0858928fcfc54936194f4a89d7026b388fde"
+  digest = "1:47c06e1941887d1de346cad908b4de98c573368596b295221a526e7aef674634"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -163,8 +163,8 @@
     "service/sts",
   ]
   pruneopts = "NUT"
-  revision = "0db84dcbcc56669065730700b054eb6d1438a0f7"
-  version = "v1.19.33"
+  revision = "3e3b24dd55ca4bb508c7e78142632646ee6e8714"
+  version = "v1.19.34"
 
 [[projects]]
   digest = "1:15e3271f463f2f40d98bf426aabb86941fc66b10272ccfdfebe548683e37acb1"
@@ -1134,14 +1134,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f2331f94f035a19ab9e8b2a2848cf1209cfe6c8f32221495d7dff7df792605b6"
+  digest = "1:faf5688d03dc097b63b91bcfe02ad54ab2caaefe0b43ee5c4a67cc8653b9719f"
   name = "github.com/prometheus/procfs"
   packages = [
     ".",
     "internal/fs",
   ]
   pruneopts = "NUT"
-  revision = "9935e8e0588d26307d1d4a07bed7bd47271b6bbd"
+  revision = "be78308d8a4ffcb4610e8d21f0e15524ea0d646f"
 
 [[projects]]
   digest = "1:e09ada96a5a41deda4748b1659cc8953961799e798aea557257b56baee4ecaf3"
@@ -1394,7 +1394,7 @@
     "trace",
   ]
   pruneopts = "NUT"
-  revision = "3ec19112720433827bbce8be9342797f5a6aaaf9"
+  revision = "018c4d40a106a7ae83689758294fcd8d23850745"
 
 [[projects]]
   branch = "master"
@@ -1422,7 +1422,7 @@
     "windows/svc/eventlog",
   ]
   pruneopts = "NUT"
-  revision = "ad400b1274690a55531a013560dc08706088f82b"
+  revision = "c432e742b0af385916e013f6a34e9e73d139cf82"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -1459,7 +1459,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:60d07c6a5479de83636c4d4f1f6087a56c7da16385da62077b714aae7e947cf8"
+  digest = "1:ef363f2b54349f4b49dd5d05422c19c3c836309b6398f270f7bda2a47fc7681d"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -1505,14 +1505,14 @@
     "go/packages",
     "go/types/objectpath",
     "go/types/typeutil",
-    "imports",
     "internal/fastwalk",
     "internal/gopathwalk",
+    "internal/imports",
     "internal/module",
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "d88f79806bbd013f54a668506864ce559edf6f0a"
+  revision = "2c78df6d2ceec2cde4b7bff46c9b42cd05742fe1"
 
 [[projects]]
   digest = "1:05d78b6f0ef9a7412a66d15280b261b43e27255de9ba853a9499fc1c1a95b88d"
@@ -1645,7 +1645,7 @@
   revision = "be2e0b0deed5a68ffee390b4583a13aff8321535"
 
 [[projects]]
-  digest = "1:3eae6badd4900930e3180060324edc2b29e9e524ef63b5fc243b63fbf7595da9"
+  digest = "1:374eeb0db486b8f7e2c7bb8391f5336c71fe9482c97b180ae14a664eba8549cb"
   name = "gopkg.in/square/go-jose.v2"
   packages = [
     ".",
@@ -1654,8 +1654,8 @@
     "jwt",
   ]
   pruneopts = "NUT"
-  revision = "e94fb177d3668d35ab39c61cbb2f311550557e83"
-  version = "v2.2.2"
+  revision = "730df5f748271903322feb182be83b43ebbbe27d"
+  version = "v2.3.1"
 
 [[projects]]
   digest = "1:18108594151654e9e696b27b181b953f9a90b16bf14d253dd1b397b025a1487f"
@@ -1956,12 +1956,12 @@
   revision = "a01b7d5d6c2258c80a4a10070f3dee9cd575d9c7"
 
 [[projects]]
-  branch = "master"
-  digest = "1:ec1e5bf41389269762e60c6ae61b7ed8c795bc0324e956966170cb30c0464b4c"
+  digest = "1:4134c1d3967cc42b5437e4a1e2a7197f8afa977e79c72b0df6d05e222d2685f7"
   name = "k8s.io/kubernetes"
   packages = ["pkg/credentialprovider"]
   pruneopts = "NUT"
-  revision = "e476a60ccbe25581f5a6a9401081dcee311a066e"
+  revision = "66049e3b21efe110454d67df4fa62b08ea79a19b"
+  version = "v1.14.2"
 
 [solve-meta]
   analyzer-name = "dep"

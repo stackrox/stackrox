@@ -21,9 +21,8 @@ func (f optFunc) apply(claims *Claims) {
 // existing expiry is later than the specified one (i.e., the validity of a token will never be extended).
 func WithExpiry(expiry time.Time) Option {
 	return optFunc(func(claims *Claims) {
-		expiryDate := jwt.NewNumericDate(expiry)
-		if expiryDate < claims.Expiry || claims.Expiry == 0 {
-			claims.Expiry = expiryDate
+		if claims.Expiry == nil || expiry.Before(claims.Expiry.Time()) {
+			claims.Expiry = jwt.NewNumericDate(expiry)
 		}
 	})
 }
@@ -32,9 +31,9 @@ func WithExpiry(expiry time.Time) Option {
 // wrt. updating of existing expiry times as for the above function apply.
 func WithTTL(ttl time.Duration) Option {
 	return optFunc(func(claims *Claims) {
-		expiryDate := jwt.NewNumericDate(time.Now().Add(ttl))
-		if expiryDate < claims.Expiry || claims.Expiry == 0 {
-			claims.Expiry = expiryDate
+		expiry := time.Now().Add(ttl)
+		if claims.Expiry == nil || expiry.Before(claims.Expiry.Time()) {
+			claims.Expiry = jwt.NewNumericDate(expiry)
 		}
 	})
 }
@@ -42,7 +41,7 @@ func WithTTL(ttl time.Duration) Option {
 // WithDefaultTTL sets the given TTL for a token ONLY if it does not have a TTL set.
 func WithDefaultTTL(ttl time.Duration) Option {
 	return optFunc(func(claims *Claims) {
-		if claims.Expiry == 0 {
+		if claims.Expiry == nil {
 			claims.Expiry = jwt.NewNumericDate(time.Now().Add(ttl))
 		}
 	})

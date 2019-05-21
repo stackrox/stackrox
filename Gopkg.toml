@@ -129,7 +129,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 
 [[constraint]]
   name = "gopkg.in/square/go-jose.v2"
-  version = "=2.2.2"
+  version = "2.3.1"
 
 [[constraint]]
   name = "github.com/coreos/clair"
