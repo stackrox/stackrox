@@ -8,6 +8,7 @@ import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as graphActions } from 'reducers/network/graph';
 import * as Icon from 'react-feather';
+import isEmpty from 'lodash/isEmpty';
 
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
@@ -21,11 +22,16 @@ import wizardStages from '../wizardStages';
 import DeploymentDetails from '../../../Risk/DeploymentDetails';
 
 function Details(props) {
-    if (!props.wizardOpen || props.wizardStage !== wizardStages.details) {
+    if (
+        !props.wizardOpen ||
+        props.wizardStage !== wizardStages.details ||
+        isEmpty(props.deployment)
+    ) {
         return null;
     }
 
     const { deployment, selectedNode } = props;
+    const { deployment: curDeployment } = deployment;
     const envGraphPanelTabs = [
         { text: 'Details' },
         { text: 'Network Policies' },
@@ -40,7 +46,7 @@ function Details(props) {
         <Tabs headers={envGraphPanelTabs}>
             <TabContent>
                 <div className="flex flex-1 flex-col h-full">
-                    {deployment.id && <DeploymentDetails deployment={deployment} />}
+                    {curDeployment.id && <DeploymentDetails deployment={curDeployment} />}
                 </div>
             </TabContent>
             <TabContent>
@@ -82,7 +88,7 @@ function Details(props) {
     ) : null;
 
     return (
-        <Panel leftButtons={leftButtons} header={deployment.name} onClose={closeHandler}>
+        <Panel leftButtons={leftButtons} header={curDeployment.name} onClose={closeHandler}>
             {content}
         </Panel>
     );
