@@ -1,5 +1,5 @@
 plugins {
-    id "com.google.protobuf" version "0.8.6"
+    id "com.google.protobuf" version "0.8.8"
     id "groovy"
     id "codenarc"
 }
@@ -16,8 +16,8 @@ repositories {
 }
 
 def grpcVersion = '1.13.1'
-def protocVersion = '3.6.0'
-def protobufVersion = '3.5.1'
+def protocVersion = '3.6.1'
+def protobufVersion = '3.6.1'
 def nettyTcNativeVersion = '2.0.7.Final'
 
 protobuf {
@@ -71,8 +71,8 @@ dependencies {
     testCompile( 'com.athaydes:spock-reports:1.4.0' ) {
         transitive = false
     }
-    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.5.1'
-    compile group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.5.1'
+    compile group: 'com.google.protobuf', name: 'protobuf-java', version: "${protobufVersion}"
+    compile group: 'com.google.protobuf', name: 'protobuf-java-util', version: "${protobufVersion}"
 
     // Use the Kubernetes API
     compile 'io.fabric8:kubernetes-client:4.1.2'

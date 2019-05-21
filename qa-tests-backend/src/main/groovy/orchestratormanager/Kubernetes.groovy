@@ -949,19 +949,19 @@ class Kubernetes implements OrchestratorMain {
             ExecWatch watch =
                     client.pods().inNamespace(deployment.namespace).withName(deployment.pods.get(0).name)
                             .redirectingOutput().usingListener(new ExecListener() {
-            @Override
-            void onOpen(Response response) {
-            }
+                @Override
+                void onOpen(Response response) {
+                }
 
-            @Override
-            void onFailure(Throwable t, Response response) {
-                latch.countDown()
-            }
+                @Override
+                void onFailure(Throwable t, Response response) {
+                    latch.countDown()
+                }
 
-            @Override
-            void onClose(int code, String reason) {
-                latch.countDown()
-            }
+                @Override
+                void onClose(int code, String reason) {
+                    latch.countDown()
+                }
             }).exec(cmd.split(" "))
             BlockingInputStreamPumper pump = new BlockingInputStreamPumper(watch.getOutput(), new SystemOutCallback())
             Future<String> outPumpFuture = executorService.submit(pump, "Done")
