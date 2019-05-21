@@ -35,13 +35,11 @@ clean-generated-srcs:
 test: proto-generated-srcs
 	@echo "+ $@"
 	gradle test -Dgroups=-Upgrade,-SensorBounce
-	gradle test -Dgroups=SensorBounce
 
 .PHONY: bat-test
 bat-test: proto-generated-srcs
 	@echo "+ $@"
 	gradle test -Dgroups=BAT
-	gradle test -Dgroups=SensorBounce
 
 .PHONY: smoke-test
 smoke-test: proto-generated-srcs

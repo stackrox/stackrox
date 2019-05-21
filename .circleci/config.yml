@@ -989,7 +989,7 @@ jobs:
 
       - *restoreGradle
       - run:
-          name: QA Automation Platform
+          name: QA Automation Platform Part 1
           command: |
             export CLUSTER=K8S
             export HOSTNAME="${API_HOSTNAME}"
@@ -1005,6 +1005,16 @@ jobs:
               echo "On a PR branch, running BAT tests only..."
               make -C qa-tests-backend bat-test
             fi
+
+      - *collectK8sLogs
+
+      - run:
+          name: QA Automation Platform Part 2
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME="${API_HOSTNAME}"
+            export PORT="${API_PORT}"
+            make -C qa-tests-backend sensor-bounce-test
 
       - save_cache:
           key: *gradleCacheKey
@@ -1068,7 +1078,7 @@ jobs:
 
       - *restoreGradle
       - run:
-          name: QA Automation Platform
+          name: QA Automation Platform Part 1
           command: |
             export CLUSTER=K8S
             export HOSTNAME="${API_HOSTNAME}"
@@ -1084,6 +1094,16 @@ jobs:
               echo "On a PR branch, running RUNTIME tests only..."
               make -C qa-tests-backend runtime-test
             fi
+
+      - *collectK8sLogs
+
+      - run:
+          name: QA Automation Platform Part 2
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME="${API_HOSTNAME}"
+            export PORT="${API_PORT}"
+            make -C qa-tests-backend sensor-bounce-test
 
       - save_cache:
           key: *gradleCacheKey
@@ -1455,7 +1475,7 @@ jobs:
 
       - *restoreGradle
       - run:
-          name: QA Automation Platform
+          name: QA Automation Platform Part 1
           command: |
             if .circleci/pr_has_label.sh ci-no-qa-tests; then
               echo "Skipping QA tests because of the presence of the ci-no-qa-tests label..."
@@ -1475,6 +1495,16 @@ jobs:
                 make -C qa-tests-backend bat-test
               fi
             fi
+
+      - *collectK8sLogs
+
+      - run:
+          name: QA Automation Platform Part 2
+          command: |
+            export CLUSTER=OPENSHIFT
+            export HOSTNAME=localhost
+            export PORT="${LOCAL_PORT}"
+            make -C qa-tests-backend sensor-bounce-test
 
       - *storeQATestResults
       - *storeQASpockReports
