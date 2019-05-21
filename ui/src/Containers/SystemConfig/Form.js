@@ -3,17 +3,20 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { reduxForm } from 'redux-form';
 
-import ConfigFormWidget from './ConfigFormWidget';
+import ConfigBannerFormWidget from './ConfigBannerFormWidget';
+import ConfigLoginFormWidget from './ConfigLoginFormWidget';
+import { pageLayoutClassName } from './Page';
 
 const Form = ({ initialValues, onSubmit }) => (
     <>
-        <form
-            className="flex flex-col justify-between md:flex-row overflow-auto px-2 w-full"
-            initialvalues={initialValues}
-            onSubmit={onSubmit}
-        >
-            <ConfigFormWidget type="header" />
-            <ConfigFormWidget type="footer" />
+        <form className={pageLayoutClassName} initialvalues={initialValues} onSubmit={onSubmit}>
+            <div className="flex flex-col justify-between md:flex-row w-full">
+                <ConfigBannerFormWidget type="header" />
+                <ConfigBannerFormWidget type="footer" />
+            </div>
+            <div className="px-3 pt-5 w-full">
+                <ConfigLoginFormWidget />
+            </div>
         </form>
     </>
 );

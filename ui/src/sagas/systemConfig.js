@@ -34,6 +34,7 @@ function* updateSystemConfig(action) {
         const config = { config: action.systemConfig };
         yield call(saveSystemConfig, config);
         yield fork(getPublicConfig);
+        yield fork(getSystemConfig);
     } catch (error) {
         if (error.response) {
             yield put(notificationActions.addNotification(error.response.data.error));

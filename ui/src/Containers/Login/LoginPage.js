@@ -16,6 +16,7 @@ import * as Icon from 'react-feather';
 import Tooltip from 'rc-tooltip';
 
 import AppWrapper from '../AppWrapper';
+import LoginNotice from './LoginNotice';
 
 class LoginPage extends Component {
     static propTypes = {
@@ -174,7 +175,7 @@ class LoginPage extends Component {
         return (
             <AppWrapper>
                 <section
-                    className={`flex flex-col items-center justify-center h-full ${
+                    className={`flex flex-col items-center justify-center h-full py-5 ${
                         isDarkMode ? 'bg-base-300' : 'bg-primary-800'
                     } `}
                 >
@@ -188,6 +189,7 @@ class LoginPage extends Component {
                             <img className="h-40 h-40 py-6" src={logoPlatform} alt="StackRox" />
                             {this.renderAuthProviders()}
                         </div>
+                        <LoginNotice />
                         {this.renderLoginButton()}
                     </div>
                 </section>

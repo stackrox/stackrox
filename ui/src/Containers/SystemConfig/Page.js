@@ -11,6 +11,7 @@ import Form from './Form';
 import Detail from './Detail';
 
 export const keyClassName = 'py-2 text-base-600 font-700 capitalize';
+export const pageLayoutClassName = 'flex flex-col overflow-auto px-2 py-5 w-full';
 
 const Page = ({ systemConfig, saveSystemConfig }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -59,12 +60,14 @@ const Page = ({ systemConfig, saveSystemConfig }) => {
     }
 
     return (
-        <section className="flex flex-1 h-full w-full">
+        <section className="flex flex-1 flex-col h-full w-full">
             <div className="flex flex-1 flex-col w-full">
                 <PageHeader header="System Configuration">
                     <div className="flex flex-1 justify-end">{getHeaderButtons()}</div>
                 </PageHeader>
-                <div className="w-full h-full flex pb-0 bg-base-200">{getContent()}</div>
+                <div className="w-full h-full flex pb-0 bg-base-200 overflow-auto">
+                    {getContent()}
+                </div>
             </div>
         </section>
     );

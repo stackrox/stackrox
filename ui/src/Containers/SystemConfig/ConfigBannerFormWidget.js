@@ -23,8 +23,8 @@ const backgroundSizeOptions = [
     }
 ];
 
-const ConfigFormWidget = ({ type }) => (
-    <div className="px-3 pt-5 w-full">
+const ConfigBannerFormWidget = ({ type }) => (
+    <div className="px-3 w-full">
         <div className="bg-base-100 border-base-200 shadow">
             <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center">
                 {`${type} configuration`}
@@ -64,8 +64,8 @@ const ConfigFormWidget = ({ type }) => (
     </div>
 );
 
-ConfigFormWidget.propTypes = {
+ConfigBannerFormWidget.propTypes = {
     type: PropTypes.string.isRequired
 };
 
-export default ConfigFormWidget;
+export default ConfigBannerFormWidget;

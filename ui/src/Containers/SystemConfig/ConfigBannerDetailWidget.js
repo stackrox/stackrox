@@ -5,7 +5,7 @@ import capitalize from 'lodash/capitalize';
 import ColorPicker from 'Components/ColorPicker';
 import { keyClassName } from './Page';
 
-const ConfigDetailWidget = ({ type, config }) => {
+const ConfigBannerDetailWidget = ({ type, config }) => {
     const { publicConfig } = config;
     function getValue(key) {
         return !publicConfig || !publicConfig[type] || !publicConfig[type][key]
@@ -14,7 +14,7 @@ const ConfigDetailWidget = ({ type, config }) => {
     }
 
     return (
-        <div className="px-3 pt-5 w-full">
+        <div className="px-3 w-full">
             <div className="bg-base-100 border-base-200 shadow">
                 <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center h-10">
                     {type} Configuration{' '}
@@ -27,7 +27,7 @@ const ConfigDetailWidget = ({ type, config }) => {
 
                 <div className="flex flex-col pt-2 pb-4 px-4 w-full">
                     <div className="flex w-full justify-between">
-                        <div className="w-full pr-4 whitespace-pre">
+                        <div className="w-full pr-4 whitespace-pre-wrap">
                             <div className={keyClassName}>Text (2000 character limit):</div>
                             {getValue('text')}
                         </div>
@@ -66,15 +66,14 @@ const ConfigDetailWidget = ({ type, config }) => {
     );
 };
 
-ConfigDetailWidget.propTypes = {
+ConfigBannerDetailWidget.propTypes = {
     type: PropTypes.string.isRequired,
     config: PropTypes.shape({
         publicConfig: PropTypes.shape({
             header: PropTypes.shape({}),
-            footer: PropTypes.shape({}),
-            loginNotice: PropTypes.shape({})
+            footer: PropTypes.shape({})
         })
     }).isRequired
 };
 
-export default ConfigDetailWidget;
+export default ConfigBannerDetailWidget;

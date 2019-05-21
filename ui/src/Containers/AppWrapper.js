@@ -16,8 +16,7 @@ const AppWrapper = ({ publicConfig, children }) => (
 AppWrapper.propTypes = {
     publicConfig: PropTypes.shape({
         header: PropTypes.shape({}),
-        footer: PropTypes.shape({}),
-        loginNotice: PropTypes.shape({})
+        footer: PropTypes.shape({})
     }),
     children: PropTypes.node.isRequired
 };
@@ -25,8 +24,7 @@ AppWrapper.propTypes = {
 AppWrapper.defaultProps = {
     publicConfig: {
         header: {},
-        footer: {},
-        loginNotice: {}
+        footer: {}
     }
 };
 
