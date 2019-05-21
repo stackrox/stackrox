@@ -8,6 +8,7 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -15,11 +16,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log          = logging.LoggerForModule()
+	allAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS,
+				storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Namespace)))
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -139,11 +146,11 @@ func (s *pipelineImpl) enrichCluster(ns *storage.NamespaceMetadata) error {
 func (s *pipelineImpl) persistNamespace(action central.ResourceAction, ns *storage.NamespaceMetadata) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
-		return s.namespaces.AddNamespace(context.TODO(), ns)
+		return s.namespaces.AddNamespace(allAccessCtx, ns)
 	case central.ResourceAction_UPDATE_RESOURCE:
-		return s.namespaces.UpdateNamespace(context.TODO(), ns)
+		return s.namespaces.UpdateNamespace(allAccessCtx, ns)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.namespaces.RemoveNamespace(context.TODO(), ns.GetId())
+		return s.namespaces.RemoveNamespace(allAccessCtx, ns.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for namespace does not exist", action)
 	}
