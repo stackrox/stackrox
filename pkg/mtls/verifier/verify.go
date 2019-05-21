@@ -54,6 +54,24 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 	return conf, nil
 }
 
+// DefaultTLSServerConfig returns the default TLS config for servers in StackRox
+func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *tls.Config {
+	// Government clients require TLS >=1.2 and require that AES-256 be preferred over AES-128
+	return &tls.Config{
+		MinVersion:               tls.VersionTLS12,
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		},
+		ClientAuth:   tls.VerifyClientCertIfGiven,
+		ClientCAs:    certPool,
+		Certificates: certs,
+	}
+}
+
 func config(serverBundle tls.Certificate) (*tls.Config, error) {
 	certPool, err := TrustedCertPool()
 	if err != nil {
@@ -62,10 +80,6 @@ func config(serverBundle tls.Certificate) (*tls.Config, error) {
 
 	// This is based on TLSClientAuthServerConfig from cfssl/transport.
 	// However, we don't use enough of their ecosystem to fully use it yet.
-	return &tls.Config{
-		Certificates: []tls.Certificate{serverBundle},
-		ClientCAs:    certPool,
-		ClientAuth:   tls.VerifyClientCertIfGiven,
-		MinVersion:   tls.VersionTLS12,
-	}, nil
+	cfg := DefaultTLSServerConfig(certPool, []tls.Certificate{serverBundle})
+	return cfg, nil
 }

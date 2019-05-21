@@ -109,12 +109,7 @@ func createTLSConfig() (*tls.Config, error) {
 	}
 	certs = append(certs, *internalCert)
 
-	cfg := &tls.Config{
-		MinVersion:   tls.VersionTLS12,
-		ClientAuth:   tls.VerifyClientCertIfGiven,
-		ClientCAs:    certPool,
-		Certificates: certs,
-	}
+	cfg := verifier.DefaultTLSServerConfig(certPool, certs)
 	cfg.BuildNameToCertificate()
 
 	return cfg, nil
