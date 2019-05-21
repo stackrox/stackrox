@@ -18,7 +18,7 @@ func TestStore(t *testing.T) {
 	require.NoError(err)
 	defer utils.IgnoreError(db.Close)
 
-	store := New(db)
+	store, err := New(db)
 	require.NoError(err)
 
 	whitelistResults := &storage.ProcessWhitelistResults{

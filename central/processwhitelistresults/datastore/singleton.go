@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -16,9 +15,7 @@ var (
 )
 
 func initialize() {
-	storage := store.New(globaldb.GetGlobalDB())
-
-	singleton = New(storage)
+	singleton = New(store.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.
