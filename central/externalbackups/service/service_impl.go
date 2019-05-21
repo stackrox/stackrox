@@ -2,8 +2,8 @@ package service
 
 import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
-	backupStore "github.com/stackrox/rox/central/externalbackups/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -37,10 +37,10 @@ var (
 	})
 )
 
-// ClusterService is the struct that manages the cluster API
+// serviceImpl is the struct that manages the external backups API
 type serviceImpl struct {
-	manager manager.Manager
-	store   backupStore.Store
+	manager   manager.Manager
+	dataStore datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -63,7 +63,7 @@ func (s *serviceImpl) GetExternalBackup(ctx context.Context, request *v1.Resourc
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Id must be specified when requesting an external backup")
 	}
-	backup, err := s.store.GetBackup(request.GetId())
+	backup, err := s.dataStore.GetBackup(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +75,8 @@ func (s *serviceImpl) GetExternalBackup(ctx context.Context, request *v1.Resourc
 }
 
 // GetExternalBackups retrieves all external backups
-func (s *serviceImpl) GetExternalBackups(context.Context, *v1.Empty) (*v1.GetExternalBackupsResponse, error) {
-	backups, err := s.store.ListBackups()
+func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.GetExternalBackupsResponse, error) {
+	backups, err := s.dataStore.ListBackups(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,8 +103,8 @@ func validateBackup(backup *storage.ExternalBackup) error {
 	return errorList.ToError()
 }
 
-func (s *serviceImpl) testBackup(backup *storage.ExternalBackup) error {
-	return s.manager.Test(backup)
+func (s *serviceImpl) testBackup(ctx context.Context, backup *storage.ExternalBackup) error {
+	return s.manager.Test(ctx, backup)
 }
 
 // TestExternalBackup tests that the current config is valid
@@ -112,29 +112,28 @@ func (s *serviceImpl) TestExternalBackup(ctx context.Context, request *storage.E
 	if err := validateBackup(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.testBackup(request); err != nil {
+	if err := s.testBackup(ctx, request); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) TriggerExternalBackup(_ context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+func (s *serviceImpl) TriggerExternalBackup(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "id must be specified when triggering a backup")
 	}
-	if err := s.manager.Backup(request.GetId()); err != nil {
+	if err := s.manager.Backup(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) upsertExternalBackup(request *storage.ExternalBackup) error {
-	if err := s.manager.Upsert(request); err != nil {
+func (s *serviceImpl) upsertExternalBackup(ctx context.Context, request *storage.ExternalBackup) error {
+	if err := s.manager.Upsert(ctx, request); err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
-
-	if err := s.store.UpsertBackup(request); err != nil {
-		s.manager.Remove(request.GetId())
+	if err := s.dataStore.UpsertBackup(ctx, request); err != nil {
+		s.manager.Remove(ctx, request.GetId())
 		return err
 	}
 	return nil
@@ -148,7 +147,7 @@ func (s *serviceImpl) PutExternalBackup(ctx context.Context, request *storage.Ex
 	if err := validateBackup(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.upsertExternalBackup(request); err != nil {
+	if err := s.upsertExternalBackup(ctx, request); err != nil {
 		return nil, err
 	}
 	return request, nil
@@ -163,7 +162,7 @@ func (s *serviceImpl) PostExternalBackup(ctx context.Context, request *storage.E
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	request.Id = uuid.NewV4().String()
-	if err := s.upsertExternalBackup(request); err != nil {
+	if err := s.upsertExternalBackup(ctx, request); err != nil {
 		return nil, err
 	}
 	return request, nil
@@ -174,9 +173,10 @@ func (s *serviceImpl) DeleteExternalBackup(ctx context.Context, request *v1.Reso
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Backup id is required for deletions")
 	}
-	s.manager.Remove(request.GetId())
-	if err := s.store.RemoveBackup(request.GetId()); err != nil {
+	if err := s.dataStore.RemoveBackup(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
+	s.manager.Remove(ctx, request.GetId())
+
 	return &v1.Empty{}, nil
 }

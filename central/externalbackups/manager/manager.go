@@ -1,23 +1,27 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/externalbackups/scheduler"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Manager implements the interface for external backups
 type Manager interface {
-	Upsert(backup *storage.ExternalBackup) error
-	Test(backup *storage.ExternalBackup) error
-	Remove(id string)
+	Upsert(ctx context.Context, backup *storage.ExternalBackup) error
+	Test(ctx context.Context, backup *storage.ExternalBackup) error
+	Remove(ctx context.Context, d string)
 
-	Backup(id string) error
+	Backup(ctx context.Context, id string) error
 }
 
 // New returns a new external backup manager
@@ -27,6 +31,10 @@ func New() Manager {
 		idsToExternalBackups: make(map[string]types.ExternalBackup),
 	}
 }
+
+var (
+	externalBkpSAC = sac.ForResource(resources.BackupPlugins)
+)
 
 type managerImpl struct {
 	scheduler scheduler.Scheduler
@@ -48,7 +56,13 @@ func renderExternalBackupFromProto(backup *storage.ExternalBackup) (types.Extern
 	return backupInterface, nil
 }
 
-func (m *managerImpl) Upsert(backup *storage.ExternalBackup) error {
+func (m *managerImpl) Upsert(ctx context.Context, backup *storage.ExternalBackup) error {
+	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	backupInterface, err := renderExternalBackupFromProto(backup)
 	if err != nil {
 		return err
@@ -70,7 +84,13 @@ func (m *managerImpl) Upsert(backup *storage.ExternalBackup) error {
 	return nil
 }
 
-func (m *managerImpl) Test(backup *storage.ExternalBackup) error {
+func (m *managerImpl) Test(ctx context.Context, backup *storage.ExternalBackup) error {
+	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	backupInterface, err := renderExternalBackupFromProto(backup)
 	if err != nil {
 		return err
@@ -78,7 +98,13 @@ func (m *managerImpl) Test(backup *storage.ExternalBackup) error {
 	return backupInterface.Test()
 }
 
-func (m *managerImpl) Backup(id string) error {
+func (m *managerImpl) Backup(ctx context.Context, id string) error {
+	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	backup, ok := m.idsToExternalBackups[id]
@@ -88,7 +114,11 @@ func (m *managerImpl) Backup(id string) error {
 	return m.scheduler.RunBackup(backup)
 }
 
-func (m *managerImpl) Remove(id string) {
+func (m *managerImpl) Remove(ctx context.Context, id string) {
+	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil || !ok {
+		return
+	}
+
 	m.scheduler.RemoveBackup(id)
 
 	m.lock.Lock()

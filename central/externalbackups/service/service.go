@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
-	backupStore "github.com/stackrox/rox/central/externalbackups/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -24,9 +24,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store backupStore.Store, manager manager.Manager) Service {
+func New(dataStore datastore.DataStore, manager manager.Manager) Service {
 	return &serviceImpl{
-		store:   store,
-		manager: manager,
+		dataStore: dataStore,
+		manager:   manager,
 	}
 }
