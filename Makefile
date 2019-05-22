@@ -236,8 +236,9 @@ volatile-generated-srcs: proto-generated-srcs go-packr-srcs keys
 .PHONY: generated-srcs
 generated-srcs: volatile-generated-srcs go-generated-srcs
 
+# clean-generated-srcs cleans ONLY volatile-generated-srcs.
 .PHONY: clean-generated-srcs
-clean-generated-srcs: clean-packr-srcs clean-easyjson-srcs clean-proto-generated-srcs
+clean-generated-srcs: clean-packr-srcs clean-proto-generated-srcs
 	@echo "+ $@"
 
 deps: Gopkg.toml Gopkg.lock proto-generated-srcs
