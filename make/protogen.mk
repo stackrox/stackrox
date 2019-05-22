@@ -220,7 +220,7 @@ clean-proto-deps:
 	rm -rf $(GOPATH)/src/github.com/gogo
 	rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
 	rm -rf $(GOPATH)/src/github.com/golang/protobuf
-	rm -rf $GOPATH/src/google.golang.org
+	rm -rf $(GOPATH)/src/google.golang.org
 	rm -rf $(PROTOC_TMP)
 	rm -f $(PROTOC_FILE)
 	rm -f $(GOPATH)/bin/protoc-gen-*
