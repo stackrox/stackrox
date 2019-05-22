@@ -20,30 +20,30 @@ type indexerImpl struct {
 	index bleve.Index
 }
 
-type alertWrapper struct {
-	*storage.Alert `json:"alert"`
-	Type           string `json:"type"`
+type listAlertWrapper struct {
+	*storage.ListAlert `json:"alert"`
+	Type               string `json:"type"`
 }
 
 // AddAlert adds the alert to the indexer
-func (b *indexerImpl) AddAlert(alert *storage.Alert) error {
+func (b *indexerImpl) AddListAlert(alert *storage.ListAlert) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Alert")
-	return b.index.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
+	return b.index.Index(alert.GetId(), &listAlertWrapper{Type: v1.SearchCategory_ALERTS.String(), ListAlert: alert})
 }
 
-func (b *indexerImpl) processBatch(alerts []*storage.Alert) error {
+func (b *indexerImpl) processBatch(alerts []*storage.ListAlert) error {
 	batch := b.index.NewBatch()
 	for _, alert := range alerts {
-		if err := batch.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert}); err != nil {
+		if err := batch.Index(alert.GetId(), &listAlertWrapper{Type: v1.SearchCategory_ALERTS.String(), ListAlert: alert}); err != nil {
 			return err
 		}
 	}
 	return b.index.Batch(batch)
 }
 
-// AddAlerts adds the alerts to the indexer
-func (b *indexerImpl) AddAlerts(alerts []*storage.Alert) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Alert")
+// AddListAlerts adds the alerts to the indexer
+func (b *indexerImpl) AddListAlerts(alerts []*storage.ListAlert) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "ListAlert")
 	batchManager := batcher.New(len(alerts), batchSize)
 	for {
 		start, end, ok := batchManager.Next()

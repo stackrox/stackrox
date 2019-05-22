@@ -4,11 +4,14 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/stackrox/rox/central/alert/convert"
+	"github.com/stackrox/rox/central/alert/index/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -41,10 +44,10 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 	const nonStaleID = "NONSTALE"
 	const staleID = "STALE"
 
-	suite.NoError(suite.indexer.AddAlert(fixtures.GetAlertWithID(nonStaleID)))
+	suite.NoError(suite.indexer.AddListAlert(convert.AlertToListAlert(fixtures.GetAlertWithID(nonStaleID))))
 	staleAlert := fixtures.GetAlertWithID(staleID)
 	staleAlert.State = storage.ViolationState_RESOLVED
-	suite.NoError(suite.indexer.AddAlert(staleAlert))
+	suite.NoError(suite.indexer.AddListAlert(convert.AlertToListAlert(staleAlert)))
 
 	var cases = []struct {
 		name             string
@@ -88,7 +91,7 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 
 // This test also tests xref because the Severity enum is buried inside Policy
 func (suite *alertIndexTestSuite) TestEnums() {
-	suite.NoError(suite.indexer.AddAlert(fixtures.GetAlert()))
+	suite.NoError(suite.indexer.AddListAlert(convert.AlertToListAlert(fixtures.GetAlert())))
 
 	var cases = []struct {
 		name             string
@@ -120,4 +123,11 @@ func (suite *alertIndexTestSuite) TestEnums() {
 			assert.ElementsMatch(t, alertIDs, c.expectedAlertIDs)
 		})
 	}
+}
+
+// This test ensures that the search options for both list alerts and alerts are identical. This is necessary
+// because we load and index list alerts from the DB for performance
+func TestListAlertAndAlertWalkAreEqual(t *testing.T) {
+	listOptions := blevesearch.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.ListAlert)(nil))
+	assert.Equal(t, listOptions, mappings.OptionsMap)
 }

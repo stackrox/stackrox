@@ -1,11 +1,12 @@
-package store
+package convert
 
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
 
-func convertAlertsToListAlerts(alert *storage.Alert) *storage.ListAlert {
+// AlertToListAlert takes in a storage.Alert and returns a store.ListAlert
+func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 	listAlert := &storage.ListAlert{
 		Id:             alert.GetId(),
 		Time:           alert.GetTime(),

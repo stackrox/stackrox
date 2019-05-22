@@ -15,10 +15,10 @@ message Alert {
     string id                                = 1;
     Policy policy                            = 2 [(gogoproto.moretags) = "search_index:\"Policy ID,Policy,Category,Severity\""];
     LifecycleStage lifecycle_stage           = 3 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
-    Deployment deployment                    = 4 [(gogoproto.moretags) = "search_index:\"Deployment ID,Cluster,Namespace,Label,Deployment\""];
+    Deployment deployment                    = 4 [(gogoproto.moretags) = "search_index:\"Deployment ID,Cluster,Namespace,Deployment\""];
 
     message Violation {
-        string message                                 = 1 [(gogoproto.moretags) = "search:\"Violation\""];
+        string message                                 = 1;
         string link                                    = 2;
         repeated ProcessIndicator DEPRECATED_processes = 3 [(gogoproto.moretags) = "search:\"-\""];
     }
@@ -31,7 +31,7 @@ message Alert {
     ProcessViolation process_violation      = 13;
 
     message Enforcement {
-        storage.EnforcementAction action = 1 [(gogoproto.moretags) = "search:\"Enforcement,store\""];
+        storage.EnforcementAction action = 1;
         string message                   = 2;
     }
     Enforcement enforcement                  = 6;
@@ -42,35 +42,35 @@ message Alert {
     google.protobuf.Timestamp snooze_till    = 12;
 }
 
-message ListAlert {
-    string id                               = 1;
-    LifecycleStage lifecycle_stage          = 2;
-    google.protobuf.Timestamp time          = 3;
-    ListAlertPolicy policy                  = 4;
-    ListAlertDeployment deployment          = 5;
-    ViolationState state                    = 6;
-    int32 enforcement_count                 = 7;
-}
-
 message AlertState {
     string id            = 1;
     ViolationState state = 6;
 }
 
+message ListAlert {
+    string id                               = 1;
+    LifecycleStage lifecycle_stage          = 2 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
+    google.protobuf.Timestamp time          = 3 [(gogoproto.moretags) = "search:\"Violation Time\""];
+    ListAlertPolicy policy                  = 4;
+    ListAlertDeployment deployment          = 5;
+    ViolationState state                    = 6 [(gogoproto.moretags) = "search:\"Violation State,store\""];
+    int32 enforcement_count                 = 7;
+}
+
 message ListAlertPolicy {
-    string id                                   = 1;
-    string name                                 = 2;
-    Severity severity                           = 3;
+    string id                                   = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
+    string name                                 = 2 [(gogoproto.moretags) = "search:\"Policy,store\""];
+    Severity severity                           = 3 [(gogoproto.moretags) = "search:\"Severity,store\""];
     string description                          = 4;
-    repeated string categories                  = 5;
+    repeated string categories                  = 5 [(gogoproto.moretags) = "search:\"Category,store\""];
 }
 
 message ListAlertDeployment {
-    string id                                  = 1;
-    string name                                = 2;
+    string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
+    string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
     google.protobuf.Timestamp updated_at       = 3;
-    string cluster_name                        = 4;
-    string namespace                           = 5;
+    string cluster_name                        = 4 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+    string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
 }
 
 enum ViolationState {

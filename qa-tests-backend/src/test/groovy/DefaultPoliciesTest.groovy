@@ -192,7 +192,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                         PaginationOuterClass.Pagination.newBuilder()
                                 .setSortOption(
                                         PaginationOuterClass.SortOption.newBuilder()
-                                                .setField("Violation")
+                                                .setField("Policy")
                                                 .setReversed(false))
                 ).build()
         def alerts3 = AlertService.getViolations(request3).collect { it.policy.name }
@@ -202,7 +202,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                 PaginationOuterClass.Pagination.newBuilder()
                         .setSortOption(
                         PaginationOuterClass.SortOption.newBuilder()
-                                .setField("Violation")
+                                .setField("Policy")
                                 .setReversed(true))
         ).build()
         def alerts4 = AlertService.getViolations(request4).collect { it.policy.name }

@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -89,12 +90,13 @@ func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err 
 	return
 }
 
-func (b *storeImpl) getAllAlerts() ([]*storage.Alert, error) {
-	var alerts []*storage.Alert
+func (b *storeImpl) getAllAlerts() ([]*storage.ListAlert, error) {
+	var alerts []*storage.ListAlert
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(alertBucket)
+		b := tx.Bucket(alertListBucket)
+		alerts = make([]*storage.ListAlert, 0, b.Stats().KeyN)
 		return b.ForEach(func(k, v []byte) error {
-			var alert storage.Alert
+			var alert storage.ListAlert
 			if err := proto.Unmarshal(v, &alert); err != nil {
 				return err
 			}
@@ -106,19 +108,19 @@ func (b *storeImpl) getAllAlerts() ([]*storage.Alert, error) {
 }
 
 // GetAlerts takes in optional ids to filter the request by. No IDs will result in all IDs being returned
-func (b *storeImpl) GetAlerts(ids ...string) ([]*storage.Alert, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Alert")
+func (b *storeImpl) GetListAlerts(ids ...string) ([]*storage.ListAlert, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
 
 	if len(ids) == 0 {
 		return b.getAllAlerts()
 	}
 
-	var alerts []*storage.Alert
+	alerts := make([]*storage.ListAlert, 0, len(ids))
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(alertBucket)
+		b := tx.Bucket(alertListBucket)
 		for _, id := range ids {
 			v := b.Get([]byte(id))
-			var alert storage.Alert
+			var alert storage.ListAlert
 			if err := proto.Unmarshal(v, &alert); err != nil {
 				return err
 			}
@@ -193,6 +195,6 @@ func getAlert(id string, bucket *bolt.Bucket) (alert *storage.Alert, exists bool
 }
 
 func marshalAsListAlert(alert *storage.Alert) ([]byte, error) {
-	listAlert := convertAlertsToListAlerts(alert)
+	listAlert := convert.AlertToListAlert(alert)
 	return proto.Marshal(listAlert)
 }

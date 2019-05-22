@@ -6,10 +6,12 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -92,4 +94,25 @@ func BenchmarkListAlerts(b *testing.B) {
 
 	bytes, _ := proto.Marshal(listAlert)
 	fmt.Printf("Max ListAlerts that can be returned: %d\n", maxGRPCSize/len(bytes))
+}
+
+func BenchmarkUnmarshalAlert(b *testing.B) {
+	alert := fixtures.GetAlert()
+	bytes, err := proto.Marshal(alert)
+	require.NoError(b, err)
+
+	var newAlert storage.Alert
+	for i := 0; i < b.N; i++ {
+		assert.NoError(b, proto.Unmarshal(bytes, &newAlert))
+	}
+}
+
+func BenchmarkUnmarshalListAlert(b *testing.B) {
+	bytes, err := proto.Marshal(convert.AlertToListAlert(fixtures.GetAlert()))
+	require.NoError(b, err)
+
+	var newAlert storage.ListAlert
+	for i := 0; i < b.N; i++ {
+		assert.NoError(b, proto.Unmarshal(bytes, &newAlert))
+	}
 }

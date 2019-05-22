@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/alert/index"
 	"github.com/stackrox/rox/central/alert/search"
 	"github.com/stackrox/rox/central/alert/store"
@@ -100,7 +101,7 @@ func (ds *datastoreImpl) AddAlert(ctx context.Context, alert *storage.Alert) err
 	if err := ds.storage.AddAlert(alert); err != nil {
 		return err
 	}
-	return ds.indexer.AddAlert(alert)
+	return ds.indexer.AddListAlert(convert.AlertToListAlert(alert))
 }
 
 // UpdateAlert updates an alert in storage and in the indexer
@@ -110,7 +111,7 @@ func (ds *datastoreImpl) UpdateAlert(ctx context.Context, alert *storage.Alert) 
 	if err := ds.storage.UpdateAlert(alert); err != nil {
 		return err
 	}
-	return ds.indexer.AddAlert(alert)
+	return ds.indexer.AddListAlert(convert.AlertToListAlert(alert))
 }
 
 func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {

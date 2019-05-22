@@ -35,28 +35,28 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddAlert mocks base method
-func (m *MockIndexer) AddAlert(arg0 *storage.Alert) error {
-	ret := m.ctrl.Call(m, "AddAlert", arg0)
+// AddListAlert mocks base method
+func (m *MockIndexer) AddListAlert(arg0 *storage.ListAlert) error {
+	ret := m.ctrl.Call(m, "AddListAlert", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddAlert indicates an expected call of AddAlert
-func (mr *MockIndexerMockRecorder) AddAlert(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAlert", reflect.TypeOf((*MockIndexer)(nil).AddAlert), arg0)
+// AddListAlert indicates an expected call of AddListAlert
+func (mr *MockIndexerMockRecorder) AddListAlert(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddListAlert", reflect.TypeOf((*MockIndexer)(nil).AddListAlert), arg0)
 }
 
-// AddAlerts mocks base method
-func (m *MockIndexer) AddAlerts(arg0 []*storage.Alert) error {
-	ret := m.ctrl.Call(m, "AddAlerts", arg0)
+// AddListAlerts mocks base method
+func (m *MockIndexer) AddListAlerts(arg0 []*storage.ListAlert) error {
+	ret := m.ctrl.Call(m, "AddListAlerts", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddAlerts indicates an expected call of AddAlerts
-func (mr *MockIndexerMockRecorder) AddAlerts(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAlerts", reflect.TypeOf((*MockIndexer)(nil).AddAlerts), arg0)
+// AddListAlerts indicates an expected call of AddListAlerts
+func (mr *MockIndexerMockRecorder) AddListAlerts(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddListAlerts", reflect.TypeOf((*MockIndexer)(nil).AddListAlerts), arg0)
 }
 
 // DeleteAlert mocks base method

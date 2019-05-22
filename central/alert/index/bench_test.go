@@ -4,12 +4,17 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 )
+
+func listAlertFixture() *storage.ListAlert {
+	return convert.AlertToListAlert(fixtures.GetAlert())
+}
 
 func getAlertIndex() Indexer {
 	tmpIndex, err := globalindex.TempInitializeIndices("")
@@ -21,25 +26,25 @@ func getAlertIndex() Indexer {
 
 func benchmarkAddAlertNumThen1(b *testing.B, numAlerts int) {
 	indexer := getAlertIndex()
-	alert := fixtures.GetAlert()
+	alert := listAlertFixture()
 	addAlerts(b, indexer, alert, numAlerts)
 	alert.Id = fmt.Sprintf("%d", numAlerts+1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		require.NoError(b, indexer.AddAlert(alert))
+		require.NoError(b, indexer.AddListAlert(alert))
 	}
 }
 
-func addAlerts(b *testing.B, indexer Indexer, alert *storage.Alert, numAlerts int) {
+func addAlerts(b *testing.B, indexer Indexer, alert *storage.ListAlert, numAlerts int) {
 	for i := 0; i < numAlerts; i++ {
 		alert.Id = fmt.Sprintf("%d", i)
-		require.NoError(b, indexer.AddAlert(alert))
+		require.NoError(b, indexer.AddListAlert(alert))
 	}
 }
 
 func benchmarkAddAlert(b *testing.B, numAlerts int) {
 	indexer := getAlertIndex()
-	alert := fixtures.GetAlert()
+	alert := listAlertFixture()
 	for i := 0; i < b.N; i++ {
 		addAlerts(b, indexer, alert, numAlerts)
 	}
@@ -67,21 +72,5 @@ func BenchmarkSearchAlert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := indexer.Search(qb.ProtoQuery())
 		require.NoError(b, err)
-	}
-}
-
-func BenchmarkBatch(b *testing.B) {
-	indexer := getAlertIndex()
-
-	alerts := make([]*storage.Alert, 0, 4000)
-	for i := 0; i < 4000; i++ {
-		a := fixtures.GetAlert()
-		a.Deployment.Containers = nil
-		a.Id = fmt.Sprintf("%d", i)
-		alerts = append(alerts, a)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		require.NoError(b, indexer.AddAlerts(alerts))
 	}
 }

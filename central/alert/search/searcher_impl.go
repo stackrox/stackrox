@@ -73,11 +73,11 @@ func (ds *searcherImpl) getAndIndexAlertsBatch(ids []string) error {
 
 func (ds *searcherImpl) getAndIndexAlerts(ids []string) error {
 	defer debug.FreeOSMemory()
-	alerts, err := ds.storage.GetAlerts(ids...)
+	alerts, err := ds.storage.GetListAlerts(ids...)
 	if err != nil {
 		return err
 	}
-	if err := ds.indexer.AddAlerts(alerts); err != nil {
+	if err := ds.indexer.AddListAlerts(alerts); err != nil {
 		return err
 	}
 	return nil

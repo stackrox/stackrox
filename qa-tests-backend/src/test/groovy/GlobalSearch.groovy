@@ -91,7 +91,7 @@ class GlobalSearch extends BaseSpecification {
         "Policy:Latest tag" | [SearchServiceOuterClass.SearchCategory.POLICIES] | "Latest tag" | []
 
         // This implicitly depends on the policy above triggering on the deployment created during this test.
-        "Violation:Latest" | [SearchServiceOuterClass.SearchCategory.ALERTS] | "Latest" | []
+        "Violation State:ACTIVE+Policy:Latest" | [SearchServiceOuterClass.SearchCategory.ALERTS] | "Latest" | []
 
         // Test passing more than one category.
         "Deployment:qaglobalsearch" | [SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/alert/convert"
 	indexMocks "github.com/stackrox/rox/central/alert/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/alert/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/store/mocks"
@@ -84,7 +85,7 @@ func (s *alertDataStoreTestSuite) TestCountAlerts() {
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
 	s.storage.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(nil)
-	s.indexer.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(errFake)
+	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Return(errFake)
 
 	err := s.dataStore.AddAlert(context.TODO(), alerttest.NewFakeAlert())
 
@@ -101,7 +102,7 @@ func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 
 func (s *alertDataStoreTestSuite) TestUpdateAlert() {
 	s.storage.EXPECT().UpdateAlert(alerttest.NewFakeAlert()).Return(nil)
-	s.indexer.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(errFake)
+	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Return(errFake)
 
 	err := s.dataStore.UpdateAlert(context.TODO(), alerttest.NewFakeAlert())
 
@@ -121,7 +122,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.storage.EXPECT().UpdateAlert(gomock.Any()).Return(nil)
-	s.indexer.EXPECT().AddAlert(gomock.Any()).Return(nil)
+	s.indexer.EXPECT().AddListAlert(gomock.Any()).Return(nil)
 
 	err := s.dataStore.MarkAlertStale(context.TODO(), alerttest.FakeAlertID)
 	s.NoError(err)

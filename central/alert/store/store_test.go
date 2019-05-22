@@ -60,10 +60,6 @@ func (s *alertStoreTestSuite) TestAlerts() {
 		s.NoError(s.store.AddAlert(a))
 	}
 
-	retrievedAlerts, err := s.store.GetAlerts()
-	s.NoError(err)
-	s.ElementsMatch(alerts, retrievedAlerts)
-
 	for _, a := range alerts {
 		full, exists, err := s.store.GetAlert(a.GetId())
 		s.NoError(err)

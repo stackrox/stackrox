@@ -15,8 +15,8 @@ var (
 // Indexer provides indexing of Alert objects.
 //go:generate mockgen-wrapper Indexer
 type Indexer interface {
-	AddAlert(alert *storage.Alert) error
-	AddAlerts(alerts []*storage.Alert) error
+	AddListAlert(alert *storage.ListAlert) error
+	AddListAlerts(alerts []*storage.ListAlert) error
 	DeleteAlert(id string) error
 	Search(q *v1.Query) ([]search.Result, error)
 }
