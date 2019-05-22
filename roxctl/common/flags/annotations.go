@@ -9,4 +9,6 @@ const (
 	DependenciesKey = "dependencies"
 	// InteractiveUsageKey allows setting a different `usage` string for interactive prompts.
 	InteractiveUsageKey = "mode-usage"
+	// PasswordKey allows an echoless prompt.
+	PasswordKey = "password"
 )

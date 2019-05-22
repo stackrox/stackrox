@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -38,6 +39,14 @@ func readUserInput(prompt string) (string, error) {
 
 func isOptional(f *pflag.Flag) bool {
 	optAnn := f.Annotations[flags.OptionalKey]
+	if len(optAnn) == 0 {
+		return false
+	}
+	return optAnn[0] == "true"
+}
+
+func isPassword(f *pflag.Flag) bool {
+	optAnn := f.Annotations[flags.PasswordKey]
 	if len(optAnn) == 0 {
 		return false
 	}
@@ -70,7 +79,14 @@ func readUserInputFromFlag(f *pflag.Flag) (string, error) {
 		prompt = fmt.Sprintf("Enter %s%s: ", usage, optText)
 	}
 
-	text, err := readUserInput(prompt)
+	var err error
+	var text string
+	if isPassword(f) {
+		text, err = readPassword(prompt)
+	} else {
+		text, err = readUserInput(prompt)
+	}
+
 	if err != nil {
 		return "", err
 	}
@@ -87,6 +103,49 @@ func readUserString(f *pflag.Flag) string {
 		return readUserString(f)
 	}
 	return s
+}
+
+func readPassword(prompt string) (string, error) {
+	printToStderr("%s", prompt)
+	fd := int(os.Stdin.Fd())
+
+	passwd, err := getPassword(fd)
+	if err != nil {
+		return "", err
+	}
+
+	// Re enter password prompt only for the roxctl case, not for docker run
+	if terminal.IsTerminal(fd) && passwd != "" {
+		printToStderr("Re-%s: ", strings.TrimSpace(strings.ToLower(strings.Split(prompt, "(")[0])))
+		reEnteredPasswd, err := getPassword(fd)
+		if err != nil {
+			return "", err
+		}
+		if passwd != reEnteredPasswd {
+			printlnToStderr("Error: Passwords do not match")
+			return readPassword(prompt)
+		}
+	}
+	return passwd, nil
+}
+
+func getPassword(fd int) (passwd string, err error) {
+	if terminal.IsTerminal(fd) {
+		bytes, err := terminal.ReadPassword(fd)
+		if err != nil {
+			return "", err
+		}
+		passwd = string(bytes)
+		printlnToStderr("")
+	} else {
+		printToStderr("%s", "Warning: Entered password will be echoed in this mode. Use 'roxctl generate central interactive' instead if you would not like the password echoed.")
+		reader := bufio.NewReader(os.Stdin)
+		passwd, err = reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
+	}
+	return passwd, nil
 }
 
 func printlnToStderr(t string, args ...interface{}) {
