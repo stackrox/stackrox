@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/serviceidentities/store"
+	"github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,7 +12,7 @@ var (
 )
 
 func initialize() {
-	as = New(store.Singleton())
+	as = New(datastore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

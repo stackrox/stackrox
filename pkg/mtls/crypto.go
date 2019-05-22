@@ -147,11 +147,6 @@ func signingPolicy() *config.Signing {
 	}
 }
 
-// serviceIdentityStorage represents any object that stores a service identity.
-type serviceIdentityStorage interface {
-	AddServiceIdentity(identity *storage.ServiceIdentity) error
-}
-
 // IssueNewCertFromCA issues a certificate from the CA that is passed in
 func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (cert *IssuedCert, err error) {
 	returnErr := func(err error, prefix string) (*IssuedCert, error) {
@@ -207,7 +202,7 @@ func validateSubject(subj Subject) error {
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(subj Subject, store serviceIdentityStorage) (cert *IssuedCert, err error) {
+func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
 	returnErr := func(err error, prefix string) (*IssuedCert, error) {
 		return nil, errors.Wrapf(err, "%s", prefix)
 	}
@@ -249,12 +244,6 @@ func IssueNewCert(subj Subject, store serviceIdentityStorage) (cert *IssuedCert,
 	}
 
 	id := generateIdentity(subj, serial)
-	if store != nil {
-		err = store.AddServiceIdentity(id)
-		if err != nil {
-			return returnErr(err, "identity storage")
-		}
-	}
 
 	return &IssuedCert{
 		CertPEM: certBytes,

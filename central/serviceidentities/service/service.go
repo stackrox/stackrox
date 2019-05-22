@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/serviceidentities/store"
+	"github.com/stackrox/rox/central/serviceidentities/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,8 +22,8 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(storage store.Store) Service {
+func New(dataStore datastore.DataStore) Service {
 	return &serviceImpl{
-		storage: storage,
+		dataStore: dataStore,
 	}
 }

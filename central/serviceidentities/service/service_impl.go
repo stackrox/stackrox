@@ -5,7 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/serviceidentities/store"
+	"github.com/stackrox/rox/central/serviceidentities/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -32,7 +32,7 @@ var (
 
 // IdentityService is the struct that manages the Service Identity API
 type serviceImpl struct {
-	storage store.Store
+	dataStore datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -52,7 +52,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetServiceIdentities returns the currently defined service identities.
 func (s *serviceImpl) GetServiceIdentities(ctx context.Context, _ *v1.Empty) (*v1.ServiceIdentityResponse, error) {
-	serviceIdentities, err := s.storage.GetServiceIdentities()
+	serviceIdentities, err := s.dataStore.GetServiceIdentities(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -74,10 +74,14 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 	if request.GetType() == storage.ServiceType_UNKNOWN_SERVICE {
 		return nil, status.Error(codes.InvalidArgument, "Service type must be nonempty")
 	}
-	issuedCert, err := mtls.IssueNewCert(mtls.NewSubject(request.GetId(), request.GetType()), s.storage)
+	issuedCert, err := mtls.IssueNewCert(mtls.NewSubject(request.GetId(), request.GetType()))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	if err := s.dataStore.AddServiceIdentity(ctx, issuedCert.ID); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	return &v1.CreateServiceIdentityResponse{
 		Identity:       issuedCert.ID,
 		CertificatePem: issuedCert.CertPEM,

@@ -9,6 +9,7 @@ import (
 var serviceIdentityBucket = []byte("service_identities")
 
 // Store provides storage functionality for alerts.
+//go:generate mockgen-wrapper Store
 type Store interface {
 	GetServiceIdentities() ([]*storage.ServiceIdentity, error)
 	AddServiceIdentity(identity *storage.ServiceIdentity) error

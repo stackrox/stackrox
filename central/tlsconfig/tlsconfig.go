@@ -56,7 +56,7 @@ func loadInternalCertificateFromFiles() (*tls.Certificate, error) {
 }
 
 func issueInternalCertificate() (*tls.Certificate, error) {
-	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject, nil)
+	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject)
 	if err != nil {
 		return nil, errors.Wrap(err, "server keypair")
 	}

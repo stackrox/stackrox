@@ -1,6 +1,7 @@
 package zip
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,11 +14,13 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/monitoring"
-	serviceIDStore "github.com/stackrox/rox/central/serviceidentities/store"
+	"github.com/stackrox/rox/central/role/resources"
+	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,7 +35,7 @@ var (
 )
 
 // Handler returns a handler for the cluster zip method.
-func Handler(c datastore.DataStore, s serviceIDStore.Store) http.Handler {
+func Handler(c datastore.DataStore, s siDataStore.DataStore) http.Handler {
 	return zipHandler{
 		clusterStore:  c,
 		identityStore: s,
@@ -41,7 +44,7 @@ func Handler(c datastore.DataStore, s serviceIDStore.Store) http.Handler {
 
 type zipHandler struct {
 	clusterStore  datastore.DataStore
-	identityStore serviceIDStore.Store
+	identityStore siDataStore.DataStore
 }
 
 func getSafeFilename(s string) string {
@@ -57,8 +60,16 @@ func getSafeFilename(s string) string {
 }
 
 func (z zipHandler) createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, serviceType storage.ServiceType) error {
-	issuedCert, err := mtls.IssueNewCert(mtls.NewSubject(id, serviceType), z.identityStore)
+	srvIDAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.ServiceIdentity)))
+
+	issuedCert, err := mtls.IssueNewCert(mtls.NewSubject(id, serviceType))
 	if err != nil {
+		return err
+	}
+	if err := z.identityStore.AddServiceIdentity(srvIDAllAccessCtx, issuedCert.ID); err != nil {
 		return err
 	}
 	wrapper.AddFiles(
