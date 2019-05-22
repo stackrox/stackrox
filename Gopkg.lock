@@ -1000,7 +1000,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:850275625f622c88a27082629c21e07d51866d11d19043baa10210b214816fec"
+  digest = "1:cd87821e88f50649d334901f10f9073a1b81aec7eecff14dc2fb3157e5b71698"
   name = "github.com/opencontainers/runc"
   packages = [
     "libcontainer/configs",
@@ -1009,8 +1009,8 @@
     "libcontainer/user",
   ]
   pruneopts = "NUT"
-  revision = "1a124e9c2da68c867ed2c4f4ff19f0cd95cda0cd"
-  version = "v0.0.8"
+  revision = "425e105d5a03fabd737a126ad93d62a9eeede87f"
+  version = "v1.0.0-rc8"
 
 [[projects]]
   digest = "1:57234a321bf1f8f98a8a9a5122a2404cc60d0800516f4ab7a7b2375e4b2d19ea"

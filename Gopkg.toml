@@ -144,6 +144,10 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
   name = "github.com/prometheus/client_golang"
   version = "v0.8.0"
 
+[[override]]
+  name = "github.com/opencontainers/runc"
+  version = "v1.0.0-rc8"
+
 [[constraint]]
   name = "github.com/grpc-ecosystem/go-grpc-prometheus"
 
