@@ -57,12 +57,10 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultVal
 		}
 
 		got := feature.Enabled()
-		if buildinfo.ReleaseBuild && got != defaultValue {
-			t.Errorf("%s set to %s", feature.EnvVar(), test.env)
-			t.Errorf("Expected %t; got %t", test.expected, got)
-		} else if got != test.expected {
-			t.Errorf("%s set to %s", feature.EnvVar(), test.env)
-			t.Errorf("Expected %t; got %t", test.expected, got)
+		if buildinfo.ReleaseBuild {
+			assert.Equal(t, got, defaultValue)
+		} else {
+			assert.Equal(t, got, test.expected)
 		}
 	})
 }
