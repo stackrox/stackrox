@@ -17,7 +17,6 @@ type providerImpl struct {
 	backend    Backend
 	roleMapper permissions.RoleMapper
 	issuer     tokens.Issuer
-	onSuccess  ProviderOption
 
 	doNotStore bool
 }
@@ -88,10 +87,6 @@ func (p *providerImpl) Issuer() tokens.Issuer {
 // Modifier functions.
 //////////////////////
 
-func (p *providerImpl) OnSuccess() error {
-	return p.applyOptions(p.onSuccess)
-}
-
 func (p *providerImpl) Validate(claims *tokens.Claims) error {
 	// Signature validation/expiry checks/check for enabledness is already done by the JWT layer.
 	// TODO: allow the backend to do validation?
@@ -121,7 +116,6 @@ func cloneWithoutMutex(pr *providerImpl) *providerImpl {
 		backend:    pr.backend,
 		roleMapper: pr.roleMapper,
 		issuer:     pr.issuer,
-		onSuccess:  pr.onSuccess,
 	}
 }
 
@@ -131,5 +125,4 @@ func copyWithoutMutex(to *providerImpl, from *providerImpl) {
 	to.backend = from.backend
 	to.roleMapper = from.roleMapper
 	to.issuer = from.issuer
-	to.onSuccess = from.onSuccess
 }

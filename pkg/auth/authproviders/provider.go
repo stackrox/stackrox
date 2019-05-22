@@ -22,7 +22,6 @@ type Provider interface {
 	RoleMapper() permissions.RoleMapper
 	Issuer() tokens.Issuer
 
-	OnSuccess() error
 	applyOptions(options ...ProviderOption) error
 }
 

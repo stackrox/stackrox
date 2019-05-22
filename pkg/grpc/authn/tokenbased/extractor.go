@@ -134,9 +134,6 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	}
 
 	id := createRoleBasedIdentity(role, token)
-	if err := authProviderSrc.OnSuccess(); err != nil {
-		log.Errorf("Could not record success for authentication provider %s: %v", authProviderSrc.Name(), err)
-	}
 	return id, nil
 }
 
