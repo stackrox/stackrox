@@ -211,18 +211,16 @@ $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 	@echo "+ $@"
 	docker run --user $(shell id -u) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 
-.PHONY: clean-protos
-clean-protos: clean-generated
-	@rm -rf $(GOPATH)/src/github.com/gogo
-	@rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
-	@rm -rf $(GOPATH)/src/github.com/golang/protobuf
-	@rm -rf $(GOPATH)/src/golang.google.org/genproto/googleapis
-	@rm -f $(GOPATH)/bin/protoc-gen-grpc-gateway
-	@rm -f $(GOPATH)/bin/protoc-gen-go
-	@rm -rf $(PROTOC_TMP)
-	@rm -f $(PROTOC_FILE)
-
-.PHONY: clean-generated
-clean-generated:
-	@find $(GENERATED_BASE_PATH) \( -name '*.pb.go' -o -name '*.pb.*.go' \) -exec rm {} \;
-	@find $(GENERATED_BASE_PATH) -type d -empty -delete
+# Nukes pretty much everything that goes into building protos.
+# You should not have to run this day-to-day, but it occasionally is useful
+# to get out of a bad state after a version update.
+.PHONY: clean-proto-deps
+clean-proto-deps:
+	@echo "+ $@"
+	rm -rf $(GOPATH)/src/github.com/gogo
+	rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
+	rm -rf $(GOPATH)/src/github.com/golang/protobuf
+	rm -rf $GOPATH/src/google.golang.org
+	rm -rf $(PROTOC_TMP)
+	rm -f $(PROTOC_FILE)
+	rm -f $(GOPATH)/bin/protoc-gen-*
