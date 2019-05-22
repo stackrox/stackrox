@@ -1,12 +1,17 @@
+import static Services.waitForViolation
 import groups.BAT
 import groups.Integration
 import groups.PolicyEnforcement
+import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.ProcessWhitelistOuterClass
 import objects.DaemonSet
 import objects.Deployment
+import org.apache.commons.lang.StringUtils
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.CreatePolicyService
+import services.ProcessWhitelistService
 import spock.lang.Shared
 import spock.lang.Unroll
 import io.stackrox.proto.storage.AlertOuterClass
@@ -19,6 +24,7 @@ class Enforcement extends BaseSpecification {
     private final static String LATEST_TAG = "Latest tag"
     private final static String CVSS = "Fixable CVSS >= 7"
     private final static String SCAN_AGE = "30-Day Scan Age"
+    private final static String WHITELISTPROCESS_POLICY = "Unauthorized Process Execution"
 
     @Shared
     private String gcrId
@@ -651,4 +657,49 @@ class Enforcement extends BaseSpecification {
                 APT_GET_POLICY
     }
 
-}
+    @Category([PolicyEnforcement])
+    def "Test Alert and  Kill Pod Enforcement - Whitelist Process"() {
+        // This test verifies enforcement of kill pod after triggering a policy violation of
+        //  Unauthorized Process Execution
+        Deployment wpDeployment = new Deployment()
+                .setName("deploymentnginx")
+                .setImage("nginx:1.7.9")
+                .addPort(22, "TCP")
+                .addAnnotation("test", "annotation")
+                .setEnv(["CLUSTER_NAME": "main"])
+                .addLabel("app", "test")
+        orchestrator.createDeployment(wpDeployment)
+        given:
+        "policy violation to whitelist process policy"
+        def result = Services.updatePolicyEnforcement(
+                WHITELISTPROCESS_POLICY,
+                [EnforcementAction.KILL_POD_ENFORCEMENT,
+                ]
+        )
+        assert !result.contains("EXCEPTION")
+        when:
+        List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
+                lockProcessWhitelists(wpDeployment.deploymentUid, wpDeployment.name, true)
+        assert (!StringUtils.isEmpty(lockProcessWhitelists.get(0).getElements(0).getElement().processName))
+        orchestrator.execInContainer(wpDeployment, "pwd")
+        assert waitForViolation(wpDeployment.name, WHITELISTPROCESS_POLICY, 90)
+        then:
+        "check pod was killed"
+        List<AlertOuterClass.ListAlert> violations = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
+                .newBuilder().build())
+        String alertId = violations.find {
+            it.getPolicy().name.equalsIgnoreCase(WHITELISTPROCESS_POLICY) &&
+            it.deployment.id.equalsIgnoreCase(wpDeployment.deploymentUid) }.id
+        assert (alertId != null)
+        AlertOuterClass.Alert alert = AlertService.getViolation(alertId)
+        def startTime = System.currentTimeMillis()
+        assert wpDeployment.pods.collect {
+            it ->
+            println "checking if ${it.name} was killed"
+            orchestrator.wasContainerKilled(it.name)
+        }.find { it == true }
+        assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
+        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        assert Services.getAlertEnforcementCount(wpDeployment.name, WHITELISTPROCESS_POLICY) > 0
+        }
+    }
