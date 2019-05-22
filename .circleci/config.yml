@@ -328,23 +328,17 @@ check-qa-tests-kernel-module-label: &check-qa-tests-kernel-module-label
 version: 2.1
 
 commands:
-  check-k8s-tests-label:
+  check-label-to-skip-tests:
+    description: "Checks GitHub for the given label, and skips the tests if we're on a PR, and the label is present."
+    parameters:
+      label:
+        type: string
     steps:
       - run:
-          name: Determine whether to run K8s tests
+          name: Determine whether to skip tests
           command: |
-            if .circleci/pr_has_label.sh ci-no-k8s-tests; then
-              echo "Skipping tests because of the presence of the ci-no-k8s-tests label..."
-              circleci step halt
-            fi
-
-  check-qa-tests-label:
-    steps:
-      - run:
-          name: Determine whether to skip QA tests
-          command: |
-            if .circleci/pr_has_label.sh ci-no-qa-tests; then
-              echo "Skipping tests because of the presence of the ci-no-qa-tests label..."
+            if .circleci/pr_has_label.sh << parameters.label >> ; then
+              echo "Skipping tests because of the presence of the << parameters.label >> label..."
               circleci step halt
             fi
 
@@ -540,7 +534,8 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - check-k8s-tests-label
+      - check-label-to-skip-tests:
+          label: ci-no-k8s-tests
       - provision-gke-cluster:
           cluster-id: k8s-tests
 
@@ -879,7 +874,8 @@ jobs:
     steps:
       - checkout
 
-      - check-k8s-tests-label
+      - check-label-to-skip-tests:
+          label: ci-no-k8s-tests
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -945,7 +941,9 @@ jobs:
       - GCP_IMAGE_TYPE: "COS"
     steps:
       - checkout
-      - check-qa-tests-label
+      - check-label-to-skip-tests:
+          label: ci-no-qa-tests
+
       - provision-gke-cluster:
           cluster-id: qa-tests
 
@@ -969,7 +967,8 @@ jobs:
     steps:
       - checkout
 
-      - check-qa-tests-label
+      - check-label-to-skip-tests:
+          label: ci-no-qa-tests
 
       - setup_remote_docker
 
@@ -1035,7 +1034,6 @@ jobs:
 
     steps:
       - checkout
-      - check-qa-tests-label
       - *check-qa-tests-kernel-module-label
       - provision-gke-cluster:
           cluster-id: qa-tests-kernel-module
