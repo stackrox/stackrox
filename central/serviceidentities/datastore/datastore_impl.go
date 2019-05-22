@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	serviceIdentitiesSAC = sac.ForResource(resources.Licenses)
+	serviceIdentitiesSAC = sac.ForResource(resources.ServiceIdentity)
 )
 
 type dataStoreImpl struct {
