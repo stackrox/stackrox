@@ -6,7 +6,6 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import services.AlertService
 
-import common.Constants
 import groups.BAT
 
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass
@@ -92,7 +91,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
     @Unroll
     @Category(BAT)
     def "Verify  whitelist processes for the given key before and after locking "() {
-        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
         when:
         def deploymentId = DEPLOYMENTS.find { it.name == deploymentName }.getDeploymentUid()
         // Currently, we always create a deployment where the container name is the same
@@ -136,7 +134,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
                         test case : choose to both resolve and whitelist
                             exec into the container and run the  process again and verify no violation alert
                */
-        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
+        Assume.assumeTrue(false)
         when:
         "exec into the container after locking whitelists and create a whitelist violation"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -204,7 +202,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
     @Unroll
     @Category(BAT)
     def "Verify  processes risk indicators for the given key after soft-lock "() {
-        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
         when:
         "exec into the container and run a process and wait for soft lock to kick in"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -240,7 +237,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
                 d)get all whitelists
                 e)verify all whitelists for the deployment have been deleted
         */
-        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
         when:
         "a deployment is deleted"
         //Get all whitelists for our deployment and assert they exist
@@ -268,7 +264,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
                 2.remove the process
                 3.rerun the process to verify it it does not get added to the whitelist
          */
-        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
         when:
         "an added process is removed and whitelist is locked and the process is run"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }

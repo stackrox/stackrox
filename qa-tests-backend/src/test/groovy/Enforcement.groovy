@@ -1,4 +1,6 @@
 import static Services.waitForViolation
+
+import org.junit.Assume
 import groups.BAT
 import groups.Integration
 import groups.PolicyEnforcement
@@ -659,6 +661,7 @@ class Enforcement extends BaseSpecification {
 
     @Category([PolicyEnforcement])
     def "Test Alert and  Kill Pod Enforcement - Whitelist Process"() {
+        Assume.assumeTrue(false)
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
         Deployment wpDeployment = new Deployment()
