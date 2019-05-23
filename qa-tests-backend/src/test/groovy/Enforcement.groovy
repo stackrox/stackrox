@@ -704,5 +704,10 @@ class Enforcement extends BaseSpecification {
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
         println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert Services.getAlertEnforcementCount(wpDeployment.name, WHITELISTPROCESS_POLICY) > 0
+
+        cleanup:
+        "remove deployment"
+
+        orchestrator.deleteDeployment(wpDeployment)
         }
     }

@@ -20,14 +20,14 @@ import services.ProcessWhitelistService
 import spock.lang.Unroll
 
 class ProcessWhiteListsTest extends BaseSpecification {
-    static final private String DEPLOYMENTNGINX = "deploymentnginx"
-    static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "deploymentnginx-violation-resolve"
+    static final private String DEPLOYMENTNGINX = "pw-deploymentnginx"
+    static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "pw-deploymentnginx-violation-resolve"
     static final private String DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION =
-            "deploymentnginx-violation-resolve-whitelist"
-    static final private String DEPLOYMENTNGINX_SOFTLOCK = "deploymentnginx-softlock"
-    static final private String DEPLOYMENTNGINX_DELETE = "deploymentnginx-delete"
+            "pw-deploymentnginx-violation-resolve-whitelist"
+    static final private String DEPLOYMENTNGINX_SOFTLOCK = "pw-deploymentnginx-softlock"
+    static final private String DEPLOYMENTNGINX_DELETE = "pw-deploymentnginx-delete"
 
-    static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "deploymentnginx-removeprocess"
+    static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "pw-deploymentnginx-removeprocess"
     static final private List<Deployment> DEPLOYMENTS =
             [
                     new Deployment()
