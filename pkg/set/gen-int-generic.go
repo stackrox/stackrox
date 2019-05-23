@@ -36,6 +36,20 @@ func (k IntSet) Add(i int) bool {
 	return k.underlying.Add(i)
 }
 
+// AddAll adds all elements of type int. The return value is true if any new element
+// was added.
+func (k IntSet) AddAll(is ...int) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
+	added := false
+	for _, i := range is {
+		added = k.underlying.Add(i) || added
+	}
+	return added
+}
+
 // Remove removes an element of type int.
 func (k IntSet) Remove(i int) {
 	if k.underlying != nil {

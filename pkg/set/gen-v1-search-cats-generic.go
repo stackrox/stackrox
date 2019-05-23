@@ -37,6 +37,20 @@ func (k V1SearchCategorySet) Add(i v1.SearchCategory) bool {
 	return k.underlying.Add(i)
 }
 
+// AddAll adds all elements of type v1.SearchCategory. The return value is true if any new element
+// was added.
+func (k V1SearchCategorySet) AddAll(is ...v1.SearchCategory) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
+	added := false
+	for _, i := range is {
+		added = k.underlying.Add(i) || added
+	}
+	return added
+}
+
 // Remove removes an element of type v1.SearchCategory.
 func (k V1SearchCategorySet) Remove(i v1.SearchCategory) {
 	if k.underlying != nil {

@@ -36,6 +36,20 @@ func (k StringSet) Add(i string) bool {
 	return k.underlying.Add(i)
 }
 
+// AddAll adds all elements of type string. The return value is true if any new element
+// was added.
+func (k StringSet) AddAll(is ...string) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
+	added := false
+	for _, i := range is {
+		added = k.underlying.Add(i) || added
+	}
+	return added
+}
+
 // Remove removes an element of type string.
 func (k StringSet) Remove(i string) {
 	if k.underlying != nil {

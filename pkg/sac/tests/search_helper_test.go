@@ -49,7 +49,7 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 		}, nil
 	}
 
-	h, err := NewSearchHelper(testResource, options, true)
+	h, err := NewSearchHelper(testResource, options, ClusterIDAndNamespaceFields)
 	require.NoError(t, err)
 
 	scc := OneStepSCC{
@@ -95,7 +95,7 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 		}, nil
 	}
 
-	h, err := NewSearchHelper(testResource, options, true)
+	h, err := NewSearchHelper(testResource, options, ClusterIDAndNamespaceFields)
 	require.NoError(t, err)
 
 	scc := AllowAllAccessScopeChecker()
@@ -115,7 +115,7 @@ func TestSearchHelper_TestNew_WithMissingClusterIDField(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testResource, options, false)
+	_, err := NewSearchHelper(testResource, options, ClusterIDField)
 	assert.Error(t, err)
 }
 
@@ -126,7 +126,7 @@ func TestSearchHelper_TestNew_WithMissingNSField_NotScoped(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testResource, options, false)
+	_, err := NewSearchHelper(testResource, options, ClusterIDField)
 	assert.NoError(t, err)
 }
 
@@ -137,6 +137,6 @@ func TestSearchHelper_TestNew_WithMissingNSField_Scoped(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testResource, options, true)
+	_, err := NewSearchHelper(testResource, options, ClusterIDAndNamespaceFields)
 	assert.Error(t, err)
 }

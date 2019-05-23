@@ -27,10 +27,13 @@ type Store interface {
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
-func New(db *bolt.DB) Store {
+// noUpdateTimestamps controls whether timestamps are automatically updated
+// whenever an image is upserted.
+func New(db *bolt.DB, noUpdateTimestamps bool) Store {
 	bolthelper.RegisterBucketOrPanic(db, imageBucket)
 	bolthelper.RegisterBucketOrPanic(db, listImageBucket)
 	return &storeImpl{
-		db: db,
+		db:                 db,
+		noUpdateTimestamps: noUpdateTimestamps,
 	}
 }

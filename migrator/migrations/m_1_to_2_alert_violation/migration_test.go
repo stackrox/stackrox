@@ -22,7 +22,7 @@ type Migration1To2TestSuite struct {
 }
 
 func (suite *Migration1To2TestSuite) SetupTest() {
-	db, err := bolthelpers.NewTemp(testutils.DBFileName(suite.Suite))
+	db, err := bolthelpers.NewTemp(testutils.DBFileName(suite))
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}

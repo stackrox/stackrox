@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	serviceAccountsSACSearchHelper = sac.ForResource(resources.ServiceAccount).MustCreateSearchHelper(options.Map, true)
+	serviceAccountsSACSearchHelper = sac.ForResource(resources.ServiceAccount).MustCreateSearchHelper(options.Map, sac.ClusterIDAndNamespaceFields)
 )
 
 type searcherImpl struct {

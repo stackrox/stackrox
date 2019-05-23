@@ -31,7 +31,7 @@ func (suite *ImageStoreTestSuite) SetupSuite() {
 	}
 
 	suite.db = db
-	suite.store = New(db)
+	suite.store = New(db, false)
 }
 
 func (suite *ImageStoreTestSuite) TearDownSuite() {

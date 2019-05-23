@@ -38,6 +38,20 @@ func (k KeyTypeSet) Add(i KeyType) bool {
 	return k.underlying.Add(i)
 }
 
+// AddAll adds all elements of type KeyType. The return value is true if any new element
+// was added.
+func (k KeyTypeSet) AddAll(is ...KeyType) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
+	added := false
+	for _, i := range is {
+		added = k.underlying.Add(i) || added
+	}
+	return added
+}
+
 // Remove removes an element of type KeyType.
 func (k KeyTypeSet) Remove(i KeyType) {
 	if k.underlying != nil {

@@ -14,7 +14,8 @@ import (
 )
 
 type storeImpl struct {
-	db *bolt.DB
+	db                 *bolt.DB
+	noUpdateTimestamps bool
 }
 
 // ListImage returns ListImage with given id.
@@ -111,7 +112,9 @@ func (b *storeImpl) GetImagesBatch(shas []string) (images []*storage.Image, err 
 func (b *storeImpl) UpsertImage(image *storage.Image) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
-	image.LastUpdated = protoTypes.TimestampNow()
+	if !b.noUpdateTimestamps {
+		image.LastUpdated = protoTypes.TimestampNow()
+	}
 	return b.db.Update(func(tx *bolt.Tx) error {
 		err := writeImage(tx, image)
 		if err != nil {
@@ -143,10 +146,11 @@ func idForSha(sha string) string {
 
 func convertImageToListImage(i *storage.Image) *storage.ListImage {
 	listImage := &storage.ListImage{
-		Id:          i.GetId(),
-		Name:        i.GetName().GetFullName(),
-		Created:     i.GetMetadata().GetV1().GetCreated(),
-		LastUpdated: i.GetLastUpdated(),
+		Id:              i.GetId(),
+		Name:            i.GetName().GetFullName(),
+		Created:         i.GetMetadata().GetV1().GetCreated(),
+		LastUpdated:     i.GetLastUpdated(),
+		ClusternsScopes: i.GetClusternsScopes(),
 	}
 
 	if i.GetScan() != nil {

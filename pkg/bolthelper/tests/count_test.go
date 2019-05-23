@@ -1,9 +1,10 @@
-package bolthelper
+package tests
 
 import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
+	. "github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,8 +21,7 @@ type countTestSuite struct {
 }
 
 func (s *countTestSuite) SetupSuite() {
-	db, err := NewTemp("count_test.db")
-	s.Require().NoError(err, "Failed to make BoltDB: %s", err)
+	db := testutils.DBForSuite(s)
 
 	testBucket := []byte("testBucket")
 	RegisterBucketOrPanic(db, testBucket)

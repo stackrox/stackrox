@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	deploymentsSearchHelper = sac.ForResource(resources.Deployment).MustCreateSearchHelper(mappings.OptionsMap, true)
+	deploymentsSearchHelper = sac.ForResource(resources.Deployment).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

@@ -50,7 +50,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 		if !compiled.AppliesTo(image) {
 			return nil
 		}
-		violations, err := compiled.Matcher().MatchOne(context.TODO(), tempSearcher, types.NewDigest(image.GetId()).Digest())
+		violations, err := compiled.Matcher().MatchOne(context.Background(), tempSearcher, types.NewDigest(image.GetId()).Digest())
 		if err != nil {
 			return errors.Wrapf(err, "matching against policy %s", compiled.Policy().GetName())
 		}

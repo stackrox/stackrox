@@ -1,11 +1,9 @@
 package datastore
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/image/index"
-	"github.com/stackrox/rox/central/image/search"
-	"github.com/stackrox/rox/central/image/store"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -16,15 +14,11 @@ var (
 )
 
 func initialize() {
-	storage := store.New(globaldb.GetGlobalDB())
-	indexer := index.New(globalindex.GetGlobalIndex())
-
-	searcher, err := search.New(storage, indexer)
+	var err error
+	ad, err = New(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), false)
 	if err != nil {
-		panic("unable to load search index for alerts")
+		panic(errors.Wrap(err, "could not create images datastore"))
 	}
-
-	ad = New(storage, indexer, searcher)
 }
 
 // Singleton provides the interface for non-service external interaction.

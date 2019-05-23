@@ -6,8 +6,11 @@ import (
 
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -18,6 +21,15 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	pruningCtx = sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.OneStepSCC{
+			sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
+				sac.ResourceScopeKeys(resources.Image, resources.Deployment)),
+			sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
+				sac.ResourceScopeKeys(resources.Image)),
+		})
 )
 
 // GarbageCollector implements a generic garbage collection mechanism
@@ -65,20 +77,22 @@ func (g *garbageCollectorImpl) runImageGC() {
 
 func (g *garbageCollectorImpl) collectImages() {
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, pruneImagesAfterDays).ProtoQuery()
-	imageResults, err := g.images.Search(context.TODO(), qb)
+	imageResults, err := g.images.Search(pruningCtx, qb)
 	if err != nil {
 		log.Error(err)
 		return
 	}
+	log.Infof("Found %d image search results", len(imageResults))
 
 	var imagesToPrune []string
 	for _, result := range imageResults {
 		q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, result.ID).ProtoQuery()
-		results, err := g.deployments.Search(context.TODO(), q)
+		results, err := g.deployments.Search(pruningCtx, q)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
+		log.Infof("Found %d search results", len(results))
 		// If there are no deployment queries that match, then allow the image to be pruned
 		if len(results) == 0 {
 			imagesToPrune = append(imagesToPrune, result.ID)
@@ -86,7 +100,7 @@ func (g *garbageCollectorImpl) collectImages() {
 	}
 	if len(imagesToPrune) > 0 {
 		log.Infof("Image Pruner will be removing the following images: %+v", imagesToPrune)
-		if err := g.images.DeleteImages(context.TODO(), imagesToPrune...); err != nil {
+		if err := g.images.DeleteImages(pruningCtx, imagesToPrune...); err != nil {
 			log.Error(err)
 		}
 	}

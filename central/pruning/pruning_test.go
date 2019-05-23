@@ -9,14 +9,12 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	imageIndexer "github.com/stackrox/rox/central/image/index"
-	imageSearcher "github.com/stackrox/rox/central/image/search"
-	imageStore "github.com/stackrox/rox/central/image/store"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	processWhitelistDatastoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,19 +40,15 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 	}
 }
 
-func generateDataStructures(t *testing.T) (imageStore.Store, imageIndexer.Indexer, imageDatastore.DataStore, deploymentDatastore.DataStore) {
-	db, err := bolthelper.NewTemp(testutils.DBFileNameForT(t))
-	require.NoError(t, err)
+func generateDataStructures(t *testing.T) (imageDatastore.DataStore, deploymentDatastore.DataStore) {
+	db := testutils.DBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	// Initialize real indexers and datastores
-	imageIndexer := imageIndexer.New(bleveIndex)
-	imageStore := imageStore.New(db)
-	imageSearcher, err := imageSearcher.New(imageStore, imageIndexer)
+	// Initialize real datastore
+	images, err := imageDatastore.New(db, bleveIndex, true)
 	require.NoError(t, err)
-	images := imageDatastore.New(imageStore, imageIndexer, imageSearcher)
 
 	ctrl := gomock.NewController(t)
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
@@ -64,7 +58,8 @@ func generateDataStructures(t *testing.T) (imageStore.Store, imageIndexer.Indexe
 
 	deployments, err := deploymentDatastore.New(db, bleveIndex, mockProcessDataStore, mockWhitelistDataStore, nil)
 	require.NoError(t, err)
-	return imageStore, imageIndexer, images, deployments
+
+	return images, deployments
 }
 
 func TestImagePruning(t *testing.T) {
@@ -119,28 +114,33 @@ func TestImagePruning(t *testing.T) {
 		},
 	}
 
+	scc := sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.Deployment, resources.Image),
+	)
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
+
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			imageStore, imageIndexer, imageDatastore, deployments := generateDataStructures(t)
+			imageDatastore, deployments := generateDataStructures(t)
 
 			gc := newGarbageCollector(imageDatastore, deployments).(*garbageCollectorImpl)
 
 			// Add images and deployments into the datastores
-			for _, image := range c.images {
-				require.NoError(t, imageIndexer.AddImage(image))
-				require.NoError(t, imageStore.UpsertImage(image))
-			}
 			if c.deployment != nil {
-				require.NoError(t, deployments.UpsertDeployment(context.TODO(), c.deployment))
+				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
 			}
-
+			for _, image := range c.images {
+				require.NoError(t, imageDatastore.UpsertImage(ctx, image))
+			}
 			// Garbage collect all of the images
 			gc.collectImages()
 
 			// Grab the  actual remaining images and make sure they match the images expected to be remaining
-			remainingImages, err := imageDatastore.ListImages(context.TODO())
+			remainingImages, err := imageDatastore.ListImages(ctx)
 			require.NoError(t, err)
 
 			var ids []string

@@ -27,7 +27,7 @@ type EnsurerTestSuite struct {
 }
 
 func (suite *EnsurerTestSuite) SetupTest() {
-	boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
+	boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	suite.Require().NoError(err, "Failed to make BoltDB")
 
 	badgerDB, _, err := badgerhelper.NewTemp(suite.T().Name())

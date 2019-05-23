@@ -20,7 +20,7 @@ func getImageStore(b *testing.B) Store {
 	if err != nil {
 		b.Fatal(err)
 	}
-	return New(db)
+	return New(db, false)
 }
 
 func BenchmarkAddImage(b *testing.B) {

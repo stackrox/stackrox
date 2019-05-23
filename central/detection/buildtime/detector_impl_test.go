@@ -6,7 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/detection"
-	"github.com/stackrox/rox/central/image/index/mappings"
+	"github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/storage"

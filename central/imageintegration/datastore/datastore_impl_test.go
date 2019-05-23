@@ -45,7 +45,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.ImageIntegration)))
 
-	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
+	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}

@@ -36,6 +36,20 @@ func (k Uint32Set) Add(i uint32) bool {
 	return k.underlying.Add(i)
 }
 
+// AddAll adds all elements of type uint32. The return value is true if any new element
+// was added.
+func (k Uint32Set) AddAll(is ...uint32) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
+	added := false
+	for _, i := range is {
+		added = k.underlying.Add(i) || added
+	}
+	return added
+}
+
 // Remove removes an element of type uint32.
 func (k Uint32Set) Remove(i uint32) {
 	if k.underlying != nil {

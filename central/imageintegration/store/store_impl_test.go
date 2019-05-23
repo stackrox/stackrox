@@ -24,7 +24,7 @@ type ImageIntegrationStoreTestSuite struct {
 }
 
 func (suite *ImageIntegrationStoreTestSuite) SetupTest() {
-	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
+	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	if err != nil {
 		suite.FailNow("failure: "+suite.T().Name(), err.Error())
 	}

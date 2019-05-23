@@ -44,8 +44,20 @@ func (h ForResourceHelper) WriteAllowed(ctx context.Context, keys ...ScopeKey) (
 
 // MustCreateSearchHelper creates and returns a search helper with the given options, or panics if the
 // search helper could not be created.
-func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap, namespaceScoped bool) *SearchHelper {
-	searchHelper, err := NewSearchHelper(h.resource, options, namespaceScoped)
+func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap, flavor SearchHelperFlavor) SearchHelper {
+	searchHelper, err := NewSearchHelper(h.resource, options, flavor)
 	utils.Must(err)
 	return searchHelper
+}
+
+// ReadAllowedForClusterNSScopes checks if the principal from the given context is allowed to read an object
+// with the given Cluster/NS scope values.
+func (h ForResourceHelper) ReadAllowedForClusterNSScopes(ctx context.Context, clusterNSScopesMap map[string]string) (bool, error) {
+	allScopeKeys := make([][]ScopeKey, 0, len(clusterNSScopesMap))
+
+	for _, clusterNSScope := range clusterNSScopesMap {
+		allScopeKeys = append(allScopeKeys, ParseClusterNSScopeString(clusterNSScope))
+	}
+
+	return h.ScopeChecker(ctx, storage.Access_READ_ACCESS).AnyAllowed(ctx, allScopeKeys)
 }

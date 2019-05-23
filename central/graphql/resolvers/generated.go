@@ -352,6 +352,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("HostMountPolicy", []string{
 	}))
 	utils.Must(builder.AddType("Image", []string{
+		"clusternsScopes: [Label!]!",
 		"id: ID!",
 		"lastUpdated: Time",
 		"metadata: ImageMetadata",
@@ -3495,6 +3496,14 @@ func (resolver *imageResolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
 		resolver.data = resolver.root.getImage(ctx, resolver.list.GetId())
 	}
+}
+
+func (resolver *imageResolver) ClusternsScopes(ctx context.Context) labels {
+	value := resolver.data.GetClusternsScopes()
+	if resolver.data == nil {
+		value = resolver.list.GetClusternsScopes()
+	}
+	return labelsResolver(value)
 }
 
 func (resolver *imageResolver) Id(ctx context.Context) graphql.ID {

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	searchMock "github.com/stackrox/rox/central/image/datastore/internal/search/mocks"
+	storeMock "github.com/stackrox/rox/central/image/datastore/internal/store/mocks"
 	indexMock "github.com/stackrox/rox/central/image/index/mocks"
-	searchMock "github.com/stackrox/rox/central/image/search/mocks"
-	storeMock "github.com/stackrox/rox/central/image/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
@@ -35,7 +35,7 @@ func (suite *ImageDataStoreTestSuite) SetupTest() {
 	suite.mockSearcher = searchMock.NewMockSearcher(suite.mockCtrl)
 	suite.mockStore = storeMock.NewMockStore(suite.mockCtrl)
 
-	suite.datastore = New(suite.mockStore, suite.mockIndexer, suite.mockSearcher)
+	suite.datastore = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher)
 }
 
 func (suite *ImageDataStoreTestSuite) TearDownTest() {

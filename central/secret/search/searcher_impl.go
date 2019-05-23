@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(options.Map, true)
+	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(options.Map, sac.ClusterIDAndNamespaceFields)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

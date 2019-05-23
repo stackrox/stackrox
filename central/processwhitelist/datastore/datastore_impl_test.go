@@ -33,7 +33,7 @@ type ProcessWhitelistDataStoreTestSuite struct {
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
-	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
+	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	suite.NoError(err)
 	suite.storage, err = store.New(db)
 	suite.NoError(err)

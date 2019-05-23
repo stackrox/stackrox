@@ -15,6 +15,8 @@ message Image {
     ImageMetadata metadata  = 2;
     ImageScan     scan      = 3;
     google.protobuf.Timestamp last_updated = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
+
+    map<string,string> clusterns_scopes = 6 [(gogoproto.moretags) = "search:\"ClusterNS Scopes,store,hidden\""];
 }
 
 message ImageScan {
@@ -133,4 +135,6 @@ message ListImage {
     }
     google.protobuf.Timestamp created = 6;
     google.protobuf.Timestamp last_updated = 8;
+
+    map<string, string> clusterns_scopes = 9;
 }

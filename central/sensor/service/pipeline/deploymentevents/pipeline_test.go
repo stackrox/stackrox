@@ -9,6 +9,7 @@ import (
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -135,7 +136,9 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 
 	// Expect that our enforcement generator is called with expected data.
 	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	suite.images.EXPECT().UpsertImage(gomock.Any(), expectedImage0).Return(nil)
+	suite.images.EXPECT().UpsertImage(gomock.Any(),
+		testutils.PredMatcher("check that image has correct ID",
+			func(img *storage.Image) bool { return img.GetId() == expectedImage0.GetId() })).Return(nil)
 
 	// Call function.
 	tested := &updateImagesImpl{

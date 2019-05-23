@@ -18,7 +18,7 @@ import (
 
 var (
 	nodesSAC             = sac.ForResource(resources.Node)
-	nodesSACSearchHelper = nodesSAC.MustCreateSearchHelper(mappings.OptionsMap, false)
+	nodesSACSearchHelper = nodesSAC.MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDField)
 )
 
 type globalDataStore struct {

@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).MustCreateSearchHelper(options.Map, true)
+	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).MustCreateSearchHelper(options.Map, sac.ClusterIDAndNamespaceFields)
 )
 
 // searcherImpl provides an search implementation for k8s role bindings

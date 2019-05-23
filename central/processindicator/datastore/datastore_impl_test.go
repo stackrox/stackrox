@@ -38,7 +38,7 @@ type IndicatorDataStoreTestSuite struct {
 }
 
 func (suite *IndicatorDataStoreTestSuite) SetupTest() {
-	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
+	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	suite.NoError(err)
 	suite.storage = store.New(db)
 

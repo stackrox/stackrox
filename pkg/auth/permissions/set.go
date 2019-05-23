@@ -36,6 +36,20 @@ func (k ResourceSet) Add(i Resource) bool {
 	return k.underlying.Add(i)
 }
 
+// AddAll adds all elements of type Resource. The return value is true if any new element
+// was added.
+func (k ResourceSet) AddAll(is ...Resource) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
+	added := false
+	for _, i := range is {
+		added = k.underlying.Add(i) || added
+	}
+	return added
+}
+
 // Remove removes an element of type Resource.
 func (k ResourceSet) Remove(i Resource) {
 	if k.underlying != nil {
