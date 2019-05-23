@@ -239,6 +239,17 @@ collectK8sLogs: &collectK8sLogs
       ./scripts/ci/collect-infrastructure-logs.sh
     when: always
 
+verifyNoStackRoxRestarts: &verifyNoStackRoxRestarts
+  run:
+    name: Verify that StackRox services did not restart during the runs
+
+    command: |
+      if [[ $(ls /tmp/k8s-service-logs/stackrox/*-previous.log | wc -l) != 0 ]]; then
+        ls /tmp/k8s-service-logs/stackrox/*-previous.log
+        exit 1
+      fi
+    when: always
+
 storeK8sLogs: &storeK8sLogs
   store_artifacts:
     path: /tmp/k8s-service-logs
@@ -916,6 +927,7 @@ jobs:
       - *storeImbuedUILogs
 
       - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
       - teardown-gke
@@ -1013,6 +1025,7 @@ jobs:
       - *storeQASpockReports
 
       - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
       - teardown-gke
@@ -1101,6 +1114,7 @@ jobs:
       - *storeQASpockReports
 
       - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
       - teardown-gke
@@ -1305,6 +1319,7 @@ jobs:
       #      make -C qa-tests-backend smoke-test
 
       - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
       - *storeK8sLogs
       - teardown-gke
 
@@ -1487,6 +1502,7 @@ jobs:
       - *storeQASpockReports
 
       - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
       - run:
@@ -1660,6 +1676,7 @@ jobs:
       - *storeImbuedUILogs
 
       - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
       - *storeCypressResults
