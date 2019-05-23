@@ -125,7 +125,7 @@ func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) *central
 }
 
 func (c *commandHandlerImpl) handleStartScrapeErr(scrapedID string, err error) *central.ScrapeUpdate {
-	errStr := fmt.Sprintf("unable to start scrape: %v", err)
+	errStr := fmt.Sprintf("unable to start scrape %q: %v", scrapedID, err)
 	log.Error(errStr)
 	return scrapeStarted(scrapedID, errStr)
 }
