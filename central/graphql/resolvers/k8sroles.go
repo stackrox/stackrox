@@ -19,7 +19,7 @@ func init() {
 		schema.AddExtraResolver("K8SRole", `urls: [String!]!`),
 		schema.AddExtraResolver("K8SRole", `subjects: [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("K8SRole", `serviceAccounts: [ServiceAccount!]!`),
-		schema.AddExtraResolver("K8SRole", `roleNamespace: Namespace!`),
+		schema.AddExtraResolver("K8SRole", `roleNamespace: Namespace`),
 	)
 }
 
@@ -101,25 +101,24 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context) ([]*servic
 	}
 
 	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_SERVICE_ACCOUNT)
-	saResolvers := make([]*serviceAccountResolver, 0, len(subjects))
-
-	for i, subject := range subjects {
+	serviceAccounts := make([]*storage.ServiceAccount, 0, len(subjects))
+	for _, subject := range subjects {
 		sa, err := resolver.convertSubjectToServiceAccount(ctx, resolver.data.GetClusterId(), subject)
 		if err != nil {
 			continue
 		}
-		saResolvers[i], err = resolver.root.wrapServiceAccount(sa, true, nil)
-		if err != nil {
-			return nil, err
-		}
+		serviceAccounts = append(serviceAccounts, sa)
 	}
 
-	return saResolvers, nil
+	return resolver.root.wrapServiceAccounts(serviceAccounts, nil)
 }
 
 // RoleNamespace returns the namespace of the k8s role
 func (resolver *k8SRoleResolver) RoleNamespace(ctx context.Context) (*namespaceResolver, error) {
 	role := resolver.data
+	if role.GetNamespace() == "" {
+		return nil, nil
+	}
 	r, err := resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(role.GetClusterId()), role.GetNamespace()})
 
 	if err != nil {
