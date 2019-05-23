@@ -707,7 +707,8 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "remove deployment"
-
-        orchestrator.deleteDeployment(wpDeployment)
+        if (wpDeployment != null) {
+            orchestrator.deleteDeployment(wpDeployment)
+        }
         }
     }
