@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+KUBE_COMMAND=${KUBE_COMMAND:-{{.K8sConfig.Command}}}
+
 function usage {
 	echo "usage:"
 	echo "    ca-setup.sh -f file"
@@ -13,11 +15,11 @@ function usage {
 }
 
 function create_ns {
-    {{.K8sConfig.Command}} get ns "stackrox" > /dev/null || {{.K8sConfig.Command}} create ns "stackrox"
+    ${KUBE_COMMAND} get ns "stackrox" > /dev/null || ${KUBE_COMMAND} create ns "stackrox"
 }
 function create_file {
     local file="$1"
-    {{.K8sConfig.Command}} create secret -n "stackrox" generic additional-ca --from-file="ca.crt=$file"
+    ${KUBE_COMMAND} create secret -n "stackrox" generic additional-ca --from-file="ca.crt=$file"
 }
 
 function create_directory {
@@ -34,7 +36,7 @@ function create_directory {
         echo "Error: No filenames ending in \".crt\" in $dir. Please add some."
         exit 2
     fi
-    {{.K8sConfig.Command}} create secret -n "stackrox" generic additional-ca --from-file="$dir/"
+    ${KUBE_COMMAND} create secret -n "stackrox" generic additional-ca --from-file="$dir/"
 }
 
 if [[ "$#" -lt 2 ]]; then
