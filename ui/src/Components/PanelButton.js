@@ -4,17 +4,21 @@ import Tooltip from 'rc-tooltip';
 import 'rc-tooltip/assets/bootstrap.css';
 
 const PanelButton = ({ icon, text, onClick, className, disabled, tooltip }) => {
-    const button = (
-        <button type="button" className={className} onClick={onClick} disabled={disabled}>
-            {icon && <span className="flex items-center">{icon}</span>}
-            {text && <span className="mx-2">{text}</span>}
-        </button>
-    );
-    if (!tooltip) return button;
-
+    const tooltipText = tooltip || text;
+    const tooltipClassName = !tooltip ? 'sm:visible md:invisible' : '';
     return (
-        <Tooltip placement="top" overlay={<div>{tooltip}</div>}>
-            <div>{button}</div>
+        <Tooltip
+            placement="top"
+            mouseLeaveDelay={0}
+            overlay={<div>{tooltipText}</div>}
+            overlayClassName={tooltipClassName}
+        >
+            <div>
+                <button type="button" className={className} onClick={onClick} disabled={disabled}>
+                    {icon && <span className="flex items-center">{icon}</span>}
+                    {text && <span className="mx-2 sm:hidden md:flex">{text}</span>}
+                </button>
+            </div>
         </Tooltip>
     );
 };

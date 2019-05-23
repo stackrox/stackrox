@@ -136,7 +136,7 @@ class ComplianceList extends Component {
         }
 
         return (
-            <div className="flex flex-1">
+            <div className="flex w-full">
                 <ListTable
                     searchComponent={searchComponent}
                     selectedRow={selectedRow}

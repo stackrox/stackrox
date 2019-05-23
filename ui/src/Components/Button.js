@@ -15,7 +15,7 @@ const Button = ({
     isLoading
 }) => {
     const content = (
-        <div className="flex">
+        <div className="flex items-center">
             {icon}
             {textCondensed ? (
                 <>

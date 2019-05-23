@@ -82,7 +82,7 @@ TooltipDiv.defaultProps = {
 
 const Panel = props => (
     <div
-        className={`flex flex-col h-full border-r border-base-400 ${props.className}`}
+        className={`flex flex-col h-full border-r border-base-400 overflow-auto ${props.className}`}
         data-test-id="panel"
     >
         <div className="border-b border-base-400 flex-no-wrap">
@@ -98,7 +98,11 @@ const Panel = props => (
                     <TooltipDiv header={props.header} isUpperCase={props.isUpperCase} />
                 )}
 
-                <div className="flex flex-1 items-center justify-end pl-3 relative">
+                <div
+                    className={`flex flex-1 items-center justify-end relative ${
+                        props.onClose ? 'pl-3' : 'px-3'
+                    }`}
+                >
                     {props.headerComponents && props.headerComponents}
                     {props.onClose && (
                         <CloseButton

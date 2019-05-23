@@ -97,7 +97,7 @@ const tableColumnData = {
         Cell: ({ original }) => {
             const { length } = original.value.evidence;
             return length > 1 ? (
-                <div className="italic font-800">{`Inspect to view ${length} pieces of evidence`}</div>
+                <div className="italic font-700">{`Inspect to view ${length} pieces of evidence`}</div>
             ) : (
                 <span>{original.value.evidence[0].message}</span>
             );

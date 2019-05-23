@@ -132,7 +132,7 @@ class FieldGroupCards extends Component {
 
         return (
             <div className="header-control float-right">
-                <span className="pr-1">{headerField.label}</span>
+                {headerField.label && <span className="pr-1">{headerField.label}</span>}
                 <Field field={headerField} />
             </div>
         );

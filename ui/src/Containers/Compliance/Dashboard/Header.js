@@ -36,7 +36,7 @@ const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
                 <div className="flex">
                     <div className="flex items-center">
                         <ScanButton
-                            className={`flex items-center justify-center border-2 border-primary-400 rounded p-2 uppercase lg:min-w-32 xl:min-w-43 h-10 ${darkModeClasses}`}
+                            className={`flex items-center justify-center border-2 border-primary-400 rounded px-2 uppercase lg:min-w-32 xl:min-w-43 h-10 ${darkModeClasses}`}
                             text="Scan environment"
                             textClass="hidden lg:block"
                             textCondensed="Scan all"

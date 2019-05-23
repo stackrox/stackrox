@@ -783,6 +783,26 @@ dependencies:
     attribution:
       - 2017 atomiks
 
+  ui/node_modules/typeface-open-sans:
+    url: https://github.com/KyleAMathews/typefaces/tree/master/packages/open-sans
+    license: MIT
+    files:
+      package.json:
+        author: 46f7720027183be6377d673f3e73f9caf19edd028375b3e28154fd48d3b3c39a
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - Kyle Mathews <mathews.kyle@gmail.com> 
+
+  ui/node_modules/typeface-open-sans-condensed:
+    url: https://github.com/KyleAMathews/typefaces/tree/master/packages/open-sans-condensed
+    license: MIT
+    files:
+      package.json:
+        author: 46f7720027183be6377d673f3e73f9caf19edd028375b3e28154fd48d3b3c39a
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - Kyle Mathews <mathews.kyle@gmail.com>
+
   vendor/cloud.google.com/go:
     url: https://github.com/googleapis/google-cloud-go
     license: Apache-2.0

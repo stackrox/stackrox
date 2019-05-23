@@ -45,7 +45,7 @@ const TablePagination = ({ dataLength, setPage, page, searchOptions, location })
             data-test-id="pagination-header"
             className="flex items-center justify-end text-base-500 font-500"
         >
-            <div className="flex items-center pl-5 pr-2">
+            <div className="flex items-center pl-5">
                 <div className="mr-4 font-600">
                     Page
                     <input
