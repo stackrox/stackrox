@@ -77,6 +77,11 @@ class ComplianceTest extends BaseSpecification {
         Services.deleteImageIntegration(dtrId)
         ImageService.clearImageCaches()
         dtrId = Services.addDockerTrustedRegistry()
+
+        // Wait for compliance daemonset to be deleted
+        Map<String, String> complianceLabels = new HashMap<>()
+        complianceLabels.put("com.stackrox.io/service", "compliance")
+        assert orchestrator.waitForAllPodsToBeRemoved("stackrox", complianceLabels, 30, 5)
     }
 
     @Category(BAT)

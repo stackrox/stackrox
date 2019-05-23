@@ -50,6 +50,7 @@ interface OrchestratorMain {
     def isKubeDashboardRunning()
     def getContainerlogs(Deployment deployment)
     def getStaticPodCount(String ns)
+    def waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int iterations, int intervalSeconds)
 
     //Services
     def createService(Deployment deployment)

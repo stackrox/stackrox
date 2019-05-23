@@ -149,6 +149,25 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    def waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int iterations = 30, int intervalSeconds = 5) {
+        LabelSelector selector = new LabelSelector()
+        selector.matchLabels = labels
+        Timer t = new Timer(iterations, intervalSeconds)
+        PodList list
+        while (t.IsValid()) {
+            list = client.pods().inNamespace(ns).withLabelSelector(selector).list()
+            if (list.items.size() == 0) {
+                return true
+            }
+        }
+
+        println "Timed out waiting for the following pods to be removed"
+        for (Pod pod : list.getItems()) {
+            println "\t- ${pod.metadata.name}"
+        }
+        return false
+    }
+
     def getAndPrintPods(String ns, String name) {
         LabelSelector selector = new LabelSelector()
         selector.matchLabels = new HashMap<String, String>()
