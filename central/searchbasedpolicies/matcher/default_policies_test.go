@@ -19,6 +19,7 @@ import (
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
@@ -29,6 +30,7 @@ import (
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -48,6 +50,8 @@ type DefaultPoliciesTestSuite struct {
 	bleveIndex bleve.Index
 	db         *bolt.DB
 
+	testCtx context.Context
+
 	deploymentIndexer  deploymentIndex.Indexer
 	deploymentSearcher search.Searcher
 	imageIndexer       imageIndex.Indexer
@@ -59,6 +63,13 @@ type DefaultPoliciesTestSuite struct {
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupTest() {
+	suite.testCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment),
+			sac.ResourceScopeKeys(resources.Image),
+			sac.ResourceScopeKeys(resources.Indicator)))
+
 	var err error
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
@@ -68,13 +79,16 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 
 	suite.deploymentIndexer = deploymentIndex.New(suite.bleveIndex)
 	suite.deploymentSearcher = search.WrapContextLessSearcher(suite.deploymentIndexer)
+
 	suite.imageIndexer = imageIndex.New(suite.bleveIndex)
 	suite.imageSearcher = search.WrapContextLessSearcher(suite.imageIndexer)
+
 	processStore := processIndicatorStore.New(suite.db)
 	processIndexer := processIndicatorIndex.New(suite.bleveIndex)
 	processSearcher, err := processIndicatorSearch.New(processStore, processIndexer)
 	suite.Require().NoError(err)
 	suite.processDataStore = processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
+
 	suite.matcherBuilder = NewBuilder(
 		NewRegistry(
 			suite.processDataStore,
@@ -180,7 +194,7 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 			Uid:          uid,
 		},
 	}
-	err := suite.processDataStore.AddProcessIndicator(context.TODO(), indicator)
+	err := suite.processDataStore.AddProcessIndicator(suite.testCtx, indicator)
 	suite.NoError(err)
 	return indicator
 }
@@ -958,7 +972,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		suite.T().Run(fmt.Sprintf("%s (on deployments)", c.policyName), func(t *testing.T) {
 			m, err := suite.matcherBuilder.ForPolicy(p)
 			require.NoError(t, err)
-			matches, err := m.Match(context.TODO(), suite.deploymentSearcher)
+			matches, err := m.Match(suite.testCtx, suite.deploymentSearcher)
 			require.NoError(t, err)
 			validateDeploymentMatches(matches, allDeployments, c, t)
 
@@ -966,7 +980,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			for _, deployment := range allDeployments {
 				allIDs = append(allIDs, deployment.ID)
 			}
-			matchesFromMatchMany, err := m.MatchMany(context.TODO(), suite.deploymentSearcher, allIDs...)
+			matchesFromMatchMany, err := m.MatchMany(suite.testCtx, suite.deploymentSearcher, allIDs...)
 			require.NoError(t, err)
 			validateDeploymentMatches(matchesFromMatchMany, allDeployments, c, t)
 
@@ -974,13 +988,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			for id := range c.expectedViolations {
 				matchingIDs = append(matchingIDs, id)
 			}
-			matchesFromExactlyMatchMany, err := m.MatchMany(context.TODO(), suite.deploymentSearcher, matchingIDs...)
+			matchesFromExactlyMatchMany, err := m.MatchMany(suite.testCtx, suite.deploymentSearcher, matchingIDs...)
 			require.NoError(t, err)
 			validateDeploymentMatches(matchesFromExactlyMatchMany, allDeployments, c, t)
 
 			for id, violations := range c.expectedViolations {
 				// Test match one
-				gotFromMatchOne, err := m.MatchOne(context.TODO(), suite.deploymentSearcher, id)
+				gotFromMatchOne, err := m.MatchOne(suite.testCtx, suite.deploymentSearcher, id)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, violations.AlertViolations, gotFromMatchOne.AlertViolations, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 				assert.Equal(t, violations.ProcessViolation, gotFromMatchOne.ProcessViolation)
@@ -1230,7 +1244,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
 			m, err := suite.matcherBuilder.ForPolicy(p)
 			require.NoError(t, err)
-			matches, err := m.Match(context.TODO(), suite.imageSearcher)
+			matches, err := m.Match(suite.testCtx, suite.imageSearcher)
 			require.NoError(t, err)
 			validateImageMatches(matches, allImages, c, t)
 
@@ -1238,7 +1252,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			for _, image := range allImages {
 				allIDs = append(allIDs, types.NewDigest(image.ID).Digest())
 			}
-			matchesFromMatchMany, err := m.MatchMany(context.TODO(), suite.imageSearcher, allIDs...)
+			matchesFromMatchMany, err := m.MatchMany(suite.testCtx, suite.imageSearcher, allIDs...)
 			require.NoError(t, err)
 			validateImageMatches(matchesFromMatchMany, allImages, c, t)
 
@@ -1246,14 +1260,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			for id := range c.expectedViolations {
 				matchingIDs = append(matchingIDs, types.NewDigest(id).Digest())
 			}
-			matchesFromExactlyMatchMany, err := m.MatchMany(context.TODO(), suite.imageSearcher, matchingIDs...)
+			matchesFromExactlyMatchMany, err := m.MatchMany(suite.testCtx, suite.imageSearcher, matchingIDs...)
 			require.NoError(t, err)
 			validateImageMatches(matchesFromExactlyMatchMany, allImages, c, t)
 
 			for id, violations := range c.expectedViolations {
 				id = types.NewDigest(id).Digest()
 				// Test match one
-				gotFromMatchOne, err := m.MatchOne(context.TODO(), suite.imageSearcher, id)
+				gotFromMatchOne, err := m.MatchOne(suite.testCtx, suite.imageSearcher, id)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, violations.AlertViolations, gotFromMatchOne.AlertViolations, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 			}

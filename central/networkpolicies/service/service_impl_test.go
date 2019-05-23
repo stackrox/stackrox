@@ -78,6 +78,7 @@ func TestNetworkPolicyService(t *testing.T) {
 type ServiceTestSuite struct {
 	suite.Suite
 
+	requestContext  context.Context
 	clusters        *cDataStoreMocks.MockDataStore
 	deployments     *dDataStoreMocks.MockDataStore
 	networkPolicies *npMocks.MockDataStore
@@ -89,6 +90,9 @@ type ServiceTestSuite struct {
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
+	// Since all the datastores underneath are mocked, the context of the request doesns't need any permissions.
+	suite.requestContext = context.Background()
+
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkPolicies = npMocks.NewMockDataStore(suite.mockCtrl)
 	suite.evaluator = npGraphMocks.NewMockEvaluator(suite.mockCtrl)
@@ -109,7 +113,7 @@ func (suite *ServiceTestSuite) TestAuth() {
 
 func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {
 	request := &v1.SimulateNetworkGraphRequest{}
-	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
+	_, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.Error(err, "expected graph generation to fail since no cluster is specified")
 }
 
@@ -122,7 +126,7 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
 	}
-	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
+	_, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.Error(err, "expected graph generation to fail since cluster does not exist")
 }
 
@@ -139,7 +143,7 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 			ApplyYaml: badYAML,
 		},
 	}
-	_, err := suite.tested.SimulateNetworkGraph(context.TODO(), request)
+	_, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.Error(err, "expected graph generation to fail since input yaml has no namespace")
 }
 
@@ -156,7 +160,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 
 	// Mock that we have network policies in effect for the cluster.
 	pols := make([]*storage.NetworkPolicy, 0)
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), networkPolicyGetIsForCluster(fakeClusterID), "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(pols, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -172,7 +176,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
 	}
-	actualResp, err := suite.tested.SimulateNetworkGraph(context.TODO(), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
 }
@@ -193,7 +197,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	pols := []*storage.NetworkPolicy{
 		compiledPolicies[0],
 	}
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), networkPolicyGetIsForCluster(fakeClusterID), "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(pols, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -210,7 +214,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 			ApplyYaml: fakeYAML1,
 		},
 	}
-	actualResp, err := suite.tested.SimulateNetworkGraph(context.TODO(), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 1)
@@ -231,7 +235,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), networkPolicyGetIsForCluster(fakeClusterID), "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -247,7 +251,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 			ApplyYaml: fakeYAML1,
 		},
 	}
-	actualResp, err := suite.tested.SimulateNetworkGraph(context.TODO(), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
@@ -270,7 +274,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), networkPolicyGetIsForCluster(fakeClusterID), "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -287,7 +291,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 			ApplyYaml: combinedYAMLs,
 		},
 	}
-	actualResp, err := suite.tested.SimulateNetworkGraph(context.TODO(), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 
 	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
@@ -311,7 +315,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), networkPolicyGetIsForCluster(fakeClusterID), "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -333,7 +337,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 			},
 		},
 	}
-	actualResp, err := suite.tested.SimulateNetworkGraph(context.TODO(), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 
 	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
@@ -355,7 +359,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), networkPolicyGetIsForCluster(fakeClusterID), "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -377,7 +381,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 			ApplyYaml: combinedYAMLs,
 		},
 	}
-	actualResp, err := suite.tested.SimulateNetworkGraph(context.TODO(), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
@@ -399,7 +403,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), networkPolicyGetIsForCluster(fakeClusterID), "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(nil, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -416,7 +420,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 			ApplyYaml: combinedYAMLs,
 		},
 	}
-	actualResp, err := suite.tested.SimulateNetworkGraph(context.TODO(), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
@@ -434,14 +438,14 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWithoutDeploymentQuery() {
 
 	// Mock that we have network policies in effect for the cluster.
 	neps := make([]*storage.NetworkPolicy, 0)
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), fakeClusterID, "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, fakeClusterID, "").
 		Return(neps, nil)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.GetNetworkPoliciesRequest{
 		ClusterId: fakeClusterID,
 	}
-	actualResp, err := suite.tested.GetNetworkPolicies(context.TODO(), request)
+	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
@@ -455,7 +459,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 
 	// Mock that we have network policies in effect for the cluster.
 	neps := make([]*storage.NetworkPolicy, 0)
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), fakeClusterID, "").
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, fakeClusterID, "").
 		Return(neps, nil)
 
 	// Mock that we receive deployments for the cluster
@@ -485,7 +489,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 		ClusterId:       fakeClusterID,
 		DeploymentQuery: fmt.Sprintf("%s:\"%s\"", search.DeploymentID, fakeDeploymentID),
 	}
-	actualResp, err := suite.tested.GetNetworkPolicies(context.TODO(), request)
+	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")

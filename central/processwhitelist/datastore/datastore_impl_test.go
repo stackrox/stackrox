@@ -9,10 +9,12 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -26,13 +28,21 @@ func TestProcessWhitelistDatastore(t *testing.T) {
 
 type ProcessWhitelistDataStoreTestSuite struct {
 	suite.Suite
-	datastore DataStore
-	storage   store.Store
-	indexer   index.Indexer
-	searcher  whitelistSearch.Searcher
+	requestContext context.Context
+	datastore      DataStore
+	storage        store.Store
+	indexer        index.Indexer
+	searcher       whitelistSearch.Searcher
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
+	suite.requestContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.ProcessWhitelist),
+		),
+	)
+
 	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	suite.NoError(err)
 	suite.storage, err = store.New(db)
@@ -58,7 +68,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) createAndStoreWhitelist(key *st
 	whitelist := fixtures.GetProcessWhitelist()
 	whitelist.Key = key
 	suite.NotNil(whitelist)
-	id, err := suite.datastore.AddProcessWhitelist(context.TODO(), whitelist)
+	id, err := suite.datastore.AddProcessWhitelist(suite.requestContext, whitelist)
 	suite.NoError(err)
 	suite.NotNil(id)
 	suite.NotNil(whitelist.Created)
@@ -86,7 +96,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) createAndStoreWhitelistWithRand
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) doGet(key *storage.ProcessWhitelistKey, exists bool, equals *storage.ProcessWhitelist) *storage.ProcessWhitelist {
-	whitelist, err := suite.datastore.GetProcessWhitelist(context.TODO(), key)
+	whitelist, err := suite.datastore.GetProcessWhitelist(suite.requestContext, key)
 	suite.NoError(err)
 	if exists {
 		suite.NotNil(whitelist)
@@ -100,7 +110,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) doGet(key *storage.ProcessWhite
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) testGetAll(allExpected []*storage.ProcessWhitelist) {
-	allWhitelists, err := suite.datastore.GetProcessWhitelists(context.TODO())
+	allWhitelists, err := suite.datastore.GetProcessWhitelists(suite.requestContext)
 	suite.NoError(err)
 	suite.NotNil(allWhitelists)
 	suite.Equal(len(allExpected), len(allWhitelists))
@@ -110,7 +120,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) testGetAll(allExpected []*stora
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) testUpdate(key *storage.ProcessWhitelistKey, addProcesses []string, removeProcesses []string, auto bool, expectedResults set.StringSet) *storage.ProcessWhitelist {
-	updated, err := suite.datastore.UpdateProcessWhitelistElements(context.TODO(), key, fixtures.MakeWhitelistItems(addProcesses...), fixtures.MakeWhitelistItems(removeProcesses...), auto)
+	updated, err := suite.datastore.UpdateProcessWhitelistElements(suite.requestContext, key, fixtures.MakeWhitelistItems(addProcesses...), fixtures.MakeWhitelistItems(removeProcesses...), auto)
 	suite.NoError(err)
 	suite.NotNil(updated)
 	suite.True(updated.GetLastUpdate().Compare(updated.GetCreated()) > 0)
@@ -144,7 +154,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRemoveProcessWhitelist() {
 	whitelist := suite.createAndStoreWhitelistWithRandomKey()
 	key := whitelist.GetKey()
 	suite.doGet(whitelist.GetKey(), true, whitelist)
-	err := suite.datastore.RemoveProcessWhitelist(context.TODO(), key)
+	err := suite.datastore.RemoveProcessWhitelist(suite.requestContext, key)
 	suite.NoError(err)
 	suite.doGet(key, false, nil)
 }
@@ -153,13 +163,13 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestLockAndUnlockWhitelist() {
 	whitelist := suite.createAndStoreWhitelistWithRandomKey()
 	key := whitelist.GetKey()
 	suite.Nil(whitelist.GetUserLockedTimestamp())
-	updatedWhitelist, err := suite.datastore.UserLockProcessWhitelist(context.TODO(), key, true)
+	updatedWhitelist, err := suite.datastore.UserLockProcessWhitelist(suite.requestContext, key, true)
 	suite.NoError(err)
 	suite.NotNil(updatedWhitelist.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedWhitelist)
 	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
 
-	updatedWhitelist, err = suite.datastore.UserLockProcessWhitelist(context.TODO(), key, false)
+	updatedWhitelist, err = suite.datastore.UserLockProcessWhitelist(suite.requestContext, key, false)
 	suite.NoError(err)
 	suite.Nil(updatedWhitelist.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedWhitelist)
@@ -173,13 +183,13 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist()
 	// Test that current time is before the StackRox locked time
 	suite.True(types.TimestampNow().Compare(whitelist.GetStackRoxLockedTimestamp()) < 0)
 
-	updatedWhitelist, err := suite.datastore.RoxLockProcessWhitelist(context.TODO(), key, false)
+	updatedWhitelist, err := suite.datastore.RoxLockProcessWhitelist(suite.requestContext, key, false)
 	suite.NoError(err)
 	suite.Nil(updatedWhitelist.GetStackRoxLockedTimestamp())
 	suite.doGet(key, true, updatedWhitelist)
 	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
 
-	updatedWhitelist, err = suite.datastore.RoxLockProcessWhitelist(context.TODO(), key, true)
+	updatedWhitelist, err = suite.datastore.RoxLockProcessWhitelist(suite.requestContext, key, true)
 	suite.NoError(err)
 	suite.NotNil(updatedWhitelist.GetStackRoxLockedTimestamp())
 	// Test that current time is after or equal to the StackRox locked time.
@@ -193,7 +203,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestUpdateProcessWhitelist() {
 	whitelist.Elements = nil // Fixture gives a single process but we want to test updates
 	suite.NotNil(whitelist)
 	key := whitelist.GetKey()
-	id, err := suite.datastore.AddProcessWhitelist(context.TODO(), whitelist)
+	id, err := suite.datastore.AddProcessWhitelist(suite.requestContext, whitelist)
 	suite.NoError(err)
 	suite.NotNil(id)
 
@@ -222,7 +232,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestUpsertProcessWhitelist() {
 	key := fixtures.GetWhitelistKey()
 	firstProcess := "Joseph Rules"
 	newItem := []*storage.WhitelistItem{{Item: &storage.WhitelistItem_ProcessName{ProcessName: firstProcess}}}
-	whitelist, err := suite.datastore.UpsertProcessWhitelist(context.TODO(), key, newItem, true)
+	whitelist, err := suite.datastore.UpsertProcessWhitelist(suite.requestContext, key, newItem, true)
 	suite.NoError(err)
 	suite.Equal(1, len(whitelist.GetElements()))
 	suite.Equal(firstProcess, whitelist.GetElements()[0].GetElement().GetProcessName())
@@ -231,7 +241,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestUpsertProcessWhitelist() {
 
 	secondProcess := "Joseph is the Best"
 	newItem = []*storage.WhitelistItem{{Item: &storage.WhitelistItem_ProcessName{ProcessName: secondProcess}}}
-	whitelist, err = suite.datastore.UpsertProcessWhitelist(context.TODO(), key, newItem, true)
+	whitelist, err = suite.datastore.UpsertProcessWhitelist(suite.requestContext, key, newItem, true)
 	suite.NoError(err)
 	suite.Equal(2, len(whitelist.GetElements()))
 	processNames := make([]string, 0, 2)
@@ -256,18 +266,18 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestGraveyard() {
 	itemList := makeItemList(whitelist.GetElements())
 	suite.NotEmpty(itemList)
 	suite.Empty(whitelist.GetElementGraveyard())
-	updatedWhitelist, err := suite.datastore.UpdateProcessWhitelistElements(context.TODO(), whitelist.GetKey(), nil, itemList, true)
+	updatedWhitelist, err := suite.datastore.UpdateProcessWhitelistElements(suite.requestContext, whitelist.GetKey(), nil, itemList, true)
 	// The elements should have been removed from the whitelist and put in the graveyard
 	suite.NoError(err)
 	suite.ElementsMatch(whitelist.GetElements(), updatedWhitelist.GetElementGraveyard())
 
-	updatedWhitelist, err = suite.datastore.UpdateProcessWhitelistElements(context.TODO(), whitelist.GetKey(), itemList, nil, true)
+	updatedWhitelist, err = suite.datastore.UpdateProcessWhitelistElements(suite.requestContext, whitelist.GetKey(), itemList, nil, true)
 	suite.NoError(err)
 	// The elements should NOT be added back on to the whitelist because they are in the graveyard and auto = true
 	suite.Empty(updatedWhitelist.GetElements())
 	suite.ElementsMatch(whitelist.GetElements(), updatedWhitelist.GetElementGraveyard())
 
-	updatedWhitelist, err = suite.datastore.UpdateProcessWhitelistElements(context.TODO(), whitelist.GetKey(), itemList, nil, false)
+	updatedWhitelist, err = suite.datastore.UpdateProcessWhitelistElements(suite.requestContext, whitelist.GetKey(), itemList, nil, false)
 	suite.NoError(err)
 	// The elements SHOULD be added back on to the whitelist because auto = false
 	suite.Empty(updatedWhitelist.GetElementGraveyard())
@@ -276,7 +286,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestGraveyard() {
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) doQuery(q *v1.Query, len int) {
-	result, err := suite.datastore.SearchRawProcessWhitelists(context.TODO(), q)
+	result, err := suite.datastore.SearchRawProcessWhitelists(suite.requestContext, q)
 	suite.NoError(err)
 	suite.Len(result, len)
 }
@@ -296,7 +306,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRemoveByDeployment() {
 	suite.doGet(key2, true, nil)
 	suite.doGet(key3, true, nil)
 
-	err := suite.datastore.RemoveProcessWhitelistsByDeployment(context.TODO(), dep1)
+	err := suite.datastore.RemoveProcessWhitelistsByDeployment(suite.requestContext, dep1)
 	suite.NoError(err)
 
 	suite.doQuery(queryDep1, 0)

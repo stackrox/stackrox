@@ -22,6 +22,7 @@ func TestPolicyValidator(t *testing.T) {
 
 type PolicyValidatorTestSuite struct {
 	suite.Suite
+	requestContext context.Context
 	validator      *policyValidator
 	nStorage       *notifierMocks.MockDataStore
 	cStorage       *clusterMocks.MockDataStore
@@ -31,6 +32,9 @@ type PolicyValidatorTestSuite struct {
 }
 
 func (suite *PolicyValidatorTestSuite) SetupTest() {
+	// Since all the datastores underneath are mocked, the context of the request doesns't need any permissions.
+	suite.requestContext = context.Background()
+
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.nStorage = notifierMocks.NewMockDataStore(suite.mockCtrl)
 	suite.cStorage = clusterMocks.NewMockDataStore(suite.mockCtrl)
@@ -464,8 +468,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id1",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier(context.TODO(), "id1").Return((*storage.Notifier)(nil), true, nil)
-	err := suite.validator.validateNotifiers(context.TODO(), policy)
+	suite.nStorage.EXPECT().GetNotifier(suite.requestContext, "id1").Return((*storage.Notifier)(nil), true, nil)
+	err := suite.validator.validateNotifiers(suite.requestContext, policy)
 	suite.NoError(err, "severity should pass when set")
 
 	policy = &storage.Policy{
@@ -473,8 +477,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id2",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier(context.TODO(), "id2").Return((*storage.Notifier)(nil), false, nil)
-	err = suite.validator.validateNotifiers(context.TODO(), policy)
+	suite.nStorage.EXPECT().GetNotifier(suite.requestContext, "id2").Return((*storage.Notifier)(nil), false, nil)
+	err = suite.validator.validateNotifiers(suite.requestContext, policy)
 	suite.Error(err, "should fail when it does not exist")
 
 	policy = &storage.Policy{
@@ -482,8 +486,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id3",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier(context.TODO(), "id3").Return((*storage.Notifier)(nil), true, fmt.Errorf("oh noes"))
-	err = suite.validator.validateNotifiers(context.TODO(), policy)
+	suite.nStorage.EXPECT().GetNotifier(suite.requestContext, "id3").Return((*storage.Notifier)(nil), true, fmt.Errorf("oh noes"))
+	err = suite.validator.validateNotifiers(suite.requestContext, policy)
 	suite.Error(err, "should fail when an error is thrown")
 }
 
