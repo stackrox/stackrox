@@ -8,10 +8,12 @@ import (
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
+	"github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,12 +21,18 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
 	connectionTerminationTimeout = 5 * time.Second
+)
+
+var (
+	clusterSAC             = sac.ForResource(resources.Cluster)
+	clusterSACSearchHelper = clusterSAC.MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDField)
 )
 
 type datastoreImpl struct {
@@ -40,6 +48,12 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(id)); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	return ds.storage.UpdateClusterStatus(id, status)
 }
 
@@ -53,26 +67,72 @@ func (ds *datastoreImpl) buildIndex() error {
 
 // Search searches through the clusters
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.indexer.Search(q)
+	return clusterSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+}
+
+func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	clusters := make([]*storage.Cluster, 0, len(results))
+	for _, result := range results {
+		cluster, _, err := ds.storage.GetCluster(result.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "retrieving cluster with id '%s'", result.ID)
+		}
+		// The result may not exist if the object was deleted after the search
+		if cluster == nil {
+			continue
+		}
+		clusters = append(clusters, cluster)
+	}
+	return clusters, nil
 }
 
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
+	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
+		return nil, false, err
+	}
+
 	return ds.storage.GetCluster(id)
 }
 
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, error) {
-	return ds.storage.GetClusters()
+	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if ok {
+		return ds.storage.GetClusters()
+	}
+
+	return ds.searchRawClusters(ctx, search.EmptyQuery())
 }
 
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
-	return ds.storage.CountClusters()
+	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {
+		return 0, err
+	} else if ok {
+		return ds.storage.CountClusters()
+	}
+
+	visible, err := ds.Search(ctx, search.EmptyQuery())
+	if err != nil {
+		return 0, err
+	}
+	return len(visible), nil
 }
 
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error) {
+	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(cluster.GetId())); err != nil {
+		return "", err
+	} else if !ok {
+		return "", errors.New("permission denied")
+	}
+
 	id, err := ds.storage.AddCluster(cluster)
 	if err != nil {
 		return "", err
@@ -82,6 +142,12 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Cluster) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(cluster.GetId())); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	if err := ds.storage.UpdateCluster(cluster); err != nil {
 		return err
 	}
@@ -108,11 +174,23 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) UpdateClusterContactTime(ctx context.Context, id string, t time.Time) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(id)); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	return ds.storage.UpdateClusterContactTime(id, t)
 }
 
 // RemoveCluster removes a cluster from the storage and the indexer
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(id)); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	// Fetch the cluster an confirm it exists.
 	cluster, exists, err := ds.storage.GetCluster(id)
 	if !exists {
@@ -126,7 +204,12 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 
-	go ds.postRemoveCluster(context.TODO(), cluster)
+	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment, resources.Alert, resources.Node, resources.Secret),
+		))
+	go ds.postRemoveCluster(deleteRelatedCtx, cluster)
 	return ds.indexer.DeleteCluster(id)
 }
 
