@@ -98,7 +98,9 @@ const EvidenceControlList = ({
             {({ loading, data }) => {
                 if (loading) return <Loader />;
                 const tableData = createTableData(data);
-                const header = `${tableData.numControls} Checks`;
+                const header = `${tableData.numControls} Check${
+                    tableData.numControls === 1 ? '' : 's'
+                }`;
                 const headerComponents = (
                     <>
                         <div className="flex flex-1 justify-start">{searchComponent}</div>

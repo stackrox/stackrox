@@ -155,7 +155,11 @@ const EvidenceResourceList = ({
                 if (loading) return <Loader />;
                 const tableData = createTableData(data, resourceType);
                 const numResources = processNumResources(data, resourceType);
-                const header = `${numResources} ${pluralize(resourceLabels[resourceType])}`;
+                const label =
+                    numResources === 1
+                        ? resourceLabels[resourceType]
+                        : pluralize(resourceLabels[resourceType]);
+                const header = `${numResources} ${label}`;
                 const headerComponents = (
                     <>
                         <div className="flex flex-1 justify-start">{searchComponent}</div>
