@@ -50,8 +50,8 @@ export function toggleSelectAll(rowsLength, selection, tableRef) {
         }
         // if all were previously selected on the current page, unselect all on page
         if (
-            previouslySelected === pageSize ||
-            previouslySelected === sortedData.length % pageSize
+            previouslySelected &&
+            (previouslySelected === pageSize || previouslySelected === sortedData.length % pageSize)
         ) {
             for (let i = startIndex; i < nextPageIndex; i += 1) {
                 if (!sortedData[i]) break;

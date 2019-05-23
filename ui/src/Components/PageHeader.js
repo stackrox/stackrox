@@ -54,7 +54,7 @@ export const PageHeaderComponent = props => {
     `;
     }
     let component = <TooltipDiv header={headerText} isUpperCase />;
-    if (props.length === maxSize) {
+    if (props.length >= maxSize) {
         component = (
             <div className="pt-2">
                 {component}
@@ -71,7 +71,7 @@ PageHeaderComponent.propTypes = {
     length: PropTypes.number.isRequired,
     selectionCount: PropTypes.number,
     type: PropTypes.string.isRequired,
-    isViewFiltered: PropTypes.boolean
+    isViewFiltered: PropTypes.bool
 };
 
 PageHeaderComponent.defaultProps = {
