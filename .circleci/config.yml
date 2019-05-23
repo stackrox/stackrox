@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-30-gd0da134ea2
+    - image: docker.io/stackrox/apollo-ci:0.1.11-31-g63504e3520
       auth:
         username: $DOCKER_IO_PULL_USERNAME
         password: $DOCKER_IO_PULL_PASSWORD
@@ -13,7 +13,7 @@ setupGoogleAppCreds: &setupGoogleAppCreds
       touch /tmp/gcp.json
       chmod 0600 /tmp/gcp.json
       echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" >/tmp/gcp.json
-      echo >>"$BASH_ENV" 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json'
+      cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud auth list
 
@@ -83,7 +83,7 @@ setupLicense: &setupLicense
     name: Creating License Key
     command: |
       ROX_LICENSE_KEY="$(licenses/ci.sh)"
-      echo "export ROX_LICENSE_KEY=${ROX_LICENSE_KEY}" >>"${BASH_ENV}"
+      cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
 # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
 # This step requires the GCP IAM permission "Kubernetes Engine Admin".
@@ -96,10 +96,8 @@ deployGKE: &deployGKE
       kubectl delete clusterrolebinding temporary-admin
 
       source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-      cat >>"$BASH_ENV" \<<EOF
-        export ROX_USERNAME='$ROX_USERNAME'
-        export ROX_PASSWORD='$ROX_PASSWORD'
-      EOF
+      cci-export ROX_USERNAME "$ROX_USERNAME"
+      cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
 setupCIMonitoring: &setupCIMonitoring
   run:
@@ -142,11 +140,9 @@ waitForAPI: &waitForAPI
         echo "Failed to connect to Central"
         exit 1
       fi
-      cat >>"$BASH_ENV" \<<EOF
-        export API_HOSTNAME='$API_HOSTNAME'
-        export API_PORT='$API_PORT'
-        export API_ENDPOINT='${API_HOSTNAME}:${API_PORT}'
-      EOF
+      cci-export API_HOSTNAME "$API_HOSTNAME"
+      cci-export API_PORT "$API_PORT"
+      cci-export API_ENDPOINT "${API_HOSTNAME}:${API_PORT}"
 
 waitForSensorK8s: &waitForSensorK8s
   run:
@@ -160,10 +156,10 @@ determineWhetherToRunUIDevServer: &determineWhetherToRunUIDevServer
     command: |
       if .circleci/pr_has_label.sh ci-ui-dev-server; then
         echo "Running UI E2Es against the dev server due to the presence of the ci-ui-dev-server label."
-        echo 'export RUN_UI_DEV_SERVER=true' >> "${BASH_ENV}"
+        cci-export RUN_UI_DEV_SERVER true
       else
         echo "Running UI E2Es against the production server. Apply the ci-ui-dev-server label to your PR to run against the dev server."
-        echo 'export RUN_UI_DEV_SERVER=false' >> "${BASH_ENV}"
+        cci-export RUN_UI_DEV_SERVER false
       fi
 
 runUIDevServer: &runUIDevServer
@@ -355,14 +351,12 @@ commands:
             <<# parameters.docker-login >>
             docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
             <</ parameters.docker-login >>
-            cat >>"$BASH_ENV" \<<EOF
-              export REGISTRY_USERNAME='$DOCKER_IO_PULL_USERNAME'
-              export REGISTRY_PASSWORD='$DOCKER_IO_PULL_PASSWORD'
-              export MAIN_IMAGE_TAG='$(make tag)'
-              export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json
-            EOF
+            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
+            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
+            cci-export MAIN_IMAGE_TAG "$(make tag)"
+            cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
-              echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
+              cci-export MAIN_IMAGE_REPO stackrox/main-rhel
             fi
 
             gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
@@ -471,7 +465,7 @@ commands:
           name: Assign cluster name
           command: |
             CLUSTER_NAME="rox-ci-<< parameters.cluster-id >>-${CIRCLE_BUILD_NUM}"
-            echo "export CLUSTER_NAME=$CLUSTER_NAME" >>"$BASH_ENV"
+            cci-export CLUSTER_NAME "$CLUSTER_NAME"
             echo "Assigned cluster name is $CLUSTER_NAME"
 
       - create-gke:
@@ -518,10 +512,7 @@ commands:
             gcloud config set compute/zone "$ZONE"
             gcloud container clusters get-credentials --project stackrox-ci "$CLUSTER_NAME"
             echo "Restored config for cluster ${CLUSTER_NAME}"
-
-            cat >>"$BASH_ENV" \<<EOF
-              export CLUSTER_NAME='$CLUSTER_NAME'
-            EOF
+            cci-export CLUSTER_NAME "$CLUSTER_NAME"
 
       - run:
           name: Waiting for << parameters.cluster-id >> cluster to stabilize
@@ -889,7 +880,7 @@ jobs:
 
       - run:
           name: Export Trusted CA file
-          command: echo "export TRUSTED_CA_FILE=$(pwd)/tests/bad-ca/superfish.pem" >> "${BASH_ENV}"
+          command: cci-export TRUSTED_CA_FILE "$PWD/tests/bad-ca/superfish.pem"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -899,12 +890,10 @@ jobs:
           command: |
             cert_dir="$(mktemp -d)"
             ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local
-            cat >>"$BASH_ENV" \<<EOF
-              export ROX_DEFAULT_TLS_CERT_FILE='${cert_dir}/tls.crt'
-              export ROX_DEFAULT_TLS_KEY_FILE='${cert_dir}/tls.key'
-              export ROX_TEST_CA_PEM='$(cat "${cert_dir}/ca.crt")'
-              export ROX_TEST_CENTRAL_CN='custom-tls-cert.central.stackrox.local'
-            EOF
+            cci-export ROX_DEFAULT_TLS_CERT_FILE "${cert_dir}/tls.crt"
+            cci-export ROX_DEFAULT_TLS_KEY_FILE "${cert_dir}/tls.key"
+            cci-export ROX_TEST_CA_PEM "$(cat "${cert_dir}/ca.crt")"
+            cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
 
       - *deployGKE
       - *setupCIMonitoring
@@ -1146,9 +1135,7 @@ jobs:
       - run:
           name: Launch Central only
           command: |
-            cat >>"$BASH_ENV" \<<EOF
-              export MAIN_IMAGE_TAG='$(make tag)'
-            EOF
+            cci-export MAIN_IMAGE_TAG "$(make tag)"
             ./deploy/k8s/central.sh
 
             central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
@@ -1159,10 +1146,8 @@ jobs:
             fi
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cat >>"$BASH_ENV" \<<EOF
-              export ROX_USERNAME='$ROX_USERNAME'
-              export ROX_PASSWORD='$ROX_PASSWORD'
-            EOF
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
       - run:
           name: Checkout current commit again
           command: git reset --hard "${CIRCLE_SHA1}"
@@ -1273,10 +1258,8 @@ jobs:
             ./deploy/k8s/central.sh
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cat >>"$BASH_ENV" \<<EOF
-              export ROX_USERNAME='$ROX_USERNAME'
-              export ROX_PASSWORD='$ROX_PASSWORD'
-            EOF
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
       - *setupCIMonitoring
       - *waitForAPI
@@ -1437,17 +1420,15 @@ jobs:
       - run:
           name: Configure Deployment Environment
           command: |
-            cat >>"$BASH_ENV" \<<EOF
-              export KUBECONFIG='$PWD/openshift/config'
-              export CLAIRIFY_IMAGE_TAG=0.5.2
-              export OPENSHIFT_HOST='$(cat openshift/master)'
-              export ROX_IMAGE_REGISTRY=docker.io
-              export MAIN_IMAGE_TAG='$(make tag)'
-              export REGISTRY_PASSWORD='$DOCKER_IO_PULL_PASSWORD'
-              export REGISTRY_USERNAME='$DOCKER_IO_PULL_USERNAME'
-            EOF
+            cci-export KUBECONFIG "$PWD/openshift/config"
+            cci-export CLAIRIFY_IMAGE_TAG 0.5.2
+            cci-export OPENSHIFT_HOST "$(cat openshift/master)"
+            cci-export ROX_IMAGE_REGISTRY docker.io
+            cci-export MAIN_IMAGE_TAG "$(make tag)"
+            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
+            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
-              echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
+              cci-export MAIN_IMAGE_REPO stackrox/main-rhel
             fi
 
             ./scripts/ci/openshift-gcr-secrets.sh
@@ -1462,10 +1443,8 @@ jobs:
             oc -n stackrox get all
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/openshift/
-            cat >>"$BASH_ENV" \<<EOF
-              export ROX_USERNAME='$ROX_USERNAME'
-              export ROX_PASSWORD='$ROX_PASSWORD'
-            EOF
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
       - *setupCIMonitoring
       - *waitForAPI
@@ -1634,15 +1613,13 @@ jobs:
       - run:
           name: Configure Deployment Environment
           command: |
-            cat >>"$BASH_ENV" \<<EOF
-              export KUBECONFIG='$PWD/kops/kube.yaml'
-              export CLAIRIFY_IMAGE_TAG=0.5.4
-              export KOPS_HOST='$(cat kops/master)'
-              export ROX_IMAGE_REGISTRY=docker.io
-              export MAIN_IMAGE_TAG='$(make tag)'
-              export REGISTRY_PASSWORD='$DOCKER_IO_PULL_PASSWORD'
-              export REGISTRY_USERNAME='$DOCKER_IO_PULL_USERNAME'
-            EOF
+            cci-export KUBECONFIG "$PWD/kops/kube.yaml"
+            cci-export CLAIRIFY_IMAGE_TAG 0.5.4
+            cci-export KOPS_HOST "$(cat kops/master)"
+            cci-export ROX_IMAGE_REGISTRY docker.io
+            cci-export MAIN_IMAGE_TAG "$(make tag)"
+            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
+            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -1654,10 +1631,8 @@ jobs:
             kubectl -n stackrox get all
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cat >>"$BASH_ENV" \<<EOF
-              export ROX_USERNAME='$ROX_USERNAME'
-              export ROX_PASSWORD='$ROX_PASSWORD'
-            EOF
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
       - *setupCIMonitoring
       - *waitForAPI
