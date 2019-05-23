@@ -305,6 +305,10 @@ func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
 			w.Containers[i].Instances = append(w.Containers[i].Instances, instance)
 		}
 	}
+	// Create a stable ordering
+	for _, c := range w.Containers {
+		sort.SliceStable(c.Instances, func(i, j int) bool { return c.Instances[i].InstanceId.Id < c.Instances[j].InstanceId.Id })
+	}
 }
 
 func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
