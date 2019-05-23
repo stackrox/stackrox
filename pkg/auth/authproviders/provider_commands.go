@@ -1,6 +1,8 @@
 package authproviders
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/dberrors"
 )
 
@@ -10,29 +12,29 @@ import (
 /////////////////////////////////////////////////////
 
 // DefaultAddToStore adds the providers stored data to the input store.
-func DefaultAddToStore(store Store) ProviderOption {
+func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.doNotStore {
 			return nil
 		}
-		return store.AddAuthProvider(&pr.storedInfo)
+		return store.AddAuthProvider(ctx, &pr.storedInfo)
 	}
 }
 
 // UpdateStore updates the stored value for the provider in the input store.
-func UpdateStore(store Store) ProviderOption {
+func UpdateStore(ctx context.Context, store Store) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.doNotStore {
 			return nil
 		}
-		return store.UpdateAuthProvider(&pr.storedInfo)
+		return store.UpdateAuthProvider(ctx, &pr.storedInfo)
 	}
 }
 
 // DeleteFromStore removes the providers stored data from the input store.
-func DeleteFromStore(store Store) ProviderOption {
+func DeleteFromStore(ctx context.Context, store Store) ProviderOption {
 	return func(pr *providerImpl) error {
-		err := store.RemoveAuthProvider(pr.storedInfo.Id)
+		err := store.RemoveAuthProvider(ctx, pr.storedInfo.Id)
 		if err != nil {
 			// If it's a type we don't want to store, then we're okay with it not existing.
 			// We do this in case it was stored in the DB in a previous version.

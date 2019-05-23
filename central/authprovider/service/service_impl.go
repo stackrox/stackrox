@@ -126,7 +126,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 	if enabledOpt, ok := request.GetEnabledOpt().(*v1.UpdateAuthProviderRequest_Enabled); ok {
 		options = append(options, authproviders.WithEnabled(enabledOpt.Enabled))
 	}
-	provider, err := s.registry.UpdateProvider(request.GetId(), options...)
+	provider, err := s.registry.UpdateProvider(ctx, request.GetId(), options...)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not update auth provider: %v", err)
 	}
@@ -138,7 +138,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id is required")
 	}
-	if err := s.registry.DeleteProvider(request.GetId()); err != nil {
+	if err := s.registry.DeleteProvider(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil

@@ -22,8 +22,8 @@ var (
 
 // RegisterAuthProviderOrPanic sets up basic authentication with the builtin htpasswd file. It panics if the basic auth
 // feature is not enabled, or if it is called twice on the same registry.
-func RegisterAuthProviderOrPanic(registry authproviders.Registry) {
-	err := registry.RegisterBackendFactory(basicAuthProvider.TypeName, basicAuthProvider.NewFactory)
+func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Registry) {
+	err := registry.RegisterBackendFactory(ctx, basicAuthProvider.TypeName, basicAuthProvider.NewFactory)
 	if err != nil {
 		log.Warnf("Could not register basic auth provider factory: %v", err)
 	}
@@ -35,7 +35,7 @@ func RegisterAuthProviderOrPanic(registry authproviders.Registry) {
 	typ := basicAuthProvider.TypeName
 	existingBasicAuthProviders := registry.GetProviders(nil, &typ)
 	for _, provider := range existingBasicAuthProviders {
-		if err := registry.DeleteProvider(provider.ID()); err != nil {
+		if err := registry.DeleteProvider(ctx, provider.ID()); err != nil {
 			log.Panicf("Could not delete existing basic auth provider %s: %v", provider.Name(), err)
 		}
 	}
@@ -52,7 +52,7 @@ func RegisterAuthProviderOrPanic(registry authproviders.Registry) {
 		authproviders.WithRoleMapper(mapper.AlwaysAdminRoleMapper()),
 		authproviders.DoNotStore(),
 	}
-	_, err = registry.CreateProvider(context.Background(), options...)
+	_, err = registry.CreateProvider(ctx, options...)
 	if err != nil {
 		log.Panicf("Could not set up basic auth provider: %v", err)
 	}

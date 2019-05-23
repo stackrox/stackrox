@@ -111,7 +111,7 @@ func DefaultOptionsForNewProvider(ctx context.Context, store Store, backendFacto
 		DefaultBackend(ctx, backendFactoryPool),                      // Not ok to fail to load a backend for newly created providers
 		LogOptionError(DefaultTokenIssuerFromFactory(issuerFactory)), // Its ok to not have a token issuer.
 		DefaultRoleMapperOption(roleMapperFactory.GetRoleMapper),
-		DefaultAddToStore(store),
+		DefaultAddToStore(ctx, store),
 	}
 }
 

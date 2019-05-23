@@ -1,6 +1,8 @@
 package authproviders
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -8,7 +10,7 @@ import (
 type Store interface {
 	GetAllAuthProviders() ([]*storage.AuthProvider, error)
 
-	AddAuthProvider(authProvider *storage.AuthProvider) error
-	UpdateAuthProvider(authProvider *storage.AuthProvider) error
-	RemoveAuthProvider(id string) error
+	AddAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error
+	UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error
+	RemoveAuthProvider(ctx context.Context, id string) error
 }

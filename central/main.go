@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
+	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
-	authProviderStore "github.com/stackrox/rox/central/authprovider/store"
 	"github.com/stackrox/rox/central/cli"
 	clientCAManager "github.com/stackrox/rox/central/clientca/manager"
 	clientCAService "github.com/stackrox/rox/central/clientca/service"
@@ -85,6 +85,7 @@ import (
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
@@ -103,6 +104,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
@@ -288,26 +290,31 @@ func watchdog(signal *concurrency.Signal, timeout time.Duration) {
 }
 
 func startGRPCServer(factory serviceFactory) {
+	// Temporarily elevate permissions to modify auth providers.
+	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.AuthProvider)))
+
+	// Create the registry of applied auth providers.
 	registry, err := authproviders.NewStoreBackedRegistry(
 		ssoURLPathPrefix, tokenRedirectURLPath,
-		authProviderStore.New(globaldb.GetGlobalDB()), jwt.IssuerFactorySingleton(),
+		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
 		mapper.FactorySingleton())
-
 	if err != nil {
 		log.Panicf("Could not create auth provider registry: %v", err)
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
-		if err := registry.RegisterBackendFactory(typeName, factoryCreator); err != nil {
+		if err := registry.RegisterBackendFactory(authProviderRegisteringCtx, typeName, factoryCreator); err != nil {
 			log.Panicf("Could not register %s auth provider factory: %v", typeName, err)
 		}
 	}
-
 	if err := registry.Init(); err != nil {
 		log.Panicf("Could not initialize auth provider registry: %v", err)
 	}
 
-	userpass.RegisterAuthProviderOrPanic(registry)
+	userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, registry)
 
 	idExtractors := []authn.IdentityExtractor{
 		service.NewExtractor(), // internal services

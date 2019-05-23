@@ -6,7 +6,6 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -22,7 +21,7 @@ type AuthProviderStoreTestSuite struct {
 
 	db *bolt.DB
 
-	store authproviders.Store
+	store Store
 }
 
 func (suite *AuthProviderStoreTestSuite) SetupSuite() {

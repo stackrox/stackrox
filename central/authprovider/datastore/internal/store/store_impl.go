@@ -16,16 +16,17 @@ import (
 )
 
 type storeImpl struct {
-	*bolt.DB
+	db *bolt.DB
 }
 
 // GetAuthProviders retrieves authProviders from bolt
-func (b *storeImpl) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
+func (s *storeImpl) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "AuthProvider")
 
 	var authProviders []*storage.AuthProvider
-	err := b.View(func(tx *bolt.Tx) error {
+	err := s.db.View(func(tx *bolt.Tx) error {
 		provB := tx.Bucket(authProviderBucket)
+
 		return provB.ForEach(func(k, v []byte) error {
 			var authProvider storage.AuthProvider
 			if err := proto.Unmarshal(v, &authProvider); err != nil {
@@ -40,14 +41,14 @@ func (b *storeImpl) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
 }
 
 // AddAuthProvider adds an auth provider into bolt
-func (b *storeImpl) AddAuthProvider(authProvider *storage.AuthProvider) error {
+func (s *storeImpl) AddAuthProvider(authProvider *storage.AuthProvider) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "AuthProvider")
 
 	if authProvider.GetId() == "" || authProvider.GetName() == "" {
 		return errors.New("auth provider is missing required fields")
 	}
 
-	return b.Update(func(tx *bolt.Tx) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(authProviderBucket)
 		if bolthelper.Exists(bucket, authProvider.GetId()) {
 			return fmt.Errorf("AuthProvider %v (%v) cannot be added because it already exists", authProvider.GetId(), authProvider.GetName())
@@ -64,10 +65,10 @@ func (b *storeImpl) AddAuthProvider(authProvider *storage.AuthProvider) error {
 }
 
 // UpdateAuthProvider upserts an auth provider into bolt
-func (b *storeImpl) UpdateAuthProvider(authProvider *storage.AuthProvider) error {
+func (s *storeImpl) UpdateAuthProvider(authProvider *storage.AuthProvider) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "AuthProvider")
 
-	return b.Update(func(tx *bolt.Tx) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(authProviderBucket)
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, authProviderBucket, authProvider.GetId()); val != authProvider.GetName() {
@@ -84,10 +85,10 @@ func (b *storeImpl) UpdateAuthProvider(authProvider *storage.AuthProvider) error
 }
 
 // RemoveAuthProvider removes an auth provider from bolt
-func (b *storeImpl) RemoveAuthProvider(id string) error {
+func (s *storeImpl) RemoveAuthProvider(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "AuthProvider")
 
-	return b.Update(func(tx *bolt.Tx) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
 		ab := tx.Bucket(authProviderBucket)
 		key := []byte(id)
 		if exists := ab.Get(key) != nil; !exists {

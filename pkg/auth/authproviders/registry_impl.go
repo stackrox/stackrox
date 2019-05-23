@@ -125,13 +125,14 @@ func (r *registryImpl) getAuthProvider(id string) Provider {
 // Modifiers that update the registry.
 //////////////////////////////////////
 
-func (r *registryImpl) RegisterBackendFactory(typ string, factoryCreator BackendFactoryCreator) error {
+func (r *registryImpl) RegisterBackendFactory(ctx context.Context, typ string, factoryCreator BackendFactoryCreator) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
 	if r.backendFactories[typ] != nil {
 		return fmt.Errorf("backend factory for type %s is already registered", typ)
 	}
+
 	pathPrefix := fmt.Sprintf("%s%s/", r.providersURLPrefix(), typ)
 	factory := factoryCreator(pathPrefix)
 	if factory == nil {
@@ -144,7 +145,7 @@ func (r *registryImpl) RegisterBackendFactory(typ string, factoryCreator Backend
 			continue
 		}
 		go func(p Provider) {
-			if err := p.applyOptions(WithBackendFromFactory(factory)); err != nil {
+			if err := p.applyOptions(WithBackendFromFactory(ctx, factory)); err != nil {
 				log.Errorf("Failed to apply options: %v", err)
 			}
 		}(provider)
@@ -167,7 +168,7 @@ func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOp
 	return newProvider, nil
 }
 
-func (r *registryImpl) UpdateProvider(id string, options ...ProviderOption) (Provider, error) {
+func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -178,13 +179,13 @@ func (r *registryImpl) UpdateProvider(id string, options ...ProviderOption) (Pro
 
 	// Run the updates with an update to the store added.
 	// This will perform name validation since it is a secondary key in the store.
-	if err := provider.applyOptions(append(options, UpdateStore(r.store))...); err != nil {
+	if err := provider.applyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
 		return nil, err
 	}
 	return provider, nil
 }
 
-func (r *registryImpl) DeleteProvider(id string) error {
+func (r *registryImpl) DeleteProvider(ctx context.Context, id string) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -193,7 +194,7 @@ func (r *registryImpl) DeleteProvider(id string) error {
 		return nil
 	}
 
-	if err := provider.applyOptions(DeleteFromStore(r.store)); err != nil {
+	if err := provider.applyOptions(DeleteFromStore(ctx, r.store)); err != nil {
 		return err
 	}
 	delete(r.providers, id)
