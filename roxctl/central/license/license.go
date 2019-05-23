@@ -3,6 +3,7 @@ package license
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/central/license/add"
+	"github.com/stackrox/rox/roxctl/central/license/info"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -18,6 +19,7 @@ func Command() *cobra.Command {
 		Long:  description,
 	}
 	c.AddCommand(add.Command())
+	c.AddCommand(info.Command())
 	flags.AddTimeout(c)
 	return c
 }

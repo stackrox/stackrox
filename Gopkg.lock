@@ -793,6 +793,14 @@
   version = "v1.9.0"
 
 [[projects]]
+  digest = "1:c1cb2d07584993177c95e0ca1b554f559c8b7d4c9d422b616f6b22ab2930c655"
+  name = "github.com/hako/durafmt"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "7b7ae1e72eade09dbc9c2cfba3e6c4bae7b8bcac"
+  version = "1.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:7f5d6a07f0f7bf576f5c672faefdd7ea47918191e44f487bb0a5adb03a82d846"
   name = "github.com/hashicorp/golang-lru"
@@ -2053,6 +2061,7 @@
     "github.com/grpc-ecosystem/go-grpc-prometheus",
     "github.com/grpc-ecosystem/grpc-gateway/runtime",
     "github.com/grpc-ecosystem/grpc-gateway/utilities",
+    "github.com/hako/durafmt",
     "github.com/hashicorp/golang-lru",
     "github.com/heroku/docker-registry-client/registry",
     "github.com/mailru/easyjson",
