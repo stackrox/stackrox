@@ -122,7 +122,9 @@ func outputZip(config renderer.Config) error {
 
 	config.Environment = make(map[string]string)
 	for _, flag := range features.Flags {
-		config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.Enabled())
+		if value := os.Getenv(flag.EnvVar()); value != "" {
+			config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.Enabled())
+		}
 	}
 
 	htpasswd, err := renderer.GenerateHtpasswd(&config)
@@ -240,9 +242,6 @@ func Command() *cobra.Command {
 		c.PersistentFlags().SetAnnotation("license", flags.InteractiveUsageKey, []string{flags.LicenseUsageInteractive}),
 		c.PersistentFlags().SetAnnotation("license", flags.OptionalKey, []string{"true"}),
 	)
-
-	c.PersistentFlags().Var(&featureValue{&cfg.Features}, "flags", "Feature flags to enable")
-	utils.Must(c.PersistentFlags().MarkHidden("flags"))
 
 	c.PersistentFlags().Var(&flags.FileContentsVar{
 		Data: &cfg.DefaultTLSCertPEM,

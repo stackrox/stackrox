@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/defaultimages"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -174,7 +173,6 @@ type Config struct {
 
 	External *ExternalPersistence
 	HostPath *HostPathPersistence
-	Features []features.FeatureFlag
 
 	Password     string
 	PasswordAuto bool
