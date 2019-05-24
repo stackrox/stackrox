@@ -17,6 +17,7 @@ import (
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -91,7 +92,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
 
 	// run removal.
-	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID)
+	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, nil)
 	suite.Error(err, "expected an error since the cluster did not exist")
 }
 
@@ -102,7 +103,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), true, expectedErr)
 
 	// run removal.
-	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID)
+	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, nil)
 	suite.Equal(expectedErr, err)
 }
 
@@ -124,9 +125,10 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(testSecrets, nil)
 	suite.secretDataStore.EXPECT().RemoveSecret(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID)
+	done := concurrency.NewSignal()
+	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, &done)
 	suite.NoError(err)
-	time.Sleep(200000)
+	suite.True(concurrency.WaitWithTimeout(&done, 10*time.Second))
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGet() {
@@ -250,10 +252,10 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesRemove() {
 	}
 	suite.clusters.EXPECT().RemoveCluster(gomock.Any()).Times(0)
 
-	err := suite.clusterDataStore.RemoveCluster(suite.hasNoneCtx, "jiogserlksd")
+	err := suite.clusterDataStore.RemoveCluster(suite.hasNoneCtx, "jiogserlksd", nil)
 	suite.Error(err, "expected an error trying to write without permissions")
 
-	err = suite.clusterDataStore.RemoveCluster(suite.hasReadCtx, "vflkjdf")
+	err = suite.clusterDataStore.RemoveCluster(suite.hasReadCtx, "vflkjdf", nil)
 	suite.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -267,10 +269,10 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 
-	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, "poiuytre")
+	done := concurrency.NewSignal()
+	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, "poiuytre", &done)
 	suite.NoError(err, "expected no error trying to write with permissions")
-	// RemoveCluster invokes a goroutine that calls a bunch of mocks.  Wait .05 seconds for this to complete
-	time.Sleep(50000)
+	suite.True(concurrency.WaitWithTimeout(&done, 10*time.Second))
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterContactTime() {

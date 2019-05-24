@@ -192,7 +192,7 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Request must have a id")
 	}
-	if err := s.datastore.RemoveCluster(ctx, request.GetId()); err != nil {
+	if err := s.datastore.RemoveCluster(ctx, request.GetId(), nil); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil

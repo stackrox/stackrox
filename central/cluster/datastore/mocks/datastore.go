@@ -9,6 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 	time "time"
@@ -91,15 +92,15 @@ func (mr *MockDataStoreMockRecorder) GetClusters(arg0 interface{}) *gomock.Call 
 }
 
 // RemoveCluster mocks base method
-func (m *MockDataStore) RemoveCluster(arg0 context.Context, arg1 string) error {
-	ret := m.ctrl.Call(m, "RemoveCluster", arg0, arg1)
+func (m *MockDataStore) RemoveCluster(arg0 context.Context, arg1 string, arg2 *concurrency.Signal) error {
+	ret := m.ctrl.Call(m, "RemoveCluster", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveCluster indicates an expected call of RemoveCluster
-func (mr *MockDataStoreMockRecorder) RemoveCluster(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveCluster", reflect.TypeOf((*MockDataStore)(nil).RemoveCluster), arg0, arg1)
+func (mr *MockDataStoreMockRecorder) RemoveCluster(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveCluster", reflect.TypeOf((*MockDataStore)(nil).RemoveCluster), arg0, arg1, arg2)
 }
 
 // Search mocks base method

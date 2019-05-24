@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -31,7 +32,7 @@ type DataStore interface {
 
 	AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error)
 	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error
-	RemoveCluster(ctx context.Context, id string) error
+	RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error
 	UpdateClusterContactTime(ctx context.Context, id string, t time.Time) error
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 

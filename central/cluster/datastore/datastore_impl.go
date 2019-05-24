@@ -184,7 +184,7 @@ func (ds *datastoreImpl) UpdateClusterContactTime(ctx context.Context, id string
 }
 
 // RemoveCluster removes a cluster from the storage and the indexer
-func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string) error {
+func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
 	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(id)); err != nil {
 		return err
 	} else if !ok {
@@ -209,11 +209,11 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string) error {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment, resources.Alert, resources.Node, resources.Secret),
 		))
-	go ds.postRemoveCluster(deleteRelatedCtx, cluster)
+	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
 	return ds.indexer.DeleteCluster(id)
 }
 
-func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster) {
+func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal) {
 	// Terminate the cluster connection to prevent new data from being stored.
 	if ds.cm != nil {
 		if conn := ds.cm.GetConnection(cluster.GetId()); conn != nil {
@@ -259,6 +259,9 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
 		_ = ds.ss.RemoveSecret(ctx, s.GetId())
+	}
+	if done != nil {
+		done.Signal()
 	}
 }
 
