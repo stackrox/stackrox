@@ -123,7 +123,7 @@ storage-protos-compatible: $(PROTOLOCK_BIN)
 .PHONY: lint
 lint:
 	@echo "+ $@"
-	@set -e; echo $(FORMATTING_FILES) | xargs -n 1 dirname | sort | uniq | while IFS='' read -r dir || [ -n "$$dir" ]; do golint -set_exit_status "$$dir"/*.go ; done
+	@$(BASE_DIR)/tools/go-lint.sh $(FORMATTING_FILES)
 
 .PHONY: vet-active-tags
 vet-active-tags: deps volatile-generated-srcs

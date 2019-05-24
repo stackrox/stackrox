@@ -3,20 +3,20 @@ package operations
 import (
 	"fmt"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
-func renderDeleteManyFunctionSignature(statement *jen.Statement, props *GeneratorProperties) *jen.Statement {
+func renderDeleteManyFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
 	functionName := fmt.Sprintf("Delete%s", props.Plural)
-	return statement.Id(functionName).Params(jen.Id("ids").Index().String()).Error()
+	return statement.Id(functionName).Params(Id("ids").Index().String()).Error()
 }
 
-func generateDeleteMany(props *GeneratorProperties) (jen.Code, jen.Code) {
-	interfaceMethod := renderDeleteManyFunctionSignature(&jen.Statement{}, props)
+func generateDeleteMany(props *GeneratorProperties) (Code, Code) {
+	interfaceMethod := renderDeleteManyFunctionSignature(&Statement{}, props)
 
 	implementation := renderDeleteManyFunctionSignature(renderFuncSStarStore(), props).Block(
 		metricLine("RemoveMany", props.Singular),
-		jen.Return(jen.Id("s").Dot("crud").Dot("DeleteBatch").Call(jen.Id("ids"))),
+		Return(Id("s").Dot("crud").Dot("DeleteBatch").Call(Id("ids"))),
 	)
 
 	return interfaceMethod, implementation

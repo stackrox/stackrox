@@ -15,7 +15,7 @@ while read -r line; do
     else
         echo >&2 "${line}"
     fi
-done < <(staticcheck -checks=all,-ST1000,-ST1005,-SA1019,-SA4001,-ST1016 "$@")
+done < <(staticcheck -checks=all,-ST1000,-ST1001,-ST1005,-SA1019,-SA4001,-ST1016 "$@")
 
 echo "Found ${total} errors, ignored ${ignored}"
 if (( total == ignored )); then

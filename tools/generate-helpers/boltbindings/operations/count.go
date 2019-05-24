@@ -3,20 +3,20 @@ package operations
 import (
 	"fmt"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
-func renderCountFunctionSignature(statement *jen.Statement, props *GeneratorProperties) *jen.Statement {
+func renderCountFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
 	functionName := fmt.Sprintf("Count%s", props.Plural)
-	return statement.Id(functionName).Params().Parens(jen.List(jen.Id("count").Int(), jen.Err().Error()))
+	return statement.Id(functionName).Params().Parens(List(Id("count").Int(), Err().Error()))
 }
 
-func generateCount(props *GeneratorProperties) (jen.Code, jen.Code) {
-	interfaceMethod := renderCountFunctionSignature(&jen.Statement{}, props)
+func generateCount(props *GeneratorProperties) (Code, Code) {
+	interfaceMethod := renderCountFunctionSignature(&Statement{}, props)
 
 	implementation := renderCountFunctionSignature(renderFuncSStarStore(), props).Block(
 		metricLine("Count", props.Singular),
-		jen.Return(jen.Id("s").Dot("crud").Dot("Count").Call()),
+		Return(Id("s").Dot("crud").Dot("Count").Call()),
 	)
 	return interfaceMethod, implementation
 }

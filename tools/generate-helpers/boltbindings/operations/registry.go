@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
 // GeneratorProperties contains the values used by the generator to generate Store-related classes
@@ -21,7 +21,7 @@ type GeneratorProperties struct {
 }
 
 // methodGenerator generates an interface and implementation for a specific kind of DB operation.
-type methodGenerator func(props *GeneratorProperties) (interfaceMethod jen.Code, implementation jen.Code)
+type methodGenerator func(props *GeneratorProperties) (interfaceMethod Code, implementation Code)
 
 var (
 	supportedMethods = make(map[string]methodGenerator)
@@ -37,7 +37,7 @@ func RenderSupportedMethods() string {
 }
 
 // GenerateInterfaceAndImplementation generates the interface definition and the implementation for the given DB operation.
-func GenerateInterfaceAndImplementation(opName string, props *GeneratorProperties) (interfaceMethod jen.Code, implementation jen.Code) {
+func GenerateInterfaceAndImplementation(opName string, props *GeneratorProperties) (interfaceMethod Code, implementation Code) {
 	method, ok := supportedMethods[opName]
 	if !ok {
 		panic(fmt.Sprintf("UNEXPECTED: method %s not found", opName))

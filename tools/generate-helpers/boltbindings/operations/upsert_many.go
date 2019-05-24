@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
-func renderUpsertManyFunctionSignature(statement *jen.Statement, props *GeneratorProperties) *jen.Statement {
+func renderUpsertManyFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
 	functionName := fmt.Sprintf("Upsert%s", props.Plural)
 	return statement.Id(functionName).
-		Params(jen.Id(strings.ToLower(props.Plural)).
+		Params(Id(strings.ToLower(props.Plural)).
 			Index().Op("*").Qual(props.Pkg, props.Object),
 		).
 		Error()
 }
 
-func generateUpsertMany(props *GeneratorProperties) (jen.Code, jen.Code) {
+func generateUpsertMany(props *GeneratorProperties) (Code, Code) {
 	return renderUpdateUpsertMany(renderUpsertManyFunctionSignature, props, strings.ToLower(props.Plural), "UpsertBatch")
 }
 

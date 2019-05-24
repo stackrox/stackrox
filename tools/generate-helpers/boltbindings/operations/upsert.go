@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
-func renderUpsertFunctionSignature(statement *jen.Statement, props *GeneratorProperties) *jen.Statement {
+func renderUpsertFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
 	functionName := fmt.Sprintf("Upsert%s", props.Singular)
-	return statement.Id(functionName).Params(jen.Id(strings.ToLower(props.Singular)).Op("*").Qual(props.Pkg, props.Object)).Error()
+	return statement.Id(functionName).Params(Id(strings.ToLower(props.Singular)).Op("*").Qual(props.Pkg, props.Object)).Error()
 }
 
-func generateUpsert(props *GeneratorProperties) (jen.Code, jen.Code) {
+func generateUpsert(props *GeneratorProperties) (Code, Code) {
 	return renderUpdateUpsert(renderUpsertFunctionSignature, props, strings.ToLower(props.Singular), "Upsert")
 }
 

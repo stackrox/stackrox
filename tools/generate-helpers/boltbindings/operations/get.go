@@ -3,47 +3,47 @@ package operations
 import (
 	"fmt"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
-func renderGetFunctionSignature(statement *jen.Statement, props *GeneratorProperties) *jen.Statement {
+func renderGetFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
 	functionName := fmt.Sprintf("Get%s", props.Singular)
-	returns := []jen.Code{jen.Op("*").Qual(props.Pkg, props.Object)}
+	returns := []Code{Op("*").Qual(props.Pkg, props.Object)}
 	if props.GetExists {
-		returns = append(returns, jen.Bool())
+		returns = append(returns, Bool())
 	}
-	returns = append(returns, jen.Error())
-	return statement.Id(functionName).Params(jen.Id("id").String()).Parens(jen.List(
+	returns = append(returns, Error())
+	return statement.Id(functionName).Params(Id("id").String()).Parens(List(
 		returns...,
 	))
 }
 
-func generateGet(props *GeneratorProperties) (jen.Code, jen.Code) {
-	interfaceMethod := renderGetFunctionSignature(&jen.Statement{}, props)
+func generateGet(props *GeneratorProperties) (Code, Code) {
+	interfaceMethod := renderGetFunctionSignature(&Statement{}, props)
 
-	existsReturns := []jen.Code{jen.Id("storedKey")}
-	nilReturns := []jen.Code{jen.Nil()}
-	errReturns := []jen.Code{jen.Nil()}
+	existsReturns := []Code{Id("storedKey")}
+	nilReturns := []Code{Nil()}
+	errReturns := []Code{Nil()}
 	if props.GetExists {
-		existsReturns = append(existsReturns, jen.True())
-		nilReturns = append(nilReturns, jen.False())
-		errReturns = append(errReturns, jen.Id("msg").Op("==").Nil())
+		existsReturns = append(existsReturns, True())
+		nilReturns = append(nilReturns, False())
+		errReturns = append(errReturns, Id("msg").Op("==").Nil())
 	}
-	existsReturns = append(existsReturns, jen.Nil())
-	nilReturns = append(nilReturns, jen.Nil())
-	errReturns = append(errReturns, jen.Err())
+	existsReturns = append(existsReturns, Nil())
+	nilReturns = append(nilReturns, Nil())
+	errReturns = append(errReturns, Err())
 
 	implementation := renderGetFunctionSignature(renderFuncSStarStore(), props).Block(
 		metricLine("Get", props.Singular),
-		jen.List(jen.Id("msg"), jen.Err()).Op(":=").Id("s").Dot("crud").Dot("Read").Call(jen.Id("id")),
-		jen.If(jen.Err().Op("!=").Nil()).Block(
-			jen.Return(errReturns...),
+		List(Id("msg"), Err()).Op(":=").Id("s").Dot("crud").Dot("Read").Call(Id("id")),
+		If(Err().Op("!=").Nil()).Block(
+			Return(errReturns...),
 		),
-		jen.If(jen.Id("msg").Op("==").Nil()).Block(
-			jen.Return(nilReturns...),
+		If(Id("msg").Op("==").Nil()).Block(
+			Return(nilReturns...),
 		),
-		jen.Id("storedKey").Op(":=").Id("msg").Assert(jen.Op("*").Qual(props.Pkg, props.Object)),
-		jen.Return(existsReturns...),
+		Id("storedKey").Op(":=").Id("msg").Assert(Op("*").Qual(props.Pkg, props.Object)),
+		Return(existsReturns...),
 	)
 
 	return interfaceMethod, implementation

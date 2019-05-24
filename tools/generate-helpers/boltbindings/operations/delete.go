@@ -3,20 +3,20 @@ package operations
 import (
 	"fmt"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
-func renderDeleteFunctionSignature(statement *jen.Statement, props *GeneratorProperties) *jen.Statement {
+func renderDeleteFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
 	functionName := fmt.Sprintf("Delete%s", props.Singular)
-	return statement.Id(functionName).Params(jen.Id("id").String()).Error()
+	return statement.Id(functionName).Params(Id("id").String()).Error()
 }
 
-func generateDelete(props *GeneratorProperties) (jen.Code, jen.Code) {
-	interfaceMethod := renderDeleteFunctionSignature(&jen.Statement{}, props)
+func generateDelete(props *GeneratorProperties) (Code, Code) {
+	interfaceMethod := renderDeleteFunctionSignature(&Statement{}, props)
 
 	implementation := renderDeleteFunctionSignature(renderFuncSStarStore(), props).Block(
 		metricLine("Remove", props.Singular),
-		jen.Return(jen.Id("s").Dot("crud").Dot("Delete").Call(jen.Id("id"))),
+		Return(Id("s").Dot("crud").Dot("Delete").Call(Id("id"))),
 	)
 	return interfaceMethod, implementation
 }
