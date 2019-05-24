@@ -32,7 +32,7 @@ const getQueryVariables = params => {
     const { controlId, query } = params;
     const newQuery = {
         ...query,
-        'Control ID': controlId
+        'Control ID': `"${controlId}"`
     };
     const variables = {
         query: queryService.objectToWhereClause(newQuery)
