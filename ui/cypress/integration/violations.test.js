@@ -157,6 +157,7 @@ describe('Violations page', () => {
     });
 
     // Excluding this test because it's causing issues. Will include it again once it's fixed in a different PR
+    // also need to test bulk whitelisting (see ROX-2304)
     xit('should whitelist the deployment', () => {
         mockWhitelistDeployment();
         mockPatchAlerts();

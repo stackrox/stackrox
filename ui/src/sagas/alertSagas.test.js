@@ -6,7 +6,7 @@ import { selectors } from 'reducers';
 import { actions, types } from 'reducers/alerts';
 import { types as locationActionTypes } from 'reducers/routes';
 import { fetchAlerts, fetchAlert } from 'services/AlertsService';
-import { whitelistDeployment } from 'services/PoliciesService';
+import { whitelistDeployments } from 'services/PoliciesService';
 import saga from './alertSagas';
 
 const alertTypeSearchOptions = [
@@ -120,7 +120,7 @@ describe('Alert Sagas', () => {
                 [select(selectors.getAlertsSearchOptions), []],
                 [select(selectors.getAlert, alert.id), alert],
                 [
-                    call(whitelistDeployment, alert.policy.id, alert.deployment.name),
+                    call(whitelistDeployments, alert.policy.id, [alert.deployment.name]),
                     dynamic(fetchWhitelistMock)
                 ]
             ])
@@ -130,6 +130,7 @@ describe('Alert Sagas', () => {
                 payload: { options: alertTypeSearchOptions }
             })
             .put(actions.pollAlerts.stop())
+            .put(actions.pollAlerts.start())
             .put(actions.whitelistDeployment.success(response))
             .silentRun();
     });

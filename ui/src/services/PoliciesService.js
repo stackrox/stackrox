@@ -130,17 +130,17 @@ export function getDryRun(policy) {
  * Updates policy with a given ID to add deployment into the whitelisted entries.
  *
  * @param {!string} policyId
- * @param {!string} deploymentName
+ * @param {!string[]} deploymentNames
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export async function whitelistDeployment(policyId, deploymentName) {
+export async function whitelistDeployments(policyId, deploymentNames) {
     const { response } = await fetchPolicy(policyId);
     const policy = response.entities.policy[policyId];
 
-    const deploymentEntry = {
-        deployment: { name: deploymentName }
-    };
-    policy.whitelists = [...policy.whitelists, deploymentEntry];
+    const deploymentEntries = deploymentNames.map(name => ({
+        deployment: { name }
+    }));
+    policy.whitelists = [...policy.whitelists, ...deploymentEntries];
     return axios.put(`${baseUrl}/${policy.id}`, policy);
 }
 

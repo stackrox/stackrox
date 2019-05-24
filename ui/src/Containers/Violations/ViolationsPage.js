@@ -47,6 +47,7 @@ class ViolationsPage extends Component {
     static propTypes = {
         violations: PropTypes.shape({}).isRequired,
         whitelistDeployment: PropTypes.func.isRequired,
+        whitelistDeployments: PropTypes.func.isRequired,
         resolveAlerts: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
@@ -157,7 +158,7 @@ class ViolationsPage extends Component {
 
     whitelistDeployments = () => {
         const { selection } = this.state;
-        selection.forEach(id => this.props.whitelistDeployment(id));
+        this.props.whitelistDeployments(selection);
         this.hideConfirmationDialog();
         this.clearSelection();
     };
@@ -504,6 +505,7 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = (dispatch, props) => ({
     whitelistDeployment: alertId => dispatch(alertActions.whitelistDeployment.request(alertId)),
+    whitelistDeployments: alertIds => dispatch(alertActions.whitelistDeployments.request(alertIds)),
     resolveAlerts: (alertIds, whitelist) =>
         dispatch(alertActions.resolveAlerts(alertIds, whitelist)),
     setSearchOptions: searchOptions => {

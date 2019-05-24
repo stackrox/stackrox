@@ -29,6 +29,7 @@ export const types = {
     ),
     FETCH_ALERTS_BY_TIMESERIES: createFetchingActionTypes('alerts/FETCH_ALERTS_BY_TIMESERIES'),
     WHITELIST_DEPLOYMENT: createFetchingActionTypes('alerts/WHITELIST_DEPLOYMENT'),
+    WHITELIST_DEPLOYMENTS: createFetchingActionTypes('alerts/WHITELIST_DEPLOYMENTS'),
     RESOLVE_ALERTS: 'alerts/RESOLVE_ALERTS',
     ...searchTypes('alerts')
 };
@@ -47,6 +48,7 @@ export const actions = {
     fetchAlertCountsByCluster: createFetchingActions(types.FETCH_ALERT_COUNTS_BY_CLUSTER),
     fetchAlertsByTimeseries: createFetchingActions(types.FETCH_ALERTS_BY_TIMESERIES),
     whitelistDeployment: createFetchingActions(types.WHITELIST_DEPLOYMENT),
+    whitelistDeployments: createFetchingActions(types.WHITELIST_DEPLOYMENTS),
     resolveAlerts: (alertIds, whitelist) => ({ type: types.RESOLVE_ALERTS, alertIds, whitelist }),
     ...getSearchActions('alerts')
 };

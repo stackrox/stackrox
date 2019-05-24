@@ -19,7 +19,7 @@ import { actions, types } from 'reducers/alerts';
 import { types as dashboardTypes } from 'reducers/dashboard';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
-import { whitelistDeployment } from 'services/PoliciesService';
+import { whitelistDeployments } from 'services/PoliciesService';
 import { actions as notificationActions } from 'reducers/notifications';
 
 function* getAlerts(filters) {
@@ -144,15 +144,42 @@ function* cancelPolling() {
     yield put(actions.pollAlerts.stop());
 }
 
-function* sendWhitelistDeployment({ params: alertId }) {
+function* whitelistDeploymentsFromAlerts(alertIds) {
     try {
         yield fork(cancelPolling);
-        const alert = yield select(selectors.getAlert, alertId);
-        const result = yield call(whitelistDeployment, alert.policy.id, alert.deployment.name);
+        const alerts = yield all(alertIds.map(alertId => select(selectors.getAlert, alertId)));
+        // need to produce { p_id1: [dep_id1], p_id2: [dep_id2, dep_id3] } to group deployments by policy
+        const deploymentsGroupedByPolicy = alerts.reduce((acc, alert) => {
+            const policyId = alert.policy.id;
+            if (!acc[policyId]) acc[policyId] = [];
+            acc[policyId].push(alert.deployment.name);
+            return acc;
+        }, {});
+        return yield all(
+            Object.keys(deploymentsGroupedByPolicy).map(policyId =>
+                call(whitelistDeployments, policyId, deploymentsGroupedByPolicy[policyId])
+            )
+        );
+    } finally {
+        yield put(actions.pollAlerts.start());
+    }
+}
+
+function* sendWhitelistDeployment({ params: alertId }) {
+    try {
+        const [result] = yield whitelistDeploymentsFromAlerts([alertId]);
         yield put(actions.whitelistDeployment.success(result.response));
-        yield fork(pollAlerts);
     } catch (error) {
         yield put(actions.whitelistDeployment.failure(error));
+    }
+}
+
+function* sendWhitelistDeployments({ params: alertIds }) {
+    try {
+        const results = yield whitelistDeploymentsFromAlerts(alertIds);
+        yield put(actions.whitelistDeployments.success(results.map(r => r.response)));
+    } catch (error) {
+        yield put(actions.whitelistDeployments.failure(error));
     }
 }
 
@@ -177,6 +204,7 @@ function* watchDashboardSearchOptions() {
 
 function* watchWhitelistDeployment() {
     yield takeLatest(types.WHITELIST_DEPLOYMENT.REQUEST, sendWhitelistDeployment);
+    yield takeLatest(types.WHITELIST_DEPLOYMENTS.REQUEST, sendWhitelistDeployments);
 }
 
 function* watchResolveAlerts() {
@@ -190,7 +218,7 @@ function* pollSagaWatcher() {
     }
 }
 
-export default function* alerts() {
+export default function* alertsSaga() {
     yield all([
         takeEvery(LOCATION_CHANGE, cancelPolling),
         takeEveryLocation(violationsPath, loadViolationsPage),
