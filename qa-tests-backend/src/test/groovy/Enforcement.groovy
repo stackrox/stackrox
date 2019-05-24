@@ -1,6 +1,4 @@
 import static Services.waitForViolation
-
-import org.junit.Assume
 import groups.BAT
 import groups.Integration
 import groups.PolicyEnforcement
@@ -9,7 +7,6 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass
 import objects.DaemonSet
 import objects.Deployment
-import org.apache.commons.lang.StringUtils
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.CreatePolicyService
@@ -661,7 +658,6 @@ class Enforcement extends BaseSpecification {
 
     @Category([PolicyEnforcement])
     def "Test Alert and  Kill Pod Enforcement - Whitelist Process"() {
-        Assume.assumeTrue(false)
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
         Deployment wpDeployment = new Deployment()
@@ -681,9 +677,14 @@ class Enforcement extends BaseSpecification {
         )
         assert !result.contains("EXCEPTION")
         when:
+        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+                getProcessWhitelist(wpDeployment.deploymentUid, wpDeployment.name)
+        assert (whitelist != null)
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
                 lockProcessWhitelists(wpDeployment.deploymentUid, wpDeployment.name, true)
-        assert (!StringUtils.isEmpty(lockProcessWhitelists.get(0).getElements(0).getElement().processName))
+        assert lockProcessWhitelists.size() ==  1
+        assert  lockProcessWhitelists.get(0).getElementsList().
+                find { it.element.processName.equalsIgnoreCase("/usr/sbin/nginx") } != null
         orchestrator.execInContainer(wpDeployment, "pwd")
         assert waitForViolation(wpDeployment.name, WHITELISTPROCESS_POLICY, 90)
         then:
