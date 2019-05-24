@@ -8,6 +8,7 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -15,11 +16,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	pipelineCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkPolicy)))
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -48,7 +55,7 @@ type pipelineImpl struct {
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
-	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(context.TODO(), clusterID, "")
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(pipelineCtx, clusterID, "")
 	if err != nil {
 		return err
 	}
@@ -142,15 +149,13 @@ func (s *pipelineImpl) enrichCluster(np *storage.NetworkPolicy) error {
 }
 
 func (s *pipelineImpl) persistNetworkPolicy(action central.ResourceAction, np *storage.NetworkPolicy) error {
-	ctx := context.TODO()
-
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
-		return s.networkPolicies.AddNetworkPolicy(ctx, np)
+		return s.networkPolicies.AddNetworkPolicy(pipelineCtx, np)
 	case central.ResourceAction_UPDATE_RESOURCE:
-		return s.networkPolicies.UpdateNetworkPolicy(ctx, np)
+		return s.networkPolicies.UpdateNetworkPolicy(pipelineCtx, np)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.networkPolicies.RemoveNetworkPolicy(ctx, string(np.GetId()))
+		return s.networkPolicies.RemoveNetworkPolicy(pipelineCtx, string(np.GetId()))
 	default:
 		return fmt.Errorf("Event action '%s' for network policy does not exist", action)
 	}

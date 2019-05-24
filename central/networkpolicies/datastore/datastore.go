@@ -26,7 +26,6 @@ type DataStore interface {
 	GetNetworkPolicy(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error)
 	GetNetworkPolicies(ctx context.Context, clusterID, namespace string) ([]*storage.NetworkPolicy, error)
 	CountMatchingNetworkPolicies(ctx context.Context, clusterID, namespace string) (int, error)
-	CountNetworkPolicies(ctx context.Context) (int, error)
 
 	AddNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error
 	UpdateNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error
