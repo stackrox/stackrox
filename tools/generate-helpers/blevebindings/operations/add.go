@@ -19,6 +19,7 @@ func generateAdd(props GeneratorProperties) (jen.Code, jen.Code) {
 	wrapperType := MakeWrapperType(props.Object)
 
 	implementation := renderAddFunctionSignature(renderFuncBStarIndexer(), props).Block(
+		metricLine("Add", props.Object),
 		jen.Return(jen.Id("b").Dot("index").Dot("Index").Call(
 			jen.Id(strings.ToLower(props.Singular)).Dot(props.IDFunc).Call(),
 			jen.Op("&").Id(wrapperType).Values(jen.Dict{

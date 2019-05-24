@@ -4,12 +4,15 @@ package index
 
 import (
 	bleve "github.com/blevesearch/bleve"
+	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/processwhitelist/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
+	"time"
 )
 
 const batchSize = 5000
@@ -24,6 +27,7 @@ type processWhitelistWrapper struct {
 }
 
 func (b *indexerImpl) AddWhitelist(whitelist *storage.ProcessWhitelist) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "ProcessWhitelist")
 	return b.index.Index(whitelist.GetId(), &processWhitelistWrapper{
 		ProcessWhitelist: whitelist,
 		Type:             v1.SearchCategory_PROCESS_WHITELISTS.String(),
@@ -31,6 +35,7 @@ func (b *indexerImpl) AddWhitelist(whitelist *storage.ProcessWhitelist) error {
 }
 
 func (b *indexerImpl) AddWhitelists(whitelists []*storage.ProcessWhitelist) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "ProcessWhitelist")
 	batchManager := batcher.New(len(whitelists), batchSize)
 	for {
 		start, end, ok := batchManager.Next()
@@ -58,6 +63,7 @@ func (b *indexerImpl) processBatch(whitelists []*storage.ProcessWhitelist) error
 }
 
 func (b *indexerImpl) DeleteWhitelist(id string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ProcessWhitelist")
 	return b.index.Delete(id)
 }
 

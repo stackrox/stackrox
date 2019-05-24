@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/dave/jennifer/jen"
+	"github.com/stackrox/rox/tools/generate-helpers/blevebindings/packagenames"
 )
 
 func renderFuncBStarIndexer() *jen.Statement {
@@ -16,4 +17,8 @@ func MakeWrapperType(str string) string {
 		return strings.ToLower(str) + "Wrapper"
 	}
 	return strings.ToLower(str[:1]) + str[1:] + "Wrapper"
+}
+
+func metricLine(op, name string) *jen.Statement {
+	return jen.Defer().Qual(packagenames.Metrics, "SetIndexOperationDurationTime").Call(jen.Qual("time", "Now").Call(), jen.Qual(packagenames.Ops, op), jen.Lit(name))
 }

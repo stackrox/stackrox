@@ -10,4 +10,6 @@ const (
 	RoxSearch         = "github.com/stackrox/rox/pkg/search"
 	RoxCentral        = "github.com/stackrox/rox/central"
 	RoxMappingSubPath = "/index/mappings"
+	Metrics           = "github.com/stackrox/rox/central/metrics"
+	Ops               = "github.com/stackrox/rox/pkg/metrics"
 )

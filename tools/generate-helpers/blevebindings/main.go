@@ -38,6 +38,9 @@ func makeTag(object string) string {
 }
 
 func generateOptionsFile(props operations.GeneratorProperties) error {
+	if !props.WriteOptions {
+		return nil
+	}
 	tagString := makeTag(props.Object)
 	f := jen.NewFile("mappings")
 	f.HeaderComment(headerComment)
@@ -54,6 +57,7 @@ func generateIndexImplementationFile(props operations.GeneratorProperties, imple
 	wrapperClass := operations.MakeWrapperType(props.Object)
 	tagString := makeTag(props.Object)
 	f := newFile()
+	f.ImportAlias(packagenames.Ops, "ops")
 	f.Line()
 	f.Const().Id("batchSize").Op("=").Lit(5000)
 	f.Line()
@@ -137,6 +141,9 @@ func main() {
 
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", fmt.Sprintf("the search category to index under (supported - %s)", renderSearchCategories()))
 	utils.Must(c.MarkFlagRequired("search-category"))
+
+	c.Flags().BoolVar(&props.WriteOptions, "write-options", true, "enable writing out the options map")
+	c.Flags().StringVar(&props.OptionsPath, "options-path", packagenames.RoxMappingSubPath, "path to write out the options to")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.Plural == "" {

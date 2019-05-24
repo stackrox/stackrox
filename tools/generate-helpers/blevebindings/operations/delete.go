@@ -15,6 +15,7 @@ func generateDelete(props GeneratorProperties) (jen.Code, jen.Code) {
 	interfaceMethod := renderDeleteFunctionSignature(&jen.Statement{}, props)
 
 	implementation := renderDeleteFunctionSignature(renderFuncBStarIndexer(), props).Block(
+		metricLine("Remove", props.Object),
 		jen.Return(jen.Id("b").Dot("index").Dot("Delete").Call(jen.Id("id"))),
 	)
 

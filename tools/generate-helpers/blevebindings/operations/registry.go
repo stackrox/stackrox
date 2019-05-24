@@ -15,6 +15,8 @@ type GeneratorProperties struct {
 	Plural         string
 	IDFunc         string
 	SearchCategory string
+	WriteOptions   bool
+	OptionsPath    string
 }
 
 // methodGenerator generates an interface and implementation for a specific kind of DB operation.

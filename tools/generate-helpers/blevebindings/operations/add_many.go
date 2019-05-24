@@ -18,6 +18,7 @@ func generateAddMany(props GeneratorProperties) (jen.Code, jen.Code) {
 	wrapperType := MakeWrapperType(props.Object)
 
 	implementation := renderAddManyFunctionSignature(renderFuncBStarIndexer(), props).Block(
+		metricLine("AddMany", props.Object),
 		jen.Id("batchManager").Op(":=").Qual(packagenames.RoxBatcher, "New").Call(jen.Id("len").Call(jen.Id(strings.ToLower(props.Plural))), jen.Id("batchSize")),
 		jen.For().Block(
 			jen.List(jen.Id("start"), jen.Id("end"), jen.Id("ok")).Op(":=").Id("batchManager").Dot("Next").Call(),
