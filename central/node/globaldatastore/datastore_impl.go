@@ -106,7 +106,11 @@ func (s *globalDataStore) GetClusterNodeStore(ctx context.Context, clusterID str
 	} else if !ok {
 		return nil, errors.New("permission denied")
 	}
-	return s.globalStore.GetClusterNodeStore(clusterID, writeAccess)
+	store, err := s.globalStore.GetClusterNodeStore(clusterID, writeAccess)
+	if err != nil {
+		return nil, err
+	}
+	return datastore.New(store, s.indexer, writeAccess), nil
 }
 
 func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterIDs ...string) error {
