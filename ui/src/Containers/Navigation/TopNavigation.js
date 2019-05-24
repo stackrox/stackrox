@@ -24,11 +24,10 @@ const topNavMenuBtnClass =
 const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
     function renderNavBarMenu() {
         const NavItem = () => <Icon.MoreHorizontal className="mx-4 h-4 w-4 pointer-events-none" />;
-        const options = [{ label: 'Logout', onClick: () => logout() }];
-        // dev only until feature is complete
-        if (process.env.NODE_ENV !== 'production') {
-            options.unshift({ label: 'System Config', link: '/main/systemconfig' });
-        }
+        const options = [
+            { label: 'System Config', link: '/main/systemconfig' },
+            { label: 'Logout', onClick: () => logout() }
+        ];
         if (shouldHaveReadPermission('Licenses')) {
             options.unshift({ label: 'Product License', link: '/main/license' });
         }
