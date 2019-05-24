@@ -18,6 +18,7 @@ func generateList(props *GeneratorProperties) (jen.Code, jen.Code) {
 	interfaceMethod := renderListFunctionSignature(&jen.Statement{}, props)
 
 	implementation := renderListFunctionSignature(renderFuncSStarStore(), props).Block(
+		metricLine("GetAll", props.Singular),
 		jen.List(jen.Id("msgs"), jen.Err()).Op(":=").Id("s").Dot("crud").Dot("ReadAll").Call(),
 		renderIfErrReturnNilErr(),
 		jen.Id("storedKeys").Op(":=").Make(jen.Index().Op("*").Qual(props.Pkg, props.Object), jen.Len(jen.Id("msgs"))),

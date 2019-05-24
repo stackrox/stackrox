@@ -15,17 +15,18 @@ func renderIfErrReturnNilErr() jen.Code {
 	)
 }
 
-func renderAddUpdateUpsert(sigFunc func(*jen.Statement, *GeneratorProperties) *jen.Statement, props *GeneratorProperties, argName, crudCall string) (jen.Code, jen.Code) {
+func renderUpdateUpsert(sigFunc func(*jen.Statement, *GeneratorProperties) *jen.Statement, props *GeneratorProperties, argName, crudCall string) (jen.Code, jen.Code) {
 	interfaceMethod := sigFunc(&jen.Statement{}, props)
 
 	implementation := sigFunc(renderFuncSStarStore(), props).Block(
+		metricLine(crudCall, props.Singular),
 		jen.Return(jen.Id("s").Dot("crud").Dot(crudCall).Call(jen.Id(argName))),
 	)
 
 	return interfaceMethod, implementation
 }
 
-func renderAddUpdateUpsertMany(sigFunc func(*jen.Statement, *GeneratorProperties) *jen.Statement, props *GeneratorProperties, argName, crudCall string) (jen.Code, jen.Code) {
+func renderUpdateUpsertMany(sigFunc func(*jen.Statement, *GeneratorProperties) *jen.Statement, props *GeneratorProperties, argName, crudCall string) (jen.Code, jen.Code) {
 	interfaceMethod := sigFunc(&jen.Statement{}, props)
 
 	implementation := sigFunc(renderFuncSStarStore(), props).Block(
@@ -38,4 +39,8 @@ func renderAddUpdateUpsertMany(sigFunc func(*jen.Statement, *GeneratorProperties
 		jen.Return(jen.Id("s").Dot("crud").Dot(crudCall).Call(jen.Id("msgs"))),
 	)
 	return interfaceMethod, implementation
+}
+
+func metricLine(op, name string) *jen.Statement {
+	return jen.Defer().Qual(packagenames.Metrics, "SetBoltOperationDurationTime").Call(jen.Qual("time", "Now").Call(), jen.Qual(packagenames.Ops, op), jen.Lit(name))
 }

@@ -27,6 +27,7 @@ func generateAddMany(props *GeneratorProperties) (jen.Code, jen.Code) {
 	var outerBlock []jen.Code
 	var innerBlock []jen.Code
 	var returnBlock []jen.Code
+	outerBlock = append(outerBlock, metricLine("AddMany", props.Singular))
 	if props.IDField != "" {
 		outerBlock = append(outerBlock, jen.Id("newIds").Op(":=").Make(jen.Index().String(), jen.Len(jen.Id(strings.ToLower(props.Plural)))))
 		innerBlock = append(innerBlock, jen.Id("newId").Op(":=").Qual(packagenames.UUID, "NewV4").Call().Dot("String").Call())

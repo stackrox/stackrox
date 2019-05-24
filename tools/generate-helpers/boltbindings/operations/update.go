@@ -13,7 +13,7 @@ func renderUpdateFunctionSignature(statement *jen.Statement, props *GeneratorPro
 }
 
 func generateUpdate(props *GeneratorProperties) (jen.Code, jen.Code) {
-	return renderAddUpdateUpsert(renderUpdateFunctionSignature, props, strings.ToLower(props.Singular), "Update")
+	return renderUpdateUpsert(renderUpdateFunctionSignature, props, strings.ToLower(props.Singular), "Update")
 }
 
 func init() {

@@ -17,7 +17,7 @@ func renderUpdateManyFunctionSignature(statement *jen.Statement, props *Generato
 }
 
 func generateUpdateMany(props *GeneratorProperties) (jen.Code, jen.Code) {
-	return renderAddUpdateUpsertMany(renderUpdateManyFunctionSignature, props, strings.ToLower(props.Plural), "UpdateBatch")
+	return renderUpdateUpsertMany(renderUpdateManyFunctionSignature, props, strings.ToLower(props.Plural), "UpdateBatch")
 }
 
 func init() {

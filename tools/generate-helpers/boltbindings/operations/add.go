@@ -24,6 +24,7 @@ func generateAdd(props *GeneratorProperties) (jen.Code, jen.Code) {
 
 	var blockContents []jen.Code
 	var returnContents []jen.Code
+	blockContents = append(blockContents, metricLine("Add", props.Singular))
 	if props.IDField != "" {
 		blockContents = append(blockContents, jen.Id("newId").Op(":=").Qual(packagenames.UUID, "NewV4").Call().Dot("String").Call())
 		blockContents = append(blockContents, jen.Id(strings.ToLower(props.Singular)).Dot(props.IDField).Op("=").Id("newId"))

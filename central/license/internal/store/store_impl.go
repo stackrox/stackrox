@@ -5,9 +5,12 @@ package store
 import (
 	bbolt "github.com/etcd-io/bbolt"
 	proto1 "github.com/gogo/protobuf/proto"
+	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
 	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
 	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	ops "github.com/stackrox/rox/pkg/metrics"
+	"time"
 )
 
 var (
@@ -34,10 +37,12 @@ func newStore(db *bbolt.DB) (*store, error) {
 }
 
 func (s *store) DeleteLicenseKey(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "LicenseKey")
 	return s.crud.Delete(id)
 }
 
 func (s *store) ListLicenseKeys() ([]*storage.StoredLicenseKey, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "LicenseKey")
 	msgs, err := s.crud.ReadAll()
 	if err != nil {
 		return nil, err

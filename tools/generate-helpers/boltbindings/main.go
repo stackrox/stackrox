@@ -69,6 +69,7 @@ func generateSingletonFile() error {
 
 func generateStoreImplFile(implementations []jen.Code, props *operations.GeneratorProperties) error {
 	f := newFile()
+	f.ImportAlias(packagenames.Ops, "ops")
 	f.Var().Defs(jen.Id(bucketNameVariable).Op("=").Index().Byte().Parens(jen.Lit(props.BucketName)))
 
 	f.Type().Id("store").Struct(

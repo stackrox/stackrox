@@ -18,6 +18,7 @@ func generateGetMany(props *GeneratorProperties) (jen.Code, jen.Code) {
 	interfaceMethod := renderGetManyFunctionSignature(&jen.Statement{}, props)
 
 	implementation := renderGetManyFunctionSignature(renderFuncSStarStore(), props).Block(
+		metricLine("GetMany", props.Singular),
 		jen.List(jen.Id("msgs"), jen.Id("err")).Op(":=").Id("s").Dot("crud").Dot("ReadBatch").Call(jen.Id("ids")),
 		renderIfErrReturnNilErr(),
 		jen.Id("storedKeys").Op(":=").Make(jen.Index().Op("*").Qual(props.Pkg, props.Object), jen.Len(jen.Id("msgs"))),

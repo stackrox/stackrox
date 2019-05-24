@@ -15,6 +15,7 @@ func generateDeleteMany(props *GeneratorProperties) (jen.Code, jen.Code) {
 	interfaceMethod := renderDeleteManyFunctionSignature(&jen.Statement{}, props)
 
 	implementation := renderDeleteManyFunctionSignature(renderFuncSStarStore(), props).Block(
+		metricLine("RemoveMany", props.Singular),
 		jen.Return(jen.Id("s").Dot("crud").Dot("DeleteBatch").Call(jen.Id("ids"))),
 	)
 

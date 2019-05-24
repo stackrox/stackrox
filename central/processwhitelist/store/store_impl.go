@@ -5,9 +5,12 @@ package store
 import (
 	bbolt "github.com/etcd-io/bbolt"
 	proto1 "github.com/gogo/protobuf/proto"
+	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
 	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
 	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	ops "github.com/stackrox/rox/pkg/metrics"
+	"time"
 )
 
 var (
@@ -34,14 +37,17 @@ func newStore(db *bbolt.DB) (*store, error) {
 }
 
 func (s *store) AddWhitelist(whitelist *storage.ProcessWhitelist) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Whitelist")
 	return s.crud.Create(whitelist)
 }
 
 func (s *store) DeleteWhitelist(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Whitelist")
 	return s.crud.Delete(id)
 }
 
 func (s *store) GetWhitelist(id string) (*storage.ProcessWhitelist, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Whitelist")
 	msg, err := s.crud.Read(id)
 	if err != nil {
 		return nil, err
@@ -54,6 +60,7 @@ func (s *store) GetWhitelist(id string) (*storage.ProcessWhitelist, error) {
 }
 
 func (s *store) ListWhitelists() ([]*storage.ProcessWhitelist, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Whitelist")
 	msgs, err := s.crud.ReadAll()
 	if err != nil {
 		return nil, err
@@ -66,5 +73,6 @@ func (s *store) ListWhitelists() ([]*storage.ProcessWhitelist, error) {
 }
 
 func (s *store) UpdateWhitelist(whitelist *storage.ProcessWhitelist) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Whitelist")
 	return s.crud.Update(whitelist)
 }

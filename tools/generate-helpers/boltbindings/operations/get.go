@@ -34,6 +34,7 @@ func generateGet(props *GeneratorProperties) (jen.Code, jen.Code) {
 	errReturns = append(errReturns, jen.Err())
 
 	implementation := renderGetFunctionSignature(renderFuncSStarStore(), props).Block(
+		metricLine("Get", props.Singular),
 		jen.List(jen.Id("msg"), jen.Err()).Op(":=").Id("s").Dot("crud").Dot("Read").Call(jen.Id("id")),
 		jen.If(jen.Err().Op("!=").Nil()).Block(
 			jen.Return(errReturns...),

@@ -15,6 +15,7 @@ func generateCount(props *GeneratorProperties) (jen.Code, jen.Code) {
 	interfaceMethod := renderCountFunctionSignature(&jen.Statement{}, props)
 
 	implementation := renderCountFunctionSignature(renderFuncSStarStore(), props).Block(
+		metricLine("Count", props.Singular),
 		jen.Return(jen.Id("s").Dot("crud").Dot("Count").Call()),
 	)
 	return interfaceMethod, implementation

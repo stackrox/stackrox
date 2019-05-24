@@ -5,9 +5,12 @@ package store
 import (
 	bbolt "github.com/etcd-io/bbolt"
 	proto1 "github.com/gogo/protobuf/proto"
+	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
 	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
 	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	ops "github.com/stackrox/rox/pkg/metrics"
+	"time"
 )
 
 var (
@@ -34,10 +37,12 @@ func newStore(db *bbolt.DB) (*store, error) {
 }
 
 func (s *store) DeleteWhitelistResults(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "WhitelistResults")
 	return s.crud.Delete(id)
 }
 
 func (s *store) GetWhitelistResults(id string) (*storage.ProcessWhitelistResults, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "WhitelistResults")
 	msg, err := s.crud.Read(id)
 	if err != nil {
 		return nil, err
@@ -50,5 +55,6 @@ func (s *store) GetWhitelistResults(id string) (*storage.ProcessWhitelistResults
 }
 
 func (s *store) UpsertWhitelistResults(whitelistresults *storage.ProcessWhitelistResults) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "WhitelistResults")
 	return s.crud.Upsert(whitelistresults)
 }
