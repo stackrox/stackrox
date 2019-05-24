@@ -45,4 +45,12 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+        volumeMounts:
+        - name: clair-config-volume
+          mountPath: /etc/clair
+          readOnly: true
       serviceAccount: scanner
+      volumes:
+      - name: clair-config-volume
+        configMap:
+          name: clair-config

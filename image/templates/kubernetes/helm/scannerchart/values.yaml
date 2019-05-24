@@ -6,3 +6,5 @@ namespace: stackrox
 image: {{.K8sConfig.ScannerImage}}
 
 scannerSecretName: {{.K8sConfig.ScannerSecretName}}
+
+offlineMode: {{.K8sConfig.OfflineMode}}
