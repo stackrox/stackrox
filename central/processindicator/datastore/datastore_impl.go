@@ -10,12 +10,18 @@ import (
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	indicatorSAC = sac.ForResource(resources.Indicator)
 )
 
 type datastoreImpl struct {
@@ -28,22 +34,42 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.indexer.Search(q)
+	return ds.searcher.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error) {
-	return ds.searcher.SearchRawProcessIndicators(q)
+	return ds.searcher.SearchRawProcessIndicators(ctx, q)
 }
 
 func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
-	return ds.storage.GetProcessIndicator(id)
+	indicator, exists, err := ds.storage.GetProcessIndicator(id)
+	if err != nil || !exists {
+		return nil, false, err
+	}
+
+	if ok, err := indicatorSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(indicator).Allowed(ctx); err != nil || !ok {
+		return nil, false, err
+	}
+
+	return indicator, true, nil
 }
 
 func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context) ([]*storage.ProcessIndicator, error) {
-	return ds.storage.GetProcessIndicators()
+	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if ok {
+		return ds.storage.GetProcessIndicators()
+	}
+	return ds.SearchRawProcessIndicators(ctx, pkgSearch.EmptyQuery())
 }
 
 func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ...*storage.ProcessIndicator) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	removedIndicators, err := ds.storage.AddProcessIndicators(indicators...)
 	if err != nil {
 		return err
@@ -76,6 +102,11 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 }
 
 func (ds *datastoreImpl) AddProcessIndicator(ctx context.Context, i *storage.ProcessIndicator) error {
+	if ok, err := indicatorSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(i).Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
 	removedIndicator, err := ds.storage.AddProcessIndicator(i)
 	if err != nil {
 		return errors.Wrap(err, "adding indicator to bolt")
@@ -89,13 +120,6 @@ func (ds *datastoreImpl) AddProcessIndicator(ctx context.Context, i *storage.Pro
 		return errors.Wrap(err, "adding indicator to index")
 	}
 	return nil
-}
-
-func (ds *datastoreImpl) RemoveProcessIndicator(ctx context.Context, id string) error {
-	if err := ds.storage.RemoveProcessIndicator(id); err != nil {
-		return err
-	}
-	return ds.indexer.DeleteProcessIndicator(id)
 }
 
 func (ds *datastoreImpl) removeMatchingIndicators(results []pkgSearch.Result) error {
@@ -116,6 +140,11 @@ func (ds *datastoreImpl) removeIndicators(ids []string) error {
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, id).ProtoQuery()
 	results, err := ds.Search(ctx, q)
 	if err != nil {
@@ -125,6 +154,11 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(ctx context.Context
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deploymentID string, currentContainerIDs []string) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
 	queries := make([]*v1.Query, 0, len(currentContainerIDs)+1)
 	queries = append(queries, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery())
 

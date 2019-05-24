@@ -629,10 +629,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"signals: [ProcessIndicator]!",
 	}))
 	utils.Must(builder.AddType("ProcessIndicator", []string{
+		"clusterId: String!",
 		"containerName: String!",
 		"deploymentId: String!",
 		"emitTimestamp: Time",
 		"id: ID!",
+		"namespace: String!",
 		"podId: String!",
 		"signal: ProcessSignal",
 	}))
@@ -5487,6 +5489,11 @@ func (resolver *Resolver) wrapProcessIndicators(values []*storage.ProcessIndicat
 	return output, nil
 }
 
+func (resolver *processIndicatorResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
 func (resolver *processIndicatorResolver) ContainerName(ctx context.Context) string {
 	value := resolver.data.GetContainerName()
 	return value
@@ -5505,6 +5512,11 @@ func (resolver *processIndicatorResolver) EmitTimestamp(ctx context.Context) (*g
 func (resolver *processIndicatorResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *processIndicatorResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
 }
 
 func (resolver *processIndicatorResolver) PodId(ctx context.Context) string {

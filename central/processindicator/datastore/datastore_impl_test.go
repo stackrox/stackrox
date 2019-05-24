@@ -11,13 +11,19 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
+	indexMocks "github.com/stackrox/rox/central/processindicator/index/mocks"
 	"github.com/stackrox/rox/central/processindicator/pruner"
-	"github.com/stackrox/rox/central/processindicator/pruner/mocks"
+	prunerMocks "github.com/stackrox/rox/central/processindicator/pruner/mocks"
 	processSearch "github.com/stackrox/rox/central/processindicator/search"
+	searchMocks "github.com/stackrox/rox/central/processindicator/search/mocks"
 	"github.com/stackrox/rox/central/processindicator/store"
+	storeMocks "github.com/stackrox/rox/central/processindicator/store/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -34,10 +40,24 @@ type IndicatorDataStoreTestSuite struct {
 	indexer   index.Indexer
 	searcher  processSearch.Searcher
 
+	hasNoneCtx  context.Context
+	hasReadCtx  context.Context
+	hasWriteCtx context.Context
+
 	mockCtrl *gomock.Controller
 }
 
 func (suite *IndicatorDataStoreTestSuite) SetupTest() {
+	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
+	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Indicator)))
+	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Indicator)))
+
 	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	suite.NoError(err)
 	suite.storage = store.New(db)
@@ -58,6 +78,14 @@ func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, nil)
+}
+
+func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
+	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
+	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
+	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
+	suite.datastore = New(mockStorage, mockIndexer, mockSearcher, nil)
+	return mockStorage, mockIndexer, mockSearcher
 }
 
 func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
@@ -118,7 +146,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAdd() {
 	suite.setupDataStoreNoPruning()
 
 	indicators, repeatIndicator := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), append(indicators, repeatIndicator)...))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, append(indicators, repeatIndicator)...))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
@@ -126,10 +154,10 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAddWithOldIndicator(
 	suite.setupDataStoreNoPruning()
 
 	indicators, repeatIndicator := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicator(context.TODO(), indicators[0]))
+	suite.NoError(suite.datastore.AddProcessIndicator(suite.hasWriteCtx, indicators[0]))
 	suite.verifyIndicatorsAre(indicators[0])
 
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators[1], repeatIndicator))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators[1], repeatIndicator))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
@@ -137,13 +165,13 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorAddOneByOne() {
 	suite.setupDataStoreNoPruning()
 
 	indicators, repeatIndicator := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators[0]))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators[0]))
 	suite.verifyIndicatorsAre(indicators[0])
 
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators[1]))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators[1]))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), repeatIndicator))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, repeatIndicator))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
@@ -168,10 +196,10 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentID() {
 	suite.setupDataStoreNoPruning()
 
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment(context.TODO(), "d1"))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasWriteCtx, "d1"))
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
 }
 
@@ -179,10 +207,10 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentIDAgai
 	suite.setupDataStoreNoPruning()
 
 	indicators := generateIndicators([]string{"d1", "d2", "d3"}, []string{"c1", "c2", "c3"})
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment(context.TODO(), "dnonexistent"))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasWriteCtx, "dnonexistent"))
 	suite.verifyIndicatorsAre(indicators...)
 }
 
@@ -190,14 +218,14 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerID() {
 	suite.setupDataStoreNoPruning()
 
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(context.TODO(), "d1", []string{"d1_c2"}))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "d1", []string{"d1_c2"}))
 	suite.verifyIndicatorsAre(
 		append(generateIndicators([]string{"d1"}, []string{"c2"}), generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(context.TODO(), "d2", []string{"d2_c2"}))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "d2", []string{"d2_c2"}))
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d1", "d2"}, []string{"c2"})...)
 }
 
@@ -205,21 +233,21 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerIDAgain
 	suite.setupDataStoreNoPruning()
 
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(context.TODO(), "d1", nil))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "d1", nil))
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 	const prunePeriod = 100 * time.Millisecond
-	mockPrunerFactory := mocks.NewMockFactory(suite.mockCtrl)
+	mockPrunerFactory := prunerMocks.NewMockFactory(suite.mockCtrl)
 	mockPrunerFactory.EXPECT().Period().Return(prunePeriod)
 	indicators, _ := getIndicators()
 
 	prunedSignal := concurrency.NewSignal()
-	mockPruner := mocks.NewMockPruner(suite.mockCtrl)
+	mockPruner := prunerMocks.NewMockPruner(suite.mockCtrl)
 	mockPruner.EXPECT().Finish().AnyTimes().Do(func() {
 		prunedSignal.Signal()
 	})
@@ -252,7 +280,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		return true
 	})
 	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, mockPrunerFactory)
-	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
 	mockPruner.EXPECT().Prune(m).Return(nil)
@@ -271,4 +299,158 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 
 	suite.datastore.Stop()
 	suite.True(suite.datastore.Wait(concurrency.Timeout(3 * prunePeriod)))
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
+	if !features.ScopedAccessControl.Enabled() {
+		suite.T().Skip()
+	}
+	mockStore, _, _ := suite.setupDataStoreWithMocks()
+	mockStore.EXPECT().GetProcessIndicator(gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
+
+	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasNoneCtx, "hkjddjhk")
+	suite.NoError(err, "expected no error, should return nil without access")
+	suite.False(exists)
+	suite.Nil(indicator, "expected return value to be nil")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
+	mockStore, _, _ := suite.setupDataStoreWithMocks()
+	testIndicator := &storage.ProcessIndicator{}
+
+	mockStore.EXPECT().GetProcessIndicator(gomock.Any()).Return(testIndicator, true, nil)
+	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasReadCtx, "An Id")
+	suite.NoError(err, "expected no error trying to read with permissions")
+	suite.True(exists)
+	suite.Equal(testIndicator, indicator)
+
+	mockStore.EXPECT().GetProcessIndicator(gomock.Any()).Return(testIndicator, true, nil)
+	indicator, exists, err = suite.datastore.GetProcessIndicator(suite.hasWriteCtx, "beef")
+	suite.NoError(err, "expected no error trying to read with permissions")
+	suite.True(exists)
+	suite.Equal(testIndicator, indicator)
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestEnforcesGetAll() {
+	if !features.ScopedAccessControl.Enabled() {
+		suite.T().Skip()
+	}
+	storeMock, _, searchMock := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().GetProcessIndicators().Times(0)
+	searchMock.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+	indicators, err := suite.datastore.GetProcessIndicators(suite.hasNoneCtx)
+	suite.NoError(err, "expected no error, should return nil without access")
+	suite.Nil(indicators, "expected return value to be nil")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestAllowsGetAll() {
+	storeMock, _, _ := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().GetProcessIndicators().Return(nil, nil)
+
+	_, err := suite.datastore.GetProcessIndicators(suite.hasReadCtx)
+	suite.NoError(err, "expected no error trying to read with permissions")
+
+	storeMock.EXPECT().GetProcessIndicators().Return(nil, nil)
+
+	_, err = suite.datastore.GetProcessIndicators(suite.hasWriteCtx)
+	suite.NoError(err, "expected no error trying to read with permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
+	if !features.ScopedAccessControl.Enabled() {
+		suite.T().Skip()
+	}
+	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().AddProcessIndicator(gomock.Any()).Times(0)
+	indexMock.EXPECT().AddProcessIndicator(gomock.Any()).Times(0)
+
+	err := suite.datastore.AddProcessIndicator(suite.hasNoneCtx, &storage.ProcessIndicator{})
+	suite.Error(err, "expected an error trying to write without permissions")
+
+	err = suite.datastore.AddProcessIndicator(suite.hasReadCtx, &storage.ProcessIndicator{})
+	suite.Error(err, "expected an error trying to write without permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestAllowsAdd() {
+	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().AddProcessIndicator(gomock.Any()).Return("", nil)
+	indexMock.EXPECT().AddProcessIndicator(gomock.Any()).Return(nil)
+
+	err := suite.datastore.AddProcessIndicator(suite.hasWriteCtx, &storage.ProcessIndicator{})
+	suite.NoError(err, "expected no error trying to write with permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
+	if !features.ScopedAccessControl.Enabled() {
+		suite.T().Skip()
+	}
+	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
+	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
+
+	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
+	suite.Error(err, "expected an error trying to write without permissions")
+
+	err = suite.datastore.AddProcessIndicators(suite.hasReadCtx, &storage.ProcessIndicator{})
+	suite.Error(err, "expected an error trying to write without permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
+	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil, nil)
+	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil)
+
+	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{})
+	suite.NoError(err, "expected no error trying to write with permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByDeployment() {
+	if !features.ScopedAccessControl.Enabled() {
+		suite.T().Skip()
+	}
+	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Times(0)
+	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)
+
+	err := suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasNoneCtx, "Joseph Rules")
+	suite.Error(err, "expected an error trying to write without permissions")
+
+	err = suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasReadCtx, "nfsiux")
+	suite.Error(err, "expected an error trying to write without permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByDeployment() {
+	storeMock, indexMock, searchMock := suite.setupDataStoreWithMocks()
+	searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
+	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Return(nil)
+	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
+
+	err := suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasWriteCtx, "eoiurvbf")
+	suite.NoError(err, "expected no error trying to write with permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByStaleContainers() {
+	if !features.ScopedAccessControl.Enabled() {
+		suite.T().Skip()
+	}
+	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Times(0)
+	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)
+
+	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasNoneCtx, "Joseph Rules", []string{})
+	suite.Error(err, "expected an error trying to write without permissions")
+
+	err = suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasReadCtx, "nfsiux", []string{})
+	suite.Error(err, "expected an error trying to write without permissions")
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByStaleContainers() {
+	storeMock, indexMock, searchMock := suite.setupDataStoreWithMocks()
+	searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
+	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Return(nil)
+	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
+
+	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "eoiurvbf", []string{})
+	suite.NoError(err, "expected no error trying to write with permissions")
 }

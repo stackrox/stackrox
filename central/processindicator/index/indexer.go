@@ -13,6 +13,7 @@ var (
 )
 
 // Indexer provides indexing of Policy objects.
+//go:generate mockgen-wrapper Indexer
 type Indexer interface {
 	AddProcessIndicator(*storage.ProcessIndicator) error
 	AddProcessIndicators([]*storage.ProcessIndicator) error

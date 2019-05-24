@@ -12,6 +12,7 @@ type ContainerMetadata struct {
 	PodID         string
 	ContainerName string
 	ContainerID   string
+	Namespace     string
 }
 
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by

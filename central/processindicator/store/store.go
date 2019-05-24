@@ -18,6 +18,7 @@ var (
 )
 
 // Store provides storage functionality for alerts.
+//go:generate mockgen-wrapper Store
 type Store interface {
 	GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error)
 	GetProcessIndicators() ([]*storage.ProcessIndicator, error)

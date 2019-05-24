@@ -22,6 +22,9 @@ message ProcessIndicator {
 
     // A process signal message passed from Collector to Sensor
     ProcessSignal signal = 6;
+
+    string cluster_id = 7 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
+    string namespace  = 8 [(gogoproto.moretags) = "search:\"Namespace,store,hidden\""];
 }
 
 // This is the unique key we store process indicators under in Bolt.
