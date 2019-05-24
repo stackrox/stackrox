@@ -104,7 +104,9 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -177,6 +179,10 @@ type invalidLicenseFactory struct {
 	restartingFlag *concurrency.Flag
 }
 
+func (f invalidLicenseFactory) TLSConfigurer() verifier.TLSConfigurer {
+	return tlsconfig.NewCentralTLSConfigurer()
+}
+
 func (f invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
 	return []pkgGRPC.APIService{
 		licenseService.New(true, licenseSingletons.ManagerSingleton()),
@@ -203,11 +209,21 @@ func startLimitedModeServer(restartingFlag *concurrency.Flag) {
 type serviceFactory interface {
 	CustomRoutes() (customRoutes []routes.CustomRoute)
 	ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService
+	TLSConfigurer() verifier.TLSConfigurer
 	StartServices()
 }
 
 type defaultFactory struct {
 	restartingFlag *concurrency.Flag
+	caManager      clientCAManager.ClientCAManager
+}
+
+func (f defaultFactory) TLSConfigurer() verifier.TLSConfigurer {
+	// is nil if feature flag is false
+	if f.caManager != nil {
+		return f.caManager.TLSConfigurer()
+	}
+	return tlsconfig.NewCentralTLSConfigurer()
 }
 
 func (defaultFactory) StartServices() {
@@ -267,16 +283,20 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		servicesToRegister = append(servicesToRegister, processWhitelistService.Singleton())
 	}
 	if features.ClientCAAuth.Enabled() {
-		caManager := clientCAManager.New(clientCAStore.Singleton())
-		servicesToRegister = append(servicesToRegister, clientCAService.New(caManager))
+		servicesToRegister = append(servicesToRegister, clientCAService.New(f.caManager))
 	}
 	return servicesToRegister
 }
 
 func startMainServer(restartingFlag *concurrency.Flag) {
-	startGRPCServer(defaultFactory{
+	factory := defaultFactory{
 		restartingFlag: restartingFlag,
-	})
+	}
+	if features.ClientCAAuth.Enabled() {
+		factory.caManager = clientCAManager.New(clientCAStore.Singleton())
+		utils.Must(factory.caManager.Initialize())
+	}
+	startGRPCServer(factory)
 }
 
 func watchdog(signal *concurrency.Signal, timeout time.Duration) {
@@ -324,7 +344,7 @@ func startGRPCServer(factory serviceFactory) {
 
 	config := pkgGRPC.Config{
 		CustomRoutes:          factory.CustomRoutes(),
-		TLS:                   tlsconfig.NewCentralTLSConfigurer(),
+		TLS:                   factory.TLSConfigurer(),
 		IdentityExtractors:    idExtractors,
 		AuthProviders:         registry,
 		InsecureLocalEndpoint: insecureLocalEndpoint,
