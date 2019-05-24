@@ -5,7 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/rbac/k8srole/search/options"
+	"github.com/stackrox/rox/central/rbac/k8srole/search/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
@@ -63,5 +63,5 @@ func (i *indexerImpl) RemoveRole(id string) error {
 
 func (i *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "K8sRole")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLES, q, i.index, options.Map)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLES, q, i.index, mappings.OptionsMap)
 }

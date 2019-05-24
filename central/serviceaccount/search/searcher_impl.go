@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
-	"github.com/stackrox/rox/central/serviceaccount/search/options"
+	"github.com/stackrox/rox/central/serviceaccount/search/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	serviceAccountsSACSearchHelper = sac.ForResource(resources.ServiceAccount).MustCreateSearchHelper(options.Map, sac.ClusterIDAndNamespaceFields)
+	serviceAccountsSACSearchHelper = sac.ForResource(resources.ServiceAccount).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
 )
 
 type searcherImpl struct {

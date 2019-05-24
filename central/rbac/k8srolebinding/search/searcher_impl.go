@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/search/options"
+	"github.com/stackrox/rox/central/rbac/k8srole/search/mappings"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).MustCreateSearchHelper(options.Map, sac.ClusterIDAndNamespaceFields)
+	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
 )
 
 // searcherImpl provides an search implementation for k8s role bindings

@@ -23,10 +23,10 @@ import (
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
 	processWhitelistMapping "github.com/stackrox/rox/central/processwhitelist/index/mappings"
-	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/search/options"
-	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/search/options"
-	secretOptions "github.com/stackrox/rox/central/secret/search/options"
-	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/search/options"
+	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/search/mappings"
+	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/search/mappings"
+	secretOptions "github.com/stackrox/rox/central/secret/search/mappings"
+	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/search/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -62,7 +62,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_DEPLOYMENTS:         deploymentMapping.OptionsMap,
 		v1.SearchCategory_IMAGES:              imageMapping.OptionsMap,
 		v1.SearchCategory_POLICIES:            policyMapping.OptionsMap,
-		v1.SearchCategory_SECRETS:             secretOptions.Map,
+		v1.SearchCategory_SECRETS:             secretOptions.OptionsMap,
 		v1.SearchCategory_PROCESS_INDICATORS:  processIndicatorMapping.OptionsMap,
 		v1.SearchCategory_COMPLIANCE_STANDARD: index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:  index.ControlOptions,
@@ -73,11 +73,11 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	}
 
 	if features.K8sRBAC.Enabled() {
-		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.Map
-		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.Map
-		entityOptionsMap[v1.SearchCategory_SERVICE_ACCOUNTS] = serviceAccountOptions.Map
-		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.Map
-		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.Map
+		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.OptionsMap
+		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.OptionsMap
+		entityOptionsMap[v1.SearchCategory_SERVICE_ACCOUNTS] = serviceAccountOptions.OptionsMap
+		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.OptionsMap
+		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.OptionsMap
 
 	}
 

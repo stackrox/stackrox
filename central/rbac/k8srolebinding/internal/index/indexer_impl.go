@@ -5,7 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/search/options"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/search/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
@@ -31,7 +31,7 @@ type indexerImpl struct {
 }
 
 func (i *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLEBINDINGS, q, i.index, options.Map)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLEBINDINGS, q, i.index, mappings.OptionsMap)
 }
 
 func (i *indexerImpl) UpsertRoleBinding(binding *storage.K8SRoleBinding) error {

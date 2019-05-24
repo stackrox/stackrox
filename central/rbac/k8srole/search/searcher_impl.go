@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
-	"github.com/stackrox/rox/central/rbac/k8srole/search/options"
+	"github.com/stackrox/rox/central/rbac/k8srole/search/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	k8sRolesSACSearchHelper = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(options.Map, sac.ClusterIDAndNamespaceFields)
+	k8sRolesSACSearchHelper = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

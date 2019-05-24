@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
-	"github.com/stackrox/rox/central/secret/search/options"
+	"github.com/stackrox/rox/central/secret/search/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(options.Map, sac.ClusterIDAndNamespaceFields)
+	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
 )
 
-// searcherImpl provides an intermediary implementation layer for AlertStorage.
+// searcherImpl provides an intermediary implementation layer focentral/serviceaccount/search/searcher_impl.gor AlertStorage.
 type searcherImpl struct {
 	storage store.Store
 	indexer index.Indexer
