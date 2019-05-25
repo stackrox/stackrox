@@ -48,7 +48,7 @@ func (i *indexerImpl) UpsertRole(role *storage.K8SRole) error {
 func (i *indexerImpl) UpsertRoles(roles ...*storage.K8SRole) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "K8SRole")
 	batchManager := batcher.New(len(roles), batchSize)
-	for start, end, ok := batchManager.Next(); ok; {
+	for start, end, ok := batchManager.Next(); ok; start, end, ok = batchManager.Next() {
 		if err := i.processBatch(roles[start:end]); err != nil {
 			return err
 		}

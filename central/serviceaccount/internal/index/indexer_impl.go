@@ -48,7 +48,7 @@ func (i *indexerImpl) processBatch(serviceAccounts []*storage.ServiceAccount) er
 func (i *indexerImpl) UpsertServiceAccounts(serviceAccounts ...*storage.ServiceAccount) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "ServiceAccount")
 	batchManager := batcher.New(len(serviceAccounts), batchSize)
-	for start, end, ok := batchManager.Next(); ok; {
+	for start, end, ok := batchManager.Next(); ok; start, end, ok = batchManager.Next() {
 		if err := i.processBatch(serviceAccounts[start:end]); err != nil {
 			return err
 		}

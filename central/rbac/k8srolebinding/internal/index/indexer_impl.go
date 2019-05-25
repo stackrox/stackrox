@@ -52,7 +52,7 @@ func (i *indexerImpl) processBatch(bindings []*storage.K8SRoleBinding) error {
 func (i *indexerImpl) UpsertRoleBindings(bindings ...*storage.K8SRoleBinding) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "K8SRoleBinding")
 	batchManager := batcher.New(len(bindings), batchSize)
-	for start, end, ok := batchManager.Next(); ok; {
+	for start, end, ok := batchManager.Next(); ok; start, end, ok = batchManager.Next() {
 		if err := i.processBatch(bindings[start:end]); err != nil {
 			return err
 		}
