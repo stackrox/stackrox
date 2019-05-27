@@ -68,5 +68,6 @@ func (b *indexerImpl) DeleteWhitelist(id string) error {
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessWhitelist")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_PROCESS_WHITELISTS, q, b.index, mappings.OptionsMap)
 }

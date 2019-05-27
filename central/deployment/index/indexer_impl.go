@@ -68,5 +68,6 @@ func (b *indexerImpl) DeleteDeployment(id string) error {
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Deployment")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, b.index, mappings.OptionsMap)
 }
