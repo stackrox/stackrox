@@ -90,8 +90,12 @@ func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Aler
 
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
-	alerts, err := ds.searcher.SearchListAlerts(searchCommon.NewQueryBuilder().AddStrings(searchCommon.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
-	return len(alerts), err
+	activeQuery := searchCommon.NewQueryBuilder().AddStrings(searchCommon.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
+	results, err := ds.Search(ctx, activeQuery)
+	if err != nil {
+		return 0, err
+	}
+	return len(results), nil
 }
 
 // AddAlert inserts an alert into storage and into the indexer

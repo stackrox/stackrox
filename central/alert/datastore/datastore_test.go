@@ -73,14 +73,25 @@ func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 	s.Equal(alerttest.NewFakeListAlertSlice(), result)
 }
 
-func (s *alertDataStoreTestSuite) TestCountAlerts() {
+func (s *alertDataStoreTestSuite) TestCountAlerts_Success() {
 	expectedQ := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	s.searcher.EXPECT().SearchListAlerts(expectedQ).Return(alerttest.NewFakeListAlertSlice(), errFake)
+	s.indexer.EXPECT().Search(expectedQ).Return([]search.Result{
+		{ID: alerttest.FakeAlertID},
+	}, nil)
 
 	result, err := s.dataStore.CountAlerts(context.TODO())
 
-	s.Equal(errFake, err)
+	s.NoError(err)
 	s.Equal(1, result)
+}
+
+func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
+	expectedQ := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
+	s.indexer.EXPECT().Search(expectedQ).Return(nil, errFake)
+
+	_, err := s.dataStore.CountAlerts(context.TODO())
+
+	s.Equal(errFake, err)
 }
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
