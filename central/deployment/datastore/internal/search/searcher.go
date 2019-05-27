@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/deployment/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -23,14 +24,8 @@ type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 }
 
-type store interface {
-	ListDeployment(id string) (*storage.ListDeployment, bool, error)
-	GetDeployment(id string) (*storage.Deployment, bool, error)
-	GetDeployments() ([]*storage.Deployment, error)
-}
-
 // New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store, indexer index.Indexer) (Searcher, error) {
+func New(storage store.Store, indexer index.Indexer) (Searcher, error) {
 	ds := &searcherImpl{
 		storage: storage,
 		indexer: indexer,

@@ -71,6 +71,34 @@ func (b *storeImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 	return deployments, err
 }
 
+func (b *storeImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListDeployment")
+	deployments := make([]*storage.ListDeployment, 0, len(ids))
+	var missingIndices []int
+	err := b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(deploymentListBucket)
+		for i, id := range ids {
+			v := bucket.Get([]byte(id))
+			if v == nil {
+				missingIndices = append(missingIndices, i)
+				continue
+			}
+			var deployment storage.ListDeployment
+			if err := proto.Unmarshal(v, &deployment); err != nil {
+				return err
+			}
+			deployment.Priority = b.ranker.Get(deployment.GetId())
+			deployments = append(deployments, &deployment)
+		}
+		return nil
+	})
+	return deployments, missingIndices, err
+}
+
 // Note: This is called within a txn and do not require an Update or View
 func (b *storeImpl) upsertListDeployment(bucket *bolt.Bucket, deployment *storage.Deployment) error {
 	listDeployment := convertDeploymentToDeploymentList(deployment)
@@ -147,6 +175,35 @@ func (b *storeImpl) GetDeployments() ([]*storage.Deployment, error) {
 		})
 	})
 	return deployments, err
+}
+
+func (b *storeImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
+	deployments := make([]*storage.Deployment, 0, len(ids))
+	var missingIndices []int
+	err := b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(deploymentBucket)
+		for i, id := range ids {
+			v := bucket.Get([]byte(id))
+			if v == nil {
+				missingIndices = append(missingIndices, i)
+				continue
+			}
+			var deployment storage.Deployment
+			if err := proto.Unmarshal(v, &deployment); err != nil {
+				return err
+			}
+			deployment.Priority = b.ranker.Get(deployment.GetId())
+
+			deployments = append(deployments, &deployment)
+		}
+		return nil
+	})
+	return deployments, missingIndices, err
 }
 
 // CountDeployments returns the number of deployments.

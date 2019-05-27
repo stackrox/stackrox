@@ -39,3 +39,29 @@ func ResultsToIDSet(results []Result) set.StringSet {
 	}
 	return ids
 }
+
+// RemoveMissingResults removes those indices in the result set that are specified in the missingIndices
+// slice. The missingIndices slice MUST be sorted.
+func RemoveMissingResults(results []Result, missingIndices []int) []Result {
+	numResultsBefore := len(results)
+
+	var outIdx int
+	for i := 0; i < len(missingIndices); i++ {
+		missingIdx := missingIndices[i]
+		if i == 0 {
+			outIdx = missingIdx
+		}
+		rangeBegin := missingIdx + 1
+		rangeEnd := numResultsBefore
+		if i+1 < len(missingIndices) {
+			rangeEnd = missingIndices[i+1]
+		}
+		chunkSize := rangeEnd - rangeBegin
+		if chunkSize == 0 {
+			continue
+		}
+		copy(results[outIdx:outIdx+chunkSize], results[rangeBegin:rangeEnd])
+		outIdx += chunkSize
+	}
+	return results[:numResultsBefore-len(missingIndices)]
+}

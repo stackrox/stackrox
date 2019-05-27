@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/mappings"
+	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +21,7 @@ var (
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
-	storage store
+	storage store.Store
 
 	indexer index.Indexer
 }
@@ -62,21 +63,14 @@ func (ds *searcherImpl) searchListDeployments(ctx context.Context, q *v1.Query) 
 	if err != nil {
 		return nil, nil, err
 	}
-	var deployments []*storage.ListDeployment
-	var newResults []search.Result
-	for _, result := range results {
-		deployment, exists, err := ds.storage.ListDeployment(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		deployments = append(deployments, deployment)
-		newResults = append(newResults, result)
+
+	ids := search.ResultsToIDs(results)
+	deployments, missingIndices, err := ds.storage.ListDeploymentsWithIDs(ids...)
+	if err != nil {
+		return nil, nil, err
 	}
-	return deployments, newResults, nil
+	results = search.RemoveMissingResults(results, missingIndices)
+	return deployments, results, nil
 }
 
 // SearchDeployments retrieves SearchResults from the indexer and storage
@@ -97,17 +91,11 @@ func (ds *searcherImpl) searchDeployments(ctx context.Context, q *v1.Query) ([]*
 	if err != nil {
 		return nil, err
 	}
-	var deployments []*storage.Deployment
-	for _, result := range results {
-		deployment, exists, err := ds.storage.GetDeployment(result.ID)
-		if err != nil {
-			return nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		deployments = append(deployments, deployment)
+
+	ids := search.ResultsToIDs(results)
+	deployments, _, err := ds.storage.GetDeploymentsWithIDs(ids...)
+	if err != nil {
+		return nil, err
 	}
 	return deployments, nil
 }

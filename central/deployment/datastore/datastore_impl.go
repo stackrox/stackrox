@@ -158,6 +158,10 @@ func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *stora
 		return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
 	}
 
+	if ds.indicators == nil {
+		return nil
+	}
+
 	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),

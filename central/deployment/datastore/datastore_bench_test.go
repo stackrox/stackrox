@@ -1,0 +1,87 @@
+package datastore
+
+import (
+	"context"
+	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"testing"
+
+	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
+	"github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/deployment/store"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/fixtures"
+	search2 "github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func BenchmarkSearchAllDeployments(b *testing.B) {
+	tempPath, err := ioutil.TempDir("", "")
+	require.NoError(b, err)
+
+	boltPath := filepath.Join(tempPath, "bolt.db")
+	blevePath := filepath.Join(tempPath, "scorch.bleve")
+
+	db, err := bolthelper.New(boltPath)
+	require.NoError(b, err)
+
+	bleveIndex, err := globalindex.InitializeIndices(blevePath)
+	require.NoError(b, err)
+
+	deploymentsStore, err := store.New(db)
+	require.NoError(b, err)
+
+	deploymentsIndexer := index.New(bleveIndex)
+	deploymentsSearcher, err := search.New(deploymentsStore, deploymentsIndexer)
+	require.NoError(b, err)
+
+	deploymentsDatastore := newDatastoreImpl(deploymentsStore, deploymentsIndexer, deploymentsSearcher, nil, nil, nil)
+
+	deploymentPrototype := proto.Clone(fixtures.GetDeployment()).(*storage.Deployment)
+
+	const numDeployments = 1000
+	for i := 0; i < numDeployments; i++ {
+		if i > 0 && i%100 == 0 {
+			fmt.Println("Added", i, "deployments")
+		}
+		deploymentPrototype.Id = fmt.Sprintf("deployment%d", i)
+		require.NoError(b, deploymentsDatastore.UpsertDeployment(context.TODO(), deploymentPrototype))
+	}
+
+	b.Run("SearchRetrievalList", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			deployments, err := deploymentsDatastore.SearchListDeployments(context.TODO(), search2.EmptyQuery())
+			assert.NoError(b, err)
+			assert.Len(b, deployments, numDeployments)
+		}
+	})
+
+	b.Run("GetAllRetrievalList", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			deployments, err := deploymentsDatastore.ListDeployments(context.TODO())
+			assert.NoError(b, err)
+			assert.Len(b, deployments, numDeployments)
+		}
+	})
+
+	b.Run("SearchRetrievalFull", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			deployments, err := deploymentsDatastore.SearchRawDeployments(context.TODO(), search2.EmptyQuery())
+			assert.NoError(b, err)
+			assert.Len(b, deployments, numDeployments)
+		}
+	})
+
+	b.Run("GetAllRetrievalFull", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			deployments, err := deploymentsDatastore.GetDeployments(context.TODO())
+			assert.NoError(b, err)
+			assert.Len(b, deployments, numDeployments)
+		}
+	})
+}
