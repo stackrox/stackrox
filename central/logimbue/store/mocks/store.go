@@ -44,19 +44,6 @@ func (mr *MockStoreMockRecorder) AddLog(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLog", reflect.TypeOf((*MockStore)(nil).AddLog), arg0)
 }
 
-// CountLogs mocks base method
-func (m *MockStore) CountLogs() (int, error) {
-	ret := m.ctrl.Call(m, "CountLogs")
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountLogs indicates an expected call of CountLogs
-func (mr *MockStoreMockRecorder) CountLogs() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLogs", reflect.TypeOf((*MockStore)(nil).CountLogs))
-}
-
 // GetLogs mocks base method
 func (m *MockStore) GetLogs() ([]string, error) {
 	ret := m.ctrl.Call(m, "GetLogs")

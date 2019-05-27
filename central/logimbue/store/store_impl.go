@@ -31,17 +31,6 @@ func (b *storeImpl) GetLogs() ([]string, error) {
 	return logs, err
 }
 
-// CountLogs returns the number of logs in the DB.
-func (b *storeImpl) CountLogs() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Logs")
-	err = b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(logsBucket)
-		count = b.Stats().KeyN
-		return nil
-	})
-	return
-}
-
 // GetLogsRange returns the time range (inclusive) in unix seconds of all the logs stored.
 func (b *storeImpl) GetLogsRange() (start int64, end int64, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Logs")

@@ -14,9 +14,6 @@ var (
 // Store provides access and update functions for service accounts.
 //go:generate mockgen-wrapper Store
 type Store interface {
-	ListServiceAccounts(id []string) ([]*storage.ServiceAccount, error)
-
-	CountServiceAccounts() (int, error)
 	GetAllServiceAccounts() ([]*storage.ServiceAccount, error)
 	GetServiceAccount(id string) (*storage.ServiceAccount, bool, error)
 	UpsertServiceAccount(sa *storage.ServiceAccount) error

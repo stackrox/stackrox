@@ -36,19 +36,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// CountServiceAccounts mocks base method
-func (m *MockDataStore) CountServiceAccounts(arg0 context.Context) (int, error) {
-	ret := m.ctrl.Call(m, "CountServiceAccounts", arg0)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountServiceAccounts indicates an expected call of CountServiceAccounts
-func (mr *MockDataStoreMockRecorder) CountServiceAccounts(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountServiceAccounts", reflect.TypeOf((*MockDataStore)(nil).CountServiceAccounts), arg0)
-}
-
 // GetServiceAccount mocks base method
 func (m *MockDataStore) GetServiceAccount(arg0 context.Context, arg1 string) (*storage.ServiceAccount, bool, error) {
 	ret := m.ctrl.Call(m, "GetServiceAccount", arg0, arg1)

@@ -19,7 +19,6 @@ type DataStore interface {
 	SearchRawServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, error)
 	SearchServiceAccounts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
-	CountServiceAccounts(ctx context.Context) (int, error)
 	ListServiceAccounts(ctx context.Context) ([]*storage.ServiceAccount, error)
 	GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error)
 	UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error

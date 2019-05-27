@@ -63,20 +63,6 @@ func (d *datastoreImpl) SearchServiceAccounts(ctx context.Context, q *v1.Query) 
 	return d.searcher.SearchServiceAccounts(ctx, q)
 }
 
-func (d *datastoreImpl) CountServiceAccounts(ctx context.Context) (int, error) {
-	if ok, err := serviceAccountsSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
-		return d.storage.CountServiceAccounts()
-	}
-
-	searchResults, err := d.Search(ctx, searchPkg.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(searchResults), nil
-}
-
 func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error {
 	if ok, err := serviceAccountsSAC.WriteAllowed(ctx); err != nil {
 		return err

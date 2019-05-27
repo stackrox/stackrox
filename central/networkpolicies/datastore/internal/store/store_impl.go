@@ -78,17 +78,6 @@ func (b *storeImpl) CountMatchingNetworkPolicies(clusterID, namespace string) (c
 	return
 }
 
-// CountNetworkPolicies returns the number of network policies.
-func (b *storeImpl) CountNetworkPolicies() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "NetworkPolicy")
-	err = b.View(func(tx *bolt.Tx) error {
-		count = tx.Bucket(networkPolicyBucket).Stats().KeyN
-		return nil
-	})
-
-	return
-}
-
 // AddNetworkPolicy adds a network policy to bolt
 func (b *storeImpl) AddNetworkPolicy(np *storage.NetworkPolicy) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "NetworkPolicy")

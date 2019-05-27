@@ -65,20 +65,6 @@ func (d *datastoreImpl) SearchRawRoleBindings(ctx context.Context, request *v1.Q
 	return d.searcher.SearchRawRoleBindings(ctx, request)
 }
 
-func (d *datastoreImpl) CountRoleBindings(ctx context.Context) (int, error) {
-	if ok, err := k8sRoleBindingsSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
-		return d.storage.CountRoleBindings()
-	}
-
-	searchResults, err := d.Search(ctx, searchPkg.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(searchResults), nil
-}
-
 func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error {
 	if ok, err := k8sRoleBindingsSAC.WriteAllowed(ctx); err != nil {
 		return err

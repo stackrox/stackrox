@@ -64,20 +64,6 @@ func (d *datastoreImpl) SearchRawRoles(ctx context.Context, request *v1.Query) (
 	return d.searcher.SearchRawRoles(ctx, request)
 }
 
-func (d *datastoreImpl) CountRoles(ctx context.Context) (int, error) {
-	if ok, err := k8sRolesSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
-		return d.storage.CountRoles()
-	}
-
-	results, err := d.Search(ctx, searchPkg.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(results), nil
-}
-
 func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole) error {
 	if ok, err := k8sRolesSAC.WriteAllowed(ctx); err != nil {
 		return err

@@ -19,7 +19,6 @@ type DataStore interface {
 	SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, error)
 
-	CountRoles(ctx context.Context) (int, error)
 	ListRoles(ctx context.Context) ([]*storage.K8SRole, error)
 	GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error)
 	UpsertRole(ctx context.Context, request *storage.K8SRole) error

@@ -36,19 +36,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// CountRoles mocks base method
-func (m *MockDataStore) CountRoles(arg0 context.Context) (int, error) {
-	ret := m.ctrl.Call(m, "CountRoles", arg0)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountRoles indicates an expected call of CountRoles
-func (mr *MockDataStoreMockRecorder) CountRoles(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountRoles", reflect.TypeOf((*MockDataStore)(nil).CountRoles), arg0)
-}
-
 // GetRole mocks base method
 func (m *MockDataStore) GetRole(arg0 context.Context, arg1 string) (*storage.K8SRole, bool, error) {
 	ret := m.ctrl.Call(m, "GetRole", arg0, arg1)

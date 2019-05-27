@@ -14,10 +14,8 @@ var (
 // Store provides access and update functions for role bindings.
 //go:generate mockgen-wrapper Store
 type Store interface {
-	ListRoleBindings(id []string) ([]*storage.K8SRoleBinding, error)
 	ListAllRoleBindings() ([]*storage.K8SRoleBinding, error)
 
-	CountRoleBindings() (int, error)
 	GetRoleBinding(id string) (*storage.K8SRoleBinding, bool, error)
 	UpsertRoleBinding(rolebinding *storage.K8SRoleBinding) error
 	RemoveRoleBinding(id string) error

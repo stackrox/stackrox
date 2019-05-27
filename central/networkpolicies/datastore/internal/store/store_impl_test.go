@@ -97,11 +97,6 @@ func (suite *NetworkPolicyStoreTestSuite) TestNetworkPolicies() {
 		suite.Equal(got, d)
 	}
 
-	// Test Count
-	count, err := suite.store.CountNetworkPolicies()
-	suite.NoError(err)
-	suite.Equal(len(networkPolicies), count)
-
 	// Test Remove
 	for _, d := range networkPolicies {
 		suite.NoError(suite.store.RemoveNetworkPolicy(d.GetId()))

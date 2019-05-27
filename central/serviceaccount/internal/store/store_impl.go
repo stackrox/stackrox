@@ -63,19 +63,6 @@ func readAllServiceAccounts(tx *bolt.Tx) (serviceAccounts []*storage.ServiceAcco
 	return
 }
 
-func getServiceAccount(tx *bolt.Tx, id string) (sa *storage.ServiceAccount, err error) {
-	bucket := tx.Bucket(serviceAccountBucket)
-	bytes := bucket.Get([]byte(id))
-	if bytes == nil {
-		err = fmt.Errorf("service account with id: %s does not exist", id)
-		return
-	}
-
-	sa = new(storage.ServiceAccount)
-	err = proto.Unmarshal(bytes, sa)
-	return
-}
-
 // Note: This is called within a txn and does not require an Update or View
 func removeServiceAccount(tx *bolt.Tx, id string) error {
 	bucket := tx.Bucket(serviceAccountBucket)
@@ -86,33 +73,6 @@ func removeServiceAccount(tx *bolt.Tx, id string) error {
 func upsertServiceAccount(tx *bolt.Tx, sa *storage.ServiceAccount, bytes []byte) error {
 	bucket := tx.Bucket(serviceAccountBucket)
 	return bucket.Put([]byte(sa.Id), bytes)
-}
-
-// ListServiceAccounts returns a list of ServiceAccounts from the given ids.
-func (s *storeImpl) ListServiceAccounts(ids []string) ([]*storage.ServiceAccount, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListServiceAccounts")
-	serviceAccounts := make([]*storage.ServiceAccount, 0, len(ids))
-	err := s.db.View(func(tx *bolt.Tx) error {
-		for _, id := range ids {
-			sa, err := getServiceAccount(tx, id)
-			if err != nil {
-				return err
-			}
-			serviceAccounts = append(serviceAccounts, sa)
-		}
-		return nil
-	})
-	return serviceAccounts, err
-}
-
-// CountServiceAccounts returns the number service accounts in the service account bucket
-func (s *storeImpl) CountServiceAccounts() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Service Account")
-	err = s.db.View(func(tx *bolt.Tx) error {
-		count = tx.Bucket(serviceAccountBucket).Stats().KeyN
-		return nil
-	})
-	return
 }
 
 // GetAllServiceAccounts returns all service accounts in the given db.

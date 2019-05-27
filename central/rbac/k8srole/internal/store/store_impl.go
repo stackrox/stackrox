@@ -16,16 +16,6 @@ type storeImpl struct {
 	db *bolt.DB
 }
 
-// CountRoles returns the number of roles in the roles bucket
-func (s *storeImpl) CountRoles() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "K8SRole")
-	err = s.db.View(func(tx *bolt.Tx) error {
-		count = tx.Bucket(roleBucket).Stats().KeyN
-		return nil
-	})
-	return
-}
-
 // ListAllRoles returns all k8s roles in the given db.
 func (s *storeImpl) ListAllRoles() (roles []*storage.K8SRole, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "K8SRole")
@@ -50,23 +40,6 @@ func (s *storeImpl) GetRole(id string) (role *storage.K8SRole, exists bool, err 
 		return err
 	})
 	return
-}
-
-// ListRoles returns a list of k8s roles from the given ids.
-func (s *storeImpl) ListRoles(ids []string) ([]*storage.K8SRole, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "K8SRole")
-	roles := make([]*storage.K8SRole, 0, len(ids))
-	err := s.db.View(func(tx *bolt.Tx) error {
-		for _, id := range ids {
-			role, err := getRole(tx, id)
-			if err != nil {
-				return err
-			}
-			roles = append(roles, role)
-		}
-		return nil
-	})
-	return roles, err
 }
 
 // UpsertRole adds or updates the k8s role in the db.
@@ -96,19 +69,6 @@ func (s *storeImpl) RemoveRole(id string) error {
 		}
 		return bucket.Delete(key)
 	})
-}
-
-func getRole(tx *bolt.Tx, id string) (role *storage.K8SRole, err error) {
-	bucket := tx.Bucket(roleBucket)
-	bytes := bucket.Get([]byte(id))
-	if bytes == nil {
-		err = fmt.Errorf("role with id: %q does not exist", id)
-		return
-	}
-
-	role = new(storage.K8SRole)
-	err = proto.Unmarshal(bytes, role)
-	return
 }
 
 // hasRole returns whether a role exists for the given id.

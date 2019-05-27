@@ -14,10 +14,8 @@ var (
 // Store provides access and update functions for k8s roles.
 //go:generate mockgen-wrapper Store
 type Store interface {
-	ListRoles(id []string) ([]*storage.K8SRole, error)
 	ListAllRoles() ([]*storage.K8SRole, error)
 
-	CountRoles() (int, error)
 	GetRole(id string) (*storage.K8SRole, bool, error)
 	UpsertRole(secret *storage.K8SRole) error
 	RemoveRole(id string) error

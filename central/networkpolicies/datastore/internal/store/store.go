@@ -19,7 +19,6 @@ type Store interface {
 	GetNetworkPolicy(id string) (*storage.NetworkPolicy, bool, error)
 	GetNetworkPolicies(clusterID, namespace string) ([]*storage.NetworkPolicy, error)
 	CountMatchingNetworkPolicies(clusterID, namespace string) (int, error)
-	CountNetworkPolicies() (int, error)
 	AddNetworkPolicy(np *storage.NetworkPolicy) error
 	UpdateNetworkPolicy(np *storage.NetworkPolicy) error
 	RemoveNetworkPolicy(id string) error

@@ -58,19 +58,6 @@ func (mr *MockStoreMockRecorder) CountMatchingNetworkPolicies(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountMatchingNetworkPolicies", reflect.TypeOf((*MockStore)(nil).CountMatchingNetworkPolicies), arg0, arg1)
 }
 
-// CountNetworkPolicies mocks base method
-func (m *MockStore) CountNetworkPolicies() (int, error) {
-	ret := m.ctrl.Call(m, "CountNetworkPolicies")
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountNetworkPolicies indicates an expected call of CountNetworkPolicies
-func (mr *MockStoreMockRecorder) CountNetworkPolicies() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountNetworkPolicies", reflect.TypeOf((*MockStore)(nil).CountNetworkPolicies))
-}
-
 // GetNetworkPolicies mocks base method
 func (m *MockStore) GetNetworkPolicies(arg0, arg1 string) ([]*storage.NetworkPolicy, error) {
 	ret := m.ctrl.Call(m, "GetNetworkPolicies", arg0, arg1)

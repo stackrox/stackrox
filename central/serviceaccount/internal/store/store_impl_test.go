@@ -62,9 +62,4 @@ func (suite *ServiceAccountStoreTestSuite) TestServiceAccounts() {
 		suite.True(exists)
 		suite.Equal(s, sa)
 	}
-
-	// Get batch service accounts
-	retrievedListSecrets, err := suite.store.ListServiceAccounts([]string{"serviceAccount1", "serviceAccount2"})
-	suite.Nil(err)
-	suite.Len(retrievedListSecrets, 2)
 }

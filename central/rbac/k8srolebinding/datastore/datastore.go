@@ -19,7 +19,6 @@ type DataStore interface {
 	SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error)
 
-	CountRoleBindings(ctx context.Context) (int, error)
 	ListRoleBindings(ctx context.Context) ([]*storage.K8SRoleBinding, error)
 	GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error)
 	UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error

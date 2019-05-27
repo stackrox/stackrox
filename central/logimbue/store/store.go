@@ -11,7 +11,6 @@ var logsBucket = []byte("logs")
 //go:generate mockgen-wrapper Store
 type Store interface {
 	GetLogs() ([]string, error)
-	CountLogs() (count int, err error)
 	GetLogsRange() (start int64, end int64, err error)
 	AddLog(log string) error
 	RemoveLogs(from, to int64) error
