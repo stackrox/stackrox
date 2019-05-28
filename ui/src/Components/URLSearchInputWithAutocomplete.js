@@ -203,16 +203,19 @@ const URLSearchInputWithAutocomplete = props => {
     const searchOptions = transformQueryStringToSearchOptions(location.search);
     const options = getOptions();
     const hideDropdown = options.length ? '' : 'hide-dropdown';
+    const isFocused = document.activeElement.id === 'url-search-input';
     const creatableProps = {
         className: `${className} ${hideDropdown}`,
         components: { ValueContainer, Option, Placeholder, MultiValue },
         options,
         optionValue: searchOptions,
         onChange: setOptions,
+        inputId: 'url-search-input',
         isMulti: true,
         noOptionsMessage,
+        closeMenuOnSelect: false,
         onInputChange: updateAutocompleteState(searchOptions),
-        defaultMenuIsOpen: searchOptions.length > 0,
+        defaultMenuIsOpen: searchOptions.length > 0 && isFocused,
         isValidNewOption: (input, _, availableOptions) =>
             input && searchOptions.length > 0 && !inputMatchesTopOption(input, availableOptions),
         formatCreateLabel: inputValue => inputValue,

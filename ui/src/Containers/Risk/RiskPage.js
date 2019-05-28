@@ -55,7 +55,7 @@ const RiskPage = ({
         const paginationComponent = (
             <TablePagination page={page} dataLength={length} setPage={setPage} />
         );
-        const isFiltering = searchOptions.length;
+        const isFiltering = !!searchOptions.length;
 
         const headerComponent = (
             <PageHeaderComponent length={length} type="Deployment" isViewFiltered={isFiltering} />
