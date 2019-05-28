@@ -11,6 +11,7 @@ type Store interface {
 	AddWhitelist(whitelist *storage.ProcessWhitelist) error
 	DeleteWhitelist(id string) error
 	GetWhitelist(id string) (*storage.ProcessWhitelist, error)
+	GetWhitelists(ids []string) ([]*storage.ProcessWhitelist, []int, error)
 	ListWhitelists() ([]*storage.ProcessWhitelist, error)
 	UpdateWhitelist(whitelist *storage.ProcessWhitelist) error
 }

@@ -71,19 +71,6 @@ func (mr *MockStoreMockRecorder) GetRole(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockStore)(nil).GetRole), arg0)
 }
 
-// GetRolesBatch mocks base method
-func (m *MockStore) GetRolesBatch(arg0 []string) ([]*storage.Role, error) {
-	ret := m.ctrl.Call(m, "GetRolesBatch", arg0)
-	ret0, _ := ret[0].([]*storage.Role)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRolesBatch indicates an expected call of GetRolesBatch
-func (mr *MockStoreMockRecorder) GetRolesBatch(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRolesBatch", reflect.TypeOf((*MockStore)(nil).GetRolesBatch), arg0)
-}
-
 // RemoveRole mocks base method
 func (m *MockStore) RemoveRole(arg0 string) error {
 	ret := m.ctrl.Call(m, "RemoveRole", arg0)

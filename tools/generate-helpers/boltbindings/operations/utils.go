@@ -9,9 +9,13 @@ func renderFuncSStarStore() *Statement {
 	return Func().Params(Id("s").Op("*").Id("store"))
 }
 
-func renderIfErrReturnNilErr() Code {
+func renderIfErrReturnNilErr(extraResults ...Code) Code {
+	allResults := make([]Code, 0, len(extraResults)+2)
+	allResults = append(allResults, Nil())
+	allResults = append(allResults, extraResults...)
+	allResults = append(allResults, Err())
 	return If(Err().Op("!=").Nil()).Block(
-		Return(Nil(), Err()),
+		Return(allResults...),
 	)
 }
 

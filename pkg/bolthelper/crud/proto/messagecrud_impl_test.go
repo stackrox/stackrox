@@ -84,8 +84,9 @@ func (s *MessageCrudTestSuite) TestCreate() {
 		s.Equal(a, full)
 	}
 
-	retrievedAlerts, err := s.crud.ReadBatch([]string{"createId1", "createId2"})
+	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"createId1", "createId2"})
 	s.NoError(err)
+	s.Empty(missingIndices)
 	s.ElementsMatch(alerts, retrievedAlerts)
 }
 
@@ -141,8 +142,9 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 		s.Equal(a, full)
 	}
 
-	retrievedAlerts, err := s.crud.ReadBatch([]string{"updateId1", "updateId2"})
+	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"updateId1", "updateId2"})
 	s.NoError(err)
+	s.Empty(missingIndices)
 	s.ElementsMatch(updatedAlerts, retrievedAlerts)
 }
 
@@ -197,8 +199,9 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 		s.Equal(a, full)
 	}
 
-	retrievedAlerts, err := s.crud.ReadBatch([]string{"upsertId1", "upsertId2"})
+	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"upsertId1", "upsertId2"})
 	s.NoError(err)
+	s.Empty(missingIndices)
 	s.ElementsMatch(updatedAlerts, retrievedAlerts)
 }
 
@@ -229,9 +232,10 @@ func (s *MessageCrudTestSuite) TestDelete() {
 		s.NoError(s.crud.Delete(a.GetId()))
 	}
 
-	retrievedAlerts, err := s.crud.ReadBatch([]string{"deleteId1", "deleteId2"})
-	s.Error(err, "messages should not exist")
-	s.Equal(0, len(retrievedAlerts), "all alerts should be deleted")
+	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"deleteId1", "deleteId2"})
+	s.NoError(err)
+	s.ElementsMatch(missingIndices, []int{0, 1})
+	s.Empty(retrievedAlerts)
 }
 
 func (s *MessageCrudTestSuite) TestDeleteBatch() {

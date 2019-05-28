@@ -59,6 +59,22 @@ func (s *store) GetWhitelist(id string) (*storage.ProcessWhitelist, error) {
 	return storedKey, nil
 }
 
+func (s *store) GetWhitelists(ids []string) ([]*storage.ProcessWhitelist, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Whitelist")
+	msgs, missingIndices, err := s.crud.ReadBatch(ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	storedKeys := make([]*storage.ProcessWhitelist, len(msgs))
+	for i, msg := range msgs {
+		storedKeys[i] = msg.(*storage.ProcessWhitelist)
+	}
+	return storedKeys, missingIndices, nil
+}
+
 func (s *store) ListWhitelists() ([]*storage.ProcessWhitelist, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Whitelist")
 	msgs, err := s.crud.ReadAll()

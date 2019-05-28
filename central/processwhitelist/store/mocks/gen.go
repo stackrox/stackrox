@@ -70,6 +70,20 @@ func (mr *MockStoreMockRecorder) GetWhitelist(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWhitelist", reflect.TypeOf((*MockStore)(nil).GetWhitelist), arg0)
 }
 
+// GetWhitelists mocks base method
+func (m *MockStore) GetWhitelists(arg0 []string) ([]*storage.ProcessWhitelist, []int, error) {
+	ret := m.ctrl.Call(m, "GetWhitelists", arg0)
+	ret0, _ := ret[0].([]*storage.ProcessWhitelist)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetWhitelists indicates an expected call of GetWhitelists
+func (mr *MockStoreMockRecorder) GetWhitelists(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWhitelists", reflect.TypeOf((*MockStore)(nil).GetWhitelists), arg0)
+}
+
 // ListWhitelists mocks base method
 func (m *MockStore) ListWhitelists() ([]*storage.ProcessWhitelist, error) {
 	ret := m.ctrl.Call(m, "ListWhitelists")

@@ -47,24 +47,6 @@ func (s *storeImpl) GetRole(name string) (*storage.Role, error) {
 	return msg.(*storage.Role), err
 }
 
-// GetRolesBatch returns a list of the roles corresponding to the input ids in the same order.
-func (s *storeImpl) GetRolesBatch(names []string) ([]*storage.Role, error) {
-	// Get the list of proto.Messages.
-	msgs, err := s.roleCrud.ReadBatch(names)
-	if err != nil {
-		return nil, err
-	}
-	if len(msgs) == 0 {
-		return nil, err
-	}
-	// Cast to a list of roles.
-	roles := make([]*storage.Role, 0, len(names))
-	for _, msg := range msgs {
-		roles = append(roles, msg.(*storage.Role))
-	}
-	return roles, err
-}
-
 // GetAllRoles returns all of the roles in the store.
 // Returns nil without an error if no roles exist in the store (default roles cannot be deleted, so never)
 func (s *storeImpl) GetAllRoles() ([]*storage.Role, error) {

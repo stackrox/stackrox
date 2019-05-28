@@ -28,16 +28,6 @@ func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Rol
 	return ds.storage.GetRole(name)
 }
 
-func (ds *dataStoreImpl) GetRolesBatch(ctx context.Context, names []string) ([]*storage.Role, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, nil
-	}
-
-	return ds.storage.GetRolesBatch(names)
-}
-
 func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {
 	if ok, err := roleSAC.ReadAllowed(ctx); err != nil {
 		return nil, err

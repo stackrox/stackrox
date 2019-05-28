@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -68,10 +70,9 @@ func (suite *ProcessWhitelistSearchTestSuite) TestErrors() {
 
 	indexResults, _ := getFakeSearchResults(1)
 	suite.indexer.EXPECT().Search(q).Return(indexResults, nil)
-	suite.store.EXPECT().GetWhitelist(indexResults[0].ID).Return(nil, someError)
+	suite.store.EXPECT().GetWhitelists(search.ResultsToIDs(indexResults)).Return(nil, nil, someError)
 	results, err = suite.searcher.SearchRawProcessWhitelists(q)
 	suite.Error(err)
-	suite.Contains(err.Error(), indexResults[0].ID)
 	suite.Nil(results)
 }
 
@@ -79,15 +80,15 @@ func (suite *ProcessWhitelistSearchTestSuite) TestSearchForAll() {
 	q := search.EmptyQuery()
 	var emptyList []search.Result
 	suite.indexer.EXPECT().Search(q).Return(emptyList, nil)
+	// It's an implementation detail whether this method is called, so allow but don't require it.
+	suite.store.EXPECT().GetWhitelists(testutils.AssertionMatcher(assert.Empty)).MinTimes(0).MaxTimes(1)
 	results, err := suite.searcher.SearchRawProcessWhitelists(q)
 	suite.NoError(err)
 	suite.Empty(results)
 
 	indexResults, dbResults := getFakeSearchResults(3)
 	suite.indexer.EXPECT().Search(q).Return(indexResults, nil)
-	for i := 0; i < 3; i++ {
-		suite.store.EXPECT().GetWhitelist(indexResults[i].ID).Return(dbResults[i], nil)
-	}
+	suite.store.EXPECT().GetWhitelists(search.ResultsToIDs(indexResults)).Return(dbResults, nil, nil)
 	results, err = suite.searcher.SearchRawProcessWhitelists(q)
 	suite.NoError(err)
 	suite.Equal(dbResults, results)

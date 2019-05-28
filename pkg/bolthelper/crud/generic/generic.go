@@ -19,7 +19,7 @@ type Entry struct {
 // Crud provides a simple crud layer on top of bolt DB supporting messages of any type stored in a nested structure.
 type Crud interface {
 	Read(firstKey Key, restKeys ...Key) (interface{}, error)
-	ReadBatch(keyPaths ...KeyPath) ([]interface{}, error)
+	ReadBatch(keyPaths ...KeyPath) ([]interface{}, []int, error)
 	ReadAll(maxDepth int, keyPathPrefix ...Key) ([]Entry, error)
 	CountLeaves(maxDepth int, keyPathPrefix ...Key) (int, error)
 

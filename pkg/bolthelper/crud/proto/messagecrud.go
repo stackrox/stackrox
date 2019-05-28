@@ -10,7 +10,7 @@ import (
 // MessageCrud provides a simple crud layer on top of bolt DB for protobuf messages with a string Id field.
 type MessageCrud interface {
 	Read(id string) (proto.Message, error)
-	ReadBatch(ids []string) ([]proto.Message, error)
+	ReadBatch(ids []string) ([]proto.Message, []int, error)
 	ReadAll() ([]proto.Message, error)
 	Count() (int, error)
 

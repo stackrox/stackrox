@@ -74,26 +74,6 @@ func (s *roleDataStoreTestSuite) TestAllowsGet() {
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
-func (s *roleDataStoreTestSuite) TestEnforcesGetBatch() {
-	s.storage.EXPECT().GetRolesBatch(gomock.Any()).Times(0)
-
-	roles, err := s.dataStore.GetRolesBatch(s.hasNoneCtx, []string{"someID"})
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(roles, "expected return value to be nil")
-}
-
-func (s *roleDataStoreTestSuite) TestAllowsGetBatch() {
-	s.storage.EXPECT().GetRolesBatch(gomock.Any()).Return(nil, nil)
-
-	_, err := s.dataStore.GetRolesBatch(s.hasReadCtx, []string{"someID"})
-	s.NoError(err, "expected no error trying to read with permissions")
-
-	s.storage.EXPECT().GetRolesBatch(gomock.Any()).Return(nil, nil)
-
-	_, err = s.dataStore.GetRolesBatch(s.hasWriteCtx, []string{"someID"})
-	s.NoError(err, "expected no error trying to read with permissions")
-}
-
 func (s *roleDataStoreTestSuite) TestEnforcesGetAll() {
 	s.storage.EXPECT().GetAllRoles().Times(0)
 

@@ -75,8 +75,9 @@ func (c *crudImpl) Read(firstKey Key, restKeys ...Key) (interface{}, error) {
 }
 
 // ReadBatch reads and returns a list of values for a list of key paths in the same order.
-func (c *crudImpl) ReadBatch(keyPaths ...KeyPath) ([]interface{}, error) {
-	results := make([]interface{}, len(keyPaths))
+func (c *crudImpl) ReadBatch(keyPaths ...KeyPath) ([]interface{}, []int, error) {
+	results := make([]interface{}, 0, len(keyPaths))
+	var missingIndices []int
 	err := c.bucketRef.View(func(b *bolt.Bucket) error {
 		for i, path := range keyPaths {
 			if len(path) == 0 {
@@ -84,22 +85,24 @@ func (c *crudImpl) ReadBatch(keyPaths ...KeyPath) ([]interface{}, error) {
 			}
 			innermostBucket, leafKey := find(b, path[0], path[1:]...)
 			if innermostBucket == nil {
-				return fmt.Errorf("cannot find value for key: %v", path)
+				missingIndices = append(missingIndices, i)
+				continue
 			}
 			v := innermostBucket.Get(leafKey)
 			if v == nil {
-				return fmt.Errorf("cannot find value for key: %v", path)
+				missingIndices = append(missingIndices, i)
+				continue
 			}
 
 			result, err := c.deserializeFunc(leafKey, v)
 			if err != nil {
 				return err
 			}
-			results[i] = result
+			results = append(results, result)
 		}
 		return nil
 	})
-	return results, err
+	return results, missingIndices, err
 }
 
 func (c *crudImpl) readAllRecursive(maxDepth int, b *bolt.Bucket, currPath KeyPath, result *[]Entry) error {

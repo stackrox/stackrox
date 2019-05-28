@@ -11,7 +11,6 @@ import (
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	GetRole(ctx context.Context, name string) (*storage.Role, error)
-	GetRolesBatch(ctx context.Context, names []string) ([]*storage.Role, error)
 	GetAllRoles(ctx context.Context) ([]*storage.Role, error)
 
 	AddRole(ctx context.Context, role *storage.Role) error

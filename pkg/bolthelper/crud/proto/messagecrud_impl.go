@@ -30,16 +30,16 @@ func idsToKeyPaths(ids []string) []generic.KeyPath {
 }
 
 // ReadBatch reads and returns a list of proto messages for a list of ids in the same order.
-func (crud *messageCrudImpl) ReadBatch(ids []string) ([]proto.Message, error) {
-	results, err := crud.genericCrud.ReadBatch(idsToKeyPaths(ids)...)
+func (crud *messageCrudImpl) ReadBatch(ids []string) ([]proto.Message, []int, error) {
+	results, missingIndices, err := crud.genericCrud.ReadBatch(idsToKeyPaths(ids)...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	msgResults := make([]proto.Message, len(results))
 	for i, res := range results {
 		msgResults[i] = res.(proto.Message)
 	}
-	return msgResults, nil
+	return msgResults, missingIndices, nil
 }
 
 // ReadAll returns all of the proto messages stored in the bucket.

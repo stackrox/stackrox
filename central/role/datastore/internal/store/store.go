@@ -14,7 +14,6 @@ var rolesBucket = []byte("roles")
 //go:generate mockgen-wrapper Store
 type Store interface {
 	GetRole(name string) (*storage.Role, error)
-	GetRolesBatch(names []string) ([]*storage.Role, error)
 	GetAllRoles() ([]*storage.Role, error)
 
 	AddRole(*storage.Role) error
