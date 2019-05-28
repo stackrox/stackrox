@@ -426,18 +426,18 @@ const NetworkGraph = ({
         if (!cy.current) return;
 
         cy.current.zoom({
-            level: Math.max(cy.current.zoom() + ZOOM_STEP, cy.current.minZoom())
+            level: Math.max(cy.current.zoom() + ZOOM_STEP, cy.current.minZoom()),
+            renderedPosition: { x: cy.current.width() / 2, y: cy.current.height() / 2 }
         });
-        cy.current.center();
     }
 
     function zoomOut() {
         if (!cy.current) return;
 
         cy.current.zoom({
-            level: Math.min(cy.current.zoom() - ZOOM_STEP, MAX_ZOOM)
+            level: Math.min(cy.current.zoom() - ZOOM_STEP, MAX_ZOOM),
+            renderedPosition: { x: cy.current.width() / 2, y: cy.current.height() / 2 }
         });
-        cy.current.center();
     }
 
     function getElements() {
