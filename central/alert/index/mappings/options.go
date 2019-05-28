@@ -7,4 +7,4 @@ import (
 )
 
 // OptionsMap is exposed for e2e test.
-var OptionsMap = blevesearch.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.Alert)(nil))
+var OptionsMap = blevesearch.Walk(v1.SearchCategory_ALERTS, "list_alert", (*storage.ListAlert)(nil))

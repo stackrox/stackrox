@@ -6,7 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	rolesDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingsDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
-	bindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/search/mappings"
+	bindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

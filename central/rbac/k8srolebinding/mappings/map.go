@@ -7,4 +7,4 @@ import (
 )
 
 // OptionsMap is the map of indexed fields in k8s rolebindings objects.
-var OptionsMap = blevesearch.Walk(v1.SearchCategory_ROLEBINDINGS, "k8srolebinding", (*storage.K8SRoleBinding)(nil))
+var OptionsMap = blevesearch.Walk(v1.SearchCategory_ROLEBINDINGS, "k8s_role_binding", (*storage.K8SRoleBinding)(nil))

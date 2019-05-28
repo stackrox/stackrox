@@ -16,7 +16,11 @@ func renderSearchFunctionSignature(statement *jen.Statement) *jen.Statement {
 func generateSearch(props GeneratorProperties) (jen.Code, jen.Code) {
 	interfaceMethod := renderSearchFunctionSignature(&jen.Statement{})
 
-	mappingPath := path.Join(packagenames.RoxCentral, strings.ToLower(props.Object), props.OptionsPath)
+	objectName := props.Object
+	if props.ObjectPathName != "" {
+		objectName = props.ObjectPathName
+	}
+	mappingPath := path.Join(packagenames.RoxCentral, strings.ToLower(objectName), props.OptionsPath)
 	implementation := renderSearchFunctionSignature(renderFuncBStarIndexer()).Block(
 		metricLine("Search", props.Object),
 		jen.Return(jen.Qual(packagenames.RoxBleve, "RunSearchRequest").Call(jen.Qual(packagenames.V1, props.SearchCategory), jen.Id("q"), jen.Id("b").Dot("index"), jen.Qual(mappingPath, "OptionsMap"))),

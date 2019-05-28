@@ -41,7 +41,7 @@ func (d *datastoreImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	return d.indexer.UpsertSecrets(secrets...)
+	return d.indexer.AddSecrets(secrets)
 }
 
 func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error) {
@@ -89,7 +89,7 @@ func (d *datastoreImpl) UpsertSecret(ctx context.Context, request *storage.Secre
 	if err := d.storage.UpsertSecret(request); err != nil {
 		return err
 	}
-	return d.indexer.UpsertSecret(request)
+	return d.indexer.AddSecret(request)
 }
 
 func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
@@ -102,7 +102,7 @@ func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
 	if err := d.storage.RemoveSecret(id); err != nil {
 		return err
 	}
-	return d.indexer.RemoveSecret(id)
+	return d.indexer.DeleteSecret(id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

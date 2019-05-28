@@ -128,6 +128,6 @@ func (suite *alertIndexTestSuite) TestEnums() {
 // This test ensures that the search options for both list alerts and alerts are identical. This is necessary
 // because we load and index list alerts from the DB for performance
 func TestListAlertAndAlertWalkAreEqual(t *testing.T) {
-	listOptions := blevesearch.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.ListAlert)(nil))
+	listOptions := blevesearch.Walk(v1.SearchCategory_ALERTS, "list_alert", (*storage.Alert)(nil))
 	assert.Equal(t, listOptions, mappings.OptionsMap)
 }

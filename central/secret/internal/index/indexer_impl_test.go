@@ -37,11 +37,11 @@ func (suite *SecretIndexTestSuite) SetupSuite() {
 	suite.indexer = New(tmpIndex)
 
 	secret := fixtures.GetSecret()
-	suite.NoError(suite.indexer.UpsertSecret(secret))
+	suite.NoError(suite.indexer.AddSecret(secret))
 
 	secondSecret := fixtures.GetSecret()
 	secondSecret.Id = fakeID
-	suite.NoError(suite.indexer.UpsertSecret(secondSecret))
+	suite.NoError(suite.indexer.AddSecret(secondSecret))
 }
 
 func (suite *SecretIndexTestSuite) TestSecretSearch() {

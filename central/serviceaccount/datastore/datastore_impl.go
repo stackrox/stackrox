@@ -39,7 +39,7 @@ func (d *datastoreImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	return d.indexer.UpsertServiceAccounts(serviceAccounts...)
+	return d.indexer.AddServiceAccounts(serviceAccounts)
 }
 
 func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error) {
@@ -73,7 +73,7 @@ func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *stora
 	if err := d.storage.UpsertServiceAccount(request); err != nil {
 		return err
 	}
-	return d.indexer.UpsertServiceAccount(request)
+	return d.indexer.AddServiceAccount(request)
 }
 
 func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) error {
@@ -86,7 +86,7 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 	if err := d.storage.DeleteServiceAccount(id); err != nil {
 		return err
 	}
-	return d.indexer.RemoveServiceAccount(id)
+	return d.indexer.DeleteServiceAccount(id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

@@ -2,6 +2,7 @@ package index
 
 import (
 	"github.com/blevesearch/bleve"
+	"github.com/stackrox/rox/central/alert/index/internal/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -17,13 +18,13 @@ var (
 type Indexer interface {
 	AddListAlert(alert *storage.ListAlert) error
 	AddListAlerts(alerts []*storage.ListAlert) error
-	DeleteAlert(id string) error
+	DeleteListAlert(id string) error
 	Search(q *v1.Query) ([]search.Result, error)
 }
 
 // New returns a new instance of Indexer using the bleve Index provided.
-func New(index bleve.Index) Indexer {
+func New(i bleve.Index) Indexer {
 	return &indexerImpl{
-		index: index,
+		Indexer: index.New(i),
 	}
 }

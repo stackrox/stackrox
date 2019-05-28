@@ -41,7 +41,7 @@ func (d *datastoreImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	return d.indexer.UpsertRoleBindings(bindings...)
+	return d.indexer.AddK8sRoleBindings(bindings)
 }
 
 func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
@@ -75,7 +75,7 @@ func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.
 	if err := d.storage.UpsertRoleBinding(request); err != nil {
 		return err
 	}
-	return d.indexer.UpsertRoleBinding(request)
+	return d.indexer.AddK8sRoleBinding(request)
 }
 
 func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error {
@@ -88,7 +88,7 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 	if err := d.storage.DeleteRoleBinding(id); err != nil {
 		return err
 	}
-	return d.indexer.RemoveRoleBinding(id)
+	return d.indexer.DeleteK8sRoleBinding(id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

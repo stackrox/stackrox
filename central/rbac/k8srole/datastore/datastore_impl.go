@@ -41,7 +41,7 @@ func (d *datastoreImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	return d.indexer.UpsertRoles(roles...)
+	return d.indexer.AddK8SRoles(roles)
 }
 
 func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error) {
@@ -74,7 +74,7 @@ func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole
 	if err := d.storage.UpsertRole(request); err != nil {
 		return err
 	}
-	return d.indexer.UpsertRole(request)
+	return d.indexer.AddK8SRole(request)
 }
 
 func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
@@ -87,7 +87,7 @@ func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
 	if err := d.storage.DeleteRole(id); err != nil {
 		return err
 	}
-	return d.indexer.RemoveRole(id)
+	return d.indexer.DeleteK8SRole(id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

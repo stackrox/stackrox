@@ -39,7 +39,7 @@ func (suite *NamespaceIndexTestSuite) TestIndexing() {
 		Name: "namespace1",
 	}
 
-	suite.NoError(suite.indexer.AddNamespace(ns))
+	suite.NoError(suite.indexer.AddNamespaceMetadata(ns))
 
 	q := search.NewQueryBuilder().AddStrings(search.Namespace, "namespace1").ProtoQuery()
 	results, err := suite.indexer.Search(q)

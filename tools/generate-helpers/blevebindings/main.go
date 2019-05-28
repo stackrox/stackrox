@@ -56,6 +56,9 @@ func generateOptionsFile(props operations.GeneratorProperties) error {
 func generateIndexImplementationFile(props operations.GeneratorProperties, implementations []jen.Code) error {
 	wrapperClass := operations.MakeWrapperType(props.Object)
 	tagString := makeTag(props.Object)
+	if props.Tag != "" {
+		tagString = props.Tag
+	}
 	f := newFile()
 	f.ImportAlias(packagenames.Ops, "ops")
 	f.Line()
@@ -144,6 +147,8 @@ func main() {
 
 	c.Flags().BoolVar(&props.WriteOptions, "write-options", true, "enable writing out the options map")
 	c.Flags().StringVar(&props.OptionsPath, "options-path", packagenames.RoxMappingSubPath, "path to write out the options to")
+	c.Flags().StringVar(&props.ObjectPathName, "object-path-name", "", "overwrite the object path underneath Central")
+	c.Flags().StringVar(&props.Tag, "tag", "", "use the specified json tag")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.Plural == "" {

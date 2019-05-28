@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
-	"github.com/stackrox/rox/central/rbac/k8srole/search/mappings"
+	"github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

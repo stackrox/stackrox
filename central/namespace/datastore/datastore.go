@@ -62,7 +62,7 @@ func (b *datastoreImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	return b.indexer.AddNamespaces(namespaces)
+	return b.indexer.AddNamespaceMetadatas(namespaces)
 }
 
 // GetNamespace returns namespace with given id.
@@ -114,7 +114,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 	if err := b.store.AddNamespace(namespace); err != nil {
 		return err
 	}
-	return b.indexer.AddNamespace(namespace)
+	return b.indexer.AddNamespaceMetadata(namespace)
 }
 
 // UpdateNamespace updates a namespace to bolt
@@ -130,7 +130,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 	if err := b.store.UpdateNamespace(namespace); err != nil {
 		return err
 	}
-	return b.indexer.AddNamespace(namespace)
+	return b.indexer.AddNamespaceMetadata(namespace)
 }
 
 // RemoveNamespace removes a namespace.
@@ -146,7 +146,7 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 	if err := b.store.RemoveNamespace(id); err != nil {
 		return err
 	}
-	return b.indexer.DeleteNamespace(id)
+	return b.indexer.DeleteNamespaceMetadata(id)
 }
 
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {

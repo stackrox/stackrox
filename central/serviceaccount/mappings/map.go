@@ -7,4 +7,4 @@ import (
 )
 
 // OptionsMap is the map of indexed fields in service account and relationship objects.
-var OptionsMap = blevesearch.Walk(v1.SearchCategory_SERVICE_ACCOUNTS, "serviceaccount", (*storage.ServiceAccount)(nil))
+var OptionsMap = blevesearch.Walk(v1.SearchCategory_SERVICE_ACCOUNTS, "service_account", (*storage.ServiceAccount)(nil))

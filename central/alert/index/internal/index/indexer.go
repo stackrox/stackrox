@@ -10,9 +10,9 @@ import (
 )
 
 type Indexer interface {
-	AddK8sRoleBinding(k8srolebinding *storage.K8SRoleBinding) error
-	AddK8sRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error
-	DeleteK8sRoleBinding(id string) error
+	AddListAlert(listalert *storage.ListAlert) error
+	AddListAlerts(listalerts []*storage.ListAlert) error
+	DeleteListAlert(id string) error
 	Search(q *v1.Query) ([]search.Result, error)
 }
 
