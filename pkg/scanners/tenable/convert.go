@@ -7,6 +7,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scans"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []pkg) (components []*storage.ImageScanComponent) {
@@ -20,7 +21,7 @@ func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []p
 		vulnerability := &storage.Vulnerability{
 			Cvss:    float32(cvssScore),
 			Cve:     finding.NVDFinding.CVE,
-			Summary: finding.NVDFinding.Description,
+			Summary: stringutils.Truncate(finding.NVDFinding.Description, 64, stringutils.WordOriented{}),
 			Link:    scans.GetVulnLink(finding.NVDFinding.CVE),
 			CvssV2:  convertCVSS(finding.NVDFinding),
 		}

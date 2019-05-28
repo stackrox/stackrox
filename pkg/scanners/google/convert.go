@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas"
 )
 
@@ -81,7 +82,7 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 		Cve:     cveName,
 		Link:    link,
 		Cvss:    vulnerability.GetCvssScore(),
-		Summary: c.getSummary(occurrence),
+		Summary: stringutils.Truncate(c.getSummary(occurrence), 64, stringutils.WordOriented{}),
 		SetFixedBy: &storage.Vulnerability_FixedBy{
 			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
 		},

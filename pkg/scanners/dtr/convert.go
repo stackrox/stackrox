@@ -6,6 +6,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scans"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 func convertVulns(dockerVulnDetails []*vulnerabilityDetails) []*storage.Vulnerability {
@@ -15,7 +16,7 @@ func convertVulns(dockerVulnDetails []*vulnerabilityDetails) []*storage.Vulnerab
 		vulns[i] = &storage.Vulnerability{
 			Cve:     vuln.CVE,
 			Cvss:    vuln.CVSS,
-			Summary: vuln.Summary,
+			Summary: stringutils.Truncate(vuln.Summary, 64, stringutils.WordOriented{}),
 			Link:    scans.GetVulnLink(vuln.CVE),
 		}
 	}

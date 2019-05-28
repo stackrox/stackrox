@@ -8,6 +8,7 @@ import (
 	cvssconv "github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scans"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -30,7 +31,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.Vulnerability {
 	}
 	vul := &storage.Vulnerability{
 		Cve:     v.Name,
-		Summary: v.Description,
+		Summary: stringutils.Truncate(v.Description, 64, stringutils.WordOriented{}),
 		Link:    v.Link,
 		SetFixedBy: &storage.Vulnerability_FixedBy{
 			FixedBy: v.FixedBy,
