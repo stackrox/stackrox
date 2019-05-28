@@ -2,14 +2,11 @@ import { schema } from 'normalizr';
 
 export const policy = new schema.Entity('policy');
 export const deployment = new schema.Entity('deployment', undefined, {
-    idAttribute: value => value.deployment.id,
-    deployment: 'deployment',
-    whitelistStatuses: 'whitelistStatuses'
+    idAttribute: value => value.deployment.id
 });
 
 export const deploymentDetail = new schema.Entity('deployment', undefined, {
-    idAttribute: value => value.deployment.id,
-    deployment: 'deployment'
+    idAttribute: value => value.deployment.id
 });
 
 // Note: alert entitiy contains a reference to a policy, but it's a version of policy (potentially obsolete)
