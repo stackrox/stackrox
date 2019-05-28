@@ -12,7 +12,6 @@ import io.stackrox.proto.storage.ProcessWhitelistOuterClass
 import objects.Deployment
 
 import org.apache.commons.lang.StringUtils
-import org.junit.Assume
 
 import org.junit.experimental.categories.Category
 
@@ -134,7 +133,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
                         test case : choose to both resolve and whitelist
                             exec into the container and run the  process again and verify no violation alert
                */
-        Assume.assumeTrue(false)
         when:
         "exec into the container after locking whitelists and create a whitelist violation"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -153,7 +151,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         orchestrator.execInContainer(deployment, "pwd")
 
         //check for whitelist  violation
-        assert waitForViolation(containerName, "Unauthorized Process Execution", 90)
+        assert waitForViolation(containerName, "Unauthorized Process Execution", 120)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
         String alertId
