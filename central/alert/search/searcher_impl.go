@@ -73,7 +73,7 @@ func (ds *searcherImpl) getAndIndexAlertsBatch(ids []string) error {
 
 func (ds *searcherImpl) getAndIndexAlerts(ids []string) error {
 	defer debug.FreeOSMemory()
-	alerts, err := ds.storage.GetListAlerts(ids...)
+	alerts, _, err := ds.storage.GetListAlerts(ids)
 	if err != nil {
 		return err
 	}
@@ -113,21 +113,12 @@ func (ds *searcherImpl) searchListAlerts(q *v1.Query) ([]*storage.ListAlert, []s
 	if err != nil {
 		return nil, nil, err
 	}
-	var alerts []*storage.ListAlert
-	var newResults []search.Result
-	for _, result := range results {
-		alert, exists, err := ds.storage.ListAlert(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		alerts = append(alerts, alert)
-		newResults = append(newResults, result)
+	alerts, missingIndices, err := ds.storage.GetListAlerts(search.ResultsToIDs(results))
+	if err != nil {
+		return nil, nil, err
 	}
-	return alerts, newResults, nil
+	results = search.RemoveMissingResults(results, missingIndices)
+	return alerts, results, nil
 }
 
 func (ds *searcherImpl) searchAlerts(q *v1.Query) ([]*storage.Alert, error) {
@@ -135,17 +126,9 @@ func (ds *searcherImpl) searchAlerts(q *v1.Query) ([]*storage.Alert, error) {
 	if err != nil {
 		return nil, err
 	}
-	var alerts []*storage.Alert
-	for _, result := range results {
-		alert, exists, err := ds.storage.GetAlert(result.ID)
-		if err != nil {
-			return nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		alerts = append(alerts, alert)
+	alerts, _, err := ds.storage.GetAlerts(search.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
 	}
 	return alerts, nil
 }

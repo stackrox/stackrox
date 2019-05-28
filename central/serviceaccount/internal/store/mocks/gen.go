@@ -59,6 +59,20 @@ func (mr *MockStoreMockRecorder) GetServiceAccount(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceAccount", reflect.TypeOf((*MockStore)(nil).GetServiceAccount), arg0)
 }
 
+// GetServiceAccounts mocks base method
+func (m *MockStore) GetServiceAccounts(arg0 []string) ([]*storage.ServiceAccount, []int, error) {
+	ret := m.ctrl.Call(m, "GetServiceAccounts", arg0)
+	ret0, _ := ret[0].([]*storage.ServiceAccount)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetServiceAccounts indicates an expected call of GetServiceAccounts
+func (mr *MockStoreMockRecorder) GetServiceAccounts(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceAccounts", reflect.TypeOf((*MockStore)(nil).GetServiceAccounts), arg0)
+}
+
 // ListServiceAccounts mocks base method
 func (m *MockStore) ListServiceAccounts() ([]*storage.ServiceAccount, error) {
 	ret := m.ctrl.Call(m, "ListServiceAccounts")

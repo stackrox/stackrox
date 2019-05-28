@@ -51,18 +51,11 @@ func (ds *searcherImpl) searchRoleBindings(ctx context.Context, q *v1.Query) ([]
 	if err != nil {
 		return nil, nil, err
 	}
-	var bindings []*storage.K8SRoleBinding
-	for _, result := range results {
-		binding, exists, err := ds.storage.GetRoleBinding(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		bindings = append(bindings, binding)
+	bindings, missingIndices, err := ds.storage.GetRoleBindings(search.ResultsToIDs(results))
+	if err != nil {
+		return nil, nil, err
 	}
+	results = search.RemoveMissingResults(results, missingIndices)
 	return bindings, results, nil
 }
 

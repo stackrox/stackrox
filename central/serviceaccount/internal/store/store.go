@@ -10,6 +10,7 @@ import (
 type Store interface {
 	DeleteServiceAccount(id string) error
 	GetServiceAccount(id string) (*storage.ServiceAccount, bool, error)
+	GetServiceAccounts(ids []string) ([]*storage.ServiceAccount, []int, error)
 	ListServiceAccounts() ([]*storage.ServiceAccount, error)
 	UpsertServiceAccount(serviceaccount *storage.ServiceAccount) error
 }

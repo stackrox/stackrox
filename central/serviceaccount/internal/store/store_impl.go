@@ -54,6 +54,22 @@ func (s *store) GetServiceAccount(id string) (*storage.ServiceAccount, bool, err
 	return storedKey, true, nil
 }
 
+func (s *store) GetServiceAccounts(ids []string) ([]*storage.ServiceAccount, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ServiceAccount")
+	msgs, missingIndices, err := s.crud.ReadBatch(ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	storedKeys := make([]*storage.ServiceAccount, len(msgs))
+	for i, msg := range msgs {
+		storedKeys[i] = msg.(*storage.ServiceAccount)
+	}
+	return storedKeys, missingIndices, nil
+}
+
 func (s *store) ListServiceAccounts() ([]*storage.ServiceAccount, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "ServiceAccount")
 	msgs, err := s.crud.ReadAll()

@@ -54,6 +54,22 @@ func (s *store) GetRole(id string) (*storage.K8SRole, bool, error) {
 	return storedKey, true, nil
 }
 
+func (s *store) GetRoles(ids []string) ([]*storage.K8SRole, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Role")
+	msgs, missingIndices, err := s.crud.ReadBatch(ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	storedKeys := make([]*storage.K8SRole, len(msgs))
+	for i, msg := range msgs {
+		storedKeys[i] = msg.(*storage.K8SRole)
+	}
+	return storedKeys, missingIndices, nil
+}
+
 func (s *store) ListRoles() ([]*storage.K8SRole, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Role")
 	msgs, err := s.crud.ReadAll()

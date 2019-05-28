@@ -10,6 +10,7 @@ import (
 type Store interface {
 	DeleteRole(id string) error
 	GetRole(id string) (*storage.K8SRole, bool, error)
+	GetRoles(ids []string) ([]*storage.K8SRole, []int, error)
 	ListRoles() ([]*storage.K8SRole, error)
 	UpsertRole(role *storage.K8SRole) error
 }

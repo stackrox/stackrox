@@ -59,6 +59,20 @@ func (mr *MockStoreMockRecorder) GetRoleBinding(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleBinding", reflect.TypeOf((*MockStore)(nil).GetRoleBinding), arg0)
 }
 
+// GetRoleBindings mocks base method
+func (m *MockStore) GetRoleBindings(arg0 []string) ([]*storage.K8SRoleBinding, []int, error) {
+	ret := m.ctrl.Call(m, "GetRoleBindings", arg0)
+	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetRoleBindings indicates an expected call of GetRoleBindings
+func (mr *MockStoreMockRecorder) GetRoleBindings(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleBindings", reflect.TypeOf((*MockStore)(nil).GetRoleBindings), arg0)
+}
+
 // ListRoleBindings mocks base method
 func (m *MockStore) ListRoleBindings() ([]*storage.K8SRoleBinding, error) {
 	ret := m.ctrl.Call(m, "ListRoleBindings")

@@ -90,36 +90,19 @@ func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err 
 	return
 }
 
-func (b *storeImpl) getAllAlerts() ([]*storage.ListAlert, error) {
-	var alerts []*storage.ListAlert
-	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(alertListBucket)
-		alerts = make([]*storage.ListAlert, 0, b.Stats().KeyN)
-		return b.ForEach(func(k, v []byte) error {
-			var alert storage.ListAlert
-			if err := proto.Unmarshal(v, &alert); err != nil {
-				return err
-			}
-			alerts = append(alerts, &alert)
-			return nil
-		})
-	})
-	return alerts, err
-}
-
-// GetAlerts takes in optional ids to filter the request by. No IDs will result in all IDs being returned
-func (b *storeImpl) GetListAlerts(ids ...string) ([]*storage.ListAlert, error) {
+func (b *storeImpl) GetListAlerts(ids []string) ([]*storage.ListAlert, []int, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
 
-	if len(ids) == 0 {
-		return b.getAllAlerts()
-	}
-
 	alerts := make([]*storage.ListAlert, 0, len(ids))
+	var missingIndices []int
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(alertListBucket)
-		for _, id := range ids {
+		for i, id := range ids {
 			v := b.Get([]byte(id))
+			if v == nil {
+				missingIndices = append(missingIndices, i)
+				continue
+			}
 			var alert storage.ListAlert
 			if err := proto.Unmarshal(v, &alert); err != nil {
 				return err
@@ -129,7 +112,32 @@ func (b *storeImpl) GetListAlerts(ids ...string) ([]*storage.ListAlert, error) {
 		return nil
 	})
 
-	return alerts, err
+	return alerts, missingIndices, err
+}
+
+func (b *storeImpl) GetAlerts(ids []string) ([]*storage.Alert, []int, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Alert")
+
+	alerts := make([]*storage.Alert, 0, len(ids))
+	var missingIndices []int
+	err := b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(alertBucket)
+		for i, id := range ids {
+			v := b.Get([]byte(id))
+			if v == nil {
+				missingIndices = append(missingIndices, i)
+				continue
+			}
+			var alert storage.Alert
+			if err := proto.Unmarshal(v, &alert); err != nil {
+				return err
+			}
+			alerts = append(alerts, &alert)
+		}
+		return nil
+	})
+
+	return alerts, missingIndices, err
 }
 
 // AddAlert adds an alert into Bolt

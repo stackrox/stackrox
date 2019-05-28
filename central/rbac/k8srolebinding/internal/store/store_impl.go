@@ -54,6 +54,22 @@ func (s *store) GetRoleBinding(id string) (*storage.K8SRoleBinding, bool, error)
 	return storedKey, true, nil
 }
 
+func (s *store) GetRoleBindings(ids []string) ([]*storage.K8SRoleBinding, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "RoleBinding")
+	msgs, missingIndices, err := s.crud.ReadBatch(ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	storedKeys := make([]*storage.K8SRoleBinding, len(msgs))
+	for i, msg := range msgs {
+		storedKeys[i] = msg.(*storage.K8SRoleBinding)
+	}
+	return storedKeys, missingIndices, nil
+}
+
 func (s *store) ListRoleBindings() ([]*storage.K8SRoleBinding, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "RoleBinding")
 	msgs, err := s.crud.ReadAll()

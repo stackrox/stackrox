@@ -52,18 +52,11 @@ func (ds *searcherImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storag
 	if err != nil {
 		return nil, nil, err
 	}
-	var roles []*storage.K8SRole
-	for _, result := range results {
-		role, exists, err := ds.storage.GetRole(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		roles = append(roles, role)
+	roles, missingIndices, err := ds.storage.GetRoles(search.ResultsToIDs(results))
+	if err != nil {
+		return nil, nil, err
 	}
+	results = search.RemoveMissingResults(results, missingIndices)
 	return roles, results, nil
 }
 

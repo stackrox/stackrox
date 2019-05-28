@@ -10,6 +10,7 @@ import (
 type Store interface {
 	DeleteRoleBinding(id string) error
 	GetRoleBinding(id string) (*storage.K8SRoleBinding, bool, error)
+	GetRoleBindings(ids []string) ([]*storage.K8SRoleBinding, []int, error)
 	ListRoleBindings() ([]*storage.K8SRoleBinding, error)
 	UpsertRoleBinding(rolebinding *storage.K8SRoleBinding) error
 }

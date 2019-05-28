@@ -58,18 +58,11 @@ func (ds *searcherImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) 
 	if err != nil {
 		return nil, nil, err
 	}
-	var serviceAccounts []*storage.ServiceAccount
-	for _, result := range results {
-		sa, exists, err := ds.storage.GetServiceAccount(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		serviceAccounts = append(serviceAccounts, sa)
+	serviceAccounts, missingIndices, err := ds.storage.GetServiceAccounts(search.ResultsToIDs(results))
+	if err != nil {
+		return nil, nil, err
 	}
+	results = search.RemoveMissingResults(results, missingIndices)
 	return serviceAccounts, results, nil
 }
 
