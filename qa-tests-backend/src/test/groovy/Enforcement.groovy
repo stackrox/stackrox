@@ -670,12 +670,12 @@ class Enforcement extends BaseSpecification {
         orchestrator.createDeployment(wpDeployment)
         given:
         "policy violation to whitelist process policy"
-        def result = Services.updatePolicyEnforcement(
+        def startEnforcements = Services.updatePolicyEnforcement(
                 WHITELISTPROCESS_POLICY,
                 [EnforcementAction.KILL_POD_ENFORCEMENT,
                 ]
         )
-        assert !result.contains("EXCEPTION")
+        assert !startEnforcements.contains("EXCEPTION")
         when:
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
                 getProcessWhitelist(wpDeployment.deploymentUid, wpDeployment.name)
@@ -708,6 +708,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "remove deployment"
+        Services.updatePolicyEnforcement(WHITELISTPROCESS_POLICY, startEnforcements)
         if (wpDeployment != null) {
             orchestrator.deleteDeployment(wpDeployment)
         }
