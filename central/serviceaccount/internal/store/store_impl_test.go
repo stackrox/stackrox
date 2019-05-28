@@ -29,7 +29,8 @@ func (suite *ServiceAccountStoreTestSuite) SetupSuite() {
 	}
 
 	suite.db = db
-	suite.store = New(db)
+	suite.store, err = New(db)
+	suite.Require().NoError(err)
 }
 
 func (suite *ServiceAccountStoreTestSuite) TearDownSuite() {
@@ -52,7 +53,7 @@ func (suite *ServiceAccountStoreTestSuite) TestServiceAccounts() {
 	}
 
 	// Get all service accounts
-	retrievedServiceAccounts, err := suite.store.GetAllServiceAccounts()
+	retrievedServiceAccounts, err := suite.store.ListServiceAccounts()
 	suite.Nil(err)
 	suite.ElementsMatch(serviceAccounts, retrievedServiceAccounts)
 

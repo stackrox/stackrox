@@ -33,6 +33,18 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// DeleteRole mocks base method
+func (m *MockStore) DeleteRole(arg0 string) error {
+	ret := m.ctrl.Call(m, "DeleteRole", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRole indicates an expected call of DeleteRole
+func (mr *MockStoreMockRecorder) DeleteRole(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRole", reflect.TypeOf((*MockStore)(nil).DeleteRole), arg0)
+}
+
 // GetRole mocks base method
 func (m *MockStore) GetRole(arg0 string) (*storage.K8SRole, bool, error) {
 	ret := m.ctrl.Call(m, "GetRole", arg0)
@@ -47,29 +59,17 @@ func (mr *MockStoreMockRecorder) GetRole(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockStore)(nil).GetRole), arg0)
 }
 
-// ListAllRoles mocks base method
-func (m *MockStore) ListAllRoles() ([]*storage.K8SRole, error) {
-	ret := m.ctrl.Call(m, "ListAllRoles")
+// ListRoles mocks base method
+func (m *MockStore) ListRoles() ([]*storage.K8SRole, error) {
+	ret := m.ctrl.Call(m, "ListRoles")
 	ret0, _ := ret[0].([]*storage.K8SRole)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListAllRoles indicates an expected call of ListAllRoles
-func (mr *MockStoreMockRecorder) ListAllRoles() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllRoles", reflect.TypeOf((*MockStore)(nil).ListAllRoles))
-}
-
-// RemoveRole mocks base method
-func (m *MockStore) RemoveRole(arg0 string) error {
-	ret := m.ctrl.Call(m, "RemoveRole", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveRole indicates an expected call of RemoveRole
-func (mr *MockStoreMockRecorder) RemoveRole(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRole", reflect.TypeOf((*MockStore)(nil).RemoveRole), arg0)
+// ListRoles indicates an expected call of ListRoles
+func (mr *MockStoreMockRecorder) ListRoles() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoles", reflect.TypeOf((*MockStore)(nil).ListRoles))
 }
 
 // UpsertRole mocks base method

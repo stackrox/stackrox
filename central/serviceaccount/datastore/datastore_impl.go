@@ -28,14 +28,14 @@ func (d *datastoreImpl) ListServiceAccounts(ctx context.Context) ([]*storage.Ser
 	if ok, err := serviceAccountsSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
-		return d.storage.GetAllServiceAccounts()
+		return d.storage.ListServiceAccounts()
 	}
 
 	return d.SearchRawServiceAccounts(ctx, searchPkg.EmptyQuery())
 }
 
 func (d *datastoreImpl) buildIndex() error {
-	serviceAccounts, err := d.storage.GetAllServiceAccounts()
+	serviceAccounts, err := d.storage.ListServiceAccounts()
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.RemoveServiceAccount(id); err != nil {
+	if err := d.storage.DeleteServiceAccount(id); err != nil {
 		return err
 	}
 	return d.indexer.RemoveServiceAccount(id)

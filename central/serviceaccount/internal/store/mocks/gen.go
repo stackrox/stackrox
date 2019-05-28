@@ -33,17 +33,16 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAllServiceAccounts mocks base method
-func (m *MockStore) GetAllServiceAccounts() ([]*storage.ServiceAccount, error) {
-	ret := m.ctrl.Call(m, "GetAllServiceAccounts")
-	ret0, _ := ret[0].([]*storage.ServiceAccount)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+// DeleteServiceAccount mocks base method
+func (m *MockStore) DeleteServiceAccount(arg0 string) error {
+	ret := m.ctrl.Call(m, "DeleteServiceAccount", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// GetAllServiceAccounts indicates an expected call of GetAllServiceAccounts
-func (mr *MockStoreMockRecorder) GetAllServiceAccounts() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllServiceAccounts", reflect.TypeOf((*MockStore)(nil).GetAllServiceAccounts))
+// DeleteServiceAccount indicates an expected call of DeleteServiceAccount
+func (mr *MockStoreMockRecorder) DeleteServiceAccount(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServiceAccount", reflect.TypeOf((*MockStore)(nil).DeleteServiceAccount), arg0)
 }
 
 // GetServiceAccount mocks base method
@@ -60,16 +59,17 @@ func (mr *MockStoreMockRecorder) GetServiceAccount(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceAccount", reflect.TypeOf((*MockStore)(nil).GetServiceAccount), arg0)
 }
 
-// RemoveServiceAccount mocks base method
-func (m *MockStore) RemoveServiceAccount(arg0 string) error {
-	ret := m.ctrl.Call(m, "RemoveServiceAccount", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
+// ListServiceAccounts mocks base method
+func (m *MockStore) ListServiceAccounts() ([]*storage.ServiceAccount, error) {
+	ret := m.ctrl.Call(m, "ListServiceAccounts")
+	ret0, _ := ret[0].([]*storage.ServiceAccount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// RemoveServiceAccount indicates an expected call of RemoveServiceAccount
-func (mr *MockStoreMockRecorder) RemoveServiceAccount(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveServiceAccount", reflect.TypeOf((*MockStore)(nil).RemoveServiceAccount), arg0)
+// ListServiceAccounts indicates an expected call of ListServiceAccounts
+func (mr *MockStoreMockRecorder) ListServiceAccounts() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServiceAccounts", reflect.TypeOf((*MockStore)(nil).ListServiceAccounts))
 }
 
 // UpsertServiceAccount mocks base method

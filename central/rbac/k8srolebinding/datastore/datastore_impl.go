@@ -29,7 +29,7 @@ func (d *datastoreImpl) ListRoleBindings(ctx context.Context) ([]*storage.K8SRol
 	if ok, err := k8sRoleBindingsSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
-		return d.storage.ListAllRoleBindings()
+		return d.storage.ListRoleBindings()
 	}
 
 	return d.SearchRawRoleBindings(ctx, searchPkg.EmptyQuery())
@@ -37,7 +37,7 @@ func (d *datastoreImpl) ListRoleBindings(ctx context.Context) ([]*storage.K8SRol
 
 func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
-	bindings, err := d.storage.ListAllRoleBindings()
+	bindings, err := d.storage.ListRoleBindings()
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.RemoveRoleBinding(id); err != nil {
+	if err := d.storage.DeleteRoleBinding(id); err != nil {
 		return err
 	}
 	return d.indexer.RemoveRoleBinding(id)

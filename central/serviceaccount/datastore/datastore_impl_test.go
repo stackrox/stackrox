@@ -45,7 +45,8 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err)
 
-	suite.storage = store.New(db)
+	suite.storage, err = store.New(db)
+	suite.Require().NoError(err)
 	suite.indexer = index.New(suite.bleveIndex)
 	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)

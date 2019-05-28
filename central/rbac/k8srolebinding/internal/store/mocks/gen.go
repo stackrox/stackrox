@@ -33,6 +33,18 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// DeleteRoleBinding mocks base method
+func (m *MockStore) DeleteRoleBinding(arg0 string) error {
+	ret := m.ctrl.Call(m, "DeleteRoleBinding", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRoleBinding indicates an expected call of DeleteRoleBinding
+func (mr *MockStoreMockRecorder) DeleteRoleBinding(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRoleBinding", reflect.TypeOf((*MockStore)(nil).DeleteRoleBinding), arg0)
+}
+
 // GetRoleBinding mocks base method
 func (m *MockStore) GetRoleBinding(arg0 string) (*storage.K8SRoleBinding, bool, error) {
 	ret := m.ctrl.Call(m, "GetRoleBinding", arg0)
@@ -47,29 +59,17 @@ func (mr *MockStoreMockRecorder) GetRoleBinding(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleBinding", reflect.TypeOf((*MockStore)(nil).GetRoleBinding), arg0)
 }
 
-// ListAllRoleBindings mocks base method
-func (m *MockStore) ListAllRoleBindings() ([]*storage.K8SRoleBinding, error) {
-	ret := m.ctrl.Call(m, "ListAllRoleBindings")
+// ListRoleBindings mocks base method
+func (m *MockStore) ListRoleBindings() ([]*storage.K8SRoleBinding, error) {
+	ret := m.ctrl.Call(m, "ListRoleBindings")
 	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListAllRoleBindings indicates an expected call of ListAllRoleBindings
-func (mr *MockStoreMockRecorder) ListAllRoleBindings() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllRoleBindings", reflect.TypeOf((*MockStore)(nil).ListAllRoleBindings))
-}
-
-// RemoveRoleBinding mocks base method
-func (m *MockStore) RemoveRoleBinding(arg0 string) error {
-	ret := m.ctrl.Call(m, "RemoveRoleBinding", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveRoleBinding indicates an expected call of RemoveRoleBinding
-func (mr *MockStoreMockRecorder) RemoveRoleBinding(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRoleBinding", reflect.TypeOf((*MockStore)(nil).RemoveRoleBinding), arg0)
+// ListRoleBindings indicates an expected call of ListRoleBindings
+func (mr *MockStoreMockRecorder) ListRoleBindings() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoleBindings", reflect.TypeOf((*MockStore)(nil).ListRoleBindings))
 }
 
 // UpsertRoleBinding mocks base method

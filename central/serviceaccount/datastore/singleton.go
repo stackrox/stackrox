@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
@@ -19,7 +18,7 @@ var (
 )
 
 func initialize() {
-	store := store.New(globaldb.GetGlobalDB())
+	store := store.Singleton()
 	indexer := index.New(globalindex.GetGlobalIndex())
 	var err error
 	ds, err = New(store, indexer, search.New(store, indexer))
