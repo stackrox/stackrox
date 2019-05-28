@@ -1033,9 +1033,7 @@ h6 {
 }
 
 .form-switch-label {
-    @apply block overflow-hidden cursor-pointer  border rounded h-6;
-
-    transition: background-color 0.2s ease-in;
+    @apply block overflow-hidden cursor-pointer border rounded h-6;
 }
 
 .form-switch .form-switch-label,
@@ -1048,12 +1046,11 @@ h6 {
 
     right: 50%;
     content: "";
-    transition: all 0.2s ease-in;
 }
 
 .form-switch .form-switch-checkbox:checked + .form-switch-label,
 .form-switch-reverse .form-switch-checkbox + .form-switch-label {
-    @apply bg-primary-600 shadow-none;
+    @apply bg-primary-400 shadow-none;
 }
 
 .form-switch-reverse .form-switch-checkbox:checked + .form-switch-label:before {
