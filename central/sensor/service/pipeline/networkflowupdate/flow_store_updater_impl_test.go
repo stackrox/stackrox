@@ -8,8 +8,10 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	nfDSMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,10 +26,21 @@ type FlowStoreUpdaterTestSuite struct {
 	mockFlows *nfDSMocks.MockFlowDataStore
 	tested    flowStoreUpdater
 
-	mockCtrl *gomock.Controller
+	mockCtrl    *gomock.Controller
+	hasReadCtx  context.Context
+	hasWriteCtx context.Context
 }
 
 func (suite *FlowStoreUpdaterTestSuite) SetupSuite() {
+	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkPolicy, resources.NetworkGraph)))
+	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkPolicy, resources.NetworkGraph)))
+
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockFlows = nfDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.tested = newFlowStoreUpdater(suite.mockFlows)
@@ -113,10 +126,10 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}
 
 	// Return storedFlows on DB read.
-	suite.mockFlows.EXPECT().GetAllFlows(context.TODO(), gomock.Any()).Return(storedFlows, *firstTimestamp, nil)
+	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, *firstTimestamp, nil)
 
 	// Check that the given write matches expectations.
-	suite.mockFlows.EXPECT().UpsertFlows(context.TODO(), testutils.PredMatcher("matches expected updates", func(actualUpdates []*storage.NetworkFlow) bool {
+	suite.mockFlows.EXPECT().UpsertFlows(suite.hasWriteCtx, testutils.PredMatcher("matches expected updates", func(actualUpdates []*storage.NetworkFlow) bool {
 		if len(actualUpdates) != len(expectedUpdateProps) {
 			return false
 		}
@@ -135,6 +148,6 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}), gomock.Any()).Return(nil)
 
 	// Run test.
-	err := suite.tested.update(context.TODO(), newFlows, secondTimestamp)
+	err := suite.tested.update(suite.hasWriteCtx, newFlows, secondTimestamp)
 	suite.NoError(err, "update should succeed on first insert")
 }

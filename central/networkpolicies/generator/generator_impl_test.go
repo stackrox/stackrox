@@ -33,6 +33,7 @@ type generatorTestSuite struct {
 	mockNamespaceStore      *nsDSMocks.MockDataStore
 	hasNoneCtx              context.Context
 	hasReadCtx              context.Context
+	hasWriteCtx             context.Context
 }
 
 func TestGenerator(t *testing.T) {
@@ -73,17 +74,21 @@ var testNetworkPolicies = []*storage.NetworkPolicy{
 }
 
 func (s *generatorTestSuite) SetupTest() {
+	s.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
+	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkPolicy, resources.NetworkGraph, resources.Namespace, resources.Deployment)))
+	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkPolicy, resources.NetworkGraph)))
+
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mocksNetworkPolicies = npDSMocks.NewMockDataStore(s.mockCtrl)
 	s.mockDeployments = dDSMocks.NewMockDataStore(s.mockCtrl)
 	s.mockGlobalFlowDataStore = nfDSMocks.NewMockClusterDataStore(s.mockCtrl)
 	s.mockNamespaceStore = nsDSMocks.NewMockDataStore(s.mockCtrl)
-
-	s.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
-	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkPolicy, resources.NetworkGraph, resources.Deployment, resources.Namespace)))
 
 	s.generator = &generator{
 		networkPolicies:     s.mocksNetworkPolicies,
