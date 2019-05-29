@@ -191,7 +191,7 @@ const getPolicyFormFields = createSelector(
                     }));
                     break;
                 case 'deployments':
-                    options = deployments.map(deployment => ({
+                    options = deployments.map(({ deployment }) => ({
                         label: deployment.name,
                         value: deployment.name
                     }));
