@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -72,5 +73,22 @@ func BenchmarkSearchAlert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := indexer.Search(qb.ProtoQuery())
 		require.NoError(b, err)
+	}
+}
+
+func BenchmarkIndex(b *testing.B) {
+	indexer := getAlertIndex()
+
+	totalAlerts := 20000
+	alerts := make([]*storage.ListAlert, 0, totalAlerts)
+	for i := 0; i < totalAlerts; i++ {
+		alert := listAlertFixture()
+		alert.Id = fmt.Sprintf("%d", i)
+		alerts = append(alerts, alert)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		assert.NoError(b, indexer.AddListAlerts(alerts))
 	}
 }
