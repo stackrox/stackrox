@@ -14,7 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
 
-const maxSearchResponses = 20000
+// Don't limit the max search responses because then functionality can go wonky as we rely on the indexer for correctness
+// Anything that is time sensitive will need to pass a limit as a part of the pagination request
+// In general, prioritize correctness over latency
+const maxSearchResponses = math.MaxInt32
 
 var (
 	subQueryContext = bleveContext{
