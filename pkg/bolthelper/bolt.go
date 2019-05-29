@@ -34,7 +34,9 @@ func New(path string) (*bolt.DB, error) {
 	} else if err != nil {
 		return nil, err
 	}
-	db, err := bolt.Open(path, 0600, nil)
+	options := *bolt.DefaultOptions
+	options.FreelistType = bolt.FreelistMapType
+	db, err := bolt.Open(path, 0600, &options)
 	if err != nil {
 		return nil, err
 	}
