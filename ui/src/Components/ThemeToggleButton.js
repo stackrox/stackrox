@@ -17,7 +17,7 @@ const ThemeToggleButton = () => {
                 className="flex h-full items-center border-l border-base-400 border-r-0 pt-3 pb-2 px-4 h-9 hover:bg-base-200 text-base-600 no-underline rounded-l-sm"
             >
                 <span className="uppercase text-sm lg:text-base font-700 tracking-wide leading-relaxed flex flex-col">
-                    {themeState.isDarkMode ? <Moon size="16" /> : <Sun size="16" />}
+                    {themeState.isDarkMode ? <Sun size="16" /> : <Moon size="16" />}
                 </span>
             </button>
         </Tooltip>
