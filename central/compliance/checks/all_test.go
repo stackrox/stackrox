@@ -5,13 +5,17 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAllCheckIDsAreValid(t *testing.T) {
 	allChecks := framework.RegistrySingleton().GetAll()
 	var allControls []string
-	for _, standard := range standards.RegistrySingleton().AllStandards() {
+
+	registryInstance := standards.NewRegistry(nil, framework.RegistrySingleton())
+	assert.NoError(t, registryInstance.RegisterStandards(metadata.AllStandards...))
+	for _, standard := range registryInstance.AllStandards() {
 		for _, ctrl := range standard.AllControls() {
 			allControls = append(allControls, ctrl.QualifiedID())
 		}
