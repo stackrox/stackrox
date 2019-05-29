@@ -7,12 +7,14 @@ import (
 )
 
 // Searcher allows you to search objects.
+//go:generate mockgen-wrapper Searcher
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]Result, error)
 }
 
 type searcherFunc func(ctx context.Context, q *v1.Query) ([]Result, error)
 
+// Search runs the search function on the input context and query.
 func (f searcherFunc) Search(ctx context.Context, q *v1.Query) ([]Result, error) {
 	return f(ctx, q)
 }
@@ -24,5 +26,19 @@ func WrapContextLessSearcher(searcher interface {
 }) Searcher {
 	return searcherFunc(func(_ context.Context, q *v1.Query) ([]Result, error) {
 		return searcher.Search(q)
+	})
+}
+
+// WrapContextLessSearchFunc a function that takes in a query and produces results as a Searcher.
+func WrapContextLessSearchFunc(f func(q *v1.Query) ([]Result, error)) Searcher {
+	return searcherFunc(func(_ context.Context, q *v1.Query) ([]Result, error) {
+		return f(q)
+	})
+}
+
+// WrapSearchFunc a function that takes in a context and query and produces results as a Searcher.
+func WrapSearchFunc(f func(ctx context.Context, q *v1.Query) ([]Result, error)) Searcher {
+	return searcherFunc(func(ctx context.Context, q *v1.Query) ([]Result, error) {
+		return f(ctx, q)
 	})
 }

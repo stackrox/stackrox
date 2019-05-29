@@ -132,7 +132,7 @@ func getMapSearchFieldsAndValues(key, value string, fv searchFieldAndValue, high
 	return keyFv, valueFv
 }
 
-func handleNegatedMapQuery(ctx context, index bleve.Index, category v1.SearchCategory, fv searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
+func handleNegatedMapQuery(ctx bleveContext, index bleve.Index, category v1.SearchCategory, fv searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
 	key, value := parseLabel(fv.value)
 	keyFv, valueFv := getMapSearchFieldsAndValues(key, value, fv, highlightCtx)
 
@@ -167,7 +167,7 @@ func handleNegatedMapQuery(ctx context, index bleve.Index, category v1.SearchCat
 	return bq, nil
 }
 
-func matchAllFieldsQuery(ctx context, index bleve.Index, category v1.SearchCategory, fieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
+func matchAllFieldsQuery(ctx bleveContext, index bleve.Index, category v1.SearchCategory, fieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
 	if len(fieldsAndValues) == 0 {
 		return bleve.NewMatchNoneQuery(), nil
 	}

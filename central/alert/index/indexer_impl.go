@@ -1,10 +1,20 @@
 package index
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/alert/index/internal/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
+)
+
+var (
+	defaultSortOption = &v1.SortOption{
+		Field:    search.ViolationTime.String(),
+		Reversed: true,
+	}
 )
 
 type indexerImpl struct {
@@ -31,5 +41,9 @@ func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 		q = cq
 	}
 
-	return b.Indexer.Search(q)
+	return paginated.Paginated(
+		paginated.WithDefaultSortOption(
+			search.WrapContextLessSearcher(b.Indexer),
+			defaultSortOption),
+	).Search(context.TODO(), q)
 }

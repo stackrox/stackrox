@@ -17,7 +17,7 @@ import (
 const maxSearchResponses = 20000
 
 var (
-	subQueryContext = context{
+	subQueryContext = bleveContext{
 		pagination: &v1.Pagination{
 			Limit: maxSearchResponses,
 		},
@@ -29,7 +29,7 @@ type relationship struct {
 	dst v1.SearchCategory
 }
 
-type context struct {
+type bleveContext struct {
 	pagination        *v1.Pagination
 	renderedSortOrder search.SortOrder
 }
@@ -169,7 +169,7 @@ func getValuesFromFields(field string, m map[string]interface{}) []string {
 // we first run a query for image tag = "latest" on images, and then extract the image ids from matching images.
 // The query returned by this function is then a query on deployments, which matches the deployment's image id field against
 // all the returned ids from the subquery we ran.
-func resolveMatchFieldQuery(ctx context, index bleve.Index, category v1.SearchCategory, searchFieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
+func resolveMatchFieldQuery(ctx bleveContext, index bleve.Index, category v1.SearchCategory, searchFieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
 	// This is a programming error
 	if len(searchFieldsAndValues) == 0 {
 		panic("Empty slice of searchFieldsAndValues passed to resolveMatchFieldQuery")
@@ -249,7 +249,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 	if err != nil {
 		return nil, err
 	}
-	ctx := context{
+	ctx := bleveContext{
 		pagination:        q.GetPagination(),
 		renderedSortOrder: sortOrder,
 	}
@@ -280,19 +280,13 @@ func getSortOrder(pagination *v1.Pagination, optionsMap searchPkg.OptionsMap) ([
 	}, nil
 }
 
-func runBleveQuery(ctx context, query query.Query, index bleve.Index, highlightCtx highlightContext, includeLocations bool, fields ...string) (*bleve.SearchResult, error) {
+func runBleveQuery(ctx bleveContext, query query.Query, index bleve.Index, highlightCtx highlightContext, includeLocations bool, fields ...string) (*bleve.SearchResult, error) {
 	searchRequest := bleve.NewSearchRequest(query)
 	// Initial size is 10 which seems small
 	searchRequest.Size = maxSearchResponses
 	if ctx.pagination != nil {
-		searchRequest.From = int(ctx.pagination.GetOffset())
 		searchRequest.Sort = ctx.renderedSortOrder
-
-		if ctx.pagination.GetLimit() != 0 {
-			searchRequest.Size = int(ctx.pagination.GetLimit())
-		}
 	}
-
 	searchRequest.IncludeLocations = includeLocations
 
 	if len(fields) > 0 {
@@ -304,7 +298,7 @@ func runBleveQuery(ctx context, query query.Query, index bleve.Index, highlightC
 }
 
 // runQuery runs the actual query and then collapses the results into a simpler format
-func runQuery(ctx context, q query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
+func runQuery(ctx bleveContext, q query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
 	searchResult, err := runBleveQuery(ctx, q, index, highlightCtx, false, fields...)
 	if err != nil {
 		return nil, err
@@ -314,7 +308,7 @@ func runQuery(ctx context, q query.Query, index bleve.Index, highlightCtx highli
 
 // buildQuery builds a bleve query for the input query
 // It is okay for the input query to be nil or empty; in this case, a query matching all documents of the given category will be returned.
-func buildQuery(ctx context, index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap searchPkg.OptionsMap) (query.Query, highlightContext, error) {
+func buildQuery(ctx bleveContext, index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap searchPkg.OptionsMap) (query.Query, highlightContext, error) {
 	if q.GetQuery() == nil {
 		return typeQuery(category), nil, nil
 	}

@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -822,7 +824,7 @@ func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
 	for _, c := range cases {
 		suite.T().Run(fmt.Sprintf("%s-%d-%d-%t", c.field, c.from, c.size, c.reversed), func(t *testing.T) {
 			qb.Pagination = newPagination(search.DeploymentID, int32(c.from), int32(c.size), c.reversed)
-			results, err := suite.indexer.Search(qb)
+			results, err := paginated.Paginated(search.WrapContextLessSearcher(suite.indexer)).Search(context.TODO(), qb)
 			require.NoError(t, err)
 
 			resultIDs := search.ResultsToIDs(results)

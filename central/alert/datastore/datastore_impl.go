@@ -52,6 +52,7 @@ func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsR
 			return nil, err
 		}
 	}
+
 	if request.GetPagination() != nil {
 		q.Pagination = request.GetPagination()
 	} else {
