@@ -147,6 +147,43 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, deployme
 	return resp, nil
 }
 
+func computeDeploymentHashWithoutContainerInstances(d *storage.Deployment) error {
+	d.Hash = 0
+	containerInstances := make([][]*storage.ContainerInstance, 0, len(d.GetContainers()))
+	for _, c := range d.GetContainers() {
+		containerInstances = append(containerInstances, c.GetInstances())
+		c.Instances = nil
+	}
+	var err error
+	d.Hash, err = hashstructure.Hash(d, &hashstructure.HashOptions{})
+
+	for i, c := range d.GetContainers() {
+		c.Instances = containerInstances[i]
+	}
+	return err
+}
+
+func (s *pipelineImpl) dedupeBasedOnHash(action central.ResourceAction, newDeployment *storage.Deployment) (bool, error) {
+	if err := computeDeploymentHashWithoutContainerInstances(newDeployment); err != nil {
+		return false, err
+	}
+
+	// Check if this deployment needs to be processed based on hash
+	oldDeployment, exists, err := s.deployments.GetDeployment(context.TODO(), newDeployment.GetId())
+	if err != nil {
+		return false, err
+	}
+	// If it already exists and the hash is the same, then just update the container instances of the old deployment and upsert
+	if exists && oldDeployment.GetHash() == newDeployment.GetHash() {
+		// Using the index of Container is save as this is ensured by the hash
+		for i, c := range newDeployment.GetContainers() {
+			oldDeployment.Containers[i].Instances = c.Instances
+		}
+		return true, s.persistDeployment.do(action, oldDeployment)
+	}
+	return false, nil
+}
+
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
 	// Validate the the deployment we receive has necessary fields set.
@@ -154,24 +191,15 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deploym
 		return nil, err
 	}
 
-	deployment.Hash = 0
-	hash, err := hashstructure.Hash(deployment, &hashstructure.HashOptions{})
+	dedupe, err := s.dedupeBasedOnHash(action, deployment)
 	if err != nil {
-		err = errors.Wrapf(err, "Could not hash deployment %q", deployment.GetName())
+		err = errors.Wrapf(err, "Could not check deployment %q for deduping", deployment.GetName())
 		log.Error(err)
 		return nil, err
 	}
-
-	// Check if this deployment needs to be processed based on hash
-	listDeployment, exists, err := s.deployments.ListDeployment(context.TODO(), deployment.GetId())
-	if err != nil {
-		return nil, err
-	}
-	// No need to process if it already exists and the hash is the same
-	if exists && listDeployment.GetHash() == hash {
+	if dedupe {
 		return nil, nil
 	}
-	deployment.Hash = hash
 
 	// Fill in cluster information.
 	if err := s.clusterEnrichment.do(deployment); err != nil {
