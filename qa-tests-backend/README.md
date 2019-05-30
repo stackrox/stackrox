@@ -10,6 +10,7 @@ Framework uses Gradle as a build tool , Groovy Language and Spock as Framework
   New tests are added with group Annotations , current CI integration uses BAT annotation which is added under groups. New target can be added to make file before running tests.
    Add values to your ENV  
     export CLUSTER=[K8S|OPENSHIFT]
+    export KUBECONFIG=<HOME_DIR>/.kube/config
     export HOSTNAME=localhost
     export PORT=${LOCAL_PORT} (8000)
     export ROX_USERNAME=admin
