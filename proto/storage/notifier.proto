@@ -23,6 +23,7 @@ message Notifier {
         Splunk splunk          = 13;
         PagerDuty pagerduty    = 14;
         Generic   generic      = 15;
+        SumoLogic sumologic    = 16;
     }
 }
 
@@ -71,4 +72,9 @@ message Generic {
     repeated KeyValuePair headers      = 6;
     repeated KeyValuePair extra_fields = 7;
     bool audit_logging_enabled         = 8;
+}
+
+message SumoLogic {
+    string http_source_address = 1;
+    bool   skipTLSVerify       = 2;
 }

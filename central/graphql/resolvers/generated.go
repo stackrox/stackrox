@@ -533,6 +533,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"Splunk",
 		"PagerDuty",
 		"Generic",
+		"SumoLogic",
 	}))
 	utils.Must(builder.AddType("NumericalPolicy", []string{
 		"op: Comparator!",
@@ -794,6 +795,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SubjectKind(0)))
+	utils.Must(builder.AddType("SumoLogic", []string{
+		"httpSourceAddress: String!",
+		"skipTLSVerify: Boolean!",
+	}))
 	utils.Must(builder.AddType("Taint", []string{
 		"key: String!",
 		"taintEffect: TaintEffect!",
@@ -4814,6 +4819,14 @@ func (resolver *notifierConfigResolver) ToGeneric() (*genericResolver, bool) {
 	return nil, false
 }
 
+func (resolver *notifierConfigResolver) ToSumoLogic() (*sumoLogicResolver, bool) {
+	value := resolver.resolver.data.GetSumologic()
+	if value != nil {
+		return &sumoLogicResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
 type numericalPolicyResolver struct {
 	root *Resolver
 	data *storage.NumericalPolicy
@@ -6698,6 +6711,39 @@ func toSubjectKinds(values *[]string) []storage.SubjectKind {
 		output[i] = toSubjectKind(&v)
 	}
 	return output
+}
+
+type sumoLogicResolver struct {
+	root *Resolver
+	data *storage.SumoLogic
+}
+
+func (resolver *Resolver) wrapSumoLogic(value *storage.SumoLogic, ok bool, err error) (*sumoLogicResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &sumoLogicResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapSumoLogics(values []*storage.SumoLogic, err error) ([]*sumoLogicResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*sumoLogicResolver, len(values))
+	for i, v := range values {
+		output[i] = &sumoLogicResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *sumoLogicResolver) HttpSourceAddress(ctx context.Context) string {
+	value := resolver.data.GetHttpSourceAddress()
+	return value
+}
+
+func (resolver *sumoLogicResolver) SkipTLSVerify(ctx context.Context) bool {
+	value := resolver.data.GetSkipTLSVerify()
+	return value
 }
 
 type taintResolver struct {

@@ -63,6 +63,14 @@ const tableColumnDescriptor = Object.freeze({
         generic: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'generic.endpoint', Header: 'Endpoint' }
+        ],
+        sumologic: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'sumologic.httpSourceAddress', Header: 'HTTP Collector Source Address' },
+            {
+                Header: 'Skip TLS Certificate Verification',
+                Cell: ({ original }) => (original.skipTLSVerify ? 'Yes (Insecure)' : 'No (Secure)')
+            }
         ]
     },
     imageIntegrations: {

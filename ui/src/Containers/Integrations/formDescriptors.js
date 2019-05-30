@@ -365,6 +365,26 @@ const formDescriptors = {
                 type: 'toggle'
             }
         ],
+        sumologic: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'SumoLogic Integration'
+            },
+            {
+                label: 'HTTP Collector Source Address',
+                jsonpath: 'sumologic.httpSourceAddress',
+                type: 'text',
+                placeholder: 'https://endpoint.sumologic.com/receiver/v1/http/<token>'
+            },
+            {
+                label: 'Disable TLS Certificate Validation (Insecure)',
+                jsonpath: 'sumologic.skipTLSVerify',
+                type: 'toggle',
+                placeholder: ''
+            }
+        ],
         pagerduty: [
             {
                 label: 'Integration Name',

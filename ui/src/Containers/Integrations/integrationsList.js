@@ -14,6 +14,7 @@ import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
 import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
+import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
 import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
@@ -181,6 +182,12 @@ const integrationsList = {
             type: 'pagerduty',
             source: 'notifiers',
             image: pagerduty
+        },
+        {
+            label: 'SumoLogic',
+            type: 'sumologic',
+            source: 'notifiers',
+            image: sumologic
         }
     ],
     backups: [
