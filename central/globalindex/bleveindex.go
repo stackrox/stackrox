@@ -21,7 +21,7 @@ import (
 	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
-	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
+	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/mappings"
 	processWhitelistMapping "github.com/stackrox/rox/central/processwhitelist/index/mappings"
 	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
