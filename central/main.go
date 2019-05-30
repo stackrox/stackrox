@@ -263,6 +263,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		pingService.Singleton(),
 		policyService.Singleton(),
 		processIndicatorService.Singleton(),
+		processWhitelistService.Singleton(),
 		roleService.Singleton(),
 		rbacService.Singleton(),
 		searchService.Singleton(),
@@ -279,9 +280,6 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
-	if features.ProcessWhitelist.Enabled() {
-		servicesToRegister = append(servicesToRegister, processWhitelistService.Singleton())
-	}
 	if features.ClientCAAuth.Enabled() {
 		servicesToRegister = append(servicesToRegister, clientCAService.New(f.caManager))
 	}

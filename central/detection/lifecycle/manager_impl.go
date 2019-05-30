@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/set"
@@ -110,27 +109,25 @@ func (m *managerImpl) flushIndicatorQueue() {
 		return
 	}
 
-	if features.ProcessWhitelist.Enabled() {
-		deploymentToMatchingIndicators := make(map[string][]*storage.ProcessIndicator)
-		for _, ind := range indicatorSlice {
-			userWhitelist, _, err := m.checkWhitelist(ind)
-			if err != nil {
-				log.Errorf("error checking whitelist for indicator: %v - %+v", err, ind)
-				continue
-			}
-			if userWhitelist {
-				deploymentToMatchingIndicators[ind.GetDeploymentId()] = append(deploymentToMatchingIndicators[ind.GetDeploymentId()], ind)
-			}
+	deploymentToMatchingIndicators := make(map[string][]*storage.ProcessIndicator)
+	for _, ind := range indicatorSlice {
+		userWhitelist, _, err := m.checkWhitelist(ind)
+		if err != nil {
+			log.Errorf("error checking whitelist for indicator: %v - %+v", err, ind)
+			continue
 		}
-		if len(deploymentToMatchingIndicators) > 0 {
-			// Compute whitelist alerts here
-			whitelistAlerts, err := m.getWhitelistAlerts(deploymentToMatchingIndicators)
-			if err != nil {
-				log.Errorf("failed to get whitelist alerts: %v", err)
-				return
-			}
-			newAlerts = append(newAlerts, whitelistAlerts...)
+		if userWhitelist {
+			deploymentToMatchingIndicators[ind.GetDeploymentId()] = append(deploymentToMatchingIndicators[ind.GetDeploymentId()], ind)
 		}
+	}
+	if len(deploymentToMatchingIndicators) > 0 {
+		// Compute whitelist alerts here
+		whitelistAlerts, err := m.getWhitelistAlerts(deploymentToMatchingIndicators)
+		if err != nil {
+			log.Errorf("failed to get whitelist alerts: %v", err)
+			return
+		}
+		newAlerts = append(newAlerts, whitelistAlerts...)
 	}
 
 	modified, err := m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))

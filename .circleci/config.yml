@@ -957,7 +957,6 @@ jobs:
       - GCP_IMAGE_TYPE: "COS"
       - MONITORING_SUPPORT: true
       - ROX_K8S_RBAC: true
-      - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SCOPED_ACCESS_CONTROL: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
@@ -1046,7 +1045,6 @@ jobs:
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
       - ROX_K8S_RBAC: true
-      - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SCOPED_ACCESS_CONTROL: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
@@ -1403,7 +1401,6 @@ jobs:
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_K8S_RBAC: true
-      - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SCOPED_ACCESS_CONTROL: true
 
@@ -1592,7 +1589,6 @@ jobs:
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_K8S_RBAC: true
-      - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SCOPED_ACCESS_CONTROL: true
 

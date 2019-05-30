@@ -13,7 +13,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -164,11 +163,9 @@ func (s *serviceImpl) GetGroupedProcessByDeploymentAndContainer(ctx context.Cont
 	}
 
 	groupedIndicators := indicatorsToGroupedResponsesWithContainer(indicators)
-	if features.ProcessWhitelist.Enabled() {
-		err = s.setSuspicious(ctx, groupedIndicators, req.GetDeploymentId())
-		if err != nil {
-			return nil, err
-		}
+	err = s.setSuspicious(ctx, groupedIndicators, req.GetDeploymentId())
+	if err != nil {
+		return nil, err
 	}
 	return &v1.GetGroupedProcessesWithContainerResponse{Groups: groupedIndicators}, nil
 }
