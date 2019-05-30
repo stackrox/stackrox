@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/images/types"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
@@ -178,7 +177,7 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deploy
 	suite.Require().Len(deployment.GetContainers(), 1, "This function only supports deployments with exactly one container")
 	id := deployment.GetContainers()[0].GetImage().GetId()
 	suite.NotEmpty(id, "Deployment '%s' had no image id", proto.MarshalTextString(deployment))
-	return types.NewDigest(id).Digest()
+	return id
 }
 
 func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args, path string, lineage []string, uid uint32) *storage.ProcessIndicator {
@@ -1250,7 +1249,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			var allIDs []string
 			for _, image := range allImages {
-				allIDs = append(allIDs, types.NewDigest(image.ID).Digest())
+				allIDs = append(allIDs, image.ID)
 			}
 			matchesFromMatchMany, err := m.MatchMany(suite.testCtx, suite.imageSearcher, allIDs...)
 			require.NoError(t, err)
@@ -1258,14 +1257,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			var matchingIDs []string
 			for id := range c.expectedViolations {
-				matchingIDs = append(matchingIDs, types.NewDigest(id).Digest())
+				matchingIDs = append(matchingIDs, id)
 			}
 			matchesFromExactlyMatchMany, err := m.MatchMany(suite.testCtx, suite.imageSearcher, matchingIDs...)
 			require.NoError(t, err)
 			validateImageMatches(matchesFromExactlyMatchMany, allImages, c, t)
 
 			for id, violations := range c.expectedViolations {
-				id = types.NewDigest(id).Digest()
 				// Test match one
 				gotFromMatchOne, err := m.MatchOne(suite.testCtx, suite.imageSearcher, id)
 				require.NoError(t, err)
@@ -1279,7 +1277,6 @@ func validateImageMatches(matches map[string]searchbasedpolicies.Violations, all
 	if len(c.shouldNotMatch) > 0 {
 		assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
 		for id := range c.shouldNotMatch {
-			id = types.NewDigest(id).Digest()
 			_, exists := matches[id]
 			assert.False(t, exists, "Should not have matched %s", id)
 		}
@@ -1300,7 +1297,6 @@ func validateImageMatches(matches map[string]searchbasedpolicies.Violations, all
 	}
 
 	for id, violations := range c.expectedViolations {
-		id = types.NewDigest(id).Digest()
 		got, ok := matches[id]
 		if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
 			continue

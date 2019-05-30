@@ -91,7 +91,7 @@ func TestImagePruning(t *testing.T) {
 				newImageInstance("id1", 1),
 				newImageInstance("id2", pruneImagesAfterDays+1),
 			},
-			deployment:  newDeployment("sha256:id1"),
+			deployment:  newDeployment("id1"),
 			expectedIDs: []string{"id1"},
 		},
 		{
@@ -100,7 +100,7 @@ func TestImagePruning(t *testing.T) {
 				newImageInstance("id1", 1),
 				newImageInstance("id2", pruneImagesAfterDays+1),
 			},
-			deployment:  newDeployment("sha256:id2"),
+			deployment:  newDeployment("id2"),
 			expectedIDs: []string{"id1", "id2"},
 		},
 		{
@@ -109,7 +109,7 @@ func TestImagePruning(t *testing.T) {
 				newImageInstance("id1", pruneImagesAfterDays+1),
 				newImageInstance("id2", pruneImagesAfterDays+1),
 			},
-			deployment:  newDeployment("sha256:id2"),
+			deployment:  newDeployment("id2"),
 			expectedIDs: []string{"id2"},
 		},
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -50,7 +49,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 		if !compiled.AppliesTo(image) {
 			return nil
 		}
-		violations, err := compiled.Matcher().MatchOne(context.Background(), tempSearcher, types.NewDigest(image.GetId()).Digest())
+		violations, err := compiled.Matcher().MatchOne(context.Background(), tempSearcher, image.GetId())
 		if err != nil {
 			return errors.Wrapf(err, "matching against policy %s", compiled.Policy().GetName())
 		}

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -58,6 +59,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetImage returns an image with given sha if it exists.
 func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*storage.Image, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "id must be specified")
+	}
+	request.Id = types.NewDigest(request.Id).Digest()
+
 	image, exists, err := s.datastore.GetImage(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
