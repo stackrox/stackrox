@@ -71,20 +71,6 @@ export const AGGREGATED_RESULTS_WITH_CONTROLS = gql`
     }
 `;
 
-export const CONTROLS_QUERY = gql`
-    query totalControls {
-        results: complianceStandards {
-            id
-            name
-            controls {
-                id
-                name
-                description
-            }
-        }
-    }
-`;
-
 export const CONTROL_QUERY = gql`
     query controlById($id: ID!) {
         results: complianceControl(id: $id) {

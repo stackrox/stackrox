@@ -28,9 +28,8 @@ function processData(data, entityType) {
         const { numPassing, numFailing } = result;
         const percentagePassing = Math.round((numPassing / (numPassing + numFailing)) * 100);
         const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-            entityType: entityTypes.CONTROL,
+            entityType: standard.id,
             query: {
-                Standard: standard.name,
                 [`${capitalize(entityType)}`]: entity.name
             }
         });

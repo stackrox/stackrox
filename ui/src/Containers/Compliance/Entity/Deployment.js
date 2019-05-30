@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import { DEPLOYMENT_QUERY } from 'queries/deployment';
@@ -10,6 +10,7 @@ import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
 import ComplianceList from 'Containers/Compliance/List/List';
+import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Cluster from 'images/cluster.svg';
 import Namespace from 'images/ns-icon.svg';
@@ -18,8 +19,6 @@ import pluralize from 'pluralize';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import contextTypes from 'constants/contextTypes';
 import PageNotFound from 'Components/PageNotFound';
-import ControlAssessment from 'Containers/Compliance/widgets/ControlAssessment';
-import ComplianceWidgetsGroup from 'Containers/Compliance/ComplianceWidgetsGroup';
 
 import pageTypes from 'constants/pageTypes';
 import Header from './Header';
@@ -32,13 +31,10 @@ function processData(data) {
     return result;
 }
 
-const types = ['nodes', 'namespaces', 'clusters', 'controls'];
-
-const DeploymentPage = ({ match, location, deploymentId, sidePanelMode, controlResult }) => {
+const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
     const entityId = deploymentId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
-    const [listType, setListType] = useState(listEntityType);
 
     return (
         <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
@@ -148,29 +144,30 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode, controlR
                                     <Labels labels={labels} />
                                 </Widget>
 
-                                <ControlAssessment
-                                    className={`sx-2 ${pdfClassName}`}
-                                    controlResult={controlResult}
-                                />
-
-                                <ComplianceWidgetsGroup
-                                    controlResult={controlResult}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                <ComplianceByStandard
+                                    standardType={entityTypes.PCI_DSS_3_2}
                                     entityName={name}
                                     entityId={id}
-                                    pdfClassName={pdfClassName}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    className={pdfClassName}
+                                />
+                                <ComplianceByStandard
+                                    standardType={entityTypes.NIST_800_190}
+                                    entityName={name}
+                                    entityId={id}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    className={pdfClassName}
+                                />
+                                <ComplianceByStandard
+                                    standardType={entityTypes.HIPAA_164}
+                                    entityName={name}
+                                    entityId={id}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    className={pdfClassName}
                                 />
                             </div>
                         </div>
                     );
-                }
-
-                function modifyListType(type) {
-                    if (types.includes(type)) {
-                        setListType(type);
-                    } else {
-                        setListType(null);
-                    }
                 }
 
                 return (
@@ -179,7 +176,7 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode, controlR
                             <>
                                 <Header
                                     entityType={entityTypes.DEPLOYMENT}
-                                    listEntityType={listType}
+                                    listEntityType={listEntityType}
                                     entityName={name}
                                     entityId={id}
                                 />
@@ -187,7 +184,6 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode, controlR
                                     entityId={id}
                                     entityType={entityTypes.DEPLOYMENT}
                                     resourceTabs={[entityTypes.CONTROL]}
-                                    onClick={modifyListType}
                                 />
                             </>
                         )}
@@ -202,14 +198,12 @@ DeploymentPage.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     deploymentId: PropTypes.string,
-    sidePanelMode: PropTypes.bool,
-    controlResult: PropTypes.shape({})
+    sidePanelMode: PropTypes.bool
 };
 
 DeploymentPage.defaultProps = {
     deploymentId: null,
-    sidePanelMode: false,
-    controlResult: null
+    sidePanelMode: false
 };
 
 export default withRouter(DeploymentPage);

@@ -18,7 +18,7 @@ export const selectors = {
     imageLink: 'div:contains("Image Name") + a',
     table: {
         columns: {
-            priority: 'div.rt-th div.table-header-text:contains("Priority")'
+            priority: 'div.rt-th div:contains("Priority")'
         },
         row: {
             firstRow: 'div.rt-tr-group:first-child div.rt-tr'

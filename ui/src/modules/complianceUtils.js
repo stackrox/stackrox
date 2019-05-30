@@ -11,7 +11,7 @@ export function getIndicesFromAggregatedResults(results) {
     );
 }
 
-export function getResourceCountFromAggregatedResults(type, data) {
+export function getResourceCountFromResults(type, data) {
     const { nodeResults, deploymentResults, namespaceResults, clusterResults } = data;
     let source;
 
@@ -36,38 +36,9 @@ export function getResourceCountFromAggregatedResults(type, data) {
     const index = getIndicesFromAggregatedResults(source, type)[type];
     if (!index && index !== 0) return 0;
 
-    let result;
-
-    if (type === entityTypes.CONTROL) {
-        result = source;
-    } else {
-        result = source.filter(datum => datum.numFailing + datum.numPassing);
-    }
-
-    result = uniq(result.map(datum => datum.aggregationKeys[index].id));
-
-    return result.length;
-}
-
-export function getResourceCountFromComplianceResults(type, data) {
-    const { clusters } = data;
-    let count = 0;
-    if (clusters && type === entityTypes.NODE) {
-        clusters.forEach(cluster => {
-            cluster.nodes.forEach(node => {
-                count += node.complianceResults.length;
-            });
-        });
-    } else if (clusters && type === entityTypes.DEPLOYMENT) {
-        clusters.forEach(cluster => {
-            cluster.deployments.forEach(deployment => {
-                count += deployment.complianceResults.length;
-            });
-        });
-    } else if (clusters && type === entityTypes.CLUSTER) {
-        clusters.forEach(cluster => {
-            count += cluster.complianceResults.length;
-        });
-    }
-    return count;
+    return uniq(
+        source
+            .filter(datum => datum.numFailing + datum.numPassing)
+            .map(datum => datum.aggregationKeys[index].id)
+    ).length;
 }

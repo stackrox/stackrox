@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import { NODE_QUERY } from 'queries/node';
@@ -16,6 +16,7 @@ import IconWidget from 'Components/IconWidget';
 import InfoWidget from 'Components/InfoWidget';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
+import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import Loader from 'Components/Loader';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
@@ -23,8 +24,6 @@ import URLService from 'modules/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
 import ComplianceList from 'Containers/Compliance/List/List';
 import PageNotFound from 'Components/PageNotFound';
-import ControlAssessment from 'Containers/Compliance/widgets/ControlAssessment';
-import ComplianceWidgetsGroup from 'Containers/Compliance/ComplianceWidgetsGroup';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 
@@ -44,13 +43,10 @@ function processData(data) {
     return result;
 }
 
-const types = ['namespaces', 'clusters', 'deployments', 'controls'];
-
-const NodePage = ({ match, location, nodeId, sidePanelMode, controlResult }) => {
+const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
     const entityId = nodeId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
-    const [listType, setListType] = useState(listEntityType);
 
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
@@ -187,30 +183,30 @@ const NodePage = ({ match, location, nodeId, sidePanelMode, controlResult }) => 
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-
-                                <ControlAssessment
-                                    className={`sx-2 ${pdfClassName}`}
-                                    controlResult={controlResult}
-                                />
-
-                                <ComplianceWidgetsGroup
-                                    controlResult={controlResult}
-                                    entityType={entityTypes.NODE}
+                                <ComplianceByStandard
+                                    standardType={entityTypes.NIST_800_190}
                                     entityName={name}
                                     entityId={id}
-                                    pdfClassName={pdfClassName}
+                                    entityType={entityTypes.NODE}
+                                    className={pdfClassName}
+                                />
+                                <ComplianceByStandard
+                                    standardType={entityTypes.CIS_Kubernetes_v1_2_0}
+                                    entityName={name}
+                                    entityId={id}
+                                    entityType={entityTypes.NODE}
+                                    className={pdfClassName}
+                                />
+                                <ComplianceByStandard
+                                    standardType={entityTypes.CIS_Docker_v1_1_0}
+                                    entityName={name}
+                                    entityId={id}
+                                    entityType={entityTypes.NODE}
+                                    className={pdfClassName}
                                 />
                             </div>
                         </div>
                     );
-                }
-
-                function modifyListType(type) {
-                    if (types.includes(type)) {
-                        setListType(type);
-                    } else {
-                        setListType(null);
-                    }
                 }
 
                 return (
@@ -219,15 +215,18 @@ const NodePage = ({ match, location, nodeId, sidePanelMode, controlResult }) => 
                             <>
                                 <Header
                                     entityType={entityTypes.NODE}
-                                    listEntityType={listType}
+                                    listEntityType={listEntityType}
                                     entityName={name}
                                     entityId={id}
                                 />
                                 <ResourceTabs
                                     entityId={id}
                                     entityType={entityTypes.NODE}
-                                    resourceTabs={[entityTypes.CONTROL, entityTypes.NAMESPACE]}
-                                    onClick={modifyListType}
+                                    resourceTabs={[
+                                        entityTypes.CONTROL,
+                                        entityTypes.CLUSTER,
+                                        entityTypes.NAMESPACE
+                                    ]}
                                 />
                             </>
                         )}
@@ -242,14 +241,12 @@ NodePage.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     nodeId: PropTypes.string,
-    sidePanelMode: PropTypes.bool,
-    controlResult: PropTypes.shape({})
+    sidePanelMode: PropTypes.bool
 };
 
 NodePage.defaultProps = {
     nodeId: null,
-    sidePanelMode: false,
-    controlResult: null
+    sidePanelMode: false
 };
 
 export default withRouter(NodePage);

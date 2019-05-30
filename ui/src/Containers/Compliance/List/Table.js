@@ -20,8 +20,8 @@ import createPDFTable from 'utils/pdfUtils';
 import {
     CLUSTERS_LIST_QUERY,
     NAMESPACES_LIST_QUERY,
-    NODES_LIST_QUERY,
-    DEPLOYMENTS_LIST_QUERY
+    NODES_QUERY,
+    DEPLOYMENTS_QUERY
 } from 'queries/table';
 import { LIST_STANDARD } from 'queries/standard';
 import queryService from 'modules/queryService';
@@ -37,9 +37,9 @@ function getQuery(entityType) {
         case entityTypes.NAMESPACE:
             return NAMESPACES_LIST_QUERY;
         case entityTypes.NODE:
-            return NODES_LIST_QUERY;
+            return NODES_QUERY;
         case entityTypes.DEPLOYMENT:
-            return DEPLOYMENTS_LIST_QUERY;
+            return DEPLOYMENTS_QUERY;
         default:
             return null;
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { standardLabels } from 'messages/standards';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
@@ -13,19 +13,14 @@ import { withRouter } from 'react-router-dom';
 import ComplianceList from 'Containers/Compliance/List/List';
 import Loader from 'Components/Loader';
 import ResourceTabs from 'Components/ResourceTabs';
-import ControlAssessment from 'Containers/Compliance/widgets/ControlAssessment';
 import PageNotFound from 'Components/PageNotFound';
 import Header from './Header';
 import SearchInput from '../SearchInput';
-import EntitiesAssessed from '../widgets/EntitiesAssessed';
 
-const types = ['nodes', 'namespaces', 'clusters', 'deployments'];
-
-const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult }) => {
+const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
     const entityId = controlId || params.controlId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
-    const [listType, setListType] = useState(null);
 
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
@@ -97,14 +92,6 @@ const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult 
                                 )}
                                 {sidePanelMode && (
                                     <>
-                                        <ControlAssessment
-                                            className={`sx-2 ${pdfClassName}`}
-                                            controlResult={controlResult}
-                                        />
-                                        <EntitiesAssessed
-                                            className={`sx-2 ${pdfClassName}`}
-                                            controlResult={controlResult}
-                                        />
                                         <ControlRelatedResourceList
                                             listEntityType={entityTypes.CLUSTER}
                                             pageEntityType={entityTypes.CONTROL}
@@ -140,23 +127,15 @@ const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult 
                     );
                 }
 
-                function modifyListType(type) {
-                    if (types.includes(type)) {
-                        setListType(type);
-                    } else {
-                        setListType(null);
-                    }
-                }
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
                                 <Header
                                     entityType={entityTypes.CONTROL}
-                                    listEntityType={listType}
+                                    listEntityType={listEntityType}
                                     entity={control}
                                     headerText={`${standardLabels[standardId]} ${name}`}
-                                    entityName={`${standardLabels[standardId]} ${name}`}
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
@@ -167,7 +146,6 @@ const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult 
                                         entityTypes.DEPLOYMENT,
                                         entityTypes.CLUSTER
                                     ]}
-                                    onClick={modifyListType}
                                 />
                             </>
                         )}
@@ -183,14 +161,12 @@ ControlPage.propTypes = {
     sidePanelMode: PropTypes.bool,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    controlId: PropTypes.string,
-    controlResult: PropTypes.shape({})
+    controlId: PropTypes.string
 };
 
 ControlPage.defaultProps = {
     sidePanelMode: false,
-    controlId: null,
-    controlResult: null
+    controlId: null
 };
 
 export default withRouter(ControlPage);

@@ -20,18 +20,9 @@ const ComplianceListPage = ({ match, location }) => {
 
     // TODO: get rid of this when standards have their own path.
     if (standardBaseTypes[entityType]) {
-        query.standard = standardLabels[entityType];
-        query.standardId = entityType;
+        query.Standard = standardLabels[entityType];
         entityType = entityTypes.CONTROL;
     }
-
-    const collapsibleBanner =
-        entityTypes.CONTROL === entityType ? null : (
-            <CollapsibleBanner className="pdf-page">
-                <ComplianceAcrossEntities entityType={entityType} query={query} groupBy={groupBy} />
-                <ControlsMostFailed entityType={entityType} query={query} showEmpty />
-            </CollapsibleBanner>
-        );
 
     return (
         <section className="flex flex-col h-full relative" id="capture-list">
@@ -40,7 +31,10 @@ const ComplianceListPage = ({ match, location }) => {
                     <SearchInput categories={['COMPLIANCE']} shouldAddComplianceState />
                 }
             />
-            {collapsibleBanner}
+            <CollapsibleBanner className="pdf-page">
+                <ComplianceAcrossEntities entityType={entityType} query={query} groupBy={groupBy} />
+                <ControlsMostFailed entityType={entityType} query={query} showEmpty />
+            </CollapsibleBanner>
             <ComplianceList entityType={entityType} query={query} />
         </section>
     );

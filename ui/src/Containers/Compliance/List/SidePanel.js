@@ -17,8 +17,7 @@ const ComplianceListSidePanel = ({
     entityId,
     clearSelectedRow,
     linkText,
-    standardId,
-    controlResult
+    standardId
 }) => {
     const isControl = entityType === entityTypes.CONTROL;
     const linkParams = {
@@ -29,24 +28,17 @@ const ComplianceListSidePanel = ({
     };
 
     function getEntityPage() {
-        if (isControl)
-            return <ControlPage controlId={entityId} controlResult={controlResult} sidePanelMode />;
+        if (isControl) return <ControlPage controlId={entityId} sidePanelMode />;
 
         switch (entityType) {
             case resourceTypes.NODE:
-                return <NodePage nodeId={entityId} controlResult={controlResult} sidePanelMode />;
+                return <NodePage nodeId={entityId} sidePanelMode />;
             case resourceTypes.NAMESPACE:
                 return <NamespacePage namespaceId={entityId} sidePanelMode />;
             case resourceTypes.CLUSTER:
                 return <ClusterPage clusterId={entityId} sidePanelMode />;
             case resourceTypes.DEPLOYMENT:
-                return (
-                    <DeploymentPage
-                        deploymentId={entityId}
-                        controlResult={controlResult}
-                        sidePanelMode
-                    />
-                );
+                return <DeploymentPage deploymentId={entityId} sidePanelMode />;
             default:
                 return null;
         }
@@ -89,15 +81,13 @@ ComplianceListSidePanel.propTypes = {
     entityId: PropTypes.string.isRequired,
     clearSelectedRow: PropTypes.func,
     linkText: PropTypes.string,
-    standardId: PropTypes.string,
-    controlResult: PropTypes.shape({})
+    standardId: PropTypes.string
 };
 
 ComplianceListSidePanel.defaultProps = {
     clearSelectedRow: () => {},
     linkText: 'Link',
-    standardId: null,
-    controlResult: null
+    standardId: null
 };
 
 export default ComplianceListSidePanel;

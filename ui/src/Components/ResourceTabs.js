@@ -8,26 +8,11 @@ import pageTypes from 'constants/pageTypes';
 import { resourceLabels } from 'messages/common';
 import pluralize from 'pluralize';
 import Query from 'Components/ThrowingQuery';
-import { SEARCH_WITH_CONTROLS } from 'queries/search';
-import { COMPLIANCE_DATA_ON_DEPLOYMENTS_AND_NODES } from 'queries/table';
+import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'modules/queryService';
-import {
-    getResourceCountFromAggregatedResults,
-    getResourceCountFromComplianceResults
-} from 'modules/complianceUtils';
-import entityTypes from 'constants/entityTypes';
+import { getResourceCountFromResults } from 'modules/complianceUtils';
 
-const ResourceTabs = ({
-    entityType,
-    entityId,
-    standardId,
-    resourceTabs,
-    match,
-    location,
-    onClick
-}) => {
-    const { entityType: pageType } = URLService.getParams(match, location);
-
+const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match }) => {
     function getLinkToListType(listEntityType) {
         const urlParams = {
             entityId,
@@ -49,15 +34,10 @@ const ResourceTabs = ({
 
         if (resourceTabs.length && data) {
             resourceTabs.forEach(type => {
-                let count;
-                if (pageType === entityTypes.CONTROL) {
-                    count = getResourceCountFromComplianceResults(type, data);
-                } else {
-                    count = getResourceCountFromAggregatedResults(type, data);
-                }
+                const count = getResourceCountFromResults(type, data);
                 if (count > 0)
                     tabData.push({
-                        title: `${pluralize(resourceLabels[type], count)}`,
+                        title: `${count} ${pluralize(resourceLabels[type], count)}`,
                         link: getLinkToListType(type)
                     });
             });
@@ -72,17 +52,9 @@ const ResourceTabs = ({
         };
     }
 
-    function getQuery() {
-        if (pageType === entityTypes.CONTROL) {
-            return COMPLIANCE_DATA_ON_DEPLOYMENTS_AND_NODES;
-        }
-        return SEARCH_WITH_CONTROLS;
-    }
-
     const variables = getVariables();
-    const query = getQuery();
     return (
-        <Query query={query} variables={variables}>
+        <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return null;
                 const tabData = processData(data);
@@ -100,21 +72,10 @@ const ResourceTabs = ({
                                 textColor = 'text-primary-600';
                                 style.borderTopColor = 'hsla(225, 90%, 67%, 1)';
                                 style.borderTopWidth = '1px';
-                                if (onClick) onClick(datum.title);
                             }
 
-                            const onTabClick = title => evt => {
-                                evt.stopPropagation();
-                                if (onClick) onClick(title);
-                            };
-
                             return (
-                                // eslint-disable-next-line
-                                <li
-                                    key={datum.title}
-                                    className="inline-block"
-                                    onClick={onTabClick(datum.title)}
-                                >
+                                <li key={datum.title} className="inline-block">
                                     <Link
                                         style={style}
                                         className={`no-underline ${textColor} ${borderLeft} ${bgColor} border-r min-w-32 px-3 text-center pt-3 pb-3 uppercase tracking-widest inline-block`}
@@ -137,15 +98,12 @@ ResourceTabs.propTypes = {
     entityId: PropTypes.string.isRequired,
     standardId: PropTypes.string,
     resourceTabs: PropTypes.arrayOf(PropTypes.string),
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    onClick: PropTypes.func
+    match: ReactRouterPropTypes.match.isRequired
 };
 
 ResourceTabs.defaultProps = {
     resourceTabs: [],
-    standardId: null,
-    onClick: null
+    standardId: null
 };
 
 export default withRouter(ResourceTabs);

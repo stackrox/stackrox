@@ -18,9 +18,6 @@ const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
         <PageHeader classes={classes} bgStyle={bgStyle} header="Compliance" subHeader="Dashboard">
             <div className="flex flex-1 justify-end">
                 <div>
-                    <Tile entityType={entityTypes.CONTROL} />
-                </div>
-                <div className="ml-3">
                     <Tile entityType={entityTypes.CLUSTER} />
                 </div>
                 <div className="ml-3">

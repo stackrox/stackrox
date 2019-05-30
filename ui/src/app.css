@@ -831,13 +831,13 @@ h6 {
     @apply .shadow-none !important;
 }
 
-.ReactTable .rt-thead .rt-th.-sort-desc div.table-header-text:after {
+.ReactTable .rt-thead .rt-th.-sort-desc div:after {
     content: " ↓";
     position: absolute;
     margin-left: 4px;
 }
 
-.ReactTable .rt-thead .rt-th.-sort-asc div.table-header-text:after {
+.ReactTable .rt-thead .rt-th.-sort-asc div:after {
     content: " ↑";
     position: absolute;
     margin-left: 4px;
@@ -1214,10 +1214,7 @@ h6 {
 
 /** Tippy tooltip **/
 .tippy-popper .tippy-tooltip {
-    opacity: 0.8 !important;
-    padding: 0.4rem !important;
-}
-
-.recharts-cartesian-axis text.recharts-cartesian-axis-tick-value {
-    fill: var(--base-600);
+  border: 2px solid  var(--base-800);
+  background-color: var(--base-700);
+  opacity: 0.8 !important;
 }
