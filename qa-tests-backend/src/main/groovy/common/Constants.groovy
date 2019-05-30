@@ -21,4 +21,11 @@ class Constants {
             "Monitoring" : ["CVSS >= 7"],
             "clairify" : ["Red Hat Package Manager Execution"],
     ]
+
+    /*
+        StackRox Product Feature Flags
+
+        We need to manually maintain this list here
+     */
+    static final String K8SRBAC_FEATURE_FLAG = "ROX_K8S_RBAC"
 }

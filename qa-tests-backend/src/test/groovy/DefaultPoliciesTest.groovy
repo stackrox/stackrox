@@ -4,6 +4,7 @@ import static Services.waitForViolation
 import spock.lang.Shared
 import io.stackrox.proto.api.v1.PaginationOuterClass
 import services.AlertService
+import services.FeatureFlagService
 import common.Constants
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
@@ -246,6 +247,11 @@ class DefaultPoliciesTest extends BaseSpecification {
     @Category([BAT])
     def "Verify risk factors on struts deployment: #riskFactor"() {
         given:
+        "Check Feature Flags"
+        featureDependancies.each {
+            Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled(it))
+        }
+
         "The struts deployment details"
         Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
         DeploymentOuterClass.Deployment deployment = Services.getDeployment(dep.deploymentUid)
@@ -271,32 +277,33 @@ class DefaultPoliciesTest extends BaseSpecification {
         where:
         "data inputs"
 
-        riskFactor                        | maxScore | message   | regex
-        "Policy Violations"               | 4.0f     | null      | null
+        riskFactor                        | maxScore | message   | regex | featureDependancies
+        "Policy Violations"               | 4.0f     | null      | null | []
 
         "Service Reachability"            | 2.0f     |
-                "Port 80 is exposed in the cluster"  | null
+                "Port 80 is exposed in the cluster"  | null | []
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least a 100 CVEs.
                 "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\" \\(container \"" +
                      STRUTS + "\"\\) contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
-                     "\\d+(\\.\\d{1,2})? and \\d+(\\.\\d{1,2})?"
+                     "\\d+(\\.\\d{1,2})? and \\d+(\\.\\d{1,2})?" | []
 
         "Service Configuration"           | 2.0f     |
-                "No capabilities were dropped" | null
+                "No capabilities were dropped" | null | []
 
         "Components Useful for Attackers" | 1.5f     |
                 "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains components useful for attackers:" +
-                    " apt, bash, curl, wget" | null
+                    " apt, bash, curl, wget" | null | []
 
         "Number of Components in Image"   | 1.5f     |
-                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components" | null
+                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components" | null | []
 
-        "Image Freshness"                 | 1.5f     | null | null
+        "Image Freshness"                 | 1.5f     | null | null | []
 
         "RBAC Configuration"              | 1.0f     |
-                "Deployment is configured to automatically mount a token for service account \"default\"" | null
+                "Deployment is configured to automatically mount a token for service account \"default\"" | null |
+                [Constants.K8SRBAC_FEATURE_FLAG]
     }
 
     @Category(BAT)

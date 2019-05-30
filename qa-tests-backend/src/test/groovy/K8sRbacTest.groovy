@@ -8,6 +8,8 @@ import objects.K8sRole
 import objects.K8sRoleBinding
 import objects.K8sServiceAccount
 import objects.K8sSubject
+import org.junit.Assume
+import services.FeatureFlagService
 import services.RbacService
 import services.ServiceAccountService
 import spock.lang.Stepwise
@@ -43,6 +45,12 @@ class K8sRbacTest extends BaseSpecification {
         orchestrator.deleteServiceAccount(NEW_SA)
         orchestrator.deleteRole(NEW_ROLE)
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
+    }
+
+    def setup() {
+        Assume.assumeTrue(
+                FeatureFlagService.isFeatureFlagEnabled(Constants.K8SRBAC_FEATURE_FLAG)
+        )
     }
 
     def "Verify scraped service accounts"() {
