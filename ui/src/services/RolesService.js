@@ -2,6 +2,13 @@ import axios from './instance';
 
 const url = '/v1/roles';
 const permissionsURL = '/v1/mypermissions';
+const resourcesURL = '/v1/resources';
+
+export function fetchResources() {
+    return axios.get(resourcesURL).then(response => ({
+        response: response.data
+    }));
+}
 
 /**
  * Fetches list of roles

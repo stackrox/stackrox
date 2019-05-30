@@ -26,7 +26,6 @@ var (
 		user.With(permissions.View(resources.Role)): {
 			"/v1.RoleService/GetRoles",
 			"/v1.RoleService/GetRole",
-			"/v1.RoleService/GetResources",
 		},
 		user.With(permissions.Modify(resources.Role)): {
 			"/v1.RoleService/CreateRole",
@@ -35,6 +34,7 @@ var (
 			"/v1.RoleService/DeleteRole",
 		},
 		allow.Anonymous(): {
+			"/v1.RoleService/GetResources",
 			"/v1.RoleService/GetMyPermissions",
 		},
 	})

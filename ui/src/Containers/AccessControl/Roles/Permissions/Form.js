@@ -4,6 +4,7 @@ import { reduxForm } from 'redux-form';
 
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import PermissionsMatrix from 'Containers/AccessControl/Roles/Permissions/PermissionsMatrix/PermissionsMatrix';
+import { defaultMinimalReadAccessResources } from 'constants/accessControl';
 
 const Form = props => {
     const { handleSubmit, initialValues, onSubmit } = props;
@@ -12,7 +13,7 @@ const Form = props => {
         <form
             className="w-full justify-between overflow-auto p-4"
             onSubmit={handleSubmit(onSubmit)}
-            initialvalues={initialValues}
+            initialValues={initialValues}
         >
             <div className="mb-4 flex flex-wrap md:flex-no-wrap items-center">
                 <div className="flex-no-shrink w-full md:w-1/3 pr-8 mb-4 md:mb-0">
@@ -28,10 +29,7 @@ const Form = props => {
                         configured for a user, please assign at least the following read
                         permissions:{' '}
                     </p>
-                    <strong>
-                        Alert, Benchmark, Cluster, Deployment, Image, NetworkPolicy, NetworkGraph,
-                        Policy, Secret
-                    </strong>
+                    <strong>{defaultMinimalReadAccessResources.join(', ')}</strong>
                 </div>
             </div>
             <div>

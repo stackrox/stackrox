@@ -7,7 +7,6 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { AUTH_STATUS } from 'reducers/auth';
-import { defaultPermissions } from 'constants/accessControl';
 import LoadingSection from 'Components/LoadingSection';
 
 class ProtectedRoute extends Component {
@@ -17,7 +16,7 @@ class ProtectedRoute extends Component {
             .isRequired,
         location: ReactRouterPropTypes.location.isRequired,
         devOnly: PropTypes.bool,
-        requiredPermission: PropTypes.oneOf(Object.keys(defaultPermissions))
+        requiredPermission: PropTypes.string
     };
 
     static defaultProps = {

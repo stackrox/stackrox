@@ -27,60 +27,30 @@ export const availableAuthProviders = [
     }
 ];
 
-export const defaultNewRolePermissions = {
-    APIToken: NO_ACCESS,
-    Alert: READ_ACCESS,
-    AuthProvider: NO_ACCESS,
-    Cluster: READ_ACCESS,
-    Config: READ_ACCESS,
-    DebugMetrics: NO_ACCESS,
-    Deployment: READ_ACCESS,
-    Detection: NO_ACCESS,
-    Group: NO_ACCESS,
-    Image: READ_ACCESS,
-    ImageIntegration: NO_ACCESS,
-    ImbuedLogs: NO_ACCESS,
-    Indicator: NO_ACCESS,
-    Licenses: NO_ACCESS,
-    Node: NO_ACCESS,
-    Notifier: NO_ACCESS,
-    NetworkPolicy: READ_ACCESS,
-    NetworkGraph: READ_ACCESS,
-    Policy: READ_ACCESS,
-    Role: NO_ACCESS,
-    Secret: READ_ACCESS,
-    ServiceIdentity: NO_ACCESS,
-    User: NO_ACCESS
-};
+export const defaultMinimalReadAccessResources = [
+    'Alert',
+    'Cluster',
+    'Config',
+    'Deployment',
+    'Image',
+    'NetworkPolicy',
+    'NetworkGraph',
+    'Policy',
+    'Secret'
+];
 
-export const defaultPermissions = {
-    APIToken: NO_ACCESS,
-    Alert: NO_ACCESS,
-    AuthProvider: NO_ACCESS,
-    Cluster: NO_ACCESS,
-    Config: NO_ACCESS,
-    DebugMetrics: NO_ACCESS,
-    Deployment: NO_ACCESS,
-    Detection: NO_ACCESS,
-    Group: NO_ACCESS,
-    Image: NO_ACCESS,
-    ImageIntegration: NO_ACCESS,
-    ImbuedLogs: NO_ACCESS,
-    Indicator: NO_ACCESS,
-    Licenses: NO_ACCESS,
-    Node: NO_ACCESS,
-    Notifier: NO_ACCESS,
-    NetworkPolicy: NO_ACCESS,
-    NetworkGraph: NO_ACCESS,
-    Policy: NO_ACCESS,
-    Role: NO_ACCESS,
-    Secret: NO_ACCESS,
-    ServiceIdentity: NO_ACCESS,
-    User: NO_ACCESS
-};
+// Default to giving new roles read access to specific resources.
+export const defaultNewRolePermissions = defaultMinimalReadAccessResources.reduce(
+    (map, resource) => {
+        const newMap = map;
+        newMap[resource] = READ_ACCESS;
+        return newMap;
+    },
+    {}
+);
 
 export const defaultSelectedRole = {
     name: '',
     globalAccess: 'NO_ACCESS',
-    resourceToAccess: defaultPermissions
+    resourceToAccess: defaultNewRolePermissions
 };

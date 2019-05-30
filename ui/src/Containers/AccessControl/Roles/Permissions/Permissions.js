@@ -3,35 +3,17 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import isEmpty from 'lodash/isEmpty';
 
-import { defaultRoles, defaultPermissions } from 'constants/accessControl';
+import { defaultRoles } from 'constants/accessControl';
 import Panel, { headerClassName } from 'Components/Panel';
 import Button from 'Containers/AccessControl/Roles/Permissions/Button';
 import Form from 'Containers/AccessControl/Roles/Permissions/Form';
 import Details from 'Containers/AccessControl/Roles/Permissions/Details';
+import addDefaultPermissionsToRole from 'Containers/AccessControl/Roles/Permissions/addDefaultPermissionsToRole';
 
-const Permissions = ({ selectedRole, isEditing, onSave, onEdit, onCancel }) => {
-    function addDefaultPermissions(initialValues) {
-        const modifiedInitialValues = { ...initialValues };
-        const resourceToAccess = { ...initialValues.resourceToAccess };
-        Object.keys(defaultPermissions).forEach(resource => {
-            // if the access value for the resource is not available
-            if (!resourceToAccess[resource]) {
-                if (isEmpty(initialValues.resourceToAccess)) {
-                    // use globalAccess level for this resource if resourceToAccess is empty
-                    resourceToAccess[resource] = initialValues.globalAccess;
-                } else {
-                    resourceToAccess[resource] = defaultPermissions[resource];
-                }
-            }
-        });
-        modifiedInitialValues.resourceToAccess = resourceToAccess;
-        return modifiedInitialValues;
-    }
-
+const Permissions = ({ resources, selectedRole, isEditing, onSave, onEdit, onCancel }) => {
     function displayContent() {
-        const modifiedSelectedRole = addDefaultPermissions(selectedRole);
+        const modifiedSelectedRole = addDefaultPermissionsToRole(resources, selectedRole);
         const content = isEditing ? (
             <Form onSubmit={onSave} initialValues={modifiedSelectedRole} />
         ) : (
@@ -61,6 +43,7 @@ const Permissions = ({ selectedRole, isEditing, onSave, onEdit, onCancel }) => {
 };
 
 Permissions.propTypes = {
+    resources: PropTypes.arrayOf(PropTypes.string).isRequired,
     selectedRole: PropTypes.shape({
         name: PropTypes.string,
         globalAccess: PropTypes.string,
@@ -77,6 +60,7 @@ Permissions.defaultProps = {
 };
 
 const mapStateToProps = createStructuredSelector({
+    resources: selectors.getResources,
     selectedRole: selectors.getSelectedRole
 });
 
