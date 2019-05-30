@@ -16,6 +16,7 @@
   "lifecycleStages": [
     "RUNTIME"
   ],
+  "disabled": true,
   "whitelists": [
     {
       "name": "Don't alert on Kube System Namespace",
