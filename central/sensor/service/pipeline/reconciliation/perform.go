@@ -12,8 +12,9 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// PerformDryRun performs reconciliation, but takes a dryRun flag.
-func PerformDryRun(store Store, existingIDs set.StringSet, resourceType string, removeFunc func(id string) error, dryRun bool) error {
+// Perform factors out some of the common reconciliation logic to avoid duplication.
+// It does the reconciliation logic, and closes the passed store at the end.
+func Perform(store Store, existingIDs set.StringSet, resourceType string, removeFunc func(id string) error) error {
 	defer store.Close()
 	idsToDelete := existingIDs.Difference(store.GetSet()).AsSlice()
 	if len(idsToDelete) == 0 {
@@ -21,10 +22,6 @@ func PerformDryRun(store Store, existingIDs set.StringSet, resourceType string, 
 	}
 
 	resources := fmt.Sprintf("%s %+v", resourceType, idsToDelete)
-	if dryRun {
-		log.Infof("Reconciliation in dry-run mode; would have deleted %s", resources)
-		return nil
-	}
 	log.Infof("Deleting %s as a part of reconciliation", resources)
 
 	errList := errorhelpers.NewErrorList("Network Policy reconciliation")
@@ -32,10 +29,4 @@ func PerformDryRun(store Store, existingIDs set.StringSet, resourceType string, 
 		errList.AddError(removeFunc(id))
 	}
 	return errList.ToError()
-}
-
-// Perform factors out some of the common reconciliation logic to avoid duplication.
-// It does the reconciliation logic, and closes the passed store at the end.
-func Perform(store Store, existingIDs set.StringSet, resourceType string, removeFunc func(id string) error) error {
-	return PerformDryRun(store, existingIDs, resourceType, removeFunc, false)
 }

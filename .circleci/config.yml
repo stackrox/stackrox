@@ -956,7 +956,6 @@ jobs:
       - RUNTIME_SUPPORT: ebpf
       - GCP_IMAGE_TYPE: "COS"
       - MONITORING_SUPPORT: true
-      - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
@@ -1046,7 +1045,6 @@ jobs:
       - LOCAL_PORT: 443
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
-      - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
@@ -1404,7 +1402,6 @@ jobs:
       - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
-      - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
@@ -1594,7 +1591,6 @@ jobs:
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
-      - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m

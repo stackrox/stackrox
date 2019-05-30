@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/enforcers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -81,10 +80,10 @@ func (s *pipelineImpl) Reconcile(clusterID string) error {
 		return err
 	}
 
-	return reconciliation.PerformDryRun(s.reconcileStore, search.ResultsToIDSet(results), "deployments", func(id string) error {
+	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "deployments", func(id string) error {
 		_, err := s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
 		return err
-	}, !features.PerformDeploymentReconciliation.Enabled())
+	})
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
