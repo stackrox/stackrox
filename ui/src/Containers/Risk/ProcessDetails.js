@@ -112,7 +112,7 @@ class ProcessDetails extends Component {
     render() {
         return (
             <div>
-                <h3 className="border-b pb-2 mx-3 mt-5">Running Processes</h3>
+                <h3 className="border-b border-base-500 pb-2 mx-3 mt-5">Running Processes</h3>
                 {this.renderProcessDiscoveryCards()}
                 <ProcessSpecificationWhitelists />
             </div>

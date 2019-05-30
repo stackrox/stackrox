@@ -12,19 +12,74 @@ const unlockTooltipText =
 const buttonClassName = 'p-1 border rounded';
 const disabledButtonClassName =
     'text-primary-400 border-primary-400 bg-base-300 pointer-events-none';
-const lockedClassName = `${disabledButtonClassName} rounded-r-none`;
-const unlockedClassName = `${disabledButtonClassName} rounded-l-none`;
+const lockedClassName = `${disabledButtonClassName} rounded-r-none border-base-500`;
+const unlockedClassName = `${disabledButtonClassName} rounded-l-none border-base-500`;
+
+const WhitelistElementsList = ({ whitelistKey, elements, deleteProcess }) => {
+    if (!elements || !elements.length) {
+        return <span className="p-3 block"> No elements in this whitelist </span>;
+    }
+
+    const deleteCurrentProcess = element => () => {
+        if (deleteProcess) {
+            const query = {
+                keys: [{ ...whitelistKey }],
+                removeElements: [element]
+            };
+            deleteProcess(query);
+        }
+    };
+
+    return (
+        <ul className="list-reset pl-3 pr-3">
+            {elements.map(({ element }) => (
+                <li
+                    key={element.processName}
+                    className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300 flex justify-between items-center"
+                >
+                    <span>{element.processName}</span>
+                    <Tooltip
+                        useContext
+                        position="top"
+                        trigger="mouseenter"
+                        animation="none"
+                        duration={0}
+                        arrow
+                        html={<span className="text-sm">Remove process from whitelist</span>}
+                        unmountHTMLWhenHide
+                    >
+                        <button
+                            className="flex p-1 rounded border content-center hover:bg-base-300"
+                            type="button"
+                            onClick={deleteCurrentProcess(element)}
+                        >
+                            <Icon.Minus className="h-4 w-4" />
+                        </button>
+                    </Tooltip>
+                </li>
+            ))}
+        </ul>
+    );
+};
+
+WhitelistElementsList.propTypes = {
+    elements: PropTypes.arrayOf(
+        PropTypes.shape({
+            processName: PropTypes.string
+        })
+    ),
+    whitelistKey: PropTypes.shape({}),
+    deleteProcess: PropTypes.func
+};
+
+WhitelistElementsList.defaultProps = {
+    elements: [],
+    whitelistKey: {},
+    deleteProcess: null
+};
 
 const ProcessWhitelist = ({ process, deleteProcess, toggleProcessLock }) => {
     const { key, elements, containerName, userLockedTimestamp } = process;
-    const deleteCurrentProcess = element => () => {
-        const query = {
-            keys: [{ ...key }],
-            removeElements: [element]
-        };
-        deleteProcess(query);
-    };
-
     const toggleCurrentProcessLock = lockState => () => {
         const query = {
             keys: [{ ...key }],
@@ -33,7 +88,6 @@ const ProcessWhitelist = ({ process, deleteProcess, toggleProcessLock }) => {
         toggleProcessLock(query);
     };
 
-    if (!elements.length) return null;
     const isLocked = userLockedTimestamp;
 
     return (
@@ -62,7 +116,7 @@ const ProcessWhitelist = ({ process, deleteProcess, toggleProcessLock }) => {
                             className={`${buttonClassName} ${
                                 isLocked
                                     ? lockedClassName
-                                    : 'border-r-0 rounded-r-none hover:bg-base-300'
+                                    : 'border-r-0 border-base-500 rounded-r-none hover:bg-base-300'
                             }`}
                             type="button"
                             onClick={toggleCurrentProcessLock(true)}
@@ -73,7 +127,7 @@ const ProcessWhitelist = ({ process, deleteProcess, toggleProcessLock }) => {
                             className={`${buttonClassName} ${
                                 !isLocked
                                     ? unlockedClassName
-                                    : 'border-l-0 rounded-l-none hover:bg-base-300'
+                                    : 'border-l-0 border-base-500 rounded-l-none hover:bg-base-300'
                             }`}
                             type="button"
                             onClick={toggleCurrentProcessLock(false)}
@@ -83,34 +137,11 @@ const ProcessWhitelist = ({ process, deleteProcess, toggleProcessLock }) => {
                     </div>
                 </Tooltip>
             </div>
-            <ul className="list-reset pl-3 pr-3">
-                {elements.map(({ element }) => (
-                    <li
-                        key={element.processName}
-                        className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300 flex justify-between items-center"
-                    >
-                        <span>{element.processName}</span>
-                        <Tooltip
-                            useContext
-                            position="top"
-                            trigger="mouseenter"
-                            animation="none"
-                            duration={0}
-                            arrow
-                            html={<span className="text-sm">Remove process from whitelist</span>}
-                            unmountHTMLWhenHide
-                        >
-                            <button
-                                className="flex p-1 rounded border content-center hover:bg-base-300"
-                                type="button"
-                                onClick={deleteCurrentProcess(element)}
-                            >
-                                <Icon.Minus className="h-4 w-4" />
-                            </button>
-                        </Tooltip>
-                    </li>
-                ))}
-            </ul>
+            <WhitelistElementsList
+                whitelistKey={key}
+                elements={elements}
+                deleteProcess={deleteProcess}
+            />
         </li>
     );
 };
