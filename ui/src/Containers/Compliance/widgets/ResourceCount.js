@@ -71,13 +71,8 @@ const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource, c
             {({ loading, data }) => {
                 const contents = <Loader />;
 
-                if (!loading && data && data.search) {
-                    const resourceCount = getResourceCountFromResults(
-                        entityType,
-                        relatedToResourceType,
-                        data
-                    );
-
+                if (!loading && data) {
+                    const resourceCount = getResourceCountFromResults(entityType, data);
                     return <CountWidget title={headerText} count={resourceCount} linkUrl={url} />;
                 }
                 return (
