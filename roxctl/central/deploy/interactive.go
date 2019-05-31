@@ -118,9 +118,12 @@ func readUserString(f *pflag.Flag) string {
 }
 
 func readPassword(prompt string) (string, error) {
-	printToStderr("%s", prompt)
 	fd := int(os.Stdin.Fd())
+	if !terminal.IsTerminal(fd) {
+		printlnToStderr("%s", "Warning: Entered password will be echoed in this mode. Use 'roxctl generate central interactive' instead if you would not like the password echoed.")
+	}
 
+	printToStderr("%s", prompt)
 	passwd, err := getPassword(fd)
 	if err != nil {
 		return "", err
@@ -150,14 +153,13 @@ func getPassword(fd int) (passwd string, err error) {
 		passwd = string(bytes)
 		printlnToStderr("")
 	} else {
-		printToStderr("%s", "Warning: Entered password will be echoed in this mode. Use 'roxctl generate central interactive' instead if you would not like the password echoed.")
 		reader := bufio.NewReader(os.Stdin)
 		passwd, err = reader.ReadString('\n')
 		if err != nil {
 			return "", err
 		}
 	}
-	return passwd, nil
+	return strings.TrimSuffix(passwd, "\n"), nil
 }
 
 func printlnToStderr(t string, args ...interface{}) {
