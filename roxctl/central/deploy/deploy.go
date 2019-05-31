@@ -253,7 +253,7 @@ func Command() *cobra.Command {
 	}, "default-tls-key", "PEM private key file")
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("default-tls-key", flags.DependenciesKey, []string{"default-tls-cert"}),
-		c.PersistentFlags().SetAnnotation("default-tls-key", flags.OptionalKey, []string{"true"}),
+		c.PersistentFlags().SetAnnotation("default-tls-key", flags.MandatoryKey, []string{"true"}),
 	)
 
 	c.AddCommand(interactive())
@@ -267,5 +267,6 @@ func runInteractive(cmd *cobra.Command) error {
 	mode.SetInteractiveMode()
 	// Overwrite os.Args because cobra uses them
 	os.Args = walkTree(cmd)
+	log.Debugf("Running with args %+v", os.Args)
 	return cmd.Execute()
 }

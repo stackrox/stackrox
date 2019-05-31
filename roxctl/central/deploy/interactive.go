@@ -45,6 +45,14 @@ func isOptional(f *pflag.Flag) bool {
 	return optAnn[0] == "true"
 }
 
+func isMandatory(f *pflag.Flag) bool {
+	mandAnn := f.Annotations[flags.MandatoryKey]
+	if len(mandAnn) == 0 {
+		return false
+	}
+	return mandAnn[0] == "true"
+}
+
 func isPassword(f *pflag.Flag) bool {
 	optAnn := f.Annotations[flags.PasswordKey]
 	if len(optAnn) == 0 {
@@ -100,6 +108,10 @@ func readUserString(f *pflag.Flag) string {
 	s, err := readUserInputFromFlag(f)
 	if err != nil {
 		printlnToStderr("Error reading value from command line. Please try again.")
+		return readUserString(f)
+	}
+	if isMandatory(f) && s == "" {
+		printlnToStderr("A value must be entered. Please try again.")
 		return readUserString(f)
 	}
 	return s
@@ -169,7 +181,7 @@ func processFlag(f *pflag.Flag) (string, string) {
 	return userInput, fmt.Sprintf("--%s=%s", f.Name, userInput)
 }
 
-func choseCommand(prompt string, c *cobra.Command) (args []string) {
+func chooseCommand(argSlice *argSlice, prompt string, c *cobra.Command) {
 	for {
 		cmdString, err := readUserInput(prompt)
 		if err != nil {
@@ -178,7 +190,7 @@ func choseCommand(prompt string, c *cobra.Command) (args []string) {
 		}
 		for _, subCommand := range c.Commands() {
 			if subCommand.Name() == cmdString {
-				args = append(args, walkTree(subCommand)...)
+				walkTreeWithArgSlice(argSlice, subCommand)
 				return
 			}
 		}
@@ -273,7 +285,7 @@ func flagGroups(flags []*pflag.Flag) []*flagGroup {
 	return groupsSlice
 }
 
-func processFlagWraps(fws []flagWrap) (args []string) {
+func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 	flagsByName := make(map[string]*pflag.Flag)
 	for _, fw := range fws {
 		flagsByName[fw.Name] = fw.Flag
@@ -285,12 +297,12 @@ func processFlagWraps(fws []flagWrap) (args []string) {
 		}
 
 		depUnmet := false
-		for _, dep := range fw.Annotations["dependencies"] {
+		for _, dep := range fw.Annotations[flags.DependenciesKey] {
 			flag := flagsByName[dep]
 			if flag == nil {
 				utils.Must(errors.Errorf("invalid flag dependency %q", dep))
 			}
-			if !flag.Changed {
+			if !argSlice.flagNameIsSetExplicitly(flag.Name) {
 				depUnmet = true
 				break
 			}
@@ -306,19 +318,53 @@ func processFlagWraps(fws []flagWrap) (args []string) {
 					printlnToStderr(err.Error())
 					continue
 				}
-				args = append(args, commandline)
+				argSlice.addArg(arg{commandLine: commandline, flagName: fw.Name})
 				if childFlags, exists := fw.childFlags[value]; exists {
-					args = append(args, processFlagWraps(childFlags)...)
+					processFlagWraps(argSlice, childFlags)
 				}
 			}
 			break
 		}
 	}
-	return
 }
 
-func walkTree(c *cobra.Command) (args []string) {
-	args = []string{c.Name()}
+type argSlice struct {
+	args []arg
+}
+
+func (a *argSlice) addArg(arg arg) {
+	a.args = append(a.args, arg)
+}
+
+func (a *argSlice) flagNameIsSetExplicitly(flagName string) bool {
+	for _, arg := range a.args {
+		if arg.commandLine != "" && arg.flagName == flagName {
+			return true
+		}
+	}
+	return false
+}
+
+type arg struct {
+	commandLine string
+	flagName    string
+}
+
+func walkTree(c *cobra.Command) []string {
+	argSlice := argSlice{}
+	walkTreeWithArgSlice(&argSlice, c)
+
+	var args []string
+	for _, arg := range argSlice.args {
+		if arg.commandLine != "" {
+			args = append(args, arg.commandLine)
+		}
+	}
+	return args
+}
+
+func walkTreeWithArgSlice(argSlice *argSlice, c *cobra.Command) {
+	argSlice.addArg(arg{commandLine: c.Name()})
 
 	var allFlags []*pflag.Flag
 	flagAppender := func(f *pflag.Flag) {
@@ -333,7 +379,7 @@ func walkTree(c *cobra.Command) (args []string) {
 	flagGroups := flagGroups(allFlags)
 
 	for _, fg := range flagGroups {
-		args = append(args, processFlagWraps(fg.flags)...)
+		processFlagWraps(argSlice, fg.flags)
 	}
 
 	// group commands by their annotation categories
@@ -349,7 +395,6 @@ func walkTree(c *cobra.Command) (args []string) {
 
 	for k, v := range categoriesToCommands {
 		cmdPrompt := fmt.Sprintf("%s (%s): ", k, strings.Join(v, ", "))
-		args = append(args, choseCommand(cmdPrompt, c)...)
+		chooseCommand(argSlice, cmdPrompt, c)
 	}
-	return
 }
