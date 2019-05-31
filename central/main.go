@@ -103,6 +103,7 @@ import (
 	authzUser "github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sac"
@@ -136,6 +137,9 @@ func main() {
 	if err := os.RemoveAll(filepath.Join(migrations.DBMountPath, ".backup")); err != nil {
 		log.Errorf("Failed to remove backup DB: %v", err)
 	}
+
+	// Start the prometheus metrics server
+	pkgMetrics.NewDefaultHTTPServer().RunForever()
 
 	var restartingFlag concurrency.Flag
 

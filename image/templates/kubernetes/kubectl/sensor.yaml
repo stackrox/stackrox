@@ -81,7 +81,7 @@ spec:
         - name: CLUSTER_NAME
           value: {{.ClusterName}}
         - name: PROMETHEUS_ENDPOINT
-          value: https://localhost:8443
+          value: http://localhost:9090
         - name: MONITORING_ENDPOINT
           value: {{.MonitoringEndpoint}}
         resources:
