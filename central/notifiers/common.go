@@ -2,7 +2,6 @@ package notifiers
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -16,12 +15,12 @@ const (
 func AlertLink(endpoint string, alertID string) string {
 	base, err := url.Parse(endpoint)
 	if err != nil {
-		log.Print(err)
+		log.Error(err)
 	}
 	alertPath := fmt.Sprintf(alertLinkPath, alertID)
 	u, err := url.Parse(alertPath)
 	if err != nil {
-		log.Print(err)
+		log.Error(err)
 		return ""
 	}
 	return base.ResolveReference(u).String()

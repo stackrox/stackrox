@@ -5,16 +5,19 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -37,15 +40,18 @@ type sumologic struct {
 
 // AlertNotify takes in an alert and generates the Slack message
 func (s *sumologic) AlertNotify(alert *storage.Alert) error {
-	alertBytes, err := json.Marshal(alert)
-	if err != nil {
+	clonedAlert := protoutils.CloneStorageAlert(alert)
+	notifiers.PruneAlert(clonedAlert, 10000)
+
+	var buf bytes.Buffer
+	if err := new(jsonpb.Marshaler).Marshal(&buf, clonedAlert); err != nil {
 		return err
 	}
-	return s.sendPayload(alertBytes)
+	return s.sendPayload(&buf)
 }
 
-func (s *sumologic) sendPayload(payload []byte) error {
-	req, err := http.NewRequest(http.MethodPost, s.fullyQualifiedEndpoint, bytes.NewReader(payload))
+func (s *sumologic) sendPayload(buf io.Reader) error {
+	req, err := http.NewRequest(http.MethodPost, s.fullyQualifiedEndpoint, buf)
 	if err != nil {
 		return err
 	}
@@ -120,7 +126,7 @@ func (s *sumologic) Test() error {
 	if err != nil {
 		return err
 	}
-	return s.sendPayload(marshaledPayload)
+	return s.sendPayload(bytes.NewBuffer(marshaledPayload))
 }
 
 func init() {

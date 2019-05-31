@@ -594,11 +594,10 @@
   version = "v5.0.1"
 
 [[projects]]
-  digest = "1:895d2773c9e78e595dd5f946a25383d579d3094a9d8d9306dba27359f190f275"
+  digest = "1:9de28de6b4453a6a96cdbb16b86d48f2640397e6739ed2d3d7ee5fd55b93d193"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
-    "jsonpb",
     "proto",
     "protoc-gen-gogo/descriptor",
     "sortkeys",
@@ -2042,7 +2041,6 @@
     "github.com/gobuffalo/packr",
     "github.com/godbus/dbus",
     "github.com/gogo/protobuf/gogoproto",
-    "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/types",
     "github.com/golang/mock/gomock",

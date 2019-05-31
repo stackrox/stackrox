@@ -29,18 +29,12 @@ var (
 	log = logging.LoggerForModule()
 
 	timeout = 5 * time.Second
-
-	// blacklist of annotations to be scrubbed
-	scrubAnnotations = map[string]bool{
-		"kubectl.kubernetes.io/last-applied-configuration": true,
-	}
 )
 
 type splunk struct {
-	token    string
 	endpoint string
-	insecure bool
-	truncate int
+	conf     *storage.Splunk
+
 	*storage.Notifier
 }
 
@@ -65,28 +59,11 @@ func (s *splunk) Test() error {
 
 func (s *splunk) postAlert(alert *storage.Alert) error {
 	clonedAlert := protoutils.CloneStorageAlert(alert)
-
 	// Splunk's HEC by default has a limitation of data size == 10KB
 	// Removing some of the fields here to make it smaller
 	// More details on HEC limitation: https://developers.perfectomobile.com/display/TT/Splunk+-+Configure+HTTP+Event+Collector
 	// Check section on "Increasing the Event Data Truncate Limit"
-	clonedAlert.GetDeployment().Risk = nil
-	for i := range clonedAlert.GetDeployment().GetContainers() {
-		clonedAlert.GetDeployment().Containers[i].GetImage().Metadata = nil
-		clonedAlert.GetDeployment().Containers[i].GetImage().Scan = nil
-	}
-
-	processViolations := clonedAlert.GetProcessViolation().GetProcesses()
-	if len(processViolations) > 5 {
-		clonedAlert.ProcessViolation.Processes = clonedAlert.ProcessViolation.Processes[0:5]
-	}
-
-	// Scrub black listed annotations
-	for needScrubbing := range clonedAlert.GetDeployment().GetAnnotations() {
-		if _, ok := scrubAnnotations[needScrubbing]; ok {
-			delete(clonedAlert.Deployment.Annotations, needScrubbing)
-		}
-	}
+	notifiers.PruneAlert(clonedAlert, int(s.conf.Truncate))
 	return s.sendHTTPPayload(clonedAlert)
 }
 
@@ -121,11 +98,8 @@ func (s *splunk) sendHTTPPayload(msg proto.Message) error {
 		return err
 	}
 
-	if s.truncate == 0 {
-		s.truncate = splunkHECDefaultDataLimit
-	}
-	if data.Len() > s.truncate {
-		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.truncate, data.Len())
+	if data.Len() > int(s.conf.GetTruncate()) {
+		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.conf.GetTruncate(), data.Len())
 	}
 
 	req, err := http.NewRequest(http.MethodPost, s.endpoint, &data)
@@ -133,10 +107,10 @@ func (s *splunk) sendHTTPPayload(msg proto.Message) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.token))
+	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.conf.HttpEndpoint))
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: s.insecure},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: s.conf.Insecure},
 	}
 
 	client := &http.Client{Timeout: timeout, Transport: tr}
@@ -175,17 +149,9 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 		return nil, err
 	}
 
-	truncate := 0
-	if conf.GetTruncate() == 0 {
-		truncate = splunkHECDefaultDataLimit
-	}
-
 	return &splunk{
-		conf.HttpToken,
-		endpoint,
-		conf.GetInsecure(),
-		int(truncate),
-		notifier,
+		endpoint: endpoint,
+		Notifier: notifier,
 	}, nil
 }
 
@@ -195,6 +161,9 @@ func validate(conf *storage.Splunk) error {
 	}
 	if len(conf.HttpEndpoint) == 0 {
 		return fmt.Errorf("Splunk HTTP endpoint must be specified")
+	}
+	if conf.GetTruncate() == 0 {
+		conf.Truncate = splunkHECDefaultDataLimit
 	}
 	return nil
 }

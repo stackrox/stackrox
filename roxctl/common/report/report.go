@@ -4,7 +4,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/gogo/protobuf/jsonpb"
+	"github.com/golang/protobuf/jsonpb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/stringutils"
