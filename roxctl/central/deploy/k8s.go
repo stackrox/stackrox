@@ -93,10 +93,9 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	return c
 }
 
-func newK8sConfig(monitoringDefault renderer.MonitoringType) *renderer.K8sConfig {
+func newK8sConfig() *renderer.K8sConfig {
 	return &renderer.K8sConfig{
 		Monitoring: renderer.MonitoringConfig{
-			Type:     monitoringDefault,
 			HostPath: &renderer.HostPathPersistence{},
 			External: &renderer.ExternalPersistence{},
 		},
@@ -104,7 +103,7 @@ func newK8sConfig(monitoringDefault renderer.MonitoringType) *renderer.K8sConfig
 }
 
 func k8s() *cobra.Command {
-	k8sConfig := newK8sConfig(renderer.OnPrem)
+	k8sConfig := newK8sConfig()
 	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", storage.ClusterType_KUBERNETES_CLUSTER)
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
@@ -118,7 +117,7 @@ func k8s() *cobra.Command {
 }
 
 func openshift() *cobra.Command {
-	k8sConfig := newK8sConfig(renderer.OnPrem)
+	k8sConfig := newK8sConfig()
 	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", storage.ClusterType_OPENSHIFT_CLUSTER)
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}

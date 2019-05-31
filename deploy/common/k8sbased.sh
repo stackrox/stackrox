@@ -55,6 +55,7 @@ function launch_central {
     if [[ "$MONITORING_SUPPORT" == "false" ]]; then
     	add_args "--monitoring-type=none"
     else
+        add_args "--monitoring-type=on-prem"
         add_args "--monitoring-lb-type=$MONITORING_LOAD_BALANCER"
     fi
 

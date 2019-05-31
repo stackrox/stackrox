@@ -65,8 +65,8 @@ type MonitoringType int
 
 // Types of monitoring
 const (
-	OnPrem = iota
-	None
+	None MonitoringType = iota
+	OnPrem
 	StackRoxHosted
 )
 
