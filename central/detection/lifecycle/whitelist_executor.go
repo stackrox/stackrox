@@ -55,7 +55,7 @@ func (w *whitelistExecutor) Execute(compiled detection.CompiledPolicy) error {
 			log.Errorf("deployment with id %q had violations, but doesn't exist", deploymentID)
 			continue
 		}
-		if !compiled.AppliesTo(dep) {
+		if !compiled.IsEnabledAndAppliesTo(dep) {
 			continue
 		}
 		w.alerts = append(w.alerts, runtime.PolicyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations))

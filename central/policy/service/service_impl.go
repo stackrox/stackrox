@@ -19,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -245,11 +244,6 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	shouldProcessFunc, err := predicate.Compile(request)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("policy predicate does not compile: %s", err))
-	}
-
 	var resp v1.DryRunResponse
 	// Dry runs do not apply to policies with whitelists because they are evaluated through the process indicator pipeline
 	if request.GetFields().GetWhitelistEnabled() {
@@ -258,6 +252,11 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 	searchBasedMatcher, err := s.testMatchBuilder.ForPolicy(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
+	}
+
+	compiledPolicy, err := detection.NewCompiledPolicy(request, searchBasedMatcher)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid policy: %v", err)
 	}
 
 	violationsPerDeployment, err := searchBasedMatcher.Match(ctx, s.deployments)
@@ -277,7 +276,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 			// Maybe the deployment was deleted around the time of the dry-run.
 			continue
 		}
-		if shouldProcessFunc != nil && !shouldProcessFunc(deployment) {
+		if !compiledPolicy.IsEnabledAndAppliesTo(deployment) {
 			continue
 		}
 		// Collect the violation messages as strings for the output.

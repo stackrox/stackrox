@@ -41,7 +41,7 @@ func (d *allDeploymentsExecutor) Execute(compiled detection.CompiledPolicy) erro
 			log.Errorf("deployment with id %q had violations, but doesn't exist", deploymentID)
 			continue
 		}
-		if !compiled.AppliesTo(dep) {
+		if !compiled.IsEnabledAndAppliesTo(dep) {
 			continue
 		}
 		d.alerts = append(d.alerts, policyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations.AlertViolations))

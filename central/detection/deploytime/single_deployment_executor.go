@@ -40,7 +40,7 @@ func (d *policyExecutor) ClearAlerts() {
 
 func (d *policyExecutor) Execute(compiled detection.CompiledPolicy) error {
 	// Check predicate on deployment.
-	if !compiled.AppliesTo(d.deployment) {
+	if !compiled.IsEnabledAndAppliesTo(d.deployment) {
 		return nil
 	}
 

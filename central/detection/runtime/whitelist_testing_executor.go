@@ -45,6 +45,6 @@ func (wte *whitelistTestingExecutorImpl) Execute(compiled detection.CompiledPoli
 		wte.result = false
 		return nil
 	}
-	wte.result = !compiled.AppliesTo(dep)
+	wte.result = !compiled.IsEnabledAndAppliesTo(dep)
 	return nil
 }

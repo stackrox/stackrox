@@ -43,10 +43,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 
 	var alerts []*storage.Alert
 	err = d.policySet.ForEach(detection.FunctionAsExecutor(func(compiled detection.CompiledPolicy) error {
-		if compiled.Policy().GetDisabled() {
-			return nil
-		}
-		if !compiled.AppliesTo(image) {
+		if !compiled.IsEnabledAndAppliesTo(image) {
 			return nil
 		}
 		violations, err := compiled.Matcher().MatchOne(context.Background(), tempSearcher, image.GetId())
