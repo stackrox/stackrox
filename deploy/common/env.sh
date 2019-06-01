@@ -7,7 +7,7 @@ echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-ebpf}
 echo "RUNTIME_SUPPORT set to $RUNTIME_SUPPORT"
 
-export SCANNER_SUPPORT=${SCANNER_SUPPORT:-false}
+export SCANNER_SUPPORT=${SCANNER_SUPPORT:-true}
 echo "SCANNER_SUPPORT set to $SCANNER_SUPPORT"
 
 export OFFLINE_MODE=${OFFLINE_MODE:-false}

@@ -869,6 +869,7 @@ jobs:
     <<: *defaults
     environment:
       - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: false
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ROX_SCOPED_ACCESS_CONTROL: true
@@ -956,6 +957,7 @@ jobs:
       - RUNTIME_SUPPORT: ebpf
       - GCP_IMAGE_TYPE: "COS"
       - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: false
       - ROX_K8S_RBAC: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SCOPED_ACCESS_CONTROL: true
@@ -1044,6 +1046,7 @@ jobs:
       - LOCAL_PORT: 443
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: false
       - ROX_K8S_RBAC: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SCOPED_ACCESS_CONTROL: true
@@ -1241,6 +1244,7 @@ jobs:
     <<: *defaults
     environment:
       - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: false
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - STORAGE: pvc
       - LOAD_BALANCER: lb
@@ -1399,6 +1403,7 @@ jobs:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: false
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_K8S_RBAC: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
@@ -1587,6 +1592,7 @@ jobs:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: false
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_K8S_RBAC: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
