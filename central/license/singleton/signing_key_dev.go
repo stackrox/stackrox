@@ -27,7 +27,7 @@ func init() {
 			},
 			validator.SigningKeyRestrictions{
 				EarliestNotValidBefore:                  timeutil.MustParse(time.RFC3339, "2019-04-01T00:00:00Z"),
-				LatestNotValidAfter:                     timeutil.MustParse(time.RFC3339, "2019-07-01T00:00:00Z"),
+				LatestNotValidAfter:                     timeutil.MustParse(time.RFC3339, "2019-07-02T00:00:00Z"),
 				MaxDuration:                             30 * 24 * time.Hour,
 				AllowOffline:                            true,
 				MaxNodeLimit:                            50,
