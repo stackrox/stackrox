@@ -313,19 +313,22 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			continue
 		}
 
-		for {
-			if value, commandline := processFlag(fw.Flag); fw.NoOptDefVal == "" {
-				// Verify flag parsing
+		processedSuccessfully := false
+		for !processedSuccessfully {
+			value, commandline := processFlag(fw.Flag)
+
+			// Verify flag parsing
+			if value != "" {
 				if err := fw.Value.Set(value); err != nil {
 					printlnToStderr(err.Error())
 					continue
 				}
-				argSlice.addArg(arg{commandLine: commandline, flagName: fw.Name})
-				if childFlags, exists := fw.childFlags[value]; exists {
-					processFlagWraps(argSlice, childFlags)
-				}
 			}
-			break
+			processedSuccessfully = true
+			argSlice.addArg(arg{commandLine: commandline, flagName: fw.Name})
+			if childFlags, exists := fw.childFlags[value]; exists {
+				processFlagWraps(argSlice, childFlags)
+			}
 		}
 	}
 }

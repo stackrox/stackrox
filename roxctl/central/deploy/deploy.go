@@ -267,6 +267,5 @@ func runInteractive(cmd *cobra.Command) error {
 	mode.SetInteractiveMode()
 	// Overwrite os.Args because cobra uses them
 	os.Args = walkTree(cmd)
-	log.Debugf("Running with args %+v", os.Args)
 	return cmd.Execute()
 }
