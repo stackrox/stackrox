@@ -1,6 +1,7 @@
 import { url as dashboardUrl, selectors } from './constants/DashboardPage';
 
 import { url as violationsUrl } from './constants/ViolationsPage';
+import { url as complianceUrl, selectors as complianceSelectors } from './constants/CompliancePage';
 import * as api from './constants/apiEndpoints';
 import withAuth from './helpers/basicAuth';
 
@@ -60,6 +61,16 @@ describe('Dashboard page', () => {
             expect(location.pathname).to.eq(violationsUrl);
             expect(location.search).to.eq('?severity=LOW_SEVERITY');
         });
+    });
+
+    it('should navigate to compliance standards page when clicking on standard', () => {
+        cy.visit(dashboardUrl);
+        cy.get(selectors.sectionHeaders.compliance).should('exist');
+        cy.get(selectors.chart.legendLink).click();
+        cy.location().should(location => {
+            expect(location.pathname).to.eq(`${complianceUrl.list.standards.CIS_Docker_v1_1_0}`);
+        });
+        cy.get(complianceSelectors.list.table.header).should('exist');
     });
 
     it('should display violations by cluster chart for single cluster', () => {
