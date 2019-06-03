@@ -21,7 +21,7 @@ const DockerfileModal = ({ modalOpen, image, onClose }) => {
         }
         return (
             <CVETable
-                components={layer.components}
+                scan={layer}
                 containsFixableCVEs={image.fixableCves > 0}
                 className="cve-table my-3 ml-4 px-2 border-0 border-l-4 border-base-300"
             />
