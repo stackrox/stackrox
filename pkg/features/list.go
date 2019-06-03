@@ -1,9 +1,6 @@
 package features
 
 var (
-	// AuditLogging is used to enable the audit logging interceptor
-	AuditLogging = registerFeature("Enables Audit logging", "ROX_AUDIT_LOGGING", true)
-
 	// K8sRBAC is used to enable k8s rbac collection and processing
 	// NB: When removing this feature flag, please also remove references to it in .circleci/config.yml
 	K8sRBAC = registerFeature("Enable k8s RBAC objects collection and processing", "ROX_K8S_RBAC", true)

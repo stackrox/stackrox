@@ -47,6 +47,18 @@ func (mr *MockProcessorMockRecorder) GetIntegratedPolicies(arg0 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegratedPolicies", reflect.TypeOf((*MockProcessor)(nil).GetIntegratedPolicies), arg0)
 }
 
+// HasEnabledAuditNotifiers mocks base method
+func (m *MockProcessor) HasEnabledAuditNotifiers() bool {
+	ret := m.ctrl.Call(m, "HasEnabledAuditNotifiers")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasEnabledAuditNotifiers indicates an expected call of HasEnabledAuditNotifiers
+func (mr *MockProcessorMockRecorder) HasEnabledAuditNotifiers() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasEnabledAuditNotifiers", reflect.TypeOf((*MockProcessor)(nil).HasEnabledAuditNotifiers))
+}
+
 // HasNotifiers mocks base method
 func (m *MockProcessor) HasNotifiers() bool {
 	ret := m.ctrl.Call(m, "HasNotifiers")

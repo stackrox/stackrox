@@ -351,10 +351,7 @@ func startGRPCServer(factory serviceFactory) {
 		AuthProviders:         registry,
 		InsecureLocalEndpoint: insecureLocalEndpoint,
 		PublicEndpoint:        publicAPIEndpoint,
-	}
-
-	if features.AuditLogging.Enabled() {
-		config.Auditor = audit.New(processor.Singleton())
+		Auditor:               audit.New(processor.Singleton()),
 	}
 
 	log.Infof("Scoped access control enabled: %v", features.ScopedAccessControl.Enabled())

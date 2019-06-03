@@ -22,6 +22,18 @@ func (p *processorImpl) HasNotifiers() bool {
 	return len(p.notifiers) != 0
 }
 
+func (p *processorImpl) HasEnabledAuditNotifiers() bool {
+	p.notifiersLock.RLock()
+	defer p.notifiersLock.RUnlock()
+	for _, n := range p.notifiers {
+		auditN, ok := n.(notifiers.AuditNotifier)
+		if ok && auditN.AuditLoggingEnabled() {
+			return true
+		}
+	}
+	return false
+}
+
 func sendAuditMessage(notifier notifiers.AuditNotifier, msg *v1.Audit_Message) {
 	if err := notifier.SendAuditMessage(msg); err != nil {
 		protoNotifier := notifier.ProtoNotifier()

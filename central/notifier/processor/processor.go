@@ -18,6 +18,7 @@ type Processor interface {
 	ProcessAuditMessage(msg *v1.Audit_Message)
 
 	HasNotifiers() bool
+	HasEnabledAuditNotifiers() bool
 	UpdateNotifier(notifier notifiers.Notifier)
 	RemoveNotifier(id string)
 

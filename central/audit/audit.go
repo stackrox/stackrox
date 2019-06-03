@@ -42,7 +42,7 @@ func New(notifications processor.Processor) auditPkg.Auditor {
 }
 
 func (a *audit) sendAuditMessage(ctx context.Context, req interface{}, grpcMethod string, authError interceptor.AuthStatus, requestError error) {
-	if !a.notifications.HasNotifiers() {
+	if !a.notifications.HasEnabledAuditNotifiers() {
 		return
 	}
 

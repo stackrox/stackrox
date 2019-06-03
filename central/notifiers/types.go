@@ -34,6 +34,7 @@ type AuditNotifier interface {
 	Notifier
 	// SendAuditMessage sends an audit message
 	SendAuditMessage(msg *v1.Audit_Message) error
+	AuditLoggingEnabled() bool
 }
 
 // NetworkPolicyNotifier is for sending network policies

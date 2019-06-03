@@ -207,10 +207,14 @@ func (g *generic) postMessage(message proto.Message, msgKey string) error {
 }
 
 func (g *generic) SendAuditMessage(msg *v1.Audit_Message) error {
-	if !g.GetGeneric().GetAuditLoggingEnabled() {
+	if !g.AuditLoggingEnabled() {
 		return nil
 	}
 	return g.postMessage(msg, auditMessageKey)
+}
+
+func (g *generic) AuditLoggingEnabled() bool {
+	return g.GetGeneric().GetAuditLoggingEnabled()
 }
 
 func init() {

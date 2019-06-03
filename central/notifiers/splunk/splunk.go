@@ -80,10 +80,14 @@ func getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
 }
 
 func (s *splunk) SendAuditMessage(msg *v1.Audit_Message) error {
-	if !s.GetSplunk().GetAuditLoggingEnabled() {
+	if !s.AuditLoggingEnabled() {
 		return nil
 	}
 	return s.sendHTTPPayload(msg)
+}
+
+func (s *splunk) AuditLoggingEnabled() bool {
+	return s.GetSplunk().GetAuditLoggingEnabled()
 }
 
 func (s *splunk) sendHTTPPayload(msg proto.Message) error {
