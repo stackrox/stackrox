@@ -84,7 +84,7 @@ dependencies:
       - 2018 Meteor Development Group, Inc.
 
   ui/node_modules/graphql-tag:
-    url: "https://github.com/apollographql/apollo-client"
+    url: "https://github.com/apollographql/graphql-tag"
     license: MIT
     files:
       LICENSE: c8b47ee39e3e20b29f769b39b6a1de8f3f2cca18738a7b3a82ffb2f483d46234
@@ -92,7 +92,7 @@ dependencies:
         author: bd85bcdb8d4e613a79cb62d0903946ad10c83e63dc75f67614c159c0dbf4d184
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-      - 2018 Meteor Development Group, Inc.
+      - 2015 - 2018 Meteor Development Group, Inc.
 
   ui/node_modules/axios:
     url: https://github.com/axios/axios
