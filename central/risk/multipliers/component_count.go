@@ -25,19 +25,19 @@ func NewComponentCount() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on image component counts.
-func (c *componentCountMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+func (c *componentCountMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	// Get the number of components in the image.
 	components := set.NewStringSet()
 	var maxCount int
 	var maxImage string
-	for _, container := range deployment.GetContainers() {
-		for _, component := range container.GetImage().GetScan().GetComponents() {
+	for _, img := range images {
+		for _, component := range img.GetScan().GetComponents() {
 			components.Add(componentKey(component))
 		}
 		count := components.Cardinality()
 		if count > maxCount {
 			maxCount = count
-			maxImage = container.GetImage().GetName().GetFullName()
+			maxImage = img.GetName().GetFullName()
 		}
 	}
 

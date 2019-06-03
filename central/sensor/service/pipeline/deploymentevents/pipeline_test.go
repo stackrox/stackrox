@@ -155,7 +155,7 @@ func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
 		Id: "id1",
 		Containers: []*storage.Container{
 			{
-				Image: &storage.Image{
+				Image: &storage.ContainerImage{
 					Name: &storage.ImageName{
 						FullName: "derp",
 					},
@@ -197,7 +197,7 @@ func fakeDeploymentEvents() []*central.SensorEvent {
 					Id: "id1",
 					Containers: []*storage.Container{
 						{
-							Image: &storage.Image{
+							Image: &storage.ContainerImage{
 								Id: "sha1",
 							},
 						},
@@ -212,7 +212,7 @@ func fakeDeploymentEvents() []*central.SensorEvent {
 					Id: "id2",
 					Containers: []*storage.Container{
 						{
-							Image: &storage.Image{
+							Image: &storage.ContainerImage{
 								Id: "sha1",
 							},
 						},
@@ -227,7 +227,7 @@ func fakeDeploymentEvents() []*central.SensorEvent {
 					Id: "id3",
 					Containers: []*storage.Container{
 						{
-							Image: &storage.Image{
+							Image: &storage.ContainerImage{
 								Id: "sha2",
 							},
 						},
@@ -242,12 +242,12 @@ func fakeDeploymentEvents() []*central.SensorEvent {
 					Id: "id4",
 					Containers: []*storage.Container{
 						{
-							Image: &storage.Image{
+							Image: &storage.ContainerImage{
 								Id: "sha2",
 							},
 						},
 						{
-							Image: &storage.Image{
+							Image: &storage.ContainerImage{
 								Id: "sha2",
 							},
 						},

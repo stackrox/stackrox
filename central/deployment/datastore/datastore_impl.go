@@ -8,6 +8,7 @@ import (
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globaldb"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -29,6 +31,7 @@ type datastoreImpl struct {
 	deploymentIndexer  deploymentIndex.Indexer
 	deploymentSearcher deploymentSearch.Searcher
 
+	images       imageDS.DataStore
 	networkFlows nfDS.ClusterDataStore
 	indicators   piDS.DataStore
 	whitelists   pwDS.DataStore
@@ -36,11 +39,12 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) *datastoreImpl {
+func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) *datastoreImpl {
 	return &datastoreImpl{
 		deploymentStore:    storage,
 		deploymentIndexer:  indexer,
 		deploymentSearcher: searcher,
+		images:             images,
 		indicators:         indicators,
 		whitelists:         whitelists,
 		networkFlows:       networkFlows,
@@ -222,4 +226,32 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	}
 	flowStore := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
 	return flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id)
+}
+
+func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {
+	imageIDs := make([]string, 0, len(deployment.GetContainers()))
+	for _, c := range deployment.GetContainers() {
+		if c.GetImage().GetId() != "" {
+			imageIDs = append(imageIDs, c.GetImage().GetId())
+		}
+	}
+	imgs, err := ds.images.GetImagesBatch(ctx, imageIDs)
+	if err != nil {
+		return nil, err
+	}
+	// Join the images to the container indices
+	imageMap := make(map[string]*storage.Image)
+	for _, i := range imgs {
+		imageMap[i.GetId()] = i
+	}
+	images := make([]*storage.Image, 0, len(deployment.GetContainers()))
+	for _, c := range deployment.GetContainers() {
+		img, ok := imageMap[c.GetImage().GetId()]
+		if ok {
+			images = append(images, img)
+		} else {
+			images = append(images, types.ToImage(c.GetImage()))
+		}
+	}
+	return images, nil
 }

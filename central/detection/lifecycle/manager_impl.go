@@ -254,14 +254,15 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 	ctx := context.TODO()
 
 	// Attempt to enrich the image before detection.
-	updatedImages, updated, err := m.enricher.EnrichDeployment(enricher.EnrichmentContext{NoExternalMetadata: false}, deployment)
+	images, updatedIndices, err := m.enricher.EnrichDeployment(enricher.EnrichmentContext{NoExternalMetadata: false}, deployment)
 	if err != nil {
 		log.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
 	}
-	if updated {
-		for _, i := range updatedImages {
-			if err := m.imageDataStore.UpsertImage(ctx, i); err != nil {
-				log.Errorf("Error persisting image %s: %s", i.GetName().GetFullName(), err)
+	if len(updatedIndices) > 0 {
+		for _, idx := range updatedIndices {
+			img := images[idx]
+			if err := m.imageDataStore.UpsertImage(ctx, img); err != nil {
+				log.Errorf("Error persisting image %s: %s", img.GetName().GetFullName(), err)
 			}
 		}
 		if err := m.deploymentDataStore.UpdateDeployment(ctx, deployment); err != nil {
@@ -272,7 +273,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 	// Update risk after processing.
 	defer m.riskManager.ReprocessDeploymentRisk(deployment)
 
-	presentAlerts, err := m.deploytimeDetector.AlertsForDeployment(deployment)
+	presentAlerts, err := m.deploytimeDetector.Detect(deploytime.DetectionContext{}, deployment, images)
 	if err != nil {
 		return "", storage.EnforcementAction_UNSET_ENFORCEMENT, errors.Wrap(err, "fetching deploy time alerts")
 	}

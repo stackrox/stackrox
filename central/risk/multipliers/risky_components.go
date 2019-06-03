@@ -44,14 +44,14 @@ func NewRiskyComponents() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on image component counts.
-func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	// Get the largest number of risky components in an image
 	var largestRiskySet *set.StringSet
 	var riskiestImage *storage.Image
-	for _, container := range deployment.GetContainers() {
+	for _, img := range images {
 		// Create a name to version map of all the image components.
 		presentComponents := set.NewStringSet()
-		for _, component := range container.GetImage().GetScan().GetComponents() {
+		for _, component := range img.GetScan().GetComponents() {
 			presentComponents.Add(component.GetName())
 		}
 
@@ -61,7 +61,7 @@ func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment) *s
 		// Keep track of the image with the largest number of risky components.
 		if largestRiskySet == nil || riskySet.Cardinality() > largestRiskySet.Cardinality() {
 			largestRiskySet = &riskySet
-			riskiestImage = container.GetImage()
+			riskiestImage = img
 		}
 	}
 	if largestRiskySet == nil || largestRiskySet.Cardinality() == 0 {

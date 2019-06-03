@@ -34,7 +34,7 @@ func filterToRequiredFields(alert *storage.Alert) {
 		deployment.Containers = append(deployment.Containers, &storage.Container{
 			Id:   c.GetId(),
 			Name: c.GetName(),
-			Image: &storage.Image{
+			Image: &storage.ContainerImage{
 				Id:   c.GetImage().GetId(),
 				Name: c.GetImage().GetName(),
 			},

@@ -24,7 +24,7 @@ func NewReachability() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on the service configuration
-func (s *reachabilityMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+func (s *reachabilityMultiplier) Score(deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
 	var score float32
 	riskResult := &storage.Risk_Result{
 		Name: ReachabilityHeading,

@@ -16,13 +16,13 @@ var (
 
 // GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
 // there was an issue parsing it. It takes in a defaultTag which it populates if the image doesn't have a tag.
-func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storage.Image, error) {
+func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storage.ContainerImage, error) {
 	imageName, ref, err := GenerateImageNameFromString(imageStr)
 	if err != nil {
 		return nil, err
 	}
 
-	image := &storage.Image{
+	image := &storage.ContainerImage{
 		Name: imageName,
 	}
 
@@ -86,7 +86,7 @@ func NormalizeImageFullNameNoSha(name *storage.ImageName) *storage.ImageName {
 
 // GenerateImageFromString generates an image type from a common string format and returns an error if
 // there was an issue parsing it
-func GenerateImageFromString(imageStr string) (*storage.Image, error) {
+func GenerateImageFromString(imageStr string) (*storage.ContainerImage, error) {
 	return GenerateImageFromStringWithDefaultTag(imageStr, "latest")
 }
 

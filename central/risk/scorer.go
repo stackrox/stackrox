@@ -19,7 +19,7 @@ var (
 
 // Scorer is the object that encompasses the multipliers for evaluating risk
 type Scorer interface {
-	Score(deployment *storage.Deployment) *storage.Risk
+	Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk
 
 	UpdateUserDefinedMultiplier(mult *storage.Multiplier)
 	RemoveUserDefinedMultiplier(id string)

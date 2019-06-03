@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/types"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
@@ -128,13 +129,9 @@ func (suite *DefaultPoliciesTestSuite) MustGetPolicy(name string) *storage.Polic
 	return p
 }
 
-func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *storage.Deployment) {
+func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *storage.Deployment, images ...*storage.Image) {
 	suite.NoError(suite.deploymentIndexer.AddDeployment(deployment))
-	for _, container := range deployment.GetContainers() {
-		if container.GetImage() != nil {
-			suite.NoError(suite.imageIndexer.AddImage(container.GetImage()))
-		}
-	}
+	suite.NoError(suite.imageIndexer.AddImages(images))
 }
 
 func imageWithComponents(components []*storage.ImageScanComponent) *storage.Image {
@@ -158,19 +155,18 @@ func imageWithLayers(layers []*storage.ImageLayer) *storage.Image {
 	}
 }
 
-func deploymentWithImage(img *storage.Image) *storage.Deployment {
+func deploymentWithImageAnyID(img *storage.Image) *storage.Deployment {
 	return &storage.Deployment{
 		Id:         uuid.NewV4().String(),
-		Containers: []*storage.Container{{Image: img}},
+		Containers: []*storage.Container{{Image: types.ToContainerImage(img)}},
 	}
 }
 
-func deploymentWithComponents(components []*storage.ImageScanComponent) *storage.Deployment {
-	return deploymentWithImage(imageWithComponents(components))
-}
-
-func deploymentWithLayers(layers []*storage.ImageLayer) *storage.Deployment {
-	return deploymentWithImage(imageWithLayers(layers))
+func deploymentWithImage(id string, img *storage.Image) *storage.Deployment {
+	return &storage.Deployment{
+		Id:         uuid.NewV4().String(),
+		Containers: []*storage.Container{{Image: types.ToContainerImage(img)}},
+	}
 }
 
 func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deployment) string {
@@ -211,7 +207,9 @@ type testCase struct {
 
 func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	fixtureDep := fixtures.GetDeployment()
-	suite.mustIndexDepAndImages(fixtureDep)
+	fixturesImages := fixtures.DeploymentImages()
+
+	suite.mustIndexDepAndImages(fixtureDep, fixturesImages...)
 
 	nginx110 := &storage.Image{
 		Id: "SHANGINX110",
@@ -221,13 +219,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			Tag:      "1.10",
 		},
 	}
-	nginx110Dep := &storage.Deployment{
-		Id: "nginx110",
-		Containers: []*storage.Container{
-			{Image: nginx110},
-		},
-	}
-	suite.mustIndexDepAndImages(nginx110Dep)
+
+	nginx110Dep := deploymentWithImage("nginx110", nginx110)
+	suite.mustIndexDepAndImages(nginx110Dep, nginx110)
 
 	oldScannedTime := time.Now().Add(-31 * 24 * time.Hour)
 	oldScannedImage := &storage.Image{
@@ -236,15 +230,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			ScanTime: protoconv.ConvertTimeToTimestamp(oldScannedTime),
 		},
 	}
-	oldScannedDep := &storage.Deployment{
-		Id: "oldscanned",
-		Containers: []*storage.Container{
-			{Image: oldScannedImage},
-		},
-	}
-	suite.mustIndexDepAndImages(oldScannedDep)
+	oldScannedDep := deploymentWithImage("oldscanned", oldScannedImage)
+	suite.mustIndexDepAndImages(oldScannedDep, oldScannedImage)
 
-	addDockerFileDep := deploymentWithLayers([]*storage.ImageLayer{
+	addDockerFileImg := imageWithLayers([]*storage.ImageLayer{
 		{
 			Instruction: "ADD",
 			Value:       "deploy.sh",
@@ -254,31 +243,36 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			Value:       "deploy.sh",
 		},
 	})
-	suite.mustIndexDepAndImages(addDockerFileDep)
+	addDockerFileDep := deploymentWithImageAnyID(addDockerFileImg)
+	suite.mustIndexDepAndImages(addDockerFileDep, addDockerFileImg)
 
-	imagePort22Dep := deploymentWithLayers([]*storage.ImageLayer{
+	imagePort22Image := imageWithLayers([]*storage.ImageLayer{
 		{
 			Instruction: "EXPOSE",
 			Value:       "22/tcp",
 		},
 	})
-	suite.mustIndexDepAndImages(imagePort22Dep)
+	imagePort22Dep := deploymentWithImageAnyID(imagePort22Image)
+	suite.mustIndexDepAndImages(imagePort22Dep, imagePort22Image)
 
-	insecureCMDDep := deploymentWithLayers([]*storage.ImageLayer{
+	insecureCMDImage := imageWithLayers([]*storage.ImageLayer{
 		{
 			Instruction: "CMD",
 			Value:       "do an insecure thing",
 		},
 	})
-	suite.mustIndexDepAndImages(insecureCMDDep)
 
-	runSecretsDep := deploymentWithLayers([]*storage.ImageLayer{
+	insecureCMDDep := deploymentWithImageAnyID(insecureCMDImage)
+	suite.mustIndexDepAndImages(insecureCMDDep, insecureCMDImage)
+
+	runSecretsImage := imageWithLayers([]*storage.ImageLayer{
 		{
 			Instruction: "VOLUME",
 			Value:       "/run/secrets",
 		},
 	})
-	suite.mustIndexDepAndImages(runSecretsDep)
+	runSecretsDep := deploymentWithImageAnyID(runSecretsImage)
+	suite.mustIndexDepAndImages(runSecretsDep, runSecretsImage)
 
 	oldImageCreationTime := time.Now().Add(-100 * 24 * time.Hour)
 	oldCreatedImage := &storage.Image{
@@ -289,30 +283,30 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 	}
-	oldImageDep := &storage.Deployment{
-		Id:         "oldimagedep",
-		Containers: []*storage.Container{{Image: oldCreatedImage}},
-	}
-	suite.mustIndexDepAndImages(oldImageDep)
+	oldImageDep := deploymentWithImage("oldimagedep", oldCreatedImage)
+	suite.mustIndexDepAndImages(oldImageDep, oldCreatedImage)
 
-	apkDep := deploymentWithComponents([]*storage.ImageScanComponent{
+	apkImage := imageWithComponents([]*storage.ImageScanComponent{
 		{Name: "apk", Version: "1.2"},
 		{Name: "asfa", Version: "1.5"},
 	})
-	suite.mustIndexDepAndImages(apkDep)
+	apkDep := deploymentWithImageAnyID(apkImage)
+	suite.mustIndexDepAndImages(apkDep, apkImage)
 
-	curlDep := deploymentWithComponents([]*storage.ImageScanComponent{
+	curlImage := imageWithComponents([]*storage.ImageScanComponent{
 		{Name: "curl", Version: "1.3"},
 		{Name: "curlwithextra", Version: "0.9"},
 	})
-	suite.mustIndexDepAndImages(curlDep)
+	curlDep := deploymentWithImageAnyID(curlImage)
+	suite.mustIndexDepAndImages(curlDep, curlImage)
 
 	componentDeps := make(map[string]*storage.Deployment)
 	for _, component := range []string{"apt", "dnf", "wget"} {
-		dep := deploymentWithComponents([]*storage.ImageScanComponent{
+		img := imageWithComponents([]*storage.ImageScanComponent{
 			{Name: component},
 		})
-		suite.mustIndexDepAndImages(dep)
+		dep := deploymentWithImageAnyID(img)
+		suite.mustIndexDepAndImages(dep, img)
 		componentDeps[component] = dep
 	}
 
@@ -321,30 +315,31 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		Containers: []*storage.Container{
 			{
 				SecurityContext: &storage.SecurityContext{Privileged: true},
-				Image: &storage.Image{
-					Id: "HEARTBLEEDDEPSHA",
-					Scan: &storage.ImageScan{
-						Components: []*storage.ImageScanComponent{
-							{Name: "heartbleed", Version: "1.2", Vulns: []*storage.Vulnerability{
-								{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.Vulnerability_FixedBy{FixedBy: "v1.2"}},
-							}},
-						},
-					},
-				},
+				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
 			},
 		},
 	}
-	suite.mustIndexDepAndImages(heartbleedDep)
+	suite.mustIndexDepAndImages(heartbleedDep, &storage.Image{
+		Id: "HEARTBLEEDDEPSHA",
+		Scan: &storage.ImageScan{
+			Components: []*storage.ImageScanComponent{
+				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.Vulnerability{
+					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.Vulnerability_FixedBy{FixedBy: "v1.2"}},
+				}},
+			},
+		},
+	})
 
-	shellshockDep := deploymentWithComponents([]*storage.ImageScanComponent{
+	shellshockImage := imageWithComponents([]*storage.ImageScanComponent{
 		{Name: "shellshock", Version: "1.2", Vulns: []*storage.Vulnerability{
 			{Cve: "CVE-2014-6271", Link: "https://shellshock", Cvss: 6},
 			{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"},
 		}},
 	})
-	suite.mustIndexDepAndImages(shellshockDep)
+	shellshockDep := deploymentWithImageAnyID(shellshockImage)
+	suite.mustIndexDepAndImages(shellshockDep, shellshockImage)
 
-	strutsDep := deploymentWithComponents([]*storage.ImageScanComponent{
+	strutsImage := imageWithComponents([]*storage.ImageScanComponent{
 		{Name: "struts", Version: "1.2", Vulns: []*storage.Vulnerability{
 			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8, SetFixedBy: &storage.Vulnerability_FixedBy{FixedBy: "v1.3"}},
 		}},
@@ -352,15 +347,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			{Cve: "CVE-1223-451", Link: "https://cvefake"},
 		}},
 	})
-	suite.mustIndexDepAndImages(strutsDep)
+	strutsDep := deploymentWithImageAnyID(strutsImage)
+	suite.mustIndexDepAndImages(strutsDep, strutsImage)
 
-	depWithNonSeriousVulns := deploymentWithComponents([]*storage.ImageScanComponent{
+	depWithNonSeriousVulnsImage := imageWithComponents([]*storage.ImageScanComponent{
 		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*storage.Vulnerability{
 			{Cve: "CVE-1234-5678", Link: "https://abcdefgh"},
 			{Cve: "CVE-5678-1234", Link: "https://lmnopqrst"},
 		}},
 	})
-	suite.mustIndexDepAndImages(depWithNonSeriousVulns)
+	depWithNonSeriousVulns := deploymentWithImageAnyID(depWithNonSeriousVulnsImage)
+	suite.mustIndexDepAndImages(depWithNonSeriousVulns, depWithNonSeriousVulnsImage)
 
 	dockerSockDep := &storage.Deployment{
 		Id: "DOCKERSOCDEP",
@@ -1000,7 +997,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			}
 		})
 	}
-
 	imageTestCases := []testCase{
 		{
 			policyName: "Latest tag",

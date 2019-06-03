@@ -15,8 +15,7 @@ type DetectionContext struct {
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	Detect(ctx DetectionContext, deployment *storage.Deployment) ([]*storage.Alert, error)
-	AlertsForDeployment(deployment *storage.Deployment) ([]*storage.Alert, error)
+	Detect(ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert, error)
 	AlertsForPolicy(policyID string) ([]*storage.Alert, error)
 }
 

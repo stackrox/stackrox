@@ -3,7 +3,53 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	types2 "github.com/stackrox/rox/pkg/images/types"
 )
+
+// LightweightDeploymentImage returns the full images referenced by GetLightweightDeployment
+func LightweightDeploymentImage() *storage.Image {
+	return &storage.Image{
+		Id: "sha256:SHA1",
+		Name: &storage.ImageName{
+			Registry: "docker.io",
+			Remote:   "library/nginx",
+			Tag:      "1.10",
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Layers: []*storage.ImageLayer{
+					{
+						Instruction: "ADD",
+						Value:       "FILE:blah",
+					},
+				},
+			},
+		},
+		Scan: &storage.ImageScan{
+			ScanTime: types.TimestampNow(),
+			Components: []*storage.ImageScanComponent{
+				{
+					Name: "name",
+					Vulns: []*storage.Vulnerability{
+						{
+							Cve:     "cve",
+							Cvss:    5,
+							Summary: "Vuln summary",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// DeploymentImages returns the full images referenced by GetDeployment
+func DeploymentImages() []*storage.Image {
+	return []*storage.Image{
+		LightweightDeploymentImage(),
+		GetImage(),
+	}
+}
 
 // LightweightDeployment returns a mock deployment which doesn't have all the crazy images.
 func LightweightDeployment() *storage.Deployment {
@@ -24,40 +70,8 @@ func LightweightDeployment() *storage.Deployment {
 		},
 		Containers: []*storage.Container{
 			{
-				Name: "nginx110container",
-				Image: &storage.Image{
-					Id: "sha256:SHA1",
-					Name: &storage.ImageName{
-						Registry: "docker.io",
-						Remote:   "library/nginx",
-						Tag:      "1.10",
-					},
-					Metadata: &storage.ImageMetadata{
-						V1: &storage.V1Metadata{
-							Layers: []*storage.ImageLayer{
-								{
-									Instruction: "ADD",
-									Value:       "FILE:blah",
-								},
-							},
-						},
-					},
-					Scan: &storage.ImageScan{
-						ScanTime: types.TimestampNow(),
-						Components: []*storage.ImageScanComponent{
-							{
-								Name: "name",
-								Vulns: []*storage.Vulnerability{
-									{
-										Cve:     "cve",
-										Cvss:    5,
-										Summary: "Vuln summary",
-									},
-								},
-							},
-						},
-					},
-				},
+				Name:  "nginx110container",
+				Image: types2.ToContainerImage(LightweightDeploymentImage()),
 				SecurityContext: &storage.SecurityContext{
 					Privileged:       true,
 					AddCapabilities:  []string{"SYS_ADMIN"},
@@ -95,6 +109,6 @@ func LightweightDeployment() *storage.Deployment {
 // GetDeployment returns a Mock Deployment
 func GetDeployment() *storage.Deployment {
 	dep := LightweightDeployment()
-	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: GetImage()})
+	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: types2.ToContainerImage(GetImage())})
 	return dep
 }

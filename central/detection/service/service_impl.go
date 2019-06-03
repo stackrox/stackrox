@@ -92,12 +92,13 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 	// This is a workaround for those who post the full image, but don't fill in fullname
 	if name := req.GetImage().GetName(); name != nil && name.GetFullName() == "" {
-		name.FullName = types.Wrapper{Image: req.GetImage()}.FullName()
+		name.FullName = types.Wrapper{GenericImage: req.GetImage()}.FullName()
 	}
 
-	_ = s.imageEnricher.EnrichImage(enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}, req.GetImage())
+	img := types.ToImage(req.GetImage())
+	_ = s.imageEnricher.EnrichImage(enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}, img)
 
-	alerts, err := s.buildTimeDetector.Detect(req.GetImage())
+	alerts, err := s.buildTimeDetector.Detect(img)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +108,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 }
 
 func (s *serviceImpl) enrichAndDetect(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
-	_, _, err := s.deploymentEnricher.EnrichDeployment(ctx, deployment)
+	images, _, err := s.deploymentEnricher.EnrichDeployment(ctx, deployment)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -116,7 +117,7 @@ func (s *serviceImpl) enrichAndDetect(ctx enricher.EnrichmentContext, deployment
 		EnforcementOnly: ctx.EnforcementOnly,
 	}
 
-	alerts, err := s.detector.Detect(detectionCtx, deployment)
+	alerts, err := s.detector.Detect(detectionCtx, deployment, images)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

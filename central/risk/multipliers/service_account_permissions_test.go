@@ -241,7 +241,7 @@ func TestPermissionScore(t *testing.T) {
 			}
 
 			mult := NewSAPermissionsMultiplier(mockRoleDatastore, mockBindingDatastore, mockSADatastore)
-			result := mult.Score(deployment)
+			result := mult.Score(deployment, nil)
 			assert.Equal(t, c.expected, result)
 			mockCtrl.Finish()
 		})

@@ -3,9 +3,9 @@ package deploymentevents
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -29,13 +29,14 @@ func (s *updateImagesImpl) do(deployment *storage.Deployment) {
 			continue
 		}
 
-		image = proto.Clone(image).(*storage.Image)
-		if image.ClusternsScopes == nil {
-			image.ClusternsScopes = make(map[string]string)
-		}
-		image.ClusternsScopes[deployment.GetId()] = clusterNSScope
+		fullImage := types.ToImage(c.GetImage())
 
-		err := s.images.UpsertImage(context.TODO(), image)
+		if fullImage.ClusternsScopes == nil {
+			fullImage.ClusternsScopes = make(map[string]string)
+		}
+		fullImage.ClusternsScopes[deployment.GetId()] = clusterNSScope
+
+		err := s.images.UpsertImage(context.TODO(), fullImage)
 		if err != nil {
 			log.Error(err)
 			continue

@@ -76,6 +76,19 @@ func (mr *MockDataStoreMockRecorder) GetDeployments(arg0 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeployments", reflect.TypeOf((*MockDataStore)(nil).GetDeployments), arg0)
 }
 
+// GetImagesForDeployment mocks base method
+func (m *MockDataStore) GetImagesForDeployment(arg0 context.Context, arg1 *storage.Deployment) ([]*storage.Image, error) {
+	ret := m.ctrl.Call(m, "GetImagesForDeployment", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.Image)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImagesForDeployment indicates an expected call of GetImagesForDeployment
+func (mr *MockDataStoreMockRecorder) GetImagesForDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesForDeployment", reflect.TypeOf((*MockDataStore)(nil).GetImagesForDeployment), arg0, arg1)
+}
+
 // ListDeployment mocks base method
 func (m *MockDataStore) ListDeployment(arg0 context.Context, arg1 string) (*storage.ListDeployment, bool, error) {
 	ret := m.ctrl.Call(m, "ListDeployment", arg0, arg1)

@@ -4,6 +4,7 @@ import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegration
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
+import io.stackrox.proto.storage.DeploymentOuterClass.ContainerImage
 import orchestratormanager.OrchestratorType
 import services.AlertService
 import services.BaseService
@@ -214,7 +215,7 @@ class Services extends BaseService {
     static requestBuildImageScan(String registry, String remote, String tag) {
         println "${registry}/${remote}:${tag}"
         return getDetectionClient().detectBuildTime(BuildDetectionRequest.newBuilder().setImage(
-                ImageOuterClass.Image.newBuilder()
+               ContainerImage.newBuilder()
                         .setName(ImageOuterClass.ImageName.newBuilder()
                         .setRegistry(registry)
                         .setRemote(remote)

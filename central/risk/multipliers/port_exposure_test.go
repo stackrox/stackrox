@@ -20,6 +20,6 @@ func TestPortExposureScore(t *testing.T) {
 		},
 		Score: 1.6,
 	}
-	score := portMultiplier.Score(deployment)
+	score := portMultiplier.Score(deployment, nil)
 	assert.Equal(t, expectedScore, score)
 }

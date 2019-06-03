@@ -95,7 +95,7 @@ func getAlerts(imageStr string, timeout time.Duration) ([]*storage.Alert, error)
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string) (*storage.Image, error) {
+func buildRequest(image string) (*storage.ContainerImage, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)

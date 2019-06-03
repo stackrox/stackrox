@@ -10,11 +10,11 @@ import (
 func TestNewImage(t *testing.T) {
 	var cases = []struct {
 		ImageString   string
-		ExpectedImage *storage.Image
+		ExpectedImage *storage.ContainerImage
 	}{
 		{
 			ImageString: "nginx:latest@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-			ExpectedImage: &storage.Image{
+			ExpectedImage: &storage.ContainerImage{
 				Id: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 				Name: &storage.ImageName{
 					Registry: "docker.io",
@@ -26,7 +26,7 @@ func TestNewImage(t *testing.T) {
 		},
 		{
 			ImageString: "stackrox.io/main:1.0@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-			ExpectedImage: &storage.Image{
+			ExpectedImage: &storage.ContainerImage{
 				Id: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 				Name: &storage.ImageName{
 					Registry: "stackrox.io",
@@ -38,7 +38,7 @@ func TestNewImage(t *testing.T) {
 		},
 		{
 			ImageString: "nginx",
-			ExpectedImage: &storage.Image{
+			ExpectedImage: &storage.ContainerImage{
 				Name: &storage.ImageName{
 					Registry: "docker.io",
 					Remote:   "library/nginx",

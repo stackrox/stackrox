@@ -239,7 +239,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Container", []string{
 		"config: ContainerConfig",
 		"id: ID!",
-		"image: Image",
+		"image: ContainerImage",
 		"instances: [ContainerInstance]!",
 		"name: String!",
 		"ports: [PortConfig]!",
@@ -259,6 +259,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ContainerConfig_EnvironmentConfig", []string{
 		"key: String!",
 		"value: String!",
+	}))
+	utils.Must(builder.AddType("ContainerImage", []string{
+		"id: ID!",
+		"name: ImageName",
 	}))
 	utils.Must(builder.AddType("ContainerInstance", []string{
 		"containerIps: [String!]!",
@@ -2621,9 +2625,9 @@ func (resolver *containerResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *containerResolver) Image(ctx context.Context) (*imageResolver, error) {
+func (resolver *containerResolver) Image(ctx context.Context) (*containerImageResolver, error) {
 	value := resolver.data.GetImage()
-	return resolver.root.wrapImage(value, true, nil)
+	return resolver.root.wrapContainerImage(value, true, nil)
 }
 
 func (resolver *containerResolver) Instances(ctx context.Context) ([]*containerInstanceResolver, error) {
@@ -2745,6 +2749,39 @@ func (resolver *containerConfig_EnvironmentConfigResolver) Key(ctx context.Conte
 func (resolver *containerConfig_EnvironmentConfigResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
+}
+
+type containerImageResolver struct {
+	root *Resolver
+	data *storage.ContainerImage
+}
+
+func (resolver *Resolver) wrapContainerImage(value *storage.ContainerImage, ok bool, err error) (*containerImageResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &containerImageResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapContainerImages(values []*storage.ContainerImage, err error) ([]*containerImageResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*containerImageResolver, len(values))
+	for i, v := range values {
+		output[i] = &containerImageResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *containerImageResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *containerImageResolver) Name(ctx context.Context) (*imageNameResolver, error) {
+	value := resolver.data.GetName()
+	return resolver.root.wrapImageName(value, true, nil)
 }
 
 type containerInstanceResolver struct {

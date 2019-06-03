@@ -18,6 +18,7 @@ func TestImageAgeScore(t *testing.T) {
 		},
 		Score: 1.25,
 	}
-	score := imageAgeMultiplier.Score(deployment)
+
+	score := imageAgeMultiplier.Score(deployment, getMockImages())
 	assert.Equal(t, expectedScore, score)
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
@@ -22,6 +23,7 @@ var (
 
 	typeToSearchCategory = map[string]v1.SearchCategory{
 		"Image":            v1.SearchCategory_IMAGES,
+		"ContainerImage":   v1.SearchCategory_IMAGES,
 		"Deployment":       v1.SearchCategory_DEPLOYMENTS,
 		"ProcessIndicator": v1.SearchCategory_PROCESS_INDICATORS,
 		"Secret":           v1.SearchCategory_SECRETS,
@@ -105,6 +107,10 @@ func (s *searchWalker) handleXRef(prefix string, t reflect.Type, tag string) {
 	}
 
 	searchMap := Walk(searchCategory, prefix, reflect.New(t).Interface())
+	if searchCategory == v1.SearchCategory_IMAGES {
+		searchMap = Walk(searchCategory, prefix, (*storage.Image)(nil))
+	}
+
 	if len(spl) == 1 && spl[0] == "all" {
 		for k, v := range searchMap.Original() {
 			s.fields[k] = v

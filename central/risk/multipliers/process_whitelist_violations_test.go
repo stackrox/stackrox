@@ -85,7 +85,7 @@ func TestProcessWhitelists(t *testing.T) {
 
 			mockEvaluator := mocks.NewMockEvaluator(mockCtrl)
 			mockEvaluator.EXPECT().EvaluateWhitelistsAndPersistResult(deployment).Return(c.violatingProcesses, c.evaluatorErr)
-			result := NewProcessWhitelists(mockEvaluator).Score(deployment)
+			result := NewProcessWhitelists(mockEvaluator).Score(deployment, nil)
 			assert.ElementsMatch(t, c.expected.GetFactors(), result.GetFactors())
 			assert.InDelta(t, c.expected.GetScore(), result.GetScore(), 0.001)
 		})

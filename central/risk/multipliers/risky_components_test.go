@@ -12,7 +12,8 @@ func TestRiskyComponentCountScore(t *testing.T) {
 	deployment := getMockDeployment()
 
 	// Add some risky components to the deployment
-	components := deployment.Containers[0].Image.Scan.Components
+	images := getMockImages()
+	components := images[0].Scan.Components
 	components = append(components, &storage.ImageScanComponent{
 		Name:    "apk",
 		Version: "1.0",
@@ -42,7 +43,7 @@ func TestRiskyComponentCountScore(t *testing.T) {
 		Version: "1.0",
 	})
 
-	deployment.Containers[0].Image.Scan.Components = components
+	images[0].Scan.Components = components
 
 	expectedScore := &storage.Risk_Result{
 		Name: RiskyComponentCountHeading,
@@ -51,6 +52,6 @@ func TestRiskyComponentCountScore(t *testing.T) {
 		},
 		Score: 1.3,
 	}
-	score := riskyMultiplier.Score(deployment)
+	score := riskyMultiplier.Score(deployment, images)
 	assert.Equal(t, expectedScore, score)
 }

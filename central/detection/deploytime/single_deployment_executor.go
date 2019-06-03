@@ -12,14 +12,16 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func newSingleDeploymentExecutor(ctx DetectionContext, searcher search.Searcher, deployment *storage.Deployment) alertCollectingExecutor {
+func newSingleDeploymentExecutor(ctx DetectionContext, searcher search.Searcher, deployment *storage.Deployment, images []*storage.Image) alertCollectingExecutor {
 	return &policyExecutor{
 		ctx:        ctx,
 		searcher:   searcher,
 		deployment: deployment,
+		images:     images,
 	}
 }
 
@@ -27,6 +29,7 @@ type policyExecutor struct {
 	ctx        DetectionContext
 	searcher   search.Searcher
 	deployment *storage.Deployment
+	images     []*storage.Image
 	alerts     []*storage.Alert
 }
 
@@ -65,7 +68,7 @@ func (d *policyExecutor) getViolations(enforcement storage.EnforcementAction, ma
 	var err error
 	var violations []*storage.Alert_Violation
 	if enforcement != storage.EnforcementAction_UNSET_ENFORCEMENT {
-		violations, err = matchWithEmptyImageIDs(matcher, d.deployment)
+		violations, err = matchWithEmptyImageIDs(matcher, d.deployment, d.images)
 	} else {
 		var violationsWrapper searchbasedpolicies.Violations
 		// Purposefully, use searcher for deployment check
@@ -75,8 +78,8 @@ func (d *policyExecutor) getViolations(enforcement storage.EnforcementAction, ma
 	return violations, err
 }
 
-func matchWithEmptyImageIDs(matcher searchbasedpolicies.Matcher, deployment *storage.Deployment) ([]*storage.Alert_Violation, error) {
-	deploymentIndex, deployment, err := singleDeploymentSearcher(deployment)
+func matchWithEmptyImageIDs(matcher searchbasedpolicies.Matcher, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert_Violation, error) {
+	deploymentIndex, deployment, err := singleDeploymentSearcher(deployment, images)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +92,7 @@ func matchWithEmptyImageIDs(matcher searchbasedpolicies.Matcher, deployment *sto
 
 const deploymentID = "deployment-id"
 
-func singleDeploymentSearcher(deployment *storage.Deployment) (search.Searcher, *storage.Deployment, error) {
+func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.Image) (search.Searcher, *storage.Deployment, error) {
 	clonedDeployment := proto.Clone(deployment).(*storage.Deployment)
 	if clonedDeployment.GetId() == "" {
 		clonedDeployment.Id = deploymentID
@@ -102,15 +105,18 @@ func singleDeploymentSearcher(deployment *storage.Deployment) (search.Searcher, 
 
 	imageIndex := imageIndexer.New(tempIndex)
 	deploymentIndex := deploymentIndexer.New(tempIndex)
-	for i, container := range clonedDeployment.GetContainers() {
-		if container.GetImage() == nil {
-			continue
+	for i, img := range images {
+		clonedImg := proto.Clone(img).(*storage.Image)
+		if clonedImg.GetId() == "" {
+			clonedImg.Id = fmt.Sprintf("image-id-%d", i)
 		}
-		if container.GetImage().GetId() == "" {
-			container.Image.Id = fmt.Sprintf("image-id-%d", i)
-		}
-		if err := imageIndex.AddImage(container.GetImage()); err != nil {
+		if err := imageIndex.AddImage(clonedImg); err != nil {
 			return nil, nil, err
+		}
+		if i >= len(clonedDeployment.GetContainers()) {
+			log.Error("Found more images than containers")
+		} else {
+			clonedDeployment.Containers[i].Image = types.ToContainerImage(clonedImg)
 		}
 	}
 	if err := deploymentIndex.AddDeployment(clonedDeployment); err != nil {

@@ -22,23 +22,14 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 }
 
 // Detect runs detection on an deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment) ([]*storage.Alert, error) {
-	deploymentIndex, deployment, err := singleDeploymentSearcher(deployment)
+func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert, error) {
+	deploymentIndex, deployment, err := singleDeploymentSearcher(deployment, images)
 	if err != nil {
 		return nil, err
 	}
 
-	exe := newSingleDeploymentExecutor(ctx, deploymentIndex, deployment)
+	exe := newSingleDeploymentExecutor(ctx, deploymentIndex, deployment, images)
 	err = d.policySet.ForEach(exe)
-	if err != nil {
-		return nil, err
-	}
-	return exe.GetAlerts(), nil
-}
-
-func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*storage.Alert, error) {
-	exe := newSingleDeploymentExecutor(DetectionContext{}, d.deployments, deployment)
-	err := d.policySet.ForEach(exe)
 	if err != nil {
 		return nil, err
 	}

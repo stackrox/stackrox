@@ -21,7 +21,7 @@ func NewUserDefined(mult *storage.Multiplier) Multiplier {
 }
 
 // Score returns a risk result
-func (u *userDefinedMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+func (u *userDefinedMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	if !scopecomp.WithinScope(u.GetScope(), deployment) {
 		return nil
 	}

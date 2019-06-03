@@ -70,6 +70,6 @@ func TestConfigScore(t *testing.T) {
 	// Hit all values
 	mult := &serviceConfigMultiplier{}
 	deployment := getMockDeployment()
-	result := mult.Score(deployment)
+	result := mult.Score(deployment, nil)
 	assert.Equal(t, result.GetScore(), float32(2))
 }

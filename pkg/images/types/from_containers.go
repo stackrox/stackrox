@@ -1,6 +1,8 @@
 package types
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -8,8 +10,8 @@ import (
 type FromContainers []*storage.Container
 
 // Images returns a slice of images from the slice of containers.
-func (cs FromContainers) Images() []*storage.Image {
-	images := make([]*storage.Image, len(cs))
+func (cs FromContainers) Images() []*storage.ContainerImage {
+	images := make([]*storage.ContainerImage, len(cs))
 	for i, c := range cs {
 		images[i] = c.GetImage()
 	}
@@ -17,5 +19,9 @@ func (cs FromContainers) Images() []*storage.Image {
 }
 
 func (cs FromContainers) String() string {
-	return SliceWrapper(cs.Images()).String()
+	output := make([]string, 0, len(cs))
+	for _, c := range cs {
+		output = append(output, c.GetImage().GetName().GetFullName())
+	}
+	return strings.Join(output, ", ")
 }

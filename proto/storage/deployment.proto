@@ -45,10 +45,19 @@ message Deployment {
     repeated PortConfig ports                  = 24;
 }
 
+message ContainerImage {
+    option (gogoproto.goproto_unrecognized) = false;
+
+    // These tags maintain backwards compatibiltiy with the previously embedded storage.Image
+    string id = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
+    ImageName name = 1;
+}
+
 message Container {
     string id                           = 1;
     ContainerConfig config              = 2;
-    Image image                         = 3 [(gogoproto.moretags) = "search_index:\"Image Sha\" search_xref:\"all\""];
+
+    ContainerImage image                         = 3 [(gogoproto.moretags) = "search_index:\"Image Sha\" search_xref:\"all\""];
     SecurityContext security_context    = 4;
     repeated Volume volumes             = 5;
     repeated PortConfig ports           = 6;

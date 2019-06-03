@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "storage/image.proto";
 import "storage/alert.proto";
 import "storage/deployment.proto";
 
@@ -12,7 +11,7 @@ package v1;
 
 message BuildDetectionRequest {
     oneof Resource {
-        storage.Image image = 1;
+        storage.ContainerImage image = 1;
         string image_name   = 3;
     }
     bool no_external_metadata = 2;

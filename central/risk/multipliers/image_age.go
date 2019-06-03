@@ -32,9 +32,9 @@ func NewImageAge() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on vulnerabilties
-func (c *imageAgeMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+func (c *imageAgeMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	// Get the earliest created time in the container images, and find the duration since then.
-	earliestImageCreated := getOldestCreatedTime(deployment)
+	earliestImageCreated := getOldestCreatedTime(images)
 	if earliestImageCreated.IsZero() {
 		return nil
 	}
@@ -69,11 +69,11 @@ func (c *imageAgeMultiplier) Score(deployment *storage.Deployment) *storage.Risk
 }
 
 // Fetches the creation time of the oldest image in the deployment.
-func getOldestCreatedTime(deployment *storage.Deployment) time.Time {
+func getOldestCreatedTime(images []*storage.Image) time.Time {
 	var earliest time.Time
-	for _, container := range deployment.GetContainers() {
+	for _, img := range images {
 		// Get the time for the containers image.
-		imageCreated := container.GetImage().GetMetadata().GetV1().GetCreated()
+		imageCreated := img.GetMetadata().GetV1().GetCreated()
 
 		createdTime := protoconv.ConvertTimestampToTimeOrDefault(imageCreated, defaultTime)
 		if createdTime == defaultTime {

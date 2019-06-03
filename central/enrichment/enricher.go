@@ -15,7 +15,7 @@ var (
 type Enricher interface {
 	// EnrichDeployment enriches the deployment and images only if they have IDs
 	// It was enriched along with image indexes that were updated
-	EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, bool, error)
+	EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, []int, error)
 }
 
 // New creates and returns a new Enricher.

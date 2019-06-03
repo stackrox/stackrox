@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
@@ -37,10 +38,12 @@ type DataStore interface {
 	// UpdateDeployment updates a deployment, erroring out if it doesn't exist.
 	UpdateDeployment(ctx context.Context, deployment *storage.Deployment) error
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
+
+	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)
 }
 
 // New returns a new instance of DataStore using the input DB and index.
-func New(db *bbolt.DB, bleveIndex bleve.Index, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) (DataStore, error) {
+func New(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) (DataStore, error) {
 	storage, err := store.New(db)
 	if err != nil {
 		return nil, err
@@ -55,6 +58,7 @@ func New(db *bbolt.DB, bleveIndex bleve.Index, indicators piDS.DataStore, whitel
 		storage,
 		indexer,
 		searcher,
+		images,
 		indicators,
 		whitelists,
 		networkFlows), nil

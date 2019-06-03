@@ -31,7 +31,7 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 	var containers []*storage.Container
 	for _, id := range imageIDs {
 		containers = append(containers, &storage.Container{
-			Image: &storage.Image{Id: id},
+			Image: &storage.ContainerImage{Id: id},
 		})
 	}
 	return &storage.Deployment{
@@ -56,7 +56,7 @@ func generateDataStructures(t *testing.T) (imageDatastore.DataStore, deploymentD
 
 	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments, err := deploymentDatastore.New(db, bleveIndex, mockProcessDataStore, mockWhitelistDataStore, nil)
+	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil)
 	require.NoError(t, err)
 
 	return images, deployments

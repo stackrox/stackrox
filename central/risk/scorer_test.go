@@ -14,6 +14,7 @@ import (
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
@@ -88,7 +89,7 @@ func TestScore(t *testing.T) {
 		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
-	actualRisk := scorer.Score(deployment)
+	actualRisk := scorer.Score(deployment, getMockImages())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
@@ -134,11 +135,47 @@ func TestScore(t *testing.T) {
 		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
-	actualRisk = scorer.Score(deployment)
+	actualRisk = scorer.Score(deployment, getMockImages())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
 	mockCtrl.Finish()
+}
+
+func getMockImages() []*storage.Image {
+	return []*storage.Image{
+		getMockImage(),
+	}
+}
+
+func getMockImage() *storage.Image {
+	return &storage.Image{
+		Name: &storage.ImageName{
+			FullName: "docker.io/library/nginx:1.10",
+			Registry: "docker.io",
+			Remote:   "library/nginx",
+			Tag:      "1.10",
+		},
+		Scan: &storage.ImageScan{
+			Components: []*storage.ImageScanComponent{
+				{
+					Vulns: []*storage.Vulnerability{
+						{
+							Cvss: 5,
+						},
+						{
+							Cvss: 5,
+						},
+					},
+				},
+			},
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(180 * 24 * time.Hour))),
+			},
+		},
+	}
 }
 
 func getMockDeployment() *storage.Deployment {
@@ -182,33 +219,7 @@ func getMockDeployment() *storage.Deployment {
 					},
 					Privileged: true,
 				},
-				Image: &storage.Image{
-					Name: &storage.ImageName{
-						FullName: "docker.io/library/nginx:1.10",
-						Registry: "docker.io",
-						Remote:   "library/nginx",
-						Tag:      "1.10",
-					},
-					Scan: &storage.ImageScan{
-						Components: []*storage.ImageScanComponent{
-							{
-								Vulns: []*storage.Vulnerability{
-									{
-										Cvss: 5,
-									},
-									{
-										Cvss: 5,
-									},
-								},
-							},
-						},
-					},
-					Metadata: &storage.ImageMetadata{
-						V1: &storage.V1Metadata{
-							Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(180 * 24 * time.Hour))),
-						},
-					},
-				},
+				Image: types.ToContainerImage(getMockImage()),
 			},
 			{
 				Name: "second",

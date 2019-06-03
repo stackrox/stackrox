@@ -50,7 +50,7 @@ func NewSAPermissionsMultiplier(roleStore roleStore.DataStore, bindingStore bind
 }
 
 // Score takes a deployment and evaluates its risk based on the permissions granted to the deployment's service account
-func (c *saPermissionsMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+func (c *saPermissionsMultiplier) Score(deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
 
 	var factors []*storage.Risk_Result_Factor
 	overallScore := float32(0)

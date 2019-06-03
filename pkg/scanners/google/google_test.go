@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/registries/google"
 	"github.com/stretchr/testify/require"
@@ -46,8 +47,10 @@ func TestGoogle(t *testing.T) {
 	}
 
 	for _, i := range images {
-		img, err := utils.GenerateImageFromString(i)
+		containerImage, err := utils.GenerateImageFromString(i)
 		require.NoError(t, err)
+
+		img := types.ToImage(containerImage)
 		metadata, err := registry.Metadata(img)
 		require.NoError(t, err)
 		img.Metadata = metadata

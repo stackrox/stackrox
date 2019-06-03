@@ -25,7 +25,7 @@ func NewServiceConfig() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on the service configuration
-func (s *serviceConfigMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+func (s *serviceConfigMultiplier) Score(deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
 	riskResult := &storage.Risk_Result{
 		Name: ServiceConfigHeading,
 	}

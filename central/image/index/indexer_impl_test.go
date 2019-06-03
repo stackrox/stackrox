@@ -48,11 +48,14 @@ func (suite *ImageIndexTestSuite) SetupSuite() {
 	secondDeployment.Containers = fixtures.GetDeployment().GetContainers()[:1]
 	secondDeployment.Containers[0].Image.Id = "FAKENEWSHA"
 
-	suite.NoError(suite.deploymentIndexer.AddDeployment(secondDeployment))
-	suite.NoError(suite.indexer.AddImage(secondDeployment.GetContainers()[0].GetImage()))
+	fixtureImage := fixtures.LightweightDeploymentImage()
+	fixtureImage.Id = "FAKENEWSHA"
 
-	for _, c := range fixtures.GetDeployment().GetContainers() {
-		suite.NoError(suite.indexer.AddImage(c.GetImage()))
+	suite.NoError(suite.deploymentIndexer.AddDeployment(secondDeployment))
+	suite.NoError(suite.indexer.AddImage(fixtureImage))
+
+	for _, img := range fixtures.DeploymentImages() {
+		suite.NoError(suite.indexer.AddImage(img))
 	}
 }
 

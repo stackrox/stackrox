@@ -11,5 +11,5 @@ var (
 
 // Multiplier is the interface that all risk calculations must implement
 type Multiplier interface {
-	Score(deployment *storage.Deployment) *storage.Risk_Result
+	Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result
 }

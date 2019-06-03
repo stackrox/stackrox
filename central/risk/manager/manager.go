@@ -27,6 +27,7 @@ type Manager interface {
 
 type managerImpl struct {
 	deploymentStorage deploymentDS.DataStore
+
 	multiplierStorage multiplierDS.Store
 
 	scorer risk.Scorer
@@ -115,6 +116,12 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 // addRiskToDeployment will add the risk
 func (e *managerImpl) addRiskToDeployment(deployment *storage.Deployment) error {
 	defer metrics.ObserveRiskProcessingDuration(time.Now())
-	deployment.Risk = e.scorer.Score(deployment)
+
+	images, err := e.deploymentStorage.GetImagesForDeployment(context.TODO(), deployment)
+	if err != nil {
+		return err
+	}
+
+	deployment.Risk = e.scorer.Score(deployment, images)
 	return e.deploymentStorage.UpdateDeployment(context.TODO(), deployment)
 }

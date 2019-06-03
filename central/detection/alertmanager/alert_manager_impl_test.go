@@ -297,7 +297,7 @@ func getDeployments() []*storage.Deployment {
 			Name: "deployment1",
 			Containers: []*storage.Container{
 				{
-					Image: &storage.Image{
+					Image: &storage.ContainerImage{
 						Name: &storage.ImageName{
 							Tag:    "latest1",
 							Remote: "stackrox/health",
@@ -310,7 +310,7 @@ func getDeployments() []*storage.Deployment {
 			Name: "deployment2",
 			Containers: []*storage.Container{
 				{
-					Image: &storage.Image{
+					Image: &storage.ContainerImage{
 						Name: &storage.ImageName{
 							Tag:    "latest2",
 							Remote: "stackrox/health",
@@ -323,7 +323,7 @@ func getDeployments() []*storage.Deployment {
 			Name: "deployment3",
 			Containers: []*storage.Container{
 				{
-					Image: &storage.Image{
+					Image: &storage.ContainerImage{
 						Name: &storage.ImageName{
 							Tag:    "latest3",
 							Remote: "stackrox/health",

@@ -216,10 +216,6 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deploym
 	// Process the deployment (alert generation, enforcement action generation)
 	resp := s.createResponse.do(deployment, action)
 
-	// We want to persist the images from the deployment in the deployment after processing (create response)
-	// TODO(rs): We should map out how images are updated in the pipeline so we don't do more writes than needed.
-	s.updateImages.do(deployment)
-
 	s.graphEvaluator.IncrementEpoch()
 
 	return resp, nil

@@ -12,14 +12,16 @@ func TestComponentCountScore(t *testing.T) {
 
 	// We need 14 components added for the count tobe 15 (the two already in the deployment are duplicates of each other)
 	deployment := getMockDeployment()
-	components := deployment.Containers[0].Image.Scan.Components
+
+	images := getMockImages()
+	components := images[0].Scan.Components
 	for i := 0; i < 14; i++ {
 		components = append(components, &storage.ImageScanComponent{
 			Name:    string(i),
 			Version: "1.0",
 		})
 	}
-	deployment.Containers[0].Image.Scan.Components = components
+	images[0].Scan.Components = components
 
 	expectedScore := &storage.Risk_Result{
 		Name: ComponentCountHeading,
@@ -28,6 +30,6 @@ func TestComponentCountScore(t *testing.T) {
 		},
 		Score: 1.25,
 	}
-	score := countMultiplier.Score(deployment)
+	score := countMultiplier.Score(deployment, images)
 	assert.Equal(t, expectedScore, score)
 }

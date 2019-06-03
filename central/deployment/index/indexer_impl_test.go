@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
@@ -89,7 +90,7 @@ func (suite *DeploymentIndexTestSuite) TestNegatedLinkedQuery() {
 		for _, image := range d.images {
 			suite.NoError(suite.imageIndexer.AddImage(image))
 			dep.Containers = append(dep.Containers, &storage.Container{
-				Image: image,
+				Image: types.ToContainerImage(image),
 			})
 		}
 		suite.NoError(suite.indexer.AddDeployment(dep))
@@ -150,19 +151,19 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 	deployment22 := &storage.Deployment{
 		Id: "22",
 		Containers: []*storage.Container{
-			{Image: img22, Volumes: []*storage.Volume{{Name: "volume22a"}, {Name: "volume22b"}, {Name: "nomatch"}}},
+			{Image: types.ToContainerImage(img22), Volumes: []*storage.Volume{{Name: "volume22a"}, {Name: "volume22b"}, {Name: "nomatch"}}},
 		},
 	}
 	deployment221 := &storage.Deployment{
 		Id: "221",
 		Containers: []*storage.Container{
-			{Image: img221, Volumes: []*storage.Volume{{Name: "volume221a"}}, Resources: &storage.Resources{CpuCoresRequest: 0.1}},
+			{Image: types.ToContainerImage(img221), Volumes: []*storage.Volume{{Name: "volume221a"}}, Resources: &storage.Resources{CpuCoresRequest: 0.1}},
 			{Resources: &storage.Resources{CpuCoresRequest: 0.75}},
 		},
 	}
 	depWithBoth22And221 := &storage.Deployment{
 		Id:         "Dep22And221",
-		Containers: []*storage.Container{{Image: img22}, {Image: img221}},
+		Containers: []*storage.Container{{Image: types.ToContainerImage(img22)}, {Image: types.ToContainerImage(img221)}},
 	}
 
 	suite.NoError(suite.indexer.AddDeployments([]*storage.Deployment{deployment22, deployment221, depWithBoth22And221}))
@@ -273,12 +274,9 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 
 func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	deployment := fixtures.GetDeployment()
+	images := fixtures.DeploymentImages()
 	suite.NoError(suite.indexer.AddDeployment(deployment))
-	for _, container := range deployment.GetContainers() {
-		if container.GetImage() != nil {
-			suite.NoError(suite.imageIndexer.AddImage(container.GetImage()))
-		}
-	}
+	suite.NoError(suite.imageIndexer.AddImages(images))
 
 	containerPort22Dep := &storage.Deployment{
 		Id:   "CONTAINERPORT22DEP",
@@ -295,7 +293,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	notNginx110Dep := &storage.Deployment{
 		Id:         "NOTNGINX110ID",
 		Name:       "NOT110",
-		Containers: []*storage.Container{{Image: img110}, {Image: imgNginx}},
+		Containers: []*storage.Container{{Image: types.ToContainerImage(img110)}, {Image: types.ToContainerImage(imgNginx)}},
 	}
 
 	suite.NoError(suite.indexer.AddDeployment(notNginx110Dep))
@@ -306,7 +304,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	nginx110Dep := &storage.Deployment{
 		Id:         "NGINX110ID",
 		Name:       "YES110",
-		Containers: []*storage.Container{{Image: imgNginx110}},
+		Containers: []*storage.Container{{Image: types.ToContainerImage(imgNginx110)}},
 	}
 	suite.NoError(suite.indexer.AddDeployment(nginx110Dep))
 	suite.NoError(suite.imageIndexer.AddImage(imgNginx110))
@@ -591,8 +589,8 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs:           []string{deployment.GetId()},
 			expectedMatches: func() map[string][]string {
 				m := make(map[string][]string)
-				for _, container := range deployment.GetContainers() {
-					for _, layer := range container.GetImage().GetMetadata().GetV1().GetLayers() {
+				for _, img := range images {
+					for _, layer := range img.GetMetadata().GetV1().GetLayers() {
 						m["image.metadata.v1.layers.instruction"] = append(m["image.metadata.v1.layers.instruction"], layer.GetInstruction())
 						m["image.metadata.v1.layers.value"] = append(m["image.metadata.v1.layers.value"], layer.GetValue())
 					}

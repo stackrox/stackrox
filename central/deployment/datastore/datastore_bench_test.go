@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globalindex"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -40,7 +41,10 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	deploymentsSearcher, err := search.New(deploymentsStore, deploymentsIndexer)
 	require.NoError(b, err)
 
-	deploymentsDatastore := newDatastoreImpl(deploymentsStore, deploymentsIndexer, deploymentsSearcher, nil, nil, nil)
+	imageDS, err := imageDatastore.New(db, bleveIndex, false)
+	require.NoError(b, err)
+
+	deploymentsDatastore := newDatastoreImpl(deploymentsStore, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil)
 
 	deploymentPrototype := proto.Clone(fixtures.GetDeployment()).(*storage.Deployment)
 

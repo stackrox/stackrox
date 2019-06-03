@@ -118,7 +118,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 					{
 						Id:   "FooID:container1",
 						Name: "container1",
-						Image: &storage.Image{
+						Image: &storage.ContainerImage{
 							Name: &storage.ImageName{
 								Registry: "docker.io",
 								Remote:   "stackrox/kafka",
@@ -143,7 +143,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 					{
 						Id:   "FooID:container2",
 						Name: "container2",
-						Image: &storage.Image{
+						Image: &storage.ContainerImage{
 							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 							Name: &storage.ImageName{
 								Registry: "docker.io",

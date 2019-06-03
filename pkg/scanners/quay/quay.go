@@ -120,7 +120,7 @@ func (q *quay) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	if err != nil {
 		return nil, err
 	} else if status != http.StatusOK {
-		return nil, fmt.Errorf("Unexpected status code %d when retrieving image scan for %s", status, imageTypes.Wrapper{Image: image})
+		return nil, fmt.Errorf("Unexpected status code %d when retrieving image scan for %s", status, imageTypes.Wrapper{GenericImage: image})
 	}
 	scan, err := parseImageScan(body)
 	if err != nil {

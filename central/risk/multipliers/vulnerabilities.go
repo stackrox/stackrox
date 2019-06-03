@@ -24,14 +24,14 @@ func NewVulnerabilities() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on vulnerabilties
-func (c *vulnerabilitiesMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+func (c *vulnerabilitiesMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	var cvssSum float32
 	var factors []*storage.Risk_Result_Factor
-	for _, container := range deployment.GetContainers() {
+	for i, img := range images {
 		cvssMin := math.MaxFloat64
 		cvssMax := -math.MaxFloat64
 		numCVEs := 0
-		for _, component := range container.GetImage().GetScan().GetComponents() {
+		for _, component := range img.GetScan().GetComponents() {
 			for _, vuln := range component.GetVulns() {
 				// Sometimes if the vuln doesn't have a CVSS score then it is unknown and we'll exclude it during scoring
 				if vuln.GetCvss() == 0 {
@@ -46,7 +46,7 @@ func (c *vulnerabilitiesMultiplier) Score(deployment *storage.Deployment) *stora
 		if numCVEs > 0 {
 			factors = append(factors, &storage.Risk_Result_Factor{
 				Message: fmt.Sprintf("Image %q (container %q) contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f",
-					container.GetImage().GetName().GetFullName(), container.GetName(), numCVEs, cvssMin, cvssMax),
+					img.GetName().GetFullName(), deployment.Containers[i].GetName(), numCVEs, cvssMin, cvssMax),
 			})
 		}
 	}

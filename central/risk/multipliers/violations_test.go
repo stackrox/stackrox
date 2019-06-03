@@ -180,7 +180,7 @@ func TestViolationsScore(t *testing.T) {
 				Alerts: c.alerts,
 			})
 			deployment := getMockDeployment()
-			result := mult.Score(deployment)
+			result := mult.Score(deployment, nil)
 			assert.Equal(t, c.expected, result)
 		})
 	}
