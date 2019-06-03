@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -22,8 +23,16 @@ import (
 var (
 	logger           = logging.LoggerForModule()
 	deploymentIDBase = uuid.NewV4().String()
-	deploymentCount  = 0
+	deploymentCount  = int64(0)
 )
+
+func getDeploymentCount() int {
+	return int(atomic.LoadInt64(&deploymentCount))
+}
+
+func incrementDeploymentCount() {
+	atomic.AddInt64(&deploymentCount, 1)
+}
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -87,7 +96,7 @@ func main() {
 }
 
 func getDeploymentID() string {
-	return getGeneratedDeploymentID(deploymentCount)
+	return getGeneratedDeploymentID(getDeploymentCount())
 }
 
 func getGeneratedDeploymentID(i int) string {
@@ -103,7 +112,7 @@ func deploymentSensorEvent(bigDepRate float64) *central.SensorEvent {
 	}
 	id := getDeploymentID()
 	deployment.Id = id
-	deployment.Name = fmt.Sprintf("nginx%d", deploymentCount)
+	deployment.Name = fmt.Sprintf("nginx%d", getDeploymentCount())
 	return &central.SensorEvent{
 		Id:     id,
 		Action: central.ResourceAction_CREATE_RESOURCE,
@@ -117,14 +126,14 @@ func sendDeployments(stream *threadSafeStream, maxDeployments int, deploymentInt
 	ticker := time.NewTicker(deploymentInterval)
 	defer ticker.Stop()
 
-	for deploymentCount < maxDeployments {
+	for getDeploymentCount() < maxDeployments {
 		<-ticker.C
 		if err := stream.SendEvent(deploymentSensorEvent(bigDepRate)); err != nil {
 			logger.Errorf("Error: %v", err)
 		}
-		deploymentCount++
+		incrementDeploymentCount()
 	}
-	logger.Infof("Finished writing %d deployments", deploymentCount)
+	logger.Infof("Finished writing %d deployments", getDeploymentCount())
 	signal.Signal()
 }
 
@@ -162,6 +171,9 @@ func sendNetworkFlows(stream *threadSafeStream, networkFlowInterval time.Duratio
 	for u := 0; u < maxUpdates; u++ {
 		time.Sleep(time.Until(nextTick))
 		update := generateNetworkFlowUpdate(maxNetworkFlows, flowDeleteRate)
+		if update == nil {
+			continue
+		}
 		if err := stream.SendNetworkFlows(update); err != nil {
 			logger.Errorf("Error: %v", err)
 		}
@@ -171,6 +183,10 @@ func sendNetworkFlows(stream *threadSafeStream, networkFlowInterval time.Duratio
 }
 
 func generateNetworkFlowUpdate(maxNetworkFlows int, flowDeleteRate float64) *central.NetworkFlowUpdate {
+	deploymentCount := getDeploymentCount()
+	if deploymentCount < 2 {
+		return nil
+	}
 	numFlows := deploymentCount * deploymentCount
 	if numFlows > maxNetworkFlows {
 		numFlows = maxNetworkFlows
