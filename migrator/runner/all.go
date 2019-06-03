@@ -9,4 +9,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_4_to_5_auth_provider_default_group"
 	_ "github.com/stackrox/rox/migrator/migrations/m_5_to_6_collection_method"
 	_ "github.com/stackrox/rox/migrator/migrations/m_6_to_7_image_update_time"
+	_ "github.com/stackrox/rox/migrator/migrations/m_7_to_8_sac_cluster_namespace"
 )

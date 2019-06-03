@@ -43,4 +43,13 @@ class ProcessService extends BaseService {
         }
         return pathContainerMap
     }
+
+    static List<ProcessIndicator> getProcessIndicatorsByDeployment(String deploymentID) {
+        def response = getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
+                .newBuilder()
+                .setDeploymentId(deploymentID)
+                .build())
+
+        return response.getProcessesList()
+    }
 }
