@@ -74,14 +74,14 @@ dependencies:
       - 2018 Meteor Development Group, Inc.
 
   ui/node_modules/graphql:
-    url: "https://github.com/apollographql/apollo-client"
+    url: "https://github.com/graphql/graphql-js"
     license: MIT
     files:
-      LICENSE: 22a28f29cff8f5ecf9f463301d9c03b8245a2952ebae0bcab633fd654c0792fb
+      LICENSE: 52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85
       package.json:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-      - 2018 Meteor Development Group, Inc.
+      - Facebook, Inc. and its affiliates.
 
   ui/node_modules/graphql-tag:
     url: "https://github.com/apollographql/graphql-tag"
@@ -629,7 +629,7 @@ dependencies:
     url: https://github.com/reactjs/react-transition-group
     license: BSD-3-Clause
     files:
-      LICENSE: 8e51db30748ee93e902fdfe36779f5aa935d55c77e7a21c20a27310ebafe10f6
+      LICENSE: b9adc17ad75a847d8743be2843935f0842a0ea4f45e7b0c7e17ed0be98614b9b
       package.json:
         author: bd85bcdb8d4e613a79cb62d0903946ad10c83e63dc75f67614c159c0dbf4d184
         license: f15ff9073b9028a1ec2bc0f18cc3e3ed6df570ab3197b5597d8932ccb30e6d6b
