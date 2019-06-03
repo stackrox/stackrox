@@ -279,7 +279,16 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 
 func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-		w.Deployment.Containers[i].Image = imageUtils.GenerateImageFromStringIgnoringError(c.Image)
+		parsedImage, err := imageUtils.GenerateImageFromString(c.Image)
+		if err != nil {
+			log.Error(err)
+			parsedImage = &storage.Image{
+				Name: &storage.ImageName{
+					FullName: fmt.Sprintf("%s is an invalid image", c.Image),
+				},
+			}
+		}
+		w.Deployment.Containers[i].Image = parsedImage
 	}
 }
 

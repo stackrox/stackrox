@@ -115,15 +115,6 @@ func Reference(img *storage.Image) string {
 	return "latest"
 }
 
-// GenerateImageFromStringIgnoringError generates an image type from a common string format
-func GenerateImageFromStringIgnoringError(imageStr string) *storage.Image {
-	image, err := GenerateImageFromString(imageStr)
-	if err != nil {
-		log.Error(err)
-	}
-	return image
-}
-
 // ExtractImageSha returns the image sha if it exists within the string.
 func ExtractImageSha(imageStr string) string {
 	if idx := strings.Index(imageStr, "sha256:"); idx != -1 {

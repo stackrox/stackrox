@@ -51,7 +51,9 @@ func TestNewImage(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.ImageString, func(t *testing.T) {
-			assert.Equal(t, c.ExpectedImage, GenerateImageFromStringIgnoringError(c.ImageString))
+			img, err := GenerateImageFromString(c.ImageString)
+			assert.NoError(t, err)
+			assert.Equal(t, c.ExpectedImage, img)
 		})
 	}
 }
