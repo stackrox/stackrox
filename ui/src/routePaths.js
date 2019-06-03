@@ -2,7 +2,12 @@
  * Application route paths constants.
  */
 
-import { standardTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
+import {
+    standardTypes,
+    resourceTypes,
+    standardEntityTypes,
+    rbacConfigTypes
+} from 'constants/entityTypes';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -25,6 +30,7 @@ export const systemConfigPath = `${mainPath}/systemconfig`;
 /**
  *Compliance-related route paths
  */
+
 export const resourceTypesToUrl = {
     [resourceTypes.NAMESPACE]: 'namespaces',
     [resourceTypes.CLUSTER]: 'clusters',
@@ -45,4 +51,44 @@ export const nestedCompliancePaths = {
     NAMESPACE: `${compliancePath}/namespaces/:entityId/:listEntityType${resourceMatcher}?`,
     DEPLOYMENT: `${compliancePath}/deployments/:entityId/:listEntityType${resourceMatcher}?`,
     NODE: `${compliancePath}/nodes/:entityId/:listEntityType${resourceMatcher}?`
+};
+
+export const urlEntityListTypes = {
+    [resourceTypes.NAMESPACE]: 'namespaces',
+    [resourceTypes.CLUSTER]: 'clusters',
+    [resourceTypes.NODE]: 'nodes',
+    [resourceTypes.DEPLOYMENT]: 'deployments',
+    [resourceTypes.SECRET]: 'secrets',
+    [standardEntityTypes.CONTROL]: 'controls',
+    [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccounts',
+    [rbacConfigTypes.USER_AND_GROUPS]: 'usersandgroups',
+    [rbacConfigTypes.ROLE]: 'roles'
+};
+
+/**
+ * New Framwork-related route paths
+ */
+
+export const urlEntityTypes = {
+    [resourceTypes.NAMESPACE]: 'namespace',
+    [resourceTypes.CLUSTER]: 'cluster',
+    [resourceTypes.NODE]: 'node',
+    [resourceTypes.DEPLOYMENT]: 'deployment',
+    [resourceTypes.SECRET]: 'secret',
+    [standardEntityTypes.CONTROL]: 'control',
+    [standardEntityTypes.STANDARD]: 'standard',
+    [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccount',
+    [rbacConfigTypes.USER_AND_GROUPS]: 'usersandgroups',
+    [rbacConfigTypes.ROLE]: 'role'
+};
+
+export const configManagementPath = `${mainPath}/configmanagement`;
+
+const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;
+const entityTypeMatcher = `(${Object.values(urlEntityTypes).join('|')})`;
+
+export const nestedPaths = {
+    DASHBOARD: `${mainPath}/:context(configmanagement)`,
+    LIST: `/:pageEntityListType${entityListTypeMatcher}/:entityId1?/:entityType2?/:entityId2?`,
+    ENTITY: `/:pageEntityType${entityTypeMatcher}/:pageEntityId?/:entityListType1${entityListTypeMatcher}?/:entityId1?/:entityType2?/:entityId2?`
 };

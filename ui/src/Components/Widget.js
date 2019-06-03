@@ -77,7 +77,7 @@ function Widget({
             <div className="border-b border-base-300">
                 <div className="flex w-full h-10 word-break">
                     <div
-                        className="flex flex-1 text-base-600 pt-1 uppercase items-center tracking-wide px-3 leading-normal font-700"
+                        className="flex flex-1 text-sm text-base-600 pt-1 uppercase items-center tracking-wide px-3 leading-normal font-700"
                         data-test-id="widget-header"
                     >
                         <div className="flex-grow">{header}</div>

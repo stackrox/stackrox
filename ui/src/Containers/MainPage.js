@@ -20,7 +20,8 @@ import {
     apidocsPath,
     accessControlPath,
     licensePath,
-    systemConfigPath
+    systemConfigPath,
+    configManagementPath
 } from 'routePaths';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -56,6 +57,7 @@ const AsyncSecretsPage = asyncComponent(() => import('Containers/Secrets/Secrets
 const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
 const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
+const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
 
 class MainPage extends Component {
     static propTypes = {
@@ -125,6 +127,11 @@ class MainPage extends Component {
                         requiredPermission="Licenses"
                     />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
+                    <ProtectedRoute
+                        path={configManagementPath}
+                        component={AsyncConfigManagementPage}
+                        devOnly
+                    />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
                 {this.renderPDFLoader()}

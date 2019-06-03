@@ -495,6 +495,17 @@ dependencies:
       attribution:
         - 2015 React Popper authors
 
+  ui/node_modules/react-pose:
+    url: "https://github.com/Popmotion/popmotion/tree/master/packages/react-pose"
+    license: MIT
+    files:
+      LICENSE.md: 233888fb02b273fb0555c7293e2113223755a6522e4e1267faa4a077eb33e6b2
+      package.json:
+        author: 893e21e932131b9fe469ec606cef28ccdaacdbe90ef31081e1ad66744f3f36ba
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2018 Popmotion
+
   ui/node_modules/react-redux:
     url: https://github.com/reduxjs/react-redux
     license: MIT

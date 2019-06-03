@@ -58,6 +58,12 @@ export const DEPLOYMENTS_QUERY = gql`
         results: deployments {
             id
             name
+            clusterName
+            namespace
+            alerts {
+                id
+            }
+            serviceAccount
         }
     }
 `;

@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 const iconClassName = 'h-4 w-4 mb-1';
+
 export const navLinks = [
     {
         text: 'Dashboard',
@@ -24,6 +25,12 @@ export const navLinks = [
         text: 'Compliance',
         to: '/main/compliance',
         renderIcon: () => <Icon.CheckSquare className={iconClassName} />
+    },
+    {
+        text: 'Config Management',
+        to: '/main/configmanagement',
+        renderIcon: () => <Icon.CheckSquare className={iconClassName} />,
+        devOnly: true
     },
     {
         text: 'Risk',
@@ -48,9 +55,13 @@ export const navLinks = [
     }
 ];
 
+const filteredNavLinks = navLinks.filter(navLink =>
+    process.env.NODE_ENV === 'development' ? true : !navLink.devOnly
+);
+
 const LeftSideNavLinks = ({ renderLink }) => (
     <ul className="flex flex-col list-reset uppercase text-sm tracking-wide">
-        {navLinks.map(navLink => (
+        {filteredNavLinks.map(navLink => (
             <li key={navLink.text}>{renderLink(navLink)}</li>
         ))}
     </ul>

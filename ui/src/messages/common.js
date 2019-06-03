@@ -40,6 +40,11 @@ const common = Object.freeze({
         SECRET: 'secret',
         CONTROL: 'control'
     },
+    rbacConfigLabels: {
+        USER_AND_GROUPS: 'userandgroups',
+        SERVICE_ACCOUNT: 'serviceaccount',
+        ROLE: 'role'
+    },
     stackroxSupport: {
         phoneNumber: {
             withSpaces: '1 (650) 489-6769',

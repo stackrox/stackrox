@@ -22,3 +22,28 @@ export const ROLE_PERMISSIONS = gql`
         }
     }
 `;
+
+export const K8S_ROLES = gql`
+    query k8sroles {
+        clusters {
+            id
+            k8sroles {
+                id
+                name
+                type
+                verbs
+                createdAt
+                roleNamespace {
+                    metadata {
+                        id
+                        name
+                    }
+                }
+                serviceAccounts {
+                    id
+                    name
+                }
+            }
+        }
+    }
+`;

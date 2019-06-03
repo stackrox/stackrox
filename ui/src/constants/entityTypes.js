@@ -7,6 +7,12 @@ export const resourceTypes = {
     SECRET: 'SECRET'
 };
 
+export const rbacConfigTypes = {
+    USER_AND_GROUPS: 'USER_AND_GROUPS',
+    SERVICE_ACCOUNT: 'SERVICE_ACCOUNT',
+    ROLE: 'ROLE'
+};
+
 export const standardEntityTypes = {
     CONTROL: 'CONTROL',
     CATEGORY: 'CATEGORY',
@@ -41,5 +47,6 @@ export const searchCategories = {
 export default {
     ...resourceTypes,
     ...standardTypes,
-    ...standardEntityTypes
+    ...standardEntityTypes,
+    ...rbacConfigTypes
 };

@@ -3,7 +3,14 @@ import pageTypes from 'constants/pageTypes';
 import { standardTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
-import { nestedCompliancePaths, resourceTypesToUrl, riskPath, secretsPath } from '../routePaths';
+import {
+    nestedCompliancePaths,
+    resourceTypesToUrl,
+    riskPath,
+    secretsPath,
+    configManagementPath,
+    nestedPaths
+} from '../routePaths';
 
 function getEntityTypeKeyFromValue(entityTypeValue) {
     const match = Object.entries(resourceTypesToUrl).find(entry => entry[1] === entityTypeValue);
@@ -19,7 +26,13 @@ function getEntityTypeFromMatch(match) {
 
 function getPath(context, pageType, urlParams) {
     const { entityType } = urlParams;
+
     const pathMap = {
+        [contextTypes.CONFIG_MANAGEMENT]: {
+            [pageTypes.DASHBOARD]: configManagementPath,
+            [pageTypes.ENTITY]: `${configManagementPath}${nestedPaths.ENTITY}`,
+            [pageTypes.LIST]: `${configManagementPath}${nestedPaths.LIST}`
+        },
         [contextTypes.COMPLIANCE]: {
             [pageTypes.DASHBOARD]: nestedCompliancePaths.DASHBOARD,
             [pageTypes.ENTITY]: nestedCompliancePaths[entityType],
@@ -59,6 +72,7 @@ function getPath(context, pageType, urlParams) {
 }
 
 function getContext(match) {
+    if (match.url.includes('/configmanagement')) return contextTypes.CONFIG_MANAGEMENT;
     if (match.url.includes('/compliance')) return contextTypes.COMPLIANCE;
     if (match.url.includes('/risk')) return contextTypes.RISK;
     return null;
