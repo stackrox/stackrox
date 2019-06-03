@@ -47,7 +47,7 @@ const DockerfileButton = ({ image, openModal }) => {
             View Dockerfile
         </button>
     );
-    if (image.metadata) return button;
+    if (image && image.metadata) return button;
     return (
         <Tooltip placement="top" overlay={<div>Dockerfile not available</div>}>
             <div>{button}</div>
@@ -57,9 +57,9 @@ const DockerfileButton = ({ image, openModal }) => {
 
 DockerfileButton.propTypes = {
     image: PropTypes.shape({
-        metadata: PropTypes.string
+        metadata: PropTypes.shape({})
     }).isRequired,
-    openModal: PropTypes.bool.isRequired
+    openModal: PropTypes.func.isRequired
 };
 
 const ImageDetails = ({ image, setDeploymentsSearchOptions, loading, history, location }) => {
@@ -83,9 +83,8 @@ const ImageDetails = ({ image, setDeploymentsSearchOptions, loading, history, lo
     }
 
     function unselectImage() {
-        const urlSuffix = image && image.id ? `/${image.id}` : '';
         history.push({
-            pathname: `/main/images${urlSuffix}`,
+            pathname: `/main/images`,
             search: location.search
         });
     }
