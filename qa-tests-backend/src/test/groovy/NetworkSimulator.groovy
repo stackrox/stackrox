@@ -43,6 +43,7 @@ class NetworkSimulator extends BaseSpecification {
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
+        DEPLOYMENTS.each { Services.waitForDeployment(it) }
     }
 
     def cleanupSpec() {
