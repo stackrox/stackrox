@@ -30,7 +30,7 @@ func filterToRequiredFields(alert *storage.Alert) {
 		Namespace:   alert.GetDeployment().GetNamespace(),
 	}
 
-	for _, c := range alert.Deployment.Containers {
+	for _, c := range alert.GetDeployment().GetContainers() {
 		deployment.Containers = append(deployment.Containers, &storage.Container{
 			Id:   c.GetId(),
 			Name: c.GetName(),
