@@ -4,7 +4,6 @@ import { connect } from 'react-redux';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import pDefer from 'p-defer';
 import dateFns from 'date-fns';
 import computedStyleToInlineStyle from 'computed-style-to-inline-style';
 import Button from 'Components/Button';
@@ -87,8 +86,8 @@ class PDFExportButton extends Component {
                 properties: printProperties
             });
             cc[i].className = 'pdf-page hidden';
-            const deferred = pDefer();
-            html2canvas(clonedNode, {
+
+            const promise = html2canvas(clonedNode, {
                 scale: 3
             }).then(canvas => {
                 Object.assign(canvas, {
@@ -96,9 +95,9 @@ class PDFExportButton extends Component {
                 });
                 cc[i].parentNode.insertBefore(canvas, clonedNode);
                 clonedNode.className = 'clonedNode hidden';
-                deferred.resolve(canvas);
+                return canvas;
             });
-            promises.push(deferred.promise);
+            promises.push(promise);
         }
         return promises;
     };
@@ -135,7 +134,7 @@ class PDFExportButton extends Component {
         const printElements = Array.from(element.getElementsByClassName(printClassName));
 
         let imgWidth = options.mode === 'l' ? defaultPageLandscapeWidth : defaultPagePotraitWidth;
-        // eslint-disable-next-line
+        // eslint-disable-next-line new-cap
         const doc = new jsPDF(mode, marginType, paperSize, true);
         let positionX = 0;
         let positionY = 0;

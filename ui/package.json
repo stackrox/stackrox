@@ -30,7 +30,6 @@
         "mobx": "^4.2.0",
         "normalizr": "^3.2.4",
         "object-resolve-path": "^1.1.1",
-        "p-defer": "^1.0.0",
         "pluralize": "^7.0.0",
         "prop-types": "^15.6.2",
         "qs": "^6.6.0",

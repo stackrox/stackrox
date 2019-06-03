@@ -293,17 +293,6 @@ dependencies:
     attribution:
       - 2015 Jiri Spac
 
-  ui/node_modules/p-defer:
-    url: https://github.com/sindresorhus/p-defer
-    license: MIT
-    files:
-      license: 6fb9754611c20f6649f68805e8c990e83261f29316e29de9e6cedae607b8634c
-      package.json:
-        author: a79cf742e06a2994f196cd45b37bb1fab34f935f97b8a48cfbd6a563f160c59f
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-     - Sindre Sorhus
-
   ui/node_modules/pluralize:
     url: https://github.com/blakeembrey/pluralize
     license: MIT
