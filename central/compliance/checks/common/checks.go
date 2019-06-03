@@ -331,7 +331,7 @@ func isKubeSystem(deployment *storage.Deployment) bool {
 
 // CheckViolationsForPolicyByDeployment checks if the deployments have violations for a given policy.
 func CheckViolationsForPolicyByDeployment(ctx framework.ComplianceContext, policy *storage.Policy) {
-	alerts := ctx.Data().Alerts()
+	alerts := ctx.Data().UnresolvedAlerts()
 	deploymentIDToAlerts := make(map[string][]*storage.ListAlert)
 	for _, alert := range alerts {
 		// resolved alerts is ok. We are interested in current env.

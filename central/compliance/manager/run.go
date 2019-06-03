@@ -92,6 +92,7 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore store.Store) {
 		if storeErr := resultsStore.StoreFailure(metadata); storeErr != nil {
 			log.Errorf("Failed to store metadata for failed compliance run: %v", storeErr)
 		}
+		log.Errorf("Compliance run %s for standard %s on cluster %s failed: %v", r.id, r.standard.Name, r.domain.Cluster().ID(), err)
 	}
 }
 

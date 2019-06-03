@@ -36,18 +36,6 @@ func (m *MockComplianceDataRepository) EXPECT() *MockComplianceDataRepositoryMoc
 	return m.recorder
 }
 
-// Alerts mocks base method
-func (m *MockComplianceDataRepository) Alerts() []*storage.ListAlert {
-	ret := m.ctrl.Call(m, "Alerts")
-	ret0, _ := ret[0].([]*storage.ListAlert)
-	return ret0
-}
-
-// Alerts indicates an expected call of Alerts
-func (mr *MockComplianceDataRepositoryMockRecorder) Alerts() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Alerts", reflect.TypeOf((*MockComplianceDataRepository)(nil).Alerts))
-}
-
 // CISDockerTriggered mocks base method
 func (m *MockComplianceDataRepository) CISDockerTriggered() bool {
 	ret := m.ctrl.Call(m, "CISDockerTriggered")
@@ -250,4 +238,16 @@ func (m *MockComplianceDataRepository) ProcessIndicators() []*storage.ProcessInd
 // ProcessIndicators indicates an expected call of ProcessIndicators
 func (mr *MockComplianceDataRepositoryMockRecorder) ProcessIndicators() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessIndicators", reflect.TypeOf((*MockComplianceDataRepository)(nil).ProcessIndicators))
+}
+
+// UnresolvedAlerts mocks base method
+func (m *MockComplianceDataRepository) UnresolvedAlerts() []*storage.ListAlert {
+	ret := m.ctrl.Call(m, "UnresolvedAlerts")
+	ret0, _ := ret[0].([]*storage.ListAlert)
+	return ret0
+}
+
+// UnresolvedAlerts indicates an expected call of UnresolvedAlerts
+func (mr *MockComplianceDataRepositoryMockRecorder) UnresolvedAlerts() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnresolvedAlerts", reflect.TypeOf((*MockComplianceDataRepository)(nil).UnresolvedAlerts))
 }

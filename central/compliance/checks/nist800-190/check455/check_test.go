@@ -80,7 +80,7 @@ func (s *suiteImpl) TestPass() {
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
 	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(policies))
-	data.EXPECT().Alerts().AnyTimes().Return(nil)
+	data.EXPECT().UnresolvedAlerts().AnyTimes().Return(nil)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -153,7 +153,7 @@ func (s *suiteImpl) TestFail() {
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
 	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(policies))
-	data.EXPECT().Alerts().AnyTimes().Return(nil)
+	data.EXPECT().UnresolvedAlerts().AnyTimes().Return(nil)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)

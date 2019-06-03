@@ -3,12 +3,14 @@ package data
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -21,7 +23,7 @@ type repository struct {
 	nodes       map[string]*storage.Node
 	deployments map[string]*storage.Deployment
 
-	alerts                []*storage.ListAlert
+	unresolvedAlerts      []*storage.ListAlert
 	networkPolicies       map[string]*storage.NetworkPolicy
 	networkGraph          *v1.NetworkGraph
 	policies              map[string]*storage.Policy
@@ -95,8 +97,8 @@ func (r *repository) K8sRoleBindings() []*storage.K8SRoleBinding {
 	return r.bindings
 }
 
-func (r *repository) Alerts() []*storage.ListAlert {
-	return r.alerts
+func (r *repository) UnresolvedAlerts() []*storage.ListAlert {
+	return r.unresolvedAlerts
 }
 
 func (r *repository) HostScraped(node *storage.Node) *compliance.ComplianceReturn {
@@ -223,7 +225,13 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 		return err
 	}
 
-	r.processIndicators, err = f.processIndicatorStore.GetProcessIndicators(ctx)
+	clusterQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	infPagination := &v1.Pagination{
+		Limit: math.MaxInt32,
+	}
+	clusterQuery.Pagination = infPagination
+
+	r.processIndicators, err = f.processIndicatorStore.SearchRawProcessIndicators(ctx, clusterQuery)
 	if err != nil {
 		return err
 	}
@@ -239,17 +247,22 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 		return err
 	}
 
-	r.roles, err = f.roleDataStore.ListRoles(ctx)
+	r.roles, err = f.roleDataStore.SearchRawRoles(ctx, clusterQuery)
 	if err != nil {
 		return err
 	}
 
-	r.bindings, err = f.bindingDataStore.ListRoleBindings(ctx)
+	r.bindings, err = f.bindingDataStore.SearchRawRoleBindings(ctx, clusterQuery)
 	if err != nil {
 		return err
 	}
 
-	r.alerts, err = f.alertStore.GetAlertStore(ctx)
+	alertQuery := search.ConjunctionQuery(
+		clusterQuery,
+		search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String(), storage.ViolationState_SNOOZED.String()).ProtoQuery(),
+	)
+	alertQuery.Pagination = infPagination
+	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery)
 	if err != nil {
 		return err
 	}
@@ -281,12 +294,12 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 		return err
 	}
 
-	dockerCISRunResults, err := f.complianceStore.GetLatestRunResults(r.Cluster().GetId(), cisDockerStandardID, 0)
+	dockerCISRunResults, err := f.complianceStore.GetLatestRunResults(clusterID, cisDockerStandardID, 0)
 	if err == nil && dockerCISRunResults.LastSuccessfulResults != nil {
 		r.cisDockerRunCheck = true
 	}
 
-	kubeCISRunResults, err := f.complianceStore.GetLatestRunResults(r.Cluster().GetId(), cisKubernetesStandardID, 0)
+	kubeCISRunResults, err := f.complianceStore.GetLatestRunResults(clusterID, cisKubernetesStandardID, 0)
 	if err == nil && kubeCISRunResults.LastSuccessfulResults != nil {
 		r.cisKubernetesRunCheck = true
 	}
