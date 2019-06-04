@@ -207,7 +207,7 @@ dependencies:
     url: https://github.com/ReactTraining/history
     license: MIT
     files:
-      LICENSE.md: 8e1cd76452d7258de13ff1187caab0f4d094b40d42b9a3a9c7fa6bb1721485f7
+      LICENSE: 079b9fe13858745a8faeaf305231a339b63ba13f36b65e6e9eca94d89196c456
       package.json:
         author: b23cbc488702e9c897869b27671fb496d0ea3846ab563083db133e5d556a6126
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
