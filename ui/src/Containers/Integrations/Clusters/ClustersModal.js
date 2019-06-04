@@ -117,7 +117,7 @@ class ClustersModal extends Component {
 
         if (this.props.clusterType === 'KUBERNETES_CLUSTER') {
             columns.push({
-                Header: 'Admission Controller',
+                Header: 'Admission Controller Webhook',
                 Cell: ({ original }) => formatAdmissionController(original)
             });
         }

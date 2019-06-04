@@ -102,7 +102,7 @@ const PanelCard = ({ children, open, title }) => (
 
 PanelCard.propTypes = {
     open: PropTypes.bool,
-    title: PropTypes.shape({}).isRequired,
+    title: PropTypes.string.isRequired,
     children: PropTypes.node.isRequired
 };
 
