@@ -49,7 +49,7 @@ func (s *splunk) ProtoNotifier() *storage.Notifier {
 func (s *splunk) Test() error {
 	alert := &storage.Alert{
 		Policy:     &storage.Policy{Name: "Test Policy"},
-		Deployment: &storage.Deployment{Name: "Test Deployment"},
+		Deployment: &storage.Alert_Deployment{Name: "Test Deployment"},
 		Violations: []*storage.Alert_Violation{
 			{Message: "This is a sample Splunk alert message created to test integration with StackRox."},
 		},

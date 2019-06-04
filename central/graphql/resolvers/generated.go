@@ -26,7 +26,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"timeoutSeconds: Int!",
 	}))
 	utils.Must(builder.AddType("Alert", []string{
-		"deployment: Deployment",
+		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
 		"firstOccurred: Time",
 		"id: ID!",
@@ -37,6 +37,21 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"state: ViolationState!",
 		"time: Time",
 		"violations: [Alert_Violation]!",
+	}))
+	utils.Must(builder.AddType("Alert_Deployment", []string{
+		"annotations: [Label!]!",
+		"clusterId: String!",
+		"clusterName: String!",
+		"containers: [Alert_Deployment_Container]!",
+		"id: ID!",
+		"labels: [Label!]!",
+		"name: String!",
+		"namespace: String!",
+		"type: String!",
+	}))
+	utils.Must(builder.AddType("Alert_Deployment_Container", []string{
+		"image: ContainerImage",
+		"name: String!",
 	}))
 	utils.Must(builder.AddType("Alert_Enforcement", []string{
 		"action: EnforcementAction!",
@@ -1003,10 +1018,10 @@ func (resolver *alertResolver) ensureData(ctx context.Context) {
 	}
 }
 
-func (resolver *alertResolver) Deployment(ctx context.Context) (*deploymentResolver, error) {
+func (resolver *alertResolver) Deployment(ctx context.Context) (*alert_DeploymentResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetDeployment()
-	return resolver.root.wrapDeployment(value, true, nil)
+	return resolver.root.wrapAlert_Deployment(value, true, nil)
 }
 
 func (resolver *alertResolver) Enforcement(ctx context.Context) (*alert_EnforcementResolver, error) {
@@ -1075,6 +1090,107 @@ func (resolver *alertResolver) Violations(ctx context.Context) ([]*alert_Violati
 	resolver.ensureData(ctx)
 	value := resolver.data.GetViolations()
 	return resolver.root.wrapAlert_Violations(value, nil)
+}
+
+type alert_DeploymentResolver struct {
+	root *Resolver
+	data *storage.Alert_Deployment
+}
+
+func (resolver *Resolver) wrapAlert_Deployment(value *storage.Alert_Deployment, ok bool, err error) (*alert_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_DeploymentResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Deployments(values []*storage.Alert_Deployment, err error) ([]*alert_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_DeploymentResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_DeploymentResolver) Annotations(ctx context.Context) labels {
+	value := resolver.data.GetAnnotations()
+	return labelsResolver(value)
+}
+
+func (resolver *alert_DeploymentResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) Containers(ctx context.Context) ([]*alert_Deployment_ContainerResolver, error) {
+	value := resolver.data.GetContainers()
+	return resolver.root.wrapAlert_Deployment_Containers(value, nil)
+}
+
+func (resolver *alert_DeploymentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *alert_DeploymentResolver) Labels(ctx context.Context) labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *alert_DeploymentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value
+}
+
+type alert_Deployment_ContainerResolver struct {
+	root *Resolver
+	data *storage.Alert_Deployment_Container
+}
+
+func (resolver *Resolver) wrapAlert_Deployment_Container(value *storage.Alert_Deployment_Container, ok bool, err error) (*alert_Deployment_ContainerResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Deployment_ContainerResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Deployment_Containers(values []*storage.Alert_Deployment_Container, err error) ([]*alert_Deployment_ContainerResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Deployment_ContainerResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Deployment_ContainerResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Deployment_ContainerResolver) Image(ctx context.Context) (*containerImageResolver, error) {
+	value := resolver.data.GetImage()
+	return resolver.root.wrapContainerImage(value, true, nil)
+}
+
+func (resolver *alert_Deployment_ContainerResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 type alert_EnforcementResolver struct {

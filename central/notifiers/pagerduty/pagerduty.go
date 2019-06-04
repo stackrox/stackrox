@@ -82,7 +82,7 @@ func (p *pagerDuty) Test() error {
 			Severity:    storage.Severity_HIGH_SEVERITY,
 			Categories:  []string{"Privileges"},
 		},
-		Deployment: &storage.Deployment{
+		Deployment: &storage.Alert_Deployment{
 			Name:        "Test Deployment",
 			ClusterName: "Test Cluster",
 		},

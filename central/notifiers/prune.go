@@ -21,28 +21,6 @@ func cleanProcessIndicator(process *storage.ProcessIndicator) *storage.ProcessIn
 	}
 }
 
-func filterToRequiredFields(alert *storage.Alert) {
-	deployment := &storage.Deployment{
-		Id:          alert.GetDeployment().GetId(),
-		Name:        alert.GetDeployment().GetName(),
-		Type:        alert.GetDeployment().GetType(),
-		ClusterName: alert.GetDeployment().GetClusterName(),
-		Namespace:   alert.GetDeployment().GetNamespace(),
-	}
-
-	for _, c := range alert.GetDeployment().GetContainers() {
-		deployment.Containers = append(deployment.Containers, &storage.Container{
-			Id:   c.GetId(),
-			Name: c.GetName(),
-			Image: &storage.ContainerImage{
-				Id:   c.GetImage().GetId(),
-				Name: c.GetImage().GetName(),
-			},
-		})
-	}
-	alert.Deployment = deployment
-}
-
 func filterProcesses(processes []*storage.ProcessIndicator, maxSize int, currSize *int) []*storage.ProcessIndicator {
 	if *currSize < maxSize {
 		return processes
@@ -88,8 +66,6 @@ func filterViolations(violations []*storage.Alert_Violation, maxSize int, currSi
 
 // PruneAlert takes in an alert and max size and ensures that the resultant alert is < maxSize
 func PruneAlert(alert *storage.Alert, maxSize int) {
-	filterToRequiredFields(alert)
-
 	// Get current size and then determine how to trim more in terms of violations
 	var data bytes.Buffer
 	marshaler := new(jsonpb.Marshaler)

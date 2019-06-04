@@ -291,11 +291,11 @@ func getAlerts() []*storage.Alert {
 }
 
 // Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
-func getDeployments() []*storage.Deployment {
-	return []*storage.Deployment{
+func getDeployments() []*storage.Alert_Deployment {
+	return []*storage.Alert_Deployment{
 		{
 			Name: "deployment1",
-			Containers: []*storage.Container{
+			Containers: []*storage.Alert_Deployment_Container{
 				{
 					Image: &storage.ContainerImage{
 						Name: &storage.ImageName{
@@ -308,7 +308,7 @@ func getDeployments() []*storage.Deployment {
 		},
 		{
 			Name: "deployment2",
-			Containers: []*storage.Container{
+			Containers: []*storage.Alert_Deployment_Container{
 				{
 					Image: &storage.ContainerImage{
 						Name: &storage.ImageName{
@@ -321,7 +321,7 @@ func getDeployments() []*storage.Deployment {
 		},
 		{
 			Name: "deployment3",
-			Containers: []*storage.Container{
+			Containers: []*storage.Alert_Deployment_Container{
 				{
 					Image: &storage.ContainerImage{
 						Name: &storage.ImageName{

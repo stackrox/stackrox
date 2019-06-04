@@ -6,6 +6,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
@@ -88,7 +89,7 @@ func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 	alert := &storage.Alert{
 		Id:               uuid.NewV4().String(),
 		LifecycleStage:   storage.LifecycleStage_RUNTIME,
-		Deployment:       protoutils.CloneStorageDeployment(deployment),
+		Deployment:       convert.ToAlertDeployment(deployment),
 		Policy:           protoutils.CloneStoragePolicy(policy),
 		Violations:       violations.AlertViolations,
 		ProcessViolation: violations.ProcessViolation,

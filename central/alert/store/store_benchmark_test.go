@@ -87,7 +87,6 @@ func BenchmarkListAlerts(b *testing.B) {
 		Deployment: &storage.ListAlertDeployment{
 			Id:          uuid.NewV4().String(),
 			Name:        "quizzical_cat",
-			UpdatedAt:   types.TimestampNow(),
 			ClusterName: "remote",
 		},
 	}

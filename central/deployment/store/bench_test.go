@@ -29,7 +29,7 @@ func getDeploymentStore(b *testing.B) Store {
 
 func BenchmarkAddDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
-	deployment := fixtures.GetAlert().GetDeployment()
+	deployment := fixtures.GetDeployment()
 	for i := 0; i < b.N; i++ {
 		require.NoError(b, store.UpsertDeployment(deployment))
 	}
@@ -37,7 +37,7 @@ func BenchmarkAddDeployment(b *testing.B) {
 
 func BenchmarkUpdateDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
-	deployment := fixtures.GetAlert().GetDeployment()
+	deployment := fixtures.GetDeployment()
 	for i := 0; i < b.N; i++ {
 		require.NoError(b, store.UpdateDeployment(deployment))
 	}
@@ -45,7 +45,7 @@ func BenchmarkUpdateDeployment(b *testing.B) {
 
 func BenchmarkGetDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
-	deployment := fixtures.GetAlert().GetDeployment()
+	deployment := fixtures.GetDeployment()
 	require.NoError(b, store.UpsertDeployment(deployment))
 	for i := 0; i < b.N; i++ {
 		_, exists, err := store.GetDeployment(deployment.GetId())
@@ -56,7 +56,7 @@ func BenchmarkGetDeployment(b *testing.B) {
 
 func BenchmarkListDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
-	deployment := fixtures.GetAlert().GetDeployment()
+	deployment := fixtures.GetDeployment()
 	require.NoError(b, store.UpsertDeployment(deployment))
 	for i := 0; i < b.N; i++ {
 		_, exists, err := store.ListDeployment(deployment.GetId())

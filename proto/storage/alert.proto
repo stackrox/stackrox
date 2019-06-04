@@ -13,9 +13,30 @@ package storage;
 
 message Alert {
     string id                                = 1;
+
     Policy policy                            = 2 [(gogoproto.moretags) = "search_index:\"Policy ID,Policy,Category,Severity\""];
     LifecycleStage lifecycle_stage           = 3 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
-    Deployment deployment                    = 4 [(gogoproto.moretags) = "search_index:\"Deployment ID,Cluster,Namespace,Deployment\""];
+
+    message Deployment {
+        option (gogoproto.goproto_unrecognized) = false;
+        string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
+        string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
+        string type                                = 4;
+        string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+        map<string, string> labels                 = 7;
+        string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
+        string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+        message Container {
+            option (gogoproto.goproto_unrecognized) = false;
+            // This is backwards compatible with the old image format
+            ContainerImage image = 3 [(gogoproto.moretags) = "search:\"-\""];
+            string name                          = 10;
+        }
+        repeated Container containers              = 11;
+        map<string, string> annotations            = 14;
+    }
+
+    Deployment deployment                    = 4;
 
     message Violation {
         string message                                 = 1;
@@ -68,9 +89,10 @@ message ListAlertPolicy {
 message ListAlertDeployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
-    google.protobuf.Timestamp updated_at       = 3;
+    reserved 3; // was: google.protobuf.Timestamp updated_at
     string cluster_name                        = 4 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+    string cluster_id                          = 6 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
 }
 
 enum ViolationState {

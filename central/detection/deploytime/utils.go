@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -23,10 +24,13 @@ func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 	if len(violations) == 0 {
 		return nil
 	}
+
+	alertDeployment := convert.ToAlertDeployment(deployment)
+
 	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_DEPLOY,
-		Deployment:     protoutils.CloneStorageDeployment(deployment),
+		Deployment:     alertDeployment,
 		Policy:         protoutils.CloneStoragePolicy(policy),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),

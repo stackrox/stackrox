@@ -7,7 +7,7 @@ import (
 )
 
 // FromContainers provides helper functions for getting a slice of images from containers.
-type FromContainers []*storage.Container
+type FromContainers []*storage.Alert_Deployment_Container
 
 // Images returns a slice of images from the slice of containers.
 func (cs FromContainers) Images() []*storage.ContainerImage {

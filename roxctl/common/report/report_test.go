@@ -55,7 +55,7 @@ var (
 	}
 
 	deploymentAlertOne = storage.Alert{
-		Deployment: &storage.Deployment{
+		Deployment: &storage.Alert_Deployment{
 			Name: "deployment1",
 		},
 		Policy: &storage.Policy{
@@ -79,7 +79,7 @@ var (
 	}
 
 	deploymentAlertTwo = storage.Alert{
-		Deployment: &storage.Deployment{
+		Deployment: &storage.Alert_Deployment{
 			Name: "deployment2",
 		},
 		Policy: &storage.Policy{

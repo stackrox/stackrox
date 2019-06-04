@@ -22,7 +22,6 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 		Deployment: &storage.ListAlertDeployment{
 			Id:          alert.GetDeployment().GetId(),
 			Name:        alert.GetDeployment().GetName(),
-			UpdatedAt:   alert.GetDeployment().GetUpdatedAt(),
 			ClusterName: alert.GetDeployment().GetClusterName(),
 			Namespace:   alert.GetDeployment().GetNamespace(),
 		},
@@ -58,4 +57,30 @@ func determineRuntimeEnforcementCount(alert *storage.Alert) int32 {
 		podIds.Add(pi.GetPodId())
 	}
 	return int32(podIds.Cardinality())
+}
+
+func toAlertDeploymentContainer(c *storage.Container) *storage.Alert_Deployment_Container {
+	return &storage.Alert_Deployment_Container{
+		Name:  c.GetName(),
+		Image: c.GetImage(),
+	}
+}
+
+// ToAlertDeployment converts a storage.Deployment to a Alert_Deployment
+func ToAlertDeployment(deployment *storage.Deployment) *storage.Alert_Deployment {
+	alertDeployment := &storage.Alert_Deployment{
+		Id:          deployment.GetId(),
+		Name:        deployment.GetName(),
+		Type:        deployment.GetType(),
+		Namespace:   deployment.GetNamespace(),
+		Labels:      deployment.GetLabels(),
+		ClusterId:   deployment.GetClusterId(),
+		ClusterName: deployment.GetClusterName(),
+		Annotations: deployment.GetAnnotations(),
+	}
+
+	for _, c := range deployment.GetContainers() {
+		alertDeployment.Containers = append(alertDeployment.Containers, toAlertDeploymentContainer(c))
+	}
+	return alertDeployment
 }
