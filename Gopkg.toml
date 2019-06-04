@@ -173,6 +173,10 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
   revision = "52856608eab5d2703730450e3440d2765766e200"
 
 [[constraint]]
+  name = "github.com/stackrox/default-authz-plugin"
+  revision = "9418288b1ab00ce3c682f0c0879693bebcbbe3d2"
+
+[[constraint]]
   name = "github.com/aws/aws-sdk-go"
   version = "v1.19.9"
 

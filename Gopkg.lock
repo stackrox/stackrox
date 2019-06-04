@@ -1236,6 +1236,13 @@
   revision = "52856608eab5d2703730450e3440d2765766e200"
 
 [[projects]]
+  digest = "1:1753c713177f229c5224a6dd4c6a67ee3087968b6bccc9bcb7cfc89b3dcec676"
+  name = "github.com/stackrox/default-authz-plugin"
+  packages = ["pkg/payload"]
+  pruneopts = "NUT"
+  revision = "9418288b1ab00ce3c682f0c0879693bebcbbe3d2"
+
+[[projects]]
   branch = "master"
   digest = "1:69177343ca227319b4580441a67d9d889e9ac7fcbfb89fbaa36d3283e6ab0139"
   name = "github.com/steveyen/gtreap"
@@ -2085,6 +2092,7 @@
     "github.com/stackrox/anchore-client/client",
     "github.com/stackrox/clairify/client",
     "github.com/stackrox/clairify/types",
+    "github.com/stackrox/default-authz-plugin/pkg/payload",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
