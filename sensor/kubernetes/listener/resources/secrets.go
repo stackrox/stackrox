@@ -9,7 +9,6 @@ import (
 	"github.com/cloudflare/cfssl/certinfo"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	v1 "k8s.io/api/core/v1"
@@ -193,7 +192,6 @@ func getImageIntegrationSensorEvents(secret *v1.Secret, action central.ResourceA
 }
 
 func getProtoSecret(secret *v1.Secret) *storage.Secret {
-	kubernetes.RemoveAppliedAnnotation(secret.GetAnnotations())
 	return &storage.Secret{
 		Id:          string(secret.GetUID()),
 		Name:        secret.GetName(),

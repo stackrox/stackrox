@@ -2,9 +2,11 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 )
 
@@ -135,5 +137,8 @@ func (e *exclusiveDispatcherImpl) ProcessEvent(obj interface{}, action central.R
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
+	if metaObj, ok := obj.(v1.Object); ok {
+		kubernetes.RemoveAppliedAnnotation(metaObj)
+	}
 	return e.dispatcher.ProcessEvent(obj, action)
 }
