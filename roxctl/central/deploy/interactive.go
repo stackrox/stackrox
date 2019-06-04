@@ -73,12 +73,12 @@ func readUserInputFromFlag(f *pflag.Flag) (string, error) {
 	usage := getInteractiveUsage(f)
 
 	var prompt string
-	if f.Value.String() != "" {
+	if defaultValue := f.DefValue; defaultValue != "" {
 		optText := ""
 		if isOptional(f) {
 			optText = ", optional"
 		}
-		prompt = fmt.Sprintf("Enter %s (default: '%s'%s): ", usage, f.Value, optText)
+		prompt = fmt.Sprintf("Enter %s (default: %q%s): ", usage, defaultValue, optText)
 	} else {
 		optText := ""
 		if isOptional(f) {
