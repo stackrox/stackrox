@@ -562,6 +562,7 @@ jobs:
           paths:
             - ui/build # Copied directly into the image downstream.
             - ui/deps
+            - ui/node_modules # Used for OSS license auditing downstream.
 
       - cleanup-clusters-on-fail
 
@@ -608,21 +609,6 @@ jobs:
           name: Generate the swagger docs
           command: make swagger-docs
 
-      - run:
-          name: Install ossls
-          working_directory: /tmp
-          command: |
-            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
-            sudo install fetch_linux_amd64 /usr/bin/fetch
-            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
-            fetch --repo="https://github.com/stackrox/ossls" --tag="0.3.0-rc1" --release-asset="ossls_linux_amd64" .
-            sudo install ossls_linux_amd64 /usr/bin/ossls
-            ossls -version
-
-      - run:
-          name: Generate OSS notice
-          command: make ossls-notice
-
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
@@ -630,12 +616,11 @@ jobs:
             - bazel-bin/migrator/linux_amd64_pure_stripped/migrator
             - bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes
             - bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection
-            - image/NOTICE.txt # Required license notice
             - image/docs # This will go into the image as generated docs.
             - image/keys
             - deps # Used to speed up k8s-tests
             - generated # Used to speed up k8s-tests
-            - vendor # Used to speed up k8s-tests
+            - vendor # Used to speed up k8s-tests, and for OSS license auditing downstream.
 
       - cleanup-clusters-on-fail
 
@@ -650,6 +635,24 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *refreshAlpineBaseImage
+
+      - run:
+          name: Install ossls
+          working_directory: /tmp
+          command: |
+            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
+            sudo install fetch_linux_amd64 /usr/bin/fetch
+            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.4.0" --release-asset="ossls_linux_amd64" .
+            sudo install ossls_linux_amd64 /usr/bin/ossls
+            ossls version
+
+      - run:
+          name: Generate OSS notice
+          command: |
+            ls vendor
+            ls ui/node_modules
+            make ossls-notice
 
       - run:
           name: Build main image
@@ -727,6 +730,23 @@ jobs:
               exit 1
             fi
 
+      - run:
+          name: Install ossls
+          working_directory: /tmp
+          command: |
+            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
+            sudo install fetch_linux_amd64 /usr/bin/fetch
+            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.4.0" --release-asset="ossls_linux_amd64" .
+            sudo install ossls_linux_amd64 /usr/bin/ossls
+            ossls version
+
+      - run:
+          name: Generate OSS notice
+          command: |
+            ls vendor
+            ls ui/node_modules
+            make ossls-notice
 
       - run:
           name: Build main image for RHEL
@@ -1706,38 +1726,6 @@ jobs:
               stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
-  oss-audit:
-    <<: *defaults
-    steps:
-      - checkout
-
-      - run:
-          name: Install ossls
-          working_directory: /tmp
-          command: |
-            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
-            sudo install fetch_linux_amd64 /usr/bin/fetch
-            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
-            fetch --repo="https://github.com/stackrox/ossls" --tag="0.3.0-rc1" --release-asset="ossls_linux_amd64" .
-            sudo install ossls_linux_amd64 /usr/bin/ossls
-            ossls -version
-
-      - *restoreDep
-      - *restoreUI
-
-      - run:
-          name: Install Go dependencies
-          command: dep ensure
-
-      - run:
-          name: Install Javascript dependencies
-          working_directory: ui
-          command: yarn install --frozen-lockfile
-
-      - run:
-          name: Audit dependencies
-          command: make ossls-audit
-
   mark-collector-release:
     <<: *defaults
     resource_class: small
@@ -2056,11 +2044,6 @@ workflows:
           requires:
             - build
             - provision-kops
-          filters:
-            tags:
-              only: /.*/
-      - oss-audit:
-          context: docker-io-pull
           filters:
             tags:
               only: /.*/

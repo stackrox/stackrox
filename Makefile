@@ -451,9 +451,9 @@ endif
 	cp bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection image/bin/compliance
 
 ifdef CI
-	@[ -f image/NOTICE.txt ] || { echo "image/NOTICE.txt file not found! It is required for CI-built images."; exit 1; }
+	@[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
 else
-	@[ -f image/NOTICE.txt ] || touch image/NOTICE.txt
+	@[ -f image/THIRD_PARTY_NOTICES ] || mkdir -p image/THIRD_PARTY_NOTICES
 endif
 	@[ -d image/docs ] || { echo "Generated docs not found in image/docs. They are required for build."; exit 1; }
 
@@ -499,10 +499,12 @@ else
 endif
 
 ossls-audit:
-	ossls -audit
+	ossls version
+	ossls audit
 
 ossls-notice:
-	ossls -notice | tee image/NOTICE.txt
+	ossls version
+	ossls audit --export image/THIRD_PARTY_NOTICES
 
 .PHONY: collector-tag
 collector-tag:

@@ -29,7 +29,7 @@ COPY ./static-bin/* /stackrox/
 COPY ./restricted-ui /stackrox/ui
 COPY --from=data /stackrox-data.tgze /stackrox/
 
-COPY ./NOTICE.txt /
+COPY ./THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
 EXPOSE 8443
 
