@@ -5,6 +5,17 @@ export const CLUSTERS_QUERY = gql`
         results: clusters {
             id
             name
+            alerts {
+                id
+            }
+            serviceAccounts {
+                id
+                name
+            }
+            k8sroles {
+                id
+                name
+            }
         }
     }
 `;

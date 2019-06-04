@@ -38,7 +38,7 @@ const tableColumns = [
         accessor: 'serviceAccount'
     },
     {
-        Header: `Alerts`,
+        Header: `Policies Violated`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         accessor: 'alerts',

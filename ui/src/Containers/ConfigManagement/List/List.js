@@ -34,7 +34,11 @@ const List = ({ query, entityType, tableColumns, createTableRows, onRowClick }) 
                     <TablePagination page={page} dataLength={tableRows.length} setPage={setPage} />
                 );
                 return (
-                    <Panel header={header} headerComponents={headerComponents}>
+                    <Panel
+                        className="bg-base-100"
+                        header={header}
+                        headerComponents={headerComponents}
+                    >
                         <Table
                             rows={tableRows}
                             columns={tableColumns}
