@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -71,6 +72,7 @@ func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBindi
 	if err != nil {
 		return nil, errors.Wrapf(err, "initializing temp index")
 	}
+	defer utils.IgnoreError(tempIndex.Close)
 	tempIndexer := indexerImpl{index: tempIndex}
 
 	// Index all of the subjects, and map by name.

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -34,6 +35,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "initializing temp index")
 	}
+	defer utils.IgnoreError(tempIndex.Close)
 	tempIndexer := index.New(tempIndex)
 	err = tempIndexer.AddImage(image)
 	if err != nil {

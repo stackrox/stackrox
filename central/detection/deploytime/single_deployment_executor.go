@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func newSingleDeploymentExecutor(ctx DetectionContext, searcher search.Searcher, deployment *storage.Deployment, images []*storage.Image) alertCollectingExecutor {
@@ -23,6 +24,10 @@ func newSingleDeploymentExecutor(ctx DetectionContext, searcher search.Searcher,
 		deployment: deployment,
 		images:     images,
 	}
+}
+
+type closeableIndex interface {
+	Close() error
 }
 
 type policyExecutor struct {
@@ -79,20 +84,22 @@ func (d *policyExecutor) getViolations(enforcement storage.EnforcementAction, ma
 }
 
 func matchWithEmptyImageIDs(matcher searchbasedpolicies.Matcher, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert_Violation, error) {
-	deploymentIndex, deployment, err := singleDeploymentSearcher(deployment, images)
+	closeableIndex, deploymentIndex, deployment, err := singleDeploymentSearcher(deployment, images)
 	if err != nil {
 		return nil, err
 	}
+	defer utils.IgnoreError(closeableIndex.Close)
 	violations, err := matcher.MatchOne(context.TODO(), deploymentIndex, deployment.GetId())
 	if err != nil {
 		return nil, err
 	}
+
 	return violations.AlertViolations, nil
 }
 
 const deploymentID = "deployment-id"
 
-func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.Image) (search.Searcher, *storage.Deployment, error) {
+func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.Image) (closeableIndex, search.Searcher, *storage.Deployment, error) {
 	clonedDeployment := proto.Clone(deployment).(*storage.Deployment)
 	if clonedDeployment.GetId() == "" {
 		clonedDeployment.Id = deploymentID
@@ -100,7 +107,7 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 
 	tempIndex, err := globalindex.MemOnlyIndex()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "initializing temp index")
+		return tempIndex, nil, nil, errors.Wrap(err, "initializing temp index")
 	}
 
 	imageIndex := imageIndexer.New(tempIndex)
@@ -111,7 +118,7 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 			clonedImg.Id = fmt.Sprintf("image-id-%d", i)
 		}
 		if err := imageIndex.AddImage(clonedImg); err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		if i >= len(clonedDeployment.GetContainers()) {
 			log.Error("Found more images than containers")
@@ -120,7 +127,7 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 		}
 	}
 	if err := deploymentIndex.AddDeployment(clonedDeployment); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return search.WrapContextLessSearcher(deploymentIndex), clonedDeployment, nil
+	return tempIndex, search.WrapContextLessSearcher(deploymentIndex), clonedDeployment, nil
 }
