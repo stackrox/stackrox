@@ -817,6 +817,13 @@ jobs:
           path: qa-tests-backend/build/reports/codenarc
           destination: reports/codenarc
 
+  check-generated-files-up-to-date:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+
+      - *restoreDep
       - run:
           name: Ensure that generated files are up to date. (If this fails, run `make go-generated-srcs` and commit the result.)
           command: |
@@ -1935,6 +1942,11 @@ workflows:
             tags:
               only: /.*/
       - style-checks:
+          context: docker-io-pull
+          filters:
+            tags:
+              only: /.*/
+      - check-generated-files-up-to-date:
           context: docker-io-pull
           filters:
             tags:
