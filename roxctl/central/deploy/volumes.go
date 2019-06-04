@@ -32,6 +32,8 @@ func externalVolume() *cobra.Command {
 	}
 	c.Flags().StringVarP(&external.Name, "name", "", "stackrox-db", "external volume name")
 	c.Flags().StringVarP(&external.StorageClass, "storage-class", "", "", "storage class name (optional if you have a default StorageClass configured)")
+	c.Flags().Uint32VarP(&external.Size, "size", "", 100, "external volume size in Gi (optional, defaults to 100Gi)")
+
 	return c
 }
 

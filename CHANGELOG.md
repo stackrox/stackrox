@@ -3,6 +3,8 @@ All notable changes to this project that require documentation updates will be d
 
 
 ## [23.0]
+### Added
+- Installer prompt to configure the size of the external volume for central.
 ### Changed
 - Prometheus endpoint changed from https://localhost:8443 to http://localhost:9090.
 

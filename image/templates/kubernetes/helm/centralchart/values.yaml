@@ -26,6 +26,7 @@ persistence:
   value:
     persistentVolumeClaim:
       claimName: {{.External.Name}}
+  size: {{.External.Size}}
 {{- else}}
   name: empty-db
   type: none

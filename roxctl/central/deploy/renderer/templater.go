@@ -34,6 +34,7 @@ var (
 type ExternalPersistence struct {
 	Name         string
 	StorageClass string
+	Size         uint32
 }
 
 // HostPathPersistence describes the parameters for a bind mount

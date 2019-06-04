@@ -73,12 +73,12 @@ func readUserInputFromFlag(f *pflag.Flag) (string, error) {
 	usage := getInteractiveUsage(f)
 
 	var prompt string
-	if defaultValue := f.DefValue; defaultValue != "" {
+	if f.DefValue != "" {
 		optText := ""
 		if isOptional(f) {
 			optText = ", optional"
 		}
-		prompt = fmt.Sprintf("Enter %s (default: %q%s): ", usage, defaultValue, optText)
+		prompt = fmt.Sprintf("Enter %s (default: %q%s): ", usage, f.DefValue, optText)
 	} else {
 		optText := ""
 		if isOptional(f) {
@@ -137,7 +137,7 @@ func readPassword(prompt string) (string, error) {
 			return "", err
 		}
 		if passwd != reEnteredPasswd {
-			printlnToStderr("Error: Passwords do not match")
+			printlnToStderr("Error: Passwords do not match. Please try again.")
 			return readPassword(prompt)
 		}
 	}
