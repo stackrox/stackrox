@@ -13,7 +13,12 @@ import { filterModes, filterLabels } from 'Containers/Network/Graph/filterModes'
 import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
 
-const DeploymentNetworkFlows = ({ deploymentEdges, networkGraphRef, filterState }) => {
+const DeploymentNetworkFlows = ({
+    deploymentEdges,
+    networkGraphRef,
+    filterState,
+    onDeploymentClick
+}) => {
     const [selectedNode, setSelectedNode] = useState(null);
     const [page, setPage] = useState(0);
 
@@ -26,20 +31,19 @@ const DeploymentNetworkFlows = ({ deploymentEdges, networkGraphRef, filterState 
     function highlightNode({ data }) {
         const node = getNodeData(data);
         if (node) {
+            if (onDeploymentClick) onDeploymentClick(node.deploymentId);
             networkGraphRef.setSelectedNode(node);
             setSelectedNode(node);
         }
     }
 
-    function navigate({ data }) {
-        return () => {
-            const { onNodeClick } = networkGraphRef;
-            const node = getNodeData(data);
-            if (node) {
-                onNodeClick(node);
-            }
-        };
-    }
+    const navigate = ({ data }) => () => {
+        const { onNodeClick } = networkGraphRef;
+        const node = getNodeData(data);
+        if (node) {
+            onNodeClick(node);
+        }
+    };
 
     function renderRowActionButtons(node) {
         const enableIconColor = 'text-primary-600';
@@ -141,12 +145,14 @@ DeploymentNetworkFlows.propTypes = {
         getNodeData: PropTypes.func,
         onNodeClick: PropTypes.func
     }),
-    filterState: PropTypes.number.isRequired
+    filterState: PropTypes.number.isRequired,
+    onDeploymentClick: PropTypes.func
 };
 
 DeploymentNetworkFlows.defaultProps = {
     deploymentEdges: [],
-    networkGraphRef: null
+    networkGraphRef: null,
+    onDeploymentClick: null
 };
 
 const mapStateToProps = createStructuredSelector({

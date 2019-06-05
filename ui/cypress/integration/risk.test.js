@@ -55,4 +55,10 @@ describe('Risk page', () => {
             .eq(1)
             .should('not.be.visible');
     });
+
+    it('should navigate to network page with selected deployment', () => {
+        cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
+        cy.get(RiskPageSelectors.networkNodeLink).click({ force: true });
+        cy.url().should('contain', '/main/network');
+    });
 });

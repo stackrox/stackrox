@@ -2,6 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 import { types as deploymentTypes } from 'reducers/deployments';
 import { actions as pageActions } from 'reducers/network/page';
 import { selectors } from 'reducers';
@@ -40,6 +42,11 @@ function Details(props) {
     const deploymentEdges = selectedNode.edges.filter(
         ({ data }) => data.destNodeNS && data.destNodeName && data.source !== data.target
     );
+
+    function onDeploymentClick(id) {
+        props.history.push(`/main/network/${id}`);
+    }
+
     const content = props.isFetchingNode ? (
         <Loader />
     ) : (
@@ -56,7 +63,10 @@ function Details(props) {
             </TabContent>
             <TabContent>
                 <div className="flex flex-1 flex-col h-full">
-                    <DeploymentNetworkFlows deploymentEdges={deploymentEdges} />
+                    <DeploymentNetworkFlows
+                        deploymentEdges={deploymentEdges}
+                        onDeploymentClick={onDeploymentClick}
+                    />
                 </div>
             </TabContent>
         </Tabs>
@@ -65,12 +75,14 @@ function Details(props) {
     function closeHandler() {
         const { onClose, networkGraphRef } = props;
         onClose();
+        props.history.push('/main/network');
         if (networkGraphRef) props.networkGraphRef.setSelectedNode();
     }
 
     function onBackButtonClick() {
         const { setWizardStage, networkGraphRef } = props;
         setWizardStage(wizardStages.namespaceDetails);
+        props.history.push('/main/network');
         if (networkGraphRef) {
             props.networkGraphRef.setSelectedNode();
             props.setSelectedNode(null);
@@ -109,7 +121,8 @@ Details.propTypes = {
         setSelectedNode: PropTypes.func
     }),
     setWizardStage: PropTypes.func.isRequired,
-    setSelectedNode: PropTypes.func.isRequired
+    setSelectedNode: PropTypes.func.isRequired,
+    history: ReactRouterPropTypes.history.isRequired
 };
 
 Details.defaultProps = {
@@ -137,7 +150,9 @@ const mapDispatchToProps = {
     setSelectedNode: graphActions.setSelectedNode
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Details);
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(Details)
+);

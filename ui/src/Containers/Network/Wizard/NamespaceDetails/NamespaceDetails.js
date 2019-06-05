@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 import { types as deploymentTypes } from 'reducers/deployments';
 import { actions as pageActions } from 'reducers/network/page';
@@ -33,7 +35,8 @@ class NamespaceDetails extends Component {
             onNodeClick: PropTypes.func,
             getNodeData: PropTypes.func
         }),
-        filterState: PropTypes.number.isRequired
+        filterState: PropTypes.number.isRequired,
+        history: ReactRouterPropTypes.history.isRequired
     };
 
     static defaultProps = {
@@ -57,6 +60,7 @@ class NamespaceDetails extends Component {
     highlightNode = ({ data }) => {
         const { networkGraphRef } = this.props;
         if (data) {
+            this.props.history.push(`/main/network/${data.deploymentId}`);
             networkGraphRef.setSelectedNode(data);
             this.setState({ selectedNode: data });
         }
@@ -65,6 +69,7 @@ class NamespaceDetails extends Component {
     navigate = ({ data }) => () => {
         const { onNodeClick } = this.props.networkGraphRef;
         if (data) {
+            this.props.history.push(`/main/network/${data.deploymentId}`);
             onNodeClick(data);
         }
     };
@@ -94,6 +99,12 @@ class NamespaceDetails extends Component {
                 </Tooltip>
             </div>
         );
+    };
+
+    onPanelClose = () => {
+        const { onClose, history } = this.props;
+        history.push('/main/network');
+        onClose();
     };
 
     renderTable() {
@@ -138,7 +149,7 @@ class NamespaceDetails extends Component {
     }
 
     render() {
-        const { namespace, wizardOpen, wizardStage, isFetchingNamespace, onClose } = this.props;
+        const { namespace, wizardOpen, wizardStage, isFetchingNamespace } = this.props;
         if (!wizardOpen || wizardStage !== wizardStages.namespaceDetails) {
             return null;
         }
@@ -155,7 +166,7 @@ class NamespaceDetails extends Component {
         const content = isFetchingNamespace ? <Loader /> : <div>{this.renderTable()}</div>;
 
         return (
-            <Panel header={namespace.id} onClose={onClose}>
+            <Panel header={namespace.id} onClose={this.onPanelClose}>
                 <Panel
                     header={subHeaderText}
                     headerComponents={paginationComponent}
@@ -183,7 +194,9 @@ const mapDispatchToProps = {
     onClose: pageActions.closeNetworkWizard
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(NamespaceDetails);
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(NamespaceDetails)
+);

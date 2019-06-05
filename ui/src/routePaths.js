@@ -15,7 +15,7 @@ export const licenseStartUpPath = `/license`;
 export const authResponsePrefix = '/auth/response/';
 
 export const dashboardPath = `${mainPath}/dashboard`;
-export const networkPath = `${mainPath}/network`;
+export const networkPath = `${mainPath}/network/:deploymentId?`;
 export const violationsPath = `${mainPath}/violations/:alertId?`;
 export const integrationsPath = `${mainPath}/integrations`;
 export const policiesPath = `${mainPath}/policies/:policyId?`;

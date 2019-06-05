@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 import { actions as graphActions } from 'reducers/network/graph';
 
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
@@ -36,7 +38,10 @@ const NetworkGraph = ({
     onClickOutside,
     filterState,
     setNetworkGraphRef,
-    setSelectedNamespace
+    setSelectedNamespace,
+    setSelectedNodeInGraph,
+    history,
+    match
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredNode, setHoveredNode] = useState();
@@ -372,6 +377,7 @@ const NetworkGraph = ({
         if (!evData || (selectedNode && evData && id === selectedNode.id)) {
             setSelectedNode();
             onClickOutside();
+            history.push('/main/network');
             return;
         }
 
@@ -390,6 +396,7 @@ const NetworkGraph = ({
         // Node click: select node
         if (target.isNode()) {
             setSelectedNode(evData);
+            history.push(`/main/network/${evData.id}`);
             onNodeClick(evData);
         }
 
@@ -549,8 +556,8 @@ const NetworkGraph = ({
             .on('zoom', zoomHandler)
             .ready(() => {
                 if (firstRenderFinished) return;
-                setFirstRenderFinished(true);
                 zoomToFit();
+                setFirstRenderFinished(true);
             });
     }
 
@@ -593,6 +600,12 @@ const NetworkGraph = ({
             }).run();
         });
         CY.fit(null, GRAPH_PADDING);
+        const node = getNodeData(match.params.deploymentId);
+        if (setSelectedNodeInGraph && node.length) {
+            setSelectedNodeInGraph(node[0].data);
+            setSelectedNode(node[0].data);
+            onNodeClick(node[0].data);
+        }
     }
 
     function grabifyNamespaces() {
@@ -651,15 +664,25 @@ NetworkGraph.propTypes = {
     onClickOutside: PropTypes.func.isRequired,
     filterState: PropTypes.number.isRequired,
     setNetworkGraphRef: PropTypes.func.isRequired,
-    setSelectedNamespace: PropTypes.func.isRequired
+    setSelectedNamespace: PropTypes.func.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
+    match: ReactRouterPropTypes.match.isRequired,
+    setSelectedNodeInGraph: PropTypes.func
+};
+
+NetworkGraph.defaultProps = {
+    setSelectedNodeInGraph: null
 };
 
 const mapDispatchToProps = {
     setNetworkGraphRef: graphActions.setNetworkGraphRef,
-    setSelectedNamespace: graphActions.setSelectedNamespace
+    setSelectedNamespace: graphActions.setSelectedNamespace,
+    setSelectedNodeInGraph: graphActions.setSelectedNode
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(NetworkGraph);
+export default withRouter(
+    connect(
+        null,
+        mapDispatchToProps
+    )(NetworkGraph)
+);

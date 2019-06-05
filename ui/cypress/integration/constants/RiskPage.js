@@ -23,5 +23,6 @@ export const selectors = {
         row: {
             firstRow: 'div.rt-tr-group:first-child div.rt-tr'
         }
-    }
+    },
+    networkNodeLink: '[data-test-id="network-node-link"]'
 };

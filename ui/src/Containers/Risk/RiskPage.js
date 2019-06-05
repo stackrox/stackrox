@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
@@ -88,7 +89,14 @@ const RiskPage = ({
             ) : (
                 <Tabs headers={riskPanelTabs}>
                     <TabContent>
-                        <div className="flex flex-1 flex-col pb-5">
+                        <div className="flex flex-col pb-5">
+                            <Link
+                                className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
+                                to={`/main/network/${selectedDeployment.deployment.id}`}
+                                data-test-id="network-node-link"
+                            >
+                                View Deployment in Network Graph
+                            </Link>
                             <RiskDetails risk={selectedDeployment.deployment.risk} />
                         </div>
                     </TabContent>

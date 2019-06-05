@@ -22,12 +22,8 @@ describe('Network page', () => {
         cy.server();
         cy.fixture('network/networkGraph.json').as('networkGraphJson');
         cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-        cy.fixture('network/epoch.json').as('epochJson');
-        cy.route('GET', api.network.epoch, '@epochJson').as('epoch');
-
         cy.visit(networkUrl);
         cy.wait('@networkGraph');
-        cy.wait('@epoch');
     });
 
     it('should have selected item in nav bar', () => {
