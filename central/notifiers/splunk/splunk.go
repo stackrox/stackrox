@@ -63,7 +63,7 @@ func (s *splunk) postAlert(alert *storage.Alert) error {
 	// Removing some of the fields here to make it smaller
 	// More details on HEC limitation: https://developers.perfectomobile.com/display/TT/Splunk+-+Configure+HTTP+Event+Collector
 	// Check section on "Increasing the Event Data Truncate Limit"
-	notifiers.PruneAlert(clonedAlert, int(s.conf.Truncate))
+	notifiers.PruneAlert(clonedAlert, int(s.conf.GetTruncate()))
 	return s.sendHTTPPayload(clonedAlert)
 }
 
@@ -111,7 +111,7 @@ func (s *splunk) sendHTTPPayload(msg proto.Message) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.conf.HttpEndpoint))
+	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.conf.HttpToken))
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: s.conf.Insecure},
@@ -154,6 +154,7 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 	}
 
 	return &splunk{
+		conf:     conf,
 		endpoint: endpoint,
 		Notifier: notifier,
 	}, nil
