@@ -27,6 +27,7 @@ const Menu = ({ triggerComponent, className, options }) => {
                     to={option.link}
                     className={`${optionsClass} no-underline text-base-600`}
                     key={option.label}
+                    data-test-id={option.label}
                 >
                     {option.label}
                 </Link>
@@ -38,6 +39,7 @@ const Menu = ({ triggerComponent, className, options }) => {
                 className={optionsClass}
                 onClick={option.onClick}
                 key={option.label}
+                data-test-id={option.label}
             >
                 {option.label}
             </button>
@@ -50,7 +52,10 @@ const Menu = ({ triggerComponent, className, options }) => {
                 {triggerComponent}
             </button>
             {isMenuOpen && (
-                <div className="absolute bg-white flex flex-col flex-no-wrap menu pin-r z-60 min-w-43 bg-base-100 shadow">
+                <div
+                    className="absolute bg-white flex flex-col flex-no-wrap menu pin-r z-60 min-w-43 bg-base-100 shadow"
+                    data-test-id="menu-list"
+                >
                     {renderOptions}
                 </div>
             )}

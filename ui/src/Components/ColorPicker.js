@@ -49,6 +49,7 @@ class ColorPickerComponent extends Component {
                 <Target>
                     <button
                         type="button"
+                        data-test-id="color-picker"
                         onClick={this.onClickHandler}
                         className={`p-1 h-5 w-full border border-base-300 ignore-react-onclickoutside ${
                             this.props.disabled ? 'pointer-events-none' : ''

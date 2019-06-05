@@ -7,9 +7,9 @@ import AppBanner from 'Components/AppBanner';
 
 const AppWrapper = ({ publicConfig, children }) => (
     <div className="flex flex-col h-full">
-        <AppBanner {...publicConfig.header} />
+        <AppBanner {...publicConfig.header} type="header" />
         {children}
-        <AppBanner {...publicConfig.footer} />
+        <AppBanner {...publicConfig.footer} type="footer" />
     </div>
 );
 

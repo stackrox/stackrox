@@ -6,7 +6,7 @@ import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import { keyClassName } from './Page';
 
 const ConfigLoginFormWidget = () => (
-    <div className="bg-base-100 border-base-200 shadow">
+    <div className="bg-base-100 border-base-200 shadow" data-test-id="login-notice-config">
         <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center">
             Login configuration
             <ReduxToggleField name="publicConfig.loginNotice.enabled" />

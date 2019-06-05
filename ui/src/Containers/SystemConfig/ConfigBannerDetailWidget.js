@@ -14,11 +14,11 @@ const ConfigBannerDetailWidget = ({ type, config }) => {
     }
 
     return (
-        <div className="px-3 w-full">
+        <div className="px-3 w-full" data-test-id={`${type}-config`}>
             <div className="bg-base-100 border-base-200 shadow">
                 <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center h-10">
                     {type} Configuration{' '}
-                    <div>
+                    <div data-test-id={`${type}-state`}>
                         {publicConfig && publicConfig[type] && publicConfig[type].enabled
                             ? 'enabled'
                             : 'disabled'}

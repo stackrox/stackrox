@@ -8,12 +8,13 @@ const sizeClassMap = {
     LARGE: 'h-24'
 };
 
-const AppBanner = ({ enabled, text, color, size, backgroundColor }) => {
+const AppBanner = ({ type, enabled, text, color, size, backgroundColor }) => {
     if (!enabled) return null;
     return (
         <div
             className={`${sizeClassMap[size]} px-2 py-1 whitespace-pre text-center`}
             style={{ color, backgroundColor }}
+            data-test-id={`${type}-banner`}
         >
             {text}
         </div>
@@ -21,6 +22,7 @@ const AppBanner = ({ enabled, text, color, size, backgroundColor }) => {
 };
 
 AppBanner.propTypes = {
+    type: PropTypes.string.isRequired,
     enabled: PropTypes.bool,
     text: PropTypes.string,
     color: PropTypes.string,

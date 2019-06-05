@@ -33,7 +33,12 @@ const Page = ({ systemConfig, saveSystemConfig }) => {
         if (isEditing) {
             return (
                 <>
-                    <button className="btn btn-base mr-2" type="button" onClick={setEditingFalse}>
+                    <button
+                        className="btn btn-base mr-2"
+                        type="button"
+                        onClick={setEditingFalse}
+                        data-test-id="cancel-btn"
+                    >
                         Cancel
                     </button>
                     <SaveButton formName="system-config-form" />
@@ -42,6 +47,7 @@ const Page = ({ systemConfig, saveSystemConfig }) => {
         }
         return (
             <button
+                data-test-id="edit-btn"
                 className="btn btn-base"
                 type="button"
                 onClick={setEditingTrue}

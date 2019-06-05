@@ -48,7 +48,7 @@ const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
                 </div>
                 <SummaryCounts />
             </div>
-            <div className="flex">
+            <div className="flex" data-test-id="top-nav-btns">
                 <GlobalSearchButton />
                 <CLIDownloadButton />
                 <ThemeToggleButton />
