@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/central/alert/index"
-	"github.com/stackrox/rox/central/alert/store"
+	"github.com/stackrox/rox/central/alert/datastore/internal/index"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"

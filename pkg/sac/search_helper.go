@@ -31,6 +31,7 @@ const (
 // SearchHelper facilitates applying scoped access control to search operations.
 type SearchHelper interface {
 	Apply(searchFunc func(*v1.Query) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error)
+	FilteredSearcher(searcher search.UnsafeSearcher) search.Searcher
 }
 
 // searchResultsChecker is responsible for checking whether a single search result is allowed to be seen.
@@ -75,16 +76,23 @@ func NewSearchHelper(resource permissions.Resource, optionsMap search.OptionsMap
 // scoped access control checks for result filtering.
 func (h *searchHelper) Apply(rawSearchFunc func(*v1.Query) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error) {
 	return func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		return h.execute(ctx, q, rawSearchFunc)
+		return h.execute(ctx, q, search.WrapUnsafeSearchFunc(rawSearchFunc))
 	}
 }
 
-func (h *searchHelper) execute(ctx context.Context, q *v1.Query, rawSearchFunc func(*v1.Query) ([]search.Result, error)) ([]search.Result, error) {
+// FilteredSearcher takes in an unsafe searcher and makes it safe.
+func (h *searchHelper) FilteredSearcher(searcher search.UnsafeSearcher) search.Searcher {
+	return search.WrapSearchFunc(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+		return h.execute(ctx, q, searcher)
+	})
+}
+
+func (h *searchHelper) execute(ctx context.Context, q *v1.Query, searcher search.UnsafeSearcher) ([]search.Result, error) {
 	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
-		return rawSearchFunc(q)
+		return searcher.Search(q)
 	}
 
 	// Make sure the cluster and perhaps namespace fields are part of the returned fields.
@@ -94,7 +102,7 @@ func (h *searchHelper) execute(ctx context.Context, q *v1.Query, rawSearchFunc f
 	}
 	queryWithFields := search.NewConjunctionQuery(q, fieldQB.ProtoQuery())
 
-	results, err := rawSearchFunc(queryWithFields)
+	results, err := searcher.Search(queryWithFields)
 	if err != nil {
 		return nil, err
 	}

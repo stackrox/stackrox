@@ -12,7 +12,7 @@ import (
 	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/mapping"
-	alertMapping "github.com/stackrox/rox/central/alert/index/mappings"
+	alertMapping "github.com/stackrox/rox/central/alert/mappings"
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	"github.com/stackrox/rox/central/compliance/standards/index"

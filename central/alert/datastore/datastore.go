@@ -3,9 +3,9 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/alert/index"
-	"github.com/stackrox/rox/central/alert/search"
-	"github.com/stackrox/rox/central/alert/store"
+	"github.com/stackrox/rox/central/alert/datastore/internal/index"
+	"github.com/stackrox/rox/central/alert/datastore/internal/search"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

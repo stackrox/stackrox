@@ -9,7 +9,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/alert/index/mappings"
+	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"

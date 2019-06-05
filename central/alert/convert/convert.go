@@ -23,6 +23,7 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 			Id:          alert.GetDeployment().GetId(),
 			Name:        alert.GetDeployment().GetName(),
 			ClusterName: alert.GetDeployment().GetClusterName(),
+			ClusterId:   alert.GetDeployment().GetClusterId(),
 			Namespace:   alert.GetDeployment().GetNamespace(),
 		},
 	}
