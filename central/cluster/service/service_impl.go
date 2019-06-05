@@ -99,7 +99,7 @@ func addDefaults(cluster *storage.Cluster) error {
 	acConfig := cluster.DynamicConfig.GetAdmissionControllerConfig()
 	if acConfig == nil {
 		acConfig = &storage.AdmissionControllerConfig{
-			Enabled: true,
+			Enabled: false,
 		}
 		cluster.DynamicConfig.AdmissionControllerConfig = acConfig
 	}
