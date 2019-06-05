@@ -171,6 +171,7 @@ class K8sRbacTest extends BaseSpecification {
             }
             assert role
             assert role.labels == r.labelsMap
+            role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
             assert role.annotations == r.annotationsMap
             for (int i = 0; i < role.rules.size(); i++) {
                 def oRule = role.rules.get(i) as K8sPolicyRule
@@ -248,6 +249,7 @@ class K8sRbacTest extends BaseSpecification {
             }
             assert binding
             assert b.labelsMap == binding.labels
+            binding.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
             assert b.annotationsMap == binding.annotations
             assert b.roleId == binding.roleRef.uid
             assert b.subjectsCount == binding.subjects.size()
