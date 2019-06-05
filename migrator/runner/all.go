@@ -10,4 +10,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_5_to_6_collection_method"
 	_ "github.com/stackrox/rox/migrator/migrations/m_6_to_7_image_update_time"
 	_ "github.com/stackrox/rox/migrator/migrations/m_7_to_8_sac_cluster_namespace"
+	_ "github.com/stackrox/rox/migrator/migrations/m_8_to_m_9_list_alert_cluster"
 )
