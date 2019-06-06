@@ -36,6 +36,15 @@ const DockerfileModal = ({ modalOpen, image, onClose }) => {
     // If we have a scan, then we can try and assume we have layers
     if (image.scan) {
         layers.forEach((layer, i) => {
+            layers[i].components = [];
+        });
+        image.scan.components.forEach(component => {
+            if (component.layerIndex !== undefined) {
+                layers[component.layerIndex].components.push(component);
+            }
+        });
+
+        layers.forEach((layer, i) => {
             layers[i].cvesCount = layer.components.reduce((cnt, o) => cnt + o.vulns.length, 0);
             layers[i].fixableCount = layer.components.reduce(
                 (cnt, o) => cnt + o.vulns.filter(x => x.fixedBy !== '').length,

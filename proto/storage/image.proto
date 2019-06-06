@@ -29,6 +29,9 @@ message ImageScanComponent {
     string version               = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
     License license              = 3;
     repeated Vulnerability vulns = 4;
+    oneof has_layer_index {
+        int32 layer_index        = 5;
+    }
 }
 
 message License {
@@ -110,7 +113,7 @@ message ImageLayer {
     string value                           = 2 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Value,store\""];
     google.protobuf.Timestamp created      = 3;
     string author                          = 4;
-    repeated ImageScanComponent components = 5;
+    repeated ImageScanComponent DEPRECATED_components = 5; // replaced by layer index reference in Scan
     bool empty                             = 6;
 }
 

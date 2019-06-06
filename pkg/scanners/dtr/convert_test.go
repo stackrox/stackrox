@@ -109,13 +109,13 @@ func TestConvertLicense(t *testing.T) {
 
 func TestConvertComponents(t *testing.T) {
 	dockerComponents, expectedComponents := getTestComponents()
-	actualComponents := convertComponents(dockerComponents)
+	actualComponents := convertComponents(nil, dockerComponents)
 	assert.Equal(t, expectedComponents, actualComponents)
 }
 
 func TestConvertLayers(t *testing.T) {
 	dockerLayers, expectedLayers := getTestLayers()
-	actualLayers := convertLayers(dockerLayers)
+	actualLayers := convertLayers(nil, dockerLayers)
 	assert.Equal(t, expectedLayers, actualLayers)
 }
 
@@ -131,6 +131,6 @@ func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 		ScanTime:   protoTime,
 	}
 
-	actualScans := convertTagScanSummaryToImageScan(tagScanSummary)
+	actualScans := convertTagScanSummaryToImageScan(nil, tagScanSummary)
 	assert.Equal(t, expectedScan, actualScans)
 }

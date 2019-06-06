@@ -34,7 +34,7 @@ func convertLicense(license *license) *storage.License {
 	}
 }
 
-func convertComponents(dockerComponents []*component) []*storage.ImageScanComponent {
+func convertComponents(layerIdx *int32, dockerComponents []*component) []*storage.ImageScanComponent {
 	components := make([]*storage.ImageScanComponent, len(dockerComponents))
 	for i, component := range dockerComponents {
 		convertedVulns := convertVulns(component.Vulnerabilities)
@@ -44,14 +44,31 @@ func convertComponents(dockerComponents []*component) []*storage.ImageScanCompon
 			License: convertLicense(component.License),
 			Vulns:   convertedVulns,
 		}
+		if layerIdx != nil {
+			components[i].HasLayerIndex = &storage.ImageScanComponent_LayerIndex{
+				LayerIndex: *layerIdx,
+			}
+		}
 	}
 	return components
 }
 
-func convertLayers(layerDetails []*detailedSummary) []*storage.ImageScanComponent {
+func convertLayers(image *storage.Image, layerDetails []*detailedSummary) []*storage.ImageScanComponent {
+	var nonEmptyLayers []int32
+	for i, l := range image.GetMetadata().GetV1().GetLayers() {
+		if !l.GetEmpty() {
+			nonEmptyLayers = append(nonEmptyLayers, int32(i))
+		}
+	}
 	components := make([]*storage.ImageScanComponent, 0, len(layerDetails))
-	for _, layerDetail := range layerDetails {
-		convertedComponents := convertComponents(layerDetail.Components)
+	for i, layerDetail := range layerDetails {
+		var layerIdx *int32
+		if i >= len(nonEmptyLayers) {
+			log.Error("Received unexpected number of layer details")
+		} else {
+			layerIdx = &nonEmptyLayers[i]
+		}
+		convertedComponents := convertComponents(layerIdx, layerDetail.Components)
 		components = append(components, convertedComponents...)
 	}
 	return components
@@ -71,18 +88,8 @@ func compareComponent(c1, c2 *storage.ImageScanComponent) int {
 	return 0
 }
 
-func populateLayersWithScan(image *storage.Image, layerDetails []*detailedSummary) {
-	layerDetailIdx := 0
-	for _, l := range image.GetMetadata().GetV1().GetLayers() {
-		if !l.Empty {
-			l.Components = convertComponents(layerDetails[layerDetailIdx].Components)
-			layerDetailIdx++
-		}
-	}
-}
-
-func convertTagScanSummaryToImageScan(tagScanSummary *tagScanSummary) *storage.ImageScan {
-	convertedLayers := convertLayers(tagScanSummary.LayerDetails)
+func convertTagScanSummaryToImageScan(image *storage.Image, tagScanSummary *tagScanSummary) *storage.ImageScan {
+	convertedLayers := convertLayers(image, tagScanSummary.LayerDetails)
 	completedAt, err := ptypes.TimestampProto(tagScanSummary.CheckCompletedAt)
 	if err != nil {
 		log.Error(err)

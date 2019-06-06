@@ -115,7 +115,7 @@ func (suite *DTRSuite) TestGetLastScan() {
 	suite.NoError(err)
 
 	// convert scans here. It relies on converting the scan but is not the conversion test
-	expectedScan := convertTagScanSummaryToImageScan(expectedScanSummary)
+	expectedScan := convertTagScanSummaryToImageScan(image, expectedScanSummary)
 	suite.Equal(expectedScan, scan)
 }
 

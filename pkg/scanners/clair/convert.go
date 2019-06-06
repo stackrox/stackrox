@@ -8,6 +8,6 @@ import (
 
 func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerEnvelope) *storage.ImageScan {
 	return &storage.ImageScan{
-		Components: clairConv.ConvertFeatures(layerEnvelope.Layer.Features),
+		Components: clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
 	}
 }

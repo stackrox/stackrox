@@ -154,9 +154,7 @@ func (d *dtr) getScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, fmt.Errorf("expected to receive at least one scan for %s", image.GetName().GetFullName())
 	}
 
-	scan := convertTagScanSummaryToImageScan(lastScan)
-	// populate V1 Metadata with scan layers
-	populateLayersWithScan(image, lastScan.LayerDetails)
+	scan := convertTagScanSummaryToImageScan(image, lastScan)
 	return scan, nil
 }
 

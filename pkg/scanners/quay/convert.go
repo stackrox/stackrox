@@ -6,7 +6,7 @@ import (
 )
 
 func convertScanToImageScan(image *storage.Image, s *scanResult) *storage.ImageScan {
-	components := clair.ConvertFeatures(s.Data.Layer.Features)
+	components := clair.ConvertFeatures(image, s.Data.Layer.Features)
 	return &storage.ImageScan{
 		Components: components,
 	}

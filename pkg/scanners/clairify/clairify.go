@@ -94,9 +94,8 @@ func validateConfig(c *storage.ClairifyConfig) error {
 }
 
 func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerEnvelope) *storage.ImageScan {
-	clairConv.PopulateLayersWithScan(image, layerEnvelope)
 	return &storage.ImageScan{
-		Components: clairConv.ConvertFeatures(layerEnvelope.Layer.Features),
+		Components: clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
 	}
 }
 

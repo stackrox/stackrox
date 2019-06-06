@@ -19,16 +19,29 @@ func TestConvertVulnerability(t *testing.T) {
 
 func TestConvertFeatures(t *testing.T) {
 	clairFeatures, protoComponents := mock.GetTestFeatures()
-	assert.Equal(t, protoComponents, ConvertFeatures(clairFeatures))
+	assert.Equal(t, protoComponents, ConvertFeatures(nil, clairFeatures))
 }
 
-func TestPopulateLayersWithScan(t *testing.T) {
+func componentWithLayerIndex(name string, idx int32) *storage.ImageScanComponent {
+	c := &storage.ImageScanComponent{
+		Name: name,
 
+		Vulns: []*storage.Vulnerability{},
+	}
+	if idx != -1 {
+		c.HasLayerIndex = &storage.ImageScanComponent_LayerIndex{
+			LayerIndex: idx,
+		}
+	}
+	return c
+}
+
+func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 	var cases = []struct {
-		name           string
-		metadata       *storage.ImageMetadata
-		envelope       *clairV1.LayerEnvelope
-		expectedLayers []*storage.ImageLayer
+		name               string
+		metadata           *storage.ImageMetadata
+		features           []clairV1.Feature
+		expectedComponents []*storage.ImageScanComponent
 	}{
 		{
 			name: "Nil metadata",
@@ -45,27 +58,19 @@ func TestPopulateLayersWithScan(t *testing.T) {
 				},
 				LayerShas: []string{"A", "B"},
 			},
-			envelope: &clairV1.LayerEnvelope{
-				Layer: &clairV1.Layer{
-					Features: []clairV1.Feature{
-						{
-							Name:    "a-name",
-							AddedBy: "A",
-						},
-						{
-							Name:    "b-name",
-							AddedBy: "B",
-						},
-					},
+			features: []clairV1.Feature{
+				{
+					Name:    "a-name",
+					AddedBy: "A",
+				},
+				{
+					Name:    "b-name",
+					AddedBy: "B",
 				},
 			},
-			expectedLayers: []*storage.ImageLayer{
-				{
-					Components: []*storage.ImageScanComponent{{Name: "a-name"}},
-				},
-				{
-					Components: []*storage.ImageScanComponent{{Name: "b-name"}},
-				},
+			expectedComponents: []*storage.ImageScanComponent{
+				componentWithLayerIndex("a-name", 0),
+				componentWithLayerIndex("b-name", 1),
 			},
 		},
 		{
@@ -76,23 +81,14 @@ func TestPopulateLayersWithScan(t *testing.T) {
 				},
 				LayerShas: []string{"A", "B"},
 			},
-			envelope: &clairV1.LayerEnvelope{
-				Layer: &clairV1.Layer{
-					Features: []clairV1.Feature{
-						{
-							Name:    "b-name",
-							AddedBy: "B",
-						},
-					},
+			features: []clairV1.Feature{
+				{
+					Name:    "b-name",
+					AddedBy: "B",
 				},
 			},
-			expectedLayers: []*storage.ImageLayer{
-				{
-					Components: nil,
-				},
-				{
-					Components: []*storage.ImageScanComponent{{Name: "b-name"}},
-				},
+			expectedComponents: []*storage.ImageScanComponent{
+				componentWithLayerIndex("b-name", 1),
 			},
 		},
 		{
@@ -104,23 +100,14 @@ func TestPopulateLayersWithScan(t *testing.T) {
 				V2:        &storage.V2Metadata{},
 				LayerShas: []string{"A", "B"},
 			},
-			envelope: &clairV1.LayerEnvelope{
-				Layer: &clairV1.Layer{
-					Features: []clairV1.Feature{
-						{
-							Name:    "b-name",
-							AddedBy: "B",
-						},
-					},
+			features: []clairV1.Feature{
+				{
+					Name:    "b-name",
+					AddedBy: "B",
 				},
 			},
-			expectedLayers: []*storage.ImageLayer{
-				{
-					Components: nil,
-				},
-				{
-					Components: []*storage.ImageScanComponent{{Name: "b-name"}},
-				},
+			expectedComponents: []*storage.ImageScanComponent{
+				componentWithLayerIndex("b-name", 1),
 			},
 		},
 		{
@@ -132,39 +119,28 @@ func TestPopulateLayersWithScan(t *testing.T) {
 				V2:        &storage.V2Metadata{},
 				LayerShas: []string{"A", "B"},
 			},
-			envelope: &clairV1.LayerEnvelope{
-				Layer: &clairV1.Layer{
-					Features: []clairV1.Feature{
-						{
-							Name:    "b-name",
-							AddedBy: "B",
-						},
-					},
+			features: []clairV1.Feature{
+				{
+					Name:    "b-name",
+					AddedBy: "B",
 				},
 			},
-			expectedLayers: []*storage.ImageLayer{
-				{},
-				{},
-				{
-					Components: []*storage.ImageScanComponent{{Name: "b-name"}},
-				},
+			expectedComponents: []*storage.ImageScanComponent{
+				componentWithLayerIndex("b-name", 2),
 			},
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			img := &storage.Image{Metadata: c.metadata}
-			PopulateLayersWithScan(img, c.envelope)
-
-			require.Len(t, img.Metadata.GetV1().GetLayers(), len(c.expectedLayers))
-			for i, el := range c.expectedLayers {
-				v1Components := img.GetMetadata().GetV1().GetLayers()[i].Components
-				for j, comp := range el.Components {
-					assert.Equal(t, comp.GetName(), v1Components[j].GetName())
-				}
+			img := &storage.Image{
+				Metadata: c.metadata,
+			}
+			convertedComponents := ConvertFeatures(img, c.features)
+			require.Equal(t, len(c.expectedComponents), len(convertedComponents))
+			for i := range convertedComponents {
+				assert.Equal(t, c.expectedComponents[i], convertedComponents[i])
 			}
 		})
 	}
-
 }

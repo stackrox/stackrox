@@ -380,7 +380,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ImageLayer", []string{
 		"author: String!",
-		"components: [ImageScanComponent]!",
 		"created: Time",
 		"empty: Boolean!",
 		"instruction: String!",
@@ -3726,11 +3725,6 @@ func (resolver *Resolver) wrapImageLayers(values []*storage.ImageLayer, err erro
 func (resolver *imageLayerResolver) Author(ctx context.Context) string {
 	value := resolver.data.GetAuthor()
 	return value
-}
-
-func (resolver *imageLayerResolver) Components(ctx context.Context) ([]*imageScanComponentResolver, error) {
-	value := resolver.data.GetComponents()
-	return resolver.root.wrapImageScanComponents(value, nil)
 }
 
 func (resolver *imageLayerResolver) Created(ctx context.Context) (*graphql.Time, error) {
