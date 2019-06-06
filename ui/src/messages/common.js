@@ -41,7 +41,7 @@ const common = Object.freeze({
         CONTROL: 'control'
     },
     rbacConfigLabels: {
-        USER_AND_GROUPS: 'userandgroups',
+        SUBJECT: 'users and groups',
         SERVICE_ACCOUNT: 'serviceaccount',
         ROLE: 'role'
     },

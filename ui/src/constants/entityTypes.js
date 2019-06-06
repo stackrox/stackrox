@@ -8,7 +8,7 @@ export const resourceTypes = {
 };
 
 export const rbacConfigTypes = {
-    USER_AND_GROUPS: 'USER_AND_GROUPS',
+    SUBJECT: 'SUBJECT',
     SERVICE_ACCOUNT: 'SERVICE_ACCOUNT',
     ROLE: 'ROLE'
 };

@@ -61,7 +61,7 @@ export const urlEntityListTypes = {
     [resourceTypes.SECRET]: 'secrets',
     [standardEntityTypes.CONTROL]: 'controls',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccounts',
-    [rbacConfigTypes.USER_AND_GROUPS]: 'usersandgroups',
+    [rbacConfigTypes.SUBJECT]: 'subjects',
     [rbacConfigTypes.ROLE]: 'roles'
 };
 
@@ -78,7 +78,7 @@ export const urlEntityTypes = {
     [standardEntityTypes.CONTROL]: 'control',
     [standardEntityTypes.STANDARD]: 'standard',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccount',
-    [rbacConfigTypes.USER_AND_GROUPS]: 'usersandgroups',
+    [rbacConfigTypes.SUBJECT]: 'subject',
     [rbacConfigTypes.ROLE]: 'role'
 };
 

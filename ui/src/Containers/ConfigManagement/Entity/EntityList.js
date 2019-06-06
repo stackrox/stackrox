@@ -3,6 +3,7 @@ import entityTypes from 'constants/entityTypes';
 
 import PageNotFound from 'Components/PageNotFound';
 import Namespaces from '../List/Namespaces';
+import Subjects from '../List/Subjects';
 import ServiceAccounts from '../List/ServiceAccounts';
 import Clusters from '../List/Clusters';
 import Nodes from '../List/Nodes';
@@ -12,6 +13,8 @@ import Roles from '../List/Roles';
 
 const EntityList = ({ entityListType, onRowClick }) => {
     switch (entityListType) {
+        case entityTypes.SUBJECT:
+            return <Subjects onRowClick={onRowClick} />;
         case entityTypes.SERVICE_ACCOUNT:
             return <ServiceAccounts onRowClick={onRowClick} />;
         case entityTypes.CLUSTER:
