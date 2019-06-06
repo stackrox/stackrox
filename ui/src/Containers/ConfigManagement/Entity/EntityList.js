@@ -2,6 +2,7 @@ import React from 'react';
 import entityTypes from 'constants/entityTypes';
 
 import PageNotFound from 'Components/PageNotFound';
+import Namespaces from '../List/Namespaces';
 import ServiceAccounts from '../List/ServiceAccounts';
 import Clusters from '../List/Clusters';
 import Deployments from '../List/Deployments';
@@ -14,6 +15,8 @@ const EntityList = ({ entityListType, onRowClick }) => {
             return <ServiceAccounts onRowClick={onRowClick} />;
         case entityTypes.CLUSTER:
             return <Clusters onRowClick={onRowClick} />;
+        case entityTypes.NAMESPACE:
+            return <Namespaces onRowClick={onRowClick} />;
         case entityTypes.DEPLOYMENT:
             return <Deployments onRowClick={onRowClick} />;
         case entityTypes.SECRET:

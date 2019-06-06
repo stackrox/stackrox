@@ -18,12 +18,12 @@ export const ALL_NAMESPACES = gql`
                 id
                 clusterId
                 clusterName
-
                 labels {
                     key
                     value
                 }
             }
+            numSecrets
         }
     }
 `;
