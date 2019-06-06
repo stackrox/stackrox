@@ -30,11 +30,11 @@ function processData(data, entityType) {
         const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
             entityType: standard.id,
             query: {
-                [`${capitalize(entityType)}`]: entity.name
+                [`${capitalize(entityType)}`]: entity && entity.name
             }
         });
         const dataPoint = {
-            x: entity.name,
+            x: entity && entity.name,
             y: percentagePassing,
             hint: {
                 title: standardLabels[standard.id],
