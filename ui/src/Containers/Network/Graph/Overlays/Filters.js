@@ -1,12 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
+import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
 
 import { filterModes, filterLabels } from '../filterModes';
-import wizardStages from '../../Wizard/wizardStages';
 
 const baseButtonClassName =
     'flex-no-shrink px-2 py-px border-2 rounded-sm uppercase text-xs font-700';
@@ -73,13 +72,8 @@ Filters.propTypes = {
     filterMode: PropTypes.number.isRequired
 };
 
-const getSimulatorOn = createSelector(
-    [selectors.getNetworkWizardOpen, selectors.getNetworkWizardStage],
-    (wizardOpen, wizardStage) => wizardOpen && wizardStage === wizardStages.simulator
-);
-
 const mapStateToProps = createStructuredSelector({
-    offset: getSimulatorOn,
+    offset: selectors.getNetworkWizardOpen,
     filterMode: selectors.getNetworkGraphFilterMode
 });
 

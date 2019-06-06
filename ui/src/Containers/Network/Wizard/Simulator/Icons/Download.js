@@ -20,7 +20,8 @@ class Download extends Component {
         const formattedYaml = applyYaml.split('\\n').join('\n');
 
         const { modificationName } = this.props;
-        download(`${modificationName}.yaml`, formattedYaml, 'yaml');
+        const yamlName = modificationName.split(/.yaml|.yml/g)[0];
+        download(`${yamlName}.yaml`, formattedYaml, 'yaml');
     };
 
     render() {

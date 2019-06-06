@@ -12,7 +12,6 @@ function SimulationBorder({ wizardOpen, wizardStage, modificationState }) {
     ) {
         return null;
     }
-
     const colorType = modificationState === 'ERROR' ? 'alert' : 'success';
     return (
         <div
