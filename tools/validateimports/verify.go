@@ -138,8 +138,8 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 		allowedPackages = append(allowedPackages, "pkg/migrations", "pkg/testutils")
 	}
 
-	// Allow central and cmd/deploy to import "image" (for fixtures)
-	if validImportRoot == "central" || validImportRoot == "roxctl" {
+	// Allow central and roxctl to import "image" (for fixtures)
+	if validImportRoot == "central" || validImportRoot == "roxctl" || validImportRoot == "pkg" {
 		allowedPackages = append(allowedPackages, "image")
 	}
 

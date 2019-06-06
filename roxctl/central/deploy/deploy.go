@@ -19,9 +19,9 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
-	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/mode"
 )
@@ -101,9 +101,8 @@ func outputZip(config renderer.Config) error {
 
 	wrapper := zip.NewWrapper()
 
-	d, ok := renderer.Deployers[config.ClusterType]
-	if !ok {
-		return fmt.Errorf("undefined cluster deployment generator: %s", config.ClusterType)
+	if config.ClusterType == storage.ClusterType_GENERIC_CLUSTER {
+		return errors.Errorf("invalid cluster type: %s", config.ClusterType)
 	}
 
 	config.SecretsByteMap = make(map[string][]byte)
@@ -168,7 +167,7 @@ func outputZip(config renderer.Config) error {
 		config.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
 	}
 
-	files, err := d.Render(config)
+	files, err := renderer.Render(config)
 	if err != nil {
 		return errors.Wrap(err, "could not render files")
 	}

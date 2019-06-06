@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/image"
+	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
 )
 
@@ -28,22 +29,16 @@ func main() {
 	c := &cobra.Command{
 		SilenceUsage: true,
 	}
-	c.AddCommand(versionCommand())
-
 	// Image Commands
-	c.AddCommand(image.Command())
-
-	// Deployment Commands
-	c.AddCommand(deployment.Command())
-
-	// Central Commands
-	c.AddCommand(central.Command())
-
-	// Sensor Commands
-	c.AddCommand(sensor.Command())
-
-	// Cluster Commands
-	c.AddCommand(cluster.Command())
+	c.AddCommand(
+		versionCommand(),
+		image.Command(),
+		deployment.Command(),
+		central.Command(),
+		sensor.Command(),
+		scanner.Command(),
+		cluster.Command(),
+	)
 
 	flags.AddPassword(c)
 	flags.AddEndpoint(c)

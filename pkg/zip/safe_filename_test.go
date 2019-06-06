@@ -36,7 +36,7 @@ func TestGetSafeFilename(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			assert.Equal(t, c.expected, getSafeFilename(c.input))
+			assert.Equal(t, c.expected, GetSafeFilename(c.input))
 		})
 	}
 

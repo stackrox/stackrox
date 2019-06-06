@@ -72,6 +72,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	"github.com/stackrox/rox/central/sac/transitional"
+	"github.com/stackrox/rox/central/scanner"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
@@ -427,6 +428,12 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/clusters/zip",
 			Authorizer:    authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
+			Compression:   false,
+		},
+		{
+			Route:         "/api/extensions/scanner/zip",
+			Authorizer:    authzUser.With(),
+			ServerHandler: scanner.Handler(),
 			Compression:   false,
 		},
 		{

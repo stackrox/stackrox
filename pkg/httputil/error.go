@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -54,4 +56,14 @@ func ErrorFromStatus(status HTTPStatus) HTTPError {
 		return err
 	}
 	return nil
+}
+
+// WriteGRPCStyleError writes a gRPC-style error to an http response writer.
+// It's useful when you have to write an http method.
+func WriteGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {
+	userErr := status.New(c, err.Error()).Proto()
+	m := jsonpb.Marshaler{}
+
+	w.WriteHeader(runtime.HTTPStatusFromCode(c))
+	_ = m.Marshal(w, userErr)
 }

@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/rox/pkg/roximages/defaults"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/defaults"
 )
 
 type persistentFlagsWrapper struct {

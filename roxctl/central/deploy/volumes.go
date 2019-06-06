@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
+	"github.com/stackrox/rox/pkg/renderer"
 )
 
 func volumeCommand(name string) *cobra.Command {

@@ -3,7 +3,7 @@ package deploy
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
+	"github.com/stackrox/rox/pkg/renderer"
 )
 
 type persistenceTypeWrapper struct {

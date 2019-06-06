@@ -41,18 +41,16 @@ func TestRender(t *testing.T) {
 
 type renderSuite struct {
 	suite.Suite
-	*kubernetes
 }
 
 func (suite *renderSuite) SetupSuite() {
-	suite.kubernetes = &kubernetes{}
 }
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 	c.HostPath = &HostPathPersistence{
 		HostPath: "/var/lib/stackrox",
 	}
-	_, err := suite.Render(c)
+	_, err := Render(c)
 	assert.NoError(t, err)
 
 	c.HostPath = &HostPathPersistence{
@@ -60,7 +58,7 @@ func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 		NodeSelectorKey:   "key",
 		NodeSelectorValue: "value",
 	}
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	assert.NoError(t, err)
 }
 
@@ -68,24 +66,24 @@ func (suite *renderSuite) testWithPV(t *testing.T, c Config) {
 	c.External = &ExternalPersistence{
 		Name: "name",
 	}
-	_, err := suite.Render(c)
+	_, err := Render(c)
 	assert.NoError(t, err)
 
 	c.External = &ExternalPersistence{
 		Name:         "name",
 		StorageClass: "storageClass",
 	}
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	assert.NoError(t, err)
 }
 
 func (suite *renderSuite) testWithLoadBalancers(t *testing.T, c Config) {
 	c.K8sConfig.LoadBalancerType = v1.LoadBalancerType_NODE_PORT
-	_, err := suite.Render(c)
+	_, err := Render(c)
 	assert.NoError(t, err)
 
 	c.K8sConfig.LoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	assert.NoError(t, err)
 }
 
@@ -110,29 +108,29 @@ func (suite *renderSuite) TestRenderMultiple() {
 func (suite *renderSuite) TestRenderWithBadImage() {
 	conf := getBaseConfig()
 	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
-	_, err := suite.Render(conf)
+	_, err := Render(conf)
 	suite.Error(err)
 }
 
 func (suite *renderSuite) testWithMonitoring(t *testing.T, c Config) {
-	_, err := suite.Render(c)
+	_, err := Render(c)
 	suite.NoError(err)
 	suite.Empty(c.K8sConfig.Monitoring.Endpoint)
 
 	defaultMonitoringImage := fmt.Sprintf("docker.io/stackrox/%s:%s", defaultimages.Monitoring, c.K8sConfig.MainImageTag)
 	c.K8sConfig.Monitoring.Type = OnPrem
 	c.K8sConfig.Monitoring.Endpoint = "monitoring.stackrox:443"
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	suite.NoError(err)
 	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
 
 	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_NODE_PORT
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	suite.NoError(err)
 	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
 
 	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	suite.NoError(err)
 	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
 
@@ -140,18 +138,18 @@ func (suite *renderSuite) testWithMonitoring(t *testing.T, c Config) {
 	alternateMain := fmt.Sprintf("%s/main:%s", defaultimages.ProdRedHatRegistry, c.K8sConfig.MainImageTag)
 	alternateMonitoring := fmt.Sprintf("%s/monitoring:%s", defaultimages.ProdMainRegistry, c.K8sConfig.MainImageTag)
 	c.K8sConfig.MainImage = alternateMain
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	suite.NoError(err)
 	suite.Equal(alternateMonitoring, c.K8sConfig.Monitoring.Image)
 	c.K8sConfig.MainImage = originalMain
 
 	alternateImage := "some.other.repo/monitoring"
 	c.K8sConfig.MonitoringImage = alternateImage
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	suite.NoError(err)
 	suite.Equal(alternateImage, c.K8sConfig.Monitoring.Image)
 
 	c.K8sConfig.MonitoringImage = "not a valid image"
-	_, err = suite.Render(c)
+	_, err = Render(c)
 	suite.Error(err)
 }

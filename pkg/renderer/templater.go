@@ -189,14 +189,6 @@ type Config struct {
 	Environment map[string]string
 }
 
-type deployer interface {
-	Render(Config) ([]*zip.File, error)
-	Instructions(Config) string
-}
-
-// Deployers contains all implementations for central deployment generators.
-var Deployers = make(map[storage.ClusterType]deployer)
-
 func executeRawTemplate(raw string, c *Config) ([]byte, error) {
 	t, err := template.New("temp").Parse(raw)
 	if err != nil {
@@ -233,19 +225,18 @@ func generateMonitoringImage(mainImage string, monitoringImage string) (string, 
 	return monitoringImageName.FullName, nil
 }
 
-func wrapFiles(files []*zip.File, c *Config) ([]*zip.File, error) {
-	instructions, err := generateReadme(c)
+func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {
+	instructions, err := generateReadme(c, mode)
 	if err != nil {
 		return nil, err
 	}
-	files = append(files, zip.NewFile("README", []byte(instructions), 0))
-	return files, nil
+	return zip.NewFile("README", []byte(instructions), 0), nil
 }
 
 // WriteInstructions writes the instructions for the configured cluster
 // to the provided writer.
 func (c Config) WriteInstructions(w io.Writer) error {
-	instructions, err := generateReadme(&c)
+	instructions, err := generateReadme(&c, renderAll)
 	if err != nil {
 		return err
 	}

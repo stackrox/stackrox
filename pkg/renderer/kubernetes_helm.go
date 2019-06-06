@@ -53,7 +53,7 @@ func getChartFile(prefix, filename string, data []byte) (*zip.File, bool) {
 
 // Helm charts consist of Chart.yaml, values.yaml and templates
 // We need to
-func (k *kubernetes) renderHelmFiles(c Config, ch *chart.Chart, prefix string) ([]*zip.File, error) {
+func renderHelmFiles(c Config, ch *chart.Chart, prefix string) ([]*zip.File, error) {
 	ch.Metadata = &chart.Metadata{
 		Name: prefix,
 	}
@@ -119,7 +119,7 @@ func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*zip.File, error)
 	return renderedFiles, nil
 }
 
-func (k *kubernetes) renderHelm(c Config) ([]*zip.File, error) {
+func renderHelm(c Config) ([]*zip.File, error) {
 	renderedFiles, err := chartToFiles("central", image.GetCentralChart(), c)
 	if err != nil {
 		return nil, err
