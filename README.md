@@ -21,7 +21,7 @@ documentation.
 The following tools are necessary to build image(s):
 
  * [Make](https://www.gnu.org/software/make/)
- * [Bazel](https://docs.bazel.build/versions/master/install.html) 0.17.2 or higher.
+ * [Bazel](https://docs.bazel.build/versions/master/install.html) 0.17.2 or higher. Note that bazel is broken from version 0.26.0 but works for 0.25.2. Get the installer script under `Assets` section from this [link](https://github.com/bazelbuild/bazel/releases/tag/0.25.2).
  Install XCode before Bazel if you are building on a Mac.
  * [Go](https://golang.org/dl/) 1.12.
  * Various Go linters that can be installed using `make dev`.
