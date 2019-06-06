@@ -1,11 +1,13 @@
 import gql from 'graphql-tag';
 
 export const NODES_QUERY = gql`
-    query list {
+    query nodes {
         results: clusters {
             id
             nodes {
                 id
+                name
+                clusterName
             }
         }
     }
