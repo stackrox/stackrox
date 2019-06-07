@@ -1,7 +1,5 @@
 #! /bin/sh
 
-set -eu
-
 # Collect pprof profiles
 #
 # Runs pprof against the specified URL
@@ -12,12 +10,18 @@ set -eu
 # Example:
 # $ ./pprof.sh . localhost:8000 5
 
+set -e
+
 usage() {
     echo "usage: ./pprof.sh <output dir> <endpoint> <num_iterations (optional)>"
 }
 
 curl_central() {
-    curl -sk -u "admin:$ROX_PASSWORD" $@
+    if [[ -n $ROX_API_TOKEN ]]; then
+        curl -sk -H "Authorization: Bearer $ROX_API_TOKEN" $@
+    else
+        curl -sk -u "admin:$ROX_PASSWORD" $@
+    fi
 }
 
 pull_profiles() {
@@ -27,6 +31,11 @@ pull_profiles() {
   curl_central "https://$ENDPOINT/debug/goroutine" > "$DIR/goroutine_${formatted_date}.tar.gz"
   curl_central "https://$ENDPOINT/debug/pprof/profile" > "$DIR/cpu_${formatted_date}.tar.gz"
 }
+
+if [[ -z $ROX_PASSWORD && -z $ROX_API_TOKEN ]]; then
+  >&2 echo "Need to specify either ROX_PASSWORD or ROX_API_TOKEN"
+  exit 1
+fi
 
 if [ $# -lt 2 ]; then
   usage
