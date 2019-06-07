@@ -3,10 +3,10 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService2';
 
-import Overview from './EntityOverview';
 import PageHeader from './EntityPageHeader';
 import Tabs from './EntityTabs';
-import List from './EntityList';
+import Overview from '../Entity';
+import List from '../EntityList';
 
 const SidePanel = () => null;
 

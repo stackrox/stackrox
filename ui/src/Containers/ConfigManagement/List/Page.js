@@ -5,7 +5,7 @@ import pluralize from 'pluralize';
 import URLService from 'modules/URLService2';
 
 import PageHeader from 'Components/PageHeader';
-import List from '../Entity/EntityList';
+import List from '../EntityList';
 
 const ListPage = ({ match, location, history }) => {
     const params = URLService.getParams(match, location);

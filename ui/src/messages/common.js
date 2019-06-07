@@ -38,7 +38,9 @@ const common = Object.freeze({
         NODE: 'node',
         DEPLOYMENT: 'deployment',
         SECRET: 'secret',
-        CONTROL: 'control'
+        CONTROL: 'control',
+        IMAGE: 'image',
+        POLICY: 'policy'
     },
     rbacConfigLabels: {
         SUBJECT: 'users and groups',

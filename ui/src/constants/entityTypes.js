@@ -4,7 +4,9 @@ export const resourceTypes = {
     NODE: 'NODE',
     DEPLOYMENT: 'DEPLOYMENT',
     NETWORK_POLICY: 'NETWORK_POLICY',
-    SECRET: 'SECRET'
+    SECRET: 'SECRET',
+    IMAGE: 'IMAGE',
+    POLICY: 'POLICY'
 };
 
 export const rbacConfigTypes = {
