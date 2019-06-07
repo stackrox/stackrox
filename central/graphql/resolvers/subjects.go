@@ -100,7 +100,7 @@ func (resolver *subjectWithClusterIDResolver) ScopedPermissions(ctx context.Cont
 
 	permissionScopeMap := make(map[string]map[string]set.StringSet)
 	for scope, evaluator := range evaluators {
-		permissions := evaluator.ForSubject(resolver.subject.data).GetPermissionMap()
+		permissions := evaluator.ForSubject(ctx, resolver.subject.data).GetPermissionMap()
 		if len(permissions) != 0 {
 			permissionScopeMap[scope] = permissions
 		}
@@ -114,11 +114,11 @@ func (resolver *subjectWithClusterIDResolver) ClusterAdmin(ctx context.Context) 
 	subject := resolver.subject.data
 	evaluator := resolver.getClusterEvaluator(ctx)
 
-	return evaluator.IsClusterAdmin(subject), nil
+	return evaluator.IsClusterAdmin(ctx, subject), nil
 }
 
-func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.Evaluator, error) {
-	evaluators := make(map[string]k8srbac.Evaluator)
+func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.EvaluatorForContext, error) {
+	evaluators := make(map[string]k8srbac.EvaluatorForContext)
 	clusterID := resolver.clusterID
 	rootResolver := resolver.subject.root
 
@@ -139,7 +139,7 @@ func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context)
 	return evaluators, nil
 }
 
-func (resolver *subjectWithClusterIDResolver) getClusterEvaluator(ctx context.Context) k8srbac.Evaluator {
+func (resolver *subjectWithClusterIDResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
 	rootResolver := resolver.subject.root
 	return rbacUtils.NewClusterPermissionEvaluator(resolver.clusterID,
 		rootResolver.K8sRoleStore, rootResolver.K8sRoleBindingStore)

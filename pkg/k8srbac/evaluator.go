@@ -1,6 +1,8 @@
 package k8srbac
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -12,6 +14,13 @@ type Evaluator interface {
 	ForSubject(subject *storage.Subject) PolicyRuleSet
 	IsClusterAdmin(subject *storage.Subject) bool
 	RolesForSubject(subject *storage.Subject) []*storage.K8SRole
+}
+
+// EvaluatorForContext evaluates the policy rules that apply to different object types and takes in a context for permissions.
+type EvaluatorForContext interface {
+	ForSubject(ctx context.Context, subject *storage.Subject) PolicyRuleSet
+	IsClusterAdmin(ctx context.Context, subject *storage.Subject) bool
+	RolesForSubject(ctx context.Context, subject *storage.Subject) []*storage.K8SRole
 }
 
 // NewCombinedEvaluator returns an evaluator that combines the output rules of the two input evaluators.

@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -44,7 +45,7 @@ func NewRiskyComponents() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on image component counts.
-func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
+func (c *riskyComponentCountMultiplier) Score(_ context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	// Get the largest number of risky components in an image
 	var largestRiskySet *set.StringSet
 	var riskiestImage *storage.Image

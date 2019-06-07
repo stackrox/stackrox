@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -19,6 +20,6 @@ func TestImageAgeScore(t *testing.T) {
 		Score: 1.25,
 	}
 
-	score := imageAgeMultiplier.Score(deployment, getMockImages())
+	score := imageAgeMultiplier.Score(context.Background(), deployment, getMockImages())
 	assert.Equal(t, expectedScore, score)
 }

@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -210,6 +211,7 @@ func TestPermissionScore(t *testing.T) {
 	for _, c := range clusterCases {
 		t.Run(c.name, func(t *testing.T) {
 			deployment := getMockDeployment()
+			ctx := context.Background()
 
 			mockCtrl := gomock.NewController(t)
 
@@ -218,7 +220,7 @@ func TestPermissionScore(t *testing.T) {
 				AddExactMatches(search.ClusterID, c.sa.ClusterId).
 				AddExactMatches(search.Namespace, c.sa.Namespace).
 				AddExactMatches(search.ServiceAccountName, c.sa.Name).ProtoQuery()
-			mockSADatastore.EXPECT().SearchRawServiceAccounts(gomock.Any(), q).Return([]*storage.ServiceAccount{c.sa}, nil)
+			mockSADatastore.EXPECT().SearchRawServiceAccounts(ctx, q).Return([]*storage.ServiceAccount{c.sa}, nil)
 
 			mockBindingDatastore := bindingMocks.NewMockDataStore(mockCtrl)
 
@@ -226,22 +228,23 @@ func TestPermissionScore(t *testing.T) {
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 				AddBools(search.ClusterRole, true).ProtoQuery()
 
-			mockBindingDatastore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).Return(c.bindings, nil).AnyTimes()
+			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, clusterScopeQuery).Return(c.bindings, nil).AnyTimes()
 
 			namespaceScopeQuery := search.NewQueryBuilder().
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 				AddExactMatches(search.Namespace, deployment.GetNamespace()).
 				AddBools(search.ClusterRole, false).ProtoQuery()
 
-			mockBindingDatastore.EXPECT().SearchRawRoleBindings(gomock.Any(), namespaceScopeQuery).Return([]*storage.K8SRoleBinding{}, nil).AnyTimes()
+			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, namespaceScopeQuery).Return([]*storage.K8SRoleBinding{}, nil).AnyTimes()
 
 			mockRoleDatastore := roleMocks.NewMockDataStore(mockCtrl)
 			for i := range c.roles {
-				mockRoleDatastore.EXPECT().GetRole(gomock.Any(), c.roles[i].GetId()).Return(c.roles[i], true, nil).AnyTimes()
+				mockRoleDatastore.EXPECT().GetRole(ctx, c.roles[i].GetId()).Return(c.roles[i], true, nil).AnyTimes()
 			}
 
 			mult := NewSAPermissionsMultiplier(mockRoleDatastore, mockBindingDatastore, mockSADatastore)
-			result := mult.Score(deployment, nil)
+			result := mult.Score(ctx, deployment, nil)
+
 			assert.Equal(t, c.expected, result)
 			mockCtrl.Finish()
 		})

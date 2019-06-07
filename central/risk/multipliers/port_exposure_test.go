@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -20,6 +21,6 @@ func TestPortExposureScore(t *testing.T) {
 		},
 		Score: 1.6,
 	}
-	score := portMultiplier.Score(deployment, nil)
+	score := portMultiplier.Score(context.Background(), deployment, nil)
 	assert.Equal(t, expectedScore, score)
 }

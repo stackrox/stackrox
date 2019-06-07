@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"fmt"
 	"math"
 
@@ -24,7 +25,7 @@ func NewVulnerabilities() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on vulnerabilties
-func (c *vulnerabilitiesMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
+func (c *vulnerabilitiesMultiplier) Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	var cvssSum float32
 	var factors []*storage.Risk_Result_Factor
 	for i, img := range images {

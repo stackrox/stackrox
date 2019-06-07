@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -103,11 +104,13 @@ func TestIsClusterAdmin(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			mockBindingDatastore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
-			mockRoleDatastore.EXPECT().GetRole(gomock.Any(), "role1").Return(c.inputRoles[0], true, nil).AnyTimes()
+			ctx := context.Background()
+
+			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
+			mockRoleDatastore.EXPECT().GetRole(ctx, "role1").Return(c.inputRoles[0], true, nil).AnyTimes()
 
 			evaluator := NewClusterPermissionEvaluator("cluster", mockRoleDatastore, mockBindingDatastore)
-			assert.Equal(t, evaluator.IsClusterAdmin(c.inputSubject), c.expected)
+			assert.Equal(t, evaluator.IsClusterAdmin(ctx, c.inputSubject), c.expected)
 		})
 	}
 
@@ -193,11 +196,13 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			mockBindingDatastore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
-			mockRoleDatastore.EXPECT().GetRole(gomock.Any(), "role1").Return(c.inputRoles[0], true, nil).AnyTimes()
+			ctx := context.Background()
+
+			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
+			mockRoleDatastore.EXPECT().GetRole(ctx, "role1").Return(c.inputRoles[0], true, nil).AnyTimes()
 
 			evaluator := NewClusterPermissionEvaluator("cluster", mockRoleDatastore, mockBindingDatastore)
-			assert.Equal(t, c.expected, evaluator.ForSubject(c.inputSubject).ToSlice())
+			assert.Equal(t, c.expected, evaluator.ForSubject(ctx, c.inputSubject).ToSlice())
 		})
 	}
 

@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -32,7 +33,7 @@ func NewImageAge() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on vulnerabilties
-func (c *imageAgeMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
+func (c *imageAgeMultiplier) Score(_ context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	// Get the earliest created time in the container images, and find the duration since then.
 	earliestImageCreated := getOldestCreatedTime(images)
 	if earliestImageCreated.IsZero() {

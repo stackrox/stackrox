@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -85,7 +86,7 @@ func TestProcessWhitelists(t *testing.T) {
 
 			mockEvaluator := mocks.NewMockEvaluator(mockCtrl)
 			mockEvaluator.EXPECT().EvaluateWhitelistsAndPersistResult(deployment).Return(c.violatingProcesses, c.evaluatorErr)
-			result := NewProcessWhitelists(mockEvaluator).Score(deployment, nil)
+			result := NewProcessWhitelists(mockEvaluator).Score(context.Background(), deployment, nil)
 			assert.ElementsMatch(t, c.expected.GetFactors(), result.GetFactors())
 			assert.InDelta(t, c.expected.GetScore(), result.GetScore(), 0.001)
 		})

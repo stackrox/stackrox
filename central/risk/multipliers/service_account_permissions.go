@@ -50,12 +50,11 @@ func NewSAPermissionsMultiplier(roleStore roleStore.DataStore, bindingStore bind
 }
 
 // Score takes a deployment and evaluates its risk based on the permissions granted to the deployment's service account
-func (c *saPermissionsMultiplier) Score(deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
-
+func (c *saPermissionsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
 	var factors []*storage.Risk_Result_Factor
 	overallScore := float32(0)
 
-	autoMountFactors, autoMounted := c.tokenAutomounted(deployment)
+	autoMountFactors, autoMounted := c.tokenAutomounted(ctx, deployment)
 	if !autoMounted {
 		return nil
 	}
@@ -64,7 +63,7 @@ func (c *saPermissionsMultiplier) Score(deployment *storage.Deployment, _ []*sto
 	overallScore = 1.0
 
 	subject := k8srbac.GetSubjectForDeployment(deployment)
-	clusterScore, verbs, isAdmin := c.getClusterPermissionsScore(deployment, subject)
+	clusterScore, verbs, isAdmin := c.getClusterPermissionsScore(ctx, deployment, subject)
 
 	if isAdmin {
 		factors = append(factors, &storage.Risk_Result_Factor{
@@ -79,7 +78,7 @@ func (c *saPermissionsMultiplier) Score(deployment *storage.Deployment, _ []*sto
 			})
 		}
 
-		namespaceScore, verbs := c.getNamespacePermissionsScore(deployment, subject)
+		namespaceScore, verbs := c.getNamespacePermissionsScore(ctx, deployment, subject)
 		if namespaceScore > 0.0 {
 			factors = append(factors, &storage.Risk_Result_Factor{
 				Message: fmt.Sprintf(strings.Join([]string{riskFactorPrefix, namespaceScopeSuffix, verbs}, " "),
@@ -100,31 +99,31 @@ func (c *saPermissionsMultiplier) Score(deployment *storage.Deployment, _ []*sto
 	return nil
 }
 
-func (c *saPermissionsMultiplier) getClusterPermissionsScore(deployment *storage.Deployment, subject *storage.Subject) (score float32, verbList string, isAdmin bool) {
+func (c *saPermissionsMultiplier) getClusterPermissionsScore(ctx context.Context, deployment *storage.Deployment, subject *storage.Subject) (score float32, verbList string, isAdmin bool) {
 	clusterEvaluator := utils.NewClusterPermissionEvaluator(deployment.GetClusterId(), c.roleStore, c.bindingStore)
 
-	if clusterEvaluator.IsClusterAdmin(subject) {
+	if clusterEvaluator.IsClusterAdmin(ctx, subject) {
 		// maxScore
 		clusterReadScore := float32(maxResources) * float32(clusterReadWeight) * float32(k8srbac.ReadResourceVerbs.Cardinality())
 		clusterWriteScore := float32(maxResources) * float32(clusterWriteWeight) * float32(k8srbac.WriteResourceVerbs.Cardinality())
 		return clusterReadScore + clusterWriteScore, "", true
 	}
 
-	permissions := clusterEvaluator.ForSubject(subject).GetPermissionMap()
+	permissions := clusterEvaluator.ForSubject(ctx, subject).GetPermissionMap()
 	score, verbs := scoreVerbs(permissions, float32(clusterReadWeight), float32(clusterWriteWeight))
 
 	return score, verbs, false
 }
 
-func (c *saPermissionsMultiplier) getNamespacePermissionsScore(deployment *storage.Deployment, subject *storage.Subject) (float32, string) {
+func (c *saPermissionsMultiplier) getNamespacePermissionsScore(ctx context.Context, deployment *storage.Deployment, subject *storage.Subject) (float32, string) {
 	namespaceEvaluator := utils.NewNamespacePermissionEvaluator(deployment.GetClusterId(),
 		deployment.GetNamespace(), c.roleStore, c.bindingStore)
-	permissions := namespaceEvaluator.ForSubject(subject).GetPermissionMap()
+	permissions := namespaceEvaluator.ForSubject(ctx, subject).GetPermissionMap()
 
 	return scoreVerbs(permissions, float32(namespaceReadWeight), float32(namespaceWriteWeight))
 }
 
-func (c *saPermissionsMultiplier) tokenAutomounted(deployment *storage.Deployment) ([]*storage.Risk_Result_Factor, bool) {
+func (c *saPermissionsMultiplier) tokenAutomounted(ctx context.Context, deployment *storage.Deployment) ([]*storage.Risk_Result_Factor, bool) {
 	saName := deployment.GetServiceAccount()
 
 	if saName == "" {
@@ -134,7 +133,7 @@ func (c *saPermissionsMultiplier) tokenAutomounted(deployment *storage.Deploymen
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 		AddExactMatches(search.Namespace, deployment.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, saName).ProtoQuery()
-	serviceAccounts, err := c.serviceAccountStore.SearchRawServiceAccounts(context.TODO(), q)
+	serviceAccounts, err := c.serviceAccountStore.SearchRawServiceAccounts(ctx, q)
 
 	if err != nil {
 		log.Errorf("error searching for service account %q for deployment %q: %v", saName, deployment.GetName(), err)

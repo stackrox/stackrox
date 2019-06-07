@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -52,6 +53,6 @@ func TestRiskyComponentCountScore(t *testing.T) {
 		},
 		Score: 1.3,
 	}
-	score := riskyMultiplier.Score(deployment, images)
+	score := riskyMultiplier.Score(context.Background(), deployment, images)
 	assert.Equal(t, expectedScore, score)
 }

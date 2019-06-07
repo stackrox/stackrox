@@ -36,7 +36,7 @@ func (s *paginationTestSuite) TearDownTest() {
 func (s *paginationTestSuite) TestHandlesNoPagination() {
 	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return(fakeResults, nil)
 
-	results, err := Paginated(s.mockSearcher).Search(context.Context(nil), &v1.Query{})
+	results, err := Paginated(s.mockSearcher).Search(context.Background(), &v1.Query{})
 	s.NoError(err, "expected no error, should return nil without access")
 	s.Equal(fakeResults, results, "with no pagination the result should be the same as the search output")
 }
@@ -48,7 +48,7 @@ func (s *paginationTestSuite) TestHandlesNoOffset() {
 		},
 	})).Return(fakeResults, nil)
 
-	results, err := Paginated(s.mockSearcher).Search(context.Context(nil), &v1.Query{
+	results, err := Paginated(s.mockSearcher).Search(context.Background(), &v1.Query{
 		Pagination: &v1.Pagination{
 			Limit: 1,
 		},
@@ -64,7 +64,7 @@ func (s *paginationTestSuite) TestHandlesNoLimit() {
 		},
 	})).Return(fakeResults, nil)
 
-	results, err := Paginated(s.mockSearcher).Search(context.Context(nil), &v1.Query{
+	results, err := Paginated(s.mockSearcher).Search(context.Background(), &v1.Query{
 		Pagination: &v1.Pagination{
 			Offset: 1,
 		},
@@ -81,7 +81,7 @@ func (s *paginationTestSuite) TestHandlesOffSetAndLimit() {
 		},
 	})).Return(fakeResults, nil)
 
-	results, err := Paginated(s.mockSearcher).Search(context.Context(nil), &v1.Query{
+	results, err := Paginated(s.mockSearcher).Search(context.Background(), &v1.Query{
 		Pagination: &v1.Pagination{
 			Offset: 1,
 			Limit:  3,

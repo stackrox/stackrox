@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -25,7 +26,7 @@ func NewComponentCount() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on image component counts.
-func (c *componentCountMultiplier) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
+func (c *componentCountMultiplier) Score(_ context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	// Get the number of components in the image.
 	components := set.NewStringSet()
 	var maxCount int

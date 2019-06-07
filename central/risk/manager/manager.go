@@ -122,6 +122,6 @@ func (e *managerImpl) addRiskToDeployment(deployment *storage.Deployment) error 
 		return err
 	}
 
-	deployment.Risk = e.scorer.Score(deployment, images)
+	deployment.Risk = e.scorer.Score(context.TODO(), deployment, images)
 	return e.deploymentStorage.UpdateDeployment(context.TODO(), deployment)
 }

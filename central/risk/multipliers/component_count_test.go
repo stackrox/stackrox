@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -30,6 +31,6 @@ func TestComponentCountScore(t *testing.T) {
 		},
 		Score: 1.25,
 	}
-	score := countMultiplier.Score(deployment, images)
+	score := countMultiplier.Score(context.Background(), deployment, images)
 	assert.Equal(t, expectedScore, score)
 }

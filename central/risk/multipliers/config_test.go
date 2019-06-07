@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,6 +71,6 @@ func TestConfigScore(t *testing.T) {
 	// Hit all values
 	mult := &serviceConfigMultiplier{}
 	deployment := getMockDeployment()
-	result := mult.Score(deployment, nil)
+	result := mult.Score(context.Background(), deployment, nil)
 	assert.Equal(t, result.GetScore(), float32(2))
 }

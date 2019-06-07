@@ -1,6 +1,7 @@
 package risk
 
 import (
+	"context"
 	"sort"
 
 	"github.com/stackrox/rox/central/risk/multipliers"
@@ -17,8 +18,8 @@ type scoreImpl struct {
 }
 
 // Score takes a deployment and evaluates its risk
-func (s *scoreImpl) Score(deployment *storage.Deployment, images []*storage.Image) *storage.Risk {
-	riskResults, score := s.score(deployment, images)
+func (s *scoreImpl) Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk {
+	riskResults, score := s.score(ctx, deployment, images)
 	return &storage.Risk{
 		Score:   score,
 		Results: riskResults,
@@ -41,14 +42,14 @@ func (s *scoreImpl) RemoveUserDefinedMultiplier(id string) {
 	delete(s.UserDefinedMultipliers, id)
 }
 
-func (s *scoreImpl) userDefinedScore(deployment *storage.Deployment, images []*storage.Image) ([]*storage.Risk_Result, float32) {
+func (s *scoreImpl) userDefinedScore(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Risk_Result, float32) {
 	s.multiplierLock.RLock()
 	defer s.multiplierLock.RUnlock()
 
 	score := float32(1.0)
 	userDefinedRiskResults := make([]*storage.Risk_Result, 0, len(s.UserDefinedMultipliers))
 	for _, mult := range s.UserDefinedMultipliers {
-		if riskResult := mult.Score(deployment, images); riskResult != nil {
+		if riskResult := mult.Score(ctx, deployment, images); riskResult != nil {
 			score *= riskResult.GetScore()
 			userDefinedRiskResults = append(userDefinedRiskResults, riskResult)
 		}
@@ -57,22 +58,22 @@ func (s *scoreImpl) userDefinedScore(deployment *storage.Deployment, images []*s
 }
 
 // Scores from user defined multiplies are sorted in descending order of risk score.
-func (s *scoreImpl) sortedUserDefinedScore(deployment *storage.Deployment, images []*storage.Image) ([]*storage.Risk_Result, float32) {
-	results, score := s.userDefinedScore(deployment, images)
+func (s *scoreImpl) sortedUserDefinedScore(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Risk_Result, float32) {
+	results, score := s.userDefinedScore(ctx, deployment, images)
 	sort.SliceStable(results, func(i, j int) bool { return results[i].Score > results[j].Score })
 	return results, score
 }
 
-func (s *scoreImpl) score(deployment *storage.Deployment, images []*storage.Image) ([]*storage.Risk_Result, float32) {
+func (s *scoreImpl) score(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Risk_Result, float32) {
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
-		if riskResult := mult.Score(deployment, images); riskResult != nil {
+		if riskResult := mult.Score(ctx, deployment, images); riskResult != nil {
 			overallScore *= riskResult.GetScore()
 			riskResults = append(riskResults, riskResult)
 		}
 	}
-	userDefinedResults, userDefinedScore := s.sortedUserDefinedScore(deployment, images)
+	userDefinedResults, userDefinedScore := s.sortedUserDefinedScore(ctx, deployment, images)
 	riskResults = append(riskResults, userDefinedResults...)
 	overallScore *= userDefinedScore
 

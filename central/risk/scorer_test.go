@@ -1,6 +1,7 @@
 package risk
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -20,6 +21,8 @@ import (
 )
 
 func TestScore(t *testing.T) {
+	ctx := context.Background()
+
 	mockCtrl := gomock.NewController(t)
 	mockRoles := roleMocks.NewMockDataStore(mockCtrl)
 	mockBindings := bindingMocks.NewMockDataStore(mockCtrl)
@@ -86,10 +89,10 @@ func TestScore(t *testing.T) {
 	}
 
 	if features.K8sRBAC.Enabled() {
-		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, nil)
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
 	}
 
-	actualRisk := scorer.Score(deployment, getMockImages())
+	actualRisk := scorer.Score(ctx, deployment, getMockImages())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
@@ -132,10 +135,10 @@ func TestScore(t *testing.T) {
 	}...)
 
 	if features.K8sRBAC.Enabled() {
-		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, nil)
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
 	}
 
-	actualRisk = scorer.Score(deployment, getMockImages())
+	actualRisk = scorer.Score(ctx, deployment, getMockImages())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 

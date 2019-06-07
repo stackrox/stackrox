@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-func getRolesForBindings(roleStore datastore.DataStore, bindings []*storage.K8SRoleBinding) []*storage.K8SRole {
+func getRolesForBindings(ctx context.Context, roleStore datastore.DataStore, bindings []*storage.K8SRoleBinding) []*storage.K8SRole {
 	roleIDs := set.NewStringSet()
 	for _, binding := range bindings {
 		roleID := binding.GetRoleId()
@@ -19,7 +19,7 @@ func getRolesForBindings(roleStore datastore.DataStore, bindings []*storage.K8SR
 
 	roles := make([]*storage.K8SRole, 0, roleIDs.Cardinality())
 	for _, roleID := range roleIDs.AsSlice() {
-		role, exists, err := roleStore.GetRole(context.TODO(), roleID)
+		role, exists, err := roleStore.GetRole(ctx, roleID)
 		if exists && err == nil {
 			roles = append(roles, role)
 		}

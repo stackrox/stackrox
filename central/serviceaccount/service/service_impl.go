@@ -157,7 +157,7 @@ func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) 
 	}
 
 	clusterEvaluator := utils.NewClusterPermissionEvaluator(sa.GetClusterId(), s.roles, s.bindings)
-	clusterRoles := clusterEvaluator.RolesForSubject(subject)
+	clusterRoles := clusterEvaluator.RolesForSubject(ctx, subject)
 
 	namespaceQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).ProtoQuery()
 	namespaces, err := s.namespaces.SearchNamespaces(ctx, namespaceQuery)
@@ -168,7 +168,7 @@ func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) 
 	scopedRoles := make([]*v1.ScopedRoles, 0)
 	for _, namespace := range namespaces {
 		namespaceEvaluator := utils.NewNamespacePermissionEvaluator(sa.ClusterId, namespace.GetName(), s.roles, s.bindings)
-		namespaceRoles := namespaceEvaluator.RolesForSubject(subject)
+		namespaceRoles := namespaceEvaluator.RolesForSubject(ctx, subject)
 
 		if len(namespaceRoles) != 0 {
 			scopedRoles = append(scopedRoles, &v1.ScopedRoles{

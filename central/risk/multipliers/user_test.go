@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -15,7 +16,8 @@ func TestUserScore(t *testing.T) {
 		Value: 1.3,
 	})
 	deployment := getMockDeployment()
-	result := mult.Score(deployment, nil)
+	result := mult.Score(context.Background(), deployment, nil)
+
 	assert.Equal(t, float32(1.3), result.GetScore())
 	assert.Len(t, result.GetFactors(), 1)
 
@@ -25,6 +27,6 @@ func TestUserScore(t *testing.T) {
 		},
 		Value: 1.3,
 	})
-	result = mult.Score(deployment, nil)
+	result = mult.Score(context.Background(), deployment, nil)
 	assert.Nil(t, result)
 }
