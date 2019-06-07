@@ -267,6 +267,39 @@ class K8sRbacTest extends BaseSpecification {
         }
     }
 
+    def "Verify returned subject list is complete"() {
+        given:
+        "list of bindings from the orchestrator, we will pull unique subjects from this list"
+        def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
+        def orchestratorSubjects = orchestratorBindings.collectMany {
+            it.subjects
+        }.findAll {
+            it.kind == "User" || it.kind == "Group"
+        }
+        orchestratorSubjects.unique { a, b -> a.name <=> b.name }
+
+        expect:
+        "SR should have the same subjects"
+        def stackroxSubjectsAndRoles = RbacService.getSubjects()
+        Timer t = new Timer(15, 2)
+        while (t.IsValid() && stackroxSubjectsAndRoles.size() != orchestratorSubjects.size()) {
+            stackroxSubjectsAndRoles = RbacService.getSubjects()
+        }
+        def stackroxSubjects = stackroxSubjectsAndRoles*.subject
+
+        assert stackroxSubjects.size() == orchestratorSubjects.size()
+        println "All subjects scraped in ${t.SecondsSince()}s"
+        for (Rbac.Subject sub : stackroxSubjects) {
+            println "Looking for SR Subject: ${sub.name} (${sub.namespace})"
+            K8sSubject subject = orchestratorSubjects.find {
+                it.name == sub.name &&
+                        it.namespace == sub.namespace &&
+                                it.kind.toLowerCase() == sub.kind.toString().toLowerCase()
+            }
+            assert subject
+        }
+    }
+
     def "Add Binding with role ref and verify it gets scraped"() {
         given:
         "create a new role binding"

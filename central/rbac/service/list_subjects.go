@@ -69,6 +69,8 @@ func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBindi
 
 	// Create a temporary index.
 	tempIndex, err := globalindex.MemOnlyIndex()
+	defer utils.IgnoreError(tempIndex.Close)
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "initializing temp index")
 	}
