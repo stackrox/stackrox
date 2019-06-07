@@ -150,13 +150,13 @@ const NetworkGraph = ({
         });
     }
 
-    function getEdgesFromNode(nodeId, isNonIsolatedNode) {
+    function getEdgesFromNode(nodeId) {
         const edgeMap = {};
         const edges = [];
-        if (isNonIsolatedNode && filterState !== filterModes.all) return edges;
+        const inAllowedState = filterState === filterModes.allowed;
         links.forEach(linkItem => {
-            const { source, sourceNS, sourceName } = linkItem;
-            const { target, targetNS, targetName, isActive } = linkItem;
+            const { source, sourceNS, sourceName, target, targetNS, targetName } = linkItem;
+            const { isActive, isBetweenNonIsolated } = linkItem;
             const nodeIsSource = nodeId === source;
             const nodeIsTarget = nodeId === target;
             // destination node info needed for network flow tab
@@ -167,8 +167,11 @@ const NetworkGraph = ({
                 (nodeIsSource || nodeIsTarget) &&
                 (filterState !== filterModes.active || isActive)
             ) {
-                const activeClass = filterState !== filterModes.allowed && isActive ? 'active' : '';
-                const nonIsolatedClass = isNonIsolatedNode && !isActive ? 'nonIsolated' : '';
+                const activeClass = !inAllowedState && isActive ? 'active' : '';
+
+                // only hide edge when it's bw nonisolated and is not active
+                const nonIsolatedClass =
+                    isBetweenNonIsolated && (!isActive || inAllowedState) ? 'nonIsolated' : '';
                 const id = [source, target].sort().join('--');
                 if (!edgeMap[id]) {
                     // If same namespace, draw line between the two nodes
@@ -339,7 +342,7 @@ const NetworkGraph = ({
         const node = hoveredNode || selectedNode;
         let allEdges = getNSEdges(node && node.id);
         if (node) {
-            allEdges = allEdges.concat(getEdgesFromNode(node.id, nonIsolated(node)));
+            allEdges = allEdges.concat(getEdgesFromNode(node.id));
         }
         return allEdges;
     }

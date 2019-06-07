@@ -43,6 +43,8 @@ export const getLinks = (nodes, networkFlowMapping) => {
                 };
 
                 link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
+                link.isBetweenNonIsolated = !!(nonIsolated(node) && nonIsolated(targetNode));
+
                 // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
                 const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
                 if (!isImplicit || link.isActive) {
@@ -67,6 +69,9 @@ export const getLinks = (nodes, networkFlowMapping) => {
                 targetNS
             };
             link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
+            link.isBetweenNonIsolated = !!(
+                nonIsolated(srcDeployment) && nonIsolated(tgtDeployment)
+            );
             filteredLinks.push(link);
         });
     });
