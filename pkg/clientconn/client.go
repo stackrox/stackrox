@@ -2,7 +2,6 @@ package clientconn
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,27 +14,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-// Service identifies the service which acts as gRPC server.
-type Service int
-
-const (
-	// Central is the service name for central
-	Central Service = iota
-	// Sensor is the service name for sensor
-	Sensor
-)
-
-func tlsConfig(clientCert tls.Certificate, rootCAs *x509.CertPool, server string) *tls.Config {
-	return &tls.Config{
-		Certificates: []tls.Certificate{clientCert},
-		ServerName:   server,
-		RootCAs:      rootCAs,
-	}
-}
-
-// AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
-// client certificates found on the local file system.
-func AuthenticatedGRPCConnection(endpoint string, service Service) (conn *grpc.ClientConn, err error) {
+// TLSConfig returns a TLS config that can be used to talk to the given server via MTLS.
+func TLSConfig(server mtls.Subject) (*tls.Config, error) {
 	clientCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
 		return nil, errors.Wrap(err, "client credentials")
@@ -44,14 +24,22 @@ func AuthenticatedGRPCConnection(endpoint string, service Service) (conn *grpc.C
 	if err != nil {
 		return nil, errors.Wrap(err, "trusted pool")
 	}
+	return &tls.Config{
+		Certificates: []tls.Certificate{clientCert},
+		ServerName:   server.Hostname(),
+		RootCAs:      rootCAs,
+	}, nil
+}
 
-	var creds credentials.TransportCredentials
-	switch service {
-	case Central:
-		creds = credentials.NewTLS(tlsConfig(clientCert, rootCAs, mtls.CentralSubject.Hostname()))
-	case Sensor:
-		creds = credentials.NewTLS(tlsConfig(clientCert, rootCAs, mtls.SensorSubject.Hostname()))
+// AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
+// client certificates found on the local file system.
+func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject) (conn *grpc.ClientConn, err error) {
+	tlsConfig, err := TLSConfig(server)
+	if err != nil {
+		return nil, err
 	}
+
+	creds := credentials.NewTLS(tlsConfig)
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), keepAliveDialOption())
 }
 

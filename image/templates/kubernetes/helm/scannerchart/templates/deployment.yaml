@@ -38,8 +38,6 @@ spec:
         - /clairify
         imagePullPolicy: Always
         ports:
-        - name: clair
-          containerPort: 6060
         - name: clairify
           containerPort: 8080
         securityContext:
@@ -49,8 +47,14 @@ spec:
         - name: clair-config-volume
           mountPath: /etc/clair
           readOnly: true
+        - name: scanner-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
       serviceAccount: scanner
       volumes:
       - name: clair-config-volume
         configMap:
           name: clair-config
+      - name: scanner-tls-volume
+        secret:
+          secretName: scanner-tls

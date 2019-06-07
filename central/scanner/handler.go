@@ -7,10 +7,12 @@ import (
 	"sort"
 
 	"github.com/docker/distribution/reference"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roximages/defaults"
 	"github.com/stackrox/rox/pkg/zip"
@@ -70,6 +72,18 @@ func serveHTTP(w http.ResponseWriter, r *http.Request) {
 		params.ScannerImage = defaults.ScannerImage()
 	}
 
+	centralCA, err := mtls.CACertPEM()
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not load central CA"))
+		return
+	}
+
+	cert, err := mtls.IssueNewCert(mtls.ScannerSubject)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not issue scanner cert"))
+		return
+	}
+
 	config := renderer.Config{
 		ClusterType: clusterType,
 		K8sConfig: &renderer.K8sConfig{
@@ -77,6 +91,11 @@ func serveHTTP(w http.ResponseWriter, r *http.Request) {
 				ScannerImage: params.ScannerImage,
 			},
 			OfflineMode: params.OfflineMode,
+		},
+		SecretsByteMap: map[string][]byte{
+			"ca.pem":           centralCA,
+			"scanner-cert.pem": cert.CertPEM,
+			"scanner-key.pem":  cert.KeyPEM,
 		},
 	}
 

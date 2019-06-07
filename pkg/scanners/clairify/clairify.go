@@ -7,12 +7,15 @@ import (
 	"time"
 
 	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/pkg/errors"
 	"github.com/stackrox/clairify/client"
 	"github.com/stackrox/clairify/types"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -57,15 +60,21 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		return nil, err
 	}
 
-	dialer := &net.Dialer{
+	dialer := net.Dialer{
 		Timeout: 2 * time.Second,
 	}
-	var transport = &http.Transport{
-		Dial: dialer.Dial,
+
+	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize TLS config")
 	}
-	var httpClient = &http.Client{
-		Timeout:   clientTimeout,
-		Transport: transport,
+
+	httpClient := &http.Client{
+		Timeout: clientTimeout,
+		Transport: &http.Transport{
+			DialContext:     dialer.DialContext,
+			TLSClientConfig: tlsConfig,
+		},
 	}
 
 	client := client.NewWithClient(endpoint, true, httpClient)

@@ -9,14 +9,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/mocks"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type fakeScanner struct {
 	global bool
+	typ    string
 }
 
 func (*fakeScanner) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
@@ -35,7 +36,10 @@ func (*fakeScanner) Test() error {
 	panic("implement me")
 }
 
-func (*fakeScanner) Type() string {
+func (f *fakeScanner) Type() string {
+	if f.typ != "" {
+		return f.typ
+	}
 	return "type"
 }
 
@@ -46,11 +50,15 @@ func TestSetOrdering(t *testing.T) {
 	}))
 	defer server.Close()
 
-	registryFactory := registries.NewFactory()
-	registrySet := registries.NewSet(registryFactory)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	scannerFactory := NewFactory(registrySet)
+	scannerFactory := mocks.NewMockFactory(ctrl)
 	scannerSet := NewSet(scannerFactory)
+
+	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("clairify", func(integration *storage.ImageIntegration) bool {
+		return integration.GetType() == "clairify"
+	})).Return(&fakeScanner{typ: "clairify"}, nil)
 
 	clairifyIntegration := &storage.ImageIntegration{
 		Id:   "clairify",
@@ -61,6 +69,11 @@ func TestSetOrdering(t *testing.T) {
 			},
 		},
 	}
+
+	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("dtr", func(integration *storage.ImageIntegration) bool {
+		return integration.GetType() == "dtr"
+	})).Return(&fakeScanner{typ: "dtr"}, nil)
+
 	dtrIntegration := &storage.ImageIntegration{
 		Id:   "dtr",
 		Type: "dtr",

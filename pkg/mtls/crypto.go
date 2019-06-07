@@ -15,6 +15,7 @@ import (
 	"github.com/cloudflare/cfssl/config"
 	cfcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/helpers"
+	cflog "github.com/cloudflare/cfssl/log"
 	cfsigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
@@ -41,6 +42,14 @@ const (
 	certLifetime = 365 * 24 * time.Hour
 )
 
+func init() {
+	// The cfssl library prints logs at Info level when it processes a
+	// Certificate Signing Request (CSR) or issues a new certificate.
+	// These logs do not help the user understand anything, so here
+	// we adjust the log level to exclude them.
+	cflog.Level = cflog.LevelWarning
+}
+
 var (
 	// CentralSubject is the identity used in certificates for Central.
 	CentralSubject = Subject{ServiceType: storage.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
@@ -48,8 +57,8 @@ var (
 	// SensorSubject is the identity used in certificates for Sensor.
 	SensorSubject = Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
 
-	// BenchmarkSubject is the identity used in certificates for Benchmark
-	BenchmarkSubject = Subject{ServiceType: storage.ServiceType_BENCHMARK_SERVICE, Identifier: "Benchmark"}
+	// ScannerSubject is the identity used in certificates for Scanner.
+	ScannerSubject = Subject{ServiceType: storage.ServiceType_SCANNER_SERVICE, Identifier: "Scanner"}
 
 	readCAOnce sync.Once
 	caCert     *x509.Certificate
@@ -70,8 +79,8 @@ func LeafCertificateFromFile() (tls.Certificate, error) {
 	return tls.LoadX509KeyPair(CertFilePath, KeyFilePath)
 }
 
-// CACertDER reads the PEM-decoded bytes of the cert from the local file system.
-func CACertDER() ([]byte, error) {
+// loadCACertDER reads the PEM-decoded bytes of the cert from the local file system.
+func loadCACertDER() ([]byte, error) {
 	b, err := ioutil.ReadFile(caCertFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "file access")
@@ -98,7 +107,7 @@ func CACertPEM() ([]byte, error) {
 // CACert reads the cert from the local file system and returns the cert and the DER encoding.
 func CACert() (*x509.Certificate, []byte, error) {
 	readCAOnce.Do(func() {
-		der, err := CACertDER()
+		der, err := loadCACertDER()
 		if err != nil {
 			caCertErr = errors.Wrap(err, "CA cert could not be decoded")
 			return

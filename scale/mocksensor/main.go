@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -52,7 +53,7 @@ func main() {
 		logger.Fatalf("Unable to generate specified flows. Increase maxDeployments or decrease maxNetworkFlows")
 	}
 
-	conn, err := clientconn.AuthenticatedGRPCConnection(*centralEndpoint, clientconn.Central)
+	conn, err := clientconn.AuthenticatedGRPCConnection(*centralEndpoint, mtls.CentralSubject)
 	if err != nil {
 		panic(err)
 	}

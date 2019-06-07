@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -72,7 +73,7 @@ func getShortID() (string, error) {
 }
 
 func getStream(sensorEndpoint string) (sensor.SignalService_PushSignalsClient, context.CancelFunc, error) {
-	conn, err := clientconn.AuthenticatedGRPCConnection(sensorEndpoint, clientconn.Sensor)
+	conn, err := clientconn.AuthenticatedGRPCConnection(sensorEndpoint, mtls.SensorSubject)
 	if err != nil {
 		log.Panic(err)
 	}

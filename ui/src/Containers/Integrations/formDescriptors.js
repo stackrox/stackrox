@@ -615,7 +615,7 @@ const formDescriptors = {
                 label: 'Endpoint',
                 jsonpath: 'clairify.endpoint',
                 type: 'text',
-                placeholder: 'http://scanner.stackrox:8080'
+                placeholder: 'https://scanner.stackrox:8080'
             }
         ],
         google: [

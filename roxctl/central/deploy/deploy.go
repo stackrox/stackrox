@@ -4,14 +4,12 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
-	cflog "github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,14 +23,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/mode"
 )
-
-func init() {
-	// The cfssl library prints logs at Info level when it processes a
-	// Certificate Signing Request (CSR) or issues a new certificate.
-	// These logs do not help the user understand anything, so here
-	// we adjust the log level to exclude them.
-	cflog.Level = cflog.LevelWarning
-}
 
 func generateJWTSigningKey(fileMap map[string][]byte) error {
 	// Generate the private key that we will use to sign JWTs for API keys.
@@ -63,6 +53,14 @@ func generateMTLSFiles(fileMap map[string][]byte) (caCert, caKey []byte, err err
 	}
 	fileMap["cert.pem"] = cert.CertPEM
 	fileMap["key.pem"] = cert.KeyPEM
+
+	scannerCert, err := mtls.IssueNewCertFromCA(mtls.ScannerSubject, caCert, caKey)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "could not issue scanner cert")
+	}
+	fileMap["scanner-cert.pem"] = scannerCert.CertPEM
+	fileMap["scanner-key.pem"] = scannerCert.KeyPEM
+
 	return caCert, caKey, nil
 }
 
@@ -160,11 +158,6 @@ func outputZip(config renderer.Config) error {
 
 		config.SecretsByteMap["monitoring-password"] = []byte(config.K8sConfig.Monitoring.Password)
 		wrapper.AddFiles(zip.NewFile("monitoring/password", []byte(config.K8sConfig.Monitoring.Password+"\n"), zip.Sensitive))
-	}
-
-	config.SecretsBase64Map = make(map[string]string)
-	for k, v := range config.SecretsByteMap {
-		config.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
 	}
 
 	files, err := renderer.Render(config)
