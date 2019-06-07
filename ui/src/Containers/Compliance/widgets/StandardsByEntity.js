@@ -17,7 +17,7 @@ import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import contextTypes from 'constants/contextTypes';
 
 function processData(data, entityType) {
-    if (!data.results.results.length || !data.entityList) return [];
+    if (!data || !data.results.results.length || !data.entityList) return [];
     const standardsGrouping = {};
     const { results, entityList, complianceStandards } = data;
     results.results.forEach(result => {
@@ -67,6 +67,7 @@ function processData(data, entityType) {
 }
 
 function getLabelLinks(data, entityType) {
+    if (!data) return null;
     const { entityList } = data;
     const labelLinks = {};
     entityList.forEach(entity => {
@@ -90,11 +91,11 @@ const StandardsByEntity = ({ entityType, bodyClassName, className }) => {
                 let contents = <Loader />;
                 const headerText = `Passing standards by ${entityType}`;
                 let pages;
-                if (!loading || data.results) {
+                if (!loading || (data && data.results)) {
                     const formattedData = {
-                        results: data.results,
+                        results: data && data.results,
                         complianceStandards: data.complianceStandards,
-                        entityList: data.clusters
+                        entityList: data && data.clusters
                     };
                     const results = processData(formattedData, entityType);
                     const labelLinks = getLabelLinks(formattedData, entityType);
