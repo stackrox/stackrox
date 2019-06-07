@@ -5,6 +5,7 @@ import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegration
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
 import io.stackrox.proto.storage.DeploymentOuterClass.ContainerImage
+import objects.NetworkPolicy
 import orchestratormanager.OrchestratorType
 import services.AlertService
 import services.BaseService
@@ -29,6 +30,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.ListPolicy
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.Whitelist
 import io.stackrox.proto.storage.ScopeOuterClass
+import services.NetworkPolicyService
 import util.Env
 import util.Timer
 
@@ -564,6 +566,19 @@ class Services extends BaseService {
         } catch (Exception e) {
             println e.toString()
             return ""
+        }
+    }
+
+    static cleanupNetworkPolicies(List<NetworkPolicy> policies) {
+        policies.each {
+            if (it.uid) {
+                OrchestratorType.orchestrator.deleteNetworkPolicy(it)
+            }
+        }
+        policies.each {
+            if (it.uid) {
+                NetworkPolicyService.waitForNetworkPolicyRemoval(it.uid)
+            }
         }
     }
 

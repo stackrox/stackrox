@@ -13,8 +13,8 @@ import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SimulateNetworkGr
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest
-
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicy
+import util.Timer
 
 class NetworkPolicyService extends BaseService {
 
@@ -104,6 +104,21 @@ class NetworkPolicyService extends BaseService {
         }
 
         println "SR did not detect the network policy"
+        return false
+    }
+
+    static waitForNetworkPolicyRemoval(String id, int timeoutSeconds = 60) {
+        Timer t = new Timer((timeoutSeconds / 2) as int, 2)
+        while (t.IsValid()) {
+            try {
+                getNetworkPolicyClient().getNetworkPolicy(ResourceByID.newBuilder().setId(id).build())
+            } catch (Exception e) {
+                println "SR did not detect the network policy"
+                return true
+            }
+        }
+
+        println "SR still detects the network policy"
         return false
     }
 

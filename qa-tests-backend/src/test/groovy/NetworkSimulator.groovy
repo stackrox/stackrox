@@ -60,8 +60,8 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
-        def policyId = orchestrator.applyNetworkPolicy(policy)
-        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
+        orchestrator.applyNetworkPolicy(policy)
+        assert NetworkPolicyService.waitForNetworkPolicy(policy.uid)
         def baseline = NetworkPolicyService.getNetworkPolicyGraph()
 
         and:
@@ -103,9 +103,7 @@ class NetworkSimulator extends BaseSpecification {
 
         cleanup:
         "cleanup"
-        if (policyId != null) {
-            orchestrator.deleteNetworkPolicy(policy)
-        }
+        Services.cleanupNetworkPolicies([policy])
     }
 
     @Category([NetworkPolicySimulation, BAT])
@@ -117,8 +115,8 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-        def policyId = orchestrator.applyNetworkPolicy(policy1)
-        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
+        orchestrator.applyNetworkPolicy(policy1)
+        assert NetworkPolicyService.waitForNetworkPolicy(policy1.uid)
         def baseline = NetworkPolicyService.getNetworkPolicyGraph()
 
         and:
@@ -167,9 +165,7 @@ class NetworkSimulator extends BaseSpecification {
 
         cleanup:
         "cleanup"
-        if (policyId != null) {
-            orchestrator.deleteNetworkPolicy(policy1)
-        }
+        Services.cleanupNetworkPolicies([policy1])
     }
 
     @Category([NetworkPolicySimulation, BAT])
@@ -181,8 +177,8 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-        def policyId = orchestrator.applyNetworkPolicy(policy1)
-        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
+        orchestrator.applyNetworkPolicy(policy1)
+        assert NetworkPolicyService.waitForNetworkPolicy(policy1.uid)
 
         and:
         "generate simulation"
@@ -241,9 +237,7 @@ class NetworkSimulator extends BaseSpecification {
 
         cleanup:
         "cleanup"
-        if (policyId != null) {
-            orchestrator.deleteNetworkPolicy(policy1)
-        }
+        Services.cleanupNetworkPolicies([policy1])\
     }
 
     @Category([NetworkPolicySimulation, BAT])
@@ -255,8 +249,8 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-        def policyId = orchestrator.applyNetworkPolicy(policy1)
-        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
+        orchestrator.applyNetworkPolicy(policy1)
+        assert NetworkPolicyService.waitForNetworkPolicy(policy1.uid)
 
         and:
         "generate simulation"
@@ -301,9 +295,7 @@ class NetworkSimulator extends BaseSpecification {
 
         cleanup:
         "cleanup"
-        if (policyId != null) {
-            orchestrator.deleteNetworkPolicy(policy1)
-        }
+        Services.cleanupNetworkPolicies([policy1])
     }
 
     @Category([NetworkPolicySimulation, BAT])
@@ -315,14 +307,14 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-        def policyId1 = orchestrator.applyNetworkPolicy(policy1)
-        assert NetworkPolicyService.waitForNetworkPolicy(policyId1)
+        orchestrator.applyNetworkPolicy(policy1)
+        assert NetworkPolicyService.waitForNetworkPolicy(policy1.uid)
         NetworkPolicy policy2 = new NetworkPolicy("allow-ingress-application-web")
                 .setNamespace("qa")
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
-        def policyId2 = orchestrator.applyNetworkPolicy(policy2)
-        assert NetworkPolicyService.waitForNetworkPolicy(policyId2)
+        orchestrator.applyNetworkPolicy(policy2)
+        assert NetworkPolicyService.waitForNetworkPolicy(policy2.uid)
         def baseline = NetworkGraphService.getNetworkGraph()
 
         and:
@@ -382,12 +374,11 @@ class NetworkSimulator extends BaseSpecification {
         }
 
         // Verify removed contains the toDelete policy
-        assert simulation.removed.nodeDiffsMap.each { it.value.policyIdsList.contains(policyId1) }
+        assert simulation.removed.nodeDiffsMap.each { it.value.policyIdsList.contains(policy1.uid) }
 
         cleanup:
         "cleanup"
-        policyId1 ? orchestrator.deleteNetworkPolicy(policy1) : null
-        policyId2 ? orchestrator.deleteNetworkPolicy(policy2) : null
+        Services.cleanupNetworkPolicies([policy1, policy2])
     }
 
     @Category([NetworkPolicySimulation])
