@@ -179,16 +179,14 @@ function* watchLocation() {
     while (true) {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
+        const onNetworkPage =
+            location && location.pathname && location.pathname.startsWith('/main/network');
 
-        if (
-            location &&
-            location.pathname &&
-            location.pathname.startsWith(networkPath) &&
-            !pollTask
-        ) {
+        if (onNetworkPage && !pollTask) {
             // start only if it's not already in progress
             pollTask = yield fork(pollNodeUpdates);
-        } else if (pollTask) {
+        } else if (!onNetworkPage && pollTask) {
+            // cancel when navigating away from network page
             yield cancel(pollTask);
             pollTask = null;
             yield put(graphNetworkActions.setSelectedNode(null));
