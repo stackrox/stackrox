@@ -15,8 +15,9 @@ type BasePipeline interface {
 // ClusterPipeline processes a message received from a given cluster.
 //go:generate mockgen-wrapper ClusterPipeline
 type ClusterPipeline interface {
-	Run(msg *central.MsgFromSensor, injector common.MessageInjector) error
 	BasePipeline
+
+	Run(ctx context.Context, msg *central.MsgFromSensor, injector common.MessageInjector) error
 }
 
 // Factory returns a ClusterPipeline for the given cluster.
@@ -30,9 +31,11 @@ type Factory interface {
 //go:generate mockgen-wrapper Fragment
 type Fragment interface {
 	BasePipeline
+
 	Match(msg *central.MsgFromSensor) bool
-	Run(clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error
-	Reconcile(clusterID string) error
+
+	Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error
+	Reconcile(ctx context.Context, clusterID string) error
 }
 
 // FragmentFactory returns a Fragment for the given cluster.

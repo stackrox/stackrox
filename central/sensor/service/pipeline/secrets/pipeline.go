@@ -44,15 +44,15 @@ type pipelineImpl struct {
 	reconcileStore reconciliation.Store
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.secrets.Search(context.TODO(), query)
+	results, err := s.secrets.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
 	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "secrets", func(id string) error {
-		return s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.Secret{Id: id})
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.Secret{Id: id})
 	})
 }
 
@@ -61,7 +61,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Secret)
 
 	event := msg.GetEvent()
@@ -70,22 +70,22 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.runRemovePipeline(event.GetAction(), secret)
+		return s.runRemovePipeline(ctx, event.GetAction(), secret)
 	default:
 		s.reconcileStore.Add(event.GetId())
-		return s.runGeneralPipeline(event.GetAction(), secret)
+		return s.runGeneralPipeline(ctx, event.GetAction(), secret)
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.Secret) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, event *storage.Secret) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the event action.
-	if err := s.persistSecret(action, event); err != nil {
+	if err := s.persistSecret(ctx, action, event); err != nil {
 		return err
 	}
 
@@ -93,16 +93,16 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, secret *storage.Secret) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, secret *storage.Secret) error {
 	if err := s.validateInput(secret); err != nil {
 		return err
 	}
 
-	if err := s.enrichCluster(secret); err != nil {
+	if err := s.enrichCluster(ctx, secret); err != nil {
 		return err
 	}
 
-	if err := s.persistSecret(action, secret); err != nil {
+	if err := s.persistSecret(ctx, action, secret); err != nil {
 		return err
 	}
 
@@ -117,10 +117,10 @@ func (s *pipelineImpl) validateInput(secret *storage.Secret) error {
 	return nil
 }
 
-func (s *pipelineImpl) enrichCluster(secret *storage.Secret) error {
+func (s *pipelineImpl) enrichCluster(ctx context.Context, secret *storage.Secret) error {
 	secret.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), secret.GetClusterId())
+	cluster, clusterExists, err := s.clusters.GetCluster(ctx, secret.GetClusterId())
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -132,12 +132,12 @@ func (s *pipelineImpl) enrichCluster(secret *storage.Secret) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistSecret(action central.ResourceAction, secret *storage.Secret) error {
+func (s *pipelineImpl) persistSecret(ctx context.Context, action central.ResourceAction, secret *storage.Secret) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
-		return s.secrets.UpsertSecret(context.TODO(), secret)
+		return s.secrets.UpsertSecret(ctx, secret)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.secrets.RemoveSecret(context.TODO(), secret.GetId())
+		return s.secrets.RemoveSecret(ctx, secret.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for secret does not exist", action)
 	}

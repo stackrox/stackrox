@@ -17,8 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/registries"
-	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -32,24 +30,18 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(imageintegration.Set().RegistryFactory(),
-		imageintegration.Set().ScannerFactory(),
-		imageintegration.ToNotify(),
+	return NewPipeline(imageintegration.ToNotify(),
 		datastore.Singleton(),
 		clusterDatastore.Singleton(),
 		reprocessor.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(registryFactory registries.Factory,
-	scannerFactory scanners.Factory,
-	toNotify integration.ToNotify,
+func NewPipeline(toNotify integration.ToNotify,
 	datastore datastore.DataStore,
 	clusterDatastore clusterDatastore.DataStore,
 	enrichAndDetectLoop reprocessor.Loop) pipeline.Fragment {
 	return &pipelineImpl{
-		registryFactory:     registryFactory,
-		scannerFactory:      scannerFactory,
 		toNotify:            toNotify,
 		datastore:           datastore,
 		clusterDatastore:    clusterDatastore,
@@ -58,16 +50,14 @@ func NewPipeline(registryFactory registries.Factory,
 }
 
 type pipelineImpl struct {
-	registryFactory registries.Factory
-	scannerFactory  scanners.Factory
-	toNotify        integration.ToNotify
+	toNotify integration.ToNotify
 
 	datastore           datastore.DataStore
 	clusterDatastore    clusterDatastore.DataStore
 	enrichAndDetectLoop reprocessor.Loop
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(_ context.Context, _ string) error {
 	// Nothing to reconcile for image integrations
 	return nil
 }
@@ -106,10 +96,10 @@ func (s *pipelineImpl) getMatchingImageIntegration(auto *storage.ImageIntegratio
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ImageIntegration)
 
-	cluster, exists, err := s.clusterDatastore.GetCluster(context.TODO(), clusterID)
+	cluster, exists, err := s.clusterDatastore.GetCluster(ctx, clusterID)
 	if err != nil {
 		return err
 	}
@@ -135,7 +125,7 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 	// Action is currently always update
 	// We should not overwrite image integrations that already have a username and password
 	// However, if they do not have a username and password, then we can add one that has a username and password
-	existingIntegrations, err := s.datastore.GetImageIntegrations(context.TODO(), &v1.GetImageIntegrationsRequest{})
+	existingIntegrations, err := s.datastore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		return err
 	}
@@ -149,7 +139,7 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 		if err := s.toNotify.NotifyUpdated(imageIntegration); err != nil {
 			return err
 		}
-		if _, err := s.datastore.AddImageIntegration(context.TODO(), imageIntegration); err != nil {
+		if _, err := s.datastore.AddImageIntegration(ctx, imageIntegration); err != nil {
 			return err
 		}
 		// Only when adding the integration the first time do we need to run processing
@@ -162,11 +152,11 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 		if err := s.toNotify.NotifyUpdated(imageIntegration); err != nil {
 			return err
 		}
-		if err := s.datastore.UpdateImageIntegration(context.TODO(), imageIntegration); err != nil {
+		if err := s.datastore.UpdateImageIntegration(ctx, imageIntegration); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

@@ -73,15 +73,15 @@ type pipelineImpl struct {
 	reconcileStore reconciliation.Store
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.deployments.Search(context.TODO(), query)
+	results, err := s.deployments.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
 	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "deployments", func(id string) error {
-		_, err := s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
+		_, err := s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
 		return err
 	})
 }
@@ -91,7 +91,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Deployment)
 
 	event := msg.GetEvent()
@@ -102,17 +102,17 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injecto
 	var err error
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		resp, err = s.runRemovePipeline(event.GetAction(), deployment)
+		resp, err = s.runRemovePipeline(ctx, event.GetAction(), deployment)
 	default:
 		s.reconcileStore.Add(event.GetId())
-		resp, err = s.runGeneralPipeline(event.GetAction(), deployment)
+		resp, err = s.runGeneralPipeline(ctx, event.GetAction(), deployment)
 	}
 	if err != nil {
 		return err
 	}
 	if resp != nil {
 		if enforcers.ShouldEnforce(deployment.GetAnnotations()) {
-			err := injector.InjectMessage(context.Background(), &central.MsgToSensor{
+			err := injector.InjectMessage(ctx, &central.MsgToSensor{
 				Msg: &central.MsgToSensor_Enforcement{
 					Enforcement: resp,
 				},
@@ -128,14 +128,14 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injecto
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return nil, err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
-	if err := s.persistDeployment.do(action, deployment); err != nil {
+	if err := s.persistDeployment.do(ctx, action, deployment); err != nil {
 		return nil, err
 	}
 
@@ -162,13 +162,13 @@ func computeDeploymentHashWithoutContainerInstances(d *storage.Deployment) error
 	return err
 }
 
-func (s *pipelineImpl) dedupeBasedOnHash(action central.ResourceAction, newDeployment *storage.Deployment) (bool, error) {
+func (s *pipelineImpl) dedupeBasedOnHash(ctx context.Context, action central.ResourceAction, newDeployment *storage.Deployment) (bool, error) {
 	if err := computeDeploymentHashWithoutContainerInstances(newDeployment); err != nil {
 		return false, err
 	}
 
 	// Check if this deployment needs to be processed based on hash
-	oldDeployment, exists, err := s.deployments.GetDeployment(context.TODO(), newDeployment.GetId())
+	oldDeployment, exists, err := s.deployments.GetDeployment(ctx, newDeployment.GetId())
 	if err != nil {
 		return false, err
 	}
@@ -178,19 +178,19 @@ func (s *pipelineImpl) dedupeBasedOnHash(action central.ResourceAction, newDeplo
 		for i, c := range newDeployment.GetContainers() {
 			oldDeployment.Containers[i].Instances = c.Instances
 		}
-		return true, s.persistDeployment.do(action, oldDeployment)
+		return true, s.persistDeployment.do(ctx, action, oldDeployment)
 	}
 	return false, nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return nil, err
 	}
 
-	dedupe, err := s.dedupeBasedOnHash(action, deployment)
+	dedupe, err := s.dedupeBasedOnHash(ctx, action, deployment)
 	if err != nil {
 		err = errors.Wrapf(err, "Could not check deployment %q for deduping", deployment.GetName())
 		log.Error(err)
@@ -201,17 +201,17 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deploym
 	}
 
 	// Fill in cluster information.
-	if err := s.clusterEnrichment.do(deployment); err != nil {
+	if err := s.clusterEnrichment.do(ctx, deployment); err != nil {
 		log.Errorf("Couldn't get cluster identity: %s", err)
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
-	if err := s.persistDeployment.do(action, deployment); err != nil {
+	if err := s.persistDeployment.do(ctx, action, deployment); err != nil {
 		return nil, err
 	}
 
 	// Update the deployments images with the latest version from storage.
-	s.updateImages.do(deployment)
+	s.updateImages.do(ctx, deployment)
 
 	// Process the deployment (alert generation, enforcement action generation)
 	resp := s.createResponse.do(deployment, action)
@@ -221,4 +221,4 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deploym
 	return resp, nil
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

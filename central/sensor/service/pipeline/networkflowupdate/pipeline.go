@@ -4,13 +4,10 @@ import (
 	"context"
 
 	countMetrics "github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -35,7 +32,7 @@ type pipelineImpl struct {
 	storeUpdater flowStoreUpdater
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(_ context.Context, _ string) error {
 	// Nothing to reconcile
 	return nil
 }
@@ -45,12 +42,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(_ string, msg *central.MsgFromSensor, _ common.MessageInjector) (err error) {
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph)))
-
+func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) (err error) {
 	update := msg.GetNetworkFlowUpdate()
 
 	if len(update.Updated) == 0 {
@@ -64,4 +56,4 @@ func (s *pipelineImpl) Run(_ string, msg *central.MsgFromSensor, _ common.Messag
 	return nil
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

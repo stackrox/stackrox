@@ -1,6 +1,7 @@
 package deploymentevents
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -83,15 +84,16 @@ func (suite *PipelineTestSuite) TestCreateResponseForRemove() {
 func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 	events := fakeDeploymentEvents()
 	events[0].Action = central.ResourceAction_CREATE_RESOURCE
+	ctx := context.Background()
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().UpsertDeployment(gomock.Any(), events[0].GetDeployment()).Return(nil)
+	suite.deployments.EXPECT().UpsertDeployment(ctx, events[0].GetDeployment()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
 		deployments: suite.deployments,
 	}
-	err := tested.do(events[0].Action, events[0].GetDeployment())
+	err := tested.do(ctx, events[0].Action, events[0].GetDeployment())
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
@@ -100,15 +102,16 @@ func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 	events := fakeDeploymentEvents()
 	events[0].Action = central.ResourceAction_UPDATE_RESOURCE
+	ctx := context.Background()
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().UpsertDeployment(gomock.Any(), events[0].GetDeployment()).Return(nil)
+	suite.deployments.EXPECT().UpsertDeployment(ctx, events[0].GetDeployment()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
 		deployments: suite.deployments,
 	}
-	err := tested.do(events[0].Action, events[0].GetDeployment())
+	err := tested.do(ctx, events[0].Action, events[0].GetDeployment())
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
@@ -117,15 +120,16 @@ func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 	events := fakeDeploymentEvents()
 	events[0].Action = central.ResourceAction_REMOVE_RESOURCE
+	ctx := context.Background()
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().RemoveDeployment(gomock.Any(), "", events[0].GetDeployment().GetId()).Return(nil)
+	suite.deployments.EXPECT().RemoveDeployment(ctx, "", events[0].GetDeployment().GetId()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
 		deployments: suite.deployments,
 	}
-	err := tested.do(events[0].GetAction(), events[0].GetDeployment())
+	err := tested.do(ctx, events[0].GetAction(), events[0].GetDeployment())
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
@@ -133,10 +137,11 @@ func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 
 func (suite *PipelineTestSuite) TestUpdateImages() {
 	events := fakeDeploymentEvents()
+	ctx := context.Background()
 
 	// Expect that our enforcement generator is called with expected data.
 	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	suite.images.EXPECT().UpsertImage(gomock.Any(),
+	suite.images.EXPECT().UpsertImage(ctx,
 		testutils.PredMatcher("check that image has correct ID",
 			func(img *storage.Image) bool { return img.GetId() == expectedImage0.GetId() })).Return(nil)
 
@@ -144,13 +149,14 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 	tested := &updateImagesImpl{
 		images: suite.images,
 	}
-	tested.do(events[0].GetDeployment())
+	tested.do(ctx, events[0].GetDeployment())
 
 	// Pull one more time to get nil
 	suite.Equal(expectedImage0, events[0].GetDeployment().GetContainers()[0].GetImage())
 }
 
 func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
+	ctx := context.Background()
 	deployment := &storage.Deployment{
 		Id: "id1",
 		Containers: []*storage.Container{
@@ -168,7 +174,7 @@ func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
 	tested := &updateImagesImpl{
 		images: suite.images,
 	}
-	tested.do(deployment)
+	tested.do(ctx, deployment)
 }
 
 func (suite *PipelineTestSuite) TestValidateImages() {

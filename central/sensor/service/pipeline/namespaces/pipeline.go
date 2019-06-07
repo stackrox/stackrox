@@ -8,7 +8,6 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -16,17 +15,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	log          = logging.LoggerForModule()
-	allAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS,
-				storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Namespace)))
+	log = logging.LoggerForModule()
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -54,14 +47,14 @@ type pipelineImpl struct {
 	reconcileStore reconciliation.Store
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.namespaces.Search(context.TODO(), query)
+	results, err := s.namespaces.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "namespaces", func(id string) error {
-		return s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.NamespaceMetadata{Id: id})
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.NamespaceMetadata{Id: id})
 	})
 }
 
@@ -70,7 +63,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Namespace)
 
 	event := msg.GetEvent()
@@ -79,22 +72,22 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.runRemovePipeline(event.GetAction(), namespace)
+		return s.runRemovePipeline(ctx, event.GetAction(), namespace)
 	default:
 		s.reconcileStore.Add(event.GetId())
-		return s.runGeneralPipeline(event.GetAction(), namespace)
+		return s.runGeneralPipeline(ctx, event.GetAction(), namespace)
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.NamespaceMetadata) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, event *storage.NamespaceMetadata) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the event action.
-	if err := s.persistNamespace(action, event); err != nil {
+	if err := s.persistNamespace(ctx, action, event); err != nil {
 		return err
 	}
 	s.graphEvaluator.IncrementEpoch()
@@ -103,16 +96,16 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, ns *storage.NamespaceMetadata) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, ns *storage.NamespaceMetadata) error {
 	if err := s.validateInput(ns); err != nil {
 		return err
 	}
 
-	if err := s.enrichCluster(ns); err != nil {
+	if err := s.enrichCluster(ctx, ns); err != nil {
 		return err
 	}
 
-	if err := s.persistNamespace(action, ns); err != nil {
+	if err := s.persistNamespace(ctx, action, ns); err != nil {
 		return err
 	}
 	s.graphEvaluator.IncrementEpoch()
@@ -128,10 +121,10 @@ func (s *pipelineImpl) validateInput(np *storage.NamespaceMetadata) error {
 	return nil
 }
 
-func (s *pipelineImpl) enrichCluster(ns *storage.NamespaceMetadata) error {
+func (s *pipelineImpl) enrichCluster(ctx context.Context, ns *storage.NamespaceMetadata) error {
 	ns.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), ns.ClusterId)
+	cluster, clusterExists, err := s.clusters.GetCluster(ctx, ns.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -143,14 +136,14 @@ func (s *pipelineImpl) enrichCluster(ns *storage.NamespaceMetadata) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistNamespace(action central.ResourceAction, ns *storage.NamespaceMetadata) error {
+func (s *pipelineImpl) persistNamespace(ctx context.Context, action central.ResourceAction, ns *storage.NamespaceMetadata) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
-		return s.namespaces.AddNamespace(allAccessCtx, ns)
+		return s.namespaces.AddNamespace(ctx, ns)
 	case central.ResourceAction_UPDATE_RESOURCE:
-		return s.namespaces.UpdateNamespace(allAccessCtx, ns)
+		return s.namespaces.UpdateNamespace(ctx, ns)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.namespaces.RemoveNamespace(allAccessCtx, ns.GetId())
+		return s.namespaces.RemoveNamespace(ctx, ns.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for namespace does not exist", action)
 	}

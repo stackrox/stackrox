@@ -19,7 +19,7 @@ type updateImagesImpl struct {
 	images imageDataStore.DataStore
 }
 
-func (s *updateImagesImpl) do(deployment *storage.Deployment) {
+func (s *updateImagesImpl) do(ctx context.Context, deployment *storage.Deployment) {
 	clusterNSScope := sac.ClusterNSScopeStringFromObject(deployment)
 
 	for _, c := range deployment.GetContainers() {
@@ -36,7 +36,7 @@ func (s *updateImagesImpl) do(deployment *storage.Deployment) {
 		}
 		fullImage.ClusternsScopes[deployment.GetId()] = clusterNSScope
 
-		err := s.images.UpsertImage(context.TODO(), fullImage)
+		err := s.images.UpsertImage(ctx, fullImage)
 		if err != nil {
 			log.Error(err)
 			continue

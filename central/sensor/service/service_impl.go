@@ -56,20 +56,20 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if identity == nil {
 		return authz.ErrNotAuthorized("only sensor may access this API")
 	}
+
 	svc := identity.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
 		return authz.ErrNotAuthorized("only sensor may access this API")
 	}
 
+	// Fetch the cluster metadata, then process the stream.
 	clusterID := svc.GetId()
-
-	_, exists, err := s.clusters.GetCluster(context.TODO(), clusterID)
+	_, exists, err := s.clusters.GetCluster(server.Context(), clusterID)
 	if err != nil {
 		return status.Errorf(codes.Internal, "couldn't look-up cluster %q: %v", clusterID, err)
 	}
 	if !exists {
 		return status.Errorf(codes.NotFound, "cluster %q not found in DB; it was possibly deleted", clusterID)
 	}
-
-	return s.manager.HandleConnection(context.TODO(), clusterID, s.pf, server, s.clusters)
+	return s.manager.HandleConnection(server.Context(), clusterID, s.pf, server, s.clusters)
 }

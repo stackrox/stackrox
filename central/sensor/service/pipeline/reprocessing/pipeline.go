@@ -39,7 +39,7 @@ type pipelineImpl struct {
 	manager     enrichanddetect.EnricherAndDetector
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 	// Nothing to reconcile
 	return nil
 }
@@ -49,11 +49,11 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.DeploymentReprocess)
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).AddExactMatches(search.DeploymentID, msg.GetReprocessDeployments().GetDeploymentIds()...).ProtoQuery()
-	deployments, err := s.deployments.SearchRawDeployments(context.TODO(), q)
+	deployments, err := s.deployments.SearchRawDeployments(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -73,4 +73,4 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injecto
 	return nil
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

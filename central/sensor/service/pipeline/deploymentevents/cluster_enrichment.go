@@ -17,10 +17,10 @@ type clusterEnrichmentImpl struct {
 	clusters datastore.DataStore
 }
 
-func (s *clusterEnrichmentImpl) do(d *storage.Deployment) error {
+func (s *clusterEnrichmentImpl) do(ctx context.Context, d *storage.Deployment) error {
 	d.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), d.ClusterId)
+	cluster, clusterExists, err := s.clusters.GetCluster(ctx, d.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)

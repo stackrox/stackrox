@@ -52,11 +52,11 @@ type pipelineImpl struct {
 	riskReprocessor reprocessor.Loop
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 	defer s.reconcileStore.Close()
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.serviceaccounts.Search(context.TODO(), query)
+	results, err := s.serviceaccounts.Search(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (s *pipelineImpl) Reconcile(clusterID string) error {
 	}
 	errList := errorhelpers.NewErrorList("Service Account reconciliation")
 	for _, id := range idsToDelete {
-		errList.AddError(s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.ServiceAccount{Id: id}))
+		errList.AddError(s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.ServiceAccount{Id: id}))
 	}
 	return errList.ToError()
 }
@@ -77,7 +77,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	if !features.K8sRBAC.Enabled() {
 		return nil
 	}
@@ -90,22 +90,22 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.runRemovePipeline(event.GetAction(), sa)
+		return s.runRemovePipeline(ctx, event.GetAction(), sa)
 	default:
 		s.reconcileStore.Add(event.GetId())
-		return s.runGeneralPipeline(event.GetAction(), sa)
+		return s.runGeneralPipeline(ctx, event.GetAction(), sa)
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.ServiceAccount) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, event *storage.ServiceAccount) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the event action.
-	if err := s.persistServiceAccount(action, event); err != nil {
+	if err := s.persistServiceAccount(ctx, action, event); err != nil {
 		return err
 	}
 
@@ -113,16 +113,16 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, sa *storage.ServiceAccount) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, sa *storage.ServiceAccount) error {
 	if err := s.validateInput(sa); err != nil {
 		return err
 	}
 
-	if err := s.enrichCluster(sa); err != nil {
+	if err := s.enrichCluster(ctx, sa); err != nil {
 		return err
 	}
 
-	if err := s.persistServiceAccount(action, sa); err != nil {
+	if err := s.persistServiceAccount(ctx, action, sa); err != nil {
 		return err
 	}
 
@@ -130,7 +130,7 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, sa *sto
 		AddExactMatches(search.Namespace, sa.Namespace).
 		AddExactMatches(search.ServiceAccountName, sa.Name).ProtoQuery()
 
-	deployments, err := s.deployments.SearchListDeployments(context.TODO(), q)
+	deployments, err := s.deployments.SearchListDeployments(ctx, q)
 	if err != nil {
 		log.Errorf("error searching for deployments with service account %q", sa.GetName())
 		return err
@@ -154,10 +154,10 @@ func (s *pipelineImpl) validateInput(sa *storage.ServiceAccount) error {
 	return nil
 }
 
-func (s *pipelineImpl) enrichCluster(sa *storage.ServiceAccount) error {
+func (s *pipelineImpl) enrichCluster(ctx context.Context, sa *storage.ServiceAccount) error {
 	sa.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), sa.GetClusterId())
+	cluster, clusterExists, err := s.clusters.GetCluster(ctx, sa.GetClusterId())
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -171,12 +171,12 @@ func (s *pipelineImpl) enrichCluster(sa *storage.ServiceAccount) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistServiceAccount(action central.ResourceAction, sa *storage.ServiceAccount) error {
+func (s *pipelineImpl) persistServiceAccount(ctx context.Context, action central.ResourceAction, sa *storage.ServiceAccount) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
-		return s.serviceaccounts.UpsertServiceAccount(context.TODO(), sa)
+		return s.serviceaccounts.UpsertServiceAccount(ctx, sa)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.serviceaccounts.RemoveServiceAccount(context.TODO(), sa.GetId())
+		return s.serviceaccounts.RemoveServiceAccount(ctx, sa.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for service account does not exist", action)
 	}

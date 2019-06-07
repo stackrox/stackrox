@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -36,10 +37,10 @@ func (suite *PipelineTestSuite) TearDownTest() {
 }
 
 func (suite *PipelineTestSuite) TestRun() {
+	ctx := context.Background()
 	secret := fixtures.GetSecret()
-
-	suite.clusters.EXPECT().GetCluster(gomock.Any(), "clusterid").Return(&storage.Cluster{Id: "clusterid", Name: "clustername"}, true, nil)
-	suite.secrets.EXPECT().UpsertSecret(gomock.Any(), secret).Return(nil)
+	suite.clusters.EXPECT().GetCluster(ctx, "clusterid").Return(&storage.Cluster{Id: "clusterid", Name: "clustername"}, true, nil)
+	suite.secrets.EXPECT().UpsertSecret(ctx, secret).Return(nil)
 
 	pipeline := NewPipeline(suite.clusters, suite.secrets)
 	msg := &central.MsgFromSensor{
@@ -53,6 +54,6 @@ func (suite *PipelineTestSuite) TestRun() {
 			},
 		},
 	}
-	err := pipeline.Run("clusterid", msg, nil)
+	err := pipeline.Run(ctx, "clusterid", msg, nil)
 	suite.NoError(err)
 }

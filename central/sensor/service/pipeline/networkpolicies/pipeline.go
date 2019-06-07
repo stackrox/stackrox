@@ -8,7 +8,6 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -16,17 +15,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	pipelineCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkPolicy)))
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -54,8 +47,8 @@ type pipelineImpl struct {
 	reconcileStore  reconciliation.Store
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
-	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(pipelineCtx, clusterID, "")
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, clusterID, "")
 	if err != nil {
 		return err
 	}
@@ -66,7 +59,7 @@ func (s *pipelineImpl) Reconcile(clusterID string) error {
 	}
 
 	return reconciliation.Perform(s.reconcileStore, existingIDs, "network policies", func(id string) error {
-		return s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.NetworkPolicy{Id: id})
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.NetworkPolicy{Id: id})
 	})
 }
 
@@ -75,7 +68,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NetworkPolicy)
 
 	event := msg.GetEvent()
@@ -84,22 +77,22 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.runRemovePipeline(event.GetAction(), networkPolicy)
+		return s.runRemovePipeline(ctx, event.GetAction(), networkPolicy)
 	default:
 		s.reconcileStore.Add(event.GetId())
-		return s.runGeneralPipeline(event.GetAction(), networkPolicy)
+		return s.runGeneralPipeline(ctx, event.GetAction(), networkPolicy)
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.NetworkPolicy) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, event *storage.NetworkPolicy) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the event action.
-	if err := s.persistNetworkPolicy(action, event); err != nil {
+	if err := s.persistNetworkPolicy(ctx, action, event); err != nil {
 		return err
 	}
 	s.graphEvaluator.IncrementEpoch()
@@ -108,16 +101,16 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, np *storage.NetworkPolicy) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, np *storage.NetworkPolicy) error {
 	if err := s.validateInput(np); err != nil {
 		return err
 	}
 
-	if err := s.enrichCluster(np); err != nil {
+	if err := s.enrichCluster(ctx, np); err != nil {
 		return err
 	}
 
-	if err := s.persistNetworkPolicy(action, np); err != nil {
+	if err := s.persistNetworkPolicy(ctx, action, np); err != nil {
 		return err
 	}
 	s.graphEvaluator.IncrementEpoch()
@@ -133,10 +126,10 @@ func (s *pipelineImpl) validateInput(np *storage.NetworkPolicy) error {
 	return nil
 }
 
-func (s *pipelineImpl) enrichCluster(np *storage.NetworkPolicy) error {
+func (s *pipelineImpl) enrichCluster(ctx context.Context, np *storage.NetworkPolicy) error {
 	np.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), np.ClusterId)
+	cluster, clusterExists, err := s.clusters.GetCluster(ctx, np.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -148,14 +141,14 @@ func (s *pipelineImpl) enrichCluster(np *storage.NetworkPolicy) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistNetworkPolicy(action central.ResourceAction, np *storage.NetworkPolicy) error {
+func (s *pipelineImpl) persistNetworkPolicy(ctx context.Context, action central.ResourceAction, np *storage.NetworkPolicy) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
-		return s.networkPolicies.AddNetworkPolicy(pipelineCtx, np)
+		return s.networkPolicies.AddNetworkPolicy(ctx, np)
 	case central.ResourceAction_UPDATE_RESOURCE:
-		return s.networkPolicies.UpdateNetworkPolicy(pipelineCtx, np)
+		return s.networkPolicies.UpdateNetworkPolicy(ctx, np)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.networkPolicies.RemoveNetworkPolicy(pipelineCtx, string(np.GetId()))
+		return s.networkPolicies.RemoveNetworkPolicy(ctx, string(np.GetId()))
 	default:
 		return fmt.Errorf("Event action '%s' for network policy does not exist", action)
 	}

@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/central/sensor/service/common"
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -57,25 +58,25 @@ func (mr *MockFragmentMockRecorder) OnFinish(arg0 interface{}) *gomock.Call {
 }
 
 // Reconcile mocks base method
-func (m *MockFragment) Reconcile(arg0 string) error {
-	ret := m.ctrl.Call(m, "Reconcile", arg0)
+func (m *MockFragment) Reconcile(arg0 context.Context, arg1 string) error {
+	ret := m.ctrl.Call(m, "Reconcile", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Reconcile indicates an expected call of Reconcile
-func (mr *MockFragmentMockRecorder) Reconcile(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockFragment)(nil).Reconcile), arg0)
+func (mr *MockFragmentMockRecorder) Reconcile(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockFragment)(nil).Reconcile), arg0, arg1)
 }
 
 // Run mocks base method
-func (m *MockFragment) Run(arg0 string, arg1 *central.MsgFromSensor, arg2 common.MessageInjector) error {
-	ret := m.ctrl.Call(m, "Run", arg0, arg1, arg2)
+func (m *MockFragment) Run(arg0 context.Context, arg1 string, arg2 *central.MsgFromSensor, arg3 common.MessageInjector) error {
+	ret := m.ctrl.Call(m, "Run", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Run indicates an expected call of Run
-func (mr *MockFragmentMockRecorder) Run(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockFragment)(nil).Run), arg0, arg1, arg2)
+func (mr *MockFragmentMockRecorder) Run(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockFragment)(nil).Run), arg0, arg1, arg2, arg3)
 }

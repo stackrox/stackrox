@@ -1,6 +1,7 @@
 package processindicators
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/central/detection/lifecycle"
@@ -33,7 +34,7 @@ type pipelineImpl struct {
 	manager lifecycle.Manager
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 	// Nothing to reconcile
 	return nil
 }
@@ -43,7 +44,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ProcessIndicator)
 
 	event := msg.GetEvent()

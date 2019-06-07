@@ -47,9 +47,7 @@ type pipelineImpl struct {
 	reconcileStore reconciliation.Store
 }
 
-func (p *pipelineImpl) Reconcile(clusterID string) error {
-	ctx := context.TODO()
-
+func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := p.nodeStore.Search(ctx, query)
 	if err != nil {
@@ -75,9 +73,7 @@ func (p *pipelineImpl) processRemove(store store.Store, n *storage.Node) error {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	ctx := context.TODO()
-
+func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Node)
 
 	event := msg.GetEvent()
@@ -101,11 +97,11 @@ func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	node = proto.Clone(node).(*storage.Node)
 	node.ClusterId = clusterID
-	cluster, ok, err := p.clusterStore.GetCluster(context.TODO(), clusterID)
+	cluster, ok, err := p.clusterStore.GetCluster(ctx, clusterID)
 	if err == nil && ok {
 		node.ClusterName = cluster.GetName()
 	}
 	return store.UpsertNode(node)
 }
 
-func (p *pipelineImpl) OnFinish(clusterID string) {}
+func (p *pipelineImpl) OnFinish(_ string) {}

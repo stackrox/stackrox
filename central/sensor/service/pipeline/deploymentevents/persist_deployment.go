@@ -18,9 +18,7 @@ type persistDeploymentImpl struct {
 	deployments datastore.DataStore
 }
 
-func (s *persistDeploymentImpl) do(action central.ResourceAction, deployment *storage.Deployment) error {
-	ctx := context.TODO()
-
+func (s *persistDeploymentImpl) do(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
 		if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {

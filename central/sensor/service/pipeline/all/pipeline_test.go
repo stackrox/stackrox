@@ -1,6 +1,7 @@
 package all
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -39,11 +40,12 @@ func (suite *PipelineTestSuite) TestCallsMatchingPipeline() {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{},
 	}
+	ctx := context.Context(nil)
 
 	suite.depMock.EXPECT().Match(msg).Return(true)
-	suite.depMock.EXPECT().Run("clusterID", msg, nil).Return(errors.New("some error"))
+	suite.depMock.EXPECT().Run(ctx, "clusterID", msg, nil).Return(errors.New("some error"))
 
-	err := suite.tested.Run(msg, nil)
+	err := suite.tested.Run(ctx, msg, nil)
 	suite.Error(err, "expected the error")
 }
 
@@ -51,9 +53,10 @@ func (suite *PipelineTestSuite) TestHandlesNoMatchingPipeline() {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{},
 	}
+	ctx := context.Context(nil)
 
 	suite.depMock.EXPECT().Match(msg).Return(false)
 
-	err := suite.tested.Run(msg, nil)
+	err := suite.tested.Run(ctx, msg, nil)
 	suite.Error(err, "expected the error")
 }

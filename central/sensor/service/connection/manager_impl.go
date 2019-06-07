@@ -49,7 +49,7 @@ func (m *manager) HandleConnection(ctx context.Context, clusterID string, pf pip
 		oldConnection.Terminate(errors.New("replaced by new connection"))
 	}
 
-	err = conn.Run(server)
+	err = conn.Run(ctx, server)
 	log.Warnf("Connection to server in cluster %s terminated: %v", clusterID, err)
 
 	concurrency.WithLock(&m.connectionsByClusterIDMutex, func() {

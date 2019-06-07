@@ -45,10 +45,10 @@ type pipelineImpl struct {
 }
 
 // Reconcile runs after all updates for a cluster have be run through their respective pipelines.
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 	// Recompile all policies that might need it, but throttle.
 	s.throttler.Run(func() {
-		err := s.updatePolicies(msgAndPolicyPredicates)
+		err := s.updatePolicies(ctx, msgAndPolicyPredicates)
 		if err != nil {
 			log.Error(err)
 		}
@@ -62,13 +62,13 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	// Recompile all policies that might need it, but throttle.
 	// Later we can change how we throttle to be per-policy, so we only refresh policies that need it based on what the
 	// input message might have changed. Basically, instead of passing in all the predicates here, only pass those
 	// returned by predicatesForMessage(msg).
 	s.throttler.Run(func() {
-		err := s.updatePolicies(msgAndPolicyPredicates)
+		err := s.updatePolicies(ctx, msgAndPolicyPredicates)
 		if err != nil {
 			log.Error(err)
 		}
@@ -82,8 +82,8 @@ func (s *pipelineImpl) OnFinish(clusterID string) {}
 ///////////////////////////////
 
 // Update all of the policies that pass the input list of predicates.
-func (s *pipelineImpl) updatePolicies(predicates []*predicate) error {
-	policies, err := s.policies.GetPolicies(context.TODO())
+func (s *pipelineImpl) updatePolicies(ctx context.Context, predicates []*predicate) error {
+	policies, err := s.policies.GetPolicies(ctx)
 	if err != nil {
 		return err
 	}

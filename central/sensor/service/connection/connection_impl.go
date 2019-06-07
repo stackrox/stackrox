@@ -68,30 +68,30 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 }
 
 // Record the check-in if the rate limiter allows it.
-func (c *sensorConnection) recordCheckInRateLimited() {
+func (c *sensorConnection) recordCheckInRateLimited(ctx context.Context) {
 	if c.checkInRecordRateLimiter.Allow() {
-		err := c.clusterMgr.UpdateClusterContactTime(context.TODO(), c.clusterID, time.Now())
+		err := c.clusterMgr.UpdateClusterContactTime(ctx, c.clusterID, time.Now())
 		if err != nil {
 			log.Warnf("Could not record cluster contact: %v", err)
 		}
 	}
 }
 
-func (c *sensorConnection) runRecv(server central.SensorService_CommunicateServer) {
+func (c *sensorConnection) runRecv(ctx context.Context, server central.SensorService_CommunicateServer) {
 	for !c.stopSig.IsDone() {
 		msg, err := server.Recv()
 		if err != nil {
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
-		c.recordCheckInRateLimited()
+		c.recordCheckInRateLimited(ctx)
 		c.eventQueue.push(msg)
 	}
 }
 
-func (c *sensorConnection) handleMessages() {
+func (c *sensorConnection) handleMessages(ctx context.Context) {
 	for msg := c.eventQueue.pullBlocking(&c.stopSig); msg != nil; msg = c.eventQueue.pullBlocking(&c.stopSig) {
-		if err := c.handleMessage(msg); err != nil {
+		if err := c.handleMessage(ctx, msg); err != nil {
 			log.Errorf("Error handling sensor message: %v", err)
 		}
 	}
@@ -139,19 +139,19 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 	}
 }
 
-func (c *sensorConnection) handleMessage(msg *central.MsgFromSensor) error {
+func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFromSensor) error {
 	switch m := msg.Msg.(type) {
 	case *central.MsgFromSensor_ScrapeUpdate:
 		return c.scrapeCtrl.ProcessScrapeUpdate(m.ScrapeUpdate)
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	default:
-		return c.eventPipeline.Run(msg, c)
+		return c.eventPipeline.Run(ctx, msg, c)
 	}
 }
 
-func (c *sensorConnection) getClusterConfigMsg() (*central.MsgToSensor, error) {
-	cluster, exists, err := c.clusterMgr.GetCluster(context.TODO(), c.clusterID)
+func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	cluster, exists, err := c.clusterMgr.GetCluster(ctx, c.clusterID)
 	if err != nil {
 		return nil, err
 	}
@@ -167,13 +167,13 @@ func (c *sensorConnection) getClusterConfigMsg() (*central.MsgToSensor, error) {
 	}, nil
 }
 
-func (c *sensorConnection) Run(server central.SensorService_CommunicateServer) error {
+func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer) error {
 	if err := server.SendHeader(metadata.MD{}); err != nil {
 		return errors.Wrap(err, "sending initial metadata")
 	}
 
 	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
-	msg, err := c.getClusterConfigMsg()
+	msg, err := c.getClusterConfigMsg(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "unable to get cluster config for %q", c.clusterID)
 	}
@@ -183,9 +183,9 @@ func (c *sensorConnection) Run(server central.SensorService_CommunicateServer) e
 	}
 
 	go c.runSend(server)
-	go c.handleMessages()
+	go c.handleMessages(ctx)
 
-	c.runRecv(server)
+	c.runRecv(ctx, server)
 	return c.stopSig.Err()
 }
 

@@ -37,7 +37,7 @@ type pipelineImpl struct {
 	deploymentEnvsMgr deploymentenvs.Manager
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(_ context.Context, _ string) error {
 	// Nothing to reconcile
 	return nil
 }
@@ -47,13 +47,13 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	switch m := msg.GetClusterStatusUpdate().Msg.(type) {
 	case *central.ClusterStatusUpdate_DeploymentEnvUpdate:
 		s.deploymentEnvsMgr.UpdateDeploymentEnvironments(clusterID, m.DeploymentEnvUpdate.Environments)
 		return nil
 	case *central.ClusterStatusUpdate_Status:
-		return s.clusters.UpdateClusterStatus(context.TODO(), clusterID, m.Status)
+		return s.clusters.UpdateClusterStatus(ctx, clusterID, m.Status)
 	default:
 		return errors.Errorf("unknown cluster status update message type %T", m)
 	}

@@ -45,16 +45,16 @@ type pipelineImpl struct {
 	riskReprocessor reprocessor.Loop
 }
 
-func (s *pipelineImpl) Reconcile(clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.roles.Search(context.TODO(), query)
+	results, err := s.roles.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
 	err = reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "k8sroles", func(id string) error {
-		return s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.K8SRole{Id: id})
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.K8SRole{Id: id})
 	})
 
 	if err != nil {
@@ -70,7 +70,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	if !features.K8sRBAC.Enabled() {
 		return nil
 	}
@@ -83,24 +83,24 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.runRemovePipeline(event.GetAction(), role)
+		return s.runRemovePipeline(ctx, event.GetAction(), role)
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
 		s.reconcileStore.Add(event.GetId())
-		return s.runGeneralPipeline(event.GetAction(), role)
+		return s.runGeneralPipeline(ctx, event.GetAction(), role)
 	default:
 		return fmt.Errorf("event action '%s' for k8s role does not exist", event.GetAction())
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.K8SRole) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, event *storage.K8SRole) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
 	}
 
 	// Add/Update/Remove the k8s role from persistence depending on the event action.
-	if err := s.roles.RemoveRole(context.TODO(), event.GetId()); err != nil {
+	if err := s.roles.RemoveRole(ctx, event.GetId()); err != nil {
 		return err
 	}
 
@@ -108,16 +108,16 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, role *storage.K8SRole) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, role *storage.K8SRole) error {
 	if err := s.validateInput(role); err != nil {
 		return err
 	}
 
-	if err := s.enrichCluster(role); err != nil {
+	if err := s.enrichCluster(ctx, role); err != nil {
 		return err
 	}
 
-	if err := s.roles.UpsertRole(context.TODO(), role); err != nil {
+	if err := s.roles.UpsertRole(ctx, role); err != nil {
 		return err
 	}
 
@@ -132,10 +132,10 @@ func (s *pipelineImpl) validateInput(role *storage.K8SRole) error {
 	return nil
 }
 
-func (s *pipelineImpl) enrichCluster(role *storage.K8SRole) error {
+func (s *pipelineImpl) enrichCluster(ctx context.Context, role *storage.K8SRole) error {
 	role.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), role.GetClusterId())
+	cluster, clusterExists, err := s.clusters.GetCluster(ctx, role.GetClusterId())
 	switch {
 	case err != nil:
 		log.Errorf("Couldn't get name of cluster: %v", err)
@@ -149,4 +149,4 @@ func (s *pipelineImpl) enrichCluster(role *storage.K8SRole) error {
 	return nil
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}
