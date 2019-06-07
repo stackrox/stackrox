@@ -1,3 +1,4 @@
+import common.Constants
 import groups.BAT
 import groups.NetworkPolicySimulation
 import objects.Deployment
@@ -559,7 +560,8 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
-                .addIngressPodSelector()                     | _       | DEPLOYMENTS.size() - 1
+                .addIngressPodSelector()                     | _       |
+                orchestrator.getAllDeploymentTypesCount(Constants.ORCHESTRATOR_NAMESPACE) - 1
 
         // Test 8:
         // Deny all egress traffic from outside namespaces
@@ -569,7 +571,8 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-                .addEgressPodSelector()                      | DEPLOYMENTS.size() - 1       | _
+                .addEgressPodSelector()                      |
+                orchestrator.getAllDeploymentTypesCount(Constants.ORCHESTRATOR_NAMESPACE) - 1       | _
     }
 
     @Unroll

@@ -115,6 +115,7 @@ interface OrchestratorMain {
     String getNameSpace()
     String getSensorContainerName()
     def waitForSensor()
+    int getAllDeploymentTypesCount(String ns)
 
     V1beta1ValidatingWebhookConfiguration getAdmissionController()
     def deleteAdmissionController(String name)

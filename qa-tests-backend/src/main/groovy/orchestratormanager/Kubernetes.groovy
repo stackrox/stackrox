@@ -1117,6 +1117,13 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    int getAllDeploymentTypesCount(String ns = null) {
+        return getDeploymentCount(ns).size() +
+                getDaemonSetCount(ns).size() +
+                getStaticPodCount(ns).size() +
+                getStatefulSetCount(ns).size()
+    }
+
     /*
         Private K8S Support functions
     */
