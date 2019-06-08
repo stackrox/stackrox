@@ -30,7 +30,7 @@ type IntSet struct {
 // Add adds an element of type int.
 func (k IntSet) Add(i int) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	return k.underlying.Add(i)
@@ -40,7 +40,7 @@ func (k IntSet) Add(i int) bool {
 // was added.
 func (k IntSet) AddAll(is ...int) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	added := false
@@ -163,13 +163,30 @@ func (k IntSet) Iter() <-chan int {
 	return ch
 }
 
+// Clear empties the set
+func (k IntSet) Clear() {
+	if k.underlying == nil {
+		return
+	}
+	k.underlying.Clear()
+}
+
 // Freeze returns a new, frozen version of the set.
 func (k IntSet) Freeze() FrozenIntSet {
 	return NewFrozenIntSet(k.AsSlice()...)
 }
 
-// NewIntSet returns a new set with the given key type.
+// NewIntSet returns a new thread unsafe set with the given key type.
 func NewIntSet(initial ...int) IntSet {
+	k := IntSet{underlying: mapset.NewThreadUnsafeSet()}
+	for _, elem := range initial {
+		k.Add(elem)
+	}
+	return k
+}
+
+// NewThreadSafeIntSet returns a new thread safe set
+func NewThreadSafeIntSet(initial ...int) IntSet {
 	k := IntSet{underlying: mapset.NewSet()}
 	for _, elem := range initial {
 		k.Add(elem)

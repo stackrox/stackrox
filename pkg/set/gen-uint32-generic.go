@@ -30,7 +30,7 @@ type Uint32Set struct {
 // Add adds an element of type uint32.
 func (k Uint32Set) Add(i uint32) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	return k.underlying.Add(i)
@@ -40,7 +40,7 @@ func (k Uint32Set) Add(i uint32) bool {
 // was added.
 func (k Uint32Set) AddAll(is ...uint32) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	added := false
@@ -163,13 +163,30 @@ func (k Uint32Set) Iter() <-chan uint32 {
 	return ch
 }
 
+// Clear empties the set
+func (k Uint32Set) Clear() {
+	if k.underlying == nil {
+		return
+	}
+	k.underlying.Clear()
+}
+
 // Freeze returns a new, frozen version of the set.
 func (k Uint32Set) Freeze() FrozenUint32Set {
 	return NewFrozenUint32Set(k.AsSlice()...)
 }
 
-// NewUint32Set returns a new set with the given key type.
+// NewUint32Set returns a new thread unsafe set with the given key type.
 func NewUint32Set(initial ...uint32) Uint32Set {
+	k := Uint32Set{underlying: mapset.NewThreadUnsafeSet()}
+	for _, elem := range initial {
+		k.Add(elem)
+	}
+	return k
+}
+
+// NewThreadSafeUint32Set returns a new thread safe set
+func NewThreadSafeUint32Set(initial ...uint32) Uint32Set {
 	k := Uint32Set{underlying: mapset.NewSet()}
 	for _, elem := range initial {
 		k.Add(elem)

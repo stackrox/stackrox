@@ -32,7 +32,7 @@ type KeyTypeSet struct {
 // Add adds an element of type KeyType.
 func (k KeyTypeSet) Add(i KeyType) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	return k.underlying.Add(i)
@@ -42,7 +42,7 @@ func (k KeyTypeSet) Add(i KeyType) bool {
 // was added.
 func (k KeyTypeSet) AddAll(is ...KeyType) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	added := false
@@ -165,13 +165,30 @@ func (k KeyTypeSet) Iter() <-chan KeyType {
 	return ch
 }
 
+// Clear empties the set
+func (k KeyTypeSet) Clear() {
+	if k.underlying == nil {
+		return
+	}
+	k.underlying.Clear()
+}
+
 // Freeze returns a new, frozen version of the set.
 func (k KeyTypeSet) Freeze() FrozenKeyTypeSet {
 	return NewFrozenKeyTypeSet(k.AsSlice()...)
 }
 
-// NewKeyTypeSet returns a new set with the given key type.
+// NewKeyTypeSet returns a new thread unsafe set with the given key type.
 func NewKeyTypeSet(initial ...KeyType) KeyTypeSet {
+	k := KeyTypeSet{underlying: mapset.NewThreadUnsafeSet()}
+	for _, elem := range initial {
+		k.Add(elem)
+	}
+	return k
+}
+
+// NewThreadSafeKeyTypeSet returns a new thread safe set
+func NewThreadSafeKeyTypeSet(initial ...KeyType) KeyTypeSet {
 	k := KeyTypeSet{underlying: mapset.NewSet()}
 	for _, elem := range initial {
 		k.Add(elem)

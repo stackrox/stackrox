@@ -30,7 +30,7 @@ type ResourceSet struct {
 // Add adds an element of type Resource.
 func (k ResourceSet) Add(i Resource) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	return k.underlying.Add(i)
@@ -40,7 +40,7 @@ func (k ResourceSet) Add(i Resource) bool {
 // was added.
 func (k ResourceSet) AddAll(is ...Resource) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	added := false
@@ -163,13 +163,30 @@ func (k ResourceSet) Iter() <-chan Resource {
 	return ch
 }
 
+// Clear empties the set
+func (k ResourceSet) Clear() {
+	if k.underlying == nil {
+		return
+	}
+	k.underlying.Clear()
+}
+
 // Freeze returns a new, frozen version of the set.
 func (k ResourceSet) Freeze() FrozenResourceSet {
 	return NewFrozenResourceSet(k.AsSlice()...)
 }
 
-// NewResourceSet returns a new set with the given key type.
+// NewResourceSet returns a new thread unsafe set with the given key type.
 func NewResourceSet(initial ...Resource) ResourceSet {
+	k := ResourceSet{underlying: mapset.NewThreadUnsafeSet()}
+	for _, elem := range initial {
+		k.Add(elem)
+	}
+	return k
+}
+
+// NewThreadSafeResourceSet returns a new thread safe set
+func NewThreadSafeResourceSet(initial ...Resource) ResourceSet {
 	k := ResourceSet{underlying: mapset.NewSet()}
 	for _, elem := range initial {
 		k.Add(elem)

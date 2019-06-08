@@ -71,24 +71,6 @@ func (e *managerImpl) RemoveMultiplier(id string) {
 	e.ReprocessRisk()
 }
 
-func (e *managerImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
-	for _, id := range deploymentIDs {
-		deployment, exists, err := e.deploymentStorage.GetDeployment(context.TODO(), id)
-		if err != nil {
-			log.Errorf("Couldn't retrieve deployment %q: %v", id, err)
-			continue
-		}
-		if !exists {
-			// Possible under normal operation.
-			continue
-		}
-		if err := e.addRiskToDeployment(deployment); err != nil {
-			log.Errorf("Error reprocessing deployment %q risk: %v", deployment.GetId(), err)
-		}
-	}
-
-}
-
 // ReprocessRisk iterates over all of the deployments and reprocesses the risk for them
 func (e *managerImpl) ReprocessRisk() {
 	deployments, err := e.deploymentStorage.GetDeployments(context.TODO())

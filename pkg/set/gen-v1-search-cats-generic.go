@@ -31,7 +31,7 @@ type V1SearchCategorySet struct {
 // Add adds an element of type v1.SearchCategory.
 func (k V1SearchCategorySet) Add(i v1.SearchCategory) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	return k.underlying.Add(i)
@@ -41,7 +41,7 @@ func (k V1SearchCategorySet) Add(i v1.SearchCategory) bool {
 // was added.
 func (k V1SearchCategorySet) AddAll(is ...v1.SearchCategory) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	added := false
@@ -164,13 +164,30 @@ func (k V1SearchCategorySet) Iter() <-chan v1.SearchCategory {
 	return ch
 }
 
+// Clear empties the set
+func (k V1SearchCategorySet) Clear() {
+	if k.underlying == nil {
+		return
+	}
+	k.underlying.Clear()
+}
+
 // Freeze returns a new, frozen version of the set.
 func (k V1SearchCategorySet) Freeze() FrozenV1SearchCategorySet {
 	return NewFrozenV1SearchCategorySet(k.AsSlice()...)
 }
 
-// NewV1SearchCategorySet returns a new set with the given key type.
+// NewV1SearchCategorySet returns a new thread unsafe set with the given key type.
 func NewV1SearchCategorySet(initial ...v1.SearchCategory) V1SearchCategorySet {
+	k := V1SearchCategorySet{underlying: mapset.NewThreadUnsafeSet()}
+	for _, elem := range initial {
+		k.Add(elem)
+	}
+	return k
+}
+
+// NewThreadSafeV1SearchCategorySet returns a new thread safe set
+func NewThreadSafeV1SearchCategorySet(initial ...v1.SearchCategory) V1SearchCategorySet {
 	k := V1SearchCategorySet{underlying: mapset.NewSet()}
 	for _, elem := range initial {
 		k.Add(elem)

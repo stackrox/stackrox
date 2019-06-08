@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/throttle"
 )
@@ -39,18 +40,22 @@ type Loop interface {
 
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager) Loop {
-	return newLoopWithDuration(connManager, time.Hour)
+	return newLoopWithDuration(connManager, time.Hour, 15*time.Second)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
-func newLoopWithDuration(connManager connection.Manager, tickerDuration time.Duration) Loop {
+func newLoopWithDuration(connManager connection.Manager, enrichAndDetectDuration, deploymentRiskDuration time.Duration) Loop {
 	return &loopImpl{
-		tickerDuration: tickerDuration,
-		stopChan:       concurrency.NewSignal(),
-		stopped:        concurrency.NewSignal(),
-		shortChan:      make(chan struct{}),
+		enrichAndDetectTickerDuration: enrichAndDetectDuration,
+		deploymenRiskTickerDuration:   deploymentRiskDuration,
+
+		deploymentRiskSet: set.NewStringSet(),
+
+		stopChan:  concurrency.NewSignal(),
+		stopped:   concurrency.NewSignal(),
+		shortChan: make(chan struct{}),
 
 		connManager: connManager,
 		throttler:   throttle.NewDropThrottle(time.Second),
@@ -58,11 +63,17 @@ func newLoopWithDuration(connManager connection.Manager, tickerDuration time.Dur
 }
 
 type loopImpl struct {
-	tickerDuration time.Duration
-	ticker         *time.Ticker
-	shortChan      chan struct{}
-	stopChan       concurrency.Signal
-	stopped        concurrency.Signal
+	enrichAndDetectTickerDuration time.Duration
+	enrichAndDetectTicker         *time.Ticker
+
+	deploymentRiskSet           set.StringSet
+	deploymentRiskLock          sync.Mutex
+	deploymentRiskTicker        *time.Ticker
+	deploymenRiskTickerDuration time.Duration
+
+	shortChan chan struct{}
+	stopChan  concurrency.Signal
+	stopped   concurrency.Signal
 
 	connManager connection.Manager
 	throttler   throttle.DropThrottle
@@ -73,15 +84,15 @@ func (l *loopImpl) ReprocessRisk() {
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
-	if len(deploymentIDs) == 0 {
-		return
-	}
-	l.sendRisk(deploymentIDs...)
+	l.deploymentRiskLock.Lock()
+	defer l.deploymentRiskLock.Unlock()
+	l.deploymentRiskSet.AddAll(deploymentIDs...)
 }
 
 // Start starts the enrich and detect loop.
 func (l *loopImpl) Start() {
-	l.ticker = time.NewTicker(l.tickerDuration)
+	l.enrichAndDetectTicker = time.NewTicker(l.enrichAndDetectTickerDuration)
+	l.deploymentRiskTicker = time.NewTicker(l.deploymenRiskTickerDuration)
 	go l.loop()
 }
 
@@ -134,16 +145,23 @@ func (l *loopImpl) sendMessageToPipeline(msg *central.MsgFromSensor) {
 
 func (l *loopImpl) loop() {
 	defer l.stopped.Signal()
-	defer l.ticker.Stop()
-
+	defer l.enrichAndDetectTicker.Stop()
+	defer l.deploymentRiskTicker.Stop()
 	for {
 		select {
 		case <-l.stopChan.Done():
 			return
 		case <-l.shortChan:
 			l.sendEnrichAndDetect()
-		case <-l.ticker.C:
+		case <-l.enrichAndDetectTicker.C:
 			l.sendEnrichAndDetect()
+		case <-l.deploymentRiskTicker.C:
+			l.deploymentRiskLock.Lock()
+			if l.deploymentRiskSet.Cardinality() > 0 {
+				l.sendRisk(l.deploymentRiskSet.AsSlice()...)
+				l.deploymentRiskSet.Clear()
+			}
+			l.deploymentRiskLock.Unlock()
 		}
 	}
 }

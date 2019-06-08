@@ -30,7 +30,7 @@ type StringSet struct {
 // Add adds an element of type string.
 func (k StringSet) Add(i string) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	return k.underlying.Add(i)
@@ -40,7 +40,7 @@ func (k StringSet) Add(i string) bool {
 // was added.
 func (k StringSet) AddAll(is ...string) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewSet()
+		k.underlying = mapset.NewThreadUnsafeSet()
 	}
 
 	added := false
@@ -163,13 +163,30 @@ func (k StringSet) Iter() <-chan string {
 	return ch
 }
 
+// Clear empties the set
+func (k StringSet) Clear() {
+	if k.underlying == nil {
+		return
+	}
+	k.underlying.Clear()
+}
+
 // Freeze returns a new, frozen version of the set.
 func (k StringSet) Freeze() FrozenStringSet {
 	return NewFrozenStringSet(k.AsSlice()...)
 }
 
-// NewStringSet returns a new set with the given key type.
+// NewStringSet returns a new thread unsafe set with the given key type.
 func NewStringSet(initial ...string) StringSet {
+	k := StringSet{underlying: mapset.NewThreadUnsafeSet()}
+	for _, elem := range initial {
+		k.Add(elem)
+	}
+	return k
+}
+
+// NewThreadSafeStringSet returns a new thread safe set
+func NewThreadSafeStringSet(initial ...string) StringSet {
 	k := StringSet{underlying: mapset.NewSet()}
 	for _, elem := range initial {
 		k.Add(elem)
