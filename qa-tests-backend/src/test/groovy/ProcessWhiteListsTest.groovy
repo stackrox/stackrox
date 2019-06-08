@@ -157,14 +157,9 @@ class ProcessWhiteListsTest extends BaseSpecification {
         String alertId
         for (AlertOuterClass.ListAlert alert : alertList) {
             if (alert.getPolicy().name.equalsIgnoreCase("Unauthorized Process Execution") &&
-                     alert.deployment.id.equalsIgnoreCase(deploymentId) && resolveWhitelist) {
+                     alert.deployment.id.equalsIgnoreCase(deploymentId)) {
                 alertId = alert.id
-                AlertService.resolveAlert(alertId, true)
-            }
-            else
-            {
-                alertId = alert.id
-                AlertService.resolveAlert(alertId, false)
+                AlertService.resolveAlert(alertId, resolveWhitelist)
             }
          }
         orchestrator.execInContainer(deployment, "pwd")
@@ -184,6 +179,8 @@ class ProcessWhiteListsTest extends BaseSpecification {
             if (alert.getPolicy().name.equalsIgnoreCase("Unauthorized Process Execution")
                      && alert.deployment.id.equalsIgnoreCase(deploymentId)) {
                 numAlertsAfterResolve++
+                AlertService.resolveAlert(alert.id, false)
+                break
              }
          }
         System.out.println("numAlertsAfterResolve .. " + numAlertsAfterResolve)
