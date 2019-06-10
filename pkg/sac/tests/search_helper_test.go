@@ -32,9 +32,11 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
+			Store:     true,
 		},
 		search.Namespace: {
 			FieldPath: "namespace",
+			Store:     true,
 		},
 	})
 
@@ -78,9 +80,11 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
+			Store:     true,
 		},
 		search.Namespace: {
 			FieldPath: "namespace",
+			Store:     true,
 		},
 	})
 
@@ -112,6 +116,19 @@ func TestSearchHelper_TestNew_WithMissingClusterIDField(t *testing.T) {
 	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
 		search.Namespace: {
 			FieldPath: "namespace",
+			Store:     true,
+		},
+	})
+
+	_, err := NewSearchHelper(testResource, options, ClusterIDField)
+	assert.Error(t, err)
+}
+
+func TestSearchHelper_TestNew_WithFieldNotStored(t *testing.T) {
+	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
+		search.ClusterID: {
+			FieldPath: "cluster_id",
+			Store:     false,
 		},
 	})
 
@@ -123,6 +140,7 @@ func TestSearchHelper_TestNew_WithMissingNSField_NotScoped(t *testing.T) {
 	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
+			Store:     true,
 		},
 	})
 
@@ -134,6 +152,7 @@ func TestSearchHelper_TestNew_WithMissingNSField_Scoped(t *testing.T) {
 	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
+			Store:     true,
 		},
 	})
 

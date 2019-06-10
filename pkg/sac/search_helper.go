@@ -151,6 +151,9 @@ func newClusterNSScopesBasedResultsChecker(opts map[search.FieldLabel]*v1.Search
 	if clusterNSScopesField == nil {
 		return nil, errors.Errorf("field %v not found", search.ClusterNSScopes)
 	}
+	if !clusterNSScopesField.GetStore() {
+		return nil, errors.Errorf("field %s is not stored, which is a requirement for access scope enforcement", clusterNSScopesField.GetFieldPath())
+	}
 
 	return &clusterNSScopesBasedResultsChecker{
 		clusterNSScopesValuePath: blevesearch.ToMapValuePath(clusterNSScopesField.GetFieldPath()),
@@ -197,12 +200,18 @@ func newClusterNSFieldBaseResultsChecker(opts map[search.FieldLabel]*v1.SearchFi
 	if clusterIDField == nil {
 		return nil, errors.Errorf("field %v not found", search.ClusterID)
 	}
+	if !clusterIDField.GetStore() {
+		return nil, errors.Errorf("field %s is not stored, which is a requirement for access scope enforcement", clusterIDField.GetFieldPath())
+	}
 
 	var nsField *v1.SearchField
 	if namespaceScoped {
 		nsField = opts[search.Namespace]
 		if nsField == nil {
 			return nil, errors.Errorf("field %v not found", search.Namespace)
+		}
+		if !nsField.GetStore() {
+			return nil, errors.Errorf("field %s is not stored, which is a requirement for access scope enforcement", nsField.GetFieldPath())
 		}
 	}
 
