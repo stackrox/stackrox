@@ -71,7 +71,7 @@ function Widget({
 
     return (
         <div
-            className={`flex flex-col shadow rounded relative rounded bg-base-100 h-full ${className}`}
+            className={`flex flex-col shadow rounded relative rounded bg-base-100 ${className}`}
             data-test-id={id}
         >
             <div className="border-b border-base-300">

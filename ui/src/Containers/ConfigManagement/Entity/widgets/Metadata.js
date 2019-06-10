@@ -10,15 +10,15 @@ const Metadata = ({ keyValuePairs, counts, ...rest }) => {
         </div>
     ));
     const countsList = counts.map(({ value, text }) => (
-        <div className="rounded border border-base-400 m-4 p-1 text-center" key={text}>
+        <div className="rounded border border-base-400 m-4 p-1 px-4 text-center" key={text}>
             {value} {text}
         </div>
     ));
     return (
         <Widget header="Metadata" {...rest}>
             <div className="flex w-full text-sm">
-                <div className="w-1/2 border-r border-base-300">{keyValueList}</div>
-                <div className="w-1/2">{countsList}</div>
+                <div className="border-r border-base-300">{keyValueList}</div>
+                <div className="">{countsList}</div>
             </div>
         </Widget>
     );

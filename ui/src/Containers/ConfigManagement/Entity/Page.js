@@ -28,10 +28,25 @@ const EntityPage = ({ match, location, history }) => {
         history.push(urlBuilder.url());
     }
 
+    function onRelatedEntityClick(entityType, entityId) {
+        const urlBuilder = URLService.getURL(match, location).base(entityType, entityId);
+        history.push(urlBuilder.url());
+    }
+
+    function onRelatedEntityListClick(entityListType) {
+        const urlBuilder = URLService.getURL(match, location).push(entityListType);
+        history.push(urlBuilder.url());
+    }
+
     const component = !entityListType1 ? (
-        <Overview entityType={pageEntityType} entityId={pageEntityId} />
+        <Overview
+            entityType={pageEntityType}
+            entityId={pageEntityId}
+            onRelatedEntityClick={onRelatedEntityClick}
+            onRelatedEntityListClick={onRelatedEntityListClick}
+        />
     ) : (
-        <div className="flex bg-base-100">
+        <div className="flex h-full bg-base-200">
             <List entityListType={entityListType1} onRowClick={onRowClick} />
             <SidePanel />
         </div>

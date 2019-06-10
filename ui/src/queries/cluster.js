@@ -25,9 +25,33 @@ export const CLUSTER_QUERY = gql`
         results: cluster(id: $id) {
             id
             name
+            admissionController
+            centralApiEndpoint
+            alerts {
+                id
+            }
             nodes {
                 id
                 name
+            }
+            deployments {
+                id
+                name
+            }
+            namespaces {
+                metadata {
+                    id
+                    name
+                }
+            }
+            subjects {
+                name
+            }
+            k8sroles {
+                id
+            }
+            serviceAccounts {
+                id
             }
         }
     }

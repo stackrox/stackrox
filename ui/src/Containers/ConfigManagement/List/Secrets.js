@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { SECRETS_QUERY as QUERY } from 'queries/secret';
+import { SECRETS as QUERY } from 'queries/secret';
 import uniq from 'lodash/uniq';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';

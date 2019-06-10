@@ -23,7 +23,9 @@ const ListPage = ({ match, location, history }) => {
     return (
         <>
             <PageHeader header={header} subHeader="Entity List" />
-            <List entityListType={pageEntityListType} onRowClick={onRowClick} />
+            <div className="h-full">
+                <List entityListType={pageEntityListType} onRowClick={onRowClick} />
+            </div>
         </>
     );
 };

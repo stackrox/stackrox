@@ -1,15 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
-import { Link } from 'react-router-dom';
 
 // @TODO We should try to use this component for Compliance as well
-const RelatedEntityListCount = ({ name, value, link, ...rest }) => {
+const RelatedEntityListCount = ({ name, value, link, onClick, ...rest }) => {
     const content = <div className="font-400 text-6xl text-lg text-primary-700">{value}</div>;
-    const result = link ? (
-        <Link className="no-underline text-base-500" to={link}>
+    const result = onClick ? (
+        <button
+            type="button"
+            className="h-full w-full no-underline text-primary-700 hover:bg-primary-100"
+            onClick={onClick}
+        >
             {content}
-        </Link>
+        </button>
     ) : (
         content
     );

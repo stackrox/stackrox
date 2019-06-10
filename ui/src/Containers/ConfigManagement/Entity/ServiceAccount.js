@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { SERVICE_ACCOUNT } from 'queries/serviceAccount';
 import entityTypes from 'constants/entityTypes';
 import nsIcon from 'images/ns-icon.svg';
+import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 
 import Query from 'Components/ThrowingQuery';
@@ -15,65 +16,95 @@ import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEnt
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 
-const ServiceAccount = ({ id }) => (
+const ServiceAccount = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => (
     <Query query={SERVICE_ACCOUNT} variables={{ id }}>
         {({ loading, data }) => {
             if (loading) return <Loader />;
-            const { serviceAccount } = data;
-            if (!serviceAccount) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
+            const { serviceAccount: entity } = data;
+            if (!entity) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
+
+            const onRelatedEntityClickHandler = (entityType, entityId) => () => {
+                onRelatedEntityClick(entityType, entityId);
+            };
+
+            const onRelatedEntityListClickHandler = entityListType => () => {
+                onRelatedEntityListClick(entityListType);
+            };
+
+            const {
+                automountToken = false,
+                createdAt,
+                labels = [],
+                secrets = [],
+                imagePullSecrets = [],
+                deployments = [],
+                roles = [],
+                saNamespace: { metadata = {} },
+                scopedPermissions = []
+            } = entity;
+
+            const { name: namespaceName, id: namespaceId } = metadata;
+
             const metadataKeyValuePairs = [
-                { key: 'Automounted', value: serviceAccount.automountToken.toString() },
+                { key: 'Automounted', value: automountToken.toString() },
                 {
                     key: 'Created',
-                    value: format(serviceAccount.createdAt, 'MM/DD/YYYY H:m:sA')
+                    value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
                 }
             ];
             const metadataCounts = [
-                { value: serviceAccount.labels.length, text: 'Labels' },
-                { value: serviceAccount.secrets.length, text: 'Secrets' },
-                { value: serviceAccount.imagePullSecrets.length, text: 'Image Pull Secrets' }
+                { value: labels.length, text: 'Labels' },
+                { value: secrets.length, text: 'Secrets' },
+                { value: imagePullSecrets.length, text: 'Image Pull Secrets' }
             ];
 
             return (
                 <div className="bg-primary-100 w-full">
                     <CollapsibleSection title="Service Account Details">
-                        <div className="flex h-48 mb-4">
+                        <div className="flex mb-4 flex-wrap">
                             <Metadata
-                                className="w-1/10 flex-grow mx-4 bg-base-100"
+                                className="mx-4 bg-base-100 h-48 mb-4"
                                 keyValuePairs={metadataKeyValuePairs}
                                 counts={metadataCounts}
                             />
                             <RelatedEntity
-                                className="flex-1 mx-4"
+                                className="mx-4 min-w-48 h-48 mb-4"
                                 name="Namespace"
                                 icon={nsIcon}
-                                value={serviceAccount.namespace}
+                                value={namespaceName}
+                                onClick={onRelatedEntityClickHandler(
+                                    entityTypes.NAMESPACE,
+                                    namespaceId
+                                )}
                             />
                             <RelatedEntityListCount
-                                className="flex-1 mx-4"
+                                className="mx-4 min-w-48 h-48 mb-4"
                                 name="Deployments"
-                                value={serviceAccount.deployments.length}
+                                value={deployments.length}
+                                onClick={onRelatedEntityListClickHandler(entityTypes.DEPLOYMENT)}
                             />
                             <RelatedEntityListCount
-                                className="flex-1 mx-4"
+                                className="mx-4 min-w-48 h-48 mb-4"
                                 name="Secrets"
-                                value={serviceAccount.secrets.length}
+                                value={secrets.length}
+                                onClick={onRelatedEntityListClickHandler(entityTypes.SECRET)}
                             />
                             <RelatedEntityListCount
-                                className="flex-1 mx-4"
+                                className="mx-4 min-w-48 h-48 mb-4"
                                 name="Roles"
-                                value={serviceAccount.roles.length}
+                                value={roles.length}
+                                onClick={onRelatedEntityListClickHandler(entityTypes.ROLE)}
                             />
                         </div>
                     </CollapsibleSection>
                     <CollapsibleSection title="Service Account Permissions">
                         <div className="flex mb-4">
                             <ClusterScopedPermissions
-                                scopedPermissions={serviceAccount.scopedPermissions}
+                                scopedPermissions={scopedPermissions}
                                 className="w-1/3 mx-4 bg-base-100"
                             />
                             <NamespaceScopedPermissions
-                                scopedPermissions={serviceAccount.scopedPermissions}
+                                scopedPermissions={scopedPermissions}
                                 className="w-2/3 flex-grow mx-4 bg-base-100"
                             />
                         </div>
@@ -85,7 +116,9 @@ const ServiceAccount = ({ id }) => (
 );
 
 ServiceAccount.propTypes = {
-    id: PropTypes.string.isRequired
+    id: PropTypes.string.isRequired,
+    onRelatedEntityClick: PropTypes.func.isRequired,
+    onRelatedEntityListClick: PropTypes.func.isRequired
 };
 
 export default ServiceAccount;

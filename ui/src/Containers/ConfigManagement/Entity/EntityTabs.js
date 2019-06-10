@@ -30,6 +30,57 @@ const entityTabsMap = {
             value: entityTypes.ROLE,
             text: pluralize(entityLabels[entityTypes.ROLE])
         }
+    ],
+    [entityTypes.SECRET]: [
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.DEPLOYMENT,
+            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
+        }
+    ],
+    [entityTypes.CLUSTER]: [
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.NODE,
+            text: pluralize(entityLabels[entityTypes.NODE])
+        },
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.NAMESPACE,
+            text: pluralize(entityLabels[entityTypes.NAMESPACE])
+        },
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.DEPLOYMENT,
+            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
+        },
+        {
+            group: TAB_GROUPS.RBAC_CONFIG,
+            value: entityTypes.SUBJECT,
+            text: pluralize(entityLabels[entityTypes.SUBJECT])
+        },
+        {
+            group: TAB_GROUPS.RBAC_CONFIG,
+            value: entityTypes.SERVICE_ACCOUNT,
+            text: pluralize(entityLabels[entityTypes.SERVICE_ACCOUNT])
+        },
+        {
+            group: TAB_GROUPS.RBAC_CONFIG,
+            value: entityTypes.ROLE,
+            text: pluralize(entityLabels[entityTypes.ROLE])
+        }
+    ],
+    [entityTypes.NAMESPACE]: [
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.DEPLOYMENT,
+            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
+        },
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.SECRET,
+            text: pluralize(entityLabels[entityTypes.SECRET])
+        }
     ]
 };
 
@@ -43,7 +94,7 @@ const EntityTabs = ({ entityType, entityListType, onClick }) => {
     );
 
     const entityTabs = entityTabsMap[entityType];
-    if (!entityTabs.length) return null;
+    if (!entityTabs) return null;
 
     const groups = Object.values(TAB_GROUPS);
 

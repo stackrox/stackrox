@@ -40,6 +40,7 @@ export const NAMESPACE_QUERY = gql`
                     key
                     value
                 }
+                creationTime
             }
             numDeployments
             numNetworkPolicies

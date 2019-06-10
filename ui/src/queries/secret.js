@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 
-export const SECRET_QUERY = gql`
+export const SECRET = gql`
     query secret($id: ID!) {
         secret(id: $id) {
             id
@@ -14,11 +14,21 @@ export const SECRET_QUERY = gql`
                 id
                 name
             }
+            labels {
+                key
+                value
+            }
+            annotations {
+                key
+                value
+            }
+            clusterName
+            clusterId
         }
     }
 `;
 
-export const SECRETS_QUERY = gql`
+export const SECRETS = gql`
     query secrets {
         secrets {
             id

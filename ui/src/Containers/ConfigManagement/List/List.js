@@ -35,7 +35,7 @@ const List = ({ query, entityType, tableColumns, createTableRows, onRowClick }) 
                 );
                 return (
                     <Panel
-                        className="bg-base-100"
+                        className="bg-base-100 w-full"
                         header={header}
                         headerComponents={headerComponents}
                     >
