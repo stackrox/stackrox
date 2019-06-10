@@ -244,7 +244,6 @@ func TestConvert(t *testing.T) {
 				Namespace:                    "namespace",
 				NamespaceId:                  "FAKENSID",
 				Type:                         kubernetes.Deployment,
-				Version:                      "100",
 				Replicas:                     15,
 				ServiceAccount:               "sensor",
 				ImagePullSecrets:             []string{"pull-secret1", "pull-secret2"},

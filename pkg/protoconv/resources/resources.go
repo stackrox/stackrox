@@ -105,7 +105,6 @@ func newWrap(meta metav1.Object, kind string) *DeploymentWrap {
 			Id:          string(meta.GetUID()),
 			Name:        meta.GetName(),
 			Type:        kind,
-			Version:     meta.GetResourceVersion(),
 			Namespace:   meta.GetNamespace(),
 			Labels:      meta.GetLabels(),
 			Annotations: meta.GetAnnotations(),

@@ -314,7 +314,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"tolerations: [Toleration]!",
 		"type: String!",
 		"updatedAt: Time",
-		"version: String!",
 	}))
 	utils.Must(builder.AddType("DockerfileLineRuleField", []string{
 		"instruction: String!",
@@ -3182,12 +3181,6 @@ func (resolver *deploymentResolver) UpdatedAt(ctx context.Context) (*graphql.Tim
 		value = resolver.list.GetUpdatedAt()
 	}
 	return timestamp(value)
-}
-
-func (resolver *deploymentResolver) Version(ctx context.Context) string {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetVersion()
-	return value
 }
 
 type dockerfileLineRuleFieldResolver struct {

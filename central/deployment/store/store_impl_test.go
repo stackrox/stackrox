@@ -70,7 +70,6 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		{
 			Id:        "fooID",
 			Name:      "foo",
-			Version:   "100",
 			Type:      "Replicated",
 			UpdatedAt: ptypes.TimestampNow(),
 			Risk:      &storage.Risk{Score: 10},
@@ -78,7 +77,6 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		{
 			Id:        "barID",
 			Name:      "bar",
-			Version:   "400",
 			Type:      "Global",
 			UpdatedAt: ptypes.TimestampNow(),
 			Risk:      &storage.Risk{Score: 9},
@@ -106,7 +104,6 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 	// Test Update
 	for _, d := range deployments {
 		d.UpdatedAt = ptypes.TimestampNow()
-		d.Version += "0"
 		d.Name += "-ext"
 		suite.NoError(suite.store.UpdateDeployment(d))
 	}

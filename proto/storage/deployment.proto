@@ -20,7 +20,7 @@ enum ContainerRuntime {
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
-    string version                             = 3;
+    reserved 3;
     uint64 hash                                = 26;
     string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
