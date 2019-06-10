@@ -13,15 +13,23 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	search2 "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkSearchAllDeployments(b *testing.B) {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment),
+		))
+
 	tempPath, err := ioutil.TempDir("", "")
 	require.NoError(b, err)
 
@@ -54,12 +62,12 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 			fmt.Println("Added", i, "deployments")
 		}
 		deploymentPrototype.Id = fmt.Sprintf("deployment%d", i)
-		require.NoError(b, deploymentsDatastore.UpsertDeployment(context.TODO(), deploymentPrototype))
+		require.NoError(b, deploymentsDatastore.UpsertDeployment(ctx, deploymentPrototype))
 	}
 
 	b.Run("SearchRetrievalList", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			deployments, err := deploymentsDatastore.SearchListDeployments(context.TODO(), search2.EmptyQuery())
+			deployments, err := deploymentsDatastore.SearchListDeployments(ctx, search2.EmptyQuery())
 			assert.NoError(b, err)
 			assert.Len(b, deployments, numDeployments)
 		}
@@ -67,7 +75,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	b.Run("GetAllRetrievalList", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			deployments, err := deploymentsDatastore.ListDeployments(context.TODO())
+			deployments, err := deploymentsDatastore.ListDeployments(ctx)
 			assert.NoError(b, err)
 			assert.Len(b, deployments, numDeployments)
 		}
@@ -75,7 +83,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	b.Run("SearchRetrievalFull", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			deployments, err := deploymentsDatastore.SearchRawDeployments(context.TODO(), search2.EmptyQuery())
+			deployments, err := deploymentsDatastore.SearchRawDeployments(ctx, search2.EmptyQuery())
 			assert.NoError(b, err)
 			assert.Len(b, deployments, numDeployments)
 		}
@@ -83,7 +91,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	b.Run("GetAllRetrievalFull", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			deployments, err := deploymentsDatastore.GetDeployments(context.TODO())
+			deployments, err := deploymentsDatastore.GetDeployments(ctx)
 			assert.NoError(b, err)
 			assert.Len(b, deployments, numDeployments)
 		}

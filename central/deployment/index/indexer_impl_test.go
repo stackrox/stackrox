@@ -822,7 +822,7 @@ func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
 	for _, c := range cases {
 		suite.T().Run(fmt.Sprintf("%s-%d-%d-%t", c.field, c.from, c.size, c.reversed), func(t *testing.T) {
 			qb.Pagination = newPagination(search.DeploymentID, int32(c.from), int32(c.size), c.reversed)
-			results, err := paginated.Paginated(search.WrapContextLessSearcher(suite.indexer)).Search(context.TODO(), qb)
+			results, err := paginated.Paginated(search.WrapContextLessSearcher(suite.indexer)).Search(context.Background(), qb)
 			require.NoError(t, err)
 
 			resultIDs := search.ResultsToIDs(results)
