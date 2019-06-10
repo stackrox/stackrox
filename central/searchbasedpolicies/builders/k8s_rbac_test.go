@@ -1,7 +1,6 @@
 package builders
 
 import (
-	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -214,16 +213,16 @@ func (suite *PipelineTestSuite) TestConstructCorrectQuery() {
 	}
 
 	// Test service accounts have more permissions than NONE.
-	suite.mockClusters.EXPECT().GetClusters(context.TODO()).Return(clusters, nil)
+	suite.mockClusters.EXPECT().GetClusters(rbacReadingCtx).Return(clusters, nil)
 
-	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(context.TODO(), isInCluster1).Return(serviceAccountsC1, nil)
-	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(context.TODO(), isInCluster2).Return(serviceAccountsC2, nil)
+	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(rbacReadingCtx, isInCluster1).Return(serviceAccountsC1, nil)
+	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(rbacReadingCtx, isInCluster2).Return(serviceAccountsC2, nil)
 
-	suite.mocksRoles.EXPECT().SearchRawRoles(context.TODO(), isInCluster1).Return(rolesC1, nil)
-	suite.mocksRoles.EXPECT().SearchRawRoles(context.TODO(), isInCluster2).Return(rolesC2, nil)
+	suite.mocksRoles.EXPECT().SearchRawRoles(rbacReadingCtx, isInCluster1).Return(rolesC1, nil)
+	suite.mocksRoles.EXPECT().SearchRawRoles(rbacReadingCtx, isInCluster2).Return(rolesC2, nil)
 
-	suite.mockBindings.EXPECT().SearchRawRoleBindings(context.TODO(), isInCluster1).Return(bindingsC1, nil)
-	suite.mockBindings.EXPECT().SearchRawRoleBindings(context.TODO(), isInCluster2).Return(bindingsC2, nil)
+	suite.mockBindings.EXPECT().SearchRawRoleBindings(rbacReadingCtx, isInCluster1).Return(bindingsC1, nil)
+	suite.mockBindings.EXPECT().SearchRawRoleBindings(rbacReadingCtx, isInCluster2).Return(bindingsC2, nil)
 
 	fields := &storage.PolicyFields{
 		PermissionPolicy: &storage.PermissionPolicy{
@@ -260,16 +259,16 @@ func (suite *PipelineTestSuite) TestConstructCorrectQuery() {
 	), outputQuery, "query didn't match expectation")
 
 	// Test service accounts have more permissions than DEFAULT.
-	suite.mockClusters.EXPECT().GetClusters(context.TODO()).Return(clusters, nil)
+	suite.mockClusters.EXPECT().GetClusters(rbacReadingCtx).Return(clusters, nil)
 
-	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(context.TODO(), isInCluster1).Return(serviceAccountsC1, nil)
-	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(context.TODO(), isInCluster2).Return(serviceAccountsC2, nil)
+	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(rbacReadingCtx, isInCluster1).Return(serviceAccountsC1, nil)
+	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(rbacReadingCtx, isInCluster2).Return(serviceAccountsC2, nil)
 
-	suite.mocksRoles.EXPECT().SearchRawRoles(context.TODO(), isInCluster1).Return(rolesC1, nil)
-	suite.mocksRoles.EXPECT().SearchRawRoles(context.TODO(), isInCluster2).Return(rolesC2, nil)
+	suite.mocksRoles.EXPECT().SearchRawRoles(rbacReadingCtx, isInCluster1).Return(rolesC1, nil)
+	suite.mocksRoles.EXPECT().SearchRawRoles(rbacReadingCtx, isInCluster2).Return(rolesC2, nil)
 
-	suite.mockBindings.EXPECT().SearchRawRoleBindings(context.TODO(), isInCluster1).Return(bindingsC1, nil)
-	suite.mockBindings.EXPECT().SearchRawRoleBindings(context.TODO(), isInCluster2).Return(bindingsC2, nil)
+	suite.mockBindings.EXPECT().SearchRawRoleBindings(rbacReadingCtx, isInCluster1).Return(bindingsC1, nil)
+	suite.mockBindings.EXPECT().SearchRawRoleBindings(rbacReadingCtx, isInCluster2).Return(bindingsC2, nil)
 
 	fields = &storage.PolicyFields{
 		PermissionPolicy: &storage.PermissionPolicy{
@@ -302,16 +301,16 @@ func (suite *PipelineTestSuite) TestConstructCorrectQuery() {
 	), outputQuery, "query didn't match expectation")
 
 	// Test service accounts have more permissions than ELEVATED_IN_NAMESPACE.
-	suite.mockClusters.EXPECT().GetClusters(context.TODO()).Return(clusters, nil)
+	suite.mockClusters.EXPECT().GetClusters(rbacReadingCtx).Return(clusters, nil)
 
-	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(context.TODO(), isInCluster1).Return(serviceAccountsC1, nil)
-	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(context.TODO(), isInCluster2).Return(serviceAccountsC2, nil)
+	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(rbacReadingCtx, isInCluster1).Return(serviceAccountsC1, nil)
+	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(rbacReadingCtx, isInCluster2).Return(serviceAccountsC2, nil)
 
-	suite.mocksRoles.EXPECT().SearchRawRoles(context.TODO(), isInCluster1).Return(rolesC1, nil)
-	suite.mocksRoles.EXPECT().SearchRawRoles(context.TODO(), isInCluster2).Return(rolesC2, nil)
+	suite.mocksRoles.EXPECT().SearchRawRoles(rbacReadingCtx, isInCluster1).Return(rolesC1, nil)
+	suite.mocksRoles.EXPECT().SearchRawRoles(rbacReadingCtx, isInCluster2).Return(rolesC2, nil)
 
-	suite.mockBindings.EXPECT().SearchRawRoleBindings(context.TODO(), isInCluster1).Return(bindingsC1, nil)
-	suite.mockBindings.EXPECT().SearchRawRoleBindings(context.TODO(), isInCluster2).Return(bindingsC2, nil)
+	suite.mockBindings.EXPECT().SearchRawRoleBindings(rbacReadingCtx, isInCluster1).Return(bindingsC1, nil)
+	suite.mockBindings.EXPECT().SearchRawRoleBindings(rbacReadingCtx, isInCluster2).Return(bindingsC2, nil)
 
 	fields = &storage.PolicyFields{
 		PermissionPolicy: &storage.PermissionPolicy{
@@ -329,16 +328,16 @@ func (suite *PipelineTestSuite) TestConstructCorrectQuery() {
 	), outputQuery, "query didn't match expectation")
 
 	// Test service accounts have CLUSTER_ADMIN permissions.
-	suite.mockClusters.EXPECT().GetClusters(context.TODO()).Return(clusters, nil)
+	suite.mockClusters.EXPECT().GetClusters(rbacReadingCtx).Return(clusters, nil)
 
-	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(context.TODO(), isInCluster1).Return(serviceAccountsC1, nil)
-	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(context.TODO(), isInCluster2).Return(serviceAccountsC2, nil)
+	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(rbacReadingCtx, isInCluster1).Return(serviceAccountsC1, nil)
+	suite.mockServiceAccounts.EXPECT().SearchRawServiceAccounts(rbacReadingCtx, isInCluster2).Return(serviceAccountsC2, nil)
 
-	suite.mocksRoles.EXPECT().SearchRawRoles(context.TODO(), isInCluster1).Return(rolesC1, nil)
-	suite.mocksRoles.EXPECT().SearchRawRoles(context.TODO(), isInCluster2).Return(rolesC2, nil)
+	suite.mocksRoles.EXPECT().SearchRawRoles(rbacReadingCtx, isInCluster1).Return(rolesC1, nil)
+	suite.mocksRoles.EXPECT().SearchRawRoles(rbacReadingCtx, isInCluster2).Return(rolesC2, nil)
 
-	suite.mockBindings.EXPECT().SearchRawRoleBindings(context.TODO(), isInCluster1).Return(bindingsC1, nil)
-	suite.mockBindings.EXPECT().SearchRawRoleBindings(context.TODO(), isInCluster2).Return(bindingsC2, nil)
+	suite.mockBindings.EXPECT().SearchRawRoleBindings(rbacReadingCtx, isInCluster1).Return(bindingsC1, nil)
+	suite.mockBindings.EXPECT().SearchRawRoleBindings(rbacReadingCtx, isInCluster2).Return(bindingsC2, nil)
 
 	fields = &storage.PolicyFields{
 		PermissionPolicy: &storage.PermissionPolicy{

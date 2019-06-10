@@ -8,12 +8,20 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	rbacReadingCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Cluster, resources.K8sRole, resources.K8sRoleBinding, resources.ServiceAccount)))
 )
 
 // K8sRBACQueryBuilder builds queries for K8s RBAC permission level.
@@ -31,8 +39,6 @@ func (p K8sRBACQueryBuilder) Name() string {
 
 // Query implements the PolicyQueryBuilder interface.
 func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
-	ctx := context.TODO()
-
 	// Check that a permission level is set in the policy.
 	if fields.GetPermissionPolicy().GetPermissionLevel() == storage.PermissionLevel_UNSET {
 		return
@@ -40,7 +46,7 @@ func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.Fi
 	maxPermissionAllowed := fields.GetPermissionPolicy().GetPermissionLevel()
 
 	// Generate a query for deployments using any of those service accounts.
-	q, err = p.allClustersQuery(ctx, maxPermissionAllowed)
+	q, err = p.allClustersQuery(rbacReadingCtx, maxPermissionAllowed)
 	if err != nil {
 		err = errors.Wrap(err, p.Name())
 		return

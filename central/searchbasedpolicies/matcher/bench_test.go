@@ -14,11 +14,13 @@ import (
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 )
@@ -91,11 +93,16 @@ func BenchmarkPolicies(b *testing.B) {
 	numDeployments := []int{10000}
 	numProcessIndicators := []int{100000}
 
+	addIndicatorCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.Indicator)))
+	matchCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS)))
 	for _, dNum := range numDeployments {
 		for _, pNum := range numProcessIndicators {
 			processDatastore, _, indexer := setup(b)
 			require.NoError(b, indexer.AddDeployments(getDeployments(dNum)))
-			require.NoError(b, processDatastore.AddProcessIndicators(context.TODO(), getProcesses(dNum, pNum)...))
+			require.NoError(b, processDatastore.AddProcessIndicators(addIndicatorCtx, getProcesses(dNum, pNum)...))
 			matcherBuilder := NewBuilder(
 				NewRegistry(
 					processDatastore,
@@ -112,7 +119,7 @@ func BenchmarkPolicies(b *testing.B) {
 					mr, err := matcherBuilder.ForPolicy(p)
 					require.NoError(b, err)
 					for i := 0; i < b.N; i++ {
-						_, err = mr.Match(context.TODO(), searcher)
+						_, err = mr.Match(matchCtx, searcher)
 						require.NoError(b, err)
 					}
 				})
