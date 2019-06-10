@@ -119,6 +119,10 @@ function launch_central {
     launch_service $unzip_dir central
     echo
 
+    if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 || -n $CI ]]; then
+        kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"2Gi"}}}]}}}}'
+    fi
+
     if [[ "$SCANNER_SUPPORT" == "true" ]]; then
         echo "Deploying Scanning..."
         launch_service $unzip_dir scanner
@@ -177,5 +181,10 @@ function launch_sensor {
 
     echo "Deploying Sensor..."
     $k8s_dir/sensor-deploy/sensor.sh
+
+    if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 || -n $CI ]]; then
+       kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+    fi
+
     echo
 }
