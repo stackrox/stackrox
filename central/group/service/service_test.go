@@ -88,13 +88,14 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 		},
 	}
 
+	contextForMock := context.Background()
 	suite.groupsMock.EXPECT().
-		Mutate(context.TODO(),
+		Mutate(contextForMock,
 			[]*storage.Group{update.GetPreviousGroups()[0]},
 			[]*storage.Group{update.GetRequiredGroups()[1]},
 			[]*storage.Group{update.GetRequiredGroups()[2]}).
 		Return(nil)
 
-	_, err := suite.ser.BatchUpdate(context.TODO(), update)
+	_, err := suite.ser.BatchUpdate(contextForMock, update)
 	suite.NoError(err, "request should not fail with valid user data")
 }
