@@ -34,6 +34,7 @@ func NewFakeListAlertSlice() []*storage.ListAlert {
 // NewFakeAlert constructs and returns a new storage.Alert object suitable for unit-testing.
 func NewFakeAlert() *storage.Alert {
 	return &storage.Alert{
-		Id: FakeAlertID,
+		Id:             FakeAlertID,
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
 	}
 }

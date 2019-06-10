@@ -25,6 +25,10 @@ message ResolveAlertRequest {
     bool whitelist = 2;
 }
 
+message ResolveAlertsRequest {
+    string query = 1;
+}
+
 message SnoozeAlertRequest {
     string id = 1;
     google.protobuf.Timestamp snooze_till = 2;
@@ -130,6 +134,14 @@ service AlertService {
     rpc ResolveAlert (ResolveAlertRequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/alerts/{id}/resolve"
+            body: "*"
+        };
+    }
+
+    // ResolveAlertsByQuery marks alerts matching search query as resolved.
+    rpc ResolveAlerts (ResolveAlertsRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/alerts/resolve"
             body: "*"
         };
     }

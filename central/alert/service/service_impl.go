@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -42,6 +43,7 @@ var (
 		user.With(permissions.Modify(resources.Alert)): {
 			"/v1.AlertService/ResolveAlert",
 			"/v1.AlertService/SnoozeAlert",
+			"/v1.AlertService/ResolveAlerts",
 		},
 	})
 
@@ -175,15 +177,52 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		}
 	}
 
-	alert.SnoozeTill = nil
-	alert.State = storage.ViolationState_RESOLVED
-	err = s.dataStore.UpdateAlert(ctx, alert)
+	if alert.LifecycleStage == storage.LifecycleStage_RUNTIME {
+		err = s.changeAlertState(ctx, alert, storage.ViolationState_RESOLVED)
+	}
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.notifier.ProcessAlert(alert)
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRequest) (*v1.Empty, error) {
+	query, err := search.ParseRawQuery(req.GetQuery())
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	runtimeQuery := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
+	cq := search.NewConjunctionQuery(query, runtimeQuery)
+	alerts, err := s.dataStore.SearchRawAlerts(ctx, cq)
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	for _, alert := range alerts {
+		err := s.changeAlertState(ctx, alert, storage.ViolationState_RESOLVED)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert, state storage.ViolationState) error {
+	if state != storage.ViolationState_SNOOZED {
+		alert.SnoozeTill = nil
+	}
+	alert.State = state
+	err := s.dataStore.UpdateAlert(ctx, alert)
+	if err != nil {
+		log.Error(err)
+		return status.Error(codes.Internal, err.Error())
+	}
+	s.notifier.ProcessAlert(alert)
+	return nil
 }
 
 func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertRequest) (*v1.Empty, error) {
@@ -202,13 +241,11 @@ func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertReques
 		return nil, status.Errorf(codes.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
 	alert.SnoozeTill = req.GetSnoozeTill()
-	alert.State = storage.ViolationState_SNOOZED
-	err = s.dataStore.UpdateAlert(ctx, alert)
+	err = s.changeAlertState(ctx, alert, storage.ViolationState_SNOOZED)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.notifier.ProcessAlert(alert)
 	return &v1.Empty{}, nil
 }
 
