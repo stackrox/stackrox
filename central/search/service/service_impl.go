@@ -233,7 +233,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		}
 		results, err := searcher.Search(ctx, query)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("failed to search category %s: %s", category.String(), err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 		for _, r := range results {
