@@ -29,7 +29,7 @@ func generateAddMany(props GeneratorProperties) (jen.Code, jen.Code) {
 				jen.Return(jen.Err()),
 			),
 		),
-		jen.Return(jen.Nil()),
+		jen.Return(incrementTxnCount()),
 	).Line().Line().Func().Params(jen.Id("b").Op("*").Id("indexerImpl")).Id("processBatch").Params(jen.Id(strings.ToLower(props.Plural)).Index().Op("*").Qual(props.Pkg, props.Object)).Error().Block(
 		jen.Id("batch").Op(":=").Id("b").Dot("index").Dot("NewBatch").Params(),
 		jen.For(jen.List(jen.Id("_"), jen.Id(strings.ToLower(props.Singular))).Op(":=").Range().Id(strings.ToLower(props.Plural))).Block(

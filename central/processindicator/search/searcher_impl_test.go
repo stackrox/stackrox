@@ -48,14 +48,9 @@ func (suite *IndicatorSearchTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.indexer = indexMock.NewMockIndexer(suite.mockCtrl)
-	suite.indexer.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil)
-
 	suite.storage = storeMock.NewMockStore(suite.mockCtrl)
-	suite.storage.EXPECT().GetProcessIndicators().Return(nil, nil)
 
-	searcher, err := New(suite.storage, suite.indexer)
-	suite.NoError(err)
-	suite.searcher = searcher
+	suite.searcher = New(suite.storage, suite.indexer)
 }
 
 func (suite *IndicatorSearchTestSuite) TearDownSuite() {

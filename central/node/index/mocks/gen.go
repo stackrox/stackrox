@@ -71,6 +71,42 @@ func (mr *MockIndexerMockRecorder) DeleteNode(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNode", reflect.TypeOf((*MockIndexer)(nil).DeleteNode), arg0)
 }
 
+// DeleteNodes mocks base method
+func (m *MockIndexer) DeleteNodes(arg0 []string) error {
+	ret := m.ctrl.Call(m, "DeleteNodes", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteNodes indicates an expected call of DeleteNodes
+func (mr *MockIndexerMockRecorder) DeleteNodes(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNodes", reflect.TypeOf((*MockIndexer)(nil).DeleteNodes), arg0)
+}
+
+// GetTxnCount mocks base method
+func (m *MockIndexer) GetTxnCount() uint64 {
+	ret := m.ctrl.Call(m, "GetTxnCount")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// GetTxnCount indicates an expected call of GetTxnCount
+func (mr *MockIndexerMockRecorder) GetTxnCount() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxnCount", reflect.TypeOf((*MockIndexer)(nil).GetTxnCount))
+}
+
+// ResetIndex mocks base method
+func (m *MockIndexer) ResetIndex() error {
+	ret := m.ctrl.Call(m, "ResetIndex")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetIndex indicates an expected call of ResetIndex
+func (mr *MockIndexerMockRecorder) ResetIndex() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetIndex", reflect.TypeOf((*MockIndexer)(nil).ResetIndex))
+}
+
 // Search mocks base method
 func (m *MockIndexer) Search(arg0 *v1.Query) ([]search.Result, error) {
 	ret := m.ctrl.Call(m, "Search", arg0)
@@ -82,4 +118,16 @@ func (m *MockIndexer) Search(arg0 *v1.Query) ([]search.Result, error) {
 // Search indicates an expected call of Search
 func (mr *MockIndexerMockRecorder) Search(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), arg0)
+}
+
+// SetTxnCount mocks base method
+func (m *MockIndexer) SetTxnCount(arg0 uint64) error {
+	ret := m.ctrl.Call(m, "SetTxnCount", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTxnCount indicates an expected call of SetTxnCount
+func (mr *MockIndexerMockRecorder) SetTxnCount(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTxnCount", reflect.TypeOf((*MockIndexer)(nil).SetTxnCount), arg0)
 }

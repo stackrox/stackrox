@@ -26,14 +26,23 @@ type Store interface {
 	AddProcessIndicator(*storage.ProcessIndicator) (string, error)
 	AddProcessIndicators(...*storage.ProcessIndicator) ([]string, error)
 	RemoveProcessIndicator(id string) error
+	RemoveProcessIndicators(id []string) error
+	GetTxnCount() (txNum uint64, err error)
+	IncTxnCount() error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, processIndicatorBucket)
 	bolthelper.RegisterBucketOrPanic(db, uniqueProcessesBucket)
+
+	wrapper, err := bolthelper.NewBoltWrapper(db, processIndicatorBucket)
+	if err != nil {
+		panic(err)
+	}
+
 	s := &storeImpl{
-		DB: db,
+		BoltWrapper: wrapper,
 	}
 	return s
 }

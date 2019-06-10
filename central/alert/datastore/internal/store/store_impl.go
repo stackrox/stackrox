@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -18,7 +19,7 @@ var (
 )
 
 type storeImpl struct {
-	*bolt.DB
+	*bolthelper.BoltWrapper
 }
 
 // GetAlert returns an alert with given id.
@@ -188,6 +189,21 @@ func (b *storeImpl) UpdateAlert(alert *storage.Alert) error {
 		}
 		bucket = tx.Bucket(alertListBucket)
 		return bucket.Put([]byte(alert.Id), listBytes)
+	})
+}
+
+func (b *storeImpl) GetTxnCount() (txNum uint64, err error) {
+	err = b.View(func(tx *bolt.Tx) error {
+		txNum = b.BoltWrapper.GetTxnCount(tx)
+		return nil
+	})
+	return
+}
+
+func (b *storeImpl) IncTxnCount() error {
+	return b.Update(func(tx *bolt.Tx) error {
+		// The b.Update increments the txn count automatically
+		return nil
 	})
 }
 

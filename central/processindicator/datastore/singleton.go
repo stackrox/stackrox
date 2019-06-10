@@ -3,6 +3,7 @@ package datastore
 import (
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator/index"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -29,15 +31,13 @@ var (
 func initialize() {
 	storage := store.New(globaldb.GetGlobalDB())
 	indexer := index.New(globalindex.GetGlobalIndex())
-
-	searcher, err := search.New(storage, indexer)
-	if err != nil {
-		panic("unable to load search index for alerts")
-	}
+	searcher := search.New(storage, indexer)
 
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)
 
-	ad = New(storage, indexer, searcher, p)
+	var err error
+	ad, err = New(storage, indexer, searcher, p)
+	utils.Must(errors.Wrap(err, "unable to load datastore for process indicators"))
 }
 
 // Singleton provides the interface for non-service external interaction.

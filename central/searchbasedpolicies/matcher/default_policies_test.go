@@ -85,9 +85,9 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 
 	processStore := processIndicatorStore.New(suite.db)
 	processIndexer := processIndicatorIndex.New(suite.bleveIndex)
-	processSearcher, err := processIndicatorSearch.New(processStore, processIndexer)
+	processSearcher := processIndicatorSearch.New(processStore, processIndexer)
+	suite.processDataStore, err = processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
 	suite.Require().NoError(err)
-	suite.processDataStore = processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
 
 	suite.matcherBuilder = NewBuilder(
 		NewRegistry(

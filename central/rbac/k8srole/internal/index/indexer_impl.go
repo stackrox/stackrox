@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "K8SRole"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type k8SRoleWrapper struct {
@@ -28,10 +30,13 @@ type k8SRoleWrapper struct {
 
 func (b *indexerImpl) AddK8SRole(k8srole *storage.K8SRole) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "K8SRole")
-	return b.index.Index(k8srole.GetId(), &k8SRoleWrapper{
+	if err := b.index.Index.Index(k8srole.GetId(), &k8SRoleWrapper{
 		K8SRole: k8srole,
 		Type:    v1.SearchCategory_ROLES.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddK8SRoles(k8sroles []*storage.K8SRole) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddK8SRoles(k8sroles []*storage.K8SRole) error {
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(k8sroles []*storage.K8SRole) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(k8sroles []*storage.K8SRole) error {
 
 func (b *indexerImpl) DeleteK8SRole(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "K8SRole")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteK8SRoles(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "K8SRole")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "K8SRole")
+	return blevesearch.ResetIndex(v1.SearchCategory_ROLES, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "K8SRole")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLES, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLES, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }

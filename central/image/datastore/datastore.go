@@ -39,9 +39,6 @@ type DataStore interface {
 func New(db *bbolt.DB, bleveIndex bleve.Index, noUpdateTimestamps bool) (DataStore, error) {
 	storage := store.New(db, noUpdateTimestamps)
 	indexer := index.New(bleveIndex)
-	searcher, err := search.New(storage, indexer)
-	if err != nil {
-		return nil, err
-	}
-	return newDatastoreImpl(storage, indexer, searcher), nil
+	searcher := search.New(storage, indexer)
+	return newDatastoreImpl(storage, indexer, searcher)
 }

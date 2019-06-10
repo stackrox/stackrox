@@ -66,8 +66,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 	suite.NoError(err)
 	suite.indexer = index.New(tmpIndex)
 
-	suite.searcher, err = processSearch.New(suite.storage, suite.indexer)
-	suite.NoError(err)
+	suite.searcher = processSearch.New(suite.storage, suite.indexer)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 }
@@ -77,14 +76,23 @@ func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, nil)
+	var err error
+	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher, nil)
+	suite.Require().NoError(err)
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
+	mockStorage.EXPECT().GetTxnCount().Return(uint64(1), nil)
+
 	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
+	mockIndexer.EXPECT().GetTxnCount().Return(uint64(1))
+
 	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
-	suite.datastore = New(mockStorage, mockIndexer, mockSearcher, nil)
+	var err error
+	suite.datastore, err = New(mockStorage, mockIndexer, mockSearcher, nil)
+	suite.Require().NoError(err)
+
 	return mockStorage, mockIndexer, mockSearcher
 }
 
@@ -279,7 +287,9 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		}
 		return true
 	})
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, mockPrunerFactory)
+	var err error
+	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher, mockPrunerFactory)
+	suite.Require().NoError(err)
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
@@ -423,7 +433,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByDeployment() {
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByDeployment() {
 	storeMock, indexMock, searchMock := suite.setupDataStoreWithMocks()
 	searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
-	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Return(nil)
+	storeMock.EXPECT().RemoveProcessIndicators(gomock.Any()).Return(nil)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasWriteCtx, "eoiurvbf")
@@ -435,7 +445,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByStaleContainers() 
 		suite.T().Skip()
 	}
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Times(0)
+	storeMock.EXPECT().RemoveProcessIndicators(gomock.Any()).Times(0)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)
 
 	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasNoneCtx, "Joseph Rules", []string{})
@@ -448,7 +458,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByStaleContainers() 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByStaleContainers() {
 	storeMock, indexMock, searchMock := suite.setupDataStoreWithMocks()
 	searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
-	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Return(nil)
+	storeMock.EXPECT().RemoveProcessIndicators(gomock.Any()).Return(nil)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "eoiurvbf", []string{})

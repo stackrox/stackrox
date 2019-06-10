@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/serviceaccount/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "ServiceAccount"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type serviceAccountWrapper struct {
@@ -28,10 +30,13 @@ type serviceAccountWrapper struct {
 
 func (b *indexerImpl) AddServiceAccount(serviceaccount *storage.ServiceAccount) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "ServiceAccount")
-	return b.index.Index(serviceaccount.GetId(), &serviceAccountWrapper{
+	if err := b.index.Index.Index(serviceaccount.GetId(), &serviceAccountWrapper{
 		ServiceAccount: serviceaccount,
 		Type:           v1.SearchCategory_SERVICE_ACCOUNTS.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddServiceAccounts(serviceaccounts []*storage.ServiceAccount) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddServiceAccounts(serviceaccounts []*storage.ServiceAccou
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(serviceaccounts []*storage.ServiceAccount) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(serviceaccounts []*storage.ServiceAccount) er
 
 func (b *indexerImpl) DeleteServiceAccount(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ServiceAccount")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteServiceAccounts(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "ServiceAccount")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "ServiceAccount")
+	return blevesearch.ResetIndex(v1.SearchCategory_SERVICE_ACCOUNTS, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ServiceAccount")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_SERVICE_ACCOUNTS, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_SERVICE_ACCOUNTS, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }

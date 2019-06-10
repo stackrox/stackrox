@@ -12,4 +12,5 @@ const (
 	RoxMappingSubPath = "/index/mappings"
 	Metrics           = "github.com/stackrox/rox/central/metrics"
 	Ops               = "github.com/stackrox/rox/pkg/metrics"
+	RoxBleveHelper    = "github.com/stackrox/rox/pkg/blevehelper"
 )

@@ -9,12 +9,13 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/images/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 type storeImpl struct {
-	db                 *bolt.DB
+	db                 *bolthelper.BoltWrapper
 	noUpdateTimestamps bool
 }
 
@@ -134,6 +135,21 @@ func (b *storeImpl) DeleteImage(id string) error {
 			return err
 		}
 		return deleteListImage(tx, []byte(idForSha(id)))
+	})
+}
+
+func (b *storeImpl) GetTxnCount() (txNum uint64, err error) {
+	err = b.db.View(func(tx *bolt.Tx) error {
+		txNum = b.db.GetTxnCount(tx)
+		return nil
+	})
+	return
+}
+
+func (b *storeImpl) IncTxnCount() error {
+	return b.db.Update(func(tx *bolt.Tx) error {
+		// The b.Update increments the txn count automatically
+		return nil
 	})
 }
 

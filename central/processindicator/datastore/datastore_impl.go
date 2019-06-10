@@ -14,10 +14,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/debug"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/txn"
 )
 
 var (
@@ -94,11 +96,16 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 
 	// This removes indicators that previously existed in the index.
 	if removedIndicatorsSet.Cardinality() > 0 {
-		if err := ds.indexer.DeleteProcessIndicators(removedIndicatorsSet.AsSlice()...); err != nil {
+		if err := ds.indexer.DeleteProcessIndicators(removedIndicatorsSet.AsSlice()); err != nil {
 			return err
 		}
 	}
-	return ds.indexer.AddProcessIndicators(filteredIndicators)
+
+	if err := ds.indexer.AddProcessIndicators(filteredIndicators); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ds *datastoreImpl) AddProcessIndicator(ctx context.Context, i *storage.ProcessIndicator) error {
@@ -107,18 +114,22 @@ func (ds *datastoreImpl) AddProcessIndicator(ctx context.Context, i *storage.Pro
 	} else if !ok {
 		return errors.New("permission denied")
 	}
+
 	removedIndicator, err := ds.storage.AddProcessIndicator(i)
 	if err != nil {
 		return errors.Wrap(err, "adding indicator to bolt")
 	}
+
 	if removedIndicator != "" {
 		if err := ds.indexer.DeleteProcessIndicator(removedIndicator); err != nil {
 			return errors.Wrap(err, "removing process indicator")
 		}
 	}
+
 	if err := ds.indexer.AddProcessIndicator(i); err != nil {
 		return errors.Wrap(err, "adding indicator to index")
 	}
+
 	return nil
 }
 
@@ -131,12 +142,13 @@ func (ds *datastoreImpl) removeMatchingIndicators(results []pkgSearch.Result) er
 }
 
 func (ds *datastoreImpl) removeIndicators(ids []string) error {
-	for _, id := range ids {
-		if err := ds.storage.RemoveProcessIndicator(id); err != nil {
-			log.Warnf("Failed to remove process indicator %q: %v", id, err)
-		}
+	if len(ids) == 0 {
+		return nil
 	}
-	return ds.indexer.DeleteProcessIndicators(ids...)
+	if err := ds.storage.RemoveProcessIndicators(ids); err != nil {
+		return err
+	}
+	return ds.indexer.DeleteProcessIndicators(ids)
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error {
@@ -220,4 +232,42 @@ func (ds *datastoreImpl) Stop() bool {
 
 func (ds *datastoreImpl) Wait(cancelWhen concurrency.Waitable) bool {
 	return concurrency.WaitInContext(&ds.stoppedSig, cancelWhen)
+}
+
+func (ds *datastoreImpl) buildIndex() error {
+	defer debug.FreeOSMemory()
+	log.Infof("[STARTUP] Determining if process indicator db/indexer reconciliation is needed")
+
+	dbTxNum, err := ds.storage.GetTxnCount()
+	if err != nil {
+		return err
+	}
+	indexerTxNum := ds.indexer.GetTxnCount()
+
+	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
+		log.Infof("[STARTUP] Reconciliation for process indicators is not needed")
+		return nil
+	}
+
+	log.Info("[STARTUP] Indexing process indicators")
+
+	if err := ds.indexer.ResetIndex(); err != nil {
+		return err
+	}
+
+	indicators, err := ds.storage.GetProcessIndicators()
+	if err != nil {
+		return err
+	}
+	if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
+		return err
+	}
+	if err := ds.storage.IncTxnCount(); err != nil {
+		return err
+	}
+	if err := ds.indexer.SetTxnCount(dbTxNum + 1); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed process indicators")
+	return nil
 }

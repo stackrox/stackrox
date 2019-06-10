@@ -32,10 +32,15 @@ func (suite *ImageDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.mockIndexer = indexMock.NewMockIndexer(suite.mockCtrl)
+	suite.mockIndexer.EXPECT().GetTxnCount().Return(uint64(1))
+
 	suite.mockSearcher = searchMock.NewMockSearcher(suite.mockCtrl)
 	suite.mockStore = storeMock.NewMockStore(suite.mockCtrl)
+	suite.mockStore.EXPECT().GetTxnCount().Return(uint64(1), nil)
 
-	suite.datastore = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher)
+	var err error
+	suite.datastore, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher)
+	suite.Require().NoError(err)
 }
 
 func (suite *ImageDataStoreTestSuite) TearDownTest() {

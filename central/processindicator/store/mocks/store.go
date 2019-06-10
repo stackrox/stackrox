@@ -104,6 +104,31 @@ func (mr *MockStoreMockRecorder) GetProcessInfoToArgs() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessInfoToArgs", reflect.TypeOf((*MockStore)(nil).GetProcessInfoToArgs))
 }
 
+// GetTxnCount mocks base method
+func (m *MockStore) GetTxnCount() (uint64, error) {
+	ret := m.ctrl.Call(m, "GetTxnCount")
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxnCount indicates an expected call of GetTxnCount
+func (mr *MockStoreMockRecorder) GetTxnCount() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxnCount", reflect.TypeOf((*MockStore)(nil).GetTxnCount))
+}
+
+// IncTxnCount mocks base method
+func (m *MockStore) IncTxnCount() error {
+	ret := m.ctrl.Call(m, "IncTxnCount")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncTxnCount indicates an expected call of IncTxnCount
+func (mr *MockStoreMockRecorder) IncTxnCount() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncTxnCount", reflect.TypeOf((*MockStore)(nil).IncTxnCount))
+}
+
 // RemoveProcessIndicator mocks base method
 func (m *MockStore) RemoveProcessIndicator(arg0 string) error {
 	ret := m.ctrl.Call(m, "RemoveProcessIndicator", arg0)
@@ -114,4 +139,16 @@ func (m *MockStore) RemoveProcessIndicator(arg0 string) error {
 // RemoveProcessIndicator indicates an expected call of RemoveProcessIndicator
 func (mr *MockStoreMockRecorder) RemoveProcessIndicator(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicator", reflect.TypeOf((*MockStore)(nil).RemoveProcessIndicator), arg0)
+}
+
+// RemoveProcessIndicators mocks base method
+func (m *MockStore) RemoveProcessIndicators(arg0 []string) error {
+	ret := m.ctrl.Call(m, "RemoveProcessIndicators", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveProcessIndicators indicates an expected call of RemoveProcessIndicators
+func (mr *MockStoreMockRecorder) RemoveProcessIndicators(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicators", reflect.TypeOf((*MockStore)(nil).RemoveProcessIndicators), arg0)
 }

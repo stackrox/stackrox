@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -23,20 +22,6 @@ var (
 type searcherImpl struct {
 	storage store.Store
 	indexer index.Indexer
-}
-
-func (ds *searcherImpl) buildIndex() error {
-	defer debug.FreeOSMemory()
-	log.Info("[STARTUP] Indexing images")
-	images, err := ds.storage.GetImages()
-	if err != nil {
-		return err
-	}
-	if err := ds.indexer.AddImages(images); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed images")
-	return nil
 }
 
 // SearchImages retrieves SearchResults from the indexer and storage

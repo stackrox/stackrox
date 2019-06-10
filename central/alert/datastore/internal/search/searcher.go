@@ -20,14 +20,10 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store.Store, indexer index.Indexer) (Searcher, error) {
-	ds := &searcherImpl{
+func New(storage store.Store, indexer index.Indexer) Searcher {
+	return &searcherImpl{
 		storage:           storage,
 		indexer:           indexer,
 		formattedSearcher: formatSearcher(indexer),
 	}
-	if err := ds.buildIndex(); err != nil {
-		return nil, err
-	}
-	return ds, nil
 }

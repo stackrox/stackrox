@@ -24,6 +24,7 @@ const (
 
 	Prune
 
+	Reset
 	Rename
 	Remove
 	RemoveMany

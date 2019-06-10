@@ -10,11 +10,13 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/txn"
 )
 
 var (
@@ -31,12 +33,16 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher) *datastoreImpl {
-	return &datastoreImpl{
+func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher) (*datastoreImpl, error) {
+	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
 	}
+	if err := ds.buildIndex(); err != nil {
+		return nil, err
+	}
+	return ds, nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -232,4 +238,43 @@ func merge(mergeTo *storage.Image, mergeWith *storage.Image) {
 			mergeTo.ClusternsScopes[k] = v
 		}
 	}
+}
+
+func (ds *datastoreImpl) buildIndex() error {
+	defer debug.FreeOSMemory()
+	log.Infof("[STARTUP] Determining if image db/indexer reconciliation is needed")
+
+	dbTxNum, err := ds.storage.GetTxnCount()
+	if err != nil {
+		return err
+	}
+	indexerTxNum := ds.indexer.GetTxnCount()
+
+	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
+		log.Infof("[STARTUP] Reconciliation for images is not needed")
+		return nil
+	}
+	log.Info("[STARTUP] Indexing images")
+
+	if err := ds.indexer.ResetIndex(); err != nil {
+		return err
+	}
+
+	images, err := ds.storage.GetImages()
+	if err != nil {
+		return err
+	}
+	if err := ds.indexer.AddImages(images); err != nil {
+		return err
+	}
+
+	if err := ds.storage.IncTxnCount(); err != nil {
+		return err
+	}
+	if err := ds.indexer.SetTxnCount(dbTxNum + 1); err != nil {
+		return err
+	}
+
+	log.Info("[STARTUP] Successfully indexed images")
+	return nil
 }

@@ -24,6 +24,8 @@ type Store interface {
 	GetAlerts(ids []string) ([]*storage.Alert, []int, error)
 	AddAlert(alert *storage.Alert) error
 	UpdateAlert(alert *storage.Alert) error
+	GetTxnCount() (txNum uint64, err error)
+	IncTxnCount() error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
@@ -31,7 +33,12 @@ func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, alertBucket)
 	bolthelper.RegisterBucketOrPanic(db, alertListBucket)
 
+	wrapper, err := bolthelper.NewBoltWrapper(db, alertBucket)
+	if err != nil {
+		panic(err)
+	}
+
 	return &storeImpl{
-		DB: db,
+		BoltWrapper: wrapper,
 	}
 }

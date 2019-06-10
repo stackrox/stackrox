@@ -20,13 +20,14 @@ func generateAdd(props GeneratorProperties) (jen.Code, jen.Code) {
 
 	implementation := renderAddFunctionSignature(renderFuncBStarIndexer(), props).Block(
 		metricLine("Add", props.Object),
-		jen.Return(jen.Id("b").Dot("index").Dot("Index").Call(
+		ifErrReturnError(jen.Id("b").Dot("index").Dot("Index").Dot("Index").Call(
 			jen.Id(strings.ToLower(props.Singular)).Dot(props.IDFunc).Call(),
 			jen.Op("&").Id(wrapperType).Values(jen.Dict{
 				jen.Id("Type"):       jen.Qual(packagenames.V1, props.SearchCategory).Dot("String").Call(),
 				jen.Id(props.Object): jen.Id(strings.ToLower(props.Singular)),
 			}),
 		)),
+		jen.Return(incrementTxnCount()),
 	)
 
 	return interfaceMethod, implementation

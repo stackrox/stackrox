@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	mappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "Cluster"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type clusterWrapper struct {
@@ -28,10 +30,13 @@ type clusterWrapper struct {
 
 func (b *indexerImpl) AddCluster(cluster *storage.Cluster) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Cluster")
-	return b.index.Index(cluster.GetId(), &clusterWrapper{
+	if err := b.index.Index.Index(cluster.GetId(), &clusterWrapper{
 		Cluster: cluster,
 		Type:    v1.SearchCategory_CLUSTERS.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddClusters(clusters []*storage.Cluster) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddClusters(clusters []*storage.Cluster) error {
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(clusters []*storage.Cluster) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(clusters []*storage.Cluster) error {
 
 func (b *indexerImpl) DeleteCluster(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Cluster")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteClusters(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "Cluster")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "Cluster")
+	return blevesearch.ResetIndex(v1.SearchCategory_CLUSTERS, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Cluster")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_CLUSTERS, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_CLUSTERS, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }

@@ -22,3 +22,13 @@ func MakeWrapperType(str string) string {
 func metricLine(op, name string) *jen.Statement {
 	return jen.Defer().Qual(packagenames.Metrics, "SetIndexOperationDurationTime").Call(jen.Qual("time", "Now").Call(), jen.Qual(packagenames.Ops, op), jen.Lit(name))
 }
+
+func bIndex() *jen.Statement {
+	return jen.Id("b").Dot("index")
+}
+
+func ifErrReturnError(statement *jen.Statement) *jen.Statement {
+	return jen.If(jen.Err().Op(":=").Add(statement), jen.Err().Op("!=").Nil()).Block(
+		jen.Return(jen.Err()),
+	)
+}

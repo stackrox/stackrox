@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -16,9 +17,7 @@ var (
 func initialize() {
 	var err error
 	ad, err = New(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), false)
-	if err != nil {
-		panic(errors.Wrap(err, "could not create images datastore"))
-	}
+	utils.Must(errors.Wrap(err, "unable to load datastore for images"))
 }
 
 // Singleton provides the interface for non-service external interaction.

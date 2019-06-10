@@ -23,6 +23,10 @@ const (
 	txMaxSize  = 65536
 )
 
+var (
+	txnBucket = []byte("transactions")
+)
+
 // New returns an instance of the persistent BoltDB store
 func New(path string) (*bolt.DB, error) {
 	dirPath := filepath.Dir(path)
@@ -38,6 +42,10 @@ func New(path string) (*bolt.DB, error) {
 	options.FreelistType = bolt.FreelistMapType
 	db, err := bolt.Open(path, 0600, &options)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := RegisterBucket(db, txnBucket); err != nil {
 		return nil, err
 	}
 

@@ -64,7 +64,9 @@ func generateIndexImplementationFile(props operations.GeneratorProperties, imple
 	f.Line()
 	f.Const().Id("batchSize").Op("=").Lit(5000)
 	f.Line()
-	f.Type().Id("indexerImpl").Struct(jen.Id("index").Qual(packagenames.Bleve, "Index"))
+	f.Const().Id("resourceName").Op("=").Lit(props.Object)
+
+	f.Type().Id("indexerImpl").Struct(jen.Id("index").Op("*").Qual(packagenames.RoxBleveHelper, "BleveWrapper"))
 	f.Line()
 	f.Type().Id(wrapperClass).Struct(
 		jen.Op("*").Qual(props.Pkg, props.Object).Tag(map[string]string{"json": tagString}),
@@ -85,8 +87,10 @@ func generateIndexInterfaceFile(interfaceMethods []jen.Code) error {
 	f.Type().Id("Indexer").Interface(interfaceMethods...)
 
 	f.Func().Id("New").Params(jen.Id("index").Qual(packagenames.Bleve, "Index")).Id("Indexer").Block(
+		jen.List(jen.Id("wrapper"), jen.Err()).Op(":=").Qual(packagenames.RoxBleveHelper, "NewBleveWrapper").Call(jen.Id("index"), jen.Id("resourceName")),
+		jen.If(jen.Err().Op("!=").Nil().Block(jen.Panic(jen.Err()))),
 		jen.Return(jen.Op("&").Id("indexerImpl").Values(jen.Dict{
-			jen.Id("index"): jen.Id("index"),
+			jen.Id("index"): jen.Id("wrapper"),
 		})),
 	)
 	return f.Save("indexer.go")

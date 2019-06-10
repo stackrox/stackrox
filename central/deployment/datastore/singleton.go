@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -9,6 +10,7 @@ import (
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -22,9 +24,7 @@ var (
 func initialize() {
 	var err error
 	ad, err = New(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton())
-	if err != nil {
-		log.Panicf("Failed to create deployments datastore: %v", err)
-	}
+	utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
 }
 
 // Singleton provides the interface for non-service external interaction.

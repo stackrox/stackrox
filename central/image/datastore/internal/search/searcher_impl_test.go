@@ -60,8 +60,7 @@ func (s *searcherSuite) SetupTest() {
 
 	s.store = store.New(db, false)
 
-	s.searcher, err = New(s.store, s.indexer)
-	s.Require().NoError(err)
+	s.searcher = New(s.store, s.indexer)
 }
 
 func (s *searcherSuite) TestNoAccess() {

@@ -17,9 +17,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
+	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/txn"
 )
 
 var (
@@ -39,8 +41,8 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) *datastoreImpl {
-	return &datastoreImpl{
+func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) (*datastoreImpl, error) {
+	ds := &datastoreImpl{
 		deploymentStore:    storage,
 		deploymentIndexer:  indexer,
 		deploymentSearcher: searcher,
@@ -50,6 +52,10 @@ func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Ind
 		networkFlows:       networkFlows,
 		keyedMutex:         concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
+	if err := ds.buildIndex(); err != nil {
+		return nil, err
+	}
+	return ds, nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -254,4 +260,44 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 		}
 	}
 	return images, nil
+}
+
+func (ds *datastoreImpl) buildIndex() error {
+	defer debug.FreeOSMemory()
+	log.Infof("[STARTUP] Determining if deployment db/indexer reconciliation is needed")
+
+	dbTxNum, err := ds.deploymentStore.GetTxnCount()
+	if err != nil {
+		return err
+	}
+	indexerTxNum := ds.deploymentIndexer.GetTxnCount()
+
+	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
+		log.Infof("[STARTUP] Reconciliation for deployments is not needed")
+		return nil
+	}
+
+	log.Info("[STARTUP] Indexing deployments")
+
+	if err := ds.deploymentIndexer.ResetIndex(); err != nil {
+		return err
+	}
+
+	deployments, err := ds.deploymentStore.GetDeployments()
+	if err != nil {
+		return err
+	}
+	if err := ds.deploymentIndexer.AddDeployments(deployments); err != nil {
+		return err
+	}
+
+	if err := ds.deploymentStore.IncTxnCount(); err != nil {
+		return err
+	}
+	if err := ds.deploymentIndexer.SetTxnCount(dbTxNum + 1); err != nil {
+		return err
+	}
+
+	log.Info("[STARTUP] Successfully indexed deployments")
+	return nil
 }

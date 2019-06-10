@@ -46,13 +46,13 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	require.NoError(b, err)
 
 	deploymentsIndexer := index.New(bleveIndex)
-	deploymentsSearcher, err := search.New(deploymentsStore, deploymentsIndexer)
-	require.NoError(b, err)
+	deploymentsSearcher := search.New(deploymentsStore, deploymentsIndexer)
 
 	imageDS, err := imageDatastore.New(db, bleveIndex, false)
 	require.NoError(b, err)
 
-	deploymentsDatastore := newDatastoreImpl(deploymentsStore, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil)
+	deploymentsDatastore, err := newDatastoreImpl(deploymentsStore, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil)
+	require.NoError(b, err)
 
 	deploymentPrototype := proto.Clone(fixtures.GetDeployment()).(*storage.Deployment)
 

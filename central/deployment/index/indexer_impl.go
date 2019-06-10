@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	mappings "github.com/stackrox/rox/central/deployment/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "Deployment"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type deploymentWrapper struct {
@@ -28,10 +30,13 @@ type deploymentWrapper struct {
 
 func (b *indexerImpl) AddDeployment(deployment *storage.Deployment) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Deployment")
-	return b.index.Index(deployment.GetId(), &deploymentWrapper{
+	if err := b.index.Index.Index(deployment.GetId(), &deploymentWrapper{
 		Deployment: deployment,
 		Type:       v1.SearchCategory_DEPLOYMENTS.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddDeployments(deployments []*storage.Deployment) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddDeployments(deployments []*storage.Deployment) error {
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(deployments []*storage.Deployment) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(deployments []*storage.Deployment) error {
 
 func (b *indexerImpl) DeleteDeployment(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Deployment")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteDeployments(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "Deployment")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "Deployment")
+	return blevesearch.ResetIndex(v1.SearchCategory_DEPLOYMENTS, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Deployment")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }

@@ -41,9 +41,6 @@ ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
 # Trusted CA certificates are written to this path by `update-ca-certificates`.
 RUN chown -R 4000 /etc/ssl
 VOLUME /etc/ssl
-# Search indices are generated upon startup and updated thereafter.
-RUN mkdir -p /tmp/search && chown -R 4000 /tmp/search
-VOLUME /tmp/search
 # The BoltDB is stored at this path.
 RUN mkdir -p /var/lib/stackrox && chown -R 4000 /var/lib/stackrox
 VOLUME /var/lib/stackrox

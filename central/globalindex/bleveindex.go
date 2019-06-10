@@ -28,6 +28,7 @@ import (
 	secretOptions "github.com/stackrox/rox/central/secret/mappings"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/blevehelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -97,12 +98,12 @@ func optionsMapToSlice(options search.OptionsMap) []search.FieldLabel {
 }
 
 // TempInitializeIndices initializes the index under the tmp system folder in the specified path.
-func TempInitializeIndices(mossPath string) (bleve.Index, error) {
+func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, err
 	}
-	return initializeIndices(filepath.Join(tmpDir, mossPath))
+	return initializeIndices(filepath.Join(tmpDir, scorchPath))
 }
 
 // MemOnlyIndex returns a temporary mem-only index.
@@ -111,33 +112,39 @@ func MemOnlyIndex() (bleve.Index, error) {
 }
 
 // InitializeIndices initializes the index in the specified path.
-func InitializeIndices(mossPath string) (bleve.Index, error) {
-	globalIndex, err := initializeIndices(mossPath)
+func InitializeIndices(scorchPath string) (bleve.Index, error) {
+	globalIndex, err := initializeIndices(scorchPath)
 	if err != nil {
 		return nil, err
 	}
-	go startMonitoring(globalIndex, mossPath)
+	go startMonitoring(globalIndex, scorchPath)
 	return globalIndex, nil
 }
 
-func initializeIndices(mossPath string) (bleve.Index, error) {
+func initializeIndices(scorchPath string) (bleve.Index, error) {
 	indexMapping := getIndexMapping()
 
 	kvconfig := map[string]interface{}{
-		// This sounds scary. It's not. It just means that the persistence to disk is not guaranteed
-		// which is fine for us because we replay on Central restart
-		"unsafe_batch": true,
+		// Persist the index
+		"unsafe_batch": false,
 	}
 
-	// Bleve requires that the directory we provide is already empty.
-	err := os.RemoveAll(mossPath)
-	if err != nil {
-		log.Warnf("Could not clean up search index path %s: %v", mossPath, err)
+	var globalIndex bleve.Index
+	if _, err := os.Stat(filepath.Join(scorchPath, "index_meta.json")); err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		globalIndex, err = bleve.NewUsing(scorchPath, indexMapping, scorch.Name, scorch.Name, kvconfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		globalIndex, err = bleve.OpenUsing(scorchPath, kvconfig)
+		if err != nil {
+			return nil, err
+		}
 	}
-	globalIndex, err := bleve.NewUsing(mossPath, indexMapping, scorch.Name, scorch.Name, kvconfig)
-	if err != nil {
-		return nil, err
-	}
+	globalIndex.SetName(blevehelper.GlobalIndexName)
 
 	return globalIndex, nil
 }

@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "NamespaceMetadata"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type namespaceMetadataWrapper struct {
@@ -28,10 +30,13 @@ type namespaceMetadataWrapper struct {
 
 func (b *indexerImpl) AddNamespaceMetadata(namespacemetadata *storage.NamespaceMetadata) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "NamespaceMetadata")
-	return b.index.Index(namespacemetadata.GetId(), &namespaceMetadataWrapper{
+	if err := b.index.Index.Index(namespacemetadata.GetId(), &namespaceMetadataWrapper{
 		NamespaceMetadata: namespacemetadata,
 		Type:              v1.SearchCategory_NAMESPACES.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddNamespaceMetadatas(namespacemetadatas []*storage.NamespaceMetadata) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddNamespaceMetadatas(namespacemetadatas []*storage.Namesp
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(namespacemetadatas []*storage.NamespaceMetadata) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(namespacemetadatas []*storage.NamespaceMetada
 
 func (b *indexerImpl) DeleteNamespaceMetadata(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "NamespaceMetadata")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteNamespaceMetadatas(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "NamespaceMetadata")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "NamespaceMetadata")
+	return blevesearch.ResetIndex(v1.SearchCategory_NAMESPACES, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "NamespaceMetadata")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_NAMESPACES, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_NAMESPACES, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }

@@ -15,7 +15,7 @@ import (
 )
 
 type storeImpl struct {
-	*bolt.DB
+	*bolthelper.BoltWrapper
 	ranker *ranking.Ranker
 }
 
@@ -259,7 +259,7 @@ func (b *storeImpl) UpdateDeployment(deployment *storage.Deployment) error {
 func (b *storeImpl) RemoveDeployment(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
-	err := b.Update(func(tx *bolt.Tx) error {
+	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(deploymentBucket)
 
 		b.ranker.Remove(id)
@@ -268,9 +268,19 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 		}
 		return b.removeListDeployment(tx, id)
 	})
+}
 
-	if err != nil {
-		return err
-	}
-	return nil
+func (b *storeImpl) GetTxnCount() (txNum uint64, err error) {
+	err = b.View(func(tx *bolt.Tx) error {
+		txNum = b.BoltWrapper.GetTxnCount(tx)
+		return nil
+	})
+	return
+}
+
+func (b *storeImpl) IncTxnCount() error {
+	return b.Update(func(tx *bolt.Tx) error {
+		// The b.Update increments the txn count automatically
+		return nil
+	})
 }

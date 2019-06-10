@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "K8SRoleBinding"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type k8SRoleBindingWrapper struct {
@@ -28,10 +30,13 @@ type k8SRoleBindingWrapper struct {
 
 func (b *indexerImpl) AddK8sRoleBinding(k8srolebinding *storage.K8SRoleBinding) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "K8SRoleBinding")
-	return b.index.Index(k8srolebinding.GetId(), &k8SRoleBindingWrapper{
+	if err := b.index.Index.Index(k8srolebinding.GetId(), &k8SRoleBindingWrapper{
 		K8SRoleBinding: k8srolebinding,
 		Type:           v1.SearchCategory_ROLEBINDINGS.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddK8sRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddK8sRoleBindings(k8srolebindings []*storage.K8SRoleBindi
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(k8srolebindings []*storage.K8SRoleBinding) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(k8srolebindings []*storage.K8SRoleBinding) er
 
 func (b *indexerImpl) DeleteK8sRoleBinding(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "K8SRoleBinding")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteK8sRoleBindings(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "K8SRoleBinding")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "K8SRoleBinding")
+	return blevesearch.ResetIndex(v1.SearchCategory_ROLEBINDINGS, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "K8SRoleBinding")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLEBINDINGS, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLEBINDINGS, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }

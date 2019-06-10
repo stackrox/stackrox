@@ -10,16 +10,10 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
-	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-)
-
-const (
-	alertBatchSize = 1000
 )
 
 var (
@@ -38,62 +32,6 @@ type searcherImpl struct {
 	storage           store.Store
 	indexer           index.Indexer
 	formattedSearcher search.Searcher
-}
-
-func (ds *searcherImpl) buildIndex() error {
-	defer debug.FreeOSMemory()
-
-	stateAlerts, err := ds.storage.GetAlertStates()
-	if err != nil {
-		return err
-	}
-
-	var resolvedIDs, unresolvedIDs []string
-	for _, a := range stateAlerts {
-		if a.GetState() == storage.ViolationState_RESOLVED {
-			resolvedIDs = append(resolvedIDs, a.GetId())
-		} else {
-			unresolvedIDs = append(unresolvedIDs, a.GetId())
-		}
-	}
-
-	log.Info("[STARTUP] Indexing alerts")
-	if err := ds.getAndIndexAlertsBatch(unresolvedIDs); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed all active alerts")
-
-	// Asynchronously index the resolved alerts because there is no hard
-	// dependency on resolved alerts being indexed
-	go func() {
-		if err := ds.getAndIndexAlertsBatch(resolvedIDs); err != nil {
-			log.Error(err)
-		}
-	}()
-	return nil
-}
-
-func (ds *searcherImpl) getAndIndexAlertsBatch(ids []string) error {
-	b := batcher.New(len(ids), alertBatchSize)
-	for start, end, ok := b.Next(); ok; start, end, ok = b.Next() {
-		if err := ds.getAndIndexAlerts(ids[start:end]); err != nil {
-			return err
-		}
-		log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(ids))
-	}
-	return nil
-}
-
-func (ds *searcherImpl) getAndIndexAlerts(ids []string) error {
-	defer debug.FreeOSMemory()
-	alerts, _, err := ds.storage.GetListAlerts(ids)
-	if err != nil {
-		return err
-	}
-	if err := ds.indexer.AddListAlerts(alerts); err != nil {
-		return err
-	}
-	return nil
 }
 
 // SearchAlerts retrieves SearchResults from the indexer and storage

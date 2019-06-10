@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -23,20 +22,6 @@ var (
 type searcherImpl struct {
 	storage store.Store
 	indexer index.Indexer
-}
-
-func (s *searcherImpl) buildIndex() error {
-	defer debug.FreeOSMemory()
-	log.Info("[STARTUP] Indexing process indicators")
-	indicators, err := s.storage.GetProcessIndicators()
-	if err != nil {
-		return err
-	}
-	if err := s.indexer.AddProcessIndicators(indicators); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed process indicators")
-	return nil
 }
 
 // SearchRawIndicators retrieves Policies from the indexer and storage

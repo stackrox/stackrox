@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/processwhitelist/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "ProcessWhitelist"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type processWhitelistWrapper struct {
@@ -28,10 +30,13 @@ type processWhitelistWrapper struct {
 
 func (b *indexerImpl) AddWhitelist(whitelist *storage.ProcessWhitelist) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "ProcessWhitelist")
-	return b.index.Index(whitelist.GetId(), &processWhitelistWrapper{
+	if err := b.index.Index.Index(whitelist.GetId(), &processWhitelistWrapper{
 		ProcessWhitelist: whitelist,
 		Type:             v1.SearchCategory_PROCESS_WHITELISTS.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddWhitelists(whitelists []*storage.ProcessWhitelist) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddWhitelists(whitelists []*storage.ProcessWhitelist) erro
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(whitelists []*storage.ProcessWhitelist) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(whitelists []*storage.ProcessWhitelist) error
 
 func (b *indexerImpl) DeleteWhitelist(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ProcessWhitelist")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteWhitelists(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessWhitelist")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "ProcessWhitelist")
+	return blevesearch.ResetIndex(v1.SearchCategory_PROCESS_WHITELISTS, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessWhitelist")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_PROCESS_WHITELISTS, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_PROCESS_WHITELISTS, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }

@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	mappings "github.com/stackrox/rox/central/image/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "Image"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type imageWrapper struct {
@@ -28,10 +30,13 @@ type imageWrapper struct {
 
 func (b *indexerImpl) AddImage(image *storage.Image) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Image")
-	return b.index.Index(image.GetId(), &imageWrapper{
+	if err := b.index.Index.Index(image.GetId(), &imageWrapper{
 		Image: image,
 		Type:  v1.SearchCategory_IMAGES.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddImages(images []*storage.Image) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddImages(images []*storage.Image) error {
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(images []*storage.Image) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(images []*storage.Image) error {
 
 func (b *indexerImpl) DeleteImage(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Image")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteImages(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "Image")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "Image")
+	return blevesearch.ResetIndex(v1.SearchCategory_IMAGES, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Image")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_IMAGES, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_IMAGES, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }

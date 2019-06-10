@@ -6,6 +6,7 @@ import (
 	bleve "github.com/blevesearch/bleve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	search "github.com/stackrox/rox/pkg/search"
 )
 
@@ -13,9 +14,17 @@ type Indexer interface {
 	AddListAlert(listalert *storage.ListAlert) error
 	AddListAlerts(listalerts []*storage.ListAlert) error
 	DeleteListAlert(id string) error
+	DeleteListAlerts(ids []string) error
+	GetTxnCount() uint64
+	ResetIndex() error
 	Search(q *v1.Query) ([]search.Result, error)
+	SetTxnCount(seq uint64) error
 }
 
 func New(index bleve.Index) Indexer {
-	return &indexerImpl{index: index}
+	wrapper, err := blevehelper.NewBleveWrapper(index, resourceName)
+	if err != nil {
+		panic(err)
+	}
+	return &indexerImpl{index: wrapper}
 }

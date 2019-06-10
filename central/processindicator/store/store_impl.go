@@ -10,11 +10,12 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 type storeImpl struct {
-	*bolt.DB
+	*bolthelper.BoltWrapper
 }
 
 func getProcessIndicator(tx *bolt.Tx, id string) (indicator *storage.ProcessIndicator, exists bool, err error) {
@@ -111,11 +112,11 @@ func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *storage.ProcessI
 	oldID := uniqueBucket.Get([]byte(secondaryKey))
 	var oldIDString string
 	if oldID != nil {
+		oldIDString = string(oldID)
 		// Remove the old indicator.
-		if err := removeProcessIndicator(tx, oldID); err != nil {
+		if err := removeProcessIndicator(tx, oldIDString); err != nil {
 			return "", errors.Wrap(err, "Removing old indicator")
 		}
-		oldIDString = string(oldID)
 	}
 	if err := indicatorBucket.Put(indicatorIDBytes, data); err != nil {
 		return "", errors.Wrap(err, "inserting into indicator bucket")
@@ -140,9 +141,18 @@ func (b *storeImpl) AddProcessIndicator(indicator *storage.ProcessIndicator) (st
 	var oldIDString string
 	err = b.Update(func(tx *bolt.Tx) error {
 		oldIDString, err = b.addProcessIndicator(tx, indicator, indicatorBytes)
-		return err
+		if err != nil {
+			return err
+		}
+		if oldIDString != "" {
+			// Purposefully increment the txn count here as it will be a call in the datastore
+			if err := b.BoltWrapper.IncTxnCount(tx); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
-	return oldIDString, nil
+	return oldIDString, err
 }
 
 func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator) ([]string, error) {
@@ -168,38 +178,71 @@ func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator
 				deletedIndicators = append(deletedIndicators, oldID)
 			}
 		}
+		if len(deletedIndicators) > 0 {
+			// Purposefully increment the txn count here as it will be a call in the datastore
+			if err := b.BoltWrapper.IncTxnCount(tx); err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 	return deletedIndicators, err
 }
 
-func removeProcessIndicator(tx *bolt.Tx, id []byte) error {
+func removeProcessIndicator(tx *bolt.Tx, id string) error {
+	indicator, exists, err := getProcessIndicator(tx, id)
+	if err != nil {
+		return errors.Wrap(err, "retrieving existing indicator")
+	}
+	// No error if the indicator didn't exist.
+	if !exists {
+		return nil
+	}
+	uniqueBucket := tx.Bucket(uniqueProcessesBucket)
+	secondaryKey, err := getSecondaryKey(indicator)
+	if err != nil {
+		return err
+	}
+	if err := uniqueBucket.Delete(secondaryKey); err != nil {
+		return errors.Wrap(err, "deleting from unique bucket")
+	}
 	bucket := tx.Bucket(processIndicatorBucket)
-	return bucket.Delete(id)
+	if err := bucket.Delete([]byte(id)); err != nil {
+		return errors.Wrap(err, "removing indicator")
+	}
+	return nil
 }
 
 func (b *storeImpl) RemoveProcessIndicator(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "ProcessIndicator")
 	return b.Update(func(tx *bolt.Tx) error {
-		indicator, exists, err := getProcessIndicator(tx, id)
-		if err != nil {
-			return errors.Wrap(err, "retrieving existing indicator")
+		return removeProcessIndicator(tx, id)
+	})
+}
+
+func (b *storeImpl) RemoveProcessIndicators(ids []string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "ProcessIndicator")
+	return b.Update(func(tx *bolt.Tx) error {
+		for _, i := range ids {
+			if err := removeProcessIndicator(tx, i); err != nil {
+				return err
+			}
 		}
-		// No error if the indicator didn't exist.
-		if !exists {
-			return nil
-		}
-		uniqueBucket := tx.Bucket(uniqueProcessesBucket)
-		secondaryKey, err := getSecondaryKey(indicator)
-		if err != nil {
-			return err
-		}
-		if err := uniqueBucket.Delete(secondaryKey); err != nil {
-			return errors.Wrap(err, "deleting from unique bucket")
-		}
-		if err := removeProcessIndicator(tx, []byte(id)); err != nil {
-			return errors.Wrap(err, "removing indicator")
-		}
+		return nil
+	})
+}
+
+func (b *storeImpl) GetTxnCount() (txNum uint64, err error) {
+	err = b.View(func(tx *bolt.Tx) error {
+		txNum = b.BoltWrapper.GetTxnCount(tx)
+		return nil
+	})
+	return
+}
+
+func (b *storeImpl) IncTxnCount() error {
+	return b.Update(func(tx *bolt.Tx) error {
+		// The b.Update increments the txn count automatically
 		return nil
 	})
 }

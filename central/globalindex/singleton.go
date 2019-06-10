@@ -13,7 +13,7 @@ var (
 
 func initialize() {
 	var err error
-	gi, err = InitializeIndices("/tmp/search/scorch.bleve")
+	gi, err = InitializeIndices("/var/lib/stackrox/scorch.bleve")
 	if err != nil {
 		panic(err)
 	}

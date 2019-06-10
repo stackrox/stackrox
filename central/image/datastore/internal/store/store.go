@@ -24,6 +24,9 @@ type Store interface {
 
 	UpsertImage(image *storage.Image) error
 	DeleteImage(id string) error
+
+	GetTxnCount() (txNum uint64, err error)
+	IncTxnCount() error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
@@ -32,8 +35,12 @@ type Store interface {
 func New(db *bolt.DB, noUpdateTimestamps bool) Store {
 	bolthelper.RegisterBucketOrPanic(db, imageBucket)
 	bolthelper.RegisterBucketOrPanic(db, listImageBucket)
+	wrapper, err := bolthelper.NewBoltWrapper(db, imageBucket)
+	if err != nil {
+		panic(err)
+	}
 	return &storeImpl{
-		db:                 db,
+		db:                 wrapper,
 		noUpdateTimestamps: noUpdateTimestamps,
 	}
 }

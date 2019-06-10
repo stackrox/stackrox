@@ -32,11 +32,15 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
-	return &datastoreImpl{
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+	ds := &datastoreImpl{
 		storage:    storage,
 		indexer:    indexer,
 		searcher:   searcher,
 		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
+	if err := ds.buildIndex(); err != nil {
+		return nil, err
+	}
+	return ds, nil
 }

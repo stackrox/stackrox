@@ -56,9 +56,14 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
+	s.storage.EXPECT().GetTxnCount().Return(uint64(1), nil)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
+	s.indexer.EXPECT().GetTxnCount().Return(uint64(1))
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
-	s.dataStore = New(s.storage, s.indexer, s.searcher)
+
+	var err error
+	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
+	s.Require().NoError(err)
 }
 
 func (s *alertDataStoreTestSuite) TestSearchAlerts() {
@@ -214,7 +219,9 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
-	s.dataStore = New(s.storage, s.indexer, s.searcher)
+	var err error
+	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
+	s.NoError(err)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {

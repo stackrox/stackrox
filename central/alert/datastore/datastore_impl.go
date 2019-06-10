@@ -12,10 +12,17 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/txn"
+)
+
+const (
+	alertBatchSize = 1000
 )
 
 var (
@@ -167,4 +174,74 @@ func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {
 
 func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 	return o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
+}
+
+func (ds *datastoreImpl) buildIndex() error {
+	defer debug.FreeOSMemory()
+
+	log.Infof("[STARTUP] Determining if alert db/indexer reconciliation is needed")
+	indexerTxNum := ds.indexer.GetTxnCount()
+
+	dbTxNum, err := ds.storage.GetTxnCount()
+	if err != nil {
+		return err
+	}
+
+	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
+		log.Infof("[STARTUP] Reconciliation for alerts is not needed")
+		return nil
+	}
+
+	log.Info("[STARTUP] Reconciling DB and Indexer by indexing alerts")
+
+	if err := ds.indexer.ResetIndex(); err != nil {
+		return err
+	}
+
+	stateAlerts, err := ds.storage.GetAlertStates()
+	if err != nil {
+		return err
+	}
+
+	ids := make([]string, 0, len(stateAlerts))
+	for _, a := range stateAlerts {
+		ids = append(ids, a.GetId())
+	}
+
+	if err := ds.getAndIndexAlertsBatch(ids); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed all alerts")
+
+	if err := ds.storage.IncTxnCount(); err != nil {
+		return err
+	}
+	if err := ds.indexer.SetTxnCount(dbTxNum + 1); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ds *datastoreImpl) getAndIndexAlertsBatch(ids []string) error {
+	b := batcher.New(len(ids), alertBatchSize)
+	for start, end, ok := b.Next(); ok; start, end, ok = b.Next() {
+		if err := ds.getAndIndexAlerts(ids[start:end]); err != nil {
+			return err
+		}
+		log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(ids))
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) getAndIndexAlerts(ids []string) error {
+	defer debug.FreeOSMemory()
+	alerts, _, err := ds.storage.GetListAlerts(ids)
+	if err != nil {
+		return err
+	}
+	if err := ds.indexer.AddListAlerts(alerts); err != nil {
+		return err
+	}
+	return nil
 }

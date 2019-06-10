@@ -3,12 +3,12 @@
 package index
 
 import (
-	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/secret/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
+	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -17,8 +17,10 @@ import (
 
 const batchSize = 5000
 
+const resourceName = "Secret"
+
 type indexerImpl struct {
-	index bleve.Index
+	index *blevehelper.BleveWrapper
 }
 
 type secretWrapper struct {
@@ -28,10 +30,13 @@ type secretWrapper struct {
 
 func (b *indexerImpl) AddSecret(secret *storage.Secret) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Secret")
-	return b.index.Index(secret.GetId(), &secretWrapper{
+	if err := b.index.Index.Index(secret.GetId(), &secretWrapper{
 		Secret: secret,
 		Type:   v1.SearchCategory_SECRETS.String(),
-	})
+	}); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) AddSecrets(secrets []*storage.Secret) error {
@@ -46,7 +51,7 @@ func (b *indexerImpl) AddSecrets(secrets []*storage.Secret) error {
 			return err
 		}
 	}
-	return nil
+	return b.index.IncTxnCount()
 }
 
 func (b *indexerImpl) processBatch(secrets []*storage.Secret) error {
@@ -64,10 +69,38 @@ func (b *indexerImpl) processBatch(secrets []*storage.Secret) error {
 
 func (b *indexerImpl) DeleteSecret(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Secret")
-	return b.index.Delete(id)
+	if err := b.index.Delete(id); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) DeleteSecrets(ids []string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "Secret")
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	if err := b.index.Batch(batch); err != nil {
+		return err
+	}
+	return b.index.IncTxnCount()
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
+}
+
+func (b *indexerImpl) ResetIndex() error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "Secret")
+	return blevesearch.ResetIndex(v1.SearchCategory_SECRETS, b.index.Index)
 }
 
 func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Secret")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_SECRETS, q, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_SECRETS, q, b.index.Index, mappings.OptionsMap)
+}
+
+func (b *indexerImpl) SetTxnCount(seq uint64) error {
+	return b.index.SetTxnCount(seq)
 }
