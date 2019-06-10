@@ -10,17 +10,23 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log        = logging.LoggerForModule()
+	cleanupCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Node, resources.Cluster)))
 )
 
 // DataStore is the entry point for modifying Cluster data.
@@ -62,6 +68,6 @@ func New(
 	if err := ds.buildIndex(); err != nil {
 		return ds, err
 	}
-	go ds.cleanUpNodeStore(context.TODO())
+	go ds.cleanUpNodeStore(cleanupCtx)
 	return ds, nil
 }
