@@ -247,6 +247,8 @@ ifdef CI
 	@# `dep check` exits with a nonzero code if there is a toml->lock mismatch.
 	dep check -skip-vendor
 endif
+	@$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
+	@test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
 	@# `dep ensure` can be flaky sometimes, so try rerunning it if it fails.
 	dep ensure || (rm -rf vendor .vendor-new && dep ensure)
 	@touch deps
