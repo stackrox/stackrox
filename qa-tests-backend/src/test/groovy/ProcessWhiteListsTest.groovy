@@ -1,10 +1,11 @@
-
 import static Services.waitForViolation
 import static Services.waitForSuspiciousProcessInRiskIndicators
+
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import services.AlertService
+import services.ClusterService
 
 import groups.BAT
 
@@ -16,9 +17,13 @@ import org.apache.commons.lang.StringUtils
 import org.junit.experimental.categories.Category
 
 import services.ProcessWhitelistService
+import spock.lang.Shared
 import spock.lang.Unroll
 
 class ProcessWhiteListsTest extends BaseSpecification {
+    @Shared
+    private String clusterId
+
     static final private String DEPLOYMENTNGINX = "pw-deploymentnginx"
     static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "pw-deploymentnginx-violation-resolve"
     static final private String DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION =
@@ -74,6 +79,8 @@ class ProcessWhiteListsTest extends BaseSpecification {
             ]
 
     def setupSpec() {
+        clusterId = ClusterService.getClusterId()
+
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
@@ -91,13 +98,15 @@ class ProcessWhiteListsTest extends BaseSpecification {
     @Category(BAT)
     def "Verify  whitelist processes for the given key before and after locking "() {
         when:
-        def deploymentId = DEPLOYMENTS.find { it.name == deploymentName }.getDeploymentUid()
+        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        assert deployment != null
+        String deploymentId = deployment.getDeploymentUid()
         // Currently, we always create a deployment where the container name is the same
         // as the deployment name
-        def containerName = deploymentName
+        String containerName = deployment.getName()
         "get process whitelists is called for a key"
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                getProcessWhitelist(deploymentId, containerName)
+                getProcessWhitelist(clusterId, deployment, containerName)
 
         assert (whitelist != null)
 
@@ -109,7 +118,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         //lock the whitelist with the key of the container just deployed
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
-                lockProcessWhitelists(deploymentId, containerName, true)
+                lockProcessWhitelists(clusterId, deployment, containerName, true)
         assert  lockProcessWhitelists.size() == 1
         assert  lockProcessWhitelists.get(0).getElementsList().
             find { it.element.processName.equalsIgnoreCase(processName) } != null
@@ -140,13 +149,14 @@ class ProcessWhiteListsTest extends BaseSpecification {
         String deploymentId = deployment.getDeploymentUid()
         String containerName = deployment.getName()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                 getProcessWhitelist(deploymentId, containerName)
+                 getProcessWhitelist(clusterId, deployment, containerName)
+        assert (whitelist != null)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                  (whitelist.key.containerName.equalsIgnoreCase(containerName)))
         assert whitelist.getElements(0).element.processName.contains(processName)
 
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
-                 lockProcessWhitelists(deploymentId, containerName, true)
+                 lockProcessWhitelists(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessWhitelists.get(0).getElements(0).getElement().processName))
         orchestrator.execInContainer(deployment, "pwd")
 
@@ -204,7 +214,8 @@ class ProcessWhiteListsTest extends BaseSpecification {
         String deploymentId = deployment.getDeploymentUid()
         String containerName = deployment.getName()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                    getProcessWhitelist(deploymentId, containerName)
+                    getProcessWhitelist(clusterId, deployment, containerName)
+        assert (whitelist != null)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                     (whitelist.key.containerName.equalsIgnoreCase(containerName)))
         assert whitelist.getElements(0).element.processName.contains(processName)
@@ -237,8 +248,9 @@ class ProcessWhiteListsTest extends BaseSpecification {
         //Get all whitelists for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE }
         assert deployment != null
-        String deploymentId = deployment.getDeploymentUid()
-        def whitelistsCreated = ProcessWhitelistService.waitForDeploymentWhitelistsCreated(deploymentId)
+        String containerName = deployment.getName()
+        def whitelistsCreated = ProcessWhitelistService.
+                waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
         assert(whitelistsCreated)
 
         //Delete the deployment
@@ -247,7 +259,8 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         then:
         "Verify that all whitelists with that deployment ID have been deleted"
-        def whitelistsDeleted = ProcessWhitelistService.waitForDeploymentWhitelistsDeleted(deploymentId)
+        def whitelistsDeleted = ProcessWhitelistService.
+                waitForDeploymentWhitelistsDeleted(clusterId, deployment, containerName)
         assert(whitelistsDeleted)
     }
 
@@ -265,16 +278,18 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert deployment != null
         def deploymentId = deployment.deploymentUid
         def containerName = deploymentName
+        def namespace = deployment.getNamespace()
 
         //Wait for whitelist to be created
-        def initialWhitelist = ProcessWhitelistService.getProcessWhitelist(deploymentId, containerName)
+        def initialWhitelist = ProcessWhitelistService.
+                getProcessWhitelist(clusterId, deployment, containerName)
         assert (initialWhitelist != null)
 
         //Add the process to the whitelist
         ProcessWhitelistOuterClass.ProcessWhitelistKey [] keys = [
                 new ProcessWhitelistOuterClass
                 .ProcessWhitelistKey().newBuilderForType().setContainerName(containerName)
-                .setDeploymentId(deploymentId).build(),
+                .setDeploymentId(deploymentId).setClusterId(clusterId).setNamespace(namespace).build(),
         ]
         String [] toBeAddedProcesses = ["pwd"]
         String [] toBeRemovedProcesses = []
@@ -282,7 +297,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
                 .updateProcessWhitelists(keys, toBeAddedProcesses, toBeRemovedProcesses)
         assert ( updatedList!= null)
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                getProcessWhitelist(deploymentId, containerName)
+                getProcessWhitelist(clusterId, deployment, containerName)
         List<ProcessWhitelistOuterClass.WhitelistElement> elements = whitelist.elementsList
         ProcessWhitelistOuterClass.WhitelistElement element = elements.find { it.element.processName.contains("pwd") }
         assert ( element != null)
@@ -297,7 +312,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         then:
         "verify process is not added to the whitelist"
         ProcessWhitelistOuterClass.ProcessWhitelist whitelistAfterReRun = ProcessWhitelistService.
-                getProcessWhitelist(deploymentId, containerName)
+                getProcessWhitelist(clusterId, deployment, containerName)
         assert  ( whitelistAfterReRun.elementsList.find { it.element.processName.contains("pwd") } == null)
         where:
         deploymentName                                   | processName

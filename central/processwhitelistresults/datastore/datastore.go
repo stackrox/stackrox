@@ -12,7 +12,6 @@ import (
 type DataStore interface {
 	UpsertWhitelistResults(ctx context.Context, results *storage.ProcessWhitelistResults) error
 	GetWhitelistResults(ctx context.Context, deploymentID string) (*storage.ProcessWhitelistResults, error)
-	DeleteWhitelistResults(ctx context.Context, deploymentID string) error
 }
 
 // New returns a new instance of DataStore.

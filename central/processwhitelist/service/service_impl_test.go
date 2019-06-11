@@ -12,10 +12,12 @@ import (
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
 	"github.com/stackrox/rox/central/reprocessor/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -23,21 +25,22 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var (
+	hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.ProcessWhitelist)))
+)
+
 func fillDB(t *testing.T, ds datastore.DataStore, whitelists []*storage.ProcessWhitelist) {
-	initialContents, err := ds.GetProcessWhitelists(context.TODO())
-	assert.NoError(t, err)
-	assert.Empty(t, initialContents, "initial db not empty, you have a test bug")
 	for _, whitelist := range whitelists {
-		_, err := ds.AddProcessWhitelist(context.TODO(), whitelist)
+		_, err := ds.AddProcessWhitelist(hasWriteCtx, whitelist)
 		assert.NoError(t, err)
 	}
 }
 
-func emptyDB(t *testing.T, ds datastore.DataStore) {
-	whitelists, err := ds.GetProcessWhitelists(context.TODO())
-	assert.NoError(t, err)
+func emptyDB(t *testing.T, ds datastore.DataStore, whitelists []*storage.ProcessWhitelist) {
 	for _, whitelist := range whitelists {
-		assert.NoError(t, ds.RemoveProcessWhitelist(context.TODO(), whitelist.GetKey()))
+		assert.NoError(t, ds.RemoveProcessWhitelist(hasWriteCtx, whitelist.GetKey()))
 	}
 }
 
@@ -77,39 +80,6 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 func (suite *ProcessWhitelistServiceTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 	suite.mockCtrl.Finish()
-}
-
-func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelists() {
-	cases := []struct {
-		name       string
-		whitelists []*storage.ProcessWhitelist
-	}{
-		{
-			name: "Empty DB",
-		},
-		{
-			name:       "One whitelist",
-			whitelists: []*storage.ProcessWhitelist{fixtures.GetProcessWhitelistWithKey()},
-		},
-		{
-			name: "Many whitelists",
-			whitelists: []*storage.ProcessWhitelist{
-				fixtures.GetProcessWhitelistWithKey(),
-				fixtures.GetProcessWhitelistWithKey(),
-				fixtures.GetProcessWhitelistWithKey(),
-			},
-		},
-	}
-
-	for _, c := range cases {
-		suite.T().Run(c.name, func(t *testing.T) {
-			fillDB(t, suite.datastore, c.whitelists)
-			defer emptyDB(t, suite.datastore)
-			gotWhitelists, err := suite.service.GetProcessWhitelists((context.Context)(nil), nil)
-			assert.NoError(t, err)
-			assert.ElementsMatch(t, gotWhitelists.Whitelists, c.whitelists)
-		})
-	}
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelist() {
@@ -155,7 +125,7 @@ func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelist() {
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
 			fillDB(t, suite.datastore, c.whitelists)
-			defer emptyDB(t, suite.datastore)
+			defer emptyDB(t, suite.datastore, c.whitelists)
 			requestByKey := &v1.GetProcessWhitelistRequest{Key: knownWhitelist.GetKey()}
 			whitelist, err := suite.service.GetProcessWhitelist((context.Context)(nil), requestByKey)
 			if c.shouldFail {
@@ -260,7 +230,7 @@ func (suite *ProcessWhitelistServiceTestSuite) TestUpdateProcessWhitelist() {
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
 			fillDB(t, suite.datastore, c.whitelists)
-			defer emptyDB(t, suite.datastore)
+			defer emptyDB(t, suite.datastore, c.whitelists)
 
 			request := &v1.UpdateProcessWhitelistsRequest{
 				Keys:           c.toUpdate,

@@ -34,18 +34,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// DeleteWhitelistResults mocks base method
-func (m *MockDataStore) DeleteWhitelistResults(arg0 context.Context, arg1 string) error {
-	ret := m.ctrl.Call(m, "DeleteWhitelistResults", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteWhitelistResults indicates an expected call of DeleteWhitelistResults
-func (mr *MockDataStoreMockRecorder) DeleteWhitelistResults(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWhitelistResults", reflect.TypeOf((*MockDataStore)(nil).DeleteWhitelistResults), arg0, arg1)
-}
-
 // GetWhitelistResults mocks base method
 func (m *MockDataStore) GetWhitelistResults(arg0 context.Context, arg1 string) (*storage.ProcessWhitelistResults, error) {
 	ret := m.ctrl.Call(m, "GetWhitelistResults", arg0, arg1)

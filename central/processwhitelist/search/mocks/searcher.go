@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -35,14 +36,14 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 }
 
 // SearchRawProcessWhitelists mocks base method
-func (m *MockSearcher) SearchRawProcessWhitelists(arg0 *v1.Query) ([]*storage.ProcessWhitelist, error) {
-	ret := m.ctrl.Call(m, "SearchRawProcessWhitelists", arg0)
+func (m *MockSearcher) SearchRawProcessWhitelists(arg0 context.Context, arg1 *v1.Query) ([]*storage.ProcessWhitelist, error) {
+	ret := m.ctrl.Call(m, "SearchRawProcessWhitelists", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.ProcessWhitelist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRawProcessWhitelists indicates an expected call of SearchRawProcessWhitelists
-func (mr *MockSearcherMockRecorder) SearchRawProcessWhitelists(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawProcessWhitelists", reflect.TypeOf((*MockSearcher)(nil).SearchRawProcessWhitelists), arg0)
+func (mr *MockSearcherMockRecorder) SearchRawProcessWhitelists(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawProcessWhitelists", reflect.TypeOf((*MockSearcher)(nil).SearchRawProcessWhitelists), arg0, arg1)
 }

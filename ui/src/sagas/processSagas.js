@@ -20,8 +20,9 @@ export function* getProcesses(id) {
         const uniqueContainerNames = uniqBy(result.response.groups, 'containerName').map(
             x => x.containerName
         );
+        const { clusterId, namespace } = result.response.result;
         uniqueContainerNames.forEach(containerName => {
-            const queryStr = `key.deploymentId=${id}&key.containerName=${containerName}`;
+            const queryStr = `key.clusterId=${clusterId}&key.namespace=${namespace}&key.deploymentId=${id}&key.containerName=${containerName}`;
             promises.push(call(fetchProcessesWhiteList, queryStr));
         });
 

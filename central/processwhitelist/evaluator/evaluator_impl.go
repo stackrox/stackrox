@@ -8,9 +8,17 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist"
 	whitelistsStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	whitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	evaluatorCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment, resources.ProcessWhitelist, resources.Indicator)))
 )
 
 type evaluator struct {
@@ -32,6 +40,8 @@ func getWhitelistStatus(whitelist *storage.ProcessWhitelist) storage.ContainerNa
 func (e *evaluator) persistResults(ctx context.Context, deployment *storage.Deployment, containerNameToWhitelistResults map[string]*storage.ContainerNameAndWhitelistStatus) error {
 	results := &storage.ProcessWhitelistResults{
 		DeploymentId: deployment.GetId(),
+		ClusterId:    deployment.GetClusterId(),
+		Namespace:    deployment.GetNamespace(),
 	}
 
 	for _, container := range deployment.GetContainers() {
@@ -44,14 +54,14 @@ func (e *evaluator) persistResults(ctx context.Context, deployment *storage.Depl
 }
 
 func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deployment) (violatingProcesses []*storage.ProcessIndicator, err error) {
-	ctx := context.TODO()
-
 	containerNameToWhitelistedProcesses := make(map[string]set.StringSet)
 	containerNameToWhitelistResults := make(map[string]*storage.ContainerNameAndWhitelistStatus)
 	for _, container := range deployment.GetContainers() {
-		whitelist, err := e.whitelists.GetProcessWhitelist(ctx, &storage.ProcessWhitelistKey{
+		whitelist, err := e.whitelists.GetProcessWhitelist(evaluatorCtx, &storage.ProcessWhitelistKey{
 			DeploymentId:  deployment.GetId(),
 			ContainerName: container.GetName(),
+			ClusterId:     deployment.GetClusterId(),
+			Namespace:     deployment.GetNamespace(),
 		})
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching process whitelist for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
@@ -70,7 +80,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 
 	}
 
-	processes, err := e.indicators.SearchRawProcessIndicators(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
+	processes, err := e.indicators.SearchRawProcessIndicators(evaluatorCtx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
 	if err != nil {
 		return nil, errors.Wrapf(err, "searching process indicators for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
 	}
@@ -86,7 +96,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 			containerNameToWhitelistResults[process.GetContainerName()].AnomalousProcessesExecuted = true
 		}
 	}
-	if err := e.persistResults(ctx, deployment, containerNameToWhitelistResults); err != nil {
+	if err := e.persistResults(evaluatorCtx, deployment, containerNameToWhitelistResults); err != nil {
 		return nil, errors.Wrap(err, "failed to persist whitelist results")
 	}
 	return

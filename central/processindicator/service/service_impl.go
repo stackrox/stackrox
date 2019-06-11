@@ -105,7 +105,20 @@ func (s *serviceImpl) setSuspicious(ctx context.Context, groupedIndicators []*v1
 }
 
 func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, containerName string) (*set.StringSet, error) {
-	key := &storage.ProcessWhitelistKey{DeploymentId: deploymentID, ContainerName: containerName}
+	deployment, exists, err := s.deployments.GetDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", deploymentID)
+	}
+
+	key := &storage.ProcessWhitelistKey{
+		ClusterId:     deployment.GetClusterId(),
+		Namespace:     deployment.GetNamespace(),
+		DeploymentId:  deploymentID,
+		ContainerName: containerName,
+	}
 	whitelist, err := s.whitelists.GetProcessWhitelist(ctx, key)
 	if err != nil {
 		return nil, err

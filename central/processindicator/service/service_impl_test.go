@@ -6,11 +6,14 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -333,9 +336,15 @@ func TestWhitelistCheck(t *testing.T) {
 			expectedSuspicious: false,
 		},
 	}
+	hasReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.ProcessWhitelist, resources.Deployment)))
 	mockCtrl := gomock.NewController(t)
+	deployments := deploymentMocks.NewMockDataStore(mockCtrl)
 	whitelists := mocks.NewMockDataStore(mockCtrl)
-	service := serviceImpl{whitelists: whitelists}
+	service := serviceImpl{deployments: deployments, whitelists: whitelists}
+	testClusterID := "Test"
+	testNamespace := "Test"
 	testDeploymentID := "Test"
 	testStart := types.TimestampNow()
 	for _, c := range cases {
@@ -348,9 +357,20 @@ func TestWhitelistCheck(t *testing.T) {
 					whitelist.UserLockedTimestamp = testStart
 				}
 			}
-			key := &storage.ProcessWhitelistKey{DeploymentId: testDeploymentID, ContainerName: c.nameContainerGroup.ContainerName}
+			deployment := &storage.Deployment{
+				ClusterId: testClusterID,
+				Namespace: testNamespace,
+				Id:        testDeploymentID,
+			}
+			key := &storage.ProcessWhitelistKey{
+				ClusterId:     testClusterID,
+				Namespace:     testNamespace,
+				DeploymentId:  testDeploymentID,
+				ContainerName: c.nameContainerGroup.ContainerName,
+			}
+			deployments.EXPECT().GetDeployment(gomock.Any(), testDeploymentID).Return(deployment, true, nil)
 			whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
-			err := service.setSuspicious(context.TODO(), []*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)
+			err := service.setSuspicious(hasReadCtx, []*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expectedSuspicious, c.nameContainerGroup.Suspicious)
 		})

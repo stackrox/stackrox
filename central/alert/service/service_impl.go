@@ -170,6 +170,8 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 			key := &storage.ProcessWhitelistKey{
 				DeploymentId:  alert.GetDeployment().GetId(),
 				ContainerName: containerName,
+				ClusterId:     alert.GetDeployment().GetClusterId(),
+				Namespace:     alert.GetDeployment().GetNamespace(),
 			}
 			if _, err := s.whitelists.UpdateProcessWhitelistElements(ctx, key, items, nil, false); err != nil {
 				return nil, status.Error(codes.Internal, err.Error())

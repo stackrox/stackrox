@@ -173,6 +173,8 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 
 			expectedWhitelistResult := &storage.ProcessWhitelistResults{
 				DeploymentId: deployment.GetId(),
+				ClusterId:    deployment.GetClusterId(),
+				Namespace:    deployment.GetNamespace(),
 			}
 			for i, container := range deployment.GetContainers() {
 				expectedWhitelistResult.WhitelistStatuses = append(expectedWhitelistResult.WhitelistStatuses, &storage.ContainerNameAndWhitelistStatus{

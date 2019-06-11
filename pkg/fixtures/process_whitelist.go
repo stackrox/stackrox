@@ -40,6 +40,8 @@ func GetWhitelistKey() *storage.ProcessWhitelistKey {
 	return &storage.ProcessWhitelistKey{
 		DeploymentId:  uuid.NewV4().String(),
 		ContainerName: uuid.NewV4().String(),
+		ClusterId:     uuid.NewV4().String(),
+		Namespace:     uuid.NewV4().String(),
 	}
 }
 

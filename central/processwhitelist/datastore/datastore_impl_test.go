@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
@@ -44,6 +43,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
 	)
 
 	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
+
 	suite.NoError(err)
 	suite.storage, err = store.New(db)
 	suite.NoError(err)
@@ -92,6 +92,8 @@ func (suite *ProcessWhitelistDataStoreTestSuite) createAndStoreWhitelistWithRand
 	return suite.createAndStoreWhitelist(&storage.ProcessWhitelistKey{
 		DeploymentId:  uuid.NewV4().String(),
 		ContainerName: uuid.NewV4().String(),
+		ClusterId:     uuid.NewV4().String(),
+		Namespace:     uuid.NewV4().String(),
 	})
 }
 
@@ -107,16 +109,6 @@ func (suite *ProcessWhitelistDataStoreTestSuite) doGet(key *storage.ProcessWhite
 		suite.Nil(whitelist)
 	}
 	return whitelist
-}
-
-func (suite *ProcessWhitelistDataStoreTestSuite) testGetAll(allExpected []*storage.ProcessWhitelist) {
-	allWhitelists, err := suite.datastore.GetProcessWhitelists(suite.requestContext)
-	suite.NoError(err)
-	suite.NotNil(allWhitelists)
-	suite.Equal(len(allExpected), len(allWhitelists))
-	for _, expected := range allExpected {
-		suite.Contains(allWhitelists, expected)
-	}
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) testUpdate(key *storage.ProcessWhitelistKey, addProcesses []string, removeProcesses []string, auto bool, expectedResults set.StringSet) *storage.ProcessWhitelist {
@@ -135,19 +127,16 @@ func (suite *ProcessWhitelistDataStoreTestSuite) testUpdate(key *storage.Process
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TestGetById() {
-	suite.doGet(&storage.ProcessWhitelistKey{DeploymentId: "FAKE", ContainerName: "whatever"}, false, nil)
+	suite.doGet(&storage.ProcessWhitelistKey{DeploymentId: "FAKE", ContainerName: "whatever", ClusterId: "whatever", Namespace: "whatever"}, false, nil)
 
 	key := &storage.ProcessWhitelistKey{
 		DeploymentId:  "blah",
 		ContainerName: "container",
+		ClusterId:     "cluster1",
+		Namespace:     "namespace",
 	}
 	whitelist := suite.createAndStoreWhitelist(key)
 	suite.doGet(key, true, whitelist)
-}
-
-func (suite *ProcessWhitelistDataStoreTestSuite) TestGetAllWhitelists() {
-	expectedWhitelists := []*storage.ProcessWhitelist{suite.createAndStoreWhitelistWithRandomKey(), suite.createAndStoreWhitelistWithRandomKey()}
-	suite.testGetAll(expectedWhitelists)
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TestRemoveProcessWhitelist() {
@@ -172,28 +161,6 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestLockAndUnlockWhitelist() {
 	updatedWhitelist, err = suite.datastore.UserLockProcessWhitelist(suite.requestContext, key, false)
 	suite.NoError(err)
 	suite.Nil(updatedWhitelist.GetUserLockedTimestamp())
-	suite.doGet(key, true, updatedWhitelist)
-	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
-}
-
-func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist() {
-	whitelist := suite.createAndStoreWhitelistWithRandomKey()
-	key := whitelist.GetKey()
-	suite.NotNil(whitelist.GetStackRoxLockedTimestamp())
-	// Test that current time is before the StackRox locked time
-	suite.True(types.TimestampNow().Compare(whitelist.GetStackRoxLockedTimestamp()) < 0)
-
-	updatedWhitelist, err := suite.datastore.RoxLockProcessWhitelist(suite.requestContext, key, false)
-	suite.NoError(err)
-	suite.Nil(updatedWhitelist.GetStackRoxLockedTimestamp())
-	suite.doGet(key, true, updatedWhitelist)
-	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
-
-	updatedWhitelist, err = suite.datastore.RoxLockProcessWhitelist(suite.requestContext, key, true)
-	suite.NoError(err)
-	suite.NotNil(updatedWhitelist.GetStackRoxLockedTimestamp())
-	// Test that current time is after or equal to the StackRox locked time.
-	suite.True(types.TimestampNow().Compare(updatedWhitelist.GetStackRoxLockedTimestamp()) >= 0)
 	suite.doGet(key, true, updatedWhitelist)
 	suite.True(updatedWhitelist.GetLastUpdate().Compare(updatedWhitelist.GetCreated()) > 0)
 }
@@ -293,9 +260,9 @@ func (suite *ProcessWhitelistDataStoreTestSuite) doQuery(q *v1.Query, len int) {
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TestRemoveByDeployment() {
 	dep1 := "1"
-	key1 := &storage.ProcessWhitelistKey{DeploymentId: dep1, ContainerName: "1"}
-	key2 := &storage.ProcessWhitelistKey{DeploymentId: dep1, ContainerName: "2"}
-	key3 := &storage.ProcessWhitelistKey{DeploymentId: "2", ContainerName: "1"}
+	key1 := &storage.ProcessWhitelistKey{DeploymentId: dep1, ContainerName: "1", ClusterId: "1", Namespace: "1"}
+	key2 := &storage.ProcessWhitelistKey{DeploymentId: dep1, ContainerName: "2", ClusterId: "1", Namespace: "2"}
+	key3 := &storage.ProcessWhitelistKey{DeploymentId: "2", ContainerName: "1", ClusterId: "1", Namespace: "3"}
 	suite.createAndStoreWhitelists(key1, key2, key3)
 
 	queryDep1 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, dep1).ProtoQuery()

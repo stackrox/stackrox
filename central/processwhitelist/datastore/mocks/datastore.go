@@ -61,19 +61,6 @@ func (mr *MockDataStoreMockRecorder) GetProcessWhitelist(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).GetProcessWhitelist), arg0, arg1)
 }
 
-// GetProcessWhitelists mocks base method
-func (m *MockDataStore) GetProcessWhitelists(arg0 context.Context) ([]*storage.ProcessWhitelist, error) {
-	ret := m.ctrl.Call(m, "GetProcessWhitelists", arg0)
-	ret0, _ := ret[0].([]*storage.ProcessWhitelist)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProcessWhitelists indicates an expected call of GetProcessWhitelists
-func (mr *MockDataStoreMockRecorder) GetProcessWhitelists(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessWhitelists", reflect.TypeOf((*MockDataStore)(nil).GetProcessWhitelists), arg0)
-}
-
 // RemoveProcessWhitelist mocks base method
 func (m *MockDataStore) RemoveProcessWhitelist(arg0 context.Context, arg1 *storage.ProcessWhitelistKey) error {
 	ret := m.ctrl.Call(m, "RemoveProcessWhitelist", arg0, arg1)
@@ -96,19 +83,6 @@ func (m *MockDataStore) RemoveProcessWhitelistsByDeployment(arg0 context.Context
 // RemoveProcessWhitelistsByDeployment indicates an expected call of RemoveProcessWhitelistsByDeployment
 func (mr *MockDataStoreMockRecorder) RemoveProcessWhitelistsByDeployment(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessWhitelistsByDeployment", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessWhitelistsByDeployment), arg0, arg1)
-}
-
-// RoxLockProcessWhitelist mocks base method
-func (m *MockDataStore) RoxLockProcessWhitelist(arg0 context.Context, arg1 *storage.ProcessWhitelistKey, arg2 bool) (*storage.ProcessWhitelist, error) {
-	ret := m.ctrl.Call(m, "RoxLockProcessWhitelist", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*storage.ProcessWhitelist)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RoxLockProcessWhitelist indicates an expected call of RoxLockProcessWhitelist
-func (mr *MockDataStoreMockRecorder) RoxLockProcessWhitelist(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RoxLockProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).RoxLockProcessWhitelist), arg0, arg1, arg2)
 }
 
 // SearchRawProcessWhitelists mocks base method

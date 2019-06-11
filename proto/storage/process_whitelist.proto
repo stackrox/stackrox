@@ -14,6 +14,8 @@ message ProcessWhitelistKey {
     // Only certain combinations of these will be supported.
     string deployment_id     = 1[(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
     string container_name    = 2;
+    string cluster_id = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
+    string namespace  = 4 [(gogoproto.moretags) = "search:\"Namespace,hidden,store\""];
 }
 
 message ProcessWhitelist {
@@ -57,6 +59,8 @@ message ContainerNameAndWhitelistStatus {
 // ProcessWhitelistResults represent cached results of process whitelist evaluation.
 message ProcessWhitelistResults {
     string                                   deployment_id      = 1;
+    string cluster_id = 3;
+    string namespace = 4;
     repeated ContainerNameAndWhitelistStatus whitelist_statuses = 2;
 }
 

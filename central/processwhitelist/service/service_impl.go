@@ -24,7 +24,6 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.ProcessWhitelist)): {
-			"/v1.ProcessWhitelistService/GetProcessWhitelists",
 			"/v1.ProcessWhitelistService/GetProcessWhitelist",
 		},
 		user.With(permissions.Modify(resources.ProcessWhitelist)): {
@@ -51,18 +50,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetProcessWhitelists(ctx context.Context, _ *v1.Empty) (*v1.ProcessWhitelistsResponse, error) {
-	whitelists, err := s.dataStore.GetProcessWhitelists(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &v1.ProcessWhitelistsResponse{Whitelists: whitelists}, nil
-}
-
 func validateKeyNotEmpty(key *storage.ProcessWhitelistKey) error {
 	if stringutils.AtLeastOneEmpty(
 		key.GetDeploymentId(),
 		key.GetContainerName(),
+		key.GetClusterId(),
+		key.GetNamespace(),
 	) {
 		return errors.New("invalid key: must specify both deployment id and container name")
 	}

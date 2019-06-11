@@ -40,13 +40,6 @@ message LockProcessWhitelistsRequest {
 
 // ProcessWhitelistService APIs can be used to manage process whitelists.
 service ProcessWhitelistService {
-    // GetProcessWhitelists returns all process whitelists.
-    rpc GetProcessWhitelists (Empty) returns (ProcessWhitelistsResponse) {
-        option (google.api.http) = {
-                get: "/v1/processwhitelists"
-            };
-    }
-
     // GetProcessWhitelistById returns the single process whitelist referenced by the given ID.
     rpc GetProcessWhitelist (GetProcessWhitelistRequest) returns (storage.ProcessWhitelist) {
         option (google.api.http) = {

@@ -18,14 +18,12 @@ type DataStore interface {
 	SearchRawProcessWhitelists(ctx context.Context, q *v1.Query) ([]*storage.ProcessWhitelist, error)
 
 	GetProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error)
-	GetProcessWhitelists(ctx context.Context) ([]*storage.ProcessWhitelist, error)
 	AddProcessWhitelist(ctx context.Context, whitelist *storage.ProcessWhitelist) (string, error)
 	RemoveProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) error
 	RemoveProcessWhitelistsByDeployment(ctx context.Context, deploymentID string) error
 	UpdateProcessWhitelistElements(ctx context.Context, key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error)
 	UpsertProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error)
 	UserLockProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error)
-	RoxLockProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error)
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

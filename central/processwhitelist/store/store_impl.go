@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	bucketName = []byte("processWhitelists")
+	bucketName = []byte("processWhitelists2")
 )
 
 type store struct {

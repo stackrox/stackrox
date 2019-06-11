@@ -18,6 +18,7 @@ import (
 	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,9 +26,16 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
+)
+
+var (
+	lifecycleCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.ProcessWhitelist, resources.Indicator, resources.Deployment, resources.Image)))
 )
 
 type indicatorWithInjector struct {
@@ -77,8 +85,6 @@ func (m *managerImpl) flushQueuePeriodically() {
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
-	ctx := context.TODO()
-
 	// This is a potentially long-running operation, and we don't want to have a pile of goroutines queueing up on
 	// this lock.
 	if !m.flushProcessingLock.MaybeLock() {
@@ -98,7 +104,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 
 	// Index the process indicators in batch
-	if err := m.processesDataStore.AddProcessIndicators(ctx, indicatorSlice...); err != nil {
+	if err := m.processesDataStore.AddProcessIndicators(lifecycleCtx, indicatorSlice...); err != nil {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
@@ -140,7 +146,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	containersSet := containersToKill(newAlerts, copiedQueue)
 	for _, indicatorInfo := range containersSet {
 		info := indicatorInfo.indicator
-		deployment, exists, err := m.deploymentDataStore.GetDeployment(ctx, info.GetDeploymentId())
+		deployment, exists, err := m.deploymentDataStore.GetDeployment(lifecycleCtx, info.GetDeploymentId())
 		if err != nil {
 			log.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", info.GetDeploymentId(), err)
 			continue
@@ -192,22 +198,22 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 	// Always reprocess risk for the deployment, since that's needed to update its process-related information.
 	defer m.reprocessor.ReprocessRiskForDeployments(indicator.GetDeploymentId())
 
-	ctx := context.TODO()
-
 	key := &storage.ProcessWhitelistKey{
 		DeploymentId:  indicator.DeploymentId,
 		ContainerName: indicator.ContainerName,
+		ClusterId:     indicator.GetClusterId(),
+		Namespace:     indicator.GetNamespace(),
 	}
 
 	// TODO joseph what to do if whitelist doesn't exist?  Always create for now?
-	whitelist, err := m.whitelists.GetProcessWhitelist(ctx, key)
+	whitelist, err := m.whitelists.GetProcessWhitelist(lifecycleCtx, key)
 	if err != nil {
 		return
 	}
 
 	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: processwhitelist.WhitelistItemFromProcess(indicator)}}
 	if whitelist == nil {
-		_, err = m.whitelists.UpsertProcessWhitelist(ctx, key, []*storage.WhitelistItem{insertableElement}, true)
+		_, err = m.whitelists.UpsertProcessWhitelist(lifecycleCtx, key, []*storage.WhitelistItem{insertableElement}, true)
 		if err == nil {
 			// This updates the risk for deployments after the whitelist gets locked.
 			// This isn't super pretty, but otherwise, our whitelistStatus for the deployment can become stale
@@ -230,7 +236,7 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 	if userWhitelist || roxWhitelist {
 		return
 	}
-	_, err = m.whitelists.UpdateProcessWhitelistElements(ctx, key, []*storage.WhitelistItem{insertableElement}, nil, true)
+	_, err = m.whitelists.UpdateProcessWhitelistElements(lifecycleCtx, key, []*storage.WhitelistItem{insertableElement}, nil, true)
 	if err != nil {
 		return
 	}
@@ -251,8 +257,6 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, inject
 }
 
 func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string, storage.EnforcementAction, error) {
-	ctx := context.TODO()
-
 	// Attempt to enrich the image before detection.
 	images, updatedIndices, err := m.enricher.EnrichDeployment(enricher.EnrichmentContext{NoExternalMetadata: false}, deployment)
 	if err != nil {
@@ -261,11 +265,11 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 	if len(updatedIndices) > 0 {
 		for _, idx := range updatedIndices {
 			img := images[idx]
-			if err := m.imageDataStore.UpsertImage(ctx, img); err != nil {
+			if err := m.imageDataStore.UpsertImage(lifecycleCtx, img); err != nil {
 				log.Errorf("Error persisting image %s: %s", img.GetName().GetFullName(), err)
 			}
 		}
-		if err := m.deploymentDataStore.UpdateDeployment(ctx, deployment); err != nil {
+		if err := m.deploymentDataStore.UpdateDeployment(lifecycleCtx, deployment); err != nil {
 			log.Errorf("Error persisting deployment %s: %s", deployment.GetName(), err)
 		}
 	}

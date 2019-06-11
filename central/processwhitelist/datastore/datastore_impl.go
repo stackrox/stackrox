@@ -9,12 +9,18 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	"github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	processWhitelistSAC = sac.ForResource(resources.ProcessWhitelist)
 )
 
 type datastoreImpl struct {
@@ -25,22 +31,31 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) SearchRawProcessWhitelists(ctx context.Context, q *v1.Query) ([]*storage.ProcessWhitelist, error) {
-	return ds.searcher.SearchRawProcessWhitelists(q)
+	return ds.searcher.SearchRawProcessWhitelists(ctx, q)
 }
 
 func (ds *datastoreImpl) GetProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
+	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil || !ok {
+		return nil, err
+	}
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
 	}
-	return ds.storage.GetWhitelist(id)
-}
-
-func (ds *datastoreImpl) GetProcessWhitelists(ctx context.Context) ([]*storage.ProcessWhitelist, error) {
-	return ds.storage.ListWhitelists()
+	processWhitelist, err := ds.storage.GetWhitelist(id)
+	if err != nil {
+		return nil, err
+	}
+	return processWhitelist, nil
 }
 
 func (ds *datastoreImpl) AddProcessWhitelist(ctx context.Context, whitelist *storage.ProcessWhitelist) (string, error) {
+	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(whitelist.GetKey()).Allowed(ctx); err != nil {
+		return "", err
+	} else if !ok {
+		return "", errors.New("permission denied")
+	}
+
 	id, err := keyToID(whitelist.GetKey())
 	if err != nil {
 		return "", err
@@ -86,6 +101,12 @@ func (ds *datastoreImpl) removeProcessWhitelistByID(id string) error {
 }
 
 func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) error {
+	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	id, err := keyToID(key)
 	if err != nil {
 		return err
@@ -94,6 +115,12 @@ func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storag
 }
 
 func (ds *datastoreImpl) RemoveProcessWhitelistsByDeployment(ctx context.Context, deploymentID string) error {
+	if ok, err := processWhitelistSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
 	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
 	results, err := ds.indexer.Search(query)
 	if err != nil {
@@ -193,6 +220,12 @@ func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *stora
 }
 
 func (ds *datastoreImpl) UpdateProcessWhitelistElements(ctx context.Context, key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
+	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, errors.New("permission denied")
+	}
+
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
@@ -205,10 +238,17 @@ func (ds *datastoreImpl) UpdateProcessWhitelistElements(ctx context.Context, key
 	if err != nil {
 		return nil, err
 	}
+
 	return ds.updateProcessWhitelistElementsUnlocked(whitelist, addElements, removeElements, auto)
 }
 
 func (ds *datastoreImpl) UpsertProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
+	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, errors.New("permission denied")
+	}
+
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
@@ -246,6 +286,12 @@ func (ds *datastoreImpl) UpsertProcessWhitelist(ctx context.Context, key *storag
 }
 
 func (ds *datastoreImpl) UserLockProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error) {
+	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, errors.New("permission denied")
+	}
+
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
@@ -263,32 +309,6 @@ func (ds *datastoreImpl) UserLockProcessWhitelist(ctx context.Context, key *stor
 		err = ds.updateProcessWhitelistAndSetTimestamp(whitelist)
 	} else if !locked && whitelist.GetUserLockedTimestamp() != nil {
 		whitelist.UserLockedTimestamp = nil
-		err = ds.updateProcessWhitelistAndSetTimestamp(whitelist)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return whitelist, nil
-}
-
-func (ds *datastoreImpl) RoxLockProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error) {
-	id, err := keyToID(key)
-	if err != nil {
-		return nil, err
-	}
-	ds.whitelistLock.Lock(id)
-	defer ds.whitelistLock.Unlock(id)
-
-	whitelist, err := ds.getWhitelistForUpdate(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if locked && whitelist.GetStackRoxLockedTimestamp() == nil {
-		whitelist.StackRoxLockedTimestamp = types.TimestampNow()
-		err = ds.updateProcessWhitelistAndSetTimestamp(whitelist)
-	} else if !locked && whitelist.GetStackRoxLockedTimestamp() != nil {
-		whitelist.StackRoxLockedTimestamp = nil
 		err = ds.updateProcessWhitelistAndSetTimestamp(whitelist)
 	}
 	if err != nil {
