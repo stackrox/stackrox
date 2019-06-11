@@ -818,7 +818,7 @@ class Kubernetes implements OrchestratorMain {
                             labels: it.metadata.labels ? it.metadata.labels : [:],
                             annotations: it.metadata.annotations ? it.metadata.annotations : [:]
                     ),
-                    it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace) }
+                    it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace ?: "") }
             )
             def uid = it.roleRef.kind == "Role" ?
                     client.rbac().roles()

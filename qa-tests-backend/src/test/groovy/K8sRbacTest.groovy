@@ -110,6 +110,7 @@ class K8sRbacTest extends BaseSpecification {
                 .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
                 .setServiceAccountName(SERVICE_ACCOUNT_NAME)
                 .setImage("nginx:1.15.4-alpine")
+                .setSkipReplicaWait(true)
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
 
