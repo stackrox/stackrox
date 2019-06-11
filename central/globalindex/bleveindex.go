@@ -11,6 +11,8 @@ import (
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
 	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/index/scorch"
+	"github.com/blevesearch/bleve/index/store/moss"
+	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
@@ -108,7 +110,7 @@ func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
 
 // MemOnlyIndex returns a temporary mem-only index.
 func MemOnlyIndex() (bleve.Index, error) {
-	return bleve.NewMemOnly(getIndexMapping())
+	return bleve.NewUsing("", getIndexMapping(), upsidedown.Name, moss.Name, nil)
 }
 
 // InitializeIndices initializes the index in the specified path.
