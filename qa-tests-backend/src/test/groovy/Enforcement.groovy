@@ -1,3 +1,4 @@
+
 import static Services.waitForViolation
 import groups.BAT
 import groups.Integration
@@ -11,6 +12,7 @@ import org.junit.experimental.categories.Category
 import services.AlertService
 import services.CreatePolicyService
 import services.ProcessWhitelistService
+import services.ClusterService
 import spock.lang.Shared
 import spock.lang.Unroll
 import io.stackrox.proto.storage.AlertOuterClass
@@ -634,7 +636,7 @@ class Enforcement extends BaseSpecification {
 
         /*
             all-in-one:
-         */
+        */
         [LifecycleStage.BUILD,]                        |
                 [EnforcementAction.FAIL_BUILD_ENFORCEMENT]                     |
                 SCAN_AGE
@@ -660,14 +662,6 @@ class Enforcement extends BaseSpecification {
     def "Test Alert and  Kill Pod Enforcement - Whitelist Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
-        Deployment wpDeployment = new Deployment()
-                .setName("deploymentnginx")
-                .setImage("nginx:1.7.9")
-                .addPort(22, "TCP")
-                .addAnnotation("test", "annotation")
-                .setEnv(["CLUSTER_NAME": "main"])
-                .addLabel("app", "test")
-        orchestrator.createDeployment(wpDeployment)
         given:
         "policy violation to whitelist process policy"
         def startEnforcements = Services.updatePolicyEnforcement(
@@ -677,11 +671,20 @@ class Enforcement extends BaseSpecification {
         )
         assert !startEnforcements.contains("EXCEPTION")
         when:
+        Deployment wpDeployment = new Deployment()
+                .setName("deploymentnginx")
+                .setImage("nginx:1.7.9")
+                .addPort(22, "TCP")
+                .addAnnotation("test", "annotation")
+                .setEnv(["CLUSTER_NAME": "main"])
+                .addLabel("app", "test")
+        orchestrator.createDeployment(wpDeployment)
+        String clusterId = ClusterService.getClusterId()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                getProcessWhitelist(wpDeployment.deploymentUid, wpDeployment.name)
+                getProcessWhitelist(clusterId, wpDeployment)
         assert (whitelist != null)
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
-                lockProcessWhitelists(wpDeployment.deploymentUid, wpDeployment.name, true)
+                lockProcessWhitelists(clusterId, wpDeployment, "", true)
         assert lockProcessWhitelists.size() ==  1
         assert  lockProcessWhitelists.get(0).getElementsList().
                 find { it.element.processName.equalsIgnoreCase("/usr/sbin/nginx") } != null
@@ -709,6 +712,7 @@ class Enforcement extends BaseSpecification {
         cleanup:
         "remove deployment"
         Services.updatePolicyEnforcement(WHITELISTPROCESS_POLICY, startEnforcements)
+        AlertService.resolveAlert(alertId, false)
         if (wpDeployment != null) {
             orchestrator.deleteDeployment(wpDeployment)
         }
