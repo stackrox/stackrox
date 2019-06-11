@@ -80,6 +80,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Infof("Initialized Sensor gRPC connection")
 	defer func() {
 		if err := conn.Close(); err != nil {
 			log.Errorf("Failed to close connection: %v", err)
@@ -90,9 +91,11 @@ func main() {
 	// Communicate with sensor, pushing the scraped data.
 	if err := retry.WithRetry(
 		func() error { // Try to push the data to sensor, time out after 5 seconds.
+			log.Infof("Trying to push return to sensor")
 			ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+			defer cancel()
+
 			_, err := cli.PushComplianceReturn(ctx, &msgReturn)
-			cancel()
 			return err
 		},
 		retry.Tries(5), // 5 attempts.
@@ -101,11 +104,12 @@ func main() {
 			time.Sleep(time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) { // Log encountered errors.
-			log.Errorf("Error posting compliance data to %v: %+v", env.AdvertisedEndpoint.Setting(), err)
+			log.Errorf("Error posting compliance data to %v: %v", env.AdvertisedEndpoint.Setting(), err)
 		}),
 	); err != nil {
 		log.Fatalf("Couldn't post data to sensor despite retries: %v", err)
 	}
+	log.Infof("Successfully pushed data to sensor")
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
