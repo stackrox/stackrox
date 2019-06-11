@@ -12,13 +12,21 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/cscc/client"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	clusterForAlertContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster),
+		))
 )
 
 // The Cloud SCC notifier plugin integrates with Google's Cloud Security Command Center.
@@ -111,7 +119,7 @@ func processUUID(u string) string {
 }
 
 func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
-	cluster, exists, err := c.clusters.GetCluster(context.TODO(), id)
+	cluster, exists, err := c.clusters.GetCluster(clusterForAlertContext, id)
 	if err != nil {
 		return nil, err
 	}
