@@ -11,19 +11,19 @@ import (
 
 // ForResourceHelper is a helper for querying access scopes related to a resource.
 type ForResourceHelper struct {
-	resource permissions.Resource
+	resourceMD permissions.ResourceMetadata
 }
 
 // ForResource returns a helper for querying access scopes related to the given resource.
-func ForResource(resource permissions.Resource) ForResourceHelper {
+func ForResource(resourceMD permissions.ResourceMetadata) ForResourceHelper {
 	return ForResourceHelper{
-		resource: resource,
+		resourceMD: resourceMD,
 	}
 }
 
 // ScopeChecker returns the scope checker for accessing the given resource in the specified way.
 func (h ForResourceHelper) ScopeChecker(ctx context.Context, am storage.Access, keys ...ScopeKey) ScopeChecker {
-	return GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(h.resource).SubScopeChecker(keys...)
+	return GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(h.resourceMD.GetResource()).SubScopeChecker(keys...)
 }
 
 // AccessAllowed checks if in the given context, we have access of the specified kind to the resource or
@@ -45,7 +45,7 @@ func (h ForResourceHelper) WriteAllowed(ctx context.Context, keys ...ScopeKey) (
 // MustCreateSearchHelper creates and returns a search helper with the given options, or panics if the
 // search helper could not be created.
 func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap, flavor SearchHelperFlavor) SearchHelper {
-	searchHelper, err := NewSearchHelper(h.resource, options, flavor)
+	searchHelper, err := NewSearchHelper(h.resourceMD, options, flavor)
 	utils.Must(err)
 	return searchHelper
 }

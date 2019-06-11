@@ -9,10 +9,10 @@ type PermissionMap map[Resource]storage.Access
 // Add adds a permission to the permission map. If the access mode is lower or equal to the currently
 // stored access mode for this resource, it has no effect; otherwise, the access is mode for the resource
 // is updated accordingly.
-func (s PermissionMap) Add(res Resource, am storage.Access) {
-	currAM := s[res]
+func (s PermissionMap) Add(res ResourceHandle, am storage.Access) {
+	currAM := s[res.GetResource()]
 	if currAM < am {
-		s[res] = am
+		s[res.GetResource()] = am
 	}
 }
 

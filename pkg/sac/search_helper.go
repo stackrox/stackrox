@@ -47,7 +47,23 @@ type searchHelper struct {
 }
 
 // NewSearchHelper returns a new search helper for the given resource.
-func NewSearchHelper(resource permissions.Resource, optionsMap search.OptionsMap, flavor SearchHelperFlavor) (SearchHelper, error) {
+func NewSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.OptionsMap, flavor SearchHelperFlavor) (SearchHelper, error) {
+	// Check that resource scope is consistent with search helper flavor being used.
+	switch resourceMD.GetScope() {
+	case permissions.GlobalScope:
+		return nil, errors.New("search helper cannot be used with globally-scoped resources")
+	case permissions.ClusterScope:
+		if flavor != ClusterIDField {
+			return nil, errors.Errorf("cluster-scoped resource %v need to be used with flavor %v, not %v", resourceMD, ClusterIDField, flavor)
+		}
+	case permissions.NamespaceScope:
+		if flavor == ClusterIDField {
+			return nil, errors.Errorf("namespace-scoped resource %v must not be used with flavor %v", resourceMD, flavor)
+		}
+	default:
+		return nil, errors.Errorf("unknown resource scope %v", resourceMD.GetScope())
+	}
+
 	optMap := optionsMap.Original()
 
 	var resultsChecker searchResultsChecker
@@ -63,11 +79,11 @@ func NewSearchHelper(resource permissions.Resource, optionsMap search.OptionsMap
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "creating search helper for resource %v", resource)
+		return nil, errors.Wrapf(err, "creating search helper for resource %v", resourceMD)
 	}
 
 	return &searchHelper{
-		resource:       resource,
+		resource:       resourceMD.GetResource(),
 		resultsChecker: resultsChecker,
 	}, nil
 }

@@ -28,7 +28,7 @@ var (
 	// This variable is package-level to facilitate the unit test that asserts
 	// that it covers all the summarized categories.
 	// The keys are matched to fields in the v1.SummaryCountsResponse struct.
-	summaryTypeToResource = map[string]permissions.Resource{
+	summaryTypeToResource = map[string]permissions.ResourceHandle{
 		"NumAlerts":      resources.Alert,
 		"NumClusters":    resources.Cluster,
 		"NumNodes":       resources.Node,

@@ -15,7 +15,14 @@ import (
 )
 
 var (
-	testResource = permissions.Resource("test-resource")
+	testNSResource = permissions.ResourceMetadata{
+		Resource: "test-resource",
+		Scope:    permissions.NamespaceScope,
+	}
+	testClusterResource = permissions.ResourceMetadata{
+		Resource: "test-resource",
+		Scope:    permissions.ClusterScope,
+	}
 )
 
 func fakeResult(id, cluster, namespace string) search.Result {
@@ -51,12 +58,12 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 		}, nil
 	}
 
-	h, err := NewSearchHelper(testResource, options, ClusterIDAndNamespaceFields)
+	h, err := NewSearchHelper(testNSResource, options, ClusterIDAndNamespaceFields)
 	require.NoError(t, err)
 
 	scc := OneStepSCC{
 		AccessModeScopeKey(storage.Access_READ_ACCESS): OneStepSCC{
-			ResourceScopeKey(testResource): OneStepSCC{
+			ResourceScopeKey(testNSResource.GetResource()): OneStepSCC{
 				ClusterScopeKey("cluster1"): AllowAllAccessScopeChecker(),
 				ClusterScopeKey("cluster2"): OneStepSCC{
 					NamespaceScopeKey("nsA"): AllowAllAccessScopeChecker(),
@@ -99,7 +106,7 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 		}, nil
 	}
 
-	h, err := NewSearchHelper(testResource, options, ClusterIDAndNamespaceFields)
+	h, err := NewSearchHelper(testNSResource, options, ClusterIDAndNamespaceFields)
 	require.NoError(t, err)
 
 	scc := AllowAllAccessScopeChecker()
@@ -120,7 +127,7 @@ func TestSearchHelper_TestNew_WithMissingClusterIDField(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testResource, options, ClusterIDField)
+	_, err := NewSearchHelper(testClusterResource, options, ClusterIDField)
 	assert.Error(t, err)
 }
 
@@ -132,7 +139,7 @@ func TestSearchHelper_TestNew_WithFieldNotStored(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testResource, options, ClusterIDField)
+	_, err := NewSearchHelper(testClusterResource, options, ClusterIDField)
 	assert.Error(t, err)
 }
 
@@ -144,7 +151,7 @@ func TestSearchHelper_TestNew_WithMissingNSField_NotScoped(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testResource, options, ClusterIDField)
+	_, err := NewSearchHelper(testClusterResource, options, ClusterIDField)
 	assert.NoError(t, err)
 }
 
@@ -156,6 +163,6 @@ func TestSearchHelper_TestNew_WithMissingNSField_Scoped(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testResource, options, ClusterIDAndNamespaceFields)
+	_, err := NewSearchHelper(testNSResource, options, ClusterIDAndNamespaceFields)
 	assert.Error(t, err)
 }

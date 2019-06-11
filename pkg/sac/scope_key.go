@@ -73,10 +73,10 @@ func (k ResourceScopeKey) String() string {
 }
 
 // ResourceScopeKeys wraps the given resources in a scope key slice.
-func ResourceScopeKeys(resources ...permissions.Resource) []ScopeKey {
+func ResourceScopeKeys(resources ...permissions.ResourceHandle) []ScopeKey {
 	keys := make([]ScopeKey, len(resources))
 	for i, resource := range resources {
-		keys[i] = ResourceScopeKey(resource)
+		keys[i] = ResourceScopeKey(resource.GetResource())
 	}
 	return keys
 }

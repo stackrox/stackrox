@@ -29,8 +29,8 @@ func scopeCheckerForIdentity(id authn.Identity) sac.ScopeCheckerCore {
 		return sac.AllowFixedScopes(sac.AccessModeScopeKeys(globalAccessModes...))
 	}
 
-	var readResources []permissions.Resource
-	var writeResources []permissions.Resource
+	var readResources []permissions.ResourceHandle
+	var writeResources []permissions.ResourceHandle
 
 	for resourceName, access := range id.Role().GetResourceToAccess() {
 		resource := permissions.Resource(resourceName)

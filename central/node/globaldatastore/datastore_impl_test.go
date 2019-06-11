@@ -103,10 +103,10 @@ func (s *testSuite) SetupTest() {
 
 	scc := sac.OneStepSCC{
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-			sac.ResourceScopeKey(resources.Node): sac.AllowFixedScopes(sac.ClusterScopeKeys("cluster-2-read-access", "cluster-3-full-access")),
+			sac.ResourceScopeKey(resources.Node.GetResource()): sac.AllowFixedScopes(sac.ClusterScopeKeys("cluster-2-read-access", "cluster-3-full-access")),
 		},
 		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.OneStepSCC{
-			sac.ResourceScopeKey(resources.Node): sac.AllowFixedScopes(sac.ClusterScopeKeys("cluster-3-full-access")),
+			sac.ResourceScopeKey(resources.Node.GetResource()): sac.AllowFixedScopes(sac.ClusterScopeKeys("cluster-3-full-access")),
 		},
 	}
 

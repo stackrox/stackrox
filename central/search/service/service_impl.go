@@ -97,7 +97,7 @@ var (
 )
 
 // GetSearchCategoryToResource gets a map of search category to corresponding resource
-func GetSearchCategoryToResource() map[v1.SearchCategory]permissions.Resource {
+func GetSearchCategoryToResource() map[v1.SearchCategory]permissions.ResourceHandle {
 
 	// SearchCategoryToResource maps search categories to resources.
 	// To access search, we require users to have view access to every searchable resource.
@@ -105,7 +105,7 @@ func GetSearchCategoryToResource() map[v1.SearchCategory]permissions.Resource {
 	// but that requires non-trivial refactoring, so we'll do it if we feel the need later.
 	// This variable is package-level to facilitate the unit test that asserts
 	// that it covers all the searchable categories.
-	searchCategoryToResource := map[v1.SearchCategory]permissions.Resource{
+	searchCategoryToResource := map[v1.SearchCategory]permissions.ResourceHandle{
 		v1.SearchCategory_ALERTS:      resources.Alert,
 		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
 		v1.SearchCategory_IMAGES:      resources.Image,

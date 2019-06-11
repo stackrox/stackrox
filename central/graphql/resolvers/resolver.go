@@ -142,11 +142,11 @@ func applyAuthorizer(authorizer authz.Authorizer) func(ctx context.Context) erro
 	}
 }
 
-func readAuth(resource permissions.Resource) func(ctx context.Context) error {
+func readAuth(resource permissions.ResourceHandle) func(ctx context.Context) error {
 	return applyAuthorizer(user.With(permissions.View(resource)))
 }
 
-func writeAuth(resource permissions.Resource) func(ctx context.Context) error {
+func writeAuth(resource permissions.ResourceHandle) func(ctx context.Context) error {
 	return applyAuthorizer(user.With(permissions.Modify(resource)))
 }
 
