@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
@@ -12,9 +13,14 @@ func generateReadme(c *Config, mode mode) (string, error) {
 	return instructions(*c, mode)
 }
 
-const instructionPrefix = `To deploy:
-  - Unzip the deployment bundle.
-  - If you need to add additional trusted CAs, run central/scripts/ca-setup.sh.`
+func instructionPrefix() string {
+	prefix := "To deploy:\n"
+	if docker.IsContainerized() {
+		prefix += "  - Unzip the deployment bundle.\n"
+	}
+	prefix += "  - If you need to add additional trusted CAs, run central/scripts/ca-setup.sh.\n"
+	return prefix
+}
 
 const instructionSuffix = `
 
@@ -77,7 +83,8 @@ func instructions(c Config, mode mode) (string, error) {
 
 	instructions := string(data)
 	if mode == renderAll {
-		instructions = instructionPrefix + instructions + instructionSuffix
+		prefix := instructionPrefix()
+		instructions = prefix + instructions + instructionSuffix
 	}
 
 	return instructions, nil

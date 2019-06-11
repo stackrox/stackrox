@@ -116,7 +116,7 @@ func TestReadme(t *testing.T) {
 			}
 
 			a.Equal(c.mustContainInstructionSuffixAndPrefix, strings.Contains(out, instructionSuffix))
-			a.Equal(c.mustContainInstructionSuffixAndPrefix, strings.Contains(out, instructionPrefix))
+			a.Equal(c.mustContainInstructionSuffixAndPrefix, strings.Contains(out, instructionPrefix()))
 		})
 	}
 }
