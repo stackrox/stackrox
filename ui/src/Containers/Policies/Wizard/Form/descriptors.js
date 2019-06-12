@@ -580,6 +580,20 @@ const policyConfigurationDescriptor = [
         default: false,
         defaultValue: false,
         reverse: false
+    },
+    {
+        label: 'RBAC Permissions',
+        jsonpath: 'fields.permissionPolicy.permissionLevel',
+        type: 'select',
+        options: [
+            { value: 'NONE', label: 'No Access' },
+            { value: 'DEFAULT', label: 'Default Access' },
+            { value: 'ELEVATED_IN_NAMESPACE', label: 'Elevated Access in Namespace' },
+            { value: 'ELEVATED_CLUSTER_WIDE', label: 'Elevated Access Cluster Wide' },
+            { value: 'CLUSTER_ADMIN', label: 'Cluster Admin Access' }
+        ],
+        required: false,
+        default: false
     }
 ];
 

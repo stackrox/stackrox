@@ -37,7 +37,7 @@ func (p K8sRBACQueryBuilder) Name() string {
 	return "query builder for k8s rbac permissions"
 }
 
-// Query implements the PolicyQueryBuilder interface.
+// Query takes in the fields of a policy and produces a query that will find indexed violators of the policy.s
 func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	// Check that a permission level is set in the policy.
 	if fields.GetPermissionPolicy().GetPermissionLevel() == storage.PermissionLevel_UNSET {
@@ -67,7 +67,7 @@ func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.Fi
 
 // Create a query that matches the deployments with privileges above the threshold in each cluster and combine then in a
 // disjunction.
-func (p K8sRBACQueryBuilder) allClustersQuery(ctx context.Context, maxPermissionAllowed storage.PermissionLevel) (q *v1.Query, err error) {
+func (p K8sRBACQueryBuilder) allClustersQuery(ctx context.Context, maxPermissionAllowed storage.PermissionLevel) (*v1.Query, error) {
 	// Get all clusters.
 	clusters, err := p.Clusters.GetClusters(ctx)
 	if err != nil {
@@ -87,7 +87,7 @@ func (p K8sRBACQueryBuilder) allClustersQuery(ctx context.Context, maxPermission
 		clusterQueries = append(clusterQueries, clusterQuery)
 	}
 	if len(clusterQueries) == 0 {
-		return nil, nil
+		return search.NewQueryBuilder().ProtoQuery(), nil
 	} else if len(clusterQueries) == 1 {
 		return clusterQueries[0], nil
 	}
@@ -96,7 +96,7 @@ func (p K8sRBACQueryBuilder) allClustersQuery(ctx context.Context, maxPermission
 }
 
 // Create a query that matches the deployments with privileges above the threshold in a specific cluster.
-func (p K8sRBACQueryBuilder) clusterQuery(ctx context.Context, clusterID string, maxPermissionAllowed storage.PermissionLevel) (q *v1.Query, err error) {
+func (p K8sRBACQueryBuilder) clusterQuery(ctx context.Context, clusterID string, maxPermissionAllowed storage.PermissionLevel) (*v1.Query, error) {
 	isInCluster := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 
 	// Fetch roles, bindings, and service accounts to form the query for the cluster.
@@ -122,7 +122,7 @@ func (p K8sRBACQueryBuilder) clusterQuery(ctx context.Context, clusterID string,
 		}
 	}
 	if len(subjectsThatViolateBucket) == 0 {
-		return // Deployments are UNABLE to violate the policy.
+		return nil, nil
 	}
 
 	// Generate a query for deployments using any of those service accounts.

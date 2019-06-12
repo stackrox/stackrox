@@ -1,4 +1,9 @@
-import { enforcementActionLabels, lifecycleStageLabels, portExposureLabels } from 'messages/common';
+import {
+    enforcementActionLabels,
+    lifecycleStageLabels,
+    portExposureLabels,
+    rbacPermissionLabels
+} from 'messages/common';
 
 const comparatorOp = {
     GREATER_THAN: '>',
@@ -280,6 +285,10 @@ const fieldsMap = {
     whitelistEnabled: {
         label: 'Whitelists Enabled',
         formatValue: d => (d ? 'Yes' : 'No')
+    },
+    permissionPolicy: {
+        label: 'RBAC Permissions',
+        formatValue: d => rbacPermissionLabels[d.permissionLevel]
     }
 };
 

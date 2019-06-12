@@ -59,6 +59,13 @@ const common = Object.freeze({
         NODE: 'NodePort',
         HOST: 'HostPort',
         INTERNAL: 'ClusterIP'
+    },
+    rbacPermissionLabels: {
+        NONE: 'No Access',
+        DEFAULT: 'Default Access',
+        ELEVATED_IN_NAMESPACE: 'Elevated Access in Namespace',
+        ELEVATED_CLUSTER_WIDE: 'Elevated Access Cluster Wide',
+        CLUSTER_ADMIN: 'Cluster Admin Access'
     }
 });
 
