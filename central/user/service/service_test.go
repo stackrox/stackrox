@@ -33,6 +33,7 @@ func (suite *UserServiceTestSuite) SetupSuite() {
 }
 
 func (suite *UserServiceTestSuite) TestGetUsersAttributes() {
+	expectedContext := context.Background()
 	users := []*storage.User{
 		{
 			Id:             "user1",
@@ -107,9 +108,9 @@ func (suite *UserServiceTestSuite) TestGetUsersAttributes() {
 		},
 	}
 
-	suite.usersMock.EXPECT().GetAllUsers(context.TODO()).Return(users, nil)
+	suite.usersMock.EXPECT().GetAllUsers(expectedContext).Return(users, nil)
 
-	resp, err := suite.ser.GetUsersAttributes(context.TODO(), nil)
+	resp, err := suite.ser.GetUsersAttributes(expectedContext, nil)
 	suite.NoError(err, "request should not fail with valid user data")
 
 	suite.Equal(len(expectedAttributes), len(resp.GetUsersAttributes()))
