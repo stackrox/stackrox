@@ -164,7 +164,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("Test case %q", testCase.query), func(t *testing.T) {
-			results, err := service.autocomplete(context.TODO(), testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+			results, err := service.autocomplete(allAccessCtx, testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
 			require.NoError(t, err)
 			if testCase.ignoreOrder {
 				assert.ElementsMatch(t, testCase.expectedResults, results)
