@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -22,8 +23,9 @@ func initialize() {
 	ad = New(storage)
 
 	// Initialize the integration set with all present integrations.
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	toNotifyOfIntegrations := imageintegration.ToNotify()
-	integrations, err := ad.GetImageIntegrations(context.TODO(), &v1.GetImageIntegrationsRequest{})
+	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		log.Errorf("unable to use previous integrations: %s", err)
 	}

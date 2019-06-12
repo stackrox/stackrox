@@ -8,7 +8,9 @@ import (
 	searchMock "github.com/stackrox/rox/central/image/datastore/internal/search/mocks"
 	storeMock "github.com/stackrox/rox/central/image/datastore/internal/store/mocks"
 	indexMock "github.com/stackrox/rox/central/image/index/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,6 +20,8 @@ func TestImageDataStore(t *testing.T) {
 
 type ImageDataStoreTestSuite struct {
 	suite.Suite
+
+	hasWriteCtx context.Context
 
 	mockIndexer  *indexMock.MockIndexer
 	mockSearcher *searchMock.MockSearcher
@@ -30,6 +34,10 @@ type ImageDataStoreTestSuite struct {
 
 func (suite *ImageDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
+
+	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.Image)))
 
 	suite.mockIndexer = indexMock.NewMockIndexer(suite.mockCtrl)
 	suite.mockIndexer.EXPECT().GetTxnCount().Return(uint64(1))
@@ -59,7 +67,7 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithoutMetadata() {
 	suite.mockStore.EXPECT().UpsertImage(image).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(image).Return(nil)
 
-	err := suite.datastore.UpsertImage(context.TODO(), image)
+	err := suite.datastore.UpsertImage(suite.hasWriteCtx, image)
 	suite.NoError(err)
 }
 
@@ -79,6 +87,6 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithMetadata() {
 	suite.mockStore.EXPECT().UpsertImage(upsertedImage).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
 
-	err := suite.datastore.UpsertImage(context.TODO(), newImage)
+	err := suite.datastore.UpsertImage(suite.hasWriteCtx, newImage)
 	suite.NoError(err)
 }

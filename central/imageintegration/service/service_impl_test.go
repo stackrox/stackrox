@@ -9,12 +9,15 @@ import (
 	integrationMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateIntegration(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	textCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
 	clusterDatastore := clusterMocks.NewMockDataStore(ctrl)
 	clusterDatastore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{}, nil).AnyTimes()
@@ -24,15 +27,15 @@ func TestValidateIntegration(t *testing.T) {
 	s := &serviceImpl{clusterDatastore: clusterDatastore, datastore: integrationDatastore}
 
 	// Test name and categories validation
-	assert.Error(t, s.validateIntegration(context.TODO(), &storage.ImageIntegration{}))
+	assert.Error(t, s.validateIntegration(textCtx, &storage.ImageIntegration{}))
 
-	assert.Error(t, s.validateIntegration(context.TODO(), &storage.ImageIntegration{
+	assert.Error(t, s.validateIntegration(textCtx, &storage.ImageIntegration{
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 	}))
 
 	// Test should be successful
 	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{}, nil)
-	assert.NoError(t, s.validateIntegration(context.TODO(), &storage.ImageIntegration{
+	assert.NoError(t, s.validateIntegration(textCtx, &storage.ImageIntegration{
 		Name:       "name",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 	}))
@@ -41,14 +44,14 @@ func TestValidateIntegration(t *testing.T) {
 
 	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{{Id: "id", Name: "name"}}, nil).AnyTimes()
 	// Duplicate name with different ID should fail
-	assert.Error(t, s.validateIntegration(context.TODO(), &storage.ImageIntegration{
+	assert.Error(t, s.validateIntegration(textCtx, &storage.ImageIntegration{
 		Id:         "diff",
 		Name:       "name",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 	}))
 
 	// Duplicate name with same ID should succeed
-	assert.NoError(t, s.validateIntegration(context.TODO(), &storage.ImageIntegration{
+	assert.NoError(t, s.validateIntegration(textCtx, &storage.ImageIntegration{
 		Id:         "id",
 		Name:       "name",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
