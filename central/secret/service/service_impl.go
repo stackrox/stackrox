@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/pagination"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -104,8 +105,6 @@ func (s *serviceImpl) ListSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve secrets: %s", err)
 	}
-	if len(secrets) > maxSecretsReturned {
-		secrets = secrets[:maxSecretsReturned]
-	}
-	return &v1.ListSecretsResponse{Secrets: secrets}, nil
+	first, last := pagination.CalculatePaginationIndices(len(secrets), maxSecretsReturned, rawQuery.GetPagination())
+	return &v1.ListSecretsResponse{Secrets: secrets[first:last]}, nil
 }

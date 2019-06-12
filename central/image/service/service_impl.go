@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/pagination"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -92,11 +93,9 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if len(images) > maxImagesReturned {
-		images = images[:maxImagesReturned]
-	}
+	first, last := pagination.CalculatePaginationIndices(len(images), maxImagesReturned, request.GetPagination())
 	return &v1.ListImagesResponse{
-		Images: images,
+		Images: images[first:last],
 	}, nil
 }
 

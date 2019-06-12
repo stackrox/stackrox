@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/pagination"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -142,11 +143,10 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	sort.SliceStable(deployments, func(i, j int) bool {
 		return deployments[i].GetPriority() < deployments[j].GetPriority()
 	})
-	if len(deployments) > maxDeploymentsReturned {
-		deployments = deployments[:maxDeploymentsReturned]
-	}
+
+	first, last := pagination.CalculatePaginationIndices(len(deployments), maxDeploymentsReturned, request.GetPagination())
 	return &v1.ListDeploymentsResponse{
-		Deployments: deployments,
+		Deployments: deployments[first:last],
 	}, nil
 }
 
