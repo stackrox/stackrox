@@ -73,6 +73,7 @@ import (
 	roleService "github.com/stackrox/rox/central/role/service"
 	"github.com/stackrox/rox/central/sac/transitional"
 	"github.com/stackrox/rox/central/scanner"
+	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
@@ -100,6 +101,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	authzUser "github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
@@ -499,6 +501,22 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			}),
 			ServerHandler: logimbueHandler.Singleton(),
 			Compression:   false,
+		},
+	)
+
+	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
+	customRoutes = append(customRoutes,
+		routes.CustomRoute{
+			Route: scannerDefinitionsRoute,
+			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
+				or.ScannerOr(authzUser.With(permissions.View(resources.ScannerDefinitions))): {
+					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
+				},
+				authzUser.With(permissions.Modify(resources.ScannerDefinitions)): {
+					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
+				},
+			}),
+			ServerHandler: scannerDefinitionsHandler.Singleton(),
 		},
 	)
 

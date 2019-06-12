@@ -69,26 +69,11 @@ func printf(val string, args ...interface{}) {
 // GetZip downloads a zip from the given endpoint.
 // bundleType is used for logging.
 func GetZip(path string, requestBody []byte, timeout time.Duration, bundleType string) error {
-	url := common.GetURL(path)
-	client := common.GetHTTPClient(timeout)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
-	if err != nil {
-		return err
-	}
-	common.AddAuthToRequest(req)
-	resp, err := client.Do(req)
+	resp, err := common.DoHTTPRequestAndCheck200(path, timeout, "POST", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	if resp.StatusCode != 200 {
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errors.Wrapf(err, "Expected status code 200, but received %d. Additionally, there was an error reading the response", resp.StatusCode)
-		}
-		return fmt.Errorf("Expected status code 200, but received %d. Response Body: %s", resp.StatusCode, string(data))
-
-	}
 
 	outputFilename, err := parseFilenameFromHeader(resp.Header)
 	if err != nil {

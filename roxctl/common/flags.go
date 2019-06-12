@@ -3,6 +3,8 @@ package common
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -12,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"google.golang.org/grpc"
 )
@@ -45,6 +48,34 @@ func GetHTTPClient(timeout time.Duration) *http.Client {
 		},
 	}
 	return client
+}
+
+// DoHTTPRequestAndCheck200 does an http request to the provided path in Central,
+// and passes through the remaining params. It checks that the returned status code is 200, and returns an error if it is not.
+// The caller receives the http response object, which it is the caller's responsibility to close.
+func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string, body io.Reader) (*http.Response, error) {
+	url := GetURL(path)
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	AddAuthToRequest(req)
+
+	client := GetHTTPClient(timeout)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		defer utils.IgnoreError(resp.Body.Close)
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Expected status code 200, but received %d. Additionally, there was an error reading the response", resp.StatusCode)
+		}
+		return nil, errors.Errorf("Expected status code 200, but received %d. Response Body: %s", resp.StatusCode, string(data))
+	}
+
+	return resp, nil
 }
 
 // AddAuthToRequest adds the correct auth to the request

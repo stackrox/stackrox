@@ -67,3 +67,9 @@ func WriteGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {
 	w.WriteHeader(runtime.HTTPStatusFromCode(c))
 	_ = m.Marshal(w, userErr)
 }
+
+// WriteGRPCStyleErrorf writes a gRPC-style error to an http response writer.
+// It's useful when you have to write an http method.
+func WriteGRPCStyleErrorf(w http.ResponseWriter, c codes.Code, format string, args ...interface{}) {
+	WriteGRPCStyleError(w, c, fmt.Errorf(format, args...))
+}
