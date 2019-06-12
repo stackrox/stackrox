@@ -85,7 +85,15 @@ func (c *sensorConnection) runRecv(ctx context.Context, server central.SensorSer
 			return
 		}
 		c.recordCheckInRateLimited(ctx)
-		c.eventQueue.push(msg)
+
+		switch msg.Msg.(type) {
+		case *central.MsgFromSensor_ScrapeUpdate:
+			if err := c.handleMessage(ctx, msg); err != nil {
+				log.Errorf("Error handling sensor msg: %v", err)
+			}
+		default:
+			c.eventQueue.push(msg)
+		}
 	}
 }
 
