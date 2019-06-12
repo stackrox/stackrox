@@ -71,6 +71,7 @@ message DeploymentEnforcement {
     string deployment_type = 3;
     string namespace       = 4;
     string alert_id        = 5;
+    string policy_name     = 6;
 }
 
 message ContainerInstanceEnforcement {

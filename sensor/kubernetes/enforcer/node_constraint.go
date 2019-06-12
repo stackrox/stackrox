@@ -53,6 +53,6 @@ func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *central.SensorEn
 
 	// Mark the deployment as having the node constraint applied.
 	return withReasonableRetry(func() error {
-		return common.MarkNodeConstraintApplied(e.recorder, getRef(enforcement))
+		return common.MarkNodeConstraintApplied(e.recorder, enforcement.GetDeployment().GetPolicyName(), getRef(enforcement))
 	})
 }

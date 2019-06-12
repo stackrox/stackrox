@@ -34,7 +34,7 @@ type Manager interface {
 	IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error
 	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning
 	// enforcement action.
-	DeploymentUpdated(deployment *storage.Deployment) (string, storage.EnforcementAction, error)
+	DeploymentUpdated(deployment *storage.Deployment) (string, string, storage.EnforcementAction, error)
 	UpsertPolicy(policy *storage.Policy) error
 	RecompilePolicy(policy *storage.Policy) error
 

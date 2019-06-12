@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, storage.EnforcementAction, error),
+func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, string, storage.EnforcementAction, error),
 	onRemove func(deployment *storage.Deployment) error) *createResponseImpl {
 	return &createResponseImpl{
 		onUpdate: onUpdate,
@@ -14,21 +14,21 @@ func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, st
 }
 
 type createResponseImpl struct {
-	onUpdate func(deployment *storage.Deployment) (string, storage.EnforcementAction, error)
+	onUpdate func(deployment *storage.Deployment) (string, string, storage.EnforcementAction, error)
 	onRemove func(deployment *storage.Deployment) error
 }
 
 func (s *createResponseImpl) do(deployment *storage.Deployment, action central.ResourceAction) *central.SensorEnforcement {
-	var alertID string
+	var alertID, policyName string
 	var enforcement storage.EnforcementAction
 	var err error
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		err = s.onRemove(deployment)
 	} else if action == central.ResourceAction_CREATE_RESOURCE {
 		// We only want enforcement if the deployment was just created.
-		alertID, enforcement, err = s.onUpdate(deployment)
+		alertID, policyName, enforcement, err = s.onUpdate(deployment)
 	} else {
-		_, _, err = s.onUpdate(deployment)
+		_, _, _, err = s.onUpdate(deployment)
 	}
 	if err != nil {
 		log.Errorf("updating from deployment failed: %s", err)
@@ -45,6 +45,7 @@ func (s *createResponseImpl) do(deployment *storage.Deployment, action central.R
 	response.DeploymentType = deployment.GetType()
 	response.Namespace = deployment.GetNamespace()
 	response.AlertId = alertID
+	response.PolicyName = policyName
 
 	return &central.SensorEnforcement{
 		Enforcement: enforcement,

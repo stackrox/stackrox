@@ -11,6 +11,6 @@ type enricherAndDetectorImpl struct {
 
 // EnrichAndDetect runs enrichment and detection on a deployment.
 func (e *enricherAndDetectorImpl) EnrichAndDetect(deployment *storage.Deployment) error {
-	_, _, err := e.manager.DeploymentUpdated(deployment)
+	_, _, _, err := e.manager.DeploymentUpdated(deployment)
 	return err
 }

@@ -54,6 +54,6 @@ func (e *enforcerImpl) scaleToZero(enforcement *central.SensorEnforcement) (err 
 
 	// Mark the deployment as having been scaled to zero.
 	return withReasonableRetry(func() error {
-		return common.MarkScaledToZero(e.recorder, getRef(enforcement))
+		return common.MarkScaledToZero(e.recorder, enforcement.GetDeployment().GetPolicyName(), getRef(enforcement))
 	})
 }
