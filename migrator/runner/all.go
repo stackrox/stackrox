@@ -4,6 +4,7 @@ import (
 	// Import these packages to trigger the registration.
 	_ "github.com/stackrox/rox/migrator/migrations/m_0_to_m_1_create_version_bucket"
 	_ "github.com/stackrox/rox/migrator/migrations/m_10_to_11_processwhitelist_cluster_namespace"
+	_ "github.com/stackrox/rox/migrator/migrations/m_11_to_m12_rewrite_alerts_and_deployments"
 	_ "github.com/stackrox/rox/migrator/migrations/m_1_to_2_alert_violation"
 	_ "github.com/stackrox/rox/migrator/migrations/m_2_to_3_network_flows_in_badger"
 	_ "github.com/stackrox/rox/migrator/migrations/m_3_to_4_cluster_spec_to_status"
