@@ -184,7 +184,7 @@ const integrationsList = {
             image: pagerduty
         },
         {
-            label: 'SumoLogic',
+            label: 'Sumo Logic',
             type: 'sumologic',
             source: 'notifiers',
             image: sumologic

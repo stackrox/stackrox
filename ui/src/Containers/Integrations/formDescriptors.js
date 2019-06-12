@@ -371,7 +371,7 @@ const formDescriptors = {
                 label: 'Integration Name',
                 jsonpath: 'name',
                 type: 'text',
-                placeholder: 'SumoLogic Integration'
+                placeholder: 'Sumo Logic Integration'
             },
             {
                 label: 'HTTP Collector Source Address',

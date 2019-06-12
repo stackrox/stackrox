@@ -66,15 +66,15 @@ func (s *sumologic) sendPayload(buf io.Reader) error {
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return errors.Wrap(err, "Error reading SumoLogic response body")
+			return errors.Wrap(err, "Error reading Sumo Logic response body")
 		}
-		return fmt.Errorf("Received error response from SumoLogic: %d %s", resp.StatusCode, string(body))
+		return fmt.Errorf("Received error response from Sumo Logic: %d %s", resp.StatusCode, string(body))
 	}
 	return nil
 }
 
 func validateConfig(sumologic *storage.SumoLogic) error {
-	errList := errorhelpers.NewErrorList("SumoLogic notifier validation")
+	errList := errorhelpers.NewErrorList("Sumo Logic notifier validation")
 	if sumologic.GetHttpSourceAddress() == "" {
 		errList.AddString("http source address is required")
 	}
