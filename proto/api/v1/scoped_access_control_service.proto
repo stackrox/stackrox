@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "api/v1/common.proto";
+import "storage/authz_plugin.proto";
+
+package v1;
+
+message GetAuthzPluginConfigsResponse {
+    repeated storage.AuthzPluginConfig configs = 1;
+}
+
+message UpsertAuthzPluginConfigRequest {
+    storage.AuthzPluginConfig config = 1;
+}
+
+// ScopedAccesssControlService manages configuration related to scoped access control.
+service ScopedAccessControlService {
+
+    rpc GetAuthzPluginConfigs (Empty) returns (GetAuthzPluginConfigsResponse) {
+        option (google.api.http) = {
+            get: "/v1/scopedaccessctrl/configs"
+        };
+    }
+
+    rpc ConfigureAuthzPlugin (UpsertAuthzPluginConfigRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/scopedaccessctrl/config"
+            body: "*"
+        };
+    }
+
+    rpc DeleteAuthzPlugin (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/scopedaccessctrl/config/{id}"
+        };
+    }
+}

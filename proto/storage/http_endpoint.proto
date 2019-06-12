@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import weak "protobuf/gogoproto/gogo.proto";
+import "storage/common.proto";
+
+package storage;
+
+message HTTPEndpointConfig {
+    string endpoint                    = 1;
+    bool   skip_tls_verify             = 2;
+    string ca_cert                     = 3;
+    string username                    = 4;
+    string password                    = 5 [(gogoproto.moretags) = "scrub:\"always\""];
+    repeated KeyValuePair headers      = 6;
+}
