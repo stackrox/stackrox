@@ -4,6 +4,7 @@ metadata:
   name: monitoring
   namespace: {{.Values.namespace}}
   labels:
+    app.kubernetes.io/name: stackrox
     app: monitoring
   annotations:
     owner: stackrox

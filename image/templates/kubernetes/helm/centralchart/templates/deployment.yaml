@@ -4,6 +4,7 @@ metadata:
   name: central
   namespace: {{.Values.namespace}}
   labels:
+    app.kubernetes.io/name: stackrox
     app: central
   annotations:
     owner: stackrox

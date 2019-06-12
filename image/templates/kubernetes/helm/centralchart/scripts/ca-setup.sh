@@ -20,6 +20,7 @@ function create_ns {
 function create_file {
     local file="$1"
     ${KUBE_COMMAND} create secret -n "stackrox" generic additional-ca --from-file="ca.crt=$file"
+    ${KUBE_COMMAND} -n "stackrox" label secret/additional-ca app.kubernetes.io/name=stackrox
 }
 
 function create_directory {
@@ -37,6 +38,7 @@ function create_directory {
         exit 2
     fi
     ${KUBE_COMMAND} create secret -n "stackrox" generic additional-ca --from-file="$dir/"
+    ${KUBE_COMMAND} -n "stackrox" label secret/additional-ca app.kubernetes.io/name=stackrox
 }
 
 if [[ "$#" -lt 2 ]]; then

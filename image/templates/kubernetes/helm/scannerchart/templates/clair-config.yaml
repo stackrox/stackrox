@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: clair-config
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
 data:
   config.yaml: |-
     # The values specified here are the default values that Clair uses if no configuration file is specified or if the keys are not defined.

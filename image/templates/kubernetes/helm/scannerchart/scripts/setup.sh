@@ -14,6 +14,8 @@ kind: Secret
 metadata:
   name: {{.K8sConfig.ScannerSecretName}}
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 type: kubernetes.io/dockerconfigjson
 EOF
 fi

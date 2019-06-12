@@ -33,6 +33,8 @@ kind: Secret
 metadata:
   name: stackrox
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 type: kubernetes.io/dockerconfigjson
 EOF
 fi

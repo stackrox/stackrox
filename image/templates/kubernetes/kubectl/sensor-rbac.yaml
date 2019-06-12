@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: sensor
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 imagePullSecrets:
 - name: stackrox
 ---
@@ -11,6 +13,8 @@ kind: ServiceAccount
 metadata:
   name: benchmark
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 imagePullSecrets:
 - name: stackrox
 ---
@@ -18,6 +22,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:monitor-deployments
+  labels:
+    app.kubernetes.io/name: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -31,6 +37,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:enforce-policies
+  labels:
+    app.kubernetes.io/name: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -45,6 +53,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: launch-benchmarks
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -58,6 +68,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:network-policies
+  labels:
+    app.kubernetes.io/name: stackrox
 rules:
   - resources:
     - 'networkpolicies'
@@ -76,6 +88,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:network-policies-binding
+  labels:
+    app.kubernetes.io/name: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -89,6 +103,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:view-nodes
+  labels:
+    app.kubernetes.io/name: stackrox
 rules:
 - resources:
   - nodes
@@ -102,6 +118,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:view-nodes-binding
+  labels:
+    app.kubernetes.io/name: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -115,6 +133,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:update-namespaces
+  labels:
+    app.kubernetes.io/name: stackrox
 rules:
 - resources:
   - namespaces
@@ -126,6 +146,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:update-namespaces-binding
+  labels:
+    app.kubernetes.io/name: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -139,6 +161,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:create-events
+  labels:
+    app.kubernetes.io/name: stackrox
 rules:
 - resources:
   - events
@@ -150,6 +174,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:create-events-binding
+  labels:
+    app.kubernetes.io/name: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -163,6 +189,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:view-rbac
+  labels:
+    app.kubernetes.io/name: stackrox
 rules:
 - resources:
   - roles
@@ -182,6 +210,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox:view-rbac-binding
+  labels:
+    app.kubernetes.io/name: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor

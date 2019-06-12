@@ -2,6 +2,8 @@ apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 webhooks:
   - name: policyeval.stackrox.io
     rules:

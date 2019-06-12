@@ -21,6 +21,8 @@ kind: Secret
 metadata:
   name: stackrox
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
@@ -30,7 +32,9 @@ oc secrets add serviceaccount/benchmark secrets/stackrox --for=pull
 
 # Create secrets for sensor
 oc create secret -n "stackrox" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
+oc -n "stackrox" label secret/sensor-tls app.kubernetes.io/name=stackrox
 oc create secret -n "stackrox" generic benchmark-tls --from-file="$DIR/benchmark-cert.pem" --from-file="$DIR/benchmark-key.pem" --from-file="$DIR/ca.pem"
+oc -n "stackrox" label secret/benchmark-tls app.kubernetes.io/name=stackrox
 
 {{if ne .CollectionMethod "NO_COLLECTION"}}
 if ! oc get secret/collector-stackrox -n stackrox > /dev/null; then

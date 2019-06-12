@@ -4,7 +4,7 @@ metadata:
   name: monitoring
   namespace: {{.Values.namespace}}
   labels:
-      app.kubernetes.io/name: monitoring
+    app.kubernetes.io/name: stackrox
 spec:
   ports:
   - name: https

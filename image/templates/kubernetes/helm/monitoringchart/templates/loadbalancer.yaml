@@ -4,6 +4,8 @@ kind: Route
 metadata:
   name: monitoring-mtls
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   host: monitoring.{{.Values.namespace}}
   port:
@@ -19,6 +21,8 @@ kind: Service
 metadata:
   name: monitoring-loadbalancer
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   ports:
   - port: {{.Values.exposure.port}}

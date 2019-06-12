@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: telegraf-proxy
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
 data:
   telegraf.conf: |-
     # Telegraf Configuration

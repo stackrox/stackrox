@@ -4,6 +4,8 @@ apiVersion: v1
 metadata:
   name: {{.Values.persistence.name}}
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   {{if .Values.persistence.storageClass -}}
   storageClassName: {{.Values.persistence.storageClass}}

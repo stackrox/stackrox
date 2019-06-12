@@ -3,6 +3,8 @@ kind: NetworkPolicy
 metadata:
   name: scanner
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   ingress:
   - from:

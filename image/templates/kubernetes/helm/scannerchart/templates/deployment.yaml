@@ -4,6 +4,7 @@ metadata:
   name: scanner
   namespace: {{.Values.namespace}}
   labels:
+    app.kubernetes.io/name: stackrox
     app: scanner
   annotations:
     owner: stackrox

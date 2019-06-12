@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: influxdb
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
 data:
   influxdb.conf: |-
     ### Welcome to the InfluxDB configuration file.

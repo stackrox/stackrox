@@ -166,3 +166,5 @@ kind: ConfigMap
 metadata:
   name: telegraf
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox

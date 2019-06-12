@@ -3,6 +3,8 @@ kind: NetworkPolicy
 metadata:
   name: sensor
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   ingress:
   - from:
@@ -33,6 +35,8 @@ kind: NetworkPolicy
 metadata:
   name: collector-no-ingress
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   podSelector:
     matchLabels:
@@ -45,6 +49,8 @@ kind: NetworkPolicy
 metadata:
   name: compliance-no-ingress
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   podSelector:
     matchLabels:

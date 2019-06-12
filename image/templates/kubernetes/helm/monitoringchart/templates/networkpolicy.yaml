@@ -3,6 +3,8 @@ kind: NetworkPolicy
 metadata:
   name: allow-ext-to-monitoring
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   ingress:
   - ports:

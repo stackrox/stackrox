@@ -4,6 +4,7 @@ metadata:
   name: sensor
   namespace: stackrox
   labels:
+    app.kubernetes.io/name: stackrox
     app: sensor
   annotations:
     owner: stackrox
@@ -131,6 +132,8 @@ kind: Service
 metadata:
   name: sensor
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   ports:
   - name: https
@@ -145,6 +148,8 @@ kind: Service
 metadata:
   name: sensor-webhook
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   ports:
   - name: https
@@ -160,6 +165,8 @@ kind: ServiceAccount
 metadata:
   name: collector
   namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
 imagePullSecrets:
 - name: stackrox
 - name: collector-stackrox
@@ -168,6 +175,7 @@ apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
   labels:
+    app.kubernetes.io/name: stackrox
     service: collector
     app: collector
   name: collector
