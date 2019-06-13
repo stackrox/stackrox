@@ -47,17 +47,17 @@ func (q *dedupingQueue) pull() *central.MsgFromSensor {
 		return nil
 	}
 
-	evt := q.queue.Remove(q.queue.Front()).(*central.MsgFromSensor)
-	metrics.IncrementSensorEventQueueCounter(ops.Remove, common.GetMessageType(evt))
-	// If resource action was not create, then delete it from the cache
-	if evt.GetEvent() != nil && evt.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE {
-		delete(q.resourceIDToEvent, evt.GetEvent().GetId())
+	msg := q.queue.Remove(q.queue.Front()).(*central.MsgFromSensor)
+	metrics.IncrementSensorEventQueueCounter(ops.Remove, common.GetMessageType(msg))
+
+	if msg.GetDedupeKey() != "" {
+		delete(q.resourceIDToEvent, msg.GetDedupeKey())
 	}
 
 	if q.queue.Len() == 0 {
 		q.notEmptySig.Reset()
 	}
-	return evt
+	return msg
 }
 
 // Push attempts to add an item to the queue, and returns an error if it is unable.
@@ -71,18 +71,17 @@ func (q *dedupingQueue) push(msg *central.MsgFromSensor) {
 }
 
 func (q *dedupingQueue) pushNoLock(msg *central.MsgFromSensor) {
-	if msg.GetEvent().GetAction() == central.ResourceAction_CREATE_RESOURCE || msg.GetEvent() == nil {
+	if msg.GetDedupeKey() == "" {
 		q.queue.PushBack(msg)
-		// Purposefully don't cache the CREATE because it should never be deduped
 		return
 	}
 	var msgInserted *list.Element
-	if evt, ok := q.resourceIDToEvent[msg.GetEvent().GetId()]; ok {
+	if evt, ok := q.resourceIDToEvent[msg.GetDedupeKey()]; ok {
 		metrics.IncrementSensorEventQueueCounter(ops.Dedupe, common.GetMessageType(msg))
 		msgInserted = q.queue.InsertBefore(msg, evt)
 		q.queue.Remove(evt)
 	} else {
 		msgInserted = q.queue.PushBack(msg)
 	}
-	q.resourceIDToEvent[msg.GetEvent().GetId()] = msgInserted
+	q.resourceIDToEvent[msg.GetDedupeKey()] = msgInserted
 }

@@ -153,9 +153,13 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return c.scrapeCtrl.ProcessScrapeUpdate(m.ScrapeUpdate)
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
-	default:
-		return c.eventPipeline.Run(ctx, msg, c)
+	case *central.MsgFromSensor_Event:
+		if msg.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE {
+			msg.DedupeKey = msg.GetEvent().GetId()
+		}
 	}
+	return c.eventPipeline.Run(ctx, msg, c)
+
 }
 
 func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.MsgToSensor, error) {

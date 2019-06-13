@@ -10,10 +10,14 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/throttle"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	fullRiskReprocessKey = uuid.NewV4().String()
+	fullReprocessKey     = uuid.NewV4().String()
 
 	once sync.Once
 	loop Loop
@@ -110,7 +114,12 @@ func (l *loopImpl) ShortCircuit() {
 }
 
 func (l *loopImpl) sendEnrichAndDetect(deploymentIDs ...string) {
+	var key string
+	if len(deploymentIDs) == 0 {
+		key = fullReprocessKey
+	}
 	msg := &central.MsgFromSensor{
+		DedupeKey: key,
 		Msg: &central.MsgFromSensor_ReprocessDeployments{
 			ReprocessDeployments: &central.ReprocessDeployments{
 				DeploymentIds: deploymentIDs,
@@ -124,7 +133,12 @@ func (l *loopImpl) sendEnrichAndDetect(deploymentIDs ...string) {
 }
 
 func (l *loopImpl) sendRisk(deploymentIDs ...string) {
+	var key string
+	if len(deploymentIDs) == 0 {
+		key = fullRiskReprocessKey
+	}
 	msg := &central.MsgFromSensor{
+		DedupeKey: key,
 		Msg: &central.MsgFromSensor_ReprocessDeployments{
 			ReprocessDeployments: &central.ReprocessDeployments{
 				DeploymentIds: deploymentIDs,

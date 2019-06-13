@@ -5,7 +5,6 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "storage/process_whitelist.proto";
-import "api/v1/empty.proto";
 
 package v1;
 

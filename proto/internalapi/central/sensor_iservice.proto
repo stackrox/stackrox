@@ -22,6 +22,7 @@ message ReprocessDeployments {
 }
 
 message MsgFromSensor {
+    string dedupe_key = 7;
     oneof msg {
         SensorEvent                  event                           = 1;
         NetworkFlowUpdate            network_flow_update             = 2;
