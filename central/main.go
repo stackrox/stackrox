@@ -122,6 +122,12 @@ var (
 		"auth0":       oidc.NewFactory, // legacy
 		saml.TypeName: saml.NewFactory,
 	}
+
+	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.ImageIntegration),
+		))
 )
 
 const (
@@ -383,7 +389,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	ds := iiDatastore.Singleton()
 	for len(integrations) > 0 {
 		for idx, integration := range integrations {
-			_, exists, _ := ds.GetImageIntegration(context.TODO(), integration.Integration.GetId())
+			_, exists, _ := ds.GetImageIntegration(imageIntegrationContext, integration.Integration.GetId())
 			if exists {
 				delete(integrations, idx)
 				continue
@@ -396,7 +402,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 			// manually add it and get the error message.
 			err := imageintegration.ToNotify().NotifyUpdated(integration.Integration)
 			if err == nil {
-				err = ds.UpdateImageIntegration(context.TODO(), integration.Integration)
+				err = ds.UpdateImageIntegration(imageIntegrationContext, integration.Integration)
 				if err != nil {
 					// so, we added the integration to the set but we weren't able to save it.
 					// This is ok -- the image scanner will "work" and after a restart we'll try to save it again.
