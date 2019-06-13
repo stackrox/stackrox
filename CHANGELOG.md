@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [24.0]
+### Changed
+- Queries against time fields involving a duration have now flipped directionality to a more intuitive way.
+  Previously, searching `Image Creation Time: >3h` would show all images created _after_ 3 hours before the current time;
+  now, it shows all images created more than three hours ago -- that is, _before_ the moment in time 3 hours before the current time.
+
 
 ## [23.0]
 ### Added
@@ -13,6 +19,7 @@ All notable changes to this project that require documentation updates will be d
 - Sensor CPU Request changed from .2 cores to .5 cores
 - Sensor Memory Request changes from 250Mi to 500Mi
 - Sensor CPU Limit changed from .5 cores to 1 core
+
 
 ## [22.0]
 ### Changed

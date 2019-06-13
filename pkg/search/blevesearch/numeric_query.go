@@ -1,6 +1,7 @@
 package blevesearch
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
@@ -9,8 +10,45 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
+type prefixAndInversion struct {
+	prefix    string
+	inversion string
+}
+
+var (
+	prefixesAndInversions = []prefixAndInversion{
+		{"<", ">="},
+		{">", "<="},
+	}
+
+	validPrefixesSortedByLengthDec = func() []string {
+		var validPrefixes []string
+		for _, pAndI := range prefixesAndInversions {
+			validPrefixes = append(validPrefixes, pAndI.prefix)
+			validPrefixes = append(validPrefixes, pAndI.inversion)
+		}
+		sort.Slice(validPrefixes, func(i, j int) bool {
+			return len(validPrefixes[i]) > len(validPrefixes[j])
+		})
+		return validPrefixes
+	}()
+
+	prefixesToInversions = func() map[string]string {
+		out := make(map[string]string)
+		for _, pAndI := range prefixesAndInversions {
+			out[pAndI.prefix] = pAndI.inversion
+			out[pAndI.inversion] = pAndI.prefix
+		}
+		return out
+	}()
+)
+
+func invertNumericPrefix(prefix string) string {
+	return prefixesToInversions[prefix]
+}
+
 func parseNumericPrefix(value string) (prefix string, trimmedValue string) {
-	for _, prefix := range []string{"<=", ">=", "<", ">"} {
+	for _, prefix := range validPrefixesSortedByLengthDec {
 		if strings.HasPrefix(value, prefix) {
 			return prefix, strings.TrimPrefix(value, prefix)
 		}

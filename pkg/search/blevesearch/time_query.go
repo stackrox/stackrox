@@ -31,6 +31,10 @@ func newTimeQuery(_ v1.SearchCategory, field string, value string) (query.Query,
 		}
 	} else if d, ok := parseDuration(trimmedValue); ok {
 		seconds = time.Now().Add(-d).Unix()
+		// Invert the prefix in a duration query, since if someone queries for >=3d
+		// they mean more than 3 days ago, which means the timestamp should be
+		// < the timestamp of 3 days ago.
+		prefix = invertNumericPrefix(prefix)
 	} else {
 		return nil, fmt.Errorf("Invalid time query. Must be of the format (01/02/2006 or 1d)")
 	}
