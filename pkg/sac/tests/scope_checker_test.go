@@ -14,6 +14,8 @@ import (
 type scopeCheckerTestSuite struct {
 	suite.Suite
 
+	ctx context.Context
+
 	mockCtrl *gomock.Controller
 	mockSCC  *mocks.MockScopeCheckerCore
 }
@@ -25,6 +27,7 @@ func TestAllowed(t *testing.T) {
 func (s *scopeCheckerTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockSCC = mocks.NewMockScopeCheckerCore(s.mockCtrl)
+	s.ctx = context.Background()
 }
 
 func (s *scopeCheckerTestSuite) TearDownTest() {
@@ -36,12 +39,12 @@ func (s *scopeCheckerTestSuite) TestAllowed_UnknownThenAllow() {
 	s.mockSCC.EXPECT().TryAllowed().AnyTimes().DoAndReturn(func() TryAllowedResult {
 		return result
 	})
-	s.mockSCC.EXPECT().PerformChecks(gomock.Any()).Times(1).DoAndReturn(func(context.Context) error {
+	s.mockSCC.EXPECT().PerformChecks(s.ctx).Times(1).DoAndReturn(func(context.Context) error {
 		result = Allow
 		return nil
 	})
 
-	ok, err := NewScopeChecker(s.mockSCC).Allowed(context.TODO())
+	ok, err := NewScopeChecker(s.mockSCC).Allowed(s.ctx)
 	s.True(ok)
 	s.NoError(err)
 }
@@ -51,12 +54,12 @@ func (s *scopeCheckerTestSuite) TestAllowed_UnknownThenDeny() {
 	s.mockSCC.EXPECT().TryAllowed().AnyTimes().DoAndReturn(func() TryAllowedResult {
 		return result
 	})
-	s.mockSCC.EXPECT().PerformChecks(gomock.Any()).Times(1).DoAndReturn(func(context.Context) error {
+	s.mockSCC.EXPECT().PerformChecks(s.ctx).Times(1).DoAndReturn(func(context.Context) error {
 		result = Deny
 		return nil
 	})
 
-	ok, err := NewScopeChecker(s.mockSCC).Allowed(context.TODO())
+	ok, err := NewScopeChecker(s.mockSCC).Allowed(s.ctx)
 	s.False(ok)
 	s.NoError(err)
 }
@@ -66,8 +69,8 @@ func (s *scopeCheckerTestSuite) UnknownThenError() {
 	s.mockSCC.EXPECT().TryAllowed().AnyTimes().DoAndReturn(func() TryAllowedResult {
 		return result
 	})
-	s.mockSCC.EXPECT().PerformChecks(gomock.Any()).Times(1).Return(errors.New("unknown error"))
+	s.mockSCC.EXPECT().PerformChecks(s.ctx).Times(1).Return(errors.New("unknown error"))
 
-	_, err := NewScopeChecker(s.mockSCC).Allowed(context.TODO())
+	_, err := NewScopeChecker(s.mockSCC).Allowed(s.ctx)
 	s.Error(err)
 }
