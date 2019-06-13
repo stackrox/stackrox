@@ -95,6 +95,9 @@ function launch_central {
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
 
+    rm "${unzip_dir}/central/templates/application.yaml" || true
+    rm "${unzip_dir}/central/application.yaml" || true
+
     echo
     if [[ -n "${TRUSTED_CA_FILE}" ]]; then
         "${unzip_dir}/central/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
