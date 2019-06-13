@@ -43,7 +43,7 @@ func TestChainContextUpdaters_Success(t *testing.T) {
 		return newCtx, nil
 	})
 
-	finalCtx, err := ChainContextUpdaters(updater1, updater2)(context.TODO())
+	finalCtx, err := ChainContextUpdaters(updater1, updater2)(context.Background())
 	a.NoError(err)
 	require.NotNil(t, finalCtx)
 	a.True(updater1ran, "updater1 should have run")
@@ -68,7 +68,7 @@ func TestChainContextUpdaters_Failure(t *testing.T) {
 		return nil, nil
 	})
 
-	_, err := ChainContextUpdaters(updater1, updater2)(context.TODO())
+	_, err := ChainContextUpdaters(updater1, updater2)(context.Background())
 	a.Equal(updater1err, err)
 }
 
@@ -82,7 +82,7 @@ func TestUnaryServerInterceptor_Success(t *testing.T) {
 		return "resp", nil
 	})
 
-	resp, err := UnaryServerInterceptor(updater)(context.TODO(), "req", nil, handler)
+	resp, err := UnaryServerInterceptor(updater)(context.Background(), "req", nil, handler)
 	a.NoError(err)
 	a.Equal("resp", resp)
 }
@@ -98,7 +98,7 @@ func TestUnaryServerInterceptor_FailUpdater(t *testing.T) {
 		return nil, nil
 	})
 
-	_, err := UnaryServerInterceptor(updater)(context.TODO(), "req", nil, handler)
+	_, err := UnaryServerInterceptor(updater)(context.Background(), "req", nil, handler)
 	a.Equal(updaterErr, err)
 }
 
@@ -113,7 +113,7 @@ func TestUnaryServerInterceptor_FailHandler(t *testing.T) {
 		return nil, handlerErr
 	})
 
-	_, err := UnaryServerInterceptor(updater)(context.TODO(), "req", nil, handler)
+	_, err := UnaryServerInterceptor(updater)(context.Background(), "req", nil, handler)
 	a.Equal(handlerErr, err)
 }
 
