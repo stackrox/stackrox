@@ -10,7 +10,7 @@ import (
 func TestGetMetadata_NotOnAzure(t *testing.T) {
 	t.Parallel()
 
-	_, err := GetMetadata(context.TODO())
+	_, err := GetMetadata(context.Background())
 	// We might not get metadata info, but we should not get an error.
 	assert.NoError(t, err)
 }
