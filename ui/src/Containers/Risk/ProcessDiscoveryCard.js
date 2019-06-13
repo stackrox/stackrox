@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { Tooltip } from 'react-tippy';
 import { actions as processActions } from 'reducers/processes';
 import CollapsibleCard from 'Components/CollapsibleCard';
+import { getDeploymentAndProcessIdFromProcessGroup } from 'utils/processUtils';
 
 const titleClassName =
     'border-b border-base-300 leading-normal cursor-pointer flex justify-between h-14';
@@ -27,8 +28,11 @@ class ProcessesDiscoveryCard extends Component {
     addWhitelist = evt => {
         evt.stopPropagation();
         const { name, containerName } = this.props.process;
+        const { clusterId, namespace } = getDeploymentAndProcessIdFromProcessGroup(
+            this.props.process
+        );
         const addProcessesQuery = {
-            keys: [{ deploymentId: this.props.deploymentId, containerName }],
+            keys: [{ deploymentId: this.props.deploymentId, containerName, clusterId, namespace }],
             addElements: [{ processName: name }]
         };
         this.props.addProcesses(addProcessesQuery);

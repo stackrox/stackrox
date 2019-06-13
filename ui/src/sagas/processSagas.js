@@ -8,6 +8,7 @@ import {
     lockUnlockProcesses
 } from 'services/ProcessesService';
 import { actions, types } from 'reducers/processes';
+import { getDeploymentAndProcessIdFromGroupedProcesses } from 'utils/processUtils';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import Raven from 'raven-js';
 import uniqBy from 'lodash/uniqBy';
@@ -20,11 +21,17 @@ export function* getProcesses(id) {
         const uniqueContainerNames = uniqBy(result.response.groups, 'containerName').map(
             x => x.containerName
         );
-        const { clusterId, namespace } = result.response.result;
-        uniqueContainerNames.forEach(containerName => {
-            const queryStr = `key.clusterId=${clusterId}&key.namespace=${namespace}&key.deploymentId=${id}&key.containerName=${containerName}`;
-            promises.push(call(fetchProcessesWhiteList, queryStr));
-        });
+
+        const { clusterId, namespace } = getDeploymentAndProcessIdFromGroupedProcesses(
+            result.response.groups
+        );
+
+        if (clusterId && namespace && uniqueContainerNames && uniqueContainerNames.length) {
+            uniqueContainerNames.forEach(containerName => {
+                const queryStr = `key.clusterId=${clusterId}&key.namespace=${namespace}&key.deploymentId=${id}&key.containerName=${containerName}`;
+                promises.push(call(fetchProcessesWhiteList, queryStr));
+            });
+        }
 
         const processesWhiteList = yield all(promises);
         yield put(actions.fetchProcessesWhitelist.success(processesWhiteList));
