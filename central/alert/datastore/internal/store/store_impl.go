@@ -207,6 +207,17 @@ func (b *storeImpl) IncTxnCount() error {
 	})
 }
 
+// DeleteAlert removes an alert
+func (b *storeImpl) DeleteAlert(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Alert")
+
+	return b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(alertBucket)
+
+		return bucket.Delete([]byte(id))
+	})
+}
+
 func getAlert(id string, bucket *bolt.Bucket) (alert *storage.Alert, exists bool, err error) {
 	alert = new(storage.Alert)
 	val := bucket.Get([]byte(id))

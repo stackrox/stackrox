@@ -24,6 +24,8 @@ type Store interface {
 	GetAlerts(ids []string) ([]*storage.Alert, []int, error)
 	AddAlert(alert *storage.Alert) error
 	UpdateAlert(alert *storage.Alert) error
+	DeleteAlert(id string) error
+
 	GetTxnCount() (txNum uint64, err error)
 	IncTxnCount() error
 }

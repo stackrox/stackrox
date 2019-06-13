@@ -23,6 +23,12 @@ service ConfigService {
         };
     }
 
+    rpc GetPrivateConfig(Empty) returns (storage.PrivateConfig) {
+        option (google.api.http) = {
+            get: "/v1/config/private"
+        };
+    }
+
     rpc GetConfig(Empty) returns (storage.Config) {
         option (google.api.http) = {
             get: "/v1/config"

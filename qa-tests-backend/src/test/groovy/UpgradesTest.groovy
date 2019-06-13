@@ -5,8 +5,11 @@ import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass
 import org.junit.experimental.categories.Category
 import services.ClusterService
+import services.ConfigService
 import services.ProcessService
 import spock.lang.Unroll
+
+import javax.validation.constraints.Null
 
 class UpgradesTest extends BaseSpecification {
     static final private String CLUSTERID = "260e11a3-cbea-464c-95f0-588fa7695b49"
@@ -60,6 +63,17 @@ class UpgradesTest extends BaseSpecification {
             assert(indicator.getClusterId() == CLUSTERID)
             assert(indicator.getNamespace() != "")
         }
+    }
+
+    @Unroll
+    @Category(Upgrade)
+    def "Verify private config contains the correct retention duration for alerts and images"() {
+        expect:
+        "Alert retention duration is nil, image rentention duration is 7 days"
+        def config = ConfigService.getConfig()
+        config != Null
+        config.getPrivateConfig().getAlertRetentionDurationDays() == 0
+        config.getPrivateConfig().getImageRetentionDurationDays() == 7
     }
 
     // TODO

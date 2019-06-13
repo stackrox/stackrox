@@ -31,6 +31,16 @@ message PublicConfig {
     BannerConfig footer      = 3;
 }
 
+message PrivateConfig {
+    oneof alert_retention {
+        int32  alert_retention_duration_days = 1;
+    }
+    int32  image_retention_duration_days = 2;
+
+}
+
+
 message Config {
     PublicConfig public_config = 1;
+    PrivateConfig private_config = 2;
 }

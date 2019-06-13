@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -162,6 +163,26 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 	}
 	alert.State = storage.ViolationState_RESOLVED
 	return ds.updateAlertNoLock(alert)
+}
+
+func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error {
+	if ok, err := alertSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	errorList := errorhelpers.NewErrorList("deleting alert")
+	for _, id := range ids {
+		if err := ds.storage.DeleteAlert(id); err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		if err := ds.indexer.DeleteListAlert(id); err != nil {
+			errorList.AddError(err)
+		}
+	}
+	return errorList.ToError()
 }
 
 func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {

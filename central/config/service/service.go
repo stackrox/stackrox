@@ -25,6 +25,9 @@ var (
 			"/v1.ConfigService/GetPublicConfig",
 		},
 		user.With(permissions.View(resources.Config)): {
+			"/v1.ConfigService/GetPrivateConfig",
+		},
+		user.With(permissions.View(resources.Config)): {
 			"/v1.ConfigService/GetConfig",
 		},
 		user.With(permissions.Modify(resources.Config)): {
@@ -78,6 +81,15 @@ func (s *serviceImpl) GetPublicConfig(ctx context.Context, _ *v1.Empty) (*storag
 		return &storage.PublicConfig{}, nil
 	}
 	return config.GetPublicConfig(), nil
+}
+
+// GetPrivateConfig returns the privately available config
+func (s *serviceImpl) GetPrivateConfig(ctx context.Context, _ *v1.Empty) (*storage.PrivateConfig, error) {
+	config, err := s.datastore.GetConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return config.GetPrivateConfig(), nil
 }
 
 // GetConfig returns Central's config

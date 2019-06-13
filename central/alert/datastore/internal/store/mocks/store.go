@@ -45,6 +45,18 @@ func (mr *MockStoreMockRecorder) AddAlert(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAlert", reflect.TypeOf((*MockStore)(nil).AddAlert), arg0)
 }
 
+// DeleteAlert mocks base method
+func (m *MockStore) DeleteAlert(arg0 string) error {
+	ret := m.ctrl.Call(m, "DeleteAlert", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAlert indicates an expected call of DeleteAlert
+func (mr *MockStoreMockRecorder) DeleteAlert(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAlert", reflect.TypeOf((*MockStore)(nil).DeleteAlert), arg0)
+}
+
 // GetAlert mocks base method
 func (m *MockStore) GetAlert(arg0 string) (*storage.Alert, bool, error) {
 	ret := m.ctrl.Call(m, "GetAlert", arg0)

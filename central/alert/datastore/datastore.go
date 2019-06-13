@@ -3,6 +3,8 @@ package datastore
 import (
 	"context"
 
+	"github.com/blevesearch/bleve"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -29,6 +31,8 @@ type DataStore interface {
 	AddAlert(ctx context.Context, alert *storage.Alert) error
 	UpdateAlert(ctx context.Context, alert *storage.Alert) error
 	MarkAlertStale(ctx context.Context, id string) error
+
+	DeleteAlerts(ctx context.Context, ids ...string) error
 }
 
 // New returns a new soleInstance of DataStore using the input store, indexer, and searcher.
@@ -43,4 +47,18 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		return nil, err
 	}
 	return ds, nil
+}
+
+// NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
+func NewWithDb(db *bolt.DB, bIndex bleve.Index) DataStore {
+	store := store.New(db)
+	indexer := index.New(bIndex)
+	searcher := search.New(store, indexer)
+
+	return &datastoreImpl{
+		storage:    store,
+		indexer:    indexer,
+		searcher:   searcher,
+		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+	}
 }
