@@ -7,13 +7,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/fullsailor/pkcs7"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -24,12 +24,7 @@ const (
 )
 
 var (
-	allowedCNs = set.NewFrozenStringSet(
-		"metadata.azure.com",
-		"metadata.azure.us",
-		"metadata.azure.cn",
-		"metadata.microsoftazure.de",
-	)
+	allowedCNsRegExp = regexp.MustCompile(`^(.*\.)?metadata\.(azure\.(com|us|cn)|microsoftazure\.de)$`)
 )
 
 type attestedMetadataResponse struct {
@@ -98,7 +93,7 @@ func getAttestedVMID(ctx context.Context) (string, error) {
 		return "", errors.New("expected PKCS7 data to be signed by a single signer")
 	}
 
-	if !allowedCNs.Contains(signer.Subject.CommonName) {
+	if !allowedCNsRegExp.MatchString(signer.Subject.CommonName) {
 		return "", errors.Errorf("invalid CN %q of signer", signer.Subject.CommonName)
 	}
 
