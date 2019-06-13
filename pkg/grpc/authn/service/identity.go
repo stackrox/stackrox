@@ -40,3 +40,7 @@ func (i identity) Expiry() time.Time {
 func (i identity) ExternalAuthProvider() authproviders.Provider {
 	return nil
 }
+
+func (i identity) Attributes() map[string][]string {
+	return nil
+}

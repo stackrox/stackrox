@@ -54,6 +54,10 @@ func (i identity) AsExternalUser() *tokens.ExternalUserClaim {
 	}
 }
 
+func (i identity) Attributes() map[string][]string {
+	return nil
+}
+
 // Identity is an extension of the identity interface for user authenticating via Basic authentication.
 type Identity interface {
 	authn.Identity

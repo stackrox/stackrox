@@ -13,6 +13,7 @@ type roleBasedIdentity struct {
 	friendlyName string
 	role         *storage.Role
 	expiry       time.Time
+	attributes   map[string][]string
 }
 
 func (i *roleBasedIdentity) UID() string {
@@ -45,4 +46,8 @@ func (i *roleBasedIdentity) Expiry() time.Time {
 
 func (i *roleBasedIdentity) ExternalAuthProvider() authproviders.Provider {
 	return nil
+}
+
+func (i *roleBasedIdentity) Attributes() map[string][]string {
+	return i.attributes
 }

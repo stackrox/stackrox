@@ -2,6 +2,8 @@ package sac
 
 import (
 	"context"
+
+	"github.com/stackrox/default-authz-plugin/pkg/payload"
 )
 
 // TryAllowedResult represents the possible values of a `TryAllowed` call on an access scope checker.
@@ -35,6 +37,22 @@ type ScopeCheckerCore interface {
 	// Note: Only scopes that have been obtained from this scope via a call to `SubScopeChecker` are guaranteed
 	// to be considered. Similarly, only requests made in the current goroutine are guaranteed to be considered.
 	PerformChecks(ctx context.Context) error
+}
+
+// NewRootScopeCheckerCore returns a ScopeCheckerCore with a root AccessScope
+func NewRootScopeCheckerCore(reqTracker ScopeRequestTracker) ScopeCheckerCore {
+	return NewScopeCheckerCore(payload.AccessScope{}, reqTracker)
+}
+
+// NewScopeCheckerCore returns a new ScopeCheckerCore for a given scope
+func NewScopeCheckerCore(currentScope payload.AccessScope, reqTracker ScopeRequestTracker) ScopeCheckerCore {
+	scc := &ScopeCheckerCoreImpl{
+		children:     make(map[ScopeKey]ScopeCheckerCore),
+		currentScope: currentScope,
+		reqTracker:   reqTracker,
+		state:        int32(Unknown),
+	}
+	return scc
 }
 
 //go:generate mockgen-wrapper ScopeCheckerCore

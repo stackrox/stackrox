@@ -71,6 +71,7 @@ import (
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
+	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/sac/transitional"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
@@ -359,7 +360,9 @@ func startGRPCServer(factory serviceFactory) {
 
 	log.Infof("Scoped access control enabled: %v", features.ScopedAccessControl.Enabled())
 	if features.ScopedAccessControl.Enabled() {
-		config.ContextEnrichers = append(config.ContextEnrichers, transitional.LegacyAccessScopesContextEnricher)
+		config.ContextEnrichers = append(config.ContextEnrichers,
+			centralSAC.GetEnricher().RootScopeCheckerCoreContextEnricher,
+		)
 		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
 

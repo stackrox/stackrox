@@ -48,6 +48,18 @@ func (k AccessModeScopeKey) String() string {
 	return storage.Access(k).String()
 }
 
+// Verb returns a string version of this access scope suitable for sending to third party auth plugins
+func (k AccessModeScopeKey) Verb() string {
+	switch storage.Access(k) {
+	case storage.Access_READ_ACCESS:
+		return "view"
+	case storage.Access_READ_WRITE_ACCESS:
+		return "edit"
+	default:
+		return ""
+	}
+}
+
 // AccessModeScopeKeys wraps the given access modes in a scope key slice.
 func AccessModeScopeKeys(ams ...storage.Access) []ScopeKey {
 	keys := make([]ScopeKey, len(ams))

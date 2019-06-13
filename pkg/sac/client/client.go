@@ -7,6 +7,7 @@ import (
 )
 
 // Client is a simple interface describing retrieving some per user data from a separate service.
+//go:generate mockgen-wrapper Client
 type Client interface {
 	ForUser(ctx context.Context, principal payload.Principal, scopes ...payload.AccessScope) (allowed, denied []payload.AccessScope, err error)
 }

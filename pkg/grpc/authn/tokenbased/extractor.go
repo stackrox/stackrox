@@ -144,6 +144,7 @@ func createRoleBasedIdentity(role *storage.Role, token *tokens.TokenInfo) *roleB
 		friendlyName: token.ExternalUser.FullName,
 		role:         role,
 		expiry:       token.Expiry(),
+		attributes:   token.Claims.ExternalUser.Attributes,
 	}
 	if id.friendlyName == "" {
 		if token.ExternalUser.Email != "" {

@@ -15,6 +15,7 @@ type Identity interface {
 	User() *storage.UserInfo
 	Role() *storage.Role
 	Service() *storage.ServiceIdentity
+	Attributes() map[string][]string
 
 	Expiry() time.Time
 	ExternalAuthProvider() authproviders.Provider
