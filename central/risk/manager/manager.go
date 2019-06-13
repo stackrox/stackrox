@@ -8,13 +8,22 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	multiplierDS "github.com/stackrox/rox/central/multiplier/store"
 	"github.com/stackrox/rox/central/risk"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	depAndImageCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment, resources.Image),
+		))
+	// Used for scorer.score() as the different Multipliers which will eventually use this context will require different permissions
+	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 
 // Manager manages changes to the risk of the deployments
@@ -73,7 +82,7 @@ func (e *managerImpl) RemoveMultiplier(id string) {
 
 // ReprocessRisk iterates over all of the deployments and reprocesses the risk for them
 func (e *managerImpl) ReprocessRisk() {
-	deployments, err := e.deploymentStorage.GetDeployments(context.TODO())
+	deployments, err := e.deploymentStorage.GetDeployments(depAndImageCtx)
 	if err != nil {
 		log.Errorf("Error reprocessing risk: %s", err)
 		return
@@ -99,11 +108,11 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 func (e *managerImpl) addRiskToDeployment(deployment *storage.Deployment) error {
 	defer metrics.ObserveRiskProcessingDuration(time.Now())
 
-	images, err := e.deploymentStorage.GetImagesForDeployment(context.TODO(), deployment)
+	images, err := e.deploymentStorage.GetImagesForDeployment(depAndImageCtx, deployment)
 	if err != nil {
 		return err
 	}
 
-	deployment.Risk = e.scorer.Score(context.TODO(), deployment, images)
-	return e.deploymentStorage.UpdateDeployment(context.TODO(), deployment)
+	deployment.Risk = e.scorer.Score(allAccessCtx, deployment, images)
+	return e.deploymentStorage.UpdateDeployment(depAndImageCtx, deployment)
 }
