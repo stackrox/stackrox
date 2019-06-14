@@ -18,6 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+const maxProcessViolationsPerAlert = 40
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -162,6 +164,10 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 		return
 	}
 
+	if len(oldProcessViolation.GetProcesses()) >= maxProcessViolationsPerAlert {
+		return
+	}
+
 	newProcessesSlice := oldProcessViolation.GetProcesses()
 	// De-dupe processes using timestamps.
 	timestamp := lastTimestamp(oldProcessViolation.GetProcesses())
@@ -174,6 +180,9 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	// If there are no new processes, we'll just use the old alert.
 	if !newAlertHasNewProcesses {
 		return
+	}
+	if len(newProcessesSlice) > maxProcessViolationsPerAlert {
+		newProcessesSlice = newProcessesSlice[:maxProcessViolationsPerAlert]
 	}
 	newAlert.ProcessViolation.Processes = newProcessesSlice
 	builders.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
