@@ -148,37 +148,51 @@ bash openshift/central.sh
 
 ## How to Release a New Version
 
-Replace the value with a version number you're about to release:
+Replace the value with the version number you want to release from:
 ```bash
-export RELEASE_VERSION=0.999
+export RELEASE_BRANCH=2.4.22.x
+export RELEASE_VERSION=2.4.22.0
 ```
+
+The release branch naming convention should follow <major_version>.<generic_minor_version>.
+This is because this branch will become the base for all patch releases of the generic
+minor version defined. Above, the branch has a major version of `2.4` and a generic minor
+version of `22.x`, which will be used as the basis for `22.0`, `22.1`, `22.2`, etc...
+
+The release version should be the specific version you plan to release. This will be used
+when creating the tag later in the process. With each release, we should create at least
+1 release candidate to use for testing prior to releasing to customers (Release
+Candidate versions should be a combination of the full version number with `-rc.x`
+appended to the end: i.e., `2.4.22.0-rc.1`).
 
 By convention, we do not currently use a `v` prefix for release tags (that is,
 we push tags like `0.5`, not `v0.5`).
 
-### Get Ready
+### Prep the relase
 Proceed with the steps that under the section of the release type you're making:
 non-patch or patch.
 
-#### Non-patch Release
+#### Release Branch already exists
 These steps assume that the tip of `origin/master` is what you plan to release
-and that **all the builds for that commit have completed successfully**.
+and that **all the builds for that commit have completed successfully**. We will
+checkout `origin/master` and create a new release branch from it. We will push the
+branch to github for use in future builds for that release version
 
 ```bash
 git checkout master
+git fetch
 git pull
-export RELEASE_COMMIT="$(git rev-parse HEAD)"
-echo -e "Preparing to release:\n$(git log -n 1 ${RELEASE_COMMIT})"
+git checkout -b release/${RELEASE_BRANCH}
+git push origin release/${RELEASE_BRANCH}
 ```
 
-#### Patch Release
-Identify the release version / tag that will be patched (patch or non-patch):
+#### Patching the Release
 ```bash
-export RELEASE_TO_PATCH=0.998
-git fetch --tags
-git checkout -b release/${RELEASE_VERSION} ${RELEASE_TO_PATCH}
+git fetch
+git checkout release/${RELEASE_BRANCH}
 ```
 
+### Pull Fixes into the Release
 Then use `git cherry-pick -x ${commit_sha}` to cherry pick commits from `master`
 that are going into this patch release. If release requires special changes
 (besides cherry picking from `master`), push the release branch and create
@@ -194,6 +208,7 @@ echo -e "Preparing to release:\n$(git log -n 1 ${RELEASE_COMMIT})"
 git tag -a -m "v${RELEASE_VERSION}" "${RELEASE_VERSION}"
 git tag -ln "${RELEASE_VERSION}"
 git push origin "${RELEASE_VERSION}"
+git push origin release/${RELEASE_BRANCH}
 ```
 
 When you push the tag to GitHub, CircleCI will start a build and will push
@@ -230,18 +245,16 @@ released.
 </details>
 
 ### Create Release Notes
+Once the GA version of the release has been created, we need to mark the tag as a release
+in GitHub.
 1. Go the [tags page on GitHub](https://github.com/stackrox/rox/tags).
 1. Find the corresponding tag. Click the three-dots menu on the right and
 click "Create release".
 1. Write release notes based on JIRA issues that
 went into the current release ([filter](https://stack-rox.atlassian.net/issues/?jql=project%20%3D%20ROX%20AND%20fixVersion%20%3D%20latestReleasedVersion()%20AND%20resolution%20not%20in%20(%22Won%27t%20Do%22%2C%20%22Won%27t%20Fix%22%2C%20%22Invalid%20Ticket%22%2C%20%22Not%20a%20Bug%22%2C%20Duplicate%2C%20%22Duplicate%20Ticket%22%2C%20%22Cannot%20Reproduce%22))).
-1. Mark the release as "Pre-release" if QA verification is pending.
 
-### Promote the Release for Demos / POCs
-If QA and the team has approved the promotion of the release to SEs for customer
-demos and POCs, then
-* update the [current releases page](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/591593496/Current+product+releases)
-* remove "Pre-release" mark from [GitHub releases](https://github.com/stackrox/rox/releases)
+### Update solutions offline scripts
+* update image tags for main, collector, and monitoring in the [solutions offline scripts](https://github.com/stackrox/solutions/blob/master/offline/create-archive.sh)
 
 [circleci-badge]: https://circleci.com/gh/stackrox/rox.svg?&style=shield&circle-token=140f88ea9dfd594ff68b71eaf1d4407c4331833d
 [circleci-link]:  https://circleci.com/gh/stackrox/workflows/rox/tree/master
