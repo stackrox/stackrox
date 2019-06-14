@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/usr/bin/env bash
 
 # Collect pprof profiles
 #
@@ -18,9 +18,9 @@ usage() {
 
 curl_central() {
     if [[ -n $ROX_API_TOKEN ]]; then
-        curl -sk -H "Authorization: Bearer $ROX_API_TOKEN" $@
+        curl -sk -H "Authorization: Bearer $ROX_API_TOKEN" "$@"
     else
-        curl -sk -u "admin:$ROX_PASSWORD" $@
+        curl -sk -u "admin:$ROX_PASSWORD" "$@"
     fi
 }
 
