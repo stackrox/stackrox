@@ -18,6 +18,7 @@ type Detector interface {
 	AlertsForDeployments(deploymentIDs ...string) ([]*storage.Alert, error)
 	AlertsForPolicy(policyID string) ([]*storage.Alert, error)
 	DeploymentWhitelistedForPolicy(deploymentID, policyID string) bool
+	DeploymentInactive(deploymentID string) bool
 }
 
 // NewDetector returns a new instance of a Detector.

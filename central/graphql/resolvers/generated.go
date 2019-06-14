@@ -44,6 +44,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"containers: [Alert_Deployment_Container]!",
 		"id: ID!",
+		"inactive: Boolean!",
 		"labels: [Label!]!",
 		"name: String!",
 		"namespace: String!",
@@ -1136,6 +1137,11 @@ func (resolver *alert_DeploymentResolver) Containers(ctx context.Context) ([]*al
 func (resolver *alert_DeploymentResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *alert_DeploymentResolver) Inactive(ctx context.Context) bool {
+	value := resolver.data.GetInactive()
+	return value
 }
 
 func (resolver *alert_DeploymentResolver) Labels(ctx context.Context) labels {

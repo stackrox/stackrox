@@ -246,6 +246,11 @@ func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*storage.Alert, oldAl
 		if d.shouldMarkAlertStale(alert, presentAlerts, oldAlertFilters...) {
 			staleAlerts = append(staleAlerts, alert)
 		}
+
+		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME && d.inactiveDeploymentAlert(alert) {
+			alert.Deployment.Inactive = true
+			updatedAlerts = append(updatedAlerts, alert)
+		}
 	}
 	return
 }
@@ -281,6 +286,10 @@ func (d *alertManagerImpl) shouldMarkAlertStale(alert *storage.Alert, presentAle
 
 	// If the deployment is whitelisted for the policy now, we should mark the alert stale, otherwise we will keep it around.
 	return d.runtimeDetector.DeploymentWhitelistedForPolicy(alert.GetDeployment().GetId(), alert.GetPolicy().GetId())
+}
+
+func (d *alertManagerImpl) inactiveDeploymentAlert(alert *storage.Alert) bool {
+	return d.runtimeDetector.DeploymentInactive(alert.GetDeployment().GetId())
 }
 
 func findAlert(toFind *storage.Alert, alerts []*storage.Alert) *storage.Alert {

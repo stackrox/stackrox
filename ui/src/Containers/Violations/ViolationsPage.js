@@ -321,7 +321,26 @@ class ViolationsPage extends Component {
                 accessor: 'deployment.name',
                 headerClassName: `w-1/6 sticky-column left-checkbox-offset ${defaultHeaderClassName}`,
                 className: `w-1/6 sticky-column left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
-                Cell: ({ value }) => <span>{value}</span>
+                Cell: ({ original }) => (
+                    <div className="flex">
+                        <span
+                            className="pr-2"
+                            title={`${
+                                original.deployment.inactive ? 'Inactive' : 'Active'
+                            } Deployment`}
+                        >
+                            <Icon.Circle
+                                className="h-2 w-2 text-success-600"
+                                hidden={original.deployment.inactive}
+                            />
+                            <Icon.Slash
+                                className="h-2 w-2 text-base-500"
+                                hidden={!original.deployment.inactive}
+                            />
+                        </span>
+                        <span>{original.deployment.name}</span>
+                    </div>
+                )
             },
             {
                 Header: 'Cluster',

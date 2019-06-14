@@ -34,6 +34,7 @@ message Alert {
         }
         repeated Container containers              = 11;
         map<string, string> annotations            = 14;
+        bool inactive = 15 [(gogoproto.moretags) = "search:\"Inactive Deployment,store\""];
     }
 
     Deployment deployment                    = 4;
@@ -93,6 +94,7 @@ message ListAlertDeployment {
     string cluster_name                        = 4 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string cluster_id                          = 6 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
+    bool inactive = 7 [(gogoproto.moretags) = "search:\"Inactive Deployment,store\""];
 }
 
 enum ViolationState {

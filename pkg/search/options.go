@@ -141,6 +141,9 @@ var (
 
 	// Internal Scoped Access Control only
 	ClusterNSScopes = newFieldLabel("ClusterNS Scopes")
+
+	// Inactive Deployment
+	Inactive = newFieldLabel("Inactive Deployment")
 )
 
 func newFieldLabel(s string) FieldLabel {

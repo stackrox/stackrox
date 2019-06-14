@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,4 +45,13 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 		log.Errorf("Couldn't evaluate whitelist for deployment %s, policy %s: %s", deploymentID, policyID, err)
 	}
 	return executor.GetResult()
+}
+
+func (d *detectorImpl) DeploymentInactive(deploymentID string) bool {
+	_, exists, err := d.deployments.ListDeployment(context.TODO(), deploymentID)
+	if err != nil {
+		log.Errorf("Couldn't determine inactive state of deployment %q: %v", deploymentID, err)
+		return false
+	}
+	return !exists
 }

@@ -25,6 +25,7 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 			ClusterName: alert.GetDeployment().GetClusterName(),
 			ClusterId:   alert.GetDeployment().GetClusterId(),
 			Namespace:   alert.GetDeployment().GetNamespace(),
+			Inactive:    alert.GetDeployment().GetInactive(),
 		},
 	}
 	if alert.GetState() == storage.ViolationState_ACTIVE {
@@ -78,6 +79,7 @@ func ToAlertDeployment(deployment *storage.Deployment) *storage.Alert_Deployment
 		ClusterId:   deployment.GetClusterId(),
 		ClusterName: deployment.GetClusterName(),
 		Annotations: deployment.GetAnnotations(),
+		Inactive:    deployment.GetInactive(),
 	}
 
 	for _, c := range deployment.GetContainers() {
