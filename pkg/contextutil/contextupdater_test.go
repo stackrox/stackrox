@@ -122,7 +122,7 @@ type fakeStream struct {
 }
 
 func (f fakeStream) Context() context.Context {
-	return context.TODO()
+	return context.Background()
 }
 
 func TestStreamServerInterceptor_Success(t *testing.T) {
