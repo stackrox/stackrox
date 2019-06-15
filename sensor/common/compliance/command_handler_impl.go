@@ -143,14 +143,14 @@ func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string
 		return c.handleStartScrapeErr(scrapeID, err)
 	}
 
-	scrapeName, err := c.orchestrator.Launch(*svc)
+	name, desired, err := c.orchestrator.LaunchDaemonSet(*svc)
 	if err != nil {
 		return c.handleStartScrapeErr(scrapeID, err)
 	}
 
 	// If we succeeded, start tracking the scrape and send a message to central.
-	c.scrapeIDToState[scrapeID] = newScrapeState(scrapeName, expectedHosts)
-	log.Infof("started scrape %q", scrapeID)
+	c.scrapeIDToState[scrapeID] = newScrapeState(name, desired, expectedHosts)
+	log.Infof("started scrape %q with DaemonSet %q and %d desired nodes", scrapeID, name, desired)
 	return scrapeStarted(scrapeID, "")
 }
 
@@ -215,7 +215,6 @@ func (c *commandHandlerImpl) createService(scrapeID string) (*orchestrators.Syst
 			orchestrators.NodeName,
 		},
 		Image:          image,
-		Global:         true,
 		ServiceAccount: benchmarkServiceAccount,
 		Resources: &storage.Resources{
 			// We want to request very little because this is a daemonset and we want it to be scheduled
@@ -254,12 +253,20 @@ func (c *commandHandlerImpl) commitResult(result *compliance.ComplianceReturn) (
 		return
 	}
 
+	// See if the node is one that needs to be removed. This guards against duplicate results from the same node
+	if scrapeState.remainingNodes.Contains(result.GetNodeName()) {
+		scrapeState.desiredNodes--
+	}
 	// Pass the update back to central.
 	scrapeState.remainingNodes.Remove(result.GetNodeName())
+
 	ret = append(ret, scrapeUpdate(result))
 
 	// If that was the last expected update, kill the scrape.
-	if scrapeState.remainingNodes.Cardinality() == 0 {
+	if scrapeState.desiredNodes == 0 || scrapeState.remainingNodes.Cardinality() == 0 {
+		if scrapeState.remainingNodes.Cardinality() != 0 {
+			log.Warnf("compliance data for the following nodes was not collected: %+v", scrapeState.remainingNodes.AsSlice())
+		}
 		if update := c.killScrape(result.GetScrapeId()); update != nil {
 			ret = append(ret, update)
 		}

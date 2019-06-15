@@ -7,9 +7,10 @@ import (
 type scrapeState struct {
 	deploymentName string
 	remainingNodes set.StringSet
+	desiredNodes   int
 }
 
-func newScrapeState(name string, expectedNodes []string) *scrapeState {
+func newScrapeState(name string, desiredNodes int, expectedNodes []string) *scrapeState {
 	expectedNodesSet := set.NewStringSet()
 	for _, host := range expectedNodes {
 		expectedNodesSet.Add(host)
@@ -17,5 +18,6 @@ func newScrapeState(name string, expectedNodes []string) *scrapeState {
 	return &scrapeState{
 		deploymentName: name,
 		remainingNodes: expectedNodesSet,
+		desiredNodes:   desiredNodes,
 	}
 }

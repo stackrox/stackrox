@@ -58,17 +58,18 @@ func (mr *MockOrchestratorMockRecorder) Kill(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kill", reflect.TypeOf((*MockOrchestrator)(nil).Kill), arg0)
 }
 
-// Launch mocks base method
-func (m *MockOrchestrator) Launch(arg0 orchestrators.SystemService) (string, error) {
-	ret := m.ctrl.Call(m, "Launch", arg0)
+// LaunchDaemonSet mocks base method
+func (m *MockOrchestrator) LaunchDaemonSet(arg0 orchestrators.SystemService) (string, int, error) {
+	ret := m.ctrl.Call(m, "LaunchDaemonSet", arg0)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// Launch indicates an expected call of Launch
-func (mr *MockOrchestratorMockRecorder) Launch(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Launch", reflect.TypeOf((*MockOrchestrator)(nil).Launch), arg0)
+// LaunchDaemonSet indicates an expected call of LaunchDaemonSet
+func (mr *MockOrchestratorMockRecorder) LaunchDaemonSet(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LaunchDaemonSet", reflect.TypeOf((*MockOrchestrator)(nil).LaunchDaemonSet), arg0)
 }
 
 // WaitForCompletion mocks base method

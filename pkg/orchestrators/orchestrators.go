@@ -26,7 +26,6 @@ type SystemService struct {
 	SpecialEnvs    []SpecialEnvVar
 	Image          string
 	Mounts         []string
-	Global         bool
 	Resources      *storage.Resources
 	Command        []string
 	HostPID        bool
@@ -38,7 +37,7 @@ type SystemService struct {
 // Orchestrator is the interface that allows for actions against an orchestrator
 //go:generate mockgen-wrapper Orchestrator
 type Orchestrator interface {
-	Launch(service SystemService) (string, error)
+	LaunchDaemonSet(service SystemService) (name string, desired int, err error)
 	Kill(id string) error
 	WaitForCompletion(service string, timeout time.Duration) error
 	CleanUp(ownedByThisInstance bool) error

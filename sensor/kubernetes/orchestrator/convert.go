@@ -46,21 +46,6 @@ func asDaemonSet(service *serviceWrap) *v1beta1.DaemonSet {
 	}
 }
 
-func asDeployment(service *serviceWrap) *v1beta1.Deployment {
-	replicas := int32(1)
-	return &v1beta1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "extensions/v1beta1",
-		},
-		ObjectMeta: objectMeta(service),
-		Spec: v1beta1.DeploymentSpec{
-			Replicas: &replicas,
-			Template: asKubernetesPod(service),
-		},
-	}
-}
-
 func objectMeta(service *serviceWrap) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:         service.Name,

@@ -9,14 +9,13 @@ import (
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	v1beta12 "k8s.io/api/extensions/v1beta1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
 )
 
 const (
@@ -54,21 +53,6 @@ func New(sensorInstanceID string) (orchestrators.Orchestrator, error) {
 	}, nil
 }
 
-func (k *kubernetesOrchestrator) launch(setInterface v1beta1.DaemonSetInterface, ds *v1beta12.DaemonSet) (string, error) {
-	for i := 0; i < 3; i++ {
-		actual, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Create(ds)
-		if err != nil {
-			if statusErr, ok := err.(*k8sErrors.StatusError); ok && statusErr.Status().Reason == metav1.StatusReasonAlreadyExists {
-				time.Sleep(10 * time.Second)
-				continue
-			}
-			return "", err
-		}
-		return actual.Name, nil
-	}
-	return "", errors.New("unable to launch daemonset")
-}
-
 func (k *kubernetesOrchestrator) patchLabels(labels *map[string]string) {
 	if *labels == nil {
 		*labels = make(map[string]string)
@@ -76,27 +60,73 @@ func (k *kubernetesOrchestrator) patchLabels(labels *map[string]string) {
 	(*labels)[ownershipLabel] = k.sensorInstanceID
 }
 
-func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (string, error) {
-	if service.Global {
-		ds := asDaemonSet(k.newServiceWrap(service))
-		k.patchLabels(&ds.Labels)
-		launchedName, err := k.launch(k.client.ExtensionsV1beta1().DaemonSets(k.namespace), ds)
-		if err != nil {
-			log.Errorf("unable to create daemonset %s: %s", service.Name, err)
-			return "", err
-		}
-		return launchedName, nil
+func (k *kubernetesOrchestrator) logEvents(ds *v1beta1.DaemonSet) error {
+	if ds == nil {
+		return nil
 	}
-
-	deploy := asDeployment(k.newServiceWrap(service))
-	k.patchLabels(&deploy.Labels)
-	actual, err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Create(deploy)
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: ds.GetLabels(),
+	})
 	if err != nil {
-		log.Errorf("unable to create deployment %s: %s", service.Name, err)
-		return "", err
+		return errors.Wrapf(err, "error creating label selector")
+	}
+	eventList, err := k.client.CoreV1().Events(namespace).List(metav1.ListOptions{
+		LabelSelector: selector.String(),
+	})
+	if err != nil {
+		return errors.Wrapf(err, "could not get events for daemonset %q", ds.GetName())
+	}
+	log.Errorf("Events for daemonset %q", ds.GetName())
+	for _, e := range eventList.Items {
+		log.Errorf("\t%s", e.Message)
+	}
+	return nil
+}
+
+func (k *kubernetesOrchestrator) waitForDesired(name string) (int, error) {
+	var ds *v1beta1.DaemonSet
+	err := retry.WithRetry(
+		func() error {
+			var err error
+			ds, err = k.client.ExtensionsV1beta1().DaemonSets(namespace).Get(name, metav1.GetOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "could not get daemonset %q from Kubernetes", name)
+			}
+
+			if ds.Status.DesiredNumberScheduled == 0 {
+				return errors.Errorf("compliance daemonset %q has 0 desired pods", name)
+			}
+			return nil
+		},
+		retry.Tries(30),
+		retry.BetweenAttempts(func() {
+			time.Sleep(2 * time.Second)
+		}),
+		retry.OnFailedAttempts(func(err error) {
+			log.Warn(err)
+		}),
+	)
+	if err != nil {
+		if logErr := k.logEvents(ds); logErr != nil {
+			log.Error(logErr)
+		}
+		return 0, err
 	}
 
-	return actual.Name, nil
+	return int(ds.Status.DesiredNumberScheduled), err
+}
+
+func (k *kubernetesOrchestrator) LaunchDaemonSet(service orchestrators.SystemService) (string, int, error) {
+	ds := asDaemonSet(k.newServiceWrap(service))
+	k.patchLabels(&ds.Labels)
+
+	actual, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Create(ds)
+	if err != nil {
+		return "", 0, errors.Wrapf(err, "error creating compliance daemonset")
+	}
+
+	desired, err := k.waitForDesired(actual.GetName())
+	return actual.GetName(), desired, err
 }
 
 func (k *kubernetesOrchestrator) newServiceWrap(service orchestrators.SystemService) *serviceWrap {
