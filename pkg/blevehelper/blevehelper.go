@@ -73,6 +73,7 @@ func (w *BleveWrapper) GetTxnCount() uint64 {
 }
 
 func (w *BleveWrapper) setTxnCountNoLock(txNum uint64) error {
+	w.currVal = txNum
 	return w.SetInternal(w.objectTypeBytes, conv.Itob(txNum))
 }
 
