@@ -57,6 +57,15 @@ export const CLUSTER_QUERY = gql`
     }
 `;
 
+export const CLUSTER_NAME = gql`
+    query getCluster($id: ID!) {
+        result: cluster(id: $id) {
+            id
+            name
+        }
+    }
+`;
+
 export const CLUSTER_WITH_NAMESPACES = gql`
     query getCluster($id: ID!) {
         results: cluster(id: $id) {

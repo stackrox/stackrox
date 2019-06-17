@@ -3,13 +3,12 @@ import pageTypes from 'constants/pageTypes';
 import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
 import {
-    nestedCompliancePaths,
+    nestedPaths,
     urlEntityListTypes,
     urlEntityTypes,
     riskPath,
     secretsPath,
-    configManagementPath,
-    nestedPaths
+    configManagementPath
 } from '../routePaths';
 
 const entityPropNames = [
@@ -47,9 +46,9 @@ function getPath(urlParams) {
             [pageTypes.LIST]: `${configManagementPath}${nestedPaths.LIST}`
         },
         [contextTypes.COMPLIANCE]: {
-            [pageTypes.DASHBOARD]: nestedCompliancePaths.DASHBOARD,
-            [pageTypes.ENTITY]: nestedCompliancePaths.ENTITY,
-            [pageTypes.LIST]: nestedCompliancePaths.LIST
+            [pageTypes.DASHBOARD]: nestedPaths.DASHBOARD,
+            [pageTypes.ENTITY]: nestedPaths.ENTITY,
+            [pageTypes.LIST]: nestedPaths.LIST
         },
         [contextTypes.RISK]: {
             [pageTypes.ENTITY]: riskPath,

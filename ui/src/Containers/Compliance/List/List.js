@@ -1,77 +1,72 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-import { standardBaseTypes } from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import URLService from 'modules/URLService';
+import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import ListTable from './Table';
 import SidePanel from './SidePanel';
+import SearchInput from '../SearchInput';
 
-class ComplianceList extends Component {
-    static propTypes = {
-        searchComponent: PropTypes.node,
-        entityType: PropTypes.string.isRequired,
-        query: PropTypes.shape({}),
-        location: ReactRouterPropTypes.location.isRequired
-    };
-
-    static defaultProps = {
-        searchComponent: null,
-        query: null
-    };
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            selectedRow: null
-        };
+const ComplianceList = ({
+    match,
+    location,
+    history,
+    entityType,
+    query,
+    selectedRowId,
+    noSearch
+}) => {
+    function setSelectedRowId(row) {
+        const { id } = row;
+        const url = URLService.getURL(match, location)
+            .set('entityListType1', entityType)
+            .set('entityId1', id)
+            .url();
+        history.push(url);
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (nextProps.location !== this.props.location) {
-            this.setState({ selectedRow: null });
-        }
+    let sidepanel;
+    if (selectedRowId) {
+        sidepanel = <SidePanel entityType={entityType} entityId={selectedRowId} />;
     }
-
-    updateSelectedRow = selectedRow => this.setState({ selectedRow });
-
-    clearSelectedRow = () => {
-        this.setState({ selectedRow: null });
-    };
-
-    render() {
-        const { selectedRow } = this.state;
-        const { searchComponent, entityType, query } = this.props;
-
-        let sidePanel;
-        if (selectedRow) {
-            const { name, id: selectedId, control, standardId } = selectedRow;
-            const linkText = control ? `${standardBaseTypes[standardId]} ${control}` : name;
-
-            sidePanel = (
-                <SidePanel
-                    entityType={entityType}
-                    entityId={selectedId}
-                    clearSelectedRow={this.clearSelectedRow}
-                    linkText={linkText}
-                    standardId={standardId}
-                />
-            );
-        }
-
-        return (
-            <div className="flex flex-1 overflow-y-auto h-full">
-                <ListTable
-                    searchComponent={searchComponent}
-                    selectedRow={selectedRow}
-                    entityType={entityType}
-                    query={query}
-                    updateSelectedRow={this.updateSelectedRow}
-                    pdfId="capture-list"
-                />
-                {sidePanel}
-            </div>
-        );
-    }
-}
+    const listQuery = Object.assign({}, query, URLService.getParams(match, location).query);
+    const searchComponent = noSearch ? null : (
+        <SearchInput categories={[searchCategoryTypes[entityType]]} />
+    );
+    return (
+        <div className="flex flex-1 overflow-y-auto h-full bg-base-100">
+            <ListTable
+                searchComponent={searchComponent}
+                selectedRowId={selectedRowId}
+                entityType={entityType}
+                query={listQuery}
+                updateSelectedRow={setSelectedRowId}
+                pdfId="capture-list"
+            />
+            {sidepanel}
+        </div>
+    );
+};
 
 export default withRouter(ComplianceList);
+
+ComplianceList.propTypes = {
+    entityType: PropTypes.string.isRequired,
+    query: PropTypes.shape({}),
+    selectedRowId: PropTypes.string,
+    // entityType2: PropTypes.string,
+    // entityId2: PropTypes.string,
+    match: ReactRouterPropTypes.match.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
+    noSearch: PropTypes.bool
+};
+
+ComplianceList.defaultProps = {
+    query: null,
+    selectedRowId: null,
+    noSearch: false
+    // entityType2: null,
+    // entityId2: null
+};

@@ -1,8 +1,6 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
-import URLService from 'modules/URLService';
 import { standardLabels } from 'messages/standards';
 import lowerCase from 'lodash/lowerCase';
 import startCase from 'lodash/startCase';
@@ -11,9 +9,7 @@ import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
 
-const ListHeader = ({ match, location, searchComponent }) => {
-    const params = URLService.getParams(match, location);
-    const { entityType } = params;
+const ListHeader = ({ entityType, searchComponent }) => {
     const standardId = standardTypes[entityType];
     const headerText = standardId
         ? standardLabels[standardId]
@@ -56,8 +52,7 @@ const ListHeader = ({ match, location, searchComponent }) => {
 };
 ListHeader.propTypes = {
     searchComponent: PropTypes.element,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    entityType: PropTypes.string.isRequired
 };
 
 ListHeader.defaultProps = {

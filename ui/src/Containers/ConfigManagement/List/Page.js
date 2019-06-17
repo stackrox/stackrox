@@ -2,7 +2,7 @@ import React from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
-import URLService from 'modules/URLService2';
+import URLService from 'modules/URLService';
 
 import PageHeader from 'Components/PageHeader';
 import List from '../EntityList';

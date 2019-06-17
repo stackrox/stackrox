@@ -1,43 +1,54 @@
 import qs from 'qs';
 import pageTypes from 'constants/pageTypes';
-import { standardTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
+import { entityParamNames, listParamNames } from 'constants/url';
+import entityTypes from 'constants/entityTypes';
 import {
-    nestedCompliancePaths,
-    resourceTypesToUrl,
+    nestedPaths,
     riskPath,
     secretsPath,
-    configManagementPath,
-    nestedPaths
+    urlEntityListTypes,
+    urlEntityTypes
 } from '../routePaths';
 
-function getEntityTypeKeyFromValue(entityTypeValue) {
-    const match = Object.entries(resourceTypesToUrl).find(entry => entry[1] === entityTypeValue);
+export function getTypeKeyFromParamValue(value, listOnly) {
+    const listMatch = Object.entries(urlEntityListTypes).find(entry => entry[1] === value);
+    const entityMatch = Object.entries(urlEntityTypes).find(entry => entry[1] === value);
+    const match = listOnly ? listMatch : listMatch || entityMatch;
     return match ? match[0] : null;
 }
 
-function getEntityTypeFromMatch(match) {
-    if (!match || !match.params || !match.params.entityType) return null;
-    return (
-        standardTypes[match.params.entityType] || getEntityTypeKeyFromValue(match.params.entityType)
-    );
+function isListType(value) {
+    return Object.values(urlEntityListTypes).includes(value);
 }
 
-function getPath(context, pageType, urlParams) {
-    const { entityType } = urlParams;
+function getEntityTypeKeyFromValue(entityTypeValue) {
+    const match = Object.entries(urlEntityListTypes).find(entry => entry[1] === entityTypeValue);
+    return match ? match[0] : null;
+}
 
-    const pathMap = {
-        [contextTypes.CONFIG_MANAGEMENT]: {
-            [pageTypes.DASHBOARD]: configManagementPath,
-            [pageTypes.ENTITY]: `${configManagementPath}${nestedPaths.ENTITY}`,
-            [pageTypes.LIST]: `${configManagementPath}${nestedPaths.LIST}`
-        },
-        [contextTypes.COMPLIANCE]: {
-            [pageTypes.DASHBOARD]: nestedCompliancePaths.DASHBOARD,
-            [pageTypes.ENTITY]: nestedCompliancePaths[entityType],
-            [pageTypes.LIST]: nestedCompliancePaths.LIST
-        },
+function getPageType(urlParams) {
+    if (urlParams.pageEntityListType) {
+        return pageTypes.LIST;
+    }
+    if (urlParams.pageEntityType) {
+        return pageTypes.ENTITY;
+    }
+    return pageTypes.DASHBOARD;
+}
+
+function getPath(urlParams) {
+    const pageType = getPageType(urlParams);
+    const { context } = urlParams;
+
+    const defaultPathMap = {
+        [pageTypes.DASHBOARD]: nestedPaths.DASHBOARD,
+        [pageTypes.ENTITY]: nestedPaths.ENTITY,
+        [pageTypes.LIST]: nestedPaths.LIST
+    };
+
+    const legacyPathMap = {
         [contextTypes.RISK]: {
             [pageTypes.ENTITY]: riskPath,
             [pageTypes.LIST]: '/main/risk'
@@ -48,7 +59,7 @@ function getPath(context, pageType, urlParams) {
         }
     };
 
-    const contextData = pathMap[context];
+    const contextData = legacyPathMap[context] || defaultPathMap;
     if (!contextData) return null;
 
     const path = contextData[pageType];
@@ -58,47 +69,56 @@ function getPath(context, pageType, urlParams) {
 
     // Patching url params for legacy contexts
     if (context === contextTypes.SECRET) {
-        params.secretId = params.entityId;
+        params.secretId = params.pageEntityId;
     } else if (context === contextTypes.RISK) {
-        params.deploymentId = params.entityId;
+        params.deploymentId = params.pageEntityId;
     }
 
-    if (urlParams.entityType && !standardTypes[urlParams.entityType])
-        params.entityType = resourceTypesToUrl[params.entityType];
-
-    if (urlParams.listEntityType) params.listEntityType = resourceTypesToUrl[params.listEntityType];
+    // Mapping from entity types to url entityTypes
+    params.pageEntityListType = urlEntityListTypes[params.pageEntityListType];
+    params.entityType2 =
+        urlEntityTypes[params.entityType2] || urlEntityListTypes[params.entityListType2];
+    params.pageEntityType = urlEntityTypes[params.pageEntityType];
+    params.entityListType1 = urlEntityListTypes[params.entityListType1];
 
     return generatePath(path, params);
 }
 
-function getContext(match) {
-    if (match.url.includes('/configmanagement')) return contextTypes.CONFIG_MANAGEMENT;
-    if (match.url.includes('/compliance')) return contextTypes.COMPLIANCE;
-    if (match.url.includes('/risk')) return contextTypes.RISK;
-    return null;
-}
-
-function getPageType(match) {
-    if (match.params.entityId) return pageTypes.ENTITY;
-    if (match.params.entityType) return pageTypes.LIST;
-    return pageTypes.DASHBOARD;
-}
-
 function getParams(match, location) {
+    if (!match) return {};
     const newParams = { ...match.params };
-    newParams.entityType = getEntityTypeFromMatch(match);
+
+    // Mapping from url to entity types
+    if (newParams.pageEntityListType)
+        newParams.pageEntityListType = getTypeKeyFromParamValue(newParams.pageEntityListType);
+    if (newParams.entityListType2) {
+        newParams.entityListType2 = getTypeKeyFromParamValue(newParams.entityListType2, true);
+    } else if (newParams.entityType2) {
+        if (isListType(newParams.entityType2)) {
+            newParams.entityListType2 = getTypeKeyFromParamValue(newParams.entityType2, true);
+            delete newParams.entityType2;
+        } else {
+            newParams.entityType2 = getTypeKeyFromParamValue(newParams.entityType2);
+        }
+    }
+
+    if (newParams.pageEntityType)
+        newParams.pageEntityType = getTypeKeyFromParamValue(newParams.pageEntityType);
+    if (newParams.entityListType1)
+        newParams.entityListType1 = getTypeKeyFromParamValue(newParams.entityListType1);
 
     return {
         ...newParams,
-        context: getContext(match),
-        pageType: getPageType(match),
-        query: qs.parse(location.search, { ignoreQueryPrefix: true })
+        query:
+            location && location.search
+                ? qs.parse(location.search, { ignoreQueryPrefix: true })
+                : {}
     };
 }
 
-function getLinkTo(context, pageType, params) {
+function getLinkTo(params) {
     const { query, ...urlParams } = params;
-    const pathname = getPath(context, pageType, urlParams);
+    const pathname = getPath(urlParams);
     const search = query ? qs.stringify(query, { addQueryPrefix: true }) : '';
 
     return {
@@ -108,9 +128,159 @@ function getLinkTo(context, pageType, params) {
     };
 }
 
+function isIdParam(paramName) {
+    if (!paramName) return false;
+    return paramName.toLowerCase().includes('entityid');
+}
+
+const pageTypesToParamNames = {
+    [pageTypes.ENTITY]: entityParamNames,
+    [pageTypes.LIST]: listParamNames
+};
+
+function getNextEmptyParamName(urlParams) {
+    const propNames = Object.values(pageTypesToParamNames[getPageType(urlParams)]);
+    if (urlParams.entityListType2) {
+        propNames[propNames.indexOf('entityType2')] = 'entityListType2';
+    }
+    let i = 0;
+    for (; i < propNames.length; i += 1) {
+        const propName = propNames[i];
+        if (!urlParams[propName]) {
+            return propName;
+        }
+    }
+
+    return null;
+}
+
+function getLastUsedParamName(urlParams) {
+    const propNames = Object.values(pageTypesToParamNames[getPageType(urlParams)]).reverse();
+    if (urlParams.entityListType2) {
+        propNames[propNames.indexOf('entityType2')] = 'entityListType2';
+    }
+    for (let i = 0; i < propNames.length; i += 1) {
+        const propName = propNames[i];
+        if (urlParams[propName]) return propName;
+    }
+    return null;
+}
+
+class URL {
+    constructor(match, location) {
+        const { query, ...urlParams } = getParams(match, location);
+        this.q = query;
+        this.urlParams = urlParams;
+    }
+
+    base(type, id, context) {
+        const params = { context: context || this.urlParams.context };
+        if (id) {
+            // Entity path
+            params.pageEntityType = type;
+            params.pageEntityId = id;
+        } else if (type) {
+            // List path
+            params.pageEntityListType = type;
+        }
+
+        this.urlParams = params;
+        return this;
+    }
+
+    push(val, val2) {
+        const newParams = { ...this.urlParams };
+        const isType = !!entityTypes[val];
+
+        // Not pushing a value, return
+        if (!val) {
+            return this;
+        }
+
+        // Pushing initial values, use base instead
+        if (!newParams.pageEntityListType && !newParams.pageEntityType) {
+            return this.base(val, val2);
+        }
+
+        let emptyParamName = getNextEmptyParamName(newParams);
+        emptyParamName =
+            emptyParamName === 'entityType2' && !val2 ? 'entityListType2' : emptyParamName;
+        const replaceParamName = getLastUsedParamName(newParams);
+
+        if (emptyParamName) {
+            if (isIdParam(emptyParamName) === !isType) {
+                // Next empty param type matches the val type, push it.
+                newParams[emptyParamName] = val;
+                if (emptyParamName === 'entityType2') {
+                    newParams.entityId2 = val2;
+                }
+            } else {
+                // next empty param type is different than input type, replace last used param instead of push
+                newParams[replaceParamName] = val;
+            }
+        } else if (isIdParam(replaceParamName) === !isType) {
+            newParams[replaceParamName] = val;
+            if (emptyParamName === 'entityType2') {
+                newParams.entityId2 = val2;
+            }
+        } else {
+            // overflow
+            // TODO: How do we handle pushing onto a full stack?
+            throw new Error(`Cant push ${val} onto a full stack`);
+        }
+
+        this.urlParams = newParams;
+        return this;
+    }
+
+    pop() {
+        const { urlParams } = this;
+        const paramName = getLastUsedParamName(urlParams);
+        if (paramName) delete urlParams[paramName];
+        // TODO: this isn't always the case.
+        if (paramName === 'entityId2') {
+            delete urlParams.entityType2;
+        }
+        if (paramName === 'pageEntityId') delete urlParams.pageEntityType;
+
+        return this;
+    }
+
+    set(paramName, value) {
+        const { urlParams } = this;
+        urlParams[paramName] = value;
+        return this;
+    }
+
+    query(queryChanges) {
+        const newQuery = { ...this.q, ...queryChanges };
+        this.q = newQuery;
+        return this;
+    }
+
+    clearSidePanelParams() {
+        const p = this.urlParams;
+        delete p.entityId1;
+        delete p.entityType2;
+        delete p.entityListType2;
+        delete p.entityId2;
+        delete p.entityListType1;
+
+        return this;
+    }
+
+    url() {
+        const { q: query, urlParams } = this;
+        return getLinkTo({ query, ...urlParams }).url;
+    }
+}
+
+function getURL(match, location) {
+    return new URL(match, location);
+}
 export default {
     getParams,
-    getContext,
     getLinkTo,
-    getEntityTypeKeyFromValue
+    getEntityTypeKeyFromValue,
+    getURL
 };

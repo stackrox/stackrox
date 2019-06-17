@@ -10,10 +10,10 @@ import { standardShortLabels } from 'messages/standards';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import URLService from 'modules/URLService';
-import contextTypes from 'constants/contextTypes';
-import pageTypes from 'constants/pageTypes';
 import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
 import queryService from 'modules/queryService';
+import { withRouter } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
 
 const isStandard = type => !!standardBaseTypes[type];
 
@@ -23,7 +23,7 @@ const sortByTitle = (a, b) => {
     return 0;
 };
 
-function processData(entityType, query, { results, complianceStandards }) {
+function processData(match, location, entityType, query, { results, complianceStandards }) {
     let filteredResults;
     if (standardBaseTypes[entityType]) {
         filteredResults = results.results.filter(result =>
@@ -53,37 +53,34 @@ function processData(entityType, query, { results, complianceStandards }) {
                 totalFailing += newMapping[standardId].failing.value;
             }
             const complianceStateKey = CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE;
-            const newQuery = { ...query };
-            newQuery[complianceStateKey] = 'Pass';
-            if (!isStandard(entityType)) newQuery.Standard = standard.name;
-            const passingLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-                entityType,
-                query: newQuery
-            });
-            newQuery[complianceStateKey] = 'Fail';
-            if (!isStandard(entityType)) newQuery.Standard = standard.name;
-            const failingLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-                entityType,
-                query: newQuery
-            });
-            delete newQuery[complianceStateKey];
-            delete newQuery.Standard;
-            const defaultLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-                entityType,
-                query: newQuery
-            });
+
+            const passingLink = URLService.getURL(match, location)
+                .push(entityType)
+                .query({ [complianceStateKey]: 'Pass' })
+                .url();
+
+            const failingLink = URLService.getURL(match, location)
+                .push(entityType)
+                .query({ [complianceStateKey]: 'Fail' })
+                .url();
+
+            const defaultLink = URLService.getURL(match, location)
+                .push(entityType)
+                .query({ [complianceStateKey]: null, Standard: null })
+                .url();
+
             newMapping[standardId] = {
                 id: standard.id,
                 title: standardShortLabels[standard.id],
                 passing: {
                     value: totalPassing,
-                    link: passingLink.url
+                    link: passingLink
                 },
                 failing: {
                     value: totalFailing,
-                    link: failingLink.url
+                    link: failingLink
                 },
-                defaultLink: defaultLink.url
+                defaultLink
             };
             return newMapping;
         }, {});
@@ -107,7 +104,7 @@ const getQueryVariables = (entityType, groupBy, query) => {
     };
 };
 
-const ComplianceAcrossEntities = ({ entityType, groupBy, query }) => {
+const ComplianceAcrossEntities = ({ match, location, entityType, groupBy, query }) => {
     const variables = getQueryVariables(entityType, groupBy, query);
     return (
         <Query query={AGGREGATED_RESULTS} variables={variables}>
@@ -117,7 +114,7 @@ const ComplianceAcrossEntities = ({ entityType, groupBy, query }) => {
                     ? `Controls in Compliance`
                     : `${resourceLabels[entityType]}s in Compliance`;
                 if (!loading && data) {
-                    const results = processData(entityType, query, data);
+                    const results = processData(match, location, entityType, query, data);
                     if (!results.length) {
                         contents = (
                             <NoResultsMessage message="No data available. Please run a scan." />
@@ -137,6 +134,8 @@ const ComplianceAcrossEntities = ({ entityType, groupBy, query }) => {
 };
 
 ComplianceAcrossEntities.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string,
     groupBy: PropTypes.string,
     query: PropTypes.shape({})
@@ -148,4 +147,4 @@ ComplianceAcrossEntities.defaultProps = {
     query: null
 };
 
-export default ComplianceAcrossEntities;
+export default withRouter(ComplianceAcrossEntities);

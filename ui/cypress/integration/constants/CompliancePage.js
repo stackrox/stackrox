@@ -7,12 +7,15 @@ export const url = {
         namespaces: `${baseURL}/namespaces`,
         nodes: `${baseURL}/nodes`,
         standards: {
-            CIS_Docker_v1_1_0: `${baseURL}/CIS_Docker_v1_1_0`,
-            CIS_Kubernetes_v1_2_0: `${baseURL}/CIS_Kubernetes_v1_2_0`,
-            HIPAA_164: `${baseURL}/HIPAA_164`,
-            NIST_800_190: `${baseURL}/NIST_800_190`,
-            PCI_DSS_3_2: `${baseURL}/PCI_DSS_3_2`
+            CIS_Docker_v1_1_0: `${baseURL}/controls?standard=CIS%20Docker%20v1.1.0`,
+            CIS_Kubernetes_v1_2_0: `${baseURL}/controls?standard=CIS%20Kubernetes%20v1.2.0`,
+            HIPAA_164: `${baseURL}/controls?standard=HIPAA%20164`,
+            NIST_800_190: `${baseURL}/controls/?standard=NIST%20800-190`,
+            PCI_DSS_3_2: `${baseURL}/controls?standard=PCI%20DSS%203.2`
         }
+    },
+    entity: {
+        cluster: `${baseURL}/cluster`
     }
 };
 

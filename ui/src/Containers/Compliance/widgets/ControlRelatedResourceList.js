@@ -1,17 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import LinkListWidget from 'Components/LinkListWidget';
-import pageTypes from 'constants/pageTypes';
 import URLService from 'modules/URLService';
 import pluralize from 'pluralize';
-import AppLink from 'Components/AppLink';
 import entityTypes from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import queryService from 'modules/queryService';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter, Link } from 'react-router-dom';
 
 const ControlRelatedEntitiesList = ({
+    match,
+    location,
     listEntityType,
     pageEntityType,
     pageEntity,
@@ -53,8 +55,8 @@ const ControlRelatedEntitiesList = ({
         }
 
         function getEntityName(id) {
-            const match = options.find(item => item.id === id);
-            return match ? match.name : null;
+            const found = options.find(item => item.id === id);
+            return found ? found.name : null;
         }
 
         const ids = data.results.results
@@ -68,11 +70,9 @@ const ControlRelatedEntitiesList = ({
 
         const result = filteredIds.map(id => ({
             label: getEntityName(id),
-            link: URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
-                entityId: id,
-                query: {},
-                entityType: listEntityType
-            }).url
+            link: URLService.getURL(match, location)
+                .base(listEntityType, id)
+                .url()
         }));
 
         return result;
@@ -87,19 +87,17 @@ const ControlRelatedEntitiesList = ({
 
     const viewAllLink =
         pageEntity && pageEntity.id && listEntityType !== entityTypes.SECRET ? (
-            <AppLink
-                context={linkContext}
-                pageType={pageTypes.LIST}
-                params={{
-                    query: { standard, [pageEntityType]: pageEntity.name },
-                    entityType: listEntityType
-                }}
+            <Link
+                to={URLService.getURL(match, location)
+                    .base(listEntityType, null, linkContext)
+                    .query({ standard, [pageEntityType]: pageEntity.name })
+                    .url()}
                 className="no-underline"
             >
                 <button className="btn-sm btn-base btn-sm" type="button">
                     View All
                 </button>
-            </AppLink>
+            </Link>
         ) : null;
 
     const variables = {
@@ -123,6 +121,8 @@ const ControlRelatedEntitiesList = ({
 };
 
 ControlRelatedEntitiesList.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     listEntityType: PropTypes.string.isRequired,
     pageEntityType: PropTypes.string.isRequired,
     pageEntity: PropTypes.shape({
@@ -140,4 +140,4 @@ ControlRelatedEntitiesList.defaultProps = {
     className: ''
 };
 
-export default ControlRelatedEntitiesList;
+export default withRouter(ControlRelatedEntitiesList);

@@ -24,9 +24,14 @@ describe('Compliance list page', () => {
 
     it('should link to entity page when clicking on side panel header', () => {
         cy.visit(url.list.clusters);
-        cy.get(selectors.list.table.firstRow).click();
-        cy.get(selectors.list.sidePanelHeader).click();
-        cy.url().should('include', url.list.clusters);
+        cy.get(selectors.list.table.firstRowName)
+            .invoke('text')
+            .then(name => {
+                cy.get(selectors.list.table.firstRow).click();
+                cy.get(selectors.list.sidePanelHeader).contains(name);
+                cy.get(selectors.list.sidePanelHeader).click();
+                cy.url().should('include', url.entity.cluster);
+            });
     });
 
     it('should be sorted by version in standards list', () => {

@@ -4,7 +4,7 @@ import { MockedProvider } from 'react-apollo/test-utils';
 import { Query } from 'react-apollo';
 import ReactRouterEnzymeContext from 'react-router-enzyme-context';
 import entityTypes from 'constants/entityTypes';
-
+import { MemoryRouter as Router } from 'react-router-dom';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import queryService from 'modules/queryService';
 import EntityCompliance from './EntityCompliance';
@@ -43,15 +43,17 @@ const testQueryForEntityType = (entityType, entityName, clusterName, id) => {
     const options = new ReactRouterEnzymeContext();
     const mock = getMock(entityType, entityName, clusterName);
     const element = mount(
-        <MockedProvider mocks={mock} addTypename={false}>
-            <EntityCompliance
-                entityType={entityType}
-                entityId={id}
-                entityName={entityName}
-                clusterName={clusterName}
-            />
-        </MockedProvider>,
-        options.get()
+        <Router>
+            <MockedProvider mocks={mock} addTypename={false}>
+                <EntityCompliance
+                    entityType={entityType}
+                    entityId={id}
+                    entityName={entityName}
+                    clusterName={clusterName}
+                    {...options.props()}
+                />
+            </MockedProvider>
+        </Router>
     );
 
     checkQueryForElement(mock[0], element, entityType);

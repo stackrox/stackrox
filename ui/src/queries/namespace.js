@@ -58,6 +58,17 @@ export const RELATED_DEPLOYMENTS = gql`
     }
 `;
 
+export const NAMESPACE_NAME = gql`
+    query getNamespace($id: ID!) {
+        result: namespace(id: $id) {
+            metadata {
+                name
+                id
+            }
+        }
+    }
+`;
+
 export const RELATED_SECRETS = gql`
     query secretsByNamespace($query: String) {
         results: secrets(query: $query) {

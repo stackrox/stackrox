@@ -3,11 +3,12 @@ import { Link, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import pageTypes from 'constants/pageTypes';
 
-const PageNotFound = ({ match, resourceType }) => {
-    const context = URLService.getContext(match);
-    const homeURL = URLService.getLinkTo(context, pageTypes.DASHBOARD, {}).url;
+const PageNotFound = ({ match, location, resourceType }) => {
+    const homeUrl = URLService.getURL(match, location)
+        .base()
+        .url();
+
     const resourceTypeName = (resourceType || 'resource').toLowerCase();
     return (
         <div className="text-center flex w-full justify-center items-center py-32 px-3 h-full bg-primary-200">
@@ -20,9 +21,9 @@ const PageNotFound = ({ match, resourceType }) => {
                 </p>
                 <Link
                     className="p-4 text-uppercase text-base-100 focus:text-base-100 hover:text-base-100 bg-tertiary-700 hover:bg-tertiary-800 no-underline focus:bg-tertiary-800 inline-block text-center rounded-sm"
-                    to={homeURL}
+                    to={homeUrl}
                 >
-                    {`Go to ${context} dashboard`}
+                    {`Go to dashboard`}
                 </Link>
             </div>
         </div>
@@ -31,7 +32,8 @@ const PageNotFound = ({ match, resourceType }) => {
 
 PageNotFound.propTypes = {
     resourceType: PropTypes.string,
-    match: ReactRouterPropTypes.match.isRequired
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired
 };
 
 PageNotFound.defaultProps = {

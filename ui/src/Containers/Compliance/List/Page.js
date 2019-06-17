@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
-import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
-import { standardLabels } from 'messages/standards';
 import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
 import ComplianceAcrossEntities from 'Containers/Compliance/widgets/ComplianceAcrossEntities';
 import ControlsMostFailed from 'Containers/Compliance/widgets/ControlsMostFailed';
@@ -15,27 +13,34 @@ import Header from './Header';
 const ComplianceListPage = ({ match, location }) => {
     const params = URLService.getParams(match, location);
     const groupBy = params.query && params.query.groupBy ? params.query.groupBy : null;
-    let { entityType } = params;
     const query = { ...params.query };
-
-    // TODO: get rid of this when standards have their own path.
-    if (standardBaseTypes[entityType]) {
-        query.Standard = standardLabels[entityType];
-        entityType = entityTypes.CONTROL;
-    }
+    const { pageEntityListType, entityId1, entityType2, entityListType2, entityId2 } = params;
 
     return (
         <section className="flex flex-col h-full relative" id="capture-list">
             <Header
+                entityType={pageEntityListType}
                 searchComponent={
                     <SearchInput categories={['COMPLIANCE']} shouldAddComplianceState />
                 }
             />
             <CollapsibleBanner className="pdf-page">
-                <ComplianceAcrossEntities entityType={entityType} query={query} groupBy={groupBy} />
-                <ControlsMostFailed entityType={entityType} query={query} showEmpty />
+                <ComplianceAcrossEntities
+                    entityType={pageEntityListType}
+                    query={query}
+                    groupBy={groupBy}
+                />
+                <ControlsMostFailed entityType={pageEntityListType} query={query} showEmpty />
             </CollapsibleBanner>
-            <ComplianceList entityType={entityType} query={query} />
+            <ComplianceList
+                entityType={pageEntityListType}
+                query={query}
+                selectedRowId={entityId1}
+                entityType2={entityType2}
+                entityListType2={entityListType2}
+                entityId2={entityId2}
+                noSearch
+            />
         </section>
     );
 };

@@ -47,6 +47,15 @@ export const NODES_BY_CLUSTER = gql`
     }
 `;
 
+export const NODE_NAME = gql`
+    query getNode($id: ID!) {
+        result: node(id: $id) {
+            id
+            name
+        }
+    }
+`;
+
 export const NODE_COMPLIANCE = gql`
     query compliance {
         aggregatedResults(groupBy: [STANDARD, NODE], unit: CONTROL) {

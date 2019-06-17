@@ -68,7 +68,7 @@ describe('Dashboard page', () => {
         cy.get(selectors.sectionHeaders.compliance).should('exist');
         cy.get(selectors.chart.legendLink).click();
         cy.location().should(location => {
-            expect(location.pathname).to.eq(`${complianceUrl.list.standards.CIS_Docker_v1_1_0}`);
+            expect(location.href).to.include(complianceUrl.list.standards.CIS_Docker_v1_1_0);
         });
         cy.get(complianceSelectors.list.table.header).should('exist');
     });

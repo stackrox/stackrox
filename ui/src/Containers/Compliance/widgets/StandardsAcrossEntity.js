@@ -1,12 +1,11 @@
 import React from 'react';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
+import { standardLabels } from 'messages/standards';
 import URLService from 'modules/URLService';
-import contextTypes from 'constants/contextTypes';
-import pageTypes from 'constants/pageTypes';
 import pluralize from 'pluralize';
 import toLower from 'lodash/toLower';
-
+import ReactRouterPropTypes from 'react-router-prop-types';
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -14,60 +13,62 @@ import PropTypes from 'prop-types';
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
+import { withRouter } from 'react-router-dom';
 
 function formatAsPercent(x) {
     return `${x}%`;
 }
 
-function processData(data, type) {
-    if (!data || !data.results || !data.results.results.length) return [];
-    const { complianceStandards } = data;
-    const standardsMapping = {};
+const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, className }) => {
+    function processData(data, type) {
+        if (!data || !data.results || !data.results.results.length) return [];
+        const { complianceStandards } = data;
+        const standardsMapping = {};
 
-    data.results.results.forEach(result => {
-        const standardId = result.aggregationKeys[0].id;
-        const { numPassing, numFailing } = result;
-        if (!standardsMapping[standardId]) {
-            standardsMapping[standardId] = {
-                passing: numPassing,
-                total: numPassing + numFailing
-            };
-        } else {
-            standardsMapping[standardId] = {
-                passing: standardsMapping[standardId].passing + numPassing,
-                total: standardsMapping[standardId].total + (numPassing + numFailing)
-            };
-        }
-    });
-
-    const barData = Object.keys(standardsMapping).map(standardId => {
-        const standard = complianceStandards.find(cs => cs.id === standardId);
-        const { passing, total } = standardsMapping[standardId];
-        const percentagePassing = Math.round((passing / total) * 100) || 0;
-        const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-            entityType: standard.id,
-            query: {
-                groupBy: type
+        data.results.results.forEach(result => {
+            const standardId = result.aggregationKeys[0].id;
+            const { numPassing, numFailing } = result;
+            if (!standardsMapping[standardId]) {
+                standardsMapping[standardId] = {
+                    passing: numPassing,
+                    total: numPassing + numFailing
+                };
+            } else {
+                standardsMapping[standardId] = {
+                    passing: standardsMapping[standardId].passing + numPassing,
+                    total: standardsMapping[standardId].total + (numPassing + numFailing)
+                };
             }
         });
-        const dataPoint = {
-            y: standardBaseTypes[standardId],
-            x: percentagePassing,
-            hint: {
-                title: `${standard.name} Standard - ${percentagePassing}% Passing`,
-                body: `${total - passing} failing controls across all ${pluralize(
-                    resourceLabels[type]
-                )}`
-            },
-            link: link.url
-        };
-        return dataPoint;
-    });
 
-    return barData;
-}
+        const barData = Object.keys(standardsMapping).map(standardId => {
+            const standard = complianceStandards.find(cs => cs.id === standardId);
+            const { passing, total } = standardsMapping[standardId];
+            const percentagePassing = Math.round((passing / total) * 100) || 0;
+            const link = URLService.getURL(match, location)
+                .base(entityTypes.CONTROL)
+                .query({
+                    groupBy: type,
+                    Standard: standardLabels[standardId]
+                })
+                .url();
+            const dataPoint = {
+                y: standardBaseTypes[standardId],
+                x: percentagePassing,
+                hint: {
+                    title: `${standard.name} Standard - ${percentagePassing}% Passing`,
+                    body: `${total - passing} failing controls across all ${pluralize(
+                        resourceLabels[type]
+                    )}`
+                },
+                link
+            };
+            return dataPoint;
+        });
 
-const StandardsAcrossEntity = ({ entityType, bodyClassName, className }) => {
+        return barData;
+    }
+
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CONTROL
@@ -107,6 +108,8 @@ const StandardsAcrossEntity = ({ entityType, bodyClassName, className }) => {
 };
 
 StandardsAcrossEntity.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
     className: PropTypes.string
@@ -117,4 +120,4 @@ StandardsAcrossEntity.defaultProps = {
     className: ''
 };
 
-export default StandardsAcrossEntity;
+export default withRouter(StandardsAcrossEntity);

@@ -6,12 +6,11 @@ import { ALL_NAMESPACES } from 'queries/namespace';
 import { DEPLOYMENTS_QUERY } from 'queries/deployment';
 import { resourceLabels } from 'messages/common';
 import URLService from 'modules/URLService';
-import contextTypes from 'constants/contextTypes';
-import pageTypes from 'constants/pageTypes';
 import entityTypes from 'constants/entityTypes';
-
+import { withRouter } from 'react-router-dom';
 import Query from 'Components/ThrowingQuery';
 import TileLink from 'Components/TileLink';
+import ReactRouterPropTypes from 'react-router-prop-types';
 
 function getQuery(entityType) {
     switch (entityType) {
@@ -28,27 +27,40 @@ function getQuery(entityType) {
     }
 }
 
-const DashboardTile = ({ entityType }) => {
+const processNumValue = (data, entityType) => {
+    let value = 0;
+    if (!data || !data.results || !Array.isArray(data.results)) return value;
+    if (entityType === entityTypes.CONTROL) {
+        const set = new Set();
+        data.results.forEach(cluster => {
+            cluster.complianceResults.forEach(result => {
+                set.add(result.control.id);
+            });
+        });
+        value = set.size;
+    } else if (entityType === entityTypes.NODE) {
+        value = data.results.reduce((acc, curr) => acc + curr.nodes.length, 0);
+    } else {
+        value = data.results.length;
+    }
+    return value;
+};
+
+const DashboardTile = ({ match, location, entityType }) => {
     const QUERY = getQuery(entityType);
-    const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-        entityType
-    });
+    const url = URLService.getURL(match, location)
+        .base(entityType)
+        .url();
+
     return (
         <Query query={QUERY} action="list">
             {({ loading, data }) => {
-                let value = 0;
-                if (!loading && data && data.results && Array.isArray(data.results)) {
-                    if (entityType === entityTypes.NODE) {
-                        value = data.results.reduce((acc, curr) => acc + curr.nodes.length, 0);
-                    } else {
-                        value = data.results.length;
-                    }
-                }
+                const value = processNumValue(data, entityType);
                 return (
                     <TileLink
                         value={value}
                         caption={resourceLabels[entityType]}
-                        to={link.url}
+                        to={url}
                         loading={loading}
                     />
                 );
@@ -58,7 +70,9 @@ const DashboardTile = ({ entityType }) => {
 };
 
 DashboardTile.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired
 };
 
-export default DashboardTile;
+export default withRouter(DashboardTile);

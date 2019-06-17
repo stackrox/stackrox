@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
-import URLService from 'modules/URLService2';
+import URLService from 'modules/URLService';
 
 import PageHeader from './EntityPageHeader';
 import Tabs from './EntityTabs';

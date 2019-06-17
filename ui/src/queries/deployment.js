@@ -53,6 +53,15 @@ export const DEPLOYMENT_QUERY = gql`
     }
 `;
 
+export const DEPLOYMENT_NAME = gql`
+    query getDeployment($id: ID!) {
+        result: deployment(id: $id) {
+            id
+            name
+        }
+    }
+`;
+
 export const DEPLOYMENTS_QUERY = gql`
     query getDeployments {
         results: deployments {

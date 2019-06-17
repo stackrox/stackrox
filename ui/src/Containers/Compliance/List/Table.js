@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes, { standardTypes } from 'constants/entityTypes';
+import entityTypes from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 
 import pluralize from 'pluralize';
@@ -20,26 +20,25 @@ import createPDFTable from 'utils/pdfUtils';
 import {
     CLUSTERS_LIST_QUERY,
     NAMESPACES_LIST_QUERY,
-    NODES_QUERY,
-    DEPLOYMENTS_QUERY
+    NODES_LIST_QUERY,
+    DEPLOYMENTS_LIST_QUERY
 } from 'queries/table';
 import { LIST_STANDARD } from 'queries/standard';
 import queryService from 'modules/queryService';
 import orderBy from 'lodash/orderBy';
 
 function getQuery(entityType) {
-    if (standardTypes[entityType] || entityType === entityTypes.CONTROL) {
-        return LIST_STANDARD;
-    }
     switch (entityType) {
         case entityTypes.CLUSTER:
             return CLUSTERS_LIST_QUERY;
         case entityTypes.NAMESPACE:
             return NAMESPACES_LIST_QUERY;
         case entityTypes.NODE:
-            return NODES_QUERY;
+            return NODES_LIST_QUERY;
         case entityTypes.DEPLOYMENT:
-            return DEPLOYMENTS_QUERY;
+            return DEPLOYMENTS_LIST_QUERY;
+        case entityTypes.CONTROL:
+            return LIST_STANDARD;
         default:
             return null;
     }
@@ -104,6 +103,7 @@ function formatResourceData(data, resourceType) {
         overallCluster.overall.average = complianceRate(numPassing, numFailing);
         formattedData.results.push(overallCluster);
     });
+
     return formattedData;
 }
 
@@ -171,12 +171,11 @@ const ListTable = ({
     searchComponent,
     entityType,
     query,
-    selectedRow,
+    selectedRowId,
     updateSelectedRow,
     pdfId
 }) => {
     const [page, setPage] = useState(0);
-
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
     function filterByComplianceState(data, filterQuery, isControlList) {
         const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
@@ -272,7 +271,7 @@ const ListTable = ({
                             onRowClick={updateSelectedRow}
                             entityType={entityType}
                             idAttribute="id"
-                            selectedRowId={selectedRow ? selectedRow.id : null}
+                            selectedRowId={selectedRowId}
                         />
                     ) : (
                         <Table
@@ -280,7 +279,7 @@ const ListTable = ({
                             columns={tableColumns}
                             onRowClick={updateSelectedRow}
                             idAttribute="id"
-                            selectedRowId={selectedRow ? selectedRow.id : null}
+                            selectedRowId={selectedRowId}
                             noDataText="No results found. Please refine your search."
                             page={page}
                             defaultSorted={[
@@ -316,14 +315,14 @@ ListTable.propTypes = {
     searchComponent: PropTypes.node,
     entityType: PropTypes.string,
     query: PropTypes.shape({}),
-    selectedRow: PropTypes.shape({}),
+    selectedRowId: PropTypes.string,
     updateSelectedRow: PropTypes.func.isRequired,
     pdfId: PropTypes.string
 };
 
 ListTable.defaultProps = {
     searchComponent: null,
-    selectedRow: null,
+    selectedRowId: null,
     pdfId: null,
     entityType: null,
     query: null

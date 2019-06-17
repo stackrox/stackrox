@@ -20,6 +20,9 @@ const mocks = [
 ];
 
 it('renders without error', () => {
+    const options = getRouterOptions(jest.fn());
+    options.context.router.route.match.params.context = 'compliance';
+
     const element = mount(
         <MockedProvider mocks={mocks} addTypename={false}>
             <ResourceCount
@@ -28,7 +31,7 @@ it('renders without error', () => {
                 relatedToResource={{ id, name }}
             />
         </MockedProvider>,
-        getRouterOptions(jest.fn())
+        options
     );
 
     const queryProps = element.find(Query).props();

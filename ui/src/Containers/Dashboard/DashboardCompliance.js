@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import URLService from 'modules/URLService';
 import contextTypes from 'constants/contextTypes';
-import pageTypes from 'constants/pageTypes';
 import entityTypes from 'constants/entityTypes';
-
+import ReactRouterPropTypes from 'react-router-prop-types';
 import Loader from 'Components/Loader';
 import Query from 'Components/ThrowingQuery';
+import { standardLabels } from 'messages/standards';
 
 const standardsResultsMap = {
     passing: 'var(--tertiary-400)',
@@ -16,7 +16,13 @@ const standardsResultsMap = {
 };
 
 class DashboardCompliance extends Component {
+    static propTypes = {
+        match: ReactRouterPropTypes.match.isRequired,
+        location: ReactRouterPropTypes.location.isRequired
+    };
+
     processData = data => {
+        const { match, location } = this.props;
         if (!data || !data.results || !data.results.results.length) return [];
         const { complianceStandards } = data;
         const modifiedData = data.results.results.map(result => {
@@ -24,14 +30,15 @@ class DashboardCompliance extends Component {
             const { numPassing, numFailing } = result;
             const percentagePassing =
                 Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
-            const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-                entityType: standard.id
-            });
+            const link = URLService.getURL(match, location)
+                .base(entityTypes.CONTROL, null, contextTypes.COMPLIANCE)
+                .query({ standard: standardLabels[standard.id] })
+                .url();
             const modifiedResult = {
                 name: standard.name,
                 passing: percentagePassing,
                 failing: 100 - percentagePassing,
-                link: link.url
+                link
             };
             return modifiedResult;
         });
@@ -87,14 +94,16 @@ class DashboardCompliance extends Component {
         });
 
     renderScanButton = () => {
-        const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.DASHBOARD, {});
+        const link = URLService.getURL()
+            .base(null, null, contextTypes.COMPLIANCE)
+            .url();
         return (
             <div className="flex flex-col items-center justify-center p-4 w-full">
                 <span className="mb-4">
                     No Standard results available. Run a scan on the Compliance page.
                 </span>
                 <Link
-                    to={link.url}
+                    to={link}
                     className="no-underline self-center bg-primary-600 px-5 py-3 text-base-100 font-600 rounded-sm uppercase text-sm hover:bg-primary-700"
                 >
                     Go to Compliance
@@ -144,4 +153,4 @@ class DashboardCompliance extends Component {
     }
 }
 
-export default DashboardCompliance;
+export default withRouter(DashboardCompliance);

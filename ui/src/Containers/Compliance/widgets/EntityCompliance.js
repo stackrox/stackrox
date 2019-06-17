@@ -5,18 +5,17 @@ import VerticalBarChart from 'Components/visuals/VerticalBar';
 import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
-import pageTypes from 'constants/pageTypes';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
-import contextTypes from 'constants/contextTypes';
 import queryService from 'modules/queryService';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import { standardLabels } from 'messages/standards';
 
-const EntityCompliance = ({ entityType, entityName, clusterName, history }) => {
+const EntityCompliance = ({ match, location, entityType, entityName, clusterName, history }) => {
     const entityTypeLabel = resourceLabels[entityType];
 
     function getBarData(results) {
@@ -40,14 +39,15 @@ const EntityCompliance = ({ entityType, entityName, clusterName, history }) => {
         );
     }
     function valueClick(datum) {
-        const linkParams = {
-            entityType: datum.standard,
-            query: {
+        const URL = URLService.getURL(match, location)
+            .base(entityTypes.CONTROL)
+            .query({
                 [entityType]: entityName,
-                [entityTypes.CLUSTER]: clusterName
-            }
-        };
-        const URL = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, linkParams);
+                [entityTypes.CLUSTER]: clusterName,
+                standard: standardLabels[datum.standard]
+            })
+            .url();
+
         history.push(URL);
     }
 
@@ -102,6 +102,8 @@ const EntityCompliance = ({ entityType, entityName, clusterName, history }) => {
     );
 };
 EntityCompliance.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     entityName: PropTypes.string,
     clusterName: PropTypes.string,

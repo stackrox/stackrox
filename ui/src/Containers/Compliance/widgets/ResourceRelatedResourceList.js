@@ -1,16 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import LinkListWidget from 'Components/LinkListWidget';
-import pageTypes from 'constants/pageTypes';
 import URLService from 'modules/URLService';
 import pluralize from 'pluralize';
-import AppLink from 'Components/AppLink';
 import entityTypes from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { resourceLabels } from 'messages/common';
 import { RELATED_SECRETS, RELATED_DEPLOYMENTS, ALL_NAMESPACES } from 'queries/namespace';
 import queryService from 'modules/queryService';
 import { NODES_BY_CLUSTER } from 'queries/node';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter, Link } from 'react-router-dom';
 
 const queryMap = {
     [entityTypes.NAMESPACE]: ALL_NAMESPACES,
@@ -31,6 +31,8 @@ function getPageContext(entityType) {
 }
 
 const ResourceRelatedEntitiesList = ({
+    match,
+    location,
     listEntityType,
     pageEntityType,
     pageEntity,
@@ -59,32 +61,28 @@ const ResourceRelatedEntitiesList = ({
 
         return items.map(item => ({
             label: item.name,
-            link: URLService.getLinkTo(linkContext, pageTypes.ENTITY, {
-                query: {},
-                entityId: item.id,
-                entityType: listEntityType
-            }).url
+            link: URLService.getURL(match, location)
+                .base(listEntityType, item.id)
+                .url()
         }));
     }
 
     const viewAllLink =
         pageEntity && pageEntity.id ? (
-            <AppLink
-                context={linkContext}
-                pageType={pageTypes.LIST}
-                params={{
-                    query: {
+            <Link
+                to={URLService.getURL(match, location)
+                    .base(listEntityType, null, linkContext)
+                    .query({
                         [pageEntityType]: pageEntity.name,
                         [entityTypes.CLUSTER]: clusterName
-                    },
-                    entityType: listEntityType
-                }}
+                    })
+                    .url()}
                 className="no-underline"
             >
                 <button className="btn-sm btn-base btn-sm" type="button">
                     View All
                 </button>
-            </AppLink>
+            </Link>
         ) : null;
 
     function getVariables() {
@@ -126,6 +124,8 @@ const ResourceRelatedEntitiesList = ({
 };
 
 ResourceRelatedEntitiesList.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     listEntityType: PropTypes.string.isRequired,
     pageEntityType: PropTypes.string.isRequired,
     className: PropTypes.string,
@@ -144,4 +144,4 @@ ResourceRelatedEntitiesList.defaultProps = {
     clusterName: null
 };
 
-export default ResourceRelatedEntitiesList;
+export default withRouter(ResourceRelatedEntitiesList);

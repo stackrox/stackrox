@@ -2,11 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { standardLabels } from 'messages/standards';
 import URLService from 'modules/URLService';
-import pageTypes from 'constants/pageTypes';
-import contextTypes from 'constants/contextTypes';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import capitalize from 'lodash/capitalize';
-
+import ReactRouterPropTypes from 'react-router-prop-types';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/ThrowingQuery';
@@ -14,7 +12,7 @@ import Loader from 'Components/Loader';
 import networkStatuses from 'constants/networkStatuses';
 import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
-import { Link } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
 
 const colors = [
     'var(--tertiary-400)',
@@ -36,7 +34,7 @@ const sunburstLegendData = [
     { title: '< 50%', color: 'var(--alert-400)' }
 ];
 
-const processSunburstData = (data, type) => {
+const processSunburstData = (match, location, data, type) => {
     if (!data || !data.results || !data.results.results.length)
         return { sunburstData: [], totalPassing: 0 };
 
@@ -87,17 +85,17 @@ const processSunburstData = (data, type) => {
         .forEach(datum => {
             const group = groupMapping[datum.groupId];
             const controlStat = controlStatsMapping[datum.id];
-            const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
-                entityType: entityTypes.CONTROL,
-                standardId: datum.standardId,
-                controlId: datum.id
-            });
+
+            const url = URLService.getURL(match, location)
+                .base(entityTypes.CONTROL, datum.id)
+                .url();
+
             if (group !== undefined && controlStat !== undefined) {
                 const value = Math.round((controlStat.passing / controlStat.total) * 100);
                 group.children.push({
                     name: `${datum.name} - ${datum.description}`,
                     color: getColor(value),
-                    link: link.url,
+                    link: url,
                     value
                 });
             }
@@ -122,25 +120,27 @@ const processSunburstData = (data, type) => {
 const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
-const getParams = standardType => ({
-    entityType: standardType,
-    query: {
-        groupBy: entityTypes.CATEGORY
-    }
-});
-
-const createURLLink = (entityType, standardType, entityName) => {
-    const linkParams = getParams(standardType);
+const createURLLink = (match, location, entityType, standardId, entityName) => {
+    const query = { groupBy: entityTypes.CATEGORY };
     if (entityName) {
         const entityKey = capitalize(entityType);
-        linkParams.query[entityKey] = entityName;
+        query[entityKey] = entityName;
     }
-    const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, linkParams);
-
-    return link;
+    return URLService.getURL(match, location)
+        .base(entityTypes.CONTROL)
+        .query({ standard: standardLabels[standardId], ...query })
+        .url();
 };
 
-const ComplianceByStandard = ({ standardType, entityName, entityType, entityId, className }) => {
+const ComplianceByStandard = ({
+    match,
+    location,
+    standardType,
+    entityName,
+    entityType,
+    entityId,
+    className
+}) => {
     const groupBy = [
         entityTypes.STANDARD,
         entityTypes.CATEGORY,
@@ -164,23 +164,36 @@ const ComplianceByStandard = ({ standardType, entityName, entityType, entityId, 
                 let viewStandardLink = null;
 
                 if (!loading && data && networkStatus === networkStatuses.READY) {
-                    const { sunburstData, totalPassing } = processSunburstData(data, standardType);
-                    const link = createURLLink(entityType, standardType, entityName);
+                    const { sunburstData, totalPassing } = processSunburstData(
+                        match,
+                        location,
+                        data,
+                        standardType
+                    );
+                    const url = createURLLink(
+                        match,
+                        location,
+                        entityType,
+                        standardType,
+                        entityName
+                    );
                     const sunburstRootData = [
                         {
                             text: `${sunburstData.length} Categories`
                         },
                         {
                             text: `${getNumControls(sunburstData)} Controls`,
-                            link: link.url
+                            link: url
                         }
                     ];
-                    const linkToParams = getParams(standardType);
-                    const linkTo = URLService.getLinkTo(
-                        contextTypes.COMPLIANCE,
-                        pageTypes.LIST,
-                        linkToParams
-                    ).url;
+
+                    const linkTo = URLService.getURL(match, location)
+                        .base(entityTypes.CONTROL)
+                        .query({
+                            standard: standardLabels[standardType],
+                            groupBy: entityTypes.CATEGORY
+                        })
+                        .url();
 
                     viewStandardLink = (
                         <Link to={linkTo} className="no-underline">
@@ -226,6 +239,8 @@ const ComplianceByStandard = ({ standardType, entityName, entityType, entityId, 
 };
 
 ComplianceByStandard.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     standardType: PropTypes.string.isRequired,
     entityName: PropTypes.string,
     entityType: PropTypes.string,
@@ -240,4 +255,4 @@ ComplianceByStandard.defaultProps = {
     className: ''
 };
 
-export default ComplianceByStandard;
+export default withRouter(ComplianceByStandard);

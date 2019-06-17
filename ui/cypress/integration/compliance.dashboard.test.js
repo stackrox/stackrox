@@ -96,6 +96,6 @@ describe('Compliance dashboard page', () => {
         cy.get(selectors.widget.PCICompliance.controls)
             .first()
             .click();
-        cy.location('pathname').should('eq', url.list.standards.PCI_DSS_3_2);
+        cy.url().should('include', url.list.standards.PCI_DSS_3_2);
     });
 });

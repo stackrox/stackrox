@@ -1,25 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import LinkListWidget from 'Components/LinkListWidget';
-import pageTypes from 'constants/pageTypes';
 import URLService from 'modules/URLService';
 import pluralize from 'pluralize';
-import entityTypes, { resourceTypes } from 'constants/entityTypes';
-import contextTypes from 'constants/contextTypes';
+import entityTypes from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
-import { standardLabels } from 'messages/standards';
-
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 import { AGGREGATED_RESULTS_WITH_CONTROLS as QUERY } from 'queries/controls';
 import queryService from 'modules/queryService';
 
-const ControlsMostFailed = ({ entityType, query, limit, showEmpty }) => {
+const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmpty }) => {
     const whereClauseValues = { ...query };
-    const isResource = !!resourceTypes[entityType];
     const groupBy = [entityTypes.CONTROL, entityTypes.STANDARD];
-    if (isResource) {
+    if (entityType !== entityTypes.CONTROL) {
         groupBy.push(entityType);
-    } else {
-        whereClauseValues[entityTypes.STANDARD] = standardLabels[entityType];
     }
 
     const variables = {
@@ -38,9 +33,10 @@ const ControlsMostFailed = ({ entityType, query, limit, showEmpty }) => {
             const standardName = standard.name;
             const standardControls = standard.controls.map(control => ({
                 id: control.id,
-                label: isResource
-                    ? `${standardName} - ${control.name}: ${control.description}`
-                    : `${control.name}: ${control.description}`
+                label:
+                    entityType !== entityTypes.CONTROL
+                        ? `${standardName} - ${control.name}: ${control.description}`
+                        : `${control.name}: ${control.description}`
             }));
 
             return acc.concat(standardControls);
@@ -75,19 +71,20 @@ const ControlsMostFailed = ({ entityType, query, limit, showEmpty }) => {
             .map(entry => {
                 const control = controls.find(ctrl => ctrl.id === entry[0]);
                 const label = control ? control.label : '';
-                const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
-                    entityType: entityTypes.CONTROL,
-                    controlId: entry[0],
-                    standardId: entry[1].standardId
-                }).url;
+
+                // TODO: Shouldn't this have some query params?
+                const link = URLService.getURL(match, location)
+                    .base(entityTypes.CONTROL, entry[0])
+                    .url();
                 return { label, link };
             });
     }
 
     function getHeadline() {
-        const titleEntity = isResource
-            ? `across ${pluralize(resourceLabels[entityType])}`
-            : `in ${standardLabels[entityType]}`;
+        const titleEntity =
+            entityType !== entityTypes.CONTROL
+                ? `across ${pluralize(resourceLabels[entityType])}`
+                : '';
         return `Controls most failed ${titleEntity}`;
     }
 
@@ -104,6 +101,8 @@ const ControlsMostFailed = ({ entityType, query, limit, showEmpty }) => {
 };
 
 ControlsMostFailed.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string,
     query: PropTypes.shape({}),
     limit: PropTypes.number,
@@ -117,4 +116,4 @@ ControlsMostFailed.defaultProps = {
     query: null
 };
 
-export default ControlsMostFailed;
+export default withRouter(ControlsMostFailed);

@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
-import pageTypes from 'constants/pageTypes';
 import labels from 'messages/common';
 import capitalize from 'lodash/capitalize';
 import sortBy from 'lodash/sortBy';
@@ -14,9 +13,10 @@ import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
-import contextTypes from 'constants/contextTypes';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 
-function processData(data, entityType) {
+function processData(match, location, data, entityType) {
     if (!data || !data.results.results.length || !data.entityList) return [];
     const standardsGrouping = {};
     const { results, entityList, complianceStandards } = data;
@@ -27,12 +27,15 @@ function processData(data, entityType) {
         const standard = complianceStandards.find(c => c.id === result.aggregationKeys[0].id);
         const { numPassing, numFailing } = result;
         const percentagePassing = Math.round((numPassing / (numPassing + numFailing)) * 100);
-        const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-            entityType: standard.id,
-            query: {
-                [`${capitalize(entityType)}`]: entity && entity.name
-            }
-        });
+
+        const link = URLService.getURL(match, location)
+            .base(entityTypes.CONTROL)
+            .query({
+                [`${capitalize(entityType)}`]: entity.name,
+                standard: standardLabels[standard.id]
+            })
+            .url();
+
         const dataPoint = {
             x: entity && entity.name,
             y: percentagePassing,
@@ -66,21 +69,19 @@ function processData(data, entityType) {
     return pagedStandardsGrouping;
 }
 
-function getLabelLinks(data, entityType) {
+function getLabelLinks(match, location, data, entityType) {
     if (!data) return null;
     const { entityList } = data;
     const labelLinks = {};
     entityList.forEach(entity => {
-        const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
-            entityType,
-            entityId: entity.id
-        });
-        labelLinks[entity.name] = link;
+        labelLinks[entity.name] = URLService.getURL(match, location)
+            .base(entityType, entity.id)
+            .url();
     });
     return labelLinks;
 }
 
-const StandardsByEntity = ({ entityType, bodyClassName, className }) => {
+const StandardsByEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CONTROL
@@ -91,27 +92,42 @@ const StandardsByEntity = ({ entityType, bodyClassName, className }) => {
                 let contents = <Loader />;
                 const headerText = `Passing standards by ${entityType}`;
                 let pages;
-                if (!loading || (data && data.results)) {
-                    const formattedData = {
-                        results: data && data.results,
-                        complianceStandards: data.complianceStandards,
-                        entityList: data && data.clusters
-                    };
-                    const results = processData(formattedData, entityType);
-                    const labelLinks = getLabelLinks(formattedData, entityType);
-                    pages = results.length;
 
-                    if (pages) {
-                        const VerticalBarChartPaged = ({ currentPage }) => (
-                            <VerticalBarChart data={results[currentPage]} labelLinks={labelLinks} />
-                        );
-                        VerticalBarChartPaged.propTypes = { currentPage: PropTypes.number };
-                        VerticalBarChartPaged.defaultProps = { currentPage: 0 };
-                        contents = <VerticalBarChartPaged />;
-                    } else {
+                if (!loading) {
+                    if (!data || !data.results || data.results.length === 0) {
                         contents = (
                             <NoResultsMessage message="No data available. Please run a scan." />
                         );
+                    } else {
+                        const formattedData = {
+                            results: data.results,
+                            complianceStandards: data.complianceStandards,
+                            entityList: data.clusters
+                        };
+                        const results = processData(match, location, formattedData, entityType);
+                        const labelLinks = getLabelLinks(
+                            match,
+                            location,
+                            formattedData,
+                            entityType
+                        );
+                        pages = results.length;
+
+                        if (pages) {
+                            const VerticalBarChartPaged = ({ currentPage }) => (
+                                <VerticalBarChart
+                                    data={results[currentPage]}
+                                    labelLinks={labelLinks}
+                                />
+                            );
+                            VerticalBarChartPaged.propTypes = { currentPage: PropTypes.number };
+                            VerticalBarChartPaged.defaultProps = { currentPage: 0 };
+                            contents = <VerticalBarChartPaged />;
+                        } else {
+                            contents = (
+                                <NoResultsMessage message="No data available. Please run a scan." />
+                            );
+                        }
                     }
                 }
 
@@ -130,6 +146,8 @@ const StandardsByEntity = ({ entityType, bodyClassName, className }) => {
     );
 };
 StandardsByEntity.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
     className: PropTypes.string
@@ -140,4 +158,4 @@ StandardsByEntity.defaultProps = {
     className: ''
 };
 
-export default StandardsByEntity;
+export default withRouter(StandardsByEntity);

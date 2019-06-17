@@ -3,45 +3,53 @@ import PropTypes from 'prop-types';
 import { Link, withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
-import contexts from 'constants/contextTypes';
-import pageTypes from 'constants/pageTypes';
 import { resourceLabels } from 'messages/common';
 import pluralize from 'pluralize';
 import Query from 'Components/ThrowingQuery';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'modules/queryService';
-import { getResourceCountFromResults } from 'modules/complianceUtils';
+import {
+    getResourceCountFromAggregatedResults,
+    getResourceCountFromComplianceResults
+} from 'modules/complianceUtils';
+import entityTypes from 'constants/entityTypes';
 
-const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match }) => {
+const ResourceTabs = ({ entityType, entityId, resourceTabs, match, location }) => {
+    const { pageEntityType: pageType } = URLService.getParams(match, location);
+
     function getLinkToListType(listEntityType) {
-        const urlParams = {
-            entityId,
-            entityType,
-            standardId,
-            controlId: entityId,
-            ...(listEntityType ? { listEntityType } : {})
-        };
-        return URLService.getLinkTo(contexts.COMPLIANCE, pageTypes.ENTITY, urlParams).url;
+        return URLService.getURL(match, location)
+            .base(entityType, entityId)
+            .push(listEntityType)
+            .url();
     }
 
     function processData(data) {
         const tabData = [
             {
                 title: 'overview',
-                link: getLinkToListType()
+                link: getLinkToListType(),
+                type: null
             }
         ];
 
         if (resourceTabs.length && data) {
             resourceTabs.forEach(type => {
-                const count = getResourceCountFromResults(type, data);
+                let count;
+                if (pageType === entityTypes.CONTROL) {
+                    count = getResourceCountFromComplianceResults(type, data);
+                } else {
+                    count = getResourceCountFromAggregatedResults(type, data);
+                }
                 if (count > 0)
                     tabData.push({
                         title: `${count} ${pluralize(resourceLabels[type], count)}`,
-                        link: getLinkToListType(type)
+                        link: getLinkToListType(type),
+                        type
                     });
             });
         }
+
         return tabData;
     }
 
@@ -53,6 +61,7 @@ const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match })
     }
 
     const variables = getVariables();
+    const tabEntity = URLService.getParams(match, location).entityListType1;
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
@@ -67,7 +76,7 @@ const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match })
                             const style = {
                                 borderColor: 'hsla(225, 44%, 87%, 1)'
                             };
-                            if (datum.link === match.url) {
+                            if (datum.type === tabEntity || (!tabEntity && !datum.type)) {
                                 bgColor = 'bg-base-100';
                                 textColor = 'text-primary-600';
                                 style.borderTopColor = 'hsla(225, 90%, 67%, 1)';
@@ -75,7 +84,11 @@ const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match })
                             }
 
                             return (
-                                <li key={datum.title} className="inline-block">
+                                // eslint-disable-next-line
+                                <li
+                                    key={datum.title}
+                                    className="inline-block"
+                                >
                                     <Link
                                         style={style}
                                         className={`no-underline ${textColor} ${borderLeft} ${bgColor} border-r min-w-32 px-3 text-center pt-3 pb-3 uppercase tracking-widest inline-block`}
@@ -94,16 +107,15 @@ const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match })
 };
 
 ResourceTabs.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
-    standardId: PropTypes.string,
-    resourceTabs: PropTypes.arrayOf(PropTypes.string),
-    match: ReactRouterPropTypes.match.isRequired
+    resourceTabs: PropTypes.arrayOf(PropTypes.string)
 };
 
 ResourceTabs.defaultProps = {
-    resourceTabs: [],
-    standardId: null
+    resourceTabs: PropTypes.arrayOf(PropTypes.string)
 };
 
 export default withRouter(ResourceTabs);
