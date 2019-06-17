@@ -362,6 +362,8 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSele
 func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore) {
 	if namespaceID, found := namespaceStore.lookupNamespaceID(w.GetNamespace()); found {
 		w.NamespaceId = namespaceID
+	} else {
+		log.Errorf("no namespace ID found for namespace %s and deployment %q", w.GetNamespace(), w.GetName())
 	}
 }
 

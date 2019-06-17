@@ -31,30 +31,46 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	roleBindingInformer := sif.Rbac().V1().RoleBindings().Informer()
 	clusterRoleBindingInformer := sif.Rbac().V1().ClusterRoleBindings().Informer()
 
-	wg := &concurrency.WaitGroup{}
+	// prePodWaitGroup
+	prePodWaitGroup := &concurrency.WaitGroup{}
 
 	// Informers that need to be synced initially
-	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil, wg, stopSignal)
-	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, wg, stopSignal)
-	handle(secretInformer, dispatchers.ForSecrets(), output, nil, wg, stopSignal)
-	handle(saInformer, dispatchers.ForServiceAccounts(), output, nil, wg, stopSignal)
+	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil, prePodWaitGroup, stopSignal)
+	handle(secretInformer, dispatchers.ForSecrets(), output, nil, prePodWaitGroup, stopSignal)
+	handle(saInformer, dispatchers.ForServiceAccounts(), output, nil, prePodWaitGroup, stopSignal)
 
 	// RBAC dispatchers handles multiple sets of data
-	handle(roleInformer, dispatchers.ForRoles(), output, nil, wg, stopSignal)
-	handle(clusterRoleInformer, dispatchers.ForClusterRoles(), output, nil, wg, stopSignal)
-	handle(roleBindingInformer, dispatchers.ForRoleBindings(), output, nil, wg, stopSignal)
-	handle(clusterRoleBindingInformer, dispatchers.ForClusterRoleBindings(), output, nil, wg, stopSignal)
+	handle(roleInformer, dispatchers.ForRoles(), output, nil, prePodWaitGroup, stopSignal)
+	handle(clusterRoleInformer, dispatchers.ForClusterRoles(), output, nil, prePodWaitGroup, stopSignal)
+	handle(roleBindingInformer, dispatchers.ForRoleBindings(), output, nil, prePodWaitGroup, stopSignal)
+	handle(clusterRoleBindingInformer, dispatchers.ForClusterRoleBindings(), output, nil, prePodWaitGroup, stopSignal)
 
 	sif.Start(stopSignal.Done())
 
-	// Run the pod and namespace and rbac object informers first since other handlers rely on their outputs.
-	informersToSync := []cache.SharedInformer{podInformer.Informer(), namespaceInformer, secretInformer,
+	// Run the namespace and rbac object informers first since other handlers rely on their outputs.
+	informersToSync := []cache.SharedInformer{namespaceInformer, secretInformer,
 		saInformer, roleInformer, clusterRoleInformer, roleBindingInformer, clusterRoleBindingInformer}
 	syncFuncs := make([]cache.InformerSynced, len(informersToSync))
 	for i, informer := range informersToSync {
 		syncFuncs[i] = informer.HasSynced
 	}
 	cache.WaitForCacheSync(stopSignal.Done(), syncFuncs...)
+
+	if !concurrency.WaitInContext(prePodWaitGroup, stopSignal) {
+		return
+	}
+
+	// Run the pod informer second since other handlers rely on its output.
+	podWaitGroup := &concurrency.WaitGroup{}
+	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, podWaitGroup, stopSignal)
+	sif.Start(stopSignal.Done())
+	cache.WaitForCacheSync(stopSignal.Done(), podInformer.Informer().HasSynced)
+
+	if !concurrency.WaitInContext(podWaitGroup, stopSignal) {
+		return
+	}
+
+	wg := &concurrency.WaitGroup{}
 
 	// Non-deployment types.
 	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil, wg, stopSignal)
