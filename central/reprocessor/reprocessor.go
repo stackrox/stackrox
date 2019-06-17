@@ -44,7 +44,7 @@ type Loop interface {
 
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager) Loop {
-	return newLoopWithDuration(connManager, time.Hour, 15*time.Second)
+	return newLoopWithDuration(connManager, 8*time.Hour, 15*time.Second)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.

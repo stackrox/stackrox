@@ -23,7 +23,7 @@ var (
 	metadataCache     expiringcache.Cache
 
 	imageCachesDataSize      = 50000
-	imageCacheExpiryDuration = 1 * time.Hour
+	imageCacheExpiryDuration = 4 * time.Hour
 	imagePruneInterval       = 1 * time.Minute
 )
 
