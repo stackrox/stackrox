@@ -43,10 +43,10 @@ func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.Fi
 	if fields.GetPermissionPolicy().GetPermissionLevel() == storage.PermissionLevel_UNSET {
 		return
 	}
-	maxPermissionAllowed := fields.GetPermissionPolicy().GetPermissionLevel()
+	disallowedPermission := fields.GetPermissionPolicy().GetPermissionLevel()
 
 	// Generate a query for deployments using any of those service accounts.
-	q, err = p.allClustersQuery(rbacReadingCtx, maxPermissionAllowed)
+	q, err = p.allClustersQuery(rbacReadingCtx, disallowedPermission)
 	if err != nil {
 		err = errors.Wrap(err, p.Name())
 		return
@@ -56,7 +56,7 @@ func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.Fi
 		violations := searchbasedpolicies.Violations{
 			AlertViolations: []*storage.Alert_Violation{
 				{
-					Message: fmt.Sprintf("Deployment uses a service account with permissions greater than %s", maxPermissionAllowed),
+					Message: fmt.Sprintf("Deployment uses a service account with permissions greater than or equal to %s", disallowedPermission),
 				},
 			},
 		}
@@ -67,7 +67,7 @@ func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.Fi
 
 // Create a query that matches the deployments with privileges above the threshold in each cluster and combine then in a
 // disjunction.
-func (p K8sRBACQueryBuilder) allClustersQuery(ctx context.Context, maxPermissionAllowed storage.PermissionLevel) (*v1.Query, error) {
+func (p K8sRBACQueryBuilder) allClustersQuery(ctx context.Context, disallowedPermission storage.PermissionLevel) (*v1.Query, error) {
 	// Get all clusters.
 	clusters, err := p.Clusters.GetClusters(ctx)
 	if err != nil {
@@ -77,7 +77,7 @@ func (p K8sRBACQueryBuilder) allClustersQuery(ctx context.Context, maxPermission
 	// Generate a query for each cluster.
 	clusterQueries := make([]*v1.Query, 0, len(clusters))
 	for _, cluster := range clusters {
-		clusterQuery, err := p.clusterQuery(ctx, cluster.GetId(), maxPermissionAllowed)
+		clusterQuery, err := p.clusterQuery(ctx, cluster.GetId(), disallowedPermission)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +96,7 @@ func (p K8sRBACQueryBuilder) allClustersQuery(ctx context.Context, maxPermission
 }
 
 // Create a query that matches the deployments with privileges above the threshold in a specific cluster.
-func (p K8sRBACQueryBuilder) clusterQuery(ctx context.Context, clusterID string, maxPermissionAllowed storage.PermissionLevel) (*v1.Query, error) {
+func (p K8sRBACQueryBuilder) clusterQuery(ctx context.Context, clusterID string, disallowedPermission storage.PermissionLevel) (*v1.Query, error) {
 	isInCluster := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 
 	// Fetch roles, bindings, and service accounts to form the query for the cluster.
@@ -117,7 +117,7 @@ func (p K8sRBACQueryBuilder) clusterQuery(ctx context.Context, clusterID string,
 	bucketEval := newBucketEvaluator(roles, bindings)
 	var subjectsThatViolateBucket []*storage.Subject
 	for _, subject := range collectServiceAccounts(serviceAccounts) {
-		if bucketEval.getBucket(subject) > maxPermissionAllowed {
+		if bucketEval.getBucket(subject) >= disallowedPermission {
 			subjectsThatViolateBucket = append(subjectsThatViolateBucket, subject)
 		}
 	}

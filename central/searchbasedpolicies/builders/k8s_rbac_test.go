@@ -226,7 +226,7 @@ func (suite *PipelineTestSuite) TestConstructCorrectQuery() {
 
 	fields := &storage.PolicyFields{
 		PermissionPolicy: &storage.PermissionPolicy{
-			PermissionLevel: storage.PermissionLevel_NONE,
+			PermissionLevel: storage.PermissionLevel_DEFAULT,
 		},
 	}
 	outputQuery, _, err := suite.tested.Query(fields, nil)
@@ -272,7 +272,7 @@ func (suite *PipelineTestSuite) TestConstructCorrectQuery() {
 
 	fields = &storage.PolicyFields{
 		PermissionPolicy: &storage.PermissionPolicy{
-			PermissionLevel: storage.PermissionLevel_DEFAULT,
+			PermissionLevel: storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
 		},
 	}
 	outputQuery, _, err = suite.tested.Query(fields, nil)
@@ -314,7 +314,7 @@ func (suite *PipelineTestSuite) TestConstructCorrectQuery() {
 
 	fields = &storage.PolicyFields{
 		PermissionPolicy: &storage.PermissionPolicy{
-			PermissionLevel: storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
+			PermissionLevel: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE,
 		},
 	}
 	outputQuery, _, err = suite.tested.Query(fields, nil)
@@ -341,7 +341,7 @@ func (suite *PipelineTestSuite) TestConstructCorrectQuery() {
 
 	fields = &storage.PolicyFields{
 		PermissionPolicy: &storage.PermissionPolicy{
-			PermissionLevel: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE,
+			PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
 		},
 	}
 	outputQuery, _, err = suite.tested.Query(fields, nil)
