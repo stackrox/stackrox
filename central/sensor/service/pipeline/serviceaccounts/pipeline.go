@@ -130,16 +130,12 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 		AddExactMatches(search.Namespace, sa.Namespace).
 		AddExactMatches(search.ServiceAccountName, sa.Name).ProtoQuery()
 
-	deployments, err := s.deployments.SearchListDeployments(ctx, q)
+	results, err := s.deployments.Search(ctx, q)
 	if err != nil {
 		log.Errorf("error searching for deployments with service account %q", sa.GetName())
 		return err
 	}
-
-	deploymentIDs := make([]string, len(deployments))
-	for _, d := range deployments {
-		deploymentIDs = append(deploymentIDs, d.GetId())
-	}
+	deploymentIDs := search.ResultsToIDs(results)
 	// Reprocess risk
 	s.riskReprocessor.ReprocessRiskForDeployments(deploymentIDs...)
 
