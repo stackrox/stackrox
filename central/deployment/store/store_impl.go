@@ -100,16 +100,6 @@ func (b *storeImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 }
 
 // Note: This is called within a txn and do not require an Update or View
-func (b *storeImpl) upsertListDeployment(bucket *bolt.Bucket, deployment *storage.Deployment) error {
-	listDeployment := convertDeploymentToDeploymentList(deployment)
-	bytes, err := proto.Marshal(listDeployment)
-	if err != nil {
-		return err
-	}
-	return bucket.Put([]byte(deployment.Id), bytes)
-}
-
-// Note: This is called within a txn and do not require an Update or View
 func (b *storeImpl) removeListDeployment(tx *bolt.Tx, id string) error {
 	bucket := tx.Bucket(deploymentListBucket)
 	return bucket.Delete([]byte(id))
@@ -217,42 +207,44 @@ func (b *storeImpl) CountDeployments() (count int, err error) {
 	return
 }
 
-func (b *storeImpl) upsertDeployment(deployment *storage.Deployment, bucket *bolt.Bucket) error {
+func (b *storeImpl) putDeployment(deployment *storage.Deployment, errorIfNotExists bool) error {
 	bytes, err := proto.Marshal(deployment)
 	if err != nil {
 		return err
 	}
-	return bucket.Put([]byte(deployment.Id), bytes)
-}
 
-// This needs to be called within an Update transaction, and is the common code between
-// upsert and update.
-func (b *storeImpl) putDeployment(deployment *storage.Deployment, tx *bolt.Tx, errorIfNotExists bool) error {
-	bucket := tx.Bucket(deploymentBucket)
-	if errorIfNotExists && !bolthelper.Exists(bucket, deployment.GetId()) {
-		return dberrors.ErrNotFound{Type: "Deployment", ID: deployment.GetId()}
-	}
-	b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
-	if err := b.upsertDeployment(deployment, bucket); err != nil {
+	listBytes, err := proto.Marshal(convertDeploymentToDeploymentList(deployment))
+	if err != nil {
 		return err
 	}
-	return b.upsertListDeployment(tx.Bucket(deploymentListBucket), deployment)
+
+	id := []byte(deployment.GetId())
+	return b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(deploymentBucket)
+		if errorIfNotExists && !bolthelper.Exists(bucket, deployment.GetId()) {
+			return dberrors.ErrNotFound{Type: "Deployment", ID: deployment.GetId()}
+		}
+		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
+
+		if err := bucket.Put(id, bytes); err != nil {
+			return err
+		}
+
+		listBucket := tx.Bucket(deploymentListBucket)
+		return listBucket.Put(id, listBytes)
+	})
 }
 
 // UpsertDeployment adds a deployment to bolt, or updates it if it exists already.
 func (b *storeImpl) UpsertDeployment(deployment *storage.Deployment) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Deployment")
-	return b.Update(func(tx *bolt.Tx) error {
-		return b.putDeployment(deployment, tx, false)
-	})
+	return b.putDeployment(deployment, false)
 }
 
 // UpdateDeployment updates a deployment to bolt
 func (b *storeImpl) UpdateDeployment(deployment *storage.Deployment) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Deployment")
-	return b.Update(func(tx *bolt.Tx) error {
-		return b.putDeployment(deployment, tx, true)
-	})
+	return b.putDeployment(deployment, true)
 }
 
 // RemoveDeployment removes a deployment
