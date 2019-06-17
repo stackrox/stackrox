@@ -104,6 +104,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	authzUser "github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
@@ -484,7 +485,7 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/graphql",
-			Authorizer:    allow.Anonymous(), // graphql enforces permissions internally
+			Authorizer:    user.With(), // graphql enforces permissions internally
 			ServerHandler: graphqlHandler.Handler(),
 			Compression:   true,
 		},

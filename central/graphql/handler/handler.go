@@ -3,14 +3,17 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"runtime"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type logger struct {
@@ -20,7 +23,7 @@ func (*logger) LogPanic(ctx context.Context, value interface{}) {
 	const size = 64 << 10
 	buf := make([]byte, size)
 	buf = buf[:runtime.Stack(buf, false)]
-	log.Printf("graphql: panic occurred: query was %+v; %v\n%s", ctx.Value(paramsContextKey{}), value, buf)
+	log.Errorf("graphql: panic occurred: query was %+v; %v\n%s", ctx.Value(paramsContextKey{}), value, buf)
 }
 
 type relayHandler struct {
@@ -59,10 +62,14 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Handler returns an HTTP handler for the graphql api endpoint
 func Handler() http.Handler {
+	opts := []graphql.SchemaOpt{graphql.Logger(&logger{})}
+	if buildinfo.ReleaseBuild {
+		opts = append(opts, graphql.DisableIntrospection())
+	}
 	s := resolvers.Schema()
-	ourSchema, err := graphql.ParseSchema(s, resolvers.New(), graphql.Logger(&logger{}))
+	ourSchema, err := graphql.ParseSchema(s, resolvers.New(), opts...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "s: %q", s)
+		log.Errorf("Unable to parse schema:\n%q", s)
 		panic(err)
 	}
 	return &relayHandler{Schema: ourSchema}
