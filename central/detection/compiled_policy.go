@@ -48,10 +48,10 @@ func (cp *compiledPolicy) Matcher() searchbasedpolicies.Matcher {
 	return cp.matcher
 }
 
-// IsEnabledAndAppliesTo returns if the compiled policy applies to the input object.
-func (cp *compiledPolicy) IsEnabledAndAppliesTo(input interface{}) bool {
+// AppliesTo returns if the compiled policy applies to the input object.
+func (cp *compiledPolicy) AppliesTo(input interface{}) bool {
 	for _, predicate := range cp.predicates {
-		if predicate.IsEnabledAndAppliesTo(input) {
+		if predicate.AppliesTo(input) {
 			return true
 		}
 	}
@@ -60,7 +60,7 @@ func (cp *compiledPolicy) IsEnabledAndAppliesTo(input interface{}) bool {
 
 // Predicate says whether or not a compiled policy applies to an object.
 type Predicate interface {
-	IsEnabledAndAppliesTo(interface{}) bool
+	AppliesTo(interface{}) bool
 }
 
 // Predicate for deployments.
@@ -68,10 +68,7 @@ type deploymentPredicate struct {
 	policy *storage.Policy
 }
 
-func (cp *deploymentPredicate) IsEnabledAndAppliesTo(input interface{}) bool {
-	if cp.policy.GetDisabled() {
-		return false
-	}
+func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
 	deployment, isDeployment := input.(*storage.Deployment)
 	if !isDeployment {
 		return false
@@ -84,10 +81,7 @@ type imagePredicate struct {
 	policy *storage.Policy
 }
 
-func (cp *imagePredicate) IsEnabledAndAppliesTo(input interface{}) bool {
-	if cp.policy.GetDisabled() {
-		return false
-	}
+func (cp *imagePredicate) AppliesTo(input interface{}) bool {
 	image, isImage := input.(*storage.Image)
 	if !isImage {
 		return false

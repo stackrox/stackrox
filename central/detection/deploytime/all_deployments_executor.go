@@ -28,6 +28,9 @@ func (d *allDeploymentsExecutor) ClearAlerts() {
 }
 
 func (d *allDeploymentsExecutor) Execute(compiled detection.CompiledPolicy) error {
+	if compiled.Policy().GetDisabled() {
+		return nil
+	}
 	violationsByDeployment, err := compiled.Matcher().Match(context.TODO(), d.deployments)
 	if err != nil {
 		return err
@@ -41,7 +44,7 @@ func (d *allDeploymentsExecutor) Execute(compiled detection.CompiledPolicy) erro
 			log.Errorf("deployment with id %q had violations, but doesn't exist", deploymentID)
 			continue
 		}
-		if !compiled.IsEnabledAndAppliesTo(dep) {
+		if !compiled.AppliesTo(dep) {
 			continue
 		}
 		d.alerts = append(d.alerts, policyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations.AlertViolations))

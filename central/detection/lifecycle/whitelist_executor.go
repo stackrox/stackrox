@@ -32,7 +32,7 @@ func newWhitelistExecutor(deployments datastore.DataStore, deploymentsToIndicato
 }
 
 func (w *whitelistExecutor) Execute(compiled detection.CompiledPolicy) error {
-	if !runtime.IsProcessWhitelistPolicy(compiled) {
+	if !runtime.IsProcessWhitelistPolicy(compiled) || compiled.Policy().GetDisabled() {
 		return nil
 	}
 
@@ -55,7 +55,7 @@ func (w *whitelistExecutor) Execute(compiled detection.CompiledPolicy) error {
 			log.Errorf("deployment with id %q had violations, but doesn't exist", deploymentID)
 			continue
 		}
-		if !compiled.IsEnabledAndAppliesTo(dep) {
+		if !compiled.AppliesTo(dep) {
 			continue
 		}
 		w.alerts = append(w.alerts, runtime.PolicyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations))

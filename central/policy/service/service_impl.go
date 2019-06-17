@@ -276,7 +276,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 			// Maybe the deployment was deleted around the time of the dry-run.
 			continue
 		}
-		if !compiledPolicy.IsEnabledAndAppliesTo(deployment) {
+		if !compiledPolicy.AppliesTo(deployment) {
 			continue
 		}
 		// Collect the violation messages as strings for the output.

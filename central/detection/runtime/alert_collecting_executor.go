@@ -49,7 +49,7 @@ func IsProcessWhitelistPolicy(compiled detection.CompiledPolicy) bool {
 }
 
 func (d *alertCollectingExecutorImpl) Execute(compiled detection.CompiledPolicy) error {
-	if IsProcessWhitelistPolicy(compiled) {
+	if IsProcessWhitelistPolicy(compiled) || compiled.Policy().GetDisabled() {
 		return nil
 	}
 	var err error
@@ -73,7 +73,7 @@ func (d *alertCollectingExecutorImpl) Execute(compiled detection.CompiledPolicy)
 			log.Errorf("deployment with id '%s' had violations, but doesn't exist", deploymentID)
 			continue
 		}
-		if !compiled.IsEnabledAndAppliesTo(dep) {
+		if !compiled.AppliesTo(dep) {
 			continue
 		}
 		d.alerts = append(d.alerts, PolicyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations))
