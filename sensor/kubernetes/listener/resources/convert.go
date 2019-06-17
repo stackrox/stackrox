@@ -159,7 +159,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
 	case *v1.Pod:
 		if o.Status.Phase != v1.PodRunning {
-			return fmt.Errorf("found Pod %s, but it was not running", o.Name)
+			return fmt.Errorf("found Pod %s, but it was in phase %q with reason %q", o.Name, o.Status.Phase, o.Status.Reason)
 		}
 		// Standalone Pods do not have a PodTemplate, like the other deployment
 		// types do. So, we need to directly access the Pod's Spec field,
