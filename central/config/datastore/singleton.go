@@ -25,9 +25,6 @@ var (
 	d DataStore
 
 	defaultPrivateConfig = storage.PrivateConfig{
-		AlertRetention: &storage.PrivateConfig_AlertRetentionDurationDays{
-			AlertRetentionDurationDays: DefaultAlertRetention,
-		},
 		ImageRetentionDurationDays: DefaultImageRetention,
 	}
 )
