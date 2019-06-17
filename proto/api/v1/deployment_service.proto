@@ -7,7 +7,6 @@ import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
 import "api/v1/search_service.proto";
 import "api/v1/empty.proto";
-import "storage/multiplier.proto";
 import "storage/deployment.proto";
 import "storage/process_whitelist.proto";
 
@@ -20,10 +19,6 @@ message DeploymentLabelsResponse {
     }
     map<string, LabelValues> labels     = 1;
     repeated string values              = 2;
-}
-
-message GetMultipliersResponse {
-    repeated storage.Multiplier multipliers = 1;
 }
 
 
@@ -71,35 +66,6 @@ service DeploymentService {
     rpc GetLabels (Empty) returns (DeploymentLabelsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments/metadata/labels"
-        };
-    }
-
-    // GetMultipliers is deprecated.
-    rpc GetMultipliers (Empty) returns (GetMultipliersResponse) {
-        option (google.api.http) = {
-            get: "/v1/deployments/metadata/multipliers"
-        };
-    }
-
-    // AddMultiplier is deprecated.
-    rpc AddMultiplier (storage.Multiplier) returns (storage.Multiplier) {
-        option (google.api.http) = {
-            post: "/v1/deployments/metadata/multipliers"
-            body: "*"
-        };
-    }
-
-    // UpdateMultiplier is deprecated.
-    rpc UpdateMultiplier (storage.Multiplier) returns (Empty) {
-        option (google.api.http) = {
-            put: "/v1/deployments/metadata/multipliers/{id}"
-        };
-    }
-
-    // RemoveMultiplier is deprecated.
-    rpc RemoveMultiplier (ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/deployments/metadata/multipliers/{id}"
         };
     }
 }

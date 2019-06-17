@@ -2,7 +2,6 @@ package manager
 
 import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	multiplierDS "github.com/stackrox/rox/central/multiplier/store"
 	"github.com/stackrox/rox/central/risk"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -14,7 +13,7 @@ var (
 
 func initialize() {
 	var err error
-	manager, err = New(deploymentDS.Singleton(), multiplierDS.Singleton(), risk.GetScorer())
+	manager, err = New(deploymentDS.Singleton(), risk.GetScorer())
 	if err != nil {
 		panic(err)
 	}

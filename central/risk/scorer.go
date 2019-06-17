@@ -24,9 +24,6 @@ var (
 // Scorer is the object that encompasses the multipliers for evaluating risk
 type Scorer interface {
 	Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk
-
-	UpdateUserDefinedMultiplier(mult *storage.Multiplier)
-	RemoveUserDefinedMultiplier(id string)
 }
 
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
@@ -46,7 +43,6 @@ func NewScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindi
 			multipliers.NewComponentCount(),
 			multipliers.NewImageAge(),
 		},
-		UserDefinedMultipliers: make(map[string]multipliers.Multiplier),
 	}
 
 	if features.K8sRBAC.Enabled() {

@@ -2,7 +2,6 @@ package risk
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -96,43 +95,7 @@ func TestScore(t *testing.T) {
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
-	// With user defined function
-	for val := 1; val <= 3; val++ {
-		mult := &storage.Multiplier{
-			Id:   fmt.Sprintf("%d", val),
-			Name: fmt.Sprintf("Cluster multiplier %d", val),
-			Scope: &storage.Scope{
-				Cluster: "cluster",
-			},
-			Value: float32(val),
-		}
-		scorer.UpdateUserDefinedMultiplier(mult)
-	}
-
-	expectedRiskScore = 54.096
-	expectedRiskResults = append(expectedRiskResults, []*storage.Risk_Result{
-		{
-			Name: "Cluster multiplier 3",
-			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Deployment matched scope 'cluster:cluster'"},
-			},
-			Score: 3.0,
-		},
-		{
-			Name: "Cluster multiplier 2",
-			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Deployment matched scope 'cluster:cluster'"},
-			},
-			Score: 2.0,
-		},
-		{
-			Name: "Cluster multiplier 1",
-			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Deployment matched scope 'cluster:cluster'"},
-			},
-			Score: 1.0,
-		},
-	}...)
+	expectedRiskScore = 9.016
 
 	if features.K8sRBAC.Enabled() {
 		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)

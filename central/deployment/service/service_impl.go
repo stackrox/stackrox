@@ -6,7 +6,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processWhitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
@@ -15,8 +14,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/dberrors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -38,12 +35,6 @@ var (
 			"/v1.DeploymentService/GetDeployment",
 			"/v1.DeploymentService/ListDeployments",
 			"/v1.DeploymentService/GetLabels",
-			"/v1.DeploymentService/GetMultipliers",
-		},
-		user.With(permissions.Modify(resources.Deployment)): {
-			"/v1.DeploymentService/AddMultiplier",
-			"/v1.DeploymentService/UpdateMultiplier",
-			"/v1.DeploymentService/RemoveMultiplier",
 		},
 		user.With(permissions.View(resources.Deployment), permissions.View(resources.ProcessWhitelist), permissions.View(resources.Indicator)): {
 			"/v1.DeploymentService/ListDeploymentsWithProcessInfo",
@@ -57,7 +48,6 @@ type serviceImpl struct {
 	processWhitelists       processWhitelistStore.DataStore
 	processIndicators       processIndicatorStore.DataStore
 	processWhitelistResults processWhitelistResultsStore.DataStore
-	multipliers             multiplierStore.Store
 	manager                 manager.Manager
 }
 
@@ -194,64 +184,4 @@ func labelsMapFromDeployments(deployments []*storage.Deployment) (keyValuesMap m
 	sort.Strings(values)
 
 	return
-}
-
-// GetMultipliers returns all multipliers
-func (s *serviceImpl) GetMultipliers(ctx context.Context, request *v1.Empty) (*v1.GetMultipliersResponse, error) {
-	multipliers, err := s.multipliers.GetMultipliers()
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	return &v1.GetMultipliersResponse{
-		Multipliers: multipliers,
-	}, nil
-}
-
-func validateMultiplier(mult *storage.Multiplier) error {
-	errorList := errorhelpers.NewErrorList("Validation")
-	if mult.GetName() == "" {
-		errorList.AddString("multiplier name must be specified")
-	}
-	if mult.GetValue() < 1 || mult.GetValue() > 2 {
-		errorList.AddString("multiplier must have a value between 1 and 2 inclusive")
-	}
-	return errorList.ToError()
-}
-
-// AddMultiplier inserts the specified multiplier
-func (s *serviceImpl) AddMultiplier(ctx context.Context, request *storage.Multiplier) (*storage.Multiplier, error) {
-	if err := validateMultiplier(request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	id, err := s.multipliers.AddMultiplier(request)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	request.Id = id
-	s.manager.UpdateMultiplier(request)
-	return request, nil
-}
-
-// UpdateMultiplier updates the specified multiplier
-func (s *serviceImpl) UpdateMultiplier(ctx context.Context, request *storage.Multiplier) (*v1.Empty, error) {
-	if err := s.multipliers.UpdateMultiplier(request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	s.manager.UpdateMultiplier(request)
-	return &v1.Empty{}, nil
-}
-
-// RemoveMultiplier removes the specified multiplier
-func (s *serviceImpl) RemoveMultiplier(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "ID must be specified when removing a multiplier")
-	}
-	if err := s.multipliers.RemoveMultiplier(request.GetId()); err != nil {
-		if _, ok := err.(dberrors.ErrNotFound); ok {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	s.manager.RemoveMultiplier(request.GetId())
-	return &v1.Empty{}, nil
 }

@@ -37,7 +37,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search_index:\\\"Policy ID,Policy,Category,Severity\\"
+                    "value": "search_index:\\\"Policy ID,Policy,Category,Severity\\\""
                   }
                 ]
               },
@@ -48,20 +48,14 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Lifecycle Stage,store\\"
+                    "value": "search:\\\"Lifecycle Stage,store\\\""
                   }
                 ]
               },
               {
                 "id": 4,
                 "name": "deployment",
-                "type": "Deployment",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search_index:\\\"Deployment ID,Cluster,Namespace,Deployment\\"
-                  }
-                ]
+                "type": "Deployment"
               },
               {
                 "id": 5,
@@ -86,7 +80,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Violation Time\\"
+                    "value": "search:\\\"Violation Time\\\""
                   }
                 ]
               },
@@ -102,7 +96,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Violation State,store\\"
+                    "value": "search:\\\"Violation State,store\\\""
                   }
                 ]
               },
@@ -113,6 +107,130 @@
               }
             ],
             "messages": [
+              {
+                "name": "Deployment",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Deployment ID,store,hidden\\\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 2,
+                    "name": "name",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Deployment,store\\\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 4,
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "namespace",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Namespace,store\\\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 9,
+                    "name": "cluster_id",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Cluster ID,store\\\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 10,
+                    "name": "cluster_name",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Cluster,store\\\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 11,
+                    "name": "containers",
+                    "type": "Container",
+                    "is_repeated": true
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 7,
+                      "name": "labels",
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 14,
+                      "name": "annotations",
+                      "type": "string"
+                    }
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Container",
+                    "fields": [
+                      {
+                        "id": 3,
+                        "name": "image",
+                        "type": "ContainerImage",
+                        "options": [
+                          {
+                            "name": "(gogoproto.moretags)",
+                            "value": "search:\\\"-\\\""
+                          }
+                        ]
+                      },
+                      {
+                        "id": 10,
+                        "name": "name",
+                        "type": "string"
+                      }
+                    ],
+                    "options": [
+                      {
+                        "name": "(gogoproto.goproto_unrecognized)",
+                        "value": "false"
+                      }
+                    ]
+                  }
+                ],
+                "options": [
+                  {
+                    "name": "(gogoproto.goproto_unrecognized)",
+                    "value": "false"
+                  }
+                ]
+              },
               {
                 "name": "Violation",
                 "fields": [
@@ -134,7 +252,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"-\\"
+                        "value": "search:\\\"-\\\""
                       }
                     ]
                   }
@@ -156,7 +274,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"-\\"
+                        "value": "search:\\\"-\\\""
                       }
                     ]
                   }
@@ -209,7 +327,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Lifecycle Stage,store\\"
+                    "value": "search:\\\"Lifecycle Stage,store\\\""
                   }
                 ]
               },
@@ -220,7 +338,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Violation Time\\"
+                    "value": "search:\\\"Violation Time\\\""
                   }
                 ]
               },
@@ -241,7 +359,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Violation State,store\\"
+                    "value": "search:\\\"Violation State,store\\\""
                   }
                 ]
               },
@@ -262,7 +380,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Policy ID,store,hidden\\"
+                    "value": "search:\\\"Policy ID,store,hidden\\\""
                   }
                 ]
               },
@@ -273,7 +391,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Policy,store\\"
+                    "value": "search:\\\"Policy,store\\\""
                   }
                 ]
               },
@@ -284,7 +402,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Severity,store\\"
+                    "value": "search:\\\"Severity,store\\\""
                   }
                 ]
               },
@@ -301,7 +419,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Category,store\\"
+                    "value": "search:\\\"Category,store\\\""
                   }
                 ]
               }
@@ -317,7 +435,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment ID,store,hidden\\"
+                    "value": "search:\\\"Deployment ID,store,hidden\\\""
                   }
                 ]
               },
@@ -328,14 +446,9 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment,store\\"
+                    "value": "search:\\\"Deployment,store\\\""
                   }
                 ]
-              },
-              {
-                "id": 3,
-                "name": "updated_at",
-                "type": "google.protobuf.Timestamp"
               },
               {
                 "id": 4,
@@ -344,7 +457,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster,store\\"
+                    "value": "search:\\\"Cluster,store\\\""
                   }
                 ]
               },
@@ -355,10 +468,24 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,store\\"
+                    "value": "search:\\\"Namespace,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster ID,store\\\""
                   }
                 ]
               }
+            ],
+            "reserved_ids": [
+              3
             ]
           }
         ],
@@ -501,6 +628,46 @@
       }
     },
     {
+      "protopath": "authz_plugin.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "AuthzPluginConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "enabled",
+                "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "endpoint_config",
+                "type": "HTTPEndpointConfig"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/http_endpoint.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
       "protopath": "certificates.proto",
       "def": {
         "messages": [
@@ -542,14 +709,11 @@
               {
                 "name": "OPENSHIFT_CLUSTER",
                 "integer": 2
-              },
-              {
-                "name": "DOCKER_EE_CLUSTER",
-                "integer": 4
               }
             ],
             "reserved_ids": [
-              3
+              3,
+              4
             ]
           },
           {
@@ -710,7 +874,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,hidden\\"
+                    "value": "search:\\\"Cluster ID,hidden,store\\\""
                   }
                 ]
               },
@@ -721,7 +885,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster\\"
+                    "value": "search:\\\"Cluster\\\""
                   }
                 ]
               },
@@ -1334,12 +1498,32 @@
             ]
           },
           {
+            "name": "PrivateConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "alert_retention_duration_days",
+                "type": "int32"
+              },
+              {
+                "id": 2,
+                "name": "image_retention_duration_days",
+                "type": "int32"
+              }
+            ]
+          },
+          {
             "name": "Config",
             "fields": [
               {
                 "id": 1,
                 "name": "public_config",
                 "type": "PublicConfig"
+              },
+              {
+                "id": 2,
+                "name": "private_config",
+                "type": "PrivateConfig"
               }
             ]
           }
@@ -1401,7 +1585,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment ID,store,hidden\\"
+                    "value": "search:\\\"Deployment ID,store,hidden\\\""
                   }
                 ]
               },
@@ -1412,14 +1596,9 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment,store\\"
+                    "value": "search:\\\"Deployment,store\\\""
                   }
                 ]
-              },
-              {
-                "id": 3,
-                "name": "version",
-                "type": "string"
               },
               {
                 "id": 26,
@@ -1433,7 +1612,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment Type\\"
+                    "value": "search:\\\"Deployment Type\\\""
                   }
                 ]
               },
@@ -1444,7 +1623,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,store\\"
+                    "value": "search:\\\"Namespace,store\\\""
                   }
                 ]
               },
@@ -1455,7 +1634,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace ID\\"
+                    "value": "search:\\\"Namespace ID\\\""
                   }
                 ]
               },
@@ -1481,7 +1660,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,store,hidden\\"
+                    "value": "search:\\\"Cluster ID,store,hidden\\\""
                   }
                 ]
               },
@@ -1492,7 +1671,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster,store\\"
+                    "value": "search:\\\"Cluster,store\\\""
                   }
                 ]
               },
@@ -1525,7 +1704,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Pull Secret\\"
+                    "value": "search:\\\"Image Pull Secret\\\""
                   }
                 ]
               },
@@ -1536,7 +1715,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Service Account\\"
+                    "value": "search:\\\"Service Account\\\""
                   }
                 ]
               },
@@ -1573,7 +1752,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Label,store\\"
+                      "value": "search:\\\"Label,store\\\""
                     }
                   ]
                 }
@@ -1587,7 +1766,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Pod Label,store\\"
+                      "value": "search:\\\"Pod Label,store\\\""
                     }
                   ]
                 }
@@ -1601,11 +1780,14 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Annotation\\"
+                      "value": "search:\\\"Annotation\\\""
                     }
                   ]
                 }
               }
+            ],
+            "reserved_ids": [
+              3
             ]
           },
           {
@@ -1618,7 +1800,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Sha,store,hidden\\"
+                    "value": "search:\\\"Image Sha,store,hidden\\\""
                   }
                 ]
               },
@@ -1626,6 +1808,12 @@
                 "id": 1,
                 "name": "name",
                 "type": "ImageName"
+              }
+            ],
+            "options": [
+              {
+                "name": "(gogoproto.goproto_unrecognized)",
+                "value": "false"
               }
             ]
           },
@@ -1649,7 +1837,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search_index:\\\"Image Sha\\\" search_xref:\\\"all\\"
+                    "value": "search_index:\\\"Image Sha\\\" search_xref:\\\"all\\\""
                   }
                 ]
               },
@@ -1704,7 +1892,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CPU Cores Request,store\\"
+                    "value": "search:\\\"CPU Cores Request,store\\\""
                   }
                 ]
               },
@@ -1715,7 +1903,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CPU Cores Limit,store\\"
+                    "value": "search:\\\"CPU Cores Limit,store\\\""
                   }
                 ]
               },
@@ -1726,7 +1914,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Memory Request (MB),store\\"
+                    "value": "search:\\\"Memory Request (MB),store\\\""
                   }
                 ]
               },
@@ -1737,7 +1925,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Memory Limit (MB),store\\"
+                    "value": "search:\\\"Memory Limit (MB),store\\\""
                   }
                 ]
               }
@@ -1753,7 +1941,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Volume Name,store\\"
+                    "value": "search:\\\"Volume Name,store\\\""
                   }
                 ]
               },
@@ -1764,7 +1952,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Volume Source,store\\"
+                    "value": "search:\\\"Volume Source,store\\\""
                   }
                 ]
               },
@@ -1775,7 +1963,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Volume Destination,store\\"
+                    "value": "search:\\\"Volume Destination,store\\\""
                   }
                 ]
               },
@@ -1786,7 +1974,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Volume ReadOnly,store\\"
+                    "value": "search:\\\"Volume ReadOnly,store\\\""
                   }
                 ]
               },
@@ -1797,7 +1985,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Volume Type,store\\"
+                    "value": "search:\\\"Volume Type,store\\\""
                   }
                 ]
               }
@@ -1854,7 +2042,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Secret\\"
+                    "value": "search:\\\"Secret\\\""
                   }
                 ]
               },
@@ -1865,7 +2053,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Secret Path\\"
+                    "value": "search:\\\"Secret Path\\\""
                   }
                 ]
               }
@@ -1886,7 +2074,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Port,store\\"
+                    "value": "search:\\\"Port,store\\\""
                   }
                 ]
               },
@@ -1897,7 +2085,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Port Protocol,store\\"
+                    "value": "search:\\\"Port Protocol,store\\\""
                   }
                 ]
               },
@@ -1908,7 +2096,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Max Exposure Level,store\\"
+                    "value": "search:\\\"Max Exposure Level,store\\\""
                   }
                 ]
               },
@@ -1941,7 +2129,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Exposure Level,store\\"
+                        "value": "search:\\\"Exposure Level,store\\\""
                       }
                     ]
                   },
@@ -1952,7 +2140,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Exposing Service,store\\"
+                        "value": "search:\\\"Exposing Service,store\\\""
                       }
                     ]
                   },
@@ -1973,7 +2161,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Exposing Service Port,store\\"
+                        "value": "search:\\\"Exposing Service Port,store\\\""
                       }
                     ]
                   },
@@ -1984,7 +2172,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Exposed Node Port,store\\"
+                        "value": "search:\\\"Exposed Node Port,store\\\""
                       }
                     ]
                   },
@@ -1996,7 +2184,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"External IP,store\\"
+                        "value": "search:\\\"External IP,store\\\""
                       }
                     ]
                   },
@@ -2008,7 +2196,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"External Hostname,store\\"
+                        "value": "search:\\\"External Hostname,store\\\""
                       }
                     ]
                   }
@@ -2064,7 +2252,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Environment Key,store\\"
+                        "value": "search:\\\"Environment Key,store\\\""
                       }
                     ]
                   },
@@ -2075,7 +2263,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Environment Value,store\\"
+                        "value": "search:\\\"Environment Value,store\\\""
                       }
                     ]
                   }
@@ -2093,7 +2281,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Privileged,store\\"
+                    "value": "search:\\\"Privileged,store\\\""
                   }
                 ]
               },
@@ -2110,7 +2298,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Drop Capabilities,store\\"
+                    "value": "search:\\\"Drop Capabilities,store\\\""
                   }
                 ]
               },
@@ -2122,7 +2310,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Add Capabilities,store\\"
+                    "value": "search:\\\"Add Capabilities,store\\\""
                   }
                 ]
               },
@@ -2133,7 +2321,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Read Only Root Filesystem,store\\"
+                    "value": "search:\\\"Read Only Root Filesystem,store\\\""
                   }
                 ]
               }
@@ -2354,7 +2542,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -2422,6 +2610,66 @@
                 "type": "string"
               }
             ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "http_endpoint.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "HTTPEndpointConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "skip_tls_verify",
+                "type": "bool"
+              },
+              {
+                "id": 3,
+                "name": "ca_cert",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "username",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "password",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"always\\\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "headers",
+                "type": "KeyValuePair",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
+          },
+          {
+            "path": "storage/common.proto"
           }
         ],
         "package": {
@@ -2509,7 +2757,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Sha,store,hidden\\"
+                    "value": "search:\\\"Image Sha,store,hidden\\\""
                   }
                 ]
               },
@@ -2535,7 +2783,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Last Updated,hidden\\"
+                    "value": "search:\\\"Last Updated,hidden\\\""
                   }
                 ]
               }
@@ -2550,7 +2798,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"ClusterNS Scopes,store,hidden\\"
+                      "value": "search:\\\"ClusterNS Scopes,store,hidden\\\""
                     }
                   ]
                 }
@@ -2567,7 +2815,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Scan Time,store\\"
+                    "value": "search:\\\"Image Scan Time,store\\\""
                   }
                 ]
               },
@@ -2589,7 +2837,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Component,store\\"
+                    "value": "search:\\\"Component,store\\\""
                   }
                 ]
               },
@@ -2600,7 +2848,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Component Version,store\\"
+                    "value": "search:\\\"Component Version,store\\\""
                   }
                 ]
               },
@@ -2614,6 +2862,11 @@
                 "name": "vulns",
                 "type": "Vulnerability",
                 "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "layer_index",
+                "type": "int32"
               }
             ]
           },
@@ -2647,7 +2900,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CVE,store\\"
+                    "value": "search:\\\"CVE,store\\\""
                   }
                 ]
               },
@@ -2658,7 +2911,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CVSS,store\\"
+                    "value": "search:\\\"CVSS,store\\\""
                   }
                 ]
               },
@@ -2674,7 +2927,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CVE Link,store,hidden\\"
+                    "value": "search:\\\"CVE Link,store,hidden\\\""
                   }
                 ]
               },
@@ -2685,7 +2938,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixed By,store\\"
+                    "value": "search:\\\"Fixed By,store\\\""
                   }
                 ]
               },
@@ -2782,7 +3035,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Created Time,store\\"
+                    "value": "search:\\\"Image Created Time,store\\\""
                   }
                 ]
               },
@@ -2804,7 +3057,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image User\\"
+                    "value": "search:\\\"Image User\\\""
                   }
                 ]
               },
@@ -2816,7 +3069,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Command\\"
+                    "value": "search:\\\"Image Command\\\""
                   }
                 ]
               },
@@ -2828,7 +3081,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Entrypoint\\"
+                    "value": "search:\\\"Image Entrypoint\\\""
                   }
                 ]
               },
@@ -2840,7 +3093,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Volumes\\"
+                    "value": "search:\\\"Image Volumes\\\""
                   }
                 ]
               }
@@ -2856,7 +3109,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Dockerfile Instruction Keyword,store\\"
+                    "value": "search:\\\"Dockerfile Instruction Keyword,store\\\""
                   }
                 ]
               },
@@ -2867,7 +3120,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Dockerfile Instruction Value,store\\"
+                    "value": "search:\\\"Dockerfile Instruction Value,store\\\""
                   }
                 ]
               },
@@ -2883,7 +3136,7 @@
               },
               {
                 "id": 5,
-                "name": "components",
+                "name": "DEPRECATED_components",
                 "type": "ImageScanComponent",
                 "is_repeated": true
               },
@@ -2904,7 +3157,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Registry,store\\"
+                    "value": "search:\\\"Image Registry,store\\\""
                   }
                 ]
               },
@@ -2915,7 +3168,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Remote,store\\"
+                    "value": "search:\\\"Image Remote,store\\\""
                   }
                 ]
               },
@@ -2926,7 +3179,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Tag,store\\"
+                    "value": "search:\\\"Image Tag,store\\\""
                   }
                 ]
               },
@@ -2937,7 +3190,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image,store,analyzer=standard\\"
+                    "value": "search:\\\"Image,store,analyzer=standard\\\""
                   }
                 ]
               }
@@ -3127,7 +3380,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               }
@@ -3173,7 +3426,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -3204,7 +3457,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -3235,7 +3488,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -3266,7 +3519,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -3287,7 +3540,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -3298,7 +3551,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               }
@@ -3451,46 +3704,6 @@
       }
     },
     {
-      "protopath": "multiplier.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "Multiplier",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "name",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "scope",
-                "type": "Scope"
-              },
-              {
-                "id": 4,
-                "name": "value",
-                "type": "float"
-              }
-            ]
-          }
-        ],
-        "imports": [
-          {
-            "path": "storage/scope.proto"
-          }
-        ],
-        "package": {
-          "name": "storage"
-        }
-      }
-    },
-    {
       "protopath": "namespace_metadata.proto",
       "def": {
         "messages": [
@@ -3504,7 +3717,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace ID\\"
+                    "value": "search:\\\"Namespace ID\\\""
                   }
                 ]
               },
@@ -3515,7 +3728,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,store\\"
+                    "value": "search:\\\"Namespace,store\\\""
                   }
                 ]
               },
@@ -3526,7 +3739,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,hidden\\"
+                    "value": "search:\\\"Cluster ID,hidden,store\\\""
                   }
                 ]
               },
@@ -3537,7 +3750,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster\\"
+                    "value": "search:\\\"Cluster\\\""
                   }
                 ]
               },
@@ -3557,7 +3770,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Label\\"
+                      "value": "search:\\\"Label\\\""
                     }
                   ]
                 }
@@ -4020,7 +4233,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Node ID,store\\"
+                    "value": "search:\\\"Node ID,store\\\""
                   }
                 ]
               },
@@ -4031,7 +4244,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Node,store\\"
+                    "value": "search:\\\"Node,store\\\""
                   }
                 ]
               },
@@ -4048,7 +4261,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,store\\"
+                    "value": "search:\\\"Cluster ID,store\\\""
                   }
                 ]
               },
@@ -4059,7 +4272,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster,store\\"
+                    "value": "search:\\\"Cluster,store\\\""
                   }
                 ]
               },
@@ -4106,7 +4319,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Label\\"
+                      "value": "search:\\\"Label\\\""
                     }
                   ]
                 }
@@ -4120,7 +4333,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Annotation\\"
+                      "value": "search:\\\"Annotation\\\""
                     }
                   ]
                 }
@@ -4233,7 +4446,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -4268,7 +4481,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -4304,7 +4517,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -4335,7 +4548,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -4371,7 +4584,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               }
@@ -4407,7 +4620,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\"
+                    "value": "scrub:\\\"always\\\""
                   }
                 ]
               },
@@ -4591,7 +4804,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Policy ID,store,hidden\\"
+                    "value": "search:\\\"Policy ID,store,hidden\\\""
                   }
                 ]
               },
@@ -4602,7 +4815,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Policy,store\\"
+                    "value": "search:\\\"Policy,store\\\""
                   }
                 ]
               },
@@ -4613,7 +4826,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Description\\"
+                    "value": "search:\\\"Description\\\""
                   }
                 ]
               },
@@ -4640,7 +4853,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Category,store\\"
+                    "value": "search:\\\"Category,store\\\""
                   }
                 ]
               },
@@ -4657,7 +4870,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Lifecycle Stage,store\\"
+                    "value": "search:\\\"Lifecycle Stage,store\\\""
                   }
                 ]
               },
@@ -4680,7 +4893,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Severity,store\\"
+                    "value": "search:\\\"Severity,store\\\""
                   }
                 ]
               },
@@ -4692,7 +4905,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Enforcement\\"
+                    "value": "search:\\\"Enforcement\\\""
                   }
                 ]
               },
@@ -5145,7 +5358,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"-\\"
+                        "value": "search:\\\"-\\\""
                       }
                     ]
                   }
@@ -5215,7 +5428,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process ID,store,hidden\\"
+                    "value": "search:\\\"Process ID,store,hidden\\\""
                   }
                 ]
               },
@@ -5226,7 +5439,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment ID,store,hidden\\"
+                    "value": "search:\\\"Deployment ID,store,hidden\\\""
                   }
                 ]
               },
@@ -5257,7 +5470,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,store,hidden\\"
+                    "value": "search:\\\"Cluster ID,store,hidden\\\""
                   }
                 ]
               },
@@ -5268,7 +5481,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,store,hidden\\"
+                    "value": "search:\\\"Namespace,store,hidden\\\""
                   }
                 ]
               }
@@ -5319,7 +5532,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Container ID,hidden\\"
+                    "value": "search:\\\"Container ID,hidden\\\""
                   }
                 ]
               },
@@ -5335,7 +5548,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process Name\\"
+                    "value": "search:\\\"Process Name\\\""
                   }
                 ]
               },
@@ -5346,7 +5559,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process Arguments\\"
+                    "value": "search:\\\"Process Arguments\\\""
                   }
                 ]
               },
@@ -5357,7 +5570,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process Path\\"
+                    "value": "search:\\\"Process Path\\\""
                   }
                 ]
               },
@@ -5373,7 +5586,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process UID\\"
+                    "value": "search:\\\"Process UID\\\""
                   }
                 ]
               },
@@ -5390,7 +5603,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process Ancestor\\"
+                    "value": "search:\\\"Process Ancestor\\\""
                   }
                 ]
               }
@@ -5446,7 +5659,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment ID,hidden\\"
+                    "value": "search:\\\"Deployment ID,hidden\\\""
                   }
                 ]
               },
@@ -5454,6 +5667,28 @@
                 "id": 2,
                 "name": "container_name",
                 "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster ID,hidden,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "namespace",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace,hidden,store\\\""
+                  }
+                ]
               }
             ]
           },
@@ -5484,7 +5719,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"-\\"
+                    "value": "search:\\\"-\\\""
                   }
                 ]
               },
@@ -5535,7 +5770,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process Name\\"
+                    "value": "search:\\\"Process Name\\\""
                   }
                 ]
               }
@@ -5567,6 +5802,16 @@
               {
                 "id": 1,
                 "name": "deployment_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "namespace",
                 "type": "string"
               },
               {
@@ -5627,7 +5872,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Role ID,hidden\\"
+                    "value": "search:\\\"Role ID,hidden\\\""
                   }
                 ]
               },
@@ -5638,7 +5883,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Role\\"
+                    "value": "search:\\\"Role\\\""
                   }
                 ]
               },
@@ -5649,7 +5894,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,store\\"
+                    "value": "search:\\\"Namespace,store\\\""
                   }
                 ]
               },
@@ -5660,7 +5905,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,store,hidden\\"
+                    "value": "search:\\\"Cluster ID,store,hidden\\\""
                   }
                 ]
               },
@@ -5671,7 +5916,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster\\"
+                    "value": "search:\\\"Cluster\\\""
                   }
                 ]
               },
@@ -5682,7 +5927,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster Role\\"
+                    "value": "search:\\\"Cluster Role\\\""
                   }
                 ]
               },
@@ -5708,7 +5953,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Label\\"
+                      "value": "search:\\\"Label\\\""
                     }
                   ]
                 }
@@ -5722,7 +5967,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Annotation\\"
+                      "value": "search:\\\"Annotation\\\""
                     }
                   ]
                 }
@@ -5774,7 +6019,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Role Binding ID,hidden\\"
+                    "value": "search:\\\"Role Binding ID,hidden\\\""
                   }
                 ]
               },
@@ -5785,7 +6030,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Role Binding\\"
+                    "value": "search:\\\"Role Binding\\\""
                   }
                 ]
               },
@@ -5796,7 +6041,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace\\"
+                    "value": "search:\\\"Namespace\\\""
                   }
                 ]
               },
@@ -5807,7 +6052,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,hidden\\"
+                    "value": "search:\\\"Cluster ID,hidden\\\""
                   }
                 ]
               },
@@ -5818,7 +6063,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster\\"
+                    "value": "search:\\\"Cluster\\\""
                   }
                 ]
               },
@@ -5829,7 +6074,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster Role\\"
+                    "value": "search:\\\"Cluster Role\\\""
                   }
                 ]
               },
@@ -5851,7 +6096,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Role ID\\"
+                    "value": "search:\\\"Role ID\\\""
                   }
                 ]
               }
@@ -5866,7 +6111,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Label\\"
+                      "value": "search:\\\"Label\\\""
                     }
                   ]
                 }
@@ -5880,7 +6125,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Annotation\\"
+                      "value": "search:\\\"Annotation\\\""
                     }
                   ]
                 }
@@ -5897,7 +6142,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Subject Kind\\"
+                    "value": "search:\\\"Subject Kind\\\""
                   }
                 ]
               },
@@ -5908,7 +6153,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Subject\\"
+                    "value": "search:\\\"Subject\\\""
                   }
                 ]
               },
@@ -6166,7 +6411,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Secret ID,store,hidden\\"
+                    "value": "search:\\\"Secret ID,store,hidden\\\""
                   }
                 ]
               },
@@ -6177,7 +6422,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Secret,store\\"
+                    "value": "search:\\\"Secret,store\\\""
                   }
                 ]
               },
@@ -6188,7 +6433,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,store,hidden\\"
+                    "value": "search:\\\"Cluster ID,store,hidden\\\""
                   }
                 ]
               },
@@ -6199,7 +6444,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster,store\\"
+                    "value": "search:\\\"Cluster,store\\\""
                   }
                 ]
               },
@@ -6210,7 +6455,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,store\\"
+                    "value": "search:\\\"Namespace,store\\\""
                   }
                 ]
               },
@@ -6226,7 +6471,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Created Time\\"
+                    "value": "search:\\\"Created Time\\\""
                   }
                 ]
               },
@@ -6370,7 +6615,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Image Pull Secret Registry,store\\"
+                        "value": "search:\\\"Image Pull Secret Registry,store\\\""
                       }
                     ]
                   },
@@ -6398,7 +6643,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Secret Type\\"
+                    "value": "search:\\\"Secret Type\\\""
                   }
                 ]
               },
@@ -6445,7 +6690,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cert Expiration\\"
+                    "value": "search:\\\"Cert Expiration\\\""
                   }
                 ]
               },
@@ -6540,7 +6785,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Service Account,store\\"
+                    "value": "search:\\\"Service Account,store\\\""
                   }
                 ]
               },
@@ -6551,7 +6796,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,store\\"
+                    "value": "search:\\\"Namespace,store\\\""
                   }
                 ]
               },
@@ -6562,7 +6807,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster,store\\"
+                    "value": "search:\\\"Cluster,store\\\""
                   }
                 ]
               },
@@ -6573,7 +6818,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,store,hidden\\"
+                    "value": "search:\\\"Cluster ID,store,hidden\\\""
                   }
                 ]
               },
@@ -6610,7 +6855,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Label\\"
+                      "value": "search:\\\"Label\\\""
                     }
                   ]
                 }
@@ -6624,7 +6869,7 @@
                   "options": [
                     {
                       "name": "(gogoproto.moretags)",
-                      "value": "search:\\\"Annotation\\"
+                      "value": "search:\\\"Annotation\\\""
                     }
                   ]
                 }
@@ -6686,6 +6931,10 @@
               {
                 "name": "BENCHMARK_SERVICE",
                 "integer": 8
+              },
+              {
+                "name": "SCANNER_SERVICE",
+                "integer": 9
               }
             ]
           }
@@ -6769,7 +7018,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Taint Key\\"
+                    "value": "search:\\\"Taint Key\\\""
                   }
                 ]
               },
@@ -6780,7 +7029,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Taint Value\\"
+                    "value": "search:\\\"Taint Value\\\""
                   }
                 ]
               },
@@ -6791,7 +7040,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Taint Effect\\"
+                    "value": "search:\\\"Taint Effect\\\""
                   }
                 ]
               }
@@ -6807,7 +7056,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Toleration Key\\"
+                    "value": "search:\\\"Toleration Key\\\""
                   }
                 ]
               },
@@ -6823,7 +7072,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Toleration Value\\"
+                    "value": "search:\\\"Toleration Value\\\""
                   }
                 ]
               },
