@@ -244,13 +244,11 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 				log.Errorf("Error persisting image %s: %s", img.GetName().GetFullName(), err)
 			}
 		}
-		if err := m.deploymentDataStore.UpdateDeployment(lifecycleCtx, deployment); err != nil {
-			log.Errorf("Error persisting deployment %s: %s", deployment.GetName(), err)
-		}
 	}
 
-	// Update risk after processing.
-	defer m.riskManager.ReprocessDeploymentRisk(deployment)
+	// Update risk after processing and save the deployment.
+	// There is no need to save the deployment in this function as it will be saved post reprocessing risk
+	defer m.riskManager.ReprocessDeploymentRiskWithImages(deployment, images)
 
 	presentAlerts, err := m.deploytimeDetector.Detect(deploytime.DetectionContext{}, deployment, images)
 	if err != nil {

@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -28,6 +27,7 @@ var (
 // Manager manages changes to the risk of the deployments
 type Manager interface {
 	ReprocessDeploymentRisk(deployment *storage.Deployment)
+	ReprocessDeploymentRiskWithImages(deployment *storage.Deployment, images []*storage.Image)
 }
 
 type managerImpl struct {
@@ -47,22 +47,21 @@ func New(deploymentStorage deploymentDS.DataStore,
 }
 
 // ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
-func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
-	deployment = protoutils.CloneStorageDeployment(deployment)
-	if err := e.addRiskToDeployment(deployment); err != nil {
+func (e *managerImpl) ReprocessDeploymentRiskWithImages(deployment *storage.Deployment, images []*storage.Image) {
+	defer metrics.ObserveRiskProcessingDuration(time.Now())
+
+	deployment.Risk = e.scorer.Score(allAccessCtx, deployment, images)
+	if err := e.deploymentStorage.UpdateDeployment(depAndImageCtx, deployment); err != nil {
 		log.Errorf("Error reprocessing risk for deployment %s: %s", deployment.GetName(), err)
 	}
 }
 
-// addRiskToDeployment will add the risk
-func (e *managerImpl) addRiskToDeployment(deployment *storage.Deployment) error {
-	defer metrics.ObserveRiskProcessingDuration(time.Now())
-
+// ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
+func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	images, err := e.deploymentStorage.GetImagesForDeployment(depAndImageCtx, deployment)
 	if err != nil {
-		return err
+		log.Errorf("error fetching images for deployment %s", deployment.GetName())
+		return
 	}
-
-	deployment.Risk = e.scorer.Score(allAccessCtx, deployment, images)
-	return e.deploymentStorage.UpdateDeployment(depAndImageCtx, deployment)
+	e.ReprocessDeploymentRiskWithImages(deployment, images)
 }
