@@ -126,7 +126,7 @@ func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context)
 		rbacUtils.NewClusterPermissionEvaluator(clusterID,
 			rootResolver.K8sRoleStore, rootResolver.K8sRoleBindingStore)
 
-	namespaces, err := rootResolver.Namespaces(ctx)
+	namespaces, err := rootResolver.Namespaces(ctx, rawQuery{nil})
 	if err != nil {
 		return evaluators, err
 	}

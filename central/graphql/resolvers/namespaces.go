@@ -13,7 +13,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddQuery("namespaces: [Namespace!]!"),
+		schema.AddQuery("namespaces(query: String): [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
 		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
@@ -28,12 +28,19 @@ func (resolver *Resolver) Namespace(ctx context.Context, args struct{ graphql.ID
 	return resolver.wrapNamespace(namespace.ResolveByID(ctx, string(args.ID), resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
 }
 
-// Namespaces returns GraphQL resolvers for all namespaces.
-func (resolver *Resolver) Namespaces(ctx context.Context) ([]*namespaceResolver, error) {
+// Namespaces returns GraphQL resolvers for all namespaces based on an optional query.
+func (resolver *Resolver) Namespaces(ctx context.Context, args rawQuery) ([]*namespaceResolver, error) {
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapNamespaces(namespace.ResolveAll(ctx, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+	query, err := args.AsV1Query()
+	if err != nil {
+		return nil, err
+	}
+	if query == nil {
+		return resolver.wrapNamespaces(namespace.ResolveAll(ctx, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+	}
+	return resolver.wrapNamespaces(namespace.ResolveByQuery(ctx, query, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
 }
 
 type clusterIDAndNameQuery struct {

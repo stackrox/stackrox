@@ -25,6 +25,16 @@ func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDa
 	return populateFromMetadataSlice(ctx, metadataSlice, deploymentDataStore, secretDataStore, npStore)
 }
 
+// ResolveByQuery resolves all namespaces based on a query, populating volatile runtime data (like deployment and secret counts) by querying related stores.
+func ResolveByQuery(ctx context.Context, q *v1.Query, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
+	metadataSlice, err := dataStore.SearchNamespaces(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving namespaces")
+	}
+	return populateFromMetadataSlice(ctx, metadataSlice, deploymentDataStore, secretDataStore, npStore)
+}
+
 // ResolveByClusterID resolves all namespaces for the given cluster.
 func ResolveByClusterID(ctx context.Context, clusterID string, datastore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
