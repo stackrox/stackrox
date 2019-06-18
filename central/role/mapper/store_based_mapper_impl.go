@@ -12,7 +12,6 @@ import (
 	userDataStore "github.com/stackrox/rox/central/user/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -23,25 +22,24 @@ type storeBasedMapperImpl struct {
 	users          userDataStore.DataStore
 }
 
-// FromTokenClaims interprets the given claim information and converts it to a role.
-func (rm *storeBasedMapperImpl) FromTokenClaims(ctx context.Context, claims *tokens.Claims) (*storage.Role, error) {
+func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) (*storage.Role, error) {
 	// Record the user we are creating a role for.
-	rm.recordUser(ctx, claims)
+	rm.recordUser(ctx, user)
 	// Determine the role.
-	return rm.getRole(ctx, claims)
+	return rm.getRole(ctx, user)
 }
 
-func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, claims *tokens.Claims) {
-	user := rm.createUser(claims)
+func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *permissions.UserDescriptor) {
+	user := rm.createUser(descriptor)
 	if err := rm.users.Upsert(ctx, user); err != nil {
 		// Just log since we don't actually need the user information.
 		log.Errorf("unable to log user: %s", proto.MarshalTextString(user))
 	}
 }
 
-func (rm *storeBasedMapperImpl) getRole(ctx context.Context, claims *tokens.Claims) (*storage.Role, error) {
+func (rm *storeBasedMapperImpl) getRole(ctx context.Context, user *permissions.UserDescriptor) (*storage.Role, error) {
 	// Get the groups for the user.
-	groups, err := rm.groups.Walk(ctx, rm.authProviderID, claims.ExternalUser.Attributes)
+	groups, err := rm.groups.Walk(ctx, rm.authProviderID, user.Attributes)
 	if err != nil {
 		return nil, err
 	}
@@ -87,13 +85,13 @@ func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*st
 // Helpers
 //////////
 
-func (rm *storeBasedMapperImpl) createUser(claims *tokens.Claims) *storage.User {
+func (rm *storeBasedMapperImpl) createUser(descriptor *permissions.UserDescriptor) *storage.User {
 	// Create a user.
 	user := &storage.User{
-		Id:             claims.ExternalUser.UserID,
+		Id:             descriptor.UserID,
 		AuthProviderId: rm.authProviderID,
 	}
-	addAttributesToUser(user, claims.ExternalUser.Attributes)
+	addAttributesToUser(user, descriptor.Attributes)
 	return user
 }
 

@@ -15,6 +15,12 @@ type Backend interface {
 	// RefreshURL returns a refresh URL, if supported by the auth provider.
 	RefreshURL() string
 
+	// OnEnable is called when a provider is enabled
+	OnEnable(provider Provider)
+
+	// OnDisable is called when a provider is disabled
+	OnDisable(provider Provider)
+
 	// ProcessHTTPRequest dispatches HTTP/1.1 requests intended for this provider. If the request is a callback from
 	// a login page, and the login was successful, the respective ExternalUserClaim is returned. If a non-login HTTP
 	// call should be handled, a nil claim and error should be returned.

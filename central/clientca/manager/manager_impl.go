@@ -1,38 +1,85 @@
 package manager
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 
-	"github.com/cloudflare/cfssl/helpers"
-	"github.com/stackrox/rox/central/clientca/store"
 	"github.com/stackrox/rox/central/tlsconfig"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dberrors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	errCertLacksSKI = errors.New("Certificate lacks ID")
-	log             = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
-type certData struct {
-	stored *storage.Certificate
-	parsed *x509.Certificate
+type providerData struct {
+	provider authproviders.Provider
+	certs    []*x509.Certificate
 }
 
 type managerImpl struct {
-	store store.Store
+	mutex sync.RWMutex
 
-	mutex    sync.RWMutex
-	allCerts map[string]certData
+	providerIDToProviderData  map[string]providerData
+	certFingerprintToProvider map[string]providerData
+}
+
+func (m *managerImpl) GetProviderForFingerprint(fingerprint string) authproviders.Provider {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	pd, ok := m.certFingerprintToProvider[fingerprint]
+	if ok {
+		return pd.provider
+	}
+	return nil
+}
+
+func (m *managerImpl) reindexNoLock() {
+	index := make(map[string]providerData)
+	for _, pd := range m.providerIDToProviderData {
+		for _, cert := range pd.certs {
+			fingerprint := cryptoutils.CertFingerprint(cert)
+			index[fingerprint] = pd
+		}
+	}
+	m.certFingerprintToProvider = index
+	log.Debugf("%d fingerprints registered: %+v", len(index), index)
+}
+
+func (m *managerImpl) RegisterAuthProvider(provider authproviders.Provider, certs []*x509.Certificate) {
+	id := provider.ID()
+	if id == "" {
+		return
+	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	log.Debugf("Provider %q registered with %d certificates", id, len(certs))
+	m.providerIDToProviderData[id] = providerData{
+		provider: provider,
+		certs:    certs,
+	}
+	m.reindexNoLock()
+}
+
+func (m *managerImpl) UnregisterAuthProvider(provider authproviders.Provider) {
+	id := provider.ID()
+	if id == "" {
+		return
+	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	log.Debugf("Provider %q unregistered", id)
+	delete(m.providerIDToProviderData, id)
+	m.reindexNoLock()
 }
 
 func (m *managerImpl) TLSConfigurer() verifier.TLSConfigurer {
@@ -43,95 +90,12 @@ func (m *managerImpl) TLSConfigurer() verifier.TLSConfigurer {
 		}
 		m.mutex.RLock()
 		defer m.mutex.RUnlock()
-		for _, c := range m.allCerts {
-			log.Infof("Adding client CA cert to the TLS trust pool: %q", (c.stored.GetId()))
-			cfg.ClientCAs.AddCert(c.parsed)
+		for _, pd := range m.providerIDToProviderData {
+			for _, cert := range pd.certs {
+				log.Debugf("Adding client CA cert to the TLS trust pool: %q", (cryptoutils.CertFingerprint(cert)))
+				cfg.ClientCAs.AddCert(cert)
+			}
 		}
 		return cfg, nil
 	})
-}
-
-func (m *managerImpl) Initialize() error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	all, err := m.store.ListCertificates(context.TODO())
-	if err != nil {
-		return err
-	}
-	allCerts := make(map[string]certData)
-	for _, cert := range all {
-		c, err := helpers.ParseCertificatePEM([]byte(cert.GetPem()))
-		if err != nil {
-			return err
-		}
-		allCerts[cert.GetId()] = certData{
-			stored: cert,
-			parsed: c,
-		}
-	}
-	m.allCerts = allCerts
-	return nil
-}
-
-func (m *managerImpl) GetAllClientCAs(ctx context.Context) []*storage.Certificate {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-	output := make([]*storage.Certificate, len(m.allCerts))
-	i := 0
-	for _, v := range m.allCerts {
-		output[i] = v.stored
-		i++
-	}
-	return output
-}
-
-func (m *managerImpl) GetClientCA(ctx context.Context, id string) (*storage.Certificate, bool) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-	val, ok := m.allCerts[id]
-	return val.stored, ok
-}
-
-func (m *managerImpl) RemoveClientCA(ctx context.Context, id string) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	_, ok := m.allCerts[id]
-	if !ok {
-		return dberrors.ErrNotFound{Type: "ClientCA", ID: id}
-	}
-	err := m.store.DeleteCertificate(ctx, id)
-	delete(m.allCerts, id)
-	return err
-}
-
-func (m *managerImpl) AddClientCA(ctx context.Context, certificatePEM string) (*storage.Certificate, error) {
-	c, err := helpers.ParseCertificatePEM([]byte(certificatePEM))
-	if err != nil {
-		return nil, err
-	}
-	err = validateCACert(c)
-	if err != nil {
-		return nil, err
-	}
-	stored := &storage.Certificate{
-		Id:  formatID(c.SubjectKeyId),
-		Pem: string(certificatePEM),
-	}
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	err = m.store.UpsertCertificates(ctx, []*storage.Certificate{stored})
-	m.allCerts[stored.Id] = certData{
-		stored: stored,
-		parsed: c,
-	}
-	certificate := protoutils.CloneStorageCertificate(stored)
-	return certificate, err
-}
-
-func validateCACert(cert *x509.Certificate) error {
-	errorList := errorhelpers.NewErrorList("Validating CA certificate")
-	if len(cert.SubjectKeyId) == 0 {
-		errorList.AddError(errCertLacksSKI)
-	}
-	return errorList.ToError()
 }

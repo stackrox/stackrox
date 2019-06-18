@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
@@ -37,6 +38,12 @@ var (
 type backendImpl struct {
 	urlPathPrefix string
 	monoClock     monoclock.MonoClock
+}
+
+func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+}
+
+func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {

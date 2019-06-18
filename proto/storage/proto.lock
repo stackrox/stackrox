@@ -668,31 +668,6 @@
       }
     },
     {
-      "protopath": "certificates.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "Certificate",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "pem",
-                "type": "string"
-              }
-            ]
-          }
-        ],
-        "package": {
-          "name": "storage"
-        }
-      }
-    },
-    {
       "protopath": "cluster.proto",
       "def": {
         "enums": [

@@ -182,6 +182,8 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	if err := provider.applyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
 		return nil, err
 	}
+	r.updatedNoLock(provider)
+
 	return provider, nil
 }
 
@@ -198,6 +200,7 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, id string) error {
 		return err
 	}
 	delete(r.providers, id)
+	r.deletedNoLock(provider)
 	return nil
 }
 
@@ -232,4 +235,27 @@ func (r *registryImpl) addProvider(provider Provider) {
 	defer r.mutex.Unlock()
 
 	r.providers[provider.ID()] = provider
+	r.updatedNoLock(provider)
+}
+
+// updatedNoLock fires the callback for the provider backend. Must be called under mutex.
+func (r *registryImpl) updatedNoLock(provider Provider) {
+	backend := provider.Backend()
+	if backend == nil {
+		return
+	}
+	if provider.Enabled() {
+		backend.OnEnable(provider)
+	} else {
+		backend.OnDisable(provider)
+	}
+}
+
+// deletedNoLock fires the callback for the provider backend. Must be called under mutex.
+func (r *registryImpl) deletedNoLock(provider Provider) {
+	backend := provider.Backend()
+	if backend == nil {
+		return
+	}
+	backend.OnDisable(provider)
 }

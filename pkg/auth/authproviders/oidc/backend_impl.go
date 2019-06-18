@@ -11,6 +11,7 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -39,6 +40,12 @@ type backendImpl struct {
 	baseRedirectURL url.URL
 	baseOauthConfig oauth2.Config
 	baseOptions     []oauth2.AuthCodeOption
+}
+
+func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+}
+
+func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {

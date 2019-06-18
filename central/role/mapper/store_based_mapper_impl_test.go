@@ -10,7 +10,7 @@ import (
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	userMocks "github.com/stackrox/rox/central/user/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -101,18 +101,13 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 		Times(1).
 		Return(expectedRole, nil)
 
-	// Call the mapper for a user.
-	tokenClaims := &tokens.Claims{
-		RoxClaims: tokens.RoxClaims{
-			ExternalUser: &tokens.ExternalUserClaim{
-				UserID: "coolguysid",
-				Attributes: map[string][]string{
-					"email": {"coolguy@yahoo"},
-				},
-			},
+	userDescriptor := &permissions.UserDescriptor{
+		UserID: "coolguysid",
+		Attributes: map[string][]string{
+			"email": {"coolguy@yahoo"},
 		},
 	}
-	role, err := s.mapper.FromTokenClaims(s.requestContext, tokenClaims)
+	role, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 	s.Equal(expectedRole, role, "since a single role was mapped, that role should be returned")
 }
@@ -178,17 +173,13 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 		Return(expectedRole2, nil)
 
 	// Call the mapper for a user.
-	tokenClaims := &tokens.Claims{
-		RoxClaims: tokens.RoxClaims{
-			ExternalUser: &tokens.ExternalUserClaim{
-				UserID: "coolguysid",
-				Attributes: map[string][]string{
-					"email": {"coolguy@yahoo"},
-				},
-			},
+	userDescriptor := &permissions.UserDescriptor{
+		UserID: "coolguysid",
+		Attributes: map[string][]string{
+			"email": {"coolguy@yahoo"},
 		},
 	}
-	role, err := s.mapper.FromTokenClaims(s.requestContext, tokenClaims)
+	role, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 
 	// Permissions should be the two roles' permissions combined.
@@ -242,17 +233,13 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 		Return(expectedRole, nil)
 
 	// Call the mapper for a user.
-	tokenClaims := &tokens.Claims{
-		RoxClaims: tokens.RoxClaims{
-			ExternalUser: &tokens.ExternalUserClaim{
-				UserID: "coolguysid",
-				Attributes: map[string][]string{
-					"email": {"coolguy@yahoo"},
-				},
-			},
+	userDescriptor := &permissions.UserDescriptor{
+		UserID: "coolguysid",
+		Attributes: map[string][]string{
+			"email": {"coolguy@yahoo"},
 		},
 	}
-	role, err := s.mapper.FromTokenClaims(s.requestContext, tokenClaims)
+	role, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 	s.Equal(expectedRole, role, "since a single role was mapped, that role should be returned")
 }
@@ -282,17 +269,13 @@ func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 		Return([]*storage.Group{}, fmt.Errorf("error should be returned"))
 
 	// Call the mapper for a user.
-	tokenClaims := &tokens.Claims{
-		RoxClaims: tokens.RoxClaims{
-			ExternalUser: &tokens.ExternalUserClaim{
-				UserID: "coolguysid",
-				Attributes: map[string][]string{
-					"email": {"coolguy@yahoo"},
-				},
-			},
+	userDescriptor := &permissions.UserDescriptor{
+		UserID: "coolguysid",
+		Attributes: map[string][]string{
+			"email": {"coolguy@yahoo"},
 		},
 	}
-	_, err := s.mapper.FromTokenClaims(s.requestContext, tokenClaims)
+	_, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.Error(err, "mapping should have succeeded")
 }
 
@@ -336,16 +319,12 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 		Return(nil, fmt.Errorf("error should be returned"))
 
 	// Call the mapper for a user.
-	tokenClaims := &tokens.Claims{
-		RoxClaims: tokens.RoxClaims{
-			ExternalUser: &tokens.ExternalUserClaim{
-				UserID: "coolguysid",
-				Attributes: map[string][]string{
-					"email": {"coolguy@yahoo"},
-				},
-			},
+	userDescriptor := &permissions.UserDescriptor{
+		UserID: "coolguysid",
+		Attributes: map[string][]string{
+			"email": {"coolguy@yahoo"},
 		},
 	}
-	_, err := s.mapper.FromTokenClaims(s.requestContext, tokenClaims)
+	_, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.Error(err, "mapping should have succeeded")
 }

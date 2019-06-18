@@ -4,13 +4,18 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/tokens"
 )
 
 // A RoleMapper returns the role corresponding to an identifier
 // obtained from a token.
 type RoleMapper interface {
-	FromTokenClaims(ctx context.Context, claims *tokens.Claims) (*storage.Role, error)
+	FromUserDescriptor(ctx context.Context, user *UserDescriptor) (*storage.Role, error)
+}
+
+// UserDescriptor contains the necessary user information to map it to a user
+type UserDescriptor struct {
+	UserID     string
+	Attributes map[string][]string
 }
 
 // RoleStore defines an object that provides looking up roles.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -21,6 +22,12 @@ type backendImpl struct {
 	acsURLPath string
 	sp         saml2.SAMLServiceProvider
 	id         string
+}
+
+func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+}
+
+func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 }
 
 func (p *backendImpl) loginURL(clientState string) (string, error) {

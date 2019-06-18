@@ -125,7 +125,12 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		return nil, errors.New("misconfigured authentication provider: no role mapper defined")
 	}
 
-	role, err := roleMapper.FromTokenClaims(ctx, token.Claims)
+	ud := &permissions.UserDescriptor{
+		UserID:     token.Claims.ExternalUser.UserID,
+		Attributes: token.Claims.ExternalUser.Attributes,
+	}
+
+	role, err := roleMapper.FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
 	}

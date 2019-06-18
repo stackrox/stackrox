@@ -1,9 +1,7 @@
-package manager
+package cryptoutils
 
 import (
 	"encoding/hex"
-	"fmt"
-	"os"
 )
 
 func upper(b byte) byte {
@@ -21,7 +19,6 @@ func formatID(b []byte) string {
 	out := make([]byte, 0, len(b)*3)
 	x := out[1*len(b) : 3*len(b)]
 	hex.Encode(x, b)
-	fmt.Fprintf(os.Stderr, "%s\n", x)
 	for i := 0; i < len(x); i += 2 {
 		out = append(out, upper(x[i]), upper(x[i+1]), ':')
 	}

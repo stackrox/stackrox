@@ -47,6 +47,7 @@ type CertInfo struct {
 	Subject             pkix.Name
 	NotBefore, NotAfter time.Time
 	SerialNumber        *big.Int
+	CertFingerprint     string
 }
 
 // HTTPRequest provides a gob encodeable way of passing HTTP Request parameters
@@ -84,10 +85,11 @@ type serializedRequestInfo struct {
 
 func extractCertInfo(fullCert *x509.Certificate) CertInfo {
 	return CertInfo{
-		Subject:      fullCert.Subject,
-		NotBefore:    fullCert.NotBefore,
-		NotAfter:     fullCert.NotAfter,
-		SerialNumber: fullCert.SerialNumber,
+		Subject:         fullCert.Subject,
+		NotBefore:       fullCert.NotBefore,
+		NotAfter:        fullCert.NotAfter,
+		SerialNumber:    fullCert.SerialNumber,
+		CertFingerprint: cryptoutils.CertFingerprint(fullCert),
 	}
 }
 

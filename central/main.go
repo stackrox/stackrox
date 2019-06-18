@@ -19,8 +19,6 @@ import (
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
 	"github.com/stackrox/rox/central/cli"
 	clientCAManager "github.com/stackrox/rox/central/clientca/manager"
-	clientCAService "github.com/stackrox/rox/central/clientca/service"
-	clientCAStore "github.com/stackrox/rox/central/clientca/store"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
@@ -90,6 +88,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/clientca"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -100,6 +99,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/authn/userpki"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -112,7 +112,6 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -122,6 +121,7 @@ var (
 		oidc.TypeName: oidc.NewFactory,
 		"auth0":       oidc.NewFactory, // legacy
 		saml.TypeName: saml.NewFactory,
+		// clientca.TypeName: clientca.NewFactory,
 	}
 
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -294,10 +294,6 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	if env.DevelopmentBuild.Setting() == "true" {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
-
-	if features.ClientCAAuth.Enabled() {
-		servicesToRegister = append(servicesToRegister, clientCAService.New(f.caManager))
-	}
 	return servicesToRegister
 }
 
@@ -306,8 +302,7 @@ func startMainServer(restartingFlag *concurrency.Flag) {
 		restartingFlag: restartingFlag,
 	}
 	if features.ClientCAAuth.Enabled() {
-		factory.caManager = clientCAManager.New(clientCAStore.Singleton())
-		utils.Must(factory.caManager.Initialize())
+		factory.caManager = clientCAManager.Instance()
 	}
 	startGRPCServer(factory)
 }
@@ -338,6 +333,10 @@ func startGRPCServer(factory serviceFactory) {
 		log.Panicf("Could not create auth provider registry: %v", err)
 	}
 
+	if features.ClientCAAuth.Enabled() {
+		authProviderBackendFactories[clientca.TypeName] = clientca.NewFactoryFactory(clientCAManager.Instance())
+	}
+
 	for typeName, factoryCreator := range authProviderBackendFactories {
 		if err := registry.RegisterBackendFactory(authProviderRegisteringCtx, typeName, factoryCreator); err != nil {
 			log.Panicf("Could not register %s auth provider factory: %v", typeName, err)
@@ -353,6 +352,10 @@ func startGRPCServer(factory serviceFactory) {
 		service.NewExtractor(), // internal services
 		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
 		userpass.IdentityExtractorOrPanic(),
+	}
+
+	if features.ClientCAAuth.Enabled() {
+		idExtractors = append(idExtractors, userpki.NewExtractor(clientCAManager.Instance()))
 	}
 
 	config := pkgGRPC.Config{
