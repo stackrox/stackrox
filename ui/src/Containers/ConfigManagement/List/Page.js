@@ -5,6 +5,7 @@ import pluralize from 'pluralize';
 import URLService from 'modules/URLService';
 
 import PageHeader from 'Components/PageHeader';
+import ExportButton from 'Components/ExportButton';
 import List from '../EntityList';
 
 const ListPage = ({ match, location, history }) => {
@@ -19,10 +20,24 @@ const ListPage = ({ match, location, history }) => {
     }
 
     const header = pluralize(entityLabels[pageEntityListType]);
+    const exportFilename = `${pluralize(pageEntityListType)}`;
 
     return (
         <>
-            <PageHeader header={header} subHeader="Entity List" />
+            <PageHeader header={header} subHeader="Entity List">
+                <div className="flex flex-1 justify-end">
+                    <div className="flex">
+                        <div className="flex items-center">
+                            <ExportButton
+                                fileName={exportFilename}
+                                type={pageEntityListType}
+                                page="configManagement"
+                                pdfId="capture-list"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </PageHeader>
             <div className="h-full">
                 <List entityListType={pageEntityListType} onRowClick={onRowClick} />
             </div>

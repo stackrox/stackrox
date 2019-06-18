@@ -36,9 +36,9 @@ const Namespace = ({ id, onRelatedEntityListClick }) => (
             const metadataCounts = [{ value: labels.length, text: 'Labels' }];
 
             return (
-                <div className="bg-primary-100 w-full">
+                <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
                     <CollapsibleSection title="Namespace Details">
-                        <div className="flex h-48 mb-4">
+                        <div className="flex h-48 mb-4 pdf-page">
                             <Metadata
                                 className="mx-4 bg-base-100"
                                 keyValuePairs={metadataKeyValuePairs}

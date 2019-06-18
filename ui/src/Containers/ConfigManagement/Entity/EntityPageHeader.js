@@ -43,7 +43,7 @@ const processHeader = (entityType, data) => {
     return resolvePath(data, key);
 };
 
-const EntityPageHeader = ({ entityType, entityId }) => {
+const EntityPageHeader = ({ entityType, entityId, children }) => {
     const { query, variables } = getQueryAndVariables(entityType, entityId);
     if (!query) return null;
     return (
@@ -53,7 +53,9 @@ const EntityPageHeader = ({ entityType, entityId }) => {
                 const header = processHeader(entityType, data);
                 if (!header) return null;
                 return (
-                    <PageHeader classes="bg-primary-100" header={header} subHeader={entityType} />
+                    <PageHeader classes="bg-primary-100" header={header} subHeader={entityType}>
+                        {children}
+                    </PageHeader>
                 );
             }}
         </Query>
@@ -62,7 +64,8 @@ const EntityPageHeader = ({ entityType, entityId }) => {
 
 EntityPageHeader.propTypes = {
     entityType: PropTypes.string.isRequired,
-    entityId: PropTypes.string.isRequired
+    entityId: PropTypes.string.isRequired,
+    children: PropTypes.node.isRequired
 };
 
 export default EntityPageHeader;

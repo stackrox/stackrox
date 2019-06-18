@@ -25,7 +25,8 @@ class ExportButton extends Component {
         type: PropTypes.string,
         id: PropTypes.string,
         pdfId: PropTypes.string,
-        tableOptions: PropTypes.shape({})
+        tableOptions: PropTypes.shape({}),
+        page: PropTypes.string
     };
 
     static defaultProps = {
@@ -35,7 +36,8 @@ class ExportButton extends Component {
         type: null,
         id: '',
         pdfId: '',
-        tableOptions: {}
+        tableOptions: {},
+        page: ''
     };
 
     state = {
@@ -59,7 +61,9 @@ class ExportButton extends Component {
         downloadCsv(query, fileName, downloadUrl);
     };
 
-    isTypeSupported = () => Object.keys(queryParamMap).includes(this.props.type);
+    isTypeSupported = () =>
+        Object.keys(queryParamMap).includes(this.props.type) &&
+        this.props.page !== 'configManagement';
 
     renderContent = () => {
         const { toggleWidget } = this.state;

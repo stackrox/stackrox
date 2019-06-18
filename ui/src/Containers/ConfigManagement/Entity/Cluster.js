@@ -46,9 +46,9 @@ const Cluster = ({ id, onRelatedEntityListClick }) => (
             const metadataCounts = [{ value: alerts.length, text: 'Alerts' }];
 
             return (
-                <div className="bg-primary-100 w-full">
+                <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
                     <CollapsibleSection title="Cluster Details">
-                        <div className="flex flex-wrap">
+                        <div className="flex flex-wrap pdf-page">
                             <Metadata
                                 className="flex-grow mx-4 bg-base-100 h-48 mb-4"
                                 keyValuePairs={metadataKeyValuePairs}

@@ -56,9 +56,9 @@ const Deployment = ({ id, onRelatedEntityClick }) => (
             ];
 
             return (
-                <div className="bg-primary-100 w-full">
+                <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
                     <CollapsibleSection title="Deployment Details">
-                        <div className="flex mb-4 flex-wrap">
+                        <div className="flex mb-4 flex-wrap pdf-page">
                             <Metadata
                                 className="mx-4 bg-base-100 h-48 mb-4"
                                 keyValuePairs={metadataKeyValuePairs}

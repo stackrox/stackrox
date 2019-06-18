@@ -59,9 +59,9 @@ const ServiceAccount = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) 
             ];
 
             return (
-                <div className="bg-primary-100 w-full">
+                <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
                     <CollapsibleSection title="Service Account Details">
-                        <div className="flex mb-4 flex-wrap">
+                        <div className="flex mb-4 flex-wrap pdf-page">
                             <Metadata
                                 className="mx-4 bg-base-100 h-48 mb-4"
                                 keyValuePairs={metadataKeyValuePairs}
@@ -98,7 +98,7 @@ const ServiceAccount = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) 
                         </div>
                     </CollapsibleSection>
                     <CollapsibleSection title="Service Account Permissions">
-                        <div className="flex mb-4">
+                        <div className="flex mb-4 pdf-page pdf-stretch">
                             <ClusterScopedPermissions
                                 scopedPermissions={scopedPermissions}
                                 className="w-1/3 mx-4 bg-base-100"

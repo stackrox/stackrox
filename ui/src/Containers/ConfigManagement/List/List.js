@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
+import createPDFTable from 'utils/pdfUtils';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -33,22 +34,28 @@ const List = ({ query, entityType, tableColumns, createTableRows, onRowClick }) 
                 const headerComponents = (
                     <TablePagination page={page} dataLength={tableRows.length} setPage={setPage} />
                 );
+                if (tableRows.length) {
+                    createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
+                }
                 return (
-                    <Panel
-                        className="bg-base-100 w-full"
-                        header={header}
-                        headerComponents={headerComponents}
-                    >
-                        <Table
-                            rows={tableRows}
-                            columns={tableColumns}
-                            onRowClick={onRowClickHandler}
-                            idAttribute="id"
-                            selectedRowId={selectedRow ? selectedRow.id : null}
-                            noDataText="No results found. Please refine your search."
-                            page={page}
-                        />
-                    </Panel>
+                    <section id="capture-list">
+                        <Panel
+                            className="bg-base-100"
+                            header={header}
+                            headerComponents={headerComponents}
+                        >
+                            <Table
+                                rows={tableRows}
+                                columns={tableColumns}
+                                onRowClick={onRowClickHandler}
+                                idAttribute="id"
+                                id="capture-list"
+                                selectedRowId={selectedRow ? selectedRow.id : null}
+                                noDataText="No results found. Please refine your search."
+                                page={page}
+                            />
+                        </Panel>
+                    </section>
                 );
             }}
         </Query>

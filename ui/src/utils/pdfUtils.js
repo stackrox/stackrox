@@ -1,8 +1,10 @@
 import toLower from 'lodash/toLower';
 import startCase from 'lodash/startCase';
 import entityToColumns from 'constants/tableColumns';
+import ReactDOMServer from 'react-dom/server';
+import flattenObject from 'utils/flattenObject';
 
-const createPDFTable = (tableData, entityType, query, pdfId) => {
+const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
     const { standardId } = query;
     const table = document.getElementById('pdf-table');
     const parent = document.getElementById(pdfId);
@@ -15,9 +17,11 @@ const createPDFTable = (tableData, entityType, query, pdfId) => {
     } else if (standardId) {
         type = 'Standard';
     }
-    const columns = entityToColumns[standardId || entityType];
+    const columns = tableColumns || entityToColumns[standardId || entityType];
     if (tableData.length) {
-        const headers = columns.map(col => col.Header).filter(header => header !== 'id');
+        const headers = columns
+            .map(col => col.Header)
+            .filter(header => header !== 'id' && header !== 'Id');
         const headerKeys = columns.map(col => col.accessor).filter(header => header !== 'id');
         if (tableData[0].rows && type) {
             headers.unshift(type);
@@ -37,14 +41,25 @@ const createPDFTable = (tableData, entityType, query, pdfId) => {
         tbdy.appendChild(trh);
         const addRows = val => {
             const tr = document.createElement('tr');
-            headerKeys.forEach(key => {
+            headerKeys.forEach((key, index) => {
                 const td = document.createElement('td');
-                const trimmedStr = val[key] && val[key].replace(/\s+/g, ' ').trim();
-                td.appendChild(document.createTextNode(trimmedStr || 'N/A'));
+                let colValue = '';
+                if (columns[index + 1] && columns[index + 1].Cell) {
+                    colValue = ReactDOMServer.renderToString(
+                        columns[index + 1].Cell({ original: val })
+                    );
+                } else {
+                    const flattenedObj = flattenObject(val);
+                    colValue =
+                        (flattenedObj[key] && flattenedObj[key].replace(/\s+/g, ' ').trim()) ||
+                        'N/A';
+                }
+                td.innerHTML = colValue;
                 tr.appendChild(td);
             });
             tbdy.appendChild(tr);
         };
+        // console.log(tbdy);
         tableData.forEach(val => {
             if (val.rows) {
                 val.rows.forEach(row => {

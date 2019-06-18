@@ -142,6 +142,71 @@ class PDFExportButton extends Component {
         const pageHeight = doc.internal.pageSize.getHeight();
         let remainingHeight = pageHeight;
 
+        function drawPDF(imgHeight, index, imgData, canvases) {
+            const halfImgWidth = imgWidth / 2;
+            const halfImgHeight = imgHeight / 2;
+
+            if (index % 2 === 1) {
+                positionX = 2;
+            }
+
+            if (index % 2 === 0) {
+                positionX += halfImgWidth + 2;
+            }
+
+            if (remainingHeight < halfImgHeight) {
+                doc.addPage();
+                positionX = 2;
+                positionY = 2;
+                count = 1;
+                remainingHeight = pageHeight;
+            }
+            doc.addImage(
+                imgData,
+                'jpg',
+                positionX,
+                positionY,
+                halfImgWidth,
+                halfImgHeight,
+                `Image${index}`,
+                'FAST'
+            );
+            count += 1;
+            if (count % 3 === 0) {
+                //  every  2 widgets
+                const firstCanvas = canvases[index - 1].height;
+                const secondCanvas = canvases[index - 2].height;
+                const prevRowMaxHeight = firstCanvas > secondCanvas ? firstCanvas : secondCanvas;
+                const prevRowHeight = (prevRowMaxHeight * imgWidth) / canvases[index - 1].width;
+                const halfPrevRowHeight = prevRowHeight / 2;
+                positionY += halfPrevRowHeight + 2;
+                count = 1;
+                remainingHeight -= halfPrevRowHeight;
+            }
+        }
+        function drawStretchPDF(imgHeight, index, imgData) {
+            positionX = 2;
+            if (remainingHeight < imgHeight) {
+                doc.addPage();
+                positionX = 2;
+                positionY = 2;
+                count = 1;
+                remainingHeight = pageHeight;
+            }
+            doc.addImage(
+                imgData,
+                'jpg',
+                positionX,
+                positionY,
+                imgWidth,
+                imgHeight,
+                `Image${index}`,
+                'FAST'
+            );
+            positionY += imgHeight + 2;
+            remainingHeight -= imgHeight;
+        }
+
         setTimeout(() => {
             Promise.all(this.beforePDFPrinting()).then(canvases => {
                 const printClonedElements = Array.from(
@@ -150,7 +215,7 @@ class PDFExportButton extends Component {
                 const header = document.getElementById('pdf-header');
                 canvases.forEach((canvas, index) => {
                     const imgData = canvas.toDataURL('image/jpeg');
-                    if (id === 'capture-dashboard' && index > 0) {
+                    if (id.includes('capture-dashboard') && index > 0) {
                         imgWidth = 203;
                     }
                     const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -169,48 +234,11 @@ class PDFExportButton extends Component {
                         positionY = imgHeight + 2;
                         remainingHeight -= imgHeight;
                     } else {
-                        if (id === 'capture-dashboard') {
-                            const halfImgWidth = imgWidth / 2;
-                            const halfImgHeight = imgHeight / 2;
-
-                            if (index % 2 === 1) {
-                                positionX = 2;
-                            }
-
-                            if (index % 2 === 0) {
-                                positionX += halfImgWidth + 2;
-                            }
-
-                            if (remainingHeight < halfImgHeight) {
-                                doc.addPage();
-                                positionX = 2;
-                                positionY = 2;
-                                count = 1;
-                                remainingHeight = pageHeight;
-                            }
-                            doc.addImage(
-                                imgData,
-                                'jpg',
-                                positionX,
-                                positionY,
-                                halfImgWidth,
-                                halfImgHeight,
-                                `Image${index}`,
-                                'FAST'
-                            );
-                            count += 1;
-                            if (count % 3 === 0) {
-                                //  every  2 widgets
-                                const firstCanvas = canvases[index - 1].height;
-                                const secondCanvas = canvases[index - 2].height;
-                                const prevRowMaxHeight =
-                                    firstCanvas > secondCanvas ? firstCanvas : secondCanvas;
-                                const prevRowHeight =
-                                    (prevRowMaxHeight * imgWidth) / canvases[index - 1].width;
-                                const halfPrevRowHeight = prevRowHeight / 2;
-                                positionY += halfPrevRowHeight + 2;
-                                count = 1;
-                                remainingHeight -= halfPrevRowHeight;
+                        if (id.includes('capture-dashboard')) {
+                            if (id === 'capture-dashboard') {
+                                drawPDF(imgHeight, index, imgData, canvases);
+                            } else {
+                                drawStretchPDF(imgHeight, index, imgData);
                             }
                         }
                         if (id === 'capture-list') {
