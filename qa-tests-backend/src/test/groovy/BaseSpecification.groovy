@@ -2,12 +2,17 @@ import com.google.protobuf.Timestamp
 import com.jayway.restassured.RestAssured
 import common.Constants
 import groovy.util.logging.Slf4j
+import io.stackrox.proto.api.v1.ApiTokenService
+
+import io.stackrox.proto.storage.RoleOuterClass
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
+import services.AuthService
 import services.BaseService
+import services.RoleService
 import spock.lang.Shared
 import spock.lang.Specification
 import testrailintegration.TestRailconfig
@@ -39,6 +44,12 @@ class BaseSpecification extends Specification {
     @Shared
     private dtrId = ""
 
+    @Shared
+    private tokenId = ""
+
+    @Shared
+    private roleName = ""
+
     def setupSpec() {
         def startTime = System.currentTimeMillis()
         testStartTime = Timestamp.newBuilder().setSeconds(startTime / 1000 as Long)
@@ -56,6 +67,21 @@ class BaseSpecification extends Specification {
             tc.setProjectSectionId("Prevent", "Policies")
             tc.createRun()
         }*/
+        def allResources = RoleService.getResources()
+        Map<String,RoleOuterClass.Access> resourceAccess = [:]
+        allResources.getResourcesList().each { it -> resourceAccess.put(it, RoleOuterClass.Access.READ_WRITE_ACCESS) }
+        "Create a test role"
+        def testRole = RoleOuterClass.Role.newBuilder()
+                .setName("Test Automation Role")
+                .putAllResourceToAccess(resourceAccess)
+                .build()
+        roleName = testRole.name
+        RoleService.createRole(testRole)
+        ApiTokenService.GenerateTokenResponse token = services.ApiTokenService.
+                generateToken("Test Token", testRole.name)
+        tokenId = token.metadata.id
+        BaseService.useApiToken(token.token)
+        println AuthService.getAuthStatus().toString()
     }
     def setup() { }
 
@@ -76,6 +102,9 @@ class BaseSpecification extends Specification {
             Integer testcaseId = Integer.parseInt(entry.value.toString());
             tc.addStatusForCase(testcaseId, status);
         }*/
+        BaseService.useBasicAuth()
+        services.ApiTokenService.revokeToken(tokenId)
+        RoleService.deleteRole(roleName)
     }
 
     def cleanup() {

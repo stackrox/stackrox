@@ -3,6 +3,7 @@ package services
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.RoleServiceGrpc
+import io.stackrox.proto.api.v1.RoleServiceOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
 
 class RoleService extends BaseService {
@@ -16,6 +17,14 @@ class RoleService extends BaseService {
 
     static getRole(String roleId) {
         return getRoleService().getRole(Common.ResourceByID.newBuilder().setId(roleId).build())
+    }
+
+    static RoleServiceOuterClass.GetResourcesResponse getResources() {
+        try {
+            return getRoleService().getResources(EmptyOuterClass.Empty.newBuilder().build())
+        } catch (Exception e) {
+            println "Failed to fetch resources: ${e}"
+        }
     }
 
     static createRole(Role role) {
