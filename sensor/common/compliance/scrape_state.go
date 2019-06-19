@@ -7,6 +7,7 @@ import (
 type scrapeState struct {
 	deploymentName string
 	remainingNodes set.StringSet
+	foundNodes     set.StringSet
 	desiredNodes   int
 }
 
@@ -19,5 +20,6 @@ func newScrapeState(name string, desiredNodes int, expectedNodes []string) *scra
 		deploymentName: name,
 		remainingNodes: expectedNodesSet,
 		desiredNodes:   desiredNodes,
+		foundNodes:     set.NewStringSet(),
 	}
 }

@@ -248,20 +248,21 @@ func (c *commandHandlerImpl) commitResult(result *compliance.ComplianceReturn) (
 	}
 
 	// Check that we have not already received a result for the host.
-	if hostNotSeenYet := scrapeState.remainingNodes.Contains(result.GetNodeName()); !hostNotSeenYet {
+	if scrapeState.foundNodes.Contains(result.GetNodeName()) {
 		log.Errorf("received duplicate result in scrape %s for node %s", result.GetScrapeId(), result.GetNodeName())
 		return
 	}
+	scrapeState.desiredNodes--
 
-	// See if the node is one that needs to be removed. This guards against duplicate results from the same node
-	if scrapeState.remainingNodes.Contains(result.GetNodeName()) {
-		scrapeState.desiredNodes--
+	// Check if the node did not exist in the scrape request
+	if !scrapeState.remainingNodes.Contains(result.GetNodeName()) {
+		log.Errorf("found node %s not requested by Central for scrape %s", result.GetNodeName(), result.GetScrapeId())
+		return
 	}
+
 	// Pass the update back to central.
 	scrapeState.remainingNodes.Remove(result.GetNodeName())
-
 	ret = append(ret, scrapeUpdate(result))
-
 	// If that was the last expected update, kill the scrape.
 	if scrapeState.desiredNodes == 0 || scrapeState.remainingNodes.Cardinality() == 0 {
 		if scrapeState.remainingNodes.Cardinality() != 0 {
