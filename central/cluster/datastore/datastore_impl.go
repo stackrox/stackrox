@@ -110,6 +110,13 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	return ds.searchRawClusters(ctx, search.EmptyQuery())
 }
 
+func (ds *datastoreImpl) SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
+	if _, err := clusterSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	}
+	return ds.searchRawClusters(ctx, q)
+}
+
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {

@@ -116,6 +116,19 @@ func (mr *MockDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0, arg1)
 }
 
+// SearchRawClusters mocks base method
+func (m *MockDataStore) SearchRawClusters(arg0 context.Context, arg1 *v1.Query) ([]*storage.Cluster, error) {
+	ret := m.ctrl.Call(m, "SearchRawClusters", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.Cluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawClusters indicates an expected call of SearchRawClusters
+func (mr *MockDataStoreMockRecorder) SearchRawClusters(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawClusters", reflect.TypeOf((*MockDataStore)(nil).SearchRawClusters), arg0, arg1)
+}
+
 // UpdateCluster mocks base method
 func (m *MockDataStore) UpdateCluster(arg0 context.Context, arg1 *storage.Cluster) error {
 	ret := m.ctrl.Call(m, "UpdateCluster", arg0, arg1)

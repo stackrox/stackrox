@@ -15,7 +15,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("SubjectWithClusterID", []string{"clusterID: String!", "subject: Subject!"}),
-		schema.AddQuery("clusters: [Cluster!]!"),
+		schema.AddQuery("clusters(query: String): [Cluster!]!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
@@ -43,11 +43,18 @@ func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }
 }
 
 // Clusters returns GraphQL resolvers for all clusters
-func (resolver *Resolver) Clusters(ctx context.Context) ([]*clusterResolver, error) {
+func (resolver *Resolver) Clusters(ctx context.Context, args rawQuery) ([]*clusterResolver, error) {
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapClusters(resolver.ClusterDataStore.GetClusters(ctx))
+	query, err := args.AsV1Query()
+	if err != nil {
+		return nil, err
+	}
+	if query == nil {
+		return resolver.wrapClusters(resolver.ClusterDataStore.GetClusters(ctx))
+	}
+	return resolver.wrapClusters(resolver.ClusterDataStore.SearchRawClusters(ctx, query))
 }
 
 // Alerts returns GraphQL resolvers for all alerts on this cluster

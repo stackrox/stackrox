@@ -43,6 +43,7 @@ type DataStore interface {
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 }
 
 // New returns an instance of DataStore.
