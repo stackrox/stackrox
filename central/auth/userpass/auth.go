@@ -18,11 +18,14 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	// The auth provider ID used for basic auth. This is arbitrary, but should not be changed.
+	basicAuthProviderID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
 )
 
 // RegisterAuthProviderOrPanic sets up basic authentication with the builtin htpasswd file. It panics if the basic auth
 // feature is not enabled, or if it is called twice on the same registry.
-func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Registry) {
+func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Registry) authproviders.Provider {
 	err := registry.RegisterBackendFactory(ctx, basicAuthProvider.TypeName, basicAuthProvider.NewFactory)
 	if err != nil {
 		log.Warnf("Could not register basic auth provider factory: %v", err)
@@ -46,25 +49,27 @@ func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Reg
 	options := []authproviders.ProviderOption{
 		authproviders.WithType(basicAuthProvider.TypeName),
 		authproviders.WithName("Login with username/password"),
+		authproviders.WithID(basicAuthProviderID),
 		authproviders.WithEnabled(true),
 		authproviders.WithValidated(true),
 		authproviders.WithConfig(config),
 		authproviders.WithRoleMapper(mapper.AlwaysAdminRoleMapper()),
 		authproviders.DoNotStore(),
 	}
-	_, err = registry.CreateProvider(ctx, options...)
+	provider, err := registry.CreateProvider(ctx, options...)
 	if err != nil {
 		log.Panicf("Could not set up basic auth provider: %v", err)
 	}
+	return provider
 }
 
 // IdentityExtractorOrPanic creates and returns the identity extractor for basic authentication.
-func IdentityExtractorOrPanic() authn.IdentityExtractor {
+func IdentityExtractorOrPanic(authProvider authproviders.Provider) authn.IdentityExtractor {
 	adminRole := role.DefaultRolesByName[role.Admin]
 	if adminRole == nil {
 		log.Panic("Could not look up admin role")
 	}
-	extractor, err := basicAuthn.NewExtractor(htpasswdFile, adminRole)
+	extractor, err := basicAuthn.NewExtractor(htpasswdFile, adminRole, authProvider)
 	if err != nil {
 		log.Panicf("Could not create identity extractor for basic auth: %v", err)
 	}

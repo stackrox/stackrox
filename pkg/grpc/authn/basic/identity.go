@@ -11,8 +11,9 @@ import (
 )
 
 type identity struct {
-	username string
-	role     *storage.Role
+	username     string
+	role         *storage.Role
+	authProvider authproviders.Provider
 }
 
 func (i identity) UID() string {
@@ -43,19 +44,23 @@ func (i identity) Expiry() time.Time {
 }
 
 func (i identity) ExternalAuthProvider() authproviders.Provider {
-	return nil
+	return i.authProvider
 }
 
 func (i identity) isBasicAuthIdentity() {}
 
 func (i identity) AsExternalUser() *tokens.ExternalUserClaim {
 	return &tokens.ExternalUserClaim{
-		UserID: i.username,
+		UserID:     i.username,
+		Attributes: i.Attributes(),
 	}
 }
 
 func (i identity) Attributes() map[string][]string {
-	return nil
+	return map[string][]string{
+		"username": {i.username},
+		"role":     {i.role.GetName()},
+	}
 }
 
 // Identity is an extension of the identity interface for user authenticating via Basic authentication.

@@ -138,11 +138,11 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		return nil, fmt.Errorf("external user %s has no assigned role", token.ExternalUser.UserID)
 	}
 
-	id := createRoleBasedIdentity(role, token)
+	id := createRoleBasedIdentity(role, token, authProviderSrc)
 	return id, nil
 }
 
-func createRoleBasedIdentity(role *storage.Role, token *tokens.TokenInfo) *roleBasedIdentity {
+func createRoleBasedIdentity(role *storage.Role, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
 		username:     token.ExternalUser.Email,
@@ -150,6 +150,7 @@ func createRoleBasedIdentity(role *storage.Role, token *tokens.TokenInfo) *roleB
 		role:         role,
 		expiry:       token.Expiry(),
 		attributes:   token.Claims.ExternalUser.Attributes,
+		authProvider: authProvider,
 	}
 	if id.friendlyName == "" {
 		if token.ExternalUser.Email != "" {

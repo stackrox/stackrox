@@ -351,12 +351,12 @@ func startGRPCServer(factory serviceFactory) {
 		log.Panicf("Could not initialize auth provider registry: %v", err)
 	}
 
-	userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, registry)
+	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, registry)
 
 	idExtractors := []authn.IdentityExtractor{
 		service.NewExtractor(), // internal services
 		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
-		userpass.IdentityExtractorOrPanic(),
+		userpass.IdentityExtractorOrPanic(basicAuthProvider),
 	}
 
 	if features.ClientCAAuth.Enabled() {
