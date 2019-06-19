@@ -10,9 +10,10 @@ import (
 	dsig "github.com/russellhaering/goxmldsig"
 )
 
-func configureIDPFromSettings(sp *saml2.SAMLServiceProvider, idpIssuer, idpLoginURL, idpCertPEM string) error {
+func configureIDPFromSettings(sp *saml2.SAMLServiceProvider, idpIssuer, idpLoginURL, idpCertPEM, nameIDFormat string) error {
 	sp.IdentityProviderIssuer = idpIssuer
 	sp.IdentityProviderSSOURL = idpLoginURL
+	sp.NameIdFormat = nameIDFormat
 
 	certStore := &dsig.MemoryX509CertificateStore{}
 	certDERBlock, rest := pem.Decode([]byte(idpCertPEM))

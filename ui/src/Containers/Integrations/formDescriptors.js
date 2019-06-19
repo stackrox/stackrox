@@ -120,6 +120,13 @@ const formDescriptors = {
                 immutable: true
             },
             {
+                label: 'Name/ID Format',
+                jsonpath: 'config.idp_nameid_format',
+                type: 'text',
+                placeholder: 'urn:oasis:names:tc:SAML:1.1:nameid-format:persistent',
+                immutable: true
+            },
+            {
                 label: 'IdP Certificate (PEM)',
                 jsonpath: 'config.idp_cert_pem',
                 type: 'textarea',

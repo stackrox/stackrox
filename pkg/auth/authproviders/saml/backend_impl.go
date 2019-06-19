@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -69,23 +70,24 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 	}
 
 	if config["idp_metadata_url"] != "" {
-		if config["idp_issuer"] != "" || config["idp_cert_pem"] != "" || config["idp_sso_url"] != "" {
-			return nil, nil, errors.New("if IdP metadata URL is set, IdP issuer, SSO URL and certificate data must be left blank")
+		if !stringutils.AllEmpty(config["idp_issuer"], config["idp_cert_pem"], config["idp_sso_url"], config["idp_nameid_format"]) {
+			return nil, nil, errors.New("if IdP metadata URL is set, IdP issuer, SSO URL, certificate data and Name/ID format must be left blank")
 		}
 		if err := configureIDPFromMetadataURL(ctx, &p.sp, config["idp_metadata_url"]); err != nil {
 			return nil, nil, errors.Wrap(err, "could not configure auth provider from IdP metadata URL")
 		}
 		effectiveConfig["idp_metadata_url"] = config["idp_metadata_url"]
 	} else {
-		if config["idp_issuer"] == "" || config["idp_sso_url"] == "" || config["idp_cert_pem"] == "" {
+		if !stringutils.AllNotEmpty(config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"]) {
 			return nil, nil, errors.New("if IdP metadata URL is not set, IdP issuer, SSO URL, and certificate data must be specified")
 		}
-		if err := configureIDPFromSettings(&p.sp, config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"]); err != nil {
+		if err := configureIDPFromSettings(&p.sp, config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"], config["idp_nameid_format"]); err != nil {
 			return nil, nil, errors.Wrap(err, "could not configure auth provider from settings")
 		}
 		effectiveConfig["idp_issuer"] = config["idp_issuer"]
 		effectiveConfig["idp_sso_url"] = config["idp_sso_url"]
 		effectiveConfig["idp_cert_pem"] = config["idp_cert_pem"]
+		effectiveConfig["idp_nameid_format"] = config["idp_nameid_format"]
 	}
 
 	return p, effectiveConfig, nil
