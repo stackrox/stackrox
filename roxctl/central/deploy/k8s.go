@@ -66,7 +66,7 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 
 	// Adds k8s specific flags
 	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", defaults.MainImage(), "main image to use", "central")
-	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "run StackRox in offline mode which avoids reaching out to the internet", "central")
+	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
 
 	// Monitoring Flags
 	flagWrap.StringVarP(&k8sConfig.Monitoring.Endpoint, "monitoring-endpoint", "", "monitoring.stackrox:443", "monitoring endpoint", "monitoring", "monitoring-type=on-prem")
