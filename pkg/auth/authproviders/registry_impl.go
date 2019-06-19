@@ -223,7 +223,7 @@ func (r *registryImpl) ExchangeToken(ctx context.Context, externalToken, typ, st
 	if err != nil {
 		return "", "", err
 	}
-	token, err := provider.Issuer().Issue(tokens.RoxClaims{ExternalUser: claim}, opts...)
+	token, err := provider.Issuer().Issue(ctx, tokens.RoxClaims{ExternalUser: claim}, opts...)
 	if err != nil {
 		return "", "", err
 	}

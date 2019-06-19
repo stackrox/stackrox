@@ -1,6 +1,8 @@
 package authproviders
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -87,10 +89,9 @@ func (p *providerImpl) Issuer() tokens.Issuer {
 // Modifier functions.
 //////////////////////
 
-func (p *providerImpl) Validate(claims *tokens.Claims) error {
-	// Signature validation/expiry checks/check for enabledness is already done by the JWT layer.
-	// TODO: allow the backend to do validation?
-	return nil
+func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+	backend := p.Backend()
+	return backend.Validate(ctx, claims)
 }
 
 // We must lock the provider when applying options to it.

@@ -1,13 +1,15 @@
 package tokens
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/jwt"
 )
 
 // Validator is responsible for validating (and thus parsing) tokens.
 type Validator interface {
-	Validate(token string) (*TokenInfo, error)
+	Validate(ctx context.Context, token string) (*TokenInfo, error)
 }
 
 type validator struct {
@@ -22,7 +24,7 @@ func newValidator(sources *sourceStore, jwtValidator jwt.Validator) *validator {
 	}
 }
 
-func (v *validator) Validate(token string) (*TokenInfo, error) {
+func (v *validator) Validate(ctx context.Context, token string) (*TokenInfo, error) {
 	var claims Claims
 	if err := v.validator.Validate(token, &claims.Claims, &claims.RoxClaims, &claims.Extra); err != nil {
 		return nil, err
@@ -32,7 +34,7 @@ func (v *validator) Validate(token string) (*TokenInfo, error) {
 		return nil, err
 	}
 	for _, src := range srcs {
-		if err := src.Validate(&claims); err != nil {
+		if err := src.Validate(ctx, &claims); err != nil {
 			return nil, errors.Wrap(err, "token rejected by source")
 		}
 	}

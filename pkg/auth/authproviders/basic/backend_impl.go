@@ -111,3 +111,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusUnauthorized)
 	return nil, nil, "", nil
 }
+
+func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+	return nil
+}

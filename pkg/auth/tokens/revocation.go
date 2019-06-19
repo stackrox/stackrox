@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -32,7 +33,7 @@ type revocationLayer struct {
 	revokedMutex sync.RWMutex
 }
 
-func (l *revocationLayer) Validate(claims *Claims) error {
+func (l *revocationLayer) Validate(ctx context.Context, claims *Claims) error {
 	if claims.ID == "" {
 		return errors.New("token has no ID")
 	}

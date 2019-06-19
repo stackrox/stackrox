@@ -146,6 +146,10 @@ func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) s
 	return url
 }
 
+func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+	return nil
+}
+
 // Helpers
 //////////
 

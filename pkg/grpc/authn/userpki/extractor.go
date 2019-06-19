@@ -35,6 +35,14 @@ type extractor struct {
 }
 
 func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+	// this auth identity provider is only relevant for API usage outside of the browser app. Inside the browser app,
+	// tokens are used (with validation to ensure continuity of access). So we ignore certs if the authorization
+	// header is set.
+	authHeaders := ri.Metadata.Get("authorization")
+	if len(authHeaders) > 0 {
+		return nil, nil
+	}
+
 	if len(ri.VerifiedChains) != 1 {
 		return nil, nil
 	}
@@ -45,7 +53,7 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			continue
 		}
 		userCert := ri.VerifiedChains[0][0]
-		attributes := extractAttributes(userCert)
+		attributes := ExtractAttributes(userCert)
 		identity := &identity{userCert, provider.ID(), nil, attributes}
 		ud := &permissions.UserDescriptor{
 			UserID:     identity.UID(),
@@ -61,7 +69,8 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	return nil, nil
 }
 
-func extractAttributes(userCert requestinfo.CertInfo) map[string][]string {
+// ExtractAttributes converts a subset of CertInfo into an attribute map for authorization
+func ExtractAttributes(userCert requestinfo.CertInfo) map[string][]string {
 	// TODO(ROX-2190)
 	output := make(map[string][]string)
 	output["CN"] = []string{userCert.Subject.CommonName}

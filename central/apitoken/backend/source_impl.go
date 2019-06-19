@@ -38,8 +38,8 @@ func (s *sourceImpl) initFromStore(ctx context.Context, apiTokens datastore.Data
 	return nil
 }
 
-func (s *sourceImpl) Validate(claims *tokens.Claims) error {
-	return s.revocationLayer.Validate(claims)
+func (s *sourceImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+	return s.revocationLayer.Validate(ctx, claims)
 }
 
 func (s *sourceImpl) Revoke(tokenID string, expiry time.Time) {

@@ -135,7 +135,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	var tokenInfo *tokens.TokenInfo
 
 	if err == nil && claim != nil {
-		tokenInfo, err = provider.Issuer().Issue(tokens.RoxClaims{ExternalUser: claim}, opts...)
+		tokenInfo, err = provider.Issuer().Issue(req.Context(), tokens.RoxClaims{ExternalUser: claim}, opts...)
 	}
 
 	if err != nil {

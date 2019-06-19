@@ -239,6 +239,10 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	return userClaim, opts, clientState, nil
 }
 
+func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+	return nil
+}
+
 // Helpers
 ///////////
 

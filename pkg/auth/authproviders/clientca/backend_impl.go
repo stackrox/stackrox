@@ -5,12 +5,18 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/cloudflare/cfssl/helpers"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/grpc/authn/userpki"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -18,13 +24,15 @@ import (
 const (
 	// ConfigKeys is the map key in the provider configuration
 	ConfigKeys = "keys"
+
+	authenticateHandlerPath = "authenticate"
 )
 
 var (
 	log = logging.LoggerForModule()
 )
 
-func newBackend(ctx context.Context, id string, callbacks ProviderCallbacks, config map[string]string) (authproviders.Backend, map[string]string, error) {
+func newBackend(ctx context.Context, pathPrefix string, callbacks ProviderCallbacks, config map[string]string) (authproviders.Backend, map[string]string, error) {
 	pem := config[ConfigKeys]
 	if pem == "" {
 		return nil, nil, fmt.Errorf("Parameter %q is required", ConfigKeys)
@@ -33,39 +41,97 @@ func newBackend(ctx context.Context, id string, callbacks ProviderCallbacks, con
 	if err != nil {
 		return nil, nil, err
 	}
+	fingerprints := set.NewStringSet()
+	for _, cert := range certs {
+		fingerprints.Add(cryptoutils.CertFingerprint(cert))
+	}
 	return &backendImpl{
-		callbacks: callbacks,
-		certs:     certs,
+		pathPrefix:   pathPrefix,
+		callbacks:    callbacks,
+		certs:        certs,
+		fingerprints: fingerprints,
 	}, config, nil
 }
 
 type backendImpl struct {
-	callbacks ProviderCallbacks
-	certs     []*x509.Certificate
+	pathPrefix   string
+	callbacks    ProviderCallbacks
+	certs        []*x509.Certificate
+	fingerprints set.StringSet
 }
 
-func (b *backendImpl) OnEnable(provider authproviders.Provider) {
+func (p *backendImpl) OnEnable(provider authproviders.Provider) {
 	log.Debugf("Provider %q enabled", provider.ID())
-	b.callbacks.RegisterAuthProvider(provider, b.certs)
+	p.callbacks.RegisterAuthProvider(provider, p.certs)
 }
 
-func (b *backendImpl) OnDisable(provider authproviders.Provider) {
+func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 	log.Debugf("Provider %q disabled", provider.ID())
-	b.callbacks.UnregisterAuthProvider(provider)
+	p.callbacks.UnregisterAuthProvider(provider)
 }
 
-func (b *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
+func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
+	return p.pathPrefix + authenticateHandlerPath
+}
+
+func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (b *backendImpl) RefreshURL() string {
-	return ""
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+	restPath := strings.TrimPrefix(r.URL.Path, p.pathPrefix)
+	if len(restPath) == len(r.URL.Path) {
+		return nil, nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
+	}
+
+	if restPath != authenticateHandlerPath {
+		return nil, nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
+	}
+	if r.Method != http.MethodGet {
+		return nil, nil, "", httputil.NewError(http.StatusMethodNotAllowed, "Method Not Allowed")
+	}
+	ri := requestinfo.FromContext(r.Context())
+	if len(ri.VerifiedChains) != 1 {
+		return nil, nil, "", httputil.NewError(http.StatusBadRequest, "User certificate required")
+	}
+	for _, ca := range ri.VerifiedChains[0] {
+		if p.fingerprints.Contains(ca.CertFingerprint) {
+			continue
+		}
+		userCert := ri.VerifiedChains[0][0]
+		return externalUser(userCert), options(userCert), "", nil
+	}
+	return nil, nil, "", httputil.NewError(http.StatusForbidden, "User certificate not matched")
 }
 
-func (b *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
-	return nil, nil, "", status.Errorf(codes.Unimplemented, "ProcessHTTPRequest not implemented for provider type %q", TypeName)
-}
-
-func (b *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	return nil, nil, "", status.Errorf(codes.Unimplemented, "ExchangeToken not implemented for provider type %q", TypeName)
+}
+
+func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+	ri := requestinfo.FromContext(ctx)
+	if len(ri.VerifiedChains) != 1 || len(ri.VerifiedChains[0]) == 0 {
+		return errors.New("No client chains present")
+	}
+	if userID(ri.VerifiedChains[0][0]) != claims.ExternalUser.UserID {
+		return errors.New("Certificate fingerprint changed, please log in again")
+	}
+	return nil
+}
+
+func userID(info requestinfo.CertInfo) string {
+	return "userpki:" + info.CertFingerprint
+}
+
+func externalUser(info requestinfo.CertInfo) *tokens.ExternalUserClaim {
+	attrs := userpki.ExtractAttributes(info)
+	return &tokens.ExternalUserClaim{
+		UserID:     userID(info),
+		FullName:   info.Subject.CommonName,
+		Attributes: attrs,
+	}
+}
+
+func options(info requestinfo.CertInfo) []tokens.Option {
+	return []tokens.Option{tokens.WithExpiry(info.NotAfter)}
 }

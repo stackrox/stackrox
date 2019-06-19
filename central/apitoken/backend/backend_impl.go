@@ -26,7 +26,7 @@ func (c *backendImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest
 }
 
 func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, role *storage.Role) (string, *storage.TokenMetadata, error) {
-	tokenInfo, err := c.issuer.Issue(tokens.RoxClaims{RoleName: role.GetName()})
+	tokenInfo, err := c.issuer.Issue(ctx, tokens.RoxClaims{RoleName: role.GetName()})
 	if err != nil {
 		return "", nil, err
 	}
