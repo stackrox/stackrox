@@ -17,8 +17,11 @@ type ScanExistsQueryBuilder struct {
 // Query implements the PolicyQueryBuilder interface.
 func (s ScanExistsQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	// We only match if the user specifies that they want to match un-scanned images.
-	if !fields.GetNoScanExists() {
+	if fields.GetSetNoScanExists() == nil {
 		return
+	}
+	if !fields.GetNoScanExists() {
+		return nil, nil, errors.New("Policy can only check for images without scans")
 	}
 
 	_, err = getSearchFieldNotStored(search.ImageScanTime, optionsMap)

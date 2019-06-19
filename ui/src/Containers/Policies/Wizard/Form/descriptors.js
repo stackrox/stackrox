@@ -287,10 +287,11 @@ const policyConfigurationDescriptor = [
     {
         label: 'Image is NOT Scanned',
         jsonpath: 'fields.noScanExists',
-        type: 'select',
-        options: [{ label: 'True', value: true }],
+        type: 'toggle',
         required: false,
-        default: false
+        default: false,
+        defaultValue: true,
+        disabled: true
     },
     {
         label: 'CVSS',
@@ -489,18 +490,20 @@ const policyConfigurationDescriptor = [
     {
         label: 'Privileged',
         jsonpath: 'fields.privileged',
-        type: 'select',
-        options: [{ label: 'Yes', value: true }, { label: 'No', value: false }],
+        type: 'toggle',
         required: false,
-        default: false
+        default: false,
+        defaultValue: true,
+        disabled: true
     },
     {
         label: 'Read-Only Root Filesystem',
         jsonpath: 'fields.readOnlyRootFs',
-        type: 'select',
-        options: [{ label: 'No', value: false }],
+        type: 'toggle',
         required: false,
-        default: false
+        default: false,
+        defaultValue: false,
+        disabled: true
     },
     {
         label: 'Drop Capabilities',
@@ -570,7 +573,8 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         defaultValue: false,
-        reverse: true
+        reverse: true,
+        disabled: true
     },
     {
         label: 'Whitelists Enabled',

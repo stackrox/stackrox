@@ -15,8 +15,11 @@ type ReadOnlyRootFSQueryBuilder struct {
 // Query implements the PolicyQueryBuilder interface.
 func (p ReadOnlyRootFSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	// We don't match on readonlyrootfs = true, because that seems pointless.
-	if fields.GetSetReadOnlyRootFs() == nil || fields.GetReadOnlyRootFs() {
+	if fields.GetSetReadOnlyRootFs() == nil {
 		return
+	}
+	if fields.GetReadOnlyRootFs() {
+		return nil, nil, errors.New("Policy can only check for non read-only root filesystems")
 	}
 	searchField, err := getSearchField(search.ReadOnlyRootFilesystem, optionsMap)
 	if err != nil {

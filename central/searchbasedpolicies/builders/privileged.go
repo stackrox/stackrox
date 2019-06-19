@@ -15,8 +15,11 @@ type PrivilegedQueryBuilder struct {
 // Query implements the PolicyQueryBuilder interface.
 func (p PrivilegedQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	// We don't match on privileged = false, because that seems pointless.
-	if !fields.GetPrivileged() {
+	if fields.GetSetPrivileged() == nil {
 		return
+	}
+	if !fields.GetPrivileged() {
+		return nil, nil, errors.New("Policy can only check for privileged containers")
 	}
 	searchField, err := getSearchField(search.Privileged, optionsMap)
 	if err != nil {
