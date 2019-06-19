@@ -22,13 +22,20 @@ message UpsertAuthzPluginConfigRequest {
 // ScopedAccesssControlService manages configuration related to scoped access control.
 service ScopedAccessControlService {
 
+    rpc DryRunAuthzPluginConfig (UpsertAuthzPluginConfigRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/scopedaccessctrl/test"
+            body: "*"
+        };
+    }
+
     rpc GetAuthzPluginConfigs (Empty) returns (GetAuthzPluginConfigsResponse) {
         option (google.api.http) = {
             get: "/v1/scopedaccessctrl/configs"
         };
     }
 
-    rpc ConfigureAuthzPlugin (UpsertAuthzPluginConfigRequest) returns (Empty) {
+    rpc ConfigureAuthzPlugin (UpsertAuthzPluginConfigRequest) returns (storage.AuthzPluginConfig) {
         option (google.api.http) = {
             post: "/v1/scopedaccessctrl/config"
             body: "*"

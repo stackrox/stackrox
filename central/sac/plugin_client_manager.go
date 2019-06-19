@@ -10,15 +10,17 @@ var (
 	managerInstanceInit sync.Once
 )
 
+// AuthPluginClientManger implementations must provide access to the auth plugin client if it has been configured.
+//go:generate mockgen-wrapper AuthPluginClientManger
+type AuthPluginClientManger interface {
+	SetClient(newClient client.Client)
+	GetClient() client.Client
+}
+
 // AuthPluginClientManagerSingleton returns the singleton instance of the deployment environments manager.
 func AuthPluginClientManagerSingleton() AuthPluginClientManger {
 	managerInstanceInit.Do(func() {
 		managerInstance = &authPluginClientManager{}
 	})
 	return managerInstance
-}
-
-// AuthPluginClientManger implementations must provide access to the auth plugin client if it has been configured.
-type AuthPluginClientManger interface {
-	GetClient() client.Client
 }

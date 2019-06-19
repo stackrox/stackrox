@@ -11,6 +11,7 @@ import (
 var (
 	APIToken              = newResourceMetadata("APIToken", permissions.GlobalScope)
 	Alert                 = newResourceMetadata("Alert", permissions.NamespaceScope)
+	AuthPlugin            = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
 	AuthProvider          = newResourceMetadata("AuthProvider", permissions.GlobalScope)
 	BackupPlugins         = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
 	ClientTrustCerts      = newResourceMetadata("ClientTrustCerts", permissions.GlobalScope)

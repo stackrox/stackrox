@@ -70,6 +70,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
+	sacService "github.com/stackrox/rox/central/sac/service"
 	"github.com/stackrox/rox/central/sac/transitional"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
@@ -293,6 +294,10 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 
 	if env.DevelopmentBuild.Setting() == "true" {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
+	}
+
+	if features.ScopedAccessControl.Enabled() {
+		servicesToRegister = append(servicesToRegister, sacService.Singleton())
 	}
 	return servicesToRegister
 }

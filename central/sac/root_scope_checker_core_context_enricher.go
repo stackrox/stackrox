@@ -9,10 +9,12 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/client"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -34,11 +36,18 @@ func GetEnricher() *Enricher {
 // Enricher returns a object which will enrich a context with a cached root scope checker core
 type Enricher struct {
 	// In a perfect world we would clear this cache when SAC gets disabled
-	scopeMap expiringcache.Cache
+	scopeMap      expiringcache.Cache
+	clientManager AuthPluginClientManger
+
+	prevCliLock    sync.Mutex
+	prevAuthClient client.Client
 }
 
 func newEnricher() *Enricher {
-	return &Enricher{scopeMap: expiringcache.NewExpiringCacheOrPanic(5000, env.PermissionTimeout.DurationSetting(), time.Minute)}
+	return &Enricher{
+		scopeMap:      expiringcache.NewExpiringCacheOrPanic(5000, env.PermissionTimeout.DurationSetting(), time.Minute),
+		clientManager: AuthPluginClientManagerSingleton(),
+	}
 }
 
 // RootScopeCheckerCoreContextEnricher enriches the given context with a root scope checker which can be used to check a
@@ -54,20 +63,27 @@ func (se *Enricher) RootScopeCheckerCoreContextEnricher(ctx context.Context) (co
 
 	// If SAC is configured create and cache a RootScopeCheckerCore with a Client object.  The Client object will
 	// encapsulate the actual connected/disconnected state of the plugin
-	clientManager := AuthPluginClientManagerSingleton()
-	client := clientManager.GetClient()
-	if client == nil {
+	authClient := se.clientManager.GetClient()
+	if authClient == nil {
 		return sac.WithGlobalAccessScopeChecker(ctx, scopeCheckerForIdentity(id)), nil
 	}
+	concurrency.WithLock(&se.prevCliLock, func() {
+		if se.prevAuthClient == authClient {
+			return
+		}
+		se.scopeMap.RemoveAll()
+		se.prevAuthClient = authClient
+	})
 
 	principal := idToPrincipal(id)
-	principalJSON, err := json.Marshal(principal)
+	principalJSONBytes, err := json.Marshal(principal)
 	if err != nil {
 		return nil, err
 	}
-	rsc := se.scopeMap.Get(principalJSON).(sac.ScopeCheckerCore)
+	principalJSON := string(principalJSONBytes)
+	rsc, _ := se.scopeMap.Get(principalJSON).(sac.ScopeCheckerCore)
 	if rsc == nil {
-		rsc = sac.NewRootScopeCheckerCore(NewRequestTracker(client, datastore.Singleton(), principal))
+		rsc = sac.NewRootScopeCheckerCore(NewRequestTracker(authClient, datastore.Singleton(), principal))
 		// Not locking here can cause multiple root contexts to be created for one user.  This will have correct results
 		// and be eventually consistent but it will be slightly inefficient.
 		se.scopeMap.Add(principalJSON, rsc)
