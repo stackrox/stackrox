@@ -1,5 +1,11 @@
-
 import static Services.waitForViolation
+
+import objects.K8sPolicyRule
+import objects.K8sRole
+import objects.K8sRoleBinding
+import objects.K8sServiceAccount
+import objects.K8sSubject
+
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Service
@@ -30,6 +36,19 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private String STRUTS = "qadefpolstruts"
     static final private String DEPLOYMENTNGINX_LB = "deploymentnginx-lb"
     static final private String DEPLOYMENTNGINX_NP = "deploymentnginx-np"
+    static final private String DEPLOYMENT_RBAC = "deployment-rbac"
+    static final private String SERVICE_ACCOUNT_NAME = "policy-config-sa"
+    private static final String CLUSTER_ROLE_NAME = "policy-config-role"
+
+    private static final K8sServiceAccount NEW_SA = new K8sServiceAccount(
+            name: SERVICE_ACCOUNT_NAME,
+            namespace: Constants.ORCHESTRATOR_NAMESPACE)
+
+    private static final K8sRole NEW_CLUSTER_ROLE =
+            new K8sRole(name: CLUSTER_ROLE_NAME, clusterRole: true)
+
+    private static final K8sRoleBinding NEW_CLUSTER_ROLE_BINDING =
+            new K8sRoleBinding(NEW_CLUSTER_ROLE, [new K8sSubject(NEW_SA)])
 
     static final private  List<DeploymentOuterClass.PortConfig.ExposureLevel> EXPOSURE_VALUES =
              [DeploymentOuterClass.PortConfig.ExposureLevel.NODE,
@@ -71,11 +90,22 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
                     .addLabel("app", "test"),
+            new Deployment()
+                    .setName(DEPLOYMENT_RBAC)
+                    .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+                    .setServiceAccountName(SERVICE_ACCOUNT_NAME)
+                    .setImage("nginx:1.15.4-alpine")
+                    .setSkipReplicaWait(true),
     ]
     static final private Service NPSERVICE = new Service(DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_NP })
             .setType(Service.Type.NODEPORT)
 
     def setupSpec() {
+        NEW_CLUSTER_ROLE.setRules(new K8sPolicyRule(resources: ["nodes"], apiGroups: [""], verbs: ["list"]))
+        orchestrator.createServiceAccount(NEW_SA)
+        orchestrator.createClusterRole(NEW_CLUSTER_ROLE)
+        orchestrator.createClusterRoleBinding(NEW_CLUSTER_ROLE_BINDING)
+
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deploymentId : DEPLOYMENTS) {
             assert Services.waitForDeployment(deploymentId)
@@ -88,6 +118,9 @@ class PolicyConfigurationTest extends BaseSpecification {
             orchestrator.deleteDeployment(deployment)
         }
         orchestrator.deleteService(NPSERVICE.name, NPSERVICE.namespace)
+        orchestrator.deleteClusterRoleBinding(NEW_CLUSTER_ROLE_BINDING)
+        orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
+        orchestrator.deleteServiceAccount(NEW_SA)
     }
 
     @Unroll
@@ -431,6 +464,19 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         PolicyOuterClass.VolumePolicy.newBuilder().setReadOnly(false).build())
                                 .build())
                         .build()            | DEPLOYMENTNGINX
+        "RBAC API access"               |
+                Policy.newBuilder()
+                        .setName("Test RBAC API Access Policy")
+                        .setDescription("Test RBAC API Access Policy")
+                        .setRationale("Test RBAC API Access Policy")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("Security Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setPermissionPolicy(PolicyOuterClass.PermissionPolicy.newBuilder()
+                                        .setPermissionLevel(PolicyOuterClass.PermissionLevel.ELEVATED_CLUSTER_WIDE)))
+                        .build()            | DEPLOYMENT_RBAC
     }
 
     @Unroll

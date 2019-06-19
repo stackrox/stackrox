@@ -895,7 +895,7 @@ class Kubernetes implements OrchestratorMain {
                     new PolicyRule(
                             verbs: it.verbs,
                             apiGroups: it.apiGroups,
-                            resources: it.resoures,
+                            resources: it.resources,
                             nonResourceURLs: it.nonResourceUrls,
                             resourceNames: it.resourceNames
                     )
