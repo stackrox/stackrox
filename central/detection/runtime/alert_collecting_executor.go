@@ -22,14 +22,16 @@ type alertCollectingExecutor interface {
 	ClearAlerts()
 }
 
-func newAlertCollectingExecutor(deployments datastore.DataStore, deploymentIDs ...string) alertCollectingExecutor {
+func newAlertCollectingExecutor(executorCtx context.Context, deployments datastore.DataStore, deploymentIDs ...string) alertCollectingExecutor {
 	return &alertCollectingExecutorImpl{
+		executorCtx:   executorCtx,
 		deploymentIDs: deploymentIDs,
 		deployments:   deployments,
 	}
 }
 
 type alertCollectingExecutorImpl struct {
+	executorCtx   context.Context
 	deploymentIDs []string
 	deployments   datastore.DataStore
 	alerts        []*storage.Alert
@@ -55,9 +57,9 @@ func (d *alertCollectingExecutorImpl) Execute(compiled detection.CompiledPolicy)
 	var err error
 	var violationsByDeployment map[string]searchbasedpolicies.Violations
 	if len(d.deploymentIDs) == 0 {
-		violationsByDeployment, err = compiled.Matcher().Match(context.TODO(), d.deployments)
+		violationsByDeployment, err = compiled.Matcher().Match(d.executorCtx, d.deployments)
 	} else {
-		violationsByDeployment, err = compiled.Matcher().MatchMany(context.TODO(), d.deployments, d.deploymentIDs...)
+		violationsByDeployment, err = compiled.Matcher().MatchMany(d.executorCtx, d.deployments, d.deploymentIDs...)
 	}
 
 	if err != nil {
@@ -65,7 +67,7 @@ func (d *alertCollectingExecutorImpl) Execute(compiled detection.CompiledPolicy)
 	}
 
 	for deploymentID, violations := range violationsByDeployment {
-		dep, exists, err := d.deployments.GetDeployment(context.TODO(), deploymentID)
+		dep, exists, err := d.deployments.GetDeployment(d.executorCtx, deploymentID)
 		if err != nil {
 			return err
 		}

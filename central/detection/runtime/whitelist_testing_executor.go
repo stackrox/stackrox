@@ -13,14 +13,16 @@ type whitelistTestingExecutor interface {
 	GetResult() bool
 }
 
-func newWhitelistTestingExecutor(deployments datastore.DataStore, deploymentID string) whitelistTestingExecutor {
+func newWhitelistTestingExecutor(executorCtx context.Context, deployments datastore.DataStore, deploymentID string) whitelistTestingExecutor {
 	return &whitelistTestingExecutorImpl{
+		executorCtx:  executorCtx,
 		deploymentID: deploymentID,
 		deployments:  deployments,
 	}
 }
 
 type whitelistTestingExecutorImpl struct {
+	executorCtx  context.Context
 	deploymentID string
 	deployments  datastore.DataStore
 	result       bool
@@ -35,7 +37,7 @@ func (wte *whitelistTestingExecutorImpl) Execute(compiled detection.CompiledPoli
 		wte.result = true
 		return nil
 	}
-	dep, exists, err := wte.deployments.GetDeployment(context.TODO(), wte.deploymentID)
+	dep, exists, err := wte.deployments.GetDeployment(wte.executorCtx, wte.deploymentID)
 	if err != nil {
 		return err
 	}

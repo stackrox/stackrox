@@ -8,13 +8,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func newAllDeploymentsExecutor(deployments datastore.DataStore) alertCollectingExecutor {
+func newAllDeploymentsExecutor(executorCtx context.Context, deployments datastore.DataStore) alertCollectingExecutor {
 	return &allDeploymentsExecutor{
 		deployments: deployments,
+		executorCtx: executorCtx,
 	}
 }
 
 type allDeploymentsExecutor struct {
+	executorCtx context.Context
 	deployments datastore.DataStore
 	alerts      []*storage.Alert
 }
@@ -31,12 +33,12 @@ func (d *allDeploymentsExecutor) Execute(compiled detection.CompiledPolicy) erro
 	if compiled.Policy().GetDisabled() {
 		return nil
 	}
-	violationsByDeployment, err := compiled.Matcher().Match(context.TODO(), d.deployments)
+	violationsByDeployment, err := compiled.Matcher().Match(d.executorCtx, d.deployments)
 	if err != nil {
 		return err
 	}
 	for deploymentID, violations := range violationsByDeployment {
-		dep, exists, err := d.deployments.GetDeployment(context.TODO(), deploymentID)
+		dep, exists, err := d.deployments.GetDeployment(d.executorCtx, deploymentID)
 		if err != nil {
 			return err
 		}

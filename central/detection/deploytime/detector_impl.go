@@ -1,15 +1,20 @@
 package deploytime
 
 import (
+	"context"
+
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	executorCtx = sac.WithAllAccess(context.Background())
 )
 
 type detectorImpl struct {
@@ -30,7 +35,7 @@ func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployme
 	}
 	defer utils.IgnoreError(closeableIndex.Close)
 
-	exe := newSingleDeploymentExecutor(ctx, deploymentIndex, deployment, images)
+	exe := newSingleDeploymentExecutor(executorCtx, ctx, deploymentIndex, deployment, images)
 	err = d.policySet.ForEach(exe)
 	if err != nil {
 		return nil, err
@@ -39,7 +44,7 @@ func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployme
 }
 
 func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*storage.Alert, error) {
-	exe := newAllDeploymentsExecutor(d.deployments)
+	exe := newAllDeploymentsExecutor(executorCtx, d.deployments)
 	err := d.policySet.ForOne(policyID, exe)
 	if err != nil {
 		return nil, err

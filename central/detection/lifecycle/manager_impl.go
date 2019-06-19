@@ -33,9 +33,9 @@ import (
 )
 
 var (
-	lifecycleCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	lifecycleMgrCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ProcessWhitelist, resources.Indicator, resources.Deployment, resources.Image)))
+			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Indicator, resources.Policy, resources.ProcessWhitelist)))
 )
 
 type indicatorWithInjector struct {
@@ -104,7 +104,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 
 	// Index the process indicators in batch
-	if err := m.processesDataStore.AddProcessIndicators(lifecycleCtx, indicatorSlice...); err != nil {
+	if err := m.processesDataStore.AddProcessIndicators(lifecycleMgrCtx, indicatorSlice...); err != nil {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
@@ -136,7 +136,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 		newAlerts = append(newAlerts, whitelistAlerts...)
 	}
 
-	modified, err := m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
+	modified, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
 	if err != nil {
 		log.Errorf("Couldn't alert and notify: %s", err)
 	} else if modified {
@@ -158,7 +158,7 @@ func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector c
 }
 
 func (m *managerImpl) getWhitelistAlerts(deploymentsToIndicators map[string][]*storage.ProcessIndicator) ([]*storage.Alert, error) {
-	whitelistExecutor := newWhitelistExecutor(m.deploymentDataStore, deploymentsToIndicators)
+	whitelistExecutor := newWhitelistExecutor(lifecycleMgrCtx, m.deploymentDataStore, deploymentsToIndicators)
 	if err := m.runtimeDetector.PolicySet().ForEach(whitelistExecutor); err != nil {
 		return nil, err
 	}
@@ -181,14 +181,14 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 	}
 
 	// TODO joseph what to do if whitelist doesn't exist?  Always create for now?
-	whitelist, err := m.whitelists.GetProcessWhitelist(lifecycleCtx, key)
+	whitelist, err := m.whitelists.GetProcessWhitelist(lifecycleMgrCtx, key)
 	if err != nil {
 		return
 	}
 
 	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: processwhitelist.WhitelistItemFromProcess(indicator)}}
 	if whitelist == nil {
-		_, err = m.whitelists.UpsertProcessWhitelist(lifecycleCtx, key, []*storage.WhitelistItem{insertableElement}, true)
+		_, err = m.whitelists.UpsertProcessWhitelist(lifecycleMgrCtx, key, []*storage.WhitelistItem{insertableElement}, true)
 		if err == nil {
 			// This updates the risk for deployments after the whitelist gets locked.
 			// This isn't super pretty, but otherwise, our whitelistStatus for the deployment can become stale
@@ -211,7 +211,7 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 	if userWhitelist || roxWhitelist {
 		return
 	}
-	_, err = m.whitelists.UpdateProcessWhitelistElements(lifecycleCtx, key, []*storage.WhitelistItem{insertableElement}, nil, true)
+	_, err = m.whitelists.UpdateProcessWhitelistElements(lifecycleMgrCtx, key, []*storage.WhitelistItem{insertableElement}, nil, true)
 	if err != nil {
 		return
 	}
@@ -240,7 +240,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 	if len(updatedIndices) > 0 {
 		for _, idx := range updatedIndices {
 			img := images[idx]
-			if err := m.imageDataStore.UpsertImage(lifecycleCtx, img); err != nil {
+			if err := m.imageDataStore.UpsertImage(lifecycleMgrCtx, img); err != nil {
 				log.Errorf("Error persisting image %s: %s", img.GetName().GetFullName(), err)
 			}
 		}
@@ -255,7 +255,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 		return "", "", storage.EnforcementAction_UNSET_ENFORCEMENT, errors.Wrap(err, "fetching deploy time alerts")
 	}
 
-	if _, err := m.alertManager.AlertAndNotify(presentAlerts,
+	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, presentAlerts,
 		alertmanager.WithLifecycleStage(storage.LifecycleStage_DEPLOY), alertmanager.WithDeploymentIDs(deployment.GetId())); err != nil {
 		return "", "", storage.EnforcementAction_UNSET_ENFORCEMENT, err
 	}
@@ -305,7 +305,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	}
 
 	// Perform notifications and update DB.
-	_, err := m.alertManager.AlertAndNotify(presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
+	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
 	return err
 }
 
@@ -348,12 +348,12 @@ func (m *managerImpl) RecompilePolicy(policy *storage.Policy) error {
 	}
 
 	// Perform notifications and update DB.
-	_, err := m.alertManager.AlertAndNotify(presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
+	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
 	return err
 }
 
 func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
-	_, err := m.alertManager.AlertAndNotify(nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
+	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
 	return err
 }
 
@@ -367,7 +367,7 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 	if err := m.runtimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
-	_, err := m.alertManager.AlertAndNotify(nil, alertmanager.WithPolicyID(policyID))
+	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policyID))
 	return err
 }
 
@@ -410,7 +410,7 @@ func (m *managerImpl) generateAndSendEnforcements(alerts []*storage.Alert, indic
 		for _, singleIndicator := range alert.GetProcessViolation().GetProcesses() {
 			if infoWithInjector, ok := indicatorsToInfo[singleIndicator.GetId()]; ok {
 				// Get the deployment details to check that the deployment is still running.
-				deployment, exists, err := m.deploymentDataStore.GetDeployment(lifecycleCtx, alert.GetDeployment().GetId())
+				deployment, exists, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, alert.GetDeployment().GetId())
 				if err != nil {
 					log.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", alert.GetDeployment().GetId(), err)
 					continue

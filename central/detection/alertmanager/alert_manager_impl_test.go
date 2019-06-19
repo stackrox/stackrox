@@ -1,6 +1,7 @@
 package alertmanager
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -56,9 +57,11 @@ type AlertManagerTestSuite struct {
 	alertManager AlertManager
 
 	mockCtrl *gomock.Controller
+	ctx      context.Context
 }
 
 func (suite *AlertManagerTestSuite) SetupTest() {
+	suite.ctx = context.Background()
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.alertsMock = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
@@ -99,17 +102,17 @@ func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
-	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any(), testutils.PredMatcher("query for violation state, policy", queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*storage.Alert)(nil), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, testutils.PredMatcher("query for violation state, policy", queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*storage.Alert)(nil), nil)
 
-	modified, err := suite.alertManager.AlertAndNotify(nil, WithPolicyID("pid"))
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithPolicyID("pid"))
 	suite.False(modified)
 	suite.NoError(err, "update should succeed")
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
-	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any(), testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*storage.Alert)(nil), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*storage.Alert)(nil), nil)
 
-	modified, err := suite.alertManager.AlertAndNotify(nil, WithDeploymentIDs("did"))
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithDeploymentIDs("did"))
 	suite.False(modified)
 	suite.NoError(err, "update should succeed")
 }
@@ -117,12 +120,12 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 	alerts := getAlerts()
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(alerts, nil)
-	suite.alertsMock.EXPECT().UpdateAlert(gomock.Any(), alerts[0]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(gomock.Any(), alerts[1]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(gomock.Any(), alerts[2]).Return(nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[0]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[1]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[2]).Return(nil)
 
-	modified, err := suite.alertManager.AlertAndNotify(alerts)
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts)
 	suite.True(modified)
 	suite.NoError(err, "update should succeed")
 }
@@ -130,18 +133,18 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 	alerts := getAlerts()
 
-	suite.alertsMock.EXPECT().MarkAlertStale(gomock.Any(), alerts[0].GetId()).Return(nil)
+	suite.alertsMock.EXPECT().MarkAlertStale(suite.ctx, alerts[0].GetId()).Return(nil)
 
 	// Next two should be updates with exactly the same values put in.
-	suite.alertsMock.EXPECT().UpdateAlert(gomock.Any(), alerts[1]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(gomock.Any(), alerts[2]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[1]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[2]).Return(nil)
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 	// We should get a notification for the new alert.
 	suite.notifierMock.EXPECT().ProcessAlert(alerts[0]).Return()
 
 	// Make one of the alerts not appear in the current alerts.
-	modified, err := suite.alertManager.AlertAndNotify(alerts[1:])
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts[1:])
 	suite.True(modified)
 	suite.NoError(err, "update should succeed")
 }
@@ -150,67 +153,67 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	alerts := getAlerts()
 
 	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
-	suite.alertsMock.EXPECT().UpdateAlert(gomock.Any(), alerts[0]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(gomock.Any(), alerts[1]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(gomock.Any(), alerts[2]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[0]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[1]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[2]).Return(nil)
 
 	// We should get a notification for the new alert.
 	suite.notifierMock.EXPECT().ProcessAlert(alerts[0]).Return()
 
 	// Make one of the alerts not appear in the previous alerts.
-	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(alerts[1:], nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts[1:], nil)
 
-	modified, err := suite.alertManager.AlertAndNotify(alerts)
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts)
 	suite.True(modified)
 	suite.NoError(err, "update should succeed")
 }
 
 func (suite *AlertManagerTestSuite) makeAlertsMockReturn(alerts ...*storage.Alert) {
-	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any(),
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for violation state, deployment, policy", queryHasFields(search.ViolationState, search.DeploymentID, search.PolicyID))).
 		Return(alerts, nil)
 }
 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesForNonRuntime() {
-	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(getAlerts()[0]))
+	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, getAlerts()[0]))
 }
 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithNoOldAlert() {
 	suite.makeAlertsMockReturn()
 	alert := getFakeRuntimeAlert(nowProcess)
 	clonedAlert := protoutils.CloneStorageAlert(alert)
-	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
+	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
 	suite.Equal(clonedAlert, alert)
 }
 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithTheSameAlert() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess))
-	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(getFakeRuntimeAlert(nowProcess)))
+	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, getFakeRuntimeAlert(nowProcess)))
 }
 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithAnOldAlert() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
 	alert := getFakeRuntimeAlert(nowProcess)
 	clonedAlert := protoutils.CloneStorageAlert(alert)
-	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
+	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
 	suite.Equal(clonedAlert, alert)
 }
 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithOldAndResolved() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess), getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
-	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(getFakeRuntimeAlert(nowProcess)))
+	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, getFakeRuntimeAlert(nowProcess)))
 }
 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithSuperOldAlert() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess), getFakeRuntimeAlert(twoDaysAgoProcess, nowProcess))
-	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(getFakeRuntimeAlert(yesterdayProcess)))
+	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, getFakeRuntimeAlert(yesterdayProcess)))
 }
 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
 	alert := getFakeRuntimeAlert(yesterdayProcess, nowProcess)
 	clonedAlert := protoutils.CloneStorageAlert(alert)
-	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
+	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
 	suite.NotEqual(clonedAlert, alert)
 	suite.Len(alert.GetProcessViolation().GetProcesses(), 1)
 	suite.Equal(alert.GetProcessViolation().GetProcesses()[0], nowProcess)

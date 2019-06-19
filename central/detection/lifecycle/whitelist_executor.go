@@ -11,6 +11,7 @@ import (
 )
 
 type whitelistExecutor struct {
+	executorCtx             context.Context
 	deploymentIDs           []string
 	deploymentsToIndicators map[string][]*storage.ProcessIndicator
 
@@ -18,13 +19,14 @@ type whitelistExecutor struct {
 	alerts      []*storage.Alert
 }
 
-func newWhitelistExecutor(deployments datastore.DataStore, deploymentsToIndicators map[string][]*storage.ProcessIndicator) *whitelistExecutor {
+func newWhitelistExecutor(executorCtx context.Context, deployments datastore.DataStore, deploymentsToIndicators map[string][]*storage.ProcessIndicator) *whitelistExecutor {
 	deploymentIDs := make([]string, 0, len(deploymentsToIndicators))
 	for k := range deploymentsToIndicators {
 		deploymentIDs = append(deploymentIDs, k)
 	}
 
 	return &whitelistExecutor{
+		executorCtx:             executorCtx,
 		deploymentIDs:           deploymentIDs,
 		deploymentsToIndicators: deploymentsToIndicators,
 		deployments:             deployments,
@@ -36,9 +38,7 @@ func (w *whitelistExecutor) Execute(compiled detection.CompiledPolicy) error {
 		return nil
 	}
 
-	ctx := context.TODO()
-
-	violationsByDeployment, err := compiled.Matcher().MatchMany(ctx, w.deployments, w.deploymentIDs...)
+	violationsByDeployment, err := compiled.Matcher().MatchMany(w.executorCtx, w.deployments, w.deploymentIDs...)
 	if err != nil {
 		return errors.Wrapf(err, "matching policy %s", compiled.Policy().GetName())
 	}
@@ -47,7 +47,7 @@ func (w *whitelistExecutor) Execute(compiled detection.CompiledPolicy) error {
 		violations.ProcessViolation = &storage.Alert_ProcessViolation{
 			Processes: w.deploymentsToIndicators[deploymentID],
 		}
-		dep, exists, err := w.deployments.GetDeployment(ctx, deploymentID)
+		dep, exists, err := w.deployments.GetDeployment(w.executorCtx, deploymentID)
 		if err != nil {
 			return err
 		}

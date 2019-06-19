@@ -30,41 +30,41 @@ type alertManagerImpl struct {
 	runtimeDetector runtime.Detector
 }
 
-func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modified bool, err error) {
+func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modified bool, err error) {
 	// Merge the old and the new alerts.
-	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(currentAlerts, oldAlertFilters...)
+	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
 		return
 	}
 	modified = len(newAlerts) > 0 || len(updatedAlerts) > 0 || len(staleAlerts) > 0
 
 	// Mark any old alerts no longer generated as stale, and insert new alerts.
-	err = d.notifyAndUpdateBatch(newAlerts)
+	err = d.notifyAndUpdateBatch(ctx, newAlerts)
 	if err != nil {
 		return
 	}
-	err = d.updateBatch(updatedAlerts)
+	err = d.updateBatch(ctx, updatedAlerts)
 	if err != nil {
 		return
 	}
-	err = d.markAlertsStale(staleAlerts)
+	err = d.markAlertsStale(ctx, staleAlerts)
 	return
 }
 
 // UpdateBatch updates all of the alerts in the datastore.
-func (d *alertManagerImpl) updateBatch(alertsToMark []*storage.Alert) error {
+func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error updating alerts: ")
 	for _, existingAlert := range alertsToMark {
-		errList.AddError(d.alerts.UpdateAlert(context.TODO(), existingAlert))
+		errList.AddError(d.alerts.UpdateAlert(ctx, existingAlert))
 	}
 	return errList.ToError()
 }
 
 // MarkAlertsStale marks all of the input alerts stale in the input datastore.
-func (d *alertManagerImpl) markAlertsStale(alertsToMark []*storage.Alert) error {
+func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
 	for _, existingAlert := range alertsToMark {
-		errList.AddError(d.alerts.MarkAlertStale(context.TODO(), existingAlert.GetId()))
+		errList.AddError(d.alerts.MarkAlertStale(ctx, existingAlert.GetId()))
 		if errList.ToError() == nil {
 			// run notifier for all the resolved alerts
 			d.notifier.ProcessAlert(existingAlert)
@@ -74,11 +74,11 @@ func (d *alertManagerImpl) markAlertsStale(alertsToMark []*storage.Alert) error 
 }
 
 // NotifyAndUpdateBatch runs the notifier on the input alerts then stores them.
-func (d *alertManagerImpl) notifyAndUpdateBatch(alertsToMark []*storage.Alert) error {
+func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	for _, existingAlert := range alertsToMark {
 		d.notifier.ProcessAlert(existingAlert)
 	}
-	return d.updateBatch(alertsToMark)
+	return d.updateBatch(ctx, alertsToMark)
 }
 
 // It is the caller's responsibility to not call this with an empty slice,
@@ -106,7 +106,7 @@ func getMostRecentProcessTimestampInAlerts(alerts ...*storage.Alert) (ts *ptypes
 // if an alert was violated by a new indicator. This function trims old resolved processes from an alert.
 // It returns a bool indicating whether the alert contained only resolved processes -- in which case
 // we don't want to generate an alert at all.
-func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *storage.Alert) (isFullyResolved bool) {
+func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(ctx context.Context, alert *storage.Alert) (isFullyResolved bool) {
 	if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
 		return false
 	}
@@ -117,7 +117,7 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *storage.
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		ProtoQuery()
 
-	oldRunTimeAlerts, err := d.alerts.SearchRawAlerts(context.TODO(), q)
+	oldRunTimeAlerts, err := d.alerts.SearchRawAlerts(ctx, q)
 	// If there's an error, just log it, and assume there was no previously resolved alert.
 	if err != nil {
 		log.Errorf("Failed to retrieve resolved runtime alerts corresponding to %+v: %s", alert, err)
@@ -214,12 +214,12 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 }
 
 // MergeManyAlerts merges two alerts.
-func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
+func (d *alertManagerImpl) mergeManyAlerts(ctx context.Context, presentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
 	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
 	for _, filter := range oldAlertFilters {
 		filter.apply(qb)
 	}
-	previousAlerts, err := d.alerts.SearchRawAlerts(context.TODO(), qb.ProtoQuery())
+	previousAlerts, err := d.alerts.SearchRawAlerts(ctx, qb.ProtoQuery())
 	if err != nil {
 		err = errors.Wrapf(err, "couldn't load previous alerts (query was %s)", qb.Query())
 		return
@@ -228,7 +228,7 @@ func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*storage.Alert, oldAl
 	// Merge any alerts that have new and old alerts.
 	for _, alert := range presentAlerts {
 		// Don't generate a new alert if it was a resolved runtime alerts.
-		isFullyResolvedRuntimeAlert := d.trimResolvedProcessesFromRuntimeAlert(alert)
+		isFullyResolvedRuntimeAlert := d.trimResolvedProcessesFromRuntimeAlert(ctx, alert)
 		if isFullyResolvedRuntimeAlert {
 			continue
 		}

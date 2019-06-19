@@ -7,8 +7,16 @@ import (
 
 	"github.com/stackrox/rox/central/metrics"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Policy)))
 )
 
 type setImpl struct {
@@ -105,7 +113,7 @@ func (p *setImpl) RemoveNotifier(notifierID string) error {
 		}
 		policy.Notifiers = filtered
 
-		err := p.policyStore.UpdatePolicy(context.TODO(), policy)
+		err := p.policyStore.UpdatePolicy(policyCtx, policy)
 		if err != nil {
 			return err
 		}

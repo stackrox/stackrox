@@ -17,12 +17,13 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func newSingleDeploymentExecutor(ctx DetectionContext, searcher search.Searcher, deployment *storage.Deployment, images []*storage.Image) alertCollectingExecutor {
+func newSingleDeploymentExecutor(executorCtx context.Context, ctx DetectionContext, searcher search.Searcher, deployment *storage.Deployment, images []*storage.Image) alertCollectingExecutor {
 	return &policyExecutor{
-		ctx:        ctx,
-		searcher:   searcher,
-		deployment: deployment,
-		images:     images,
+		executorCtx: executorCtx,
+		ctx:         ctx,
+		searcher:    searcher,
+		deployment:  deployment,
+		images:      images,
 	}
 }
 
@@ -31,11 +32,12 @@ type closeableIndex interface {
 }
 
 type policyExecutor struct {
-	ctx        DetectionContext
-	searcher   search.Searcher
-	deployment *storage.Deployment
-	images     []*storage.Image
-	alerts     []*storage.Alert
+	executorCtx context.Context
+	ctx         DetectionContext
+	searcher    search.Searcher
+	deployment  *storage.Deployment
+	images      []*storage.Image
+	alerts      []*storage.Alert
 }
 
 func (d *policyExecutor) GetAlerts() []*storage.Alert {
@@ -62,7 +64,7 @@ func (d *policyExecutor) Execute(compiled detection.CompiledPolicy) error {
 	}
 
 	// Generate violations.
-	violations, err := d.getViolations(enforcement, compiled.Matcher())
+	violations, err := d.getViolations(d.executorCtx, enforcement, compiled.Matcher())
 	if err != nil {
 		return errors.Wrapf(err, "evaluating violations for policy %s; deployment %s/%s", compiled.Policy().GetName(), d.deployment.GetNamespace(), d.deployment.GetName())
 	}
@@ -72,27 +74,27 @@ func (d *policyExecutor) Execute(compiled detection.CompiledPolicy) error {
 	return nil
 }
 
-func (d *policyExecutor) getViolations(enforcement storage.EnforcementAction, matcher searchbasedpolicies.Matcher) ([]*storage.Alert_Violation, error) {
+func (d *policyExecutor) getViolations(ctx context.Context, enforcement storage.EnforcementAction, matcher searchbasedpolicies.Matcher) ([]*storage.Alert_Violation, error) {
 	var err error
 	var violations []*storage.Alert_Violation
 	if enforcement != storage.EnforcementAction_UNSET_ENFORCEMENT {
-		violations, err = matchWithEmptyImageIDs(matcher, d.deployment, d.images)
+		violations, err = matchWithEmptyImageIDs(ctx, matcher, d.deployment, d.images)
 	} else {
 		var violationsWrapper searchbasedpolicies.Violations
 		// Purposefully, use searcher for deployment check
-		violationsWrapper, err = matcher.MatchOne(context.TODO(), d.searcher, d.deployment.GetId())
+		violationsWrapper, err = matcher.MatchOne(ctx, d.searcher, d.deployment.GetId())
 		violations = violationsWrapper.AlertViolations
 	}
 	return violations, err
 }
 
-func matchWithEmptyImageIDs(matcher searchbasedpolicies.Matcher, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert_Violation, error) {
+func matchWithEmptyImageIDs(ctx context.Context, matcher searchbasedpolicies.Matcher, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert_Violation, error) {
 	closeableIndex, deploymentIndex, deployment, err := singleDeploymentSearcher(deployment, images)
 	if err != nil {
 		return nil, err
 	}
 	defer utils.IgnoreError(closeableIndex.Close)
-	violations, err := matcher.MatchOne(context.TODO(), deploymentIndex, deployment.GetId())
+	violations, err := matcher.MatchOne(ctx, deploymentIndex, deployment.GetId())
 	if err != nil {
 		return nil, err
 	}

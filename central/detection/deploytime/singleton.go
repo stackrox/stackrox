@@ -6,9 +6,13 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
+	"github.com/stackrox/rox/generated/storage"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -16,6 +20,10 @@ var (
 
 	policySet detection.PolicySet
 	detector  Detector
+
+	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Policy)))
 )
 
 // SingletonDetector returns the singleton instance of a Detector.
@@ -32,15 +40,12 @@ func SingletonPolicySet() detection.PolicySet {
 
 func initialize() {
 	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detection.NewPolicyCompiler(matcher.DeploymentBuilderSingleton()))
-	policies, err := policyDataStore.Singleton().GetPolicies(context.TODO())
-	if err != nil {
-		panic(err)
-	}
+	policies, err := policyDataStore.Singleton().GetPolicies(policyCtx)
+	utils.Must(err)
+
 	for _, policy := range policies {
 		if policyUtils.AppliesAtDeployTime(policy) {
-			if err := policySet.UpsertPolicy(policy); err != nil {
-				panic(err)
-			}
+			utils.Must(policySet.UpsertPolicy(policy))
 		}
 	}
 

@@ -67,8 +67,10 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 		Signal:        signal,
 	}
 	key := &storage.ProcessWhitelistKey{
-		DeploymentId:  indicator.DeploymentId,
-		ContainerName: indicator.ContainerName,
+		DeploymentId:  indicator.GetDeploymentId(),
+		ContainerName: indicator.GetContainerName(),
+		ClusterId:     indicator.GetClusterId(),
+		Namespace:     indicator.GetNamespace(),
 	}
 	return key, indicator
 }

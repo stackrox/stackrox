@@ -1,6 +1,8 @@
 package alertmanager
 
 import (
+	"context"
+
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
@@ -14,7 +16,7 @@ type AlertManager interface {
 	// that have been produced, and takes care of the logic of marking alerts no longer being produced as resolved,
 	// notifying of new alerts, and updating the timestamp of updated alerts.
 	// It returns true if it has actually added/removed/updated alerts.
-	AlertAndNotify(alerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modified bool, err error)
+	AlertAndNotify(ctx context.Context, alerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modified bool, err error)
 }
 
 // New returns a new instance of AlertManager. You should just use the singleton instance instead.
