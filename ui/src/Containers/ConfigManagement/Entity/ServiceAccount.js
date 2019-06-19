@@ -101,11 +101,11 @@ const ServiceAccount = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) 
                         <div className="flex mb-4 pdf-page pdf-stretch">
                             <ClusterScopedPermissions
                                 scopedPermissions={scopedPermissions}
-                                className="w-1/3 mx-4 bg-base-100"
+                                className="mx-4 bg-base-100"
                             />
                             <NamespaceScopedPermissions
                                 scopedPermissions={scopedPermissions}
-                                className="w-2/3 flex-grow mx-4 bg-base-100"
+                                className="flex-grow mx-4 bg-base-100"
                             />
                         </div>
                     </CollapsibleSection>

@@ -1216,3 +1216,9 @@ h6 {
 .tippy-popper .tippy-tooltip {
     opacity: 0.8 !important;
 }
+
+.overlay {
+    content: "";
+    background-image: var(--base-800);
+    @apply .absolute .pin-t .pin-l .w-full .h-full .opacity-25 .pointer-events-none;
+}

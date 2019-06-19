@@ -11,7 +11,7 @@ const tableColumns = [
         Header: 'Id',
         headerClassName: 'hidden',
         className: 'hidden',
-        accessor: 'id'
+        accessor: 'metadata.id'
     },
     {
         Header: `Namespace`,
@@ -39,18 +39,28 @@ const tableColumns = [
 
 const createTableRows = data => data.results;
 
-const Namespaces = ({ onRowClick }) => (
+const Namespaces = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
-        entityType={entityTypes.NODE}
+        entityType={entityTypes.NAMESPACE}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
+        idAttribute="metadata.id"
     />
 );
 
 Namespaces.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+Namespaces.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Namespaces;

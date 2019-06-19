@@ -72,18 +72,28 @@ const tableColumns = [
 
 const createTableRows = data => data.secrets;
 
-const Secrets = ({ onRowClick }) => (
+const Secrets = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
         entityType={entityTypes.SECRET}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
+        idAttribute="id"
     />
 );
 
 Secrets.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+Secrets.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Secrets;

@@ -42,6 +42,7 @@ const Images = ({ onRowClick }) => (
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        idAttribute="id"
     />
 );
 

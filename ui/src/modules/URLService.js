@@ -4,13 +4,7 @@ import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
 import { entityParamNames, listParamNames } from 'constants/url';
 import entityTypes from 'constants/entityTypes';
-import {
-    nestedPaths,
-    riskPath,
-    secretsPath,
-    urlEntityListTypes,
-    urlEntityTypes
-} from '../routePaths';
+import { nestedPaths, riskPath, secretsPath, urlEntityListTypes, urlEntityTypes } from 'routePaths';
 
 export function getTypeKeyFromParamValue(value, listOnly) {
     const listMatch = Object.entries(urlEntityListTypes).find(entry => entry[1] === value);
@@ -155,7 +149,11 @@ function getNextEmptyParamName(urlParams) {
 }
 
 function getLastUsedParamName(urlParams) {
-    const propNames = Object.values(pageTypesToParamNames[getPageType(urlParams)]).reverse();
+    const pageType = getPageType(urlParams);
+    if (!pageType) return null;
+    const paramTypes = pageTypesToParamNames[pageType];
+    if (!paramTypes) return null;
+    const propNames = Object.values(paramTypes).reverse();
     if (urlParams.entityListType2) {
         propNames[propNames.indexOf('entityType2')] = 'entityListType2';
     }

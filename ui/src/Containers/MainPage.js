@@ -104,7 +104,7 @@ class MainPage extends Component {
 
     renderRouter = () => (
         <section
-            className={`flex-auto w-full relative ${
+            className={`flex flex-col h-full w-full relative ${
                 this.props.pdfLoadingStatus ? '' : 'overflow-auto'
             }`}
         >

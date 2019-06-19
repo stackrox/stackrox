@@ -29,18 +29,28 @@ const tableColumns = [
 
 const createTableRows = data => data.results.reduce((acc, curr) => [...acc, ...curr.nodes], []);
 
-const Nodes = ({ onRowClick }) => (
+const Nodes = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
         entityType={entityTypes.NODE}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
+        idAttribute="id"
     />
 );
 
 Nodes.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+Nodes.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Nodes;

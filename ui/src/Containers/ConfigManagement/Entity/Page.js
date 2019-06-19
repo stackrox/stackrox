@@ -3,18 +3,27 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 
+import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
+
 import pluralize from 'pluralize';
 import ExportButton from 'Components/ExportButton';
 import PageHeader from './EntityPageHeader';
 import Tabs from './EntityTabs';
 import Overview from '../Entity';
 import List from '../EntityList';
-
-const SidePanel = () => null;
+import SidePanel from '../SidePanel/SidePanel';
 
 const EntityPage = ({ match, location, history }) => {
     const params = URLService.getParams(match, location);
-    const { pageEntityType, pageEntityId, entityListType1 } = params;
+    const {
+        pageEntityType,
+        pageEntityId,
+        entityListType1,
+        entityId1,
+        entityType2,
+        entityListType2,
+        entityId2
+    } = params;
 
     function onTabClick({ value }) {
         const urlBuilder = URLService.getURL(match, location).base(pageEntityType, pageEntityId);
@@ -23,10 +32,7 @@ const EntityPage = ({ match, location, history }) => {
     }
 
     function onRowClick(entityId) {
-        const urlBuilder = URLService.getURL(match, location)
-            .base(pageEntityType, pageEntityId)
-            .push(entityListType1)
-            .push(entityListType1, entityId);
+        const urlBuilder = URLService.getURL(match, location).push(entityId);
         history.push(urlBuilder.url());
     }
 
@@ -40,6 +46,11 @@ const EntityPage = ({ match, location, history }) => {
         history.push(urlBuilder.url());
     }
 
+    function onSidePanelClose() {
+        const urlBuilder = URLService.getURL(match, location).clearSidePanelParams();
+        history.replace(urlBuilder.url());
+    }
+
     const component = !entityListType1 ? (
         <Overview
             entityType={pageEntityType}
@@ -48,9 +59,24 @@ const EntityPage = ({ match, location, history }) => {
             onRelatedEntityListClick={onRelatedEntityListClick}
         />
     ) : (
-        <div className="flex h-full bg-base-200">
-            <List entityListType={entityListType1} onRowClick={onRowClick} />
-            <SidePanel />
+        <div className="flex flex-1 w-full h-full bg-base-100 relative">
+            <List
+                className={entityId1 ? 'overlay' : ''}
+                entityListType={entityListType1}
+                entityId={entityId1}
+                onRowClick={onRowClick}
+            />
+            <SidePanelAnimation className="w-3/4" condition={!!entityId1}>
+                <SidePanel
+                    className="w-full h-full bg-base-100 border-l-2 border-base-300"
+                    entityType1={entityListType1}
+                    entityId1={entityId1}
+                    entityType2={entityType2}
+                    entityListType2={entityListType2}
+                    entityId2={entityId2}
+                    onClose={onSidePanelClose}
+                />
+            </SidePanelAnimation>
         </div>
     );
     const exportFilename = `${pluralize(pageEntityType)}`;
@@ -61,7 +87,7 @@ const EntityPage = ({ match, location, history }) => {
     }
 
     return (
-        <div className="h-full bg-base-200">
+        <div className="flex flex-1 flex-col bg-base-200">
             <PageHeader entityType={pageEntityType} entityId={pageEntityId}>
                 <div className="flex flex-1 justify-end">
                     <div className="flex">

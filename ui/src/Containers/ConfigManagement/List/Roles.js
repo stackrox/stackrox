@@ -78,18 +78,28 @@ const tableColumns = [
 
 const createTableRows = data => data.clusters.reduce((acc, curr) => [...acc, ...curr.k8sroles], []);
 
-const Roles = ({ onRowClick }) => (
+const Roles = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
         entityType={entityTypes.ROLE}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
+        idAttribute="id"
     />
 );
 
 Roles.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+Roles.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Roles;

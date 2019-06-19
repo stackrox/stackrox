@@ -27,15 +27,22 @@ const entityComponentMap = {
     [entityTypes.POLICY]: Policies
 };
 
-const EntityList = ({ entityListType, onRowClick }) => {
+const EntityList = ({ className, entityListType, entityId, onRowClick }) => {
     const Component = entityComponentMap[entityListType];
     if (!Component) return <PageNotFound resourceType={entityListType} />;
-    return <Component onRowClick={onRowClick} />;
+    return <Component className={className} selectedRowId={entityId} onRowClick={onRowClick} />;
 };
 
 EntityList.propTypes = {
+    className: PropTypes.string,
     entityListType: PropTypes.string.isRequired,
-    onRowClick: PropTypes.string.isRequired
+    entityId: PropTypes.string,
+    onRowClick: PropTypes.func.isRequired
+};
+
+EntityList.defaultProps = {
+    className: '',
+    entityId: null
 };
 
 export default EntityList;

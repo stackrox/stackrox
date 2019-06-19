@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 import createPDFTable from 'utils/pdfUtils';
+import resolvePath from 'object-resolve-path';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -11,17 +12,21 @@ import Panel from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 
-const List = ({ query, entityType, tableColumns, createTableRows, onRowClick }) => {
-    const [selectedRow, setSelectedRow] = useState(null);
+const List = ({
+    className,
+    query,
+    entityType,
+    tableColumns,
+    createTableRows,
+    onRowClick,
+    selectedRowId,
+    idAttribute
+}) => {
     const [page, setPage] = useState(0);
 
     function onRowClickHandler(row) {
-        if (row === selectedRow) {
-            setSelectedRow(null);
-        } else {
-            onRowClick(row.id);
-            setSelectedRow(row);
-        }
+        const id = resolvePath(row, idAttribute);
+        onRowClick(id);
     }
 
     return (
@@ -38,9 +43,9 @@ const List = ({ query, entityType, tableColumns, createTableRows, onRowClick }) 
                     createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
                 }
                 return (
-                    <section id="capture-list">
+                    <section id="capture-list" className="w-full">
                         <Panel
-                            className="bg-base-100"
+                            className={className}
                             header={header}
                             headerComponents={headerComponents}
                         >
@@ -48,9 +53,9 @@ const List = ({ query, entityType, tableColumns, createTableRows, onRowClick }) 
                                 rows={tableRows}
                                 columns={tableColumns}
                                 onRowClick={onRowClickHandler}
-                                idAttribute="id"
+                                idAttribute={idAttribute}
                                 id="capture-list"
-                                selectedRowId={selectedRow ? selectedRow.id : null}
+                                selectedRowId={selectedRowId}
                                 noDataText="No results found. Please refine your search."
                                 page={page}
                             />
@@ -63,11 +68,19 @@ const List = ({ query, entityType, tableColumns, createTableRows, onRowClick }) 
 };
 
 List.propTypes = {
+    className: PropTypes.string,
     query: PropTypes.shape().isRequired,
     entityType: PropTypes.string.isRequired,
     tableColumns: PropTypes.arrayOf(PropTypes.shape).isRequired,
     createTableRows: PropTypes.func.isRequired,
-    onRowClick: PropTypes.func.isRequired
+    onRowClick: PropTypes.func.isRequired,
+    selectedRowId: PropTypes.string,
+    idAttribute: PropTypes.string.isRequired
+};
+
+List.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default List;

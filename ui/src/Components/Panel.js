@@ -81,7 +81,9 @@ TooltipDiv.defaultProps = {
 
 const Panel = props => (
     <div
-        className={`flex flex-col h-full border-r border-base-400 overflow-auto ${props.className}`}
+        className={`flex flex-col h-full border-r border-base-400 overflow-auto w-full ${
+            props.className
+        }`}
         data-test-id="panel"
     >
         <div className="border-b border-base-400 flex-no-wrap">
@@ -137,7 +139,7 @@ Panel.defaultProps = {
     headerTextComponent: null,
     headerClassName,
     bodyClassName: null,
-    className: 'w-full',
+    className: '',
     onClose: null,
     closeButtonClassName: '',
     closeButtonIconColor: '',

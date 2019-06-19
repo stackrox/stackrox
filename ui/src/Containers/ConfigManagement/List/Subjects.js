@@ -69,6 +69,7 @@ const Subjects = ({ onRowClick }) => (
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        idAttribute="id"
     />
 );
 

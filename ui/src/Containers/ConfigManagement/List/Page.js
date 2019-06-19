@@ -4,19 +4,25 @@ import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 import URLService from 'modules/URLService';
 
+import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
+
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import List from '../EntityList';
+import SidePanel from '../SidePanel/SidePanel';
 
 const ListPage = ({ match, location, history }) => {
     const params = URLService.getParams(match, location);
-    const { pageEntityListType } = params;
+    const { pageEntityListType, entityId1, entityType2, entityListType2, entityId2 } = params;
 
     function onRowClick(entityId) {
-        const urlBuilder = URLService.getURL(match, location)
-            .base(pageEntityListType)
-            .push(pageEntityListType, entityId);
+        const urlBuilder = URLService.getURL(match, location).push(entityId);
         history.push(urlBuilder.url());
+    }
+
+    function onClose() {
+        const urlBuilder = URLService.getURL(match, location).clearSidePanelParams();
+        history.replace(urlBuilder.url());
     }
 
     const header = pluralize(entityLabels[pageEntityListType]);
@@ -38,8 +44,24 @@ const ListPage = ({ match, location, history }) => {
                     </div>
                 </div>
             </PageHeader>
-            <div className="h-full">
-                <List entityListType={pageEntityListType} onRowClick={onRowClick} />
+            <div className="flex flex-1 h-full bg-base-100 relative">
+                <List
+                    className={`bg-base-100 ${entityId1 ? 'overlay' : ''}`}
+                    entityListType={pageEntityListType}
+                    entityId={entityId1}
+                    onRowClick={onRowClick}
+                />
+                <SidePanelAnimation className="w-3/4" condition={!!entityId1}>
+                    <SidePanel
+                        className="w-full h-full bg-base-100 border-l-2 border-base-300"
+                        entityType1={pageEntityListType}
+                        entityId1={entityId1}
+                        entityType2={entityType2}
+                        entityListType2={entityListType2}
+                        entityId2={entityId2}
+                        onClose={onClose}
+                    />
+                </SidePanelAnimation>
             </div>
         </>
     );

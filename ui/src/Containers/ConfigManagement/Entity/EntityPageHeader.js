@@ -1,35 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import resolvePath from 'object-resolve-path';
-import entityTypes from 'constants/entityTypes';
-import { SERVICE_ACCOUNT } from 'queries/serviceAccount';
-import { SECRET } from 'queries/secret';
-import { CLUSTER_QUERY as CLUSTER } from 'queries/cluster';
-import { DEPLOYMENT_QUERY as DEPLOYMENT } from 'queries/deployment';
-import { NAMESPACE_QUERY as NAMESPACE } from 'queries/namespace';
+import getEntityName from 'Containers/ConfigManagement/getEntityName';
+import { entityQueryMap } from 'Containers/ConfigManagement/queryMap';
 
 import Query from 'Components/ThrowingQuery';
 import PageHeader from 'Components/PageHeader';
-import Loader from 'Components/Loader';
-
-const queryMap = {
-    [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,
-    [entityTypes.SECRET]: SECRET,
-    [entityTypes.CLUSTER]: CLUSTER,
-    [entityTypes.DEPLOYMENT]: DEPLOYMENT,
-    [entityTypes.NAMESPACE]: NAMESPACE
-};
-
-const nameKeyMap = {
-    [entityTypes.SERVICE_ACCOUNT]: 'serviceAccount.name',
-    [entityTypes.SECRET]: 'secret.name',
-    [entityTypes.CLUSTER]: 'results.name',
-    [entityTypes.DEPLOYMENT]: 'deployment.name',
-    [entityTypes.NAMESPACE]: 'results.metadata.name'
-};
 
 const getQueryAndVariables = (entityType, entityId) => {
-    const query = queryMap[entityType] || null;
+    const query = entityQueryMap[entityType] || null;
     return {
         query,
         variables: {
@@ -38,20 +16,13 @@ const getQueryAndVariables = (entityType, entityId) => {
     };
 };
 
-const processHeader = (entityType, data) => {
-    const key = nameKeyMap[entityType];
-    return resolvePath(data, key);
-};
-
 const EntityPageHeader = ({ entityType, entityId, children }) => {
     const { query, variables } = getQueryAndVariables(entityType, entityId);
     if (!query) return null;
     return (
         <Query query={query} variables={variables}>
-            {({ loading, data }) => {
-                if (loading) return <Loader />;
-                const header = processHeader(entityType, data);
-                if (!header) return null;
+            {({ data }) => {
+                const header = getEntityName(entityType, data) || '-';
                 return (
                     <PageHeader classes="bg-primary-100" header={header} subHeader={entityType}>
                         {children}

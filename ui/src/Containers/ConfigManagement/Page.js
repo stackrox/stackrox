@@ -10,8 +10,8 @@ import EntityPage from './Entity/Page';
 const Page = () => (
     <Switch>
         <Route exact path={PATHS.DASHBOARD} component={DashboardPage} />
-        <Route path={`${PATHS.DASHBOARD}${PATHS.ENTITY}`} component={EntityPage} />
-        <Route path={`${PATHS.DASHBOARD}${PATHS.LIST}`} component={ListPage} />
+        <Route path={PATHS.ENTITY} component={EntityPage} />
+        <Route path={PATHS.LIST} component={ListPage} />
         <Route render={PageNotFound} />
     </Switch>
 );

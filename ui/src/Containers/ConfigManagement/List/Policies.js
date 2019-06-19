@@ -45,6 +45,7 @@ const Policies = ({ onRowClick }) => (
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        idAttribute="id"
     />
 );
 

@@ -63,18 +63,28 @@ const tableColumns = [
 const createTableRows = data =>
     data.clusters.reduce((acc, curr) => [...acc, ...curr.serviceAccounts], []);
 
-const ServiceAccounts = ({ onRowClick }) => (
+const ServiceAccounts = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
         entityType={entityTypes.SERVICE_ACCOUNT}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
+        idAttribute="id"
     />
 );
 
 ServiceAccounts.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+ServiceAccounts.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default ServiceAccounts;

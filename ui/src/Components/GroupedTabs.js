@@ -50,7 +50,7 @@ const GroupedTabs = ({ groups, tabs, activeTab, onClick }) => {
             );
         });
     return (
-        <ul className="list-reset flex flex-1 border-b border-base-400 px-4 bg-primary-100 uppercase text-sm">
+        <ul className="list-reset flex border-b border-base-400 px-4 bg-primary-100 uppercase text-sm">
             {result}
         </ul>
     );

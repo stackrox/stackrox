@@ -73,18 +73,28 @@ const tableColumns = [
 
 const createTableRows = data => data.results;
 
-const Clusters = ({ onRowClick }) => (
+const Clusters = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
         entityType={entityTypes.CLUSTER}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
+        idAttribute="id"
     />
 );
 
 Clusters.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+Clusters.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Clusters;

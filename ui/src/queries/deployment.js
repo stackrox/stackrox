@@ -48,7 +48,6 @@ export const DEPLOYMENT_QUERY = gql`
             }
             type
             updatedAt
-            version
         }
     }
 `;

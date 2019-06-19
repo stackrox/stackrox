@@ -31,6 +31,7 @@ PermissionsCounts.propTypes = {
 
 const NamespaceScopedPermissions = ({ scopedPermissions, ...rest }) => {
     const namespaceScopePermissions = scopedPermissions.filter(datum => datum.scope !== 'Cluster');
+    if (!namespaceScopePermissions.length) return null;
     const namespaceGroups = namespaceScopePermissions.map(({ scope, permissions }) => {
         const groupHeader = (
             <div className="flex flex-1">

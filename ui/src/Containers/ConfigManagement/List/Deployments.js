@@ -57,18 +57,28 @@ const tableColumns = [
 
 const createTableRows = data => data.results;
 
-const Deployments = ({ onRowClick }) => (
+const Deployments = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
         entityType={entityTypes.DEPLOYMENT}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
+        idAttribute="id"
     />
 );
 
 Deployments.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+Deployments.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Deployments;
