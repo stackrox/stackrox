@@ -201,6 +201,22 @@ const formDescriptors = {
             type: 'html'
         }
     ],
+    clientca: [
+        {
+            label: 'Integration Name',
+            jsonPath: 'name',
+            type: 'text',
+            placeholder: 'Enterprise CA'
+        },
+        {
+            label: 'CA Certificates (PEM)',
+            jsonPath: 'config.keys',
+            type: 'textarea',
+            placeholder:
+                '-----BEGIN CERTIFICATE-----Authority certificate data\n-----END CERTIFICATE-----',
+            immutable: true
+        }
+    ],
     attrToRole: {
         keyOptions: [
             { value: 'name', label: 'name' },
