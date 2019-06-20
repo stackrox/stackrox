@@ -44,6 +44,7 @@ var (
 			"/v1.AlertService/ResolveAlert",
 			"/v1.AlertService/SnoozeAlert",
 			"/v1.AlertService/ResolveAlerts",
+			"/v1.AlertService/DeleteAlerts",
 		},
 	})
 
@@ -249,6 +250,60 @@ func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertReques
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &v1.Empty{}, nil
+}
+
+// DeleteAlerts is a maintenance function that deletes alerts from the store
+func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlertsRequest) (*v1.DeleteAlertsResponse, error) {
+	if request.GetQuery() == nil {
+		return nil, fmt.Errorf("a scoping query is required")
+	}
+
+	query, err := search.ParseRawQueryOrEmpty(request.GetQuery().GetQuery())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "error parsing query: %v", err)
+	}
+	query.Pagination = request.GetQuery().GetPagination()
+
+	specified := false
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.ViolationState.String() {
+			if matchFieldQuery.MatchFieldQuery.Value != storage.ViolationState_RESOLVED.String() {
+				err = status.Errorf(codes.InvalidArgument, "invalid value for violation state: %q. Only resolved alerts can be deleted", matchFieldQuery.MatchFieldQuery.Value)
+				return
+			}
+			specified = true
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !specified {
+		return nil, status.Errorf(codes.InvalidArgument, "please specify Violation State:%s in the query to confirm deletion", storage.ViolationState_RESOLVED.String())
+	}
+
+	results, err := s.dataStore.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &v1.DeleteAlertsResponse{
+		NumDeleted: uint32(len(results)),
+		DryRun:     !request.GetConfirm(),
+	}
+
+	if !request.GetConfirm() {
+		return response, nil
+	}
+
+	idSlice := search.ResultsToIDs(results)
+	if err := s.dataStore.DeleteAlerts(ctx, idSlice...); err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 // alertsGroupResponseFrom returns a slice of storage.ListAlert objects translated into a v1.GetAlertsGroupResponse object.

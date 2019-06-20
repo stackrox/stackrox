@@ -173,14 +173,11 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting alert")
-	for _, id := range ids {
-		if err := ds.storage.DeleteAlert(id); err != nil {
-			errorList.AddError(err)
-			continue
-		}
-		if err := ds.indexer.DeleteListAlert(id); err != nil {
-			errorList.AddError(err)
-		}
+	if err := ds.storage.DeleteAlerts(ids...); err != nil {
+		errorList.AddError(err)
+	}
+	if err := ds.indexer.DeleteListAlerts(ids); err != nil {
+		errorList.AddError(err)
 	}
 	return errorList.ToError()
 }

@@ -11,6 +11,7 @@ import "api/v1/empty.proto";
 import "api/v1/pagination.proto";
 import "storage/policy.proto";
 import "storage/alert.proto";
+import "api/v1/search_service.proto";
 
 package v1;
 
@@ -36,6 +37,16 @@ message SnoozeAlertRequest {
 
 message ListAlertsResponse {
     repeated storage.ListAlert alerts = 1;
+}
+
+message DeleteAlertsRequest {
+    RawQuery query   = 1;
+    bool     confirm = 2;
+}
+
+message DeleteAlertsResponse {
+    uint32 num_deleted = 1;
+    bool   dry_run     = 2;
 }
 
 message GetAlertsGroupResponse {
@@ -151,6 +162,12 @@ service AlertService {
         option (google.api.http) = {
             patch: "/v1/alerts/{id}/snooze"
             body: "*"
+        };
+    }
+
+    rpc DeleteAlerts (DeleteAlertsRequest) returns (DeleteAlertsResponse) {
+        option (google.api.http) = {
+            delete: "/v1/alerts"
         };
     }
 

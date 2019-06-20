@@ -218,6 +218,21 @@ func (b *storeImpl) DeleteAlert(id string) error {
 	})
 }
 
+// DeleteAlerts removes multiple alerts
+func (b *storeImpl) DeleteAlerts(ids ...string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
+
+	return b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(alertBucket)
+		for _, id := range ids {
+			if err := bucket.Delete([]byte(id)); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 func getAlert(id string, bucket *bolt.Bucket) (alert *storage.Alert, exists bool, err error) {
 	alert = new(storage.Alert)
 	val := bucket.Get([]byte(id))

@@ -17,6 +17,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -993,4 +994,59 @@ func (s *patchAlertTests) TestResolveAlert() {
 	_, err := s.service.ResolveAlert(context.Background(), &v1.ResolveAlertRequest{Id: alerttest.FakeAlertID})
 	s.NoError(err)
 	s.Equal(fakeAlert.State, storage.ViolationState_RESOLVED)
+}
+
+func (s *baseSuite) TestDeleteAlerts() {
+	errorCases := []struct {
+		request *v1.DeleteAlertsRequest
+	}{
+		{
+			request: &v1.DeleteAlertsRequest{},
+		},
+		{
+			request: &v1.DeleteAlertsRequest{
+				Query: &v1.RawQuery{},
+			},
+		},
+		{
+			request: &v1.DeleteAlertsRequest{
+				Query: &v1.RawQuery{
+					Query: search.NewQueryBuilder().AddStrings(search.DeploymentName, "lol").Query(),
+				},
+			},
+		},
+		{
+			request: &v1.DeleteAlertsRequest{
+				Query: &v1.RawQuery{
+					Query: search.NewQueryBuilder().AddStrings(search.DeploymentName, "lol").Query(),
+				},
+			},
+		},
+		{
+			request: &v1.DeleteAlertsRequest{
+				Query: &v1.RawQuery{
+					Query: search.NewQueryBuilder().AddStrings(search.ViolationState, "ACTIVE").Query(),
+				},
+			},
+		},
+	}
+
+	for _, e := range errorCases {
+		s.T().Run(s.T().Name(), func(t *testing.T) {
+			_, err := s.service.DeleteAlerts(context.Background(), e.request)
+			assert.Error(t, err)
+		})
+	}
+
+	queryBuilder := search.NewQueryBuilder().AddStrings(search.DeploymentName, "deployment").
+		AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String())
+
+	s.datastoreMock.EXPECT().Search(context.Background(), queryBuilder.ProtoQuery()).Return([]search.Result{}, nil)
+
+	_, err := s.service.DeleteAlerts(context.Background(), &v1.DeleteAlertsRequest{
+		Query: &v1.RawQuery{
+			Query: queryBuilder.Query(),
+		},
+	})
+	s.NoError(err)
 }
