@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 )
@@ -80,7 +80,7 @@ func GetZip(path string, requestBody []byte, timeout time.Duration, bundleType s
 		return err
 	}
 	// If containerized, then write a zip file
-	if docker.IsContainerized() {
+	if roxctl.InMainImage() {
 		if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
 			return errors.Wrap(err, "Error writing out zip file")
 		}

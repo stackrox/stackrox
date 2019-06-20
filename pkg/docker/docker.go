@@ -1,10 +1,7 @@
 package docker
 
 import (
-	"bytes"
 	"context"
-	"io/ioutil"
-	"os"
 	"time"
 
 	"github.com/docker/docker/api"
@@ -39,16 +36,4 @@ func NewClientWithPath(host string) (*client.Client, error) {
 // TimeoutContext returns a context with a timeout with the duration of the hang timeout
 func TimeoutContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), HangTimeout)
-}
-
-// IsContainerized returns true if the process calling it is within a container
-func IsContainerized() bool {
-	if os.Getenv("CIRCLECI") != "" {
-		return false
-	}
-	data, err := ioutil.ReadFile("/proc/1/cgroup")
-	if err != nil {
-		return false
-	}
-	return bytes.Contains(data, []byte("docker"))
 }

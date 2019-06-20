@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/roximages/defaults"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -45,7 +45,7 @@ Output is a zip file printed to stdout.`, shortName, longName),
 			return fmt.Errorf("storage type must be specified")
 		},
 	}
-	if !docker.IsContainerized() {
+	if !roxctl.InMainImage() {
 		c.PersistentFlags().Var(newOutputDir(&cfg.OutputDir), "output-dir", "the directory to output the deployment bundle to")
 	}
 	return c

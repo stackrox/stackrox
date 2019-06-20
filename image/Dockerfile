@@ -19,6 +19,8 @@ RUN apk update && \
 
 ENV PATH="/stackrox:$PATH"
 
+ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
+
 COPY ./central-entrypoint.sh /stackrox/
 COPY ./bin/migrator /stackrox/
 COPY ./bin/central /stackrox/

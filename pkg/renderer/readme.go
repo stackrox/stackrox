@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/roxctl"
 )
 
 // generateReadme generates a README file.
@@ -15,7 +15,7 @@ func generateReadme(c *Config, mode mode) (string, error) {
 
 func instructionPrefix() string {
 	prefix := "To deploy:\n"
-	if docker.IsContainerized() {
+	if roxctl.InMainImage() {
 		prefix += "  - Unzip the deployment bundle.\n"
 	}
 	prefix += "  - If you need to add additional trusted CAs, run central/scripts/ca-setup.sh.\n"

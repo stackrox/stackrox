@@ -13,11 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -167,7 +167,7 @@ func outputZip(config renderer.Config) error {
 	wrapper.AddFiles(files...)
 
 	var outputPath string
-	if docker.IsContainerized() {
+	if roxctl.InMainImage() {
 		bytes, err := wrapper.Zip()
 		if err != nil {
 			return errors.Wrap(err, "error generating zip file")

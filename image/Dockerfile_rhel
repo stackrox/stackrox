@@ -14,6 +14,8 @@ RUN curl -L https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B4
 
 ENV PATH="/stackrox:$PATH"
 
+ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
+
 COPY ./central-entrypoint.sh /stackrox/
 COPY ./bin/migrator /stackrox/
 COPY ./bin/central /stackrox/
