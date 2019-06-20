@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -81,7 +82,9 @@ func (scc *ScopeCheckerCoreImpl) SetState(state TryAllowedResult) {
 	scc.atomicStoreState(state)
 	if state == Allow {
 		// if this scope is allowed then all sub-scopes will be allowed
-		scc.children = nil
+		concurrency.WithLock(&scc.childrenLock, func() {
+			scc.children = nil
+		})
 	}
 }
 

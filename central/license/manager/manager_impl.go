@@ -37,7 +37,7 @@ var (
 	ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkPolicy)))
+			sac.ResourceScopeKeys(resources.Licenses)))
 )
 
 func licenseStatusToMetadataStatus(status v1.LicenseInfo_Status) v1.Metadata_LicenseStatus {
@@ -405,9 +405,12 @@ func (m *manager) updateStore() error {
 	for dirtyLicense := range m.dirty {
 		toUpsert = append(toUpsert, m.toStoredKeyNoLock(dirtyLicense))
 	}
-	m.dirty = make(map[*licenseData]struct{})
 
-	return m.dataStore.UpsertLicenseKeys(ctx, toUpsert)
+	err := m.dataStore.UpsertLicenseKeys(ctx, toUpsert)
+	if err == nil {
+		m.dirty = make(map[*licenseData]struct{})
+	}
+	return err
 }
 
 func (m *manager) GetActiveLicense() *licenseproto.License {
