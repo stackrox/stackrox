@@ -22,6 +22,9 @@ class Graph extends Component {
         wizardStage: PropTypes.string.isRequired,
         filterState: PropTypes.number.isRequired,
 
+        networkNodeMap: PropTypes.shape({}).isRequired,
+        networkEdgeMap: PropTypes.shape({}).isRequired,
+
         networkPolicyGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(PropTypes.shape({}))
         }).isRequired,
@@ -30,7 +33,6 @@ class Graph extends Component {
         networkFlowGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(PropTypes.shape({}))
         }),
-        networkFlowMapping: PropTypes.shape({}).isRequired,
         networkFlowGraphUpdateKey: PropTypes.number.isRequired,
         networkFlowGraphState: PropTypes.string.isRequired,
         setSelectedNode: PropTypes.func.isRequired,
@@ -73,21 +75,27 @@ class Graph extends Component {
         this.props.openWizard();
     };
 
-    renderGraph = nodes => {
+    renderGraph = () => {
         // If we have more than 1100 nodes, display a message instead of the graph.
-        if (nodes.length > 1100) {
+        const { networkPolicyGraph, networkFlowGraph } = this.props;
+        const { nodes: allowedNodes } = networkPolicyGraph;
+        const { nodes: activeNodes } = networkFlowGraph;
+        const nodeLimit = 1100;
+        if (allowedNodes.length > nodeLimit || activeNodes.length > nodeLimit) {
             // hopefully a temporal solution
             return (
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
             );
         }
-        const { networkFlowGraphUpdateKey, networkFlowMapping } = this.props;
-        const { closeWizard, filterState } = this.props;
+        const { networkFlowGraphUpdateKey, networkEdgeMap } = this.props;
+        const { closeWizard, filterState, networkNodeMap } = this.props;
         return (
             <NetworkGraph
                 updateKey={networkFlowGraphUpdateKey}
-                nodes={nodes}
-                networkFlowMapping={networkFlowMapping}
+                activeNodes={activeNodes}
+                allowedNodes={allowedNodes}
+                networkEdgeMap={networkEdgeMap}
+                networkNodeMap={networkNodeMap}
                 onNodeClick={this.onNodeClick}
                 onNamespaceClick={this.onNamespaceClick}
                 onClickOutside={closeWizard}
@@ -98,6 +106,7 @@ class Graph extends Component {
 
     render() {
         const { wizardOpen, wizardStage, filterState } = this.props;
+        const { networkFlowGraphState, networkPolicyGraphState } = this.props;
         // Simulator styling.
         const simulatorOn =
             wizardOpen &&
@@ -106,16 +115,8 @@ class Graph extends Component {
 
         // Graph nodes and styling.
         let nodes;
-        let networkGraphState;
-        if (filterState === filterModes.active) {
-            const { networkFlowGraphState, networkFlowGraph } = this.props;
-            ({ nodes } = networkFlowGraph);
-            networkGraphState = networkFlowGraphState;
-        } else {
-            const { networkPolicyGraphState, networkPolicyGraph } = this.props;
-            ({ nodes } = networkPolicyGraph);
-            networkGraphState = networkPolicyGraphState;
-        }
+        const networkGraphState =
+            filterState === filterModes.active ? networkFlowGraphState : networkPolicyGraphState;
         const networkGraphStateClass = networkGraphState === 'ERROR' ? 'error' : 'success';
 
         // Rendering.
@@ -134,11 +135,13 @@ const mapStateToProps = createStructuredSelector({
     wizardStage: selectors.getNetworkWizardStage,
     filterState: selectors.getNetworkGraphFilterMode,
 
+    networkNodeMap: selectors.getNetworkNodeMap,
+    networkEdgeMap: selectors.getNetworkEdgeMap,
+
     networkPolicyGraph: selectors.getNetworkPolicyGraph,
     networkPolicyGraphState: selectors.getNetworkPolicyGraphState,
 
     networkFlowGraph: selectors.getNetworkFlowGraph,
-    networkFlowMapping: selectors.getNetworkFlowMapping,
     networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
     networkFlowGraphState: selectors.getNetworkFlowGraphState,
 

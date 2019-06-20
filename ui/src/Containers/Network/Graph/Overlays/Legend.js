@@ -15,7 +15,7 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                 </button>
             </div>
             <div className="bg-primary-100">
-                <div className="flex border-b border-base-400">
+                <div className="flex border-b border-base-400" data-test-id="deployment-legend">
                     <LegendTile name="deployment" tooltip="Deployment" type="font" />
                     <LegendTile
                         name="deployment-allowed-connections"
@@ -27,8 +27,13 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                         tooltip="Non-isolated deployment (all connections allowed)"
                         type="font"
                     />
+                    <LegendTile
+                        name="disallowed-deployment"
+                        tooltip="Disallowed deployment (no connections allowed)"
+                        type="font"
+                    />
                 </div>
-                <div className="flex border-b border-base-400">
+                <div className="flex border-b border-base-400" data-test-id="namespace-legend">
                     <LegendTile name="namespace" tooltip="Namespace" type="svg" />
                     <LegendTile
                         name="namespace-allowed-connection"
@@ -40,10 +45,20 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                         tooltip="Namespace connection"
                         type="svg"
                     />
+                    <LegendTile
+                        name="namespace-disallowed-connection"
+                        tooltip="Active but disallowed namespace connection"
+                        type="svg"
+                    />
                 </div>
-                <div className="flex border-b border-base-400">
+                <div className="flex border-b border-base-400" data-test-id="connection-legend">
                     <LegendTile name="active-connection" tooltip="Active connection" type="svg" />
                     <LegendTile name="allowed-connection" tooltip="Allowed connection" type="svg" />
+                    <LegendTile
+                        name="disallowed-connection"
+                        tooltip="Active but disallowed connection"
+                        type="svg"
+                    />
                     <LegendTile
                         name="namespace-egress-ingress"
                         tooltip="Namespace external egress/ingress traffic"

@@ -6,15 +6,25 @@ export const nonIsolated = node => node.nonIsolatedIngress && node.nonIsolatedEg
  * @param {!Object[]} nodes list of nodes
  * @returns {!Object[]}
  */
-export const getLinks = (nodes, networkFlowMapping) => {
+export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
     const filteredLinks = [];
 
     nodes.forEach(node => {
-        if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
+        if (!node.entity || node.entity.type !== 'DEPLOYMENT' || !networkEdgeMap) {
             return;
         }
         const { id: srcDeploymentId, deployment: srcDeployment } = node.entity;
         const sourceNS = srcDeployment && srcDeployment.namespace;
+
+        const isActive = key => !!(networkEdgeMap[key] && networkEdgeMap[key].active);
+        const isNonIsolated = id => !!(networkNodeMap[id] && networkNodeMap[id].nonIsolated);
+        const isBetweenNonIsolated = (srcId, tgtId) => isNonIsolated(srcId) && isNonIsolated(tgtId);
+        const isAllowed = (key, { source, target, targetNS }) =>
+            sourceNS === 'stackrox' ||
+            targetNS === 'stackrox' ||
+            isBetweenNonIsolated(source, target) ||
+            !!(networkEdgeMap[key] && networkEdgeMap[key].allowed);
+        const isDisallowed = (key, link) => isActive(key) && !isAllowed(key, link);
 
         // For nodes that are egress non-isolated, add outgoing edges to ingress non-isolated nodes, as long as the pair
         // of nodes is not fully non-isolated. This is a compromise to make the non-isolation highlight only apply in
@@ -31,19 +41,23 @@ export const getLinks = (nodes, networkFlowMapping) => {
                 ) {
                     return;
                 }
+
                 const { id: tgtDeploymentId, deployment: tgtDeployment } = targetNode.entity;
                 const targetNS = tgtDeployment && tgtDeployment.namespace;
+                const key = [srcDeploymentId, tgtDeploymentId].sort().join('--');
+
                 const link = {
                     source: srcDeploymentId,
-                    sourceName: srcDeployment.name,
                     target: tgtDeploymentId,
+                    sourceName: srcDeployment.name,
                     targetName: tgtDeployment.name,
                     sourceNS,
                     targetNS
                 };
 
-                link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
-                link.isBetweenNonIsolated = !!(nonIsolated(node) && nonIsolated(targetNode));
+                link.isActive = isActive(key);
+                link.isBetweenNonIsolated = isBetweenNonIsolated(srcDeploymentId, tgtDeploymentId);
+                link.isDisallowed = isDisallowed(key, link);
 
                 // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
                 const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
@@ -60,6 +74,7 @@ export const getLinks = (nodes, networkFlowMapping) => {
             }
             const { id: tgtDeploymentId, deployment: tgtDeployment } = tgtNode.entity;
             const targetNS = tgtDeployment && tgtDeployment.namespace;
+            const key = [srcDeploymentId, tgtDeploymentId].sort().join('--');
             const link = {
                 source: srcDeploymentId,
                 target: tgtDeploymentId,
@@ -68,10 +83,11 @@ export const getLinks = (nodes, networkFlowMapping) => {
                 sourceNS,
                 targetNS
             };
-            link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
-            link.isBetweenNonIsolated = !!(
-                nonIsolated(srcDeployment) && nonIsolated(tgtDeployment)
-            );
+
+            link.isActive = isActive(key);
+            link.isBetweenNonIsolated = isBetweenNonIsolated(srcDeploymentId, tgtDeploymentId);
+            link.isDisallowed = isDisallowed(key, link);
+
             filteredLinks.push(link);
         });
     });

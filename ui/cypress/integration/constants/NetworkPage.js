@@ -8,7 +8,9 @@ export const selectors = {
         uploadPanel: '[data-test-id="upload-yaml-panel"]'
     },
     legend: {
-        items: '[data-test-id=legend] > div:last > div > div'
+        deployments: '[data-test-id="deployment-legend"] div',
+        namespaces: '[data-test-id="namespace-legend"] div',
+        connections: '[data-test-id="connection-legend"] div'
     },
     namespaces: {
         all: 'g.container > rect',

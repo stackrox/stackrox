@@ -18,42 +18,33 @@ import {
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
-import { takeEveryLocation } from 'utils/sagaEffects';
+import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { types as deploymentTypes } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import timeWindowToDate from 'utils/timeWindows';
 import { getDeployment } from './deploymentSagas';
 
-function* getNetworkFlowGraph(clusterId, query) {
+// get generators
+function* getNetworkGraphs(clusterId, query) {
     try {
         const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
-        const flowResult = yield call(
-            service.fetchNetworkFlowGraph,
-            clusterId,
-            query,
-            timeWindowToDate(timeWindow)
-        );
-        yield put(graphNetworkActions.setNetworkFlowMapping(flowResult.response));
-        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowResult.response));
-        yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
-    } catch (error) {
-        yield put(backendNetworkActions.fetchNetworkFlowGraph.failure(error));
-    }
-}
+        const modification = yield select(selectors.getNetworkPolicyModification);
 
-function* getNetworkGraphs(clusterId, query, modification) {
-    try {
-        const policyResult = yield call(
-            service.fetchNetworkPolicyGraph,
-            clusterId,
-            query,
-            modification
-        );
-        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyResult.response));
+        const [{ response: flowGraph }, { response: policyGraph }] = yield all([
+            call(service.fetchNetworkFlowGraph, clusterId, query, timeWindowToDate(timeWindow)),
+            call(service.fetchNetworkPolicyGraph, clusterId, query, modification)
+        ]);
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
+        yield put(graphNetworkActions.setNetworkEdgeMap(flowGraph, policyGraph));
+        yield put(graphNetworkActions.setNetworkNodeMap(policyGraph));
     } catch (error) {
-        yield put(backendNetworkActions.fetchNetworkPolicyGraph.failure(error));
+        // if network flow graph fails
+        const policyGraph = yield select(selectors.getNetworkPolicyGraph);
+        if (policyGraph)
+            yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
     }
 }
 
@@ -67,43 +58,6 @@ export function* getNetworkPolicies({ params }) {
         yield put(backendNetworkActions.fetchNetworkPolicies.success(result.response, { params }));
     } catch (error) {
         yield put(backendNetworkActions.fetchNetworkPolicies.failure(error));
-    }
-}
-
-export function* pollNodeUpdates() {
-    while (true) {
-        try {
-            const result = yield call(service.fetchNodeUpdates);
-            yield put(backendNetworkActions.fetchNodeUpdates.success(result.response));
-        } catch (error) {
-            yield put(backendNetworkActions.fetchNodeUpdates.failure(error));
-        }
-        yield call(delay, 30000); // poll every 30 sec
-    }
-}
-
-function* generateNetworkModification() {
-    yield put(wizardNetworkActions.setNetworkPolicyModificationName('StackRox Generated'));
-    yield put(wizardNetworkActions.setNetworkPolicyModificationState('REQUEST'));
-    try {
-        const clusterId = yield select(selectors.getSelectedNetworkClusterId);
-        const searchOptions = yield select(selectors.getNetworkSearchOptions);
-        const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
-        const modification = yield call(
-            service.generateNetworkModification,
-            clusterId,
-            searchOptionsToQuery(searchOptions),
-            timeWindowToDate(timeWindow)
-        );
-        yield put(wizardNetworkActions.setNetworkPolicyModificationSource('GENERATED'));
-        yield put(wizardNetworkActions.setNetworkPolicyModification(modification));
-        yield put(wizardNetworkActions.setNetworkPolicyModificationState('SUCCESS'));
-        yield put(notificationActions.addNotification('Successfully generated YAML.'));
-        yield put(notificationActions.removeOldestNotification());
-    } catch (error) {
-        yield put(wizardNetworkActions.setNetworkPolicyModificationState('ERROR'));
-        yield put(notificationActions.addNotification(error.response.data.error));
-        yield put(notificationActions.removeOldestNotification());
     }
 }
 
@@ -144,6 +98,20 @@ export function* getUndoNetworkModification() {
     }
 }
 
+// poll generators
+export function* pollNodeUpdates() {
+    while (true) {
+        try {
+            const result = yield call(service.fetchNodeUpdates);
+            yield put(backendNetworkActions.fetchNodeUpdates.success(result.response));
+        } catch (error) {
+            yield put(backendNetworkActions.fetchNodeUpdates.failure(error));
+        }
+        yield call(delay, 30000); // poll every 30 sec
+    }
+}
+
+// send generators
 function* sendNetworkModificationNotification() {
     try {
         const clusterId = yield select(selectors.getSelectedNetworkClusterId);
@@ -174,6 +142,56 @@ function* sendNetworkModificationApplication() {
     }
 }
 
+// misc action generators
+function* filterNetworkPageBySearch() {
+    const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+    const searchOptions = yield select(selectors.getNetworkSearchOptions);
+    if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
+        return;
+    }
+    if (clusterId) {
+        const filters = searchOptionsToQuery(searchOptions);
+        yield fork(getNetworkGraphs, clusterId, filters);
+    }
+}
+
+function* loadNetworkPage() {
+    try {
+        const result = yield call(fetchClusters);
+        yield put(clusterActions.fetchClusters.success(result.response));
+        yield put(graphNetworkActions.selectDefaultNetworkClusterId(result.response));
+        yield fork(filterNetworkPageBySearch);
+    } catch (error) {
+        yield put(clusterActions.fetchClusters.failure(error));
+    }
+}
+
+function* generateNetworkModification() {
+    yield put(wizardNetworkActions.setNetworkPolicyModificationName('StackRox Generated'));
+    yield put(wizardNetworkActions.setNetworkPolicyModificationState('REQUEST'));
+    try {
+        const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+        const searchOptions = yield select(selectors.getNetworkSearchOptions);
+        const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
+        const modification = yield call(
+            service.generateNetworkModification,
+            clusterId,
+            searchOptionsToQuery(searchOptions),
+            timeWindowToDate(timeWindow)
+        );
+        yield put(wizardNetworkActions.setNetworkPolicyModificationSource('GENERATED'));
+        yield put(wizardNetworkActions.setNetworkPolicyModification(modification));
+        yield put(wizardNetworkActions.setNetworkPolicyModificationState('SUCCESS'));
+        yield put(notificationActions.addNotification('Successfully generated YAML.'));
+        yield put(notificationActions.removeOldestNotification());
+    } catch (error) {
+        yield put(wizardNetworkActions.setNetworkPolicyModificationState('ERROR'));
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
+    }
+}
+
+// watch generators
 function* watchLocation() {
     let pollTask = null;
     while (true) {
@@ -191,31 +209,6 @@ function* watchLocation() {
             pollTask = null;
             yield put(graphNetworkActions.setSelectedNode(null));
         }
-    }
-}
-
-function* filterNetworkPageBySearch() {
-    const clusterId = yield select(selectors.getSelectedNetworkClusterId);
-    const searchOptions = yield select(selectors.getNetworkSearchOptions);
-    const modification = yield select(selectors.getNetworkPolicyModification);
-    if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
-        return;
-    }
-    if (clusterId) {
-        const filters = searchOptionsToQuery(searchOptions);
-        yield fork(getNetworkFlowGraph, clusterId, filters);
-        yield fork(getNetworkGraphs, clusterId, filters, modification);
-    }
-}
-
-function* loadNetworkPage() {
-    try {
-        const result = yield call(fetchClusters);
-        yield put(clusterActions.fetchClusters.success(result.response));
-        yield put(graphNetworkActions.selectDefaultNetworkClusterId(result.response));
-        yield fork(filterNetworkPageBySearch);
-    } catch (error) {
-        yield put(clusterActions.fetchClusters.failure(error));
     }
 }
 
@@ -282,9 +275,10 @@ function* watchNetworkNodesUpdate() {
     yield takeLatest(graphNetworkTypes.NETWORK_NODES_UPDATE, filterNetworkPageBySearch);
 }
 
+// all generators
 export default function* network() {
     yield all([
-        takeEveryLocation(networkPath, loadNetworkPage),
+        takeEveryNewlyMatchedLocation(networkPath, loadNetworkPage),
         fork(watchNetworkSearchOptions),
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),

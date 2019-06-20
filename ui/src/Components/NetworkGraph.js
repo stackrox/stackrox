@@ -31,8 +31,10 @@ Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
 Cytoscape.use(edgeGridLayout);
 
 const NetworkGraph = ({
-    nodes,
-    networkFlowMapping,
+    activeNodes,
+    allowedNodes,
+    networkEdgeMap,
+    networkNodeMap,
     onNodeClick,
     onNamespaceClick,
     onClickOutside,
@@ -54,12 +56,13 @@ const NetworkGraph = ({
     const tippy = useRef();
     const namespacesWithDeployments = {};
 
+    const nodes = filterState === filterModes.active ? activeNodes : allowedNodes;
     const data = nodes.map(datum => ({
         ...datum,
         isActive: filterState !== filterModes.active && datum.internetAccess
     }));
 
-    const links = getLinks(data, networkFlowMapping);
+    const links = getLinks(data, networkEdgeMap, networkNodeMap);
 
     function makePopperDiv(text) {
         const div = document.createElement('div');
@@ -107,10 +110,14 @@ const NetworkGraph = ({
         );
 
         const sourceTargetMap = {};
+        const disallowedLinkMap = {};
         const activeLinkMap = filteredLinks.reduce((acc, curr) => {
-            const { sourceNS, targetNS, isActive } = curr;
+            const { sourceNS, targetNS, isActive, isDisallowed } = curr;
             const key = [sourceNS, targetNS].sort().join(delimiter);
             if (isActive) acc[key] = true;
+            if (isDisallowed) {
+                disallowedLinkMap[key] = true;
+            }
             return acc;
         }, {});
 
@@ -131,13 +138,14 @@ const NetworkGraph = ({
             const count = counts[key];
             const isActive = activeLinkMap[key];
             const activeClass = filterState !== filterModes.allowed && isActive ? 'active' : '';
-            const { source, target, sourceSide } = getSideMap(sourceId, targetId) || {
+            const disallowedClass =
+                filterState !== filterModes.allowed && (isActive && disallowedLinkMap[key])
+                    ? 'disallowed'
+                    : '';
+            const { source, target } = getSideMap(sourceId, targetId) || {
                 sourceId,
                 targetId
             };
-            const taxiDirClass = ['top', 'bottom'].includes(sourceSide)
-                ? 'taxi-vertical'
-                : 'taxi-horizontal';
 
             return {
                 data: {
@@ -145,7 +153,7 @@ const NetworkGraph = ({
                     target,
                     count
                 },
-                classes: `namespace ${activeClass} ${taxiDirClass}`
+                classes: `namespace ${activeClass} ${disallowedClass}`
             };
         });
     }
@@ -156,7 +164,7 @@ const NetworkGraph = ({
         const inAllowedState = filterState === filterModes.allowed;
         links.forEach(linkItem => {
             const { source, sourceNS, sourceName, target, targetNS, targetName } = linkItem;
-            const { isActive, isBetweenNonIsolated } = linkItem;
+            const { isActive, isDisallowed, isBetweenNonIsolated } = linkItem;
             const nodeIsSource = nodeId === source;
             const nodeIsTarget = nodeId === target;
             // destination node info needed for network flow tab
@@ -172,6 +180,10 @@ const NetworkGraph = ({
                 // only hide edge when it's bw nonisolated and is not active
                 const nonIsolatedClass =
                     isBetweenNonIsolated && (!isActive || inAllowedState) ? 'nonIsolated' : '';
+                // an edge is disallowed when it is active but is not allowed
+                const disallowedClass = !inAllowedState && isDisallowed ? 'disallowed' : '';
+                // if(isDisallowed) console.log(linkItem)
+                const classes = `${activeClass} ${nonIsolatedClass} ${disallowedClass}`;
                 const id = [source, target].sort().join('--');
                 if (!edgeMap[id]) {
                     // If same namespace, draw line between the two nodes
@@ -183,7 +195,7 @@ const NetworkGraph = ({
                                 destNodeName,
                                 ...linkItem
                             },
-                            classes: `edge ${activeClass} ${nonIsolatedClass}`
+                            classes: `edge ${classes}`
                         });
                     } else {
                         // make sure both nodes have edges drawn to the nearest side of their NS
@@ -199,9 +211,10 @@ const NetworkGraph = ({
                         edges.push({
                             data: {
                                 source,
-                                target: sourceNSSide
+                                target: sourceNSSide,
+                                isDisallowed
                             },
-                            classes: `edge inner ${activeClass} ${nonIsolatedClass}`
+                            classes: `edge inner ${classes}`
                         });
 
                         // Edge from target to its namespace
@@ -212,16 +225,16 @@ const NetworkGraph = ({
                                 destNodeId,
                                 destNodeName,
                                 destNodeNS,
-                                isActive
+                                isActive,
+                                isDisallowed
                             },
-                            classes: `edge inner ${activeClass} ${nonIsolatedClass}`
+                            classes: `edge inner ${classes}`
                         });
                     }
                     edgeMap[id] = true;
                 }
             }
         });
-
         return edges;
     }
 
@@ -231,6 +244,9 @@ const NetworkGraph = ({
             const { entity, ...datumProps } = datum;
             const { deployment, ...entityProps } = entity;
             const { namespace, ...deploymentProps } = deployment;
+
+            const edges = getEdgesFromNode(entityProps.id, true);
+
             const isSelected = !!(selectedNode && selectedNode.id === entity.id);
             const isHovered = !!(hoveredNode && hoveredNode.id === entity.id);
             const isBackground =
@@ -238,10 +254,13 @@ const NetworkGraph = ({
                 !isHovered &&
                 !isSelected;
             const isNonIsolated = nonIsolated(datum);
+            const isDisallowed =
+                filterState !== filterModes.allowed && edges.find(edge => edge.data.isDisallowed);
             const classes = getClasses({
                 active: datum.isActive,
                 selected: isSelected,
                 deployment: true,
+                disallowed: isDisallowed,
                 hovered: isHovered,
                 background: isBackground,
                 nonIsolated: isNonIsolated
@@ -253,7 +272,7 @@ const NetworkGraph = ({
                     ...entityProps,
                     ...deploymentProps,
                     parent: namespace,
-                    edges: getEdgesFromNode(entityProps.id),
+                    edges,
                     deploymentId: entityProps.id
                 },
                 classes
@@ -650,7 +669,7 @@ const NetworkGraph = ({
 };
 
 NetworkGraph.propTypes = {
-    nodes: PropTypes.arrayOf(
+    activeNodes: PropTypes.arrayOf(
         PropTypes.shape({
             entity: PropTypes.shape({
                 type: PropTypes.string.isRequired,
@@ -661,7 +680,19 @@ NetworkGraph.propTypes = {
             }).isRequired
         })
     ).isRequired,
-    networkFlowMapping: PropTypes.shape({}).isRequired,
+    allowedNodes: PropTypes.arrayOf(
+        PropTypes.shape({
+            entity: PropTypes.shape({
+                type: PropTypes.string.isRequired,
+                id: PropTypes.string.isRequired,
+                deployment: PropTypes.shape({
+                    name: PropTypes.string.isRequired
+                })
+            }).isRequired
+        })
+    ).isRequired,
+    networkEdgeMap: PropTypes.shape({}).isRequired,
+    networkNodeMap: PropTypes.shape({}).isRequired,
     onNamespaceClick: PropTypes.func.isRequired,
     onNodeClick: PropTypes.func.isRequired,
     onClickOutside: PropTypes.func.isRequired,

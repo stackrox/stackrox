@@ -32,41 +32,55 @@ describe('Network page', () => {
     });
 
     it('should display a legend', () => {
-        cy.get(networkPageSelectors.legend.items)
+        cy.get(networkPageSelectors.legend.deployments)
             .eq(0)
             .children()
             .should('have.class', 'icon-node');
-        cy.get(networkPageSelectors.legend.items)
+        cy.get(networkPageSelectors.legend.deployments)
             .eq(1)
             .children()
             .children()
             .should('have.class', 'icon-potential');
-        cy.get(networkPageSelectors.legend.items)
+        cy.get(networkPageSelectors.legend.deployments)
             .eq(2)
             .children()
             .should('have.class', 'icon-node');
-        cy.get(networkPageSelectors.legend.items)
+        cy.get(networkPageSelectors.legend.deployments)
             .eq(3)
             .children()
+            .should('have.class', 'icon-node');
+
+        cy.get(networkPageSelectors.legend.namespaces)
+            .eq(0)
+            .children()
             .should('have.attr', 'alt', 'namespace');
-        cy.get(networkPageSelectors.legend.items)
-            .eq(4)
+        cy.get(networkPageSelectors.legend.namespaces)
+            .eq(1)
             .children()
             .should('have.attr', 'alt', 'namespace-allowed-connection');
-        cy.get(networkPageSelectors.legend.items)
-            .eq(5)
+        cy.get(networkPageSelectors.legend.namespaces)
+            .eq(2)
             .children()
             .should('have.attr', 'alt', 'namespace-connection');
-        cy.get(networkPageSelectors.legend.items)
-            .eq(6)
+        cy.get(networkPageSelectors.legend.namespaces)
+            .eq(3)
+            .children()
+            .should('have.attr', 'alt', 'namespace-disallowed-connection');
+
+        cy.get(networkPageSelectors.legend.connections)
+            .eq(0)
             .children()
             .should('have.attr', 'alt', 'active-connection');
-        cy.get(networkPageSelectors.legend.items)
-            .eq(7)
+        cy.get(networkPageSelectors.legend.connections)
+            .eq(1)
             .children()
             .should('have.attr', 'alt', 'allowed-connection');
-        cy.get(networkPageSelectors.legend.items)
-            .eq(8)
+        cy.get(networkPageSelectors.legend.connections)
+            .eq(2)
+            .children()
+            .should('have.attr', 'alt', 'disallowed-connection');
+        cy.get(networkPageSelectors.legend.connections)
+            .eq(3)
             .children()
             .should('have.class', 'icon-ingress-egress');
     });

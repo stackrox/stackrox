@@ -120,6 +120,12 @@ const styles = [
         }
     },
     {
+        selector: 'node.disallowed',
+        style: {
+            'background-color': COLORS.disallowed
+        }
+    },
+    {
         selector: 'node.hovered',
         style: {
             opacity: 1,
@@ -173,7 +179,6 @@ const styles = [
             'curve-style': 'unbundled-bezier',
             'line-color': COLORS.NSEdge,
             'edge-distances': 'node-position',
-            // 'taxi-turn-min-distance': '10px',
             label: 'data(count)',
             'font-size': '8px',
             color: COLORS.NSEdge,
@@ -210,6 +215,13 @@ const styles = [
             'z-index-compare': 'manual'
         }
     },
+
+    {
+        selector: 'edge.nonIsolated',
+        style: {
+            display: 'none'
+        }
+    },
     {
         selector: 'edge.active',
         style: {
@@ -219,9 +231,13 @@ const styles = [
         }
     },
     {
-        selector: 'edge.nonIsolated',
+        selector: 'edge.disallowed',
         style: {
-            display: 'none'
+            'line-style': 'solid',
+            'line-color': COLORS.disallowed,
+            'z-compound-depth': 'top',
+            color: COLORS.disallowed,
+            'text-border-color': COLORS.disallowed
         }
     },
     {
