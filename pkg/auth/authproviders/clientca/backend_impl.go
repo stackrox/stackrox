@@ -29,7 +29,9 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                   = logging.LoggerForModule()
+	errNoCertificate      = errors.New("user certificate not present")
+	errInvalidCertificate = errors.New("user certificate doesn't match any configured provider")
 )
 
 func newBackend(ctx context.Context, pathPrefix string, callbacks ProviderCallbacks, config map[string]string) (authproviders.Backend, map[string]string, error) {
@@ -92,7 +94,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	}
 	ri := requestinfo.FromContext(r.Context())
 	if len(ri.VerifiedChains) != 1 {
-		return nil, nil, "", httputil.NewError(http.StatusBadRequest, "User certificate required")
+		return nil, nil, "", errNoCertificate
 	}
 	for _, ca := range ri.VerifiedChains[0] {
 		if p.fingerprints.Contains(ca.CertFingerprint) {
@@ -101,7 +103,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 		userCert := ri.VerifiedChains[0][0]
 		return externalUser(userCert), options(userCert), "", nil
 	}
-	return nil, nil, "", httputil.NewError(http.StatusForbidden, "User certificate not matched")
+	return nil, nil, "", errInvalidCertificate
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
