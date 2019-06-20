@@ -146,30 +146,16 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.Res
 	return resp, nil
 }
 
-func computeDeploymentHashWithoutContainerInstances(d *storage.Deployment) error {
-	d.Hash = 0
-	containerInstances := make([][]*storage.ContainerInstance, 0, len(d.GetContainers()))
-	for _, c := range d.GetContainers() {
-		containerInstances = append(containerInstances, c.GetInstances())
-		c.Instances = nil
-	}
-	var err error
-	d.Hash, err = hashstructure.Hash(d, &hashstructure.HashOptions{})
-
-	for i, c := range d.GetContainers() {
-		c.Instances = containerInstances[i]
-	}
-	return err
-}
-
 func (s *pipelineImpl) dedupeBasedOnHash(ctx context.Context, action central.ResourceAction, newDeployment *storage.Deployment) (bool, error) {
-	if err := computeDeploymentHashWithoutContainerInstances(newDeployment); err != nil {
+	var err error
+	newDeployment.Hash, err = hashstructure.Hash(newDeployment, &hashstructure.HashOptions{})
+	if err != nil {
 		return false, err
 	}
 
 	// Check if this deployment needs to be processed based on hash
 	oldDeployment, exists, err := s.deployments.GetDeployment(ctx, newDeployment.GetId())
-	if err != nil {
+	if err != nil || !exists {
 		return false, err
 	}
 	// If it already exists and the hash is the same, then just update the container instances of the old deployment and upsert
