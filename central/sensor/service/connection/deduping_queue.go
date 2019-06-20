@@ -62,7 +62,6 @@ func (q *dedupingQueue) pull() *central.MsgFromSensor {
 
 // Push attempts to add an item to the queue, and returns an error if it is unable.
 func (q *dedupingQueue) push(msg *central.MsgFromSensor) {
-	metrics.IncrementSensorEventQueueCounter(ops.Add, common.GetMessageType(msg))
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -72,6 +71,7 @@ func (q *dedupingQueue) push(msg *central.MsgFromSensor) {
 
 func (q *dedupingQueue) pushNoLock(msg *central.MsgFromSensor) {
 	if msg.GetDedupeKey() == "" {
+		metrics.IncrementSensorEventQueueCounter(ops.Add, common.GetMessageType(msg))
 		q.queue.PushBack(msg)
 		return
 	}
@@ -81,6 +81,7 @@ func (q *dedupingQueue) pushNoLock(msg *central.MsgFromSensor) {
 		msgInserted = q.queue.InsertBefore(msg, evt)
 		q.queue.Remove(evt)
 	} else {
+		metrics.IncrementSensorEventQueueCounter(ops.Add, common.GetMessageType(msg))
 		msgInserted = q.queue.PushBack(msg)
 	}
 	q.resourceIDToEvent[msg.GetDedupeKey()] = msgInserted
