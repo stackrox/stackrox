@@ -14,6 +14,7 @@ import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
 import FormField from 'Components/FormField';
 
 import Field from 'Containers/Policies/Wizard/Form/Field';
+import sortBy from 'lodash/sortBy';
 
 class FieldGroupCards extends Component {
     static propTypes = {
@@ -101,7 +102,7 @@ class FieldGroupCards extends Component {
     };
 
     renderFieldsDropdown = (formFields, formData) => {
-        const availableFields = formFields
+        let availableFields = formFields
             .filter(
                 field =>
                     !this.state.fields.find(jsonpath => jsonpath === field.jsonpath) &&
@@ -111,6 +112,7 @@ class FieldGroupCards extends Component {
             .map(field => ({ label: field.label, value: field.jsonpath }));
         const placeholder = 'Add a field';
         if (!availableFields.length) return '';
+        availableFields = sortBy(availableFields, o => o.label);
         return (
             <div className="flex p-3 border-t border-base-200 bg-success-100">
                 <span className="w-full">
