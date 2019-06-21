@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -20,8 +21,8 @@ var (
 )
 
 type clientImpl struct {
-	client       *http.Client
-	authEndpoint string
+	client *http.Client
+	config *storage.HTTPEndpointConfig
 }
 
 func (c *clientImpl) ForUser(ctx context.Context, principal payload.Principal, scopes ...payload.AccessScope) ([]payload.AccessScope, []payload.AccessScope, error) {
@@ -30,12 +31,13 @@ func (c *clientImpl) ForUser(ctx context.Context, principal payload.Principal, s
 	if err != nil {
 		return nil, nil, err
 	}
-	httpReq, err := http.NewRequest(http.MethodPost, c.authEndpoint, bytes.NewBuffer(jsonBytes))
+	httpReq, err := http.NewRequest(http.MethodPost, c.config.GetEndpoint(), bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return nil, nil, err
 	}
 	httpReq.Header.Set("content-type", contentType)
 	httpReq = httpReq.WithContext(ctx)
+	applyConfig(c.config, httpReq)
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
 		return nil, nil, err
@@ -72,4 +74,15 @@ func (c *clientImpl) ForUser(ctx context.Context, principal payload.Principal, s
 		}
 	}
 	return response.AuthorizedScopes, denied, nil
+}
+
+func applyConfig(config *storage.HTTPEndpointConfig, req *http.Request) {
+	if config.GetUsername() != "" && config.GetPassword() != "" {
+		req.SetBasicAuth(config.GetUsername(), config.GetPassword())
+	}
+	for _, header := range config.GetHeaders() {
+		if header.GetKey() != "" && header.GetValue() != "" {
+			req.Header.Add(header.GetKey(), header.GetValue())
+		}
+	}
 }

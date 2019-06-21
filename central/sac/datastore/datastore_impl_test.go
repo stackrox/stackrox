@@ -64,10 +64,16 @@ func (s *authzDataStoreTestSuite) TestMultipleEnabledRecovery() {
 		{
 			Id:      "id1",
 			Enabled: true,
+			EndpointConfig: &storage.HTTPEndpointConfig{
+				Endpoint: "https://test",
+			},
 		},
 		{
 			Id:      "id2",
 			Enabled: true,
+			EndpointConfig: &storage.HTTPEndpointConfig{
+				Endpoint: "https://test",
+			},
 		},
 	}
 	disabled := proto.Clone(current[1]).(*storage.AuthzPluginConfig)
@@ -97,7 +103,7 @@ func (s *authzDataStoreTestSuite) TestUpsertNewEnabled() {
 		Id:      "id2",
 		Enabled: true,
 		EndpointConfig: &storage.HTTPEndpointConfig{
-			Endpoint: "endpoint",
+			Endpoint: "https://endpoint",
 		},
 	}
 	s.mockStorage.EXPECT().UpsertAuthzPluginConfig(upserted).Return(nil)
@@ -119,10 +125,13 @@ func (s *authzDataStoreTestSuite) TestEditEnabledPlugin() {
 		{
 			Id:      "id2",
 			Enabled: true,
+			EndpointConfig: &storage.HTTPEndpointConfig{
+				Endpoint: "https://test",
+			},
 		},
 	}
 	modifiedCurrentlyEnabled := proto.Clone(current[1]).(*storage.AuthzPluginConfig)
-	modifiedCurrentlyEnabled.EndpointConfig = &storage.HTTPEndpointConfig{Endpoint: "Another Endpoint"}
+	modifiedCurrentlyEnabled.EndpointConfig = &storage.HTTPEndpointConfig{Endpoint: "https://AnotherEndpoint"}
 
 	s.mockStorage.EXPECT().GetAuthzPluginConfig(current[1].GetId()).Return(current[1], nil)
 	s.mockStorage.EXPECT().UpsertAuthzPluginConfig(modifiedCurrentlyEnabled).Return(nil)
@@ -160,6 +169,9 @@ func (s *authzDataStoreTestSuite) TestUpsertCurrentEnabled() {
 		{
 			Id:      "id2",
 			Enabled: true,
+			EndpointConfig: &storage.HTTPEndpointConfig{
+				Endpoint: "https://test",
+			},
 		},
 	}
 
@@ -172,7 +184,7 @@ func (s *authzDataStoreTestSuite) TestUpsertCurrentEnabled() {
 	upserted := &storage.AuthzPluginConfig{
 		Enabled: true,
 		EndpointConfig: &storage.HTTPEndpointConfig{
-			Endpoint: "endpoint",
+			Endpoint: "https://endpoint",
 		},
 	}
 	s.mockStorage.EXPECT().UpsertAuthzPluginConfig(upserted).Return(nil)
@@ -202,7 +214,7 @@ func (s *authzDataStoreTestSuite) TestDeleteEnabled() {
 			Id:      "id",
 			Enabled: true,
 			EndpointConfig: &storage.HTTPEndpointConfig{
-				Endpoint: "endpoint1",
+				Endpoint: "https://endpoint1",
 			},
 		},
 	}

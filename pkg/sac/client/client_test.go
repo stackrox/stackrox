@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -56,7 +57,8 @@ func (suite *clientTestSuite) TearDownTest() {
 
 func (suite *clientTestSuite) getTestClient(endpoint string) *clientImpl {
 	httpClient := suite.server.Client()
-	return &clientImpl{client: httpClient, authEndpoint: "http://" + suite.server.Listener.Addr().String() + endpoint}
+	config := &storage.HTTPEndpointConfig{Endpoint: "http://" + suite.server.Listener.Addr().String() + endpoint}
+	return &clientImpl{client: httpClient, config: config}
 }
 
 func (suite *clientTestSuite) allowAll(w http.ResponseWriter, r *http.Request) {

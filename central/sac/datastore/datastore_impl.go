@@ -55,7 +55,13 @@ func (ds *datastoreImpl) Initialize() error {
 			}
 		}
 	}
-	ds.setEnabledAuthzPluginUnlocked(enabledConfig)
+	err = ds.setEnabledAuthzPluginUnlocked(enabledConfig)
+	if err != nil {
+		log.Errorf("Authorization plugin is not configured properly on initialization: %v.  API "+
+			"requests will be rejected until authorization plugin configuration is fixed.  Please log in with "+
+			"username/password to fix the configuration", err)
+		ds.setErrorAuthzPluginUnlocked(enabledConfig, errors.New("authorization plugin is not configured properly"))
+	}
 	return nil
 }
 
@@ -82,6 +88,7 @@ func (ds *datastoreImpl) UpsertAuthzPluginConfig(ctx context.Context, config *st
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
+	// Determine insert or update
 	if config.GetId() == "" {
 		config.Id = uuid.NewV4().String()
 	} else {
@@ -91,27 +98,34 @@ func (ds *datastoreImpl) UpsertAuthzPluginConfig(ctx context.Context, config *st
 			return nil, errors.Errorf("cannot update non-existent auth plugin config with id %s", config.GetId())
 		}
 	}
-	if err := ds.storage.UpsertAuthzPluginConfig(config); err != nil {
-		return nil, err
-	}
 
 	oldEnabledPlugin := ds.enabledPlugin
-	// The upserted plugin is not enabled.  Figure out if we need to turn off a previously enabled plugin.
-	if !config.GetEnabled() {
-		if oldEnabledPlugin != nil && oldEnabledPlugin.GetId() == config.GetId() && oldEnabledPlugin.GetEnabled() {
-			ds.setEnabledAuthzPluginUnlocked(nil)
+	// Validate the plugin config and set the current auth plugin client
+	if !config.GetEnabled() && oldEnabledPlugin != nil && oldEnabledPlugin.GetId() == config.GetId() {
+		// We are turning off the previously enabled plugin
+		err := ds.setEnabledAuthzPluginUnlocked(nil)
+		if err != nil {
+			return nil, err
 		}
-		return config, nil
+	} else if config.GetEnabled() {
+		err := ds.setEnabledAuthzPluginUnlocked(config)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// The upserted plugin is enabled.  Figure out if we need to turn off a previously enabled plugin.
-	ds.setEnabledAuthzPluginUnlocked(config)
-	if oldEnabledPlugin == nil || oldEnabledPlugin.GetId() == config.GetId() {
-		return config, nil
-	}
-	oldEnabledPlugin.Enabled = false
-	if err := ds.storage.UpsertAuthzPluginConfig(oldEnabledPlugin); err != nil {
+	// Store the new plugin config
+	err := ds.storage.UpsertAuthzPluginConfig(config)
+	if err != nil {
 		return nil, err
+	}
+
+	// Disable the previously enabled config if necessary
+	if config.GetEnabled() && oldEnabledPlugin != nil && oldEnabledPlugin.GetId() != config.GetId() {
+		oldEnabledPlugin.Enabled = false
+		if err := ds.storage.UpsertAuthzPluginConfig(oldEnabledPlugin); err != nil {
+			return nil, err
+		}
 	}
 
 	return config, nil
@@ -132,17 +146,32 @@ func (ds *datastoreImpl) DeleteAuthzPluginConfig(ctx context.Context, id string)
 	}
 
 	if ds.enabledPlugin.GetId() == id {
-		ds.setEnabledAuthzPluginUnlocked(nil)
+		err := ds.setEnabledAuthzPluginUnlocked(nil)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (ds *datastoreImpl) setEnabledAuthzPluginUnlocked(config *storage.AuthzPluginConfig) {
-	ds.enabledPlugin = config
+func (ds *datastoreImpl) setEnabledAuthzPluginUnlocked(config *storage.AuthzPluginConfig) error {
+	if config == nil {
+		ds.clientMgr.SetClient(nil)
+		ds.enabledPlugin = nil
+		return nil
+	}
 
-	var newClient client.Client
-	if config != nil {
-		newClient = client.New(config)
+	newClient, err := client.New(config.GetEndpointConfig())
+	if err != nil {
+		return err
 	}
 	ds.clientMgr.SetClient(newClient)
+	ds.enabledPlugin = config
+	return nil
+}
+
+// Use an auto-fail client but still track which config is enabled
+func (ds *datastoreImpl) setErrorAuthzPluginUnlocked(config *storage.AuthzPluginConfig, err error) {
+	ds.clientMgr.SetClient(client.NewErrorClient(err))
+	ds.enabledPlugin = config
 }

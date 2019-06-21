@@ -39,8 +39,8 @@ type Enricher struct {
 	scopeMap      expiringcache.Cache
 	clientManager AuthPluginClientManger
 
-	prevCliLock    sync.Mutex
-	prevAuthClient client.Client
+	prevClientMutex sync.Mutex
+	prevAuthClient  client.Client
 }
 
 func newEnricher() *Enricher {
@@ -67,7 +67,7 @@ func (se *Enricher) RootScopeCheckerCoreContextEnricher(ctx context.Context) (co
 	if authClient == nil {
 		return sac.WithGlobalAccessScopeChecker(ctx, scopeCheckerForIdentity(id)), nil
 	}
-	concurrency.WithLock(&se.prevCliLock, func() {
+	concurrency.WithLock(&se.prevClientMutex, func() {
 		if se.prevAuthClient == authClient {
 			return
 		}
