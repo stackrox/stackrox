@@ -20,7 +20,8 @@ class Constants {
     static final VIOLATIONS_WHITELIST = [
             "Monitoring" : ["CVSS >= 7"],
             "clairify" : ["Red Hat Package Manager Execution"],
-            "authorization-plugin" : ["Latest tag"],
+            "authorization-plugin" : ["Latest tag", "90-Day Image Age"],
+            "webhookserver" : ["90-Day Image Age"],
     ]
 
     /*
