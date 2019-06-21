@@ -65,11 +65,15 @@ func (s *serviceImpl) GetAuthzPluginConfigs(ctx context.Context, _ *v1.Empty) (*
 }
 
 func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*storage.AuthzPluginConfig, error) {
-	config, err := s.ds.UpsertAuthzPluginConfig(ctx, req.GetConfig())
+	config := req.GetConfig()
+	if err := validateConfig(config); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	upsertedConfig, err := s.ds.UpsertAuthzPluginConfig(ctx, req.GetConfig())
 	if err != nil {
 		return nil, err
 	}
-	return config, nil
+	return upsertedConfig, nil
 }
 
 func (s *serviceImpl) DeleteAuthzPlugin(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
