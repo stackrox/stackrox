@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -16,13 +17,21 @@ import (
 )
 
 func versionCommand() *cobra.Command {
-	return &cobra.Command{
+	c := &cobra.Command{
 		Use:   "version",
 		Short: "Version of the CLI",
-		Run: func(*cobra.Command, []string) {
+		RunE: func(c *cobra.Command, _ []string) error {
+			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				return enc.Encode(version.GetAllVersions())
+			}
 			fmt.Println(version.GetMainVersion())
+			return nil
 		},
 	}
+	c.PersistentFlags().Bool("json", false, "print extended version information as JSON")
+	return c
 }
 
 func main() {

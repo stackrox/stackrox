@@ -7,4 +7,6 @@ var (
 	CollectorVersion string
 	// ScannerVersion is the scanner version to be used with this Rox version.
 	ScannerVersion string
+	// GitShortSha is the (short) Git SHA that was built.
+	GitShortSha string
 )
