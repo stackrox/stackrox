@@ -1,6 +1,8 @@
 package data
 
 import (
+	"context"
+
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
@@ -20,7 +22,7 @@ import (
 
 // RepositoryFactory allows creating `ComplianceDataRepository`s to be used in compliance runs.
 type RepositoryFactory interface {
-	CreateDataRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error)
+	CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error)
 }
 
 type factory struct {
@@ -58,8 +60,8 @@ func NewDefaultFactory() RepositoryFactory {
 	}
 }
 
-func (f *factory) CreateDataRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error) {
-	return newRepository(domain, scrapeResults, f)
+func (f *factory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error) {
+	return newRepository(ctx, domain, scrapeResults, f)
 }
 
 //go:generate mockgen-wrapper RepositoryFactory

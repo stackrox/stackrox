@@ -21,8 +21,8 @@ type fixedDataPromise struct {
 	err      error
 }
 
-func newFixedDataPromise(dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain) dataPromise {
-	dataRepo, err := dataRepoFactory.CreateDataRepository(domain, nil)
+func newFixedDataPromise(ctx context.Context, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain) dataPromise {
+	dataRepo, err := dataRepoFactory.CreateDataRepository(ctx, domain, nil)
 
 	return &fixedDataPromise{
 		dataRepo: dataRepo,
@@ -46,22 +46,22 @@ type scrapePromise struct {
 }
 
 // createAndRunScrape creates and returns a scrapePromise for the given domain. The returned promise will be running.
-func createAndRunScrape(scrapeFactory factory.ScrapeFactory, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain, timeout time.Duration) *scrapePromise {
+func createAndRunScrape(ctx context.Context, scrapeFactory factory.ScrapeFactory, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain, timeout time.Duration) *scrapePromise {
 	promise := &scrapePromise{
 		domain:          domain,
 		finishedSig:     concurrency.NewErrorSignal(),
 		dataRepoFactory: dataRepoFactory,
 	}
-	go promise.run(scrapeFactory, domain, timeout)
+	go promise.run(ctx, scrapeFactory, domain, timeout)
 	return promise
 }
 
-func (p *scrapePromise) finish(scrapeResult map[string]*compliance.ComplianceReturn, err error) {
+func (p *scrapePromise) finish(ctx context.Context, scrapeResult map[string]*compliance.ComplianceReturn, err error) {
 	if err != nil {
 		log.Errorf("Scrape failed: %v. Using partial data from %d/%d nodes", err, len(scrapeResult), len(p.domain.Nodes()))
 	}
 
-	p.result, err = p.dataRepoFactory.CreateDataRepository(p.domain, scrapeResult)
+	p.result, err = p.dataRepoFactory.CreateDataRepository(ctx, p.domain, scrapeResult)
 	p.finishedSig.SignalWithError(err)
 }
 
@@ -76,8 +76,10 @@ func (p *scrapePromise) WaitForResult(cancel concurrency.Waitable) (framework.Co
 	return p.result, nil
 }
 
-func (p *scrapePromise) run(scrapeFactory factory.ScrapeFactory, domain framework.ComplianceDomain, timeout time.Duration) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+func (p *scrapePromise) run(ctx context.Context, scrapeFactory factory.ScrapeFactory, domain framework.ComplianceDomain, timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	p.finish(scrapeFactory.RunScrape(domain, ctx))
+
+	scrapeResults, err := scrapeFactory.RunScrape(domain, ctx)
+	p.finish(ctx, scrapeResults, err)
 }

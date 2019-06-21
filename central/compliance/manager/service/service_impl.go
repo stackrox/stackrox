@@ -29,10 +29,10 @@ var (
 			"/v1.ComplianceManagementService/TriggerRun",
 			"/v1.ComplianceManagementService/TriggerRuns",
 		},
-		user.With(permissions.View(resources.ComplianceRunSchedule)): {
+		user.With(permissions.View(resources.ComplianceRunSchedule)): { // Not exposed in UI
 			"/v1.ComplianceManagementService/GetRunSchedules",
 		},
-		user.With(permissions.Modify(resources.ComplianceRunSchedule)): {
+		user.With(permissions.Modify(resources.ComplianceRunSchedule)): { // Not exposed in UI
 			"/v1.ComplianceManagementService/AddRunSchedule",
 			"/v1.ComplianceManagementService/UpdateRunSchedule",
 			"/v1.ComplianceManagementService/DeleteRunSchedule",
@@ -63,7 +63,7 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 }
 
 func (s *service) AddRunSchedule(ctx context.Context, req *v1.AddComplianceRunScheduleRequest) (*v1.AddComplianceRunScheduleResponse, error) {
-	schedule, err := s.manager.AddSchedule(req.GetScheduleSpec())
+	schedule, err := s.manager.AddSchedule(ctx, req.GetScheduleSpec())
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (s *service) UpdateRunSchedule(ctx context.Context, req *v1.UpdateComplianc
 		return nil, status.Errorf(codes.InvalidArgument, "id in updated spec body must be empty or match schedule id %q, is: %q", req.GetScheduleId(), req.GetUpdatedSpec().GetId())
 	}
 
-	schedule, err := s.manager.UpdateSchedule(req.GetUpdatedSpec())
+	schedule, err := s.manager.UpdateSchedule(ctx, req.GetUpdatedSpec())
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (s *service) UpdateRunSchedule(ctx context.Context, req *v1.UpdateComplianc
 }
 
 func (s *service) DeleteRunSchedule(ctx context.Context, req *v1.DeleteComplianceRunScheduleRequest) (*v1.Empty, error) {
-	err := s.manager.DeleteSchedule(req.GetScheduleId())
+	err := s.manager.DeleteSchedule(ctx, req.GetScheduleId())
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,10 @@ func (s *service) DeleteRunSchedule(ctx context.Context, req *v1.DeleteComplianc
 }
 
 func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentComplianceRunsRequest) (*v1.GetRecentComplianceRunsResponse, error) {
-	runs := s.manager.GetRecentRuns(req)
+	runs, err := s.manager.GetRecentRuns(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	sort.Slice(runs, func(i, j int) bool {
 		return runs[i].StartTime.Compare(runs[j].StartTime) < 0
 	})
@@ -108,14 +111,17 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 }
 
 func (s *service) GetRunSchedules(ctx context.Context, req *v1.GetComplianceRunSchedulesRequest) (*v1.GetComplianceRunSchedulesResponse, error) {
-	schedules := s.manager.GetSchedules(req)
+	schedules, err := s.manager.GetSchedules(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	return &v1.GetComplianceRunSchedulesResponse{
 		Schedules: schedules,
 	}, nil
 }
 
 func (s *service) TriggerRun(ctx context.Context, req *v1.TriggerComplianceRunRequest) (*v1.TriggerComplianceRunResponse, error) {
-	runs, err := s.manager.TriggerRuns(compliance.ClusterStandardPair{
+	runs, err := s.manager.TriggerRuns(ctx, compliance.ClusterStandardPair{
 		ClusterID:  req.GetClusterId(),
 		StandardID: req.GetStandardId(),
 	})
@@ -131,11 +137,12 @@ func (s *service) TriggerRun(ctx context.Context, req *v1.TriggerComplianceRunRe
 }
 
 func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRunsRequest) (*v1.TriggerComplianceRunsResponse, error) {
-	expanded, err := s.manager.ExpandSelection(req.GetSelection().GetClusterId(), req.GetSelection().GetStandardId())
+	expanded, err := s.manager.ExpandSelection(ctx, req.GetSelection().GetClusterId(), req.GetSelection().GetStandardId())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not expand cluster/standard selection: %v", err)
 	}
-	runs, err := s.manager.TriggerRuns(expanded...)
+
+	runs, err := s.manager.TriggerRuns(ctx, expanded...)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +152,11 @@ func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRuns
 }
 
 func (s *service) GetRunStatuses(ctx context.Context, req *v1.GetComplianceRunStatusesRequest) (*v1.GetComplianceRunStatusesResponse, error) {
-	runs := s.manager.GetRunStatuses(req.GetRunIds()...)
+	runs, err := s.manager.GetRunStatuses(ctx, req.GetRunIds()...)
+	if err != nil {
+		return nil, err
+	}
+
 	allRunIds := set.NewStringSet(req.GetRunIds()...)
 	for _, run := range runs {
 		allRunIds.Remove(run.GetId())

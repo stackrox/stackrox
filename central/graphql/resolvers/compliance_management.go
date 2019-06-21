@@ -72,7 +72,10 @@ func (resolver *Resolver) ComplianceRecentRuns(
 		}
 		req.Since = t
 	}
-	runs := resolver.ComplianceManager.GetRecentRuns(req)
+	runs, err := resolver.ComplianceManager.GetRecentRuns(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	return resolver.wrapComplianceRuns(runs, nil)
 }
 
@@ -81,6 +84,6 @@ func (resolver *Resolver) ComplianceRun(ctx context.Context, args struct{ graphq
 	if err := readComplianceRuns(ctx); err != nil {
 		return nil, err
 	}
-	run, err := resolver.ComplianceManager.GetRecentRun(string(args.ID))
+	run, err := resolver.ComplianceManager.GetRecentRun(ctx, string(args.ID))
 	return resolver.wrapComplianceRun(run, run != nil, err)
 }

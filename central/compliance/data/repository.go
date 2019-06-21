@@ -117,9 +117,9 @@ func (r *repository) CISKubernetesTriggered() bool {
 	return r.cisKubernetesRunCheck
 }
 
-func newRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
+func newRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
 	r := &repository{}
-	if err := r.init(domain, scrapeResults, factory); err != nil {
+	if err := r.init(ctx, domain, scrapeResults, factory); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -187,9 +187,7 @@ func expandFile(parent *compliance.File) map[string]*compliance.File {
 	return expanded
 }
 
-func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
-	ctx := context.TODO()
-
+func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
 

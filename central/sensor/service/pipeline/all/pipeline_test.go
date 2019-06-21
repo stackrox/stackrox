@@ -40,7 +40,7 @@ func (suite *PipelineTestSuite) TestCallsMatchingPipeline() {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{},
 	}
-	ctx := context.Context(nil)
+	ctx := context.Background()
 
 	suite.depMock.EXPECT().Match(msg).Return(true)
 	suite.depMock.EXPECT().Run(ctx, "clusterID", msg, nil).Return(errors.New("some error"))
@@ -53,7 +53,7 @@ func (suite *PipelineTestSuite) TestHandlesNoMatchingPipeline() {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{},
 	}
-	ctx := context.Context(nil)
+	ctx := context.Background()
 
 	suite.depMock.EXPECT().Match(msg).Return(false)
 

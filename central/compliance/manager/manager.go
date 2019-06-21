@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"context"
+
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/data"
@@ -24,25 +26,32 @@ type ComplianceManager interface {
 	Start() error
 	Stop() error
 
-	GetSchedules(request *v1.GetComplianceRunSchedulesRequest) []*v1.ComplianceRunScheduleInfo
-	GetSchedule(id string) (*v1.ComplianceRunScheduleInfo, error)
-	AddSchedule(spec *storage.ComplianceRunSchedule) (*v1.ComplianceRunScheduleInfo, error)
-	UpdateSchedule(spec *storage.ComplianceRunSchedule) (*v1.ComplianceRunScheduleInfo, error)
-	DeleteSchedule(id string) error
+	GetSchedules(ctx context.Context, request *v1.GetComplianceRunSchedulesRequest) ([]*v1.ComplianceRunScheduleInfo, error)
+	GetSchedule(ctx context.Context, id string) (*v1.ComplianceRunScheduleInfo, error)
+	AddSchedule(ctx context.Context, spec *storage.ComplianceRunSchedule) (*v1.ComplianceRunScheduleInfo, error)
+	UpdateSchedule(ctx context.Context, spec *storage.ComplianceRunSchedule) (*v1.ComplianceRunScheduleInfo, error)
+	DeleteSchedule(ctx context.Context, id string) error
 
-	GetRecentRuns(request *v1.GetRecentComplianceRunsRequest) []*v1.ComplianceRun
-	GetRecentRun(id string) (*v1.ComplianceRun, error)
+	GetRecentRuns(ctx context.Context, request *v1.GetRecentComplianceRunsRequest) ([]*v1.ComplianceRun, error)
+	GetRecentRun(ctx context.Context, id string) (*v1.ComplianceRun, error)
 
-	ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard string) ([]compliance.ClusterStandardPair, error)
+	ExpandSelection(ctx context.Context, clusterIDOrWildcard, standardIDOrWildcard string) ([]compliance.ClusterStandardPair, error)
 
-	TriggerRuns(clusterStandardPairs ...compliance.ClusterStandardPair) ([]*v1.ComplianceRun, error)
+	TriggerRuns(ctx context.Context, clusterStandardPairs ...compliance.ClusterStandardPair) ([]*v1.ComplianceRun, error)
 
 	// GetRunStatuses returns the statuses for the runs with the given IDs. Any runs that could not be located (e.g.,
 	// because they are too old or the ID is invalid) will be returned in the id to error map.
-	GetRunStatuses(ids ...string) []*v1.ComplianceRun
+	GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.ComplianceRun, error)
 }
 
 // NewManager creates and returns a new compliance manager.
-func NewManager(standardsRegistry *standards.Registry, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.GlobalDataStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceResultsStore.Store) (ComplianceManager, error) {
+func NewManager(standardsRegistry *standards.Registry,
+	scheduleStore ScheduleStore,
+	clusterStore clusterDatastore.DataStore,
+	nodeStore nodeDatastore.GlobalDataStore,
+	deploymentStore datastore.DataStore,
+	dataRepoFactory data.RepositoryFactory,
+	scrapeFactory factory.ScrapeFactory,
+	resultsStore complianceResultsStore.Store) (ComplianceManager, error) {
 	return newManager(standardsRegistry, scheduleStore, clusterStore, nodeStore, deploymentStore, dataRepoFactory, scrapeFactory, resultsStore)
 }

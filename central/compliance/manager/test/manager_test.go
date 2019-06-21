@@ -1,6 +1,7 @@
 package manager_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -24,6 +25,7 @@ type managerTestSuite struct {
 	suite.Suite
 
 	manager manager.ComplianceManager
+	testCtx context.Context
 
 	mockCtrl            *gomock.Controller
 	standardRegistry    *standards.Registry
@@ -41,7 +43,7 @@ func TestManager(t *testing.T) {
 }
 
 func (s *managerTestSuite) TestExpandSelection_OneOne() {
-	pairs, err := s.manager.ExpandSelection("cluster1", "standard1")
+	pairs, err := s.manager.ExpandSelection(s.testCtx, "cluster1", "standard1")
 	s.NoError(err)
 	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
 		{ClusterID: "cluster1", StandardID: "standard1"},
@@ -49,7 +51,7 @@ func (s *managerTestSuite) TestExpandSelection_OneOne() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_AllOne_OK() {
-	s.mockClusterStore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
+	s.mockClusterStore.EXPECT().GetClusters(s.testCtx).Return([]*storage.Cluster{
 		{
 			Id: "cluster1",
 		},
@@ -57,7 +59,7 @@ func (s *managerTestSuite) TestExpandSelection_AllOne_OK() {
 			Id: "cluster2",
 		},
 	}, nil)
-	pairs, err := s.manager.ExpandSelection(manager.Wildcard, "standard1")
+	pairs, err := s.manager.ExpandSelection(s.testCtx, manager.Wildcard, "standard1")
 	s.NoError(err)
 	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
 		{ClusterID: "cluster1", StandardID: "standard1"},
@@ -66,8 +68,8 @@ func (s *managerTestSuite) TestExpandSelection_AllOne_OK() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_AllOne_GetClustersError() {
-	s.mockClusterStore.EXPECT().GetClusters(gomock.Any()).Return(nil, errors.New("some error"))
-	_, err := s.manager.ExpandSelection(manager.Wildcard, "standard1")
+	s.mockClusterStore.EXPECT().GetClusters(s.testCtx).Return(nil, errors.New("some error"))
+	_, err := s.manager.ExpandSelection(s.testCtx, manager.Wildcard, "standard1")
 	s.Error(err)
 }
 
@@ -76,7 +78,7 @@ func (s *managerTestSuite) TestExpandSelection_OneAll_OK() {
 		metadata.Standard{ID: "standard1"},
 		metadata.Standard{ID: "standard2"},
 	))
-	pairs, err := s.manager.ExpandSelection("cluster1", manager.Wildcard)
+	pairs, err := s.manager.ExpandSelection(s.testCtx, "cluster1", manager.Wildcard)
 	s.NoError(err)
 	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
 		{ClusterID: "cluster1", StandardID: "standard1"},
@@ -85,7 +87,7 @@ func (s *managerTestSuite) TestExpandSelection_OneAll_OK() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
-	s.mockClusterStore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
+	s.mockClusterStore.EXPECT().GetClusters(s.testCtx).Return([]*storage.Cluster{
 		{Id: "cluster1"},
 		{Id: "cluster2"},
 	}, nil)
@@ -93,7 +95,7 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 		metadata.Standard{ID: "standard1"},
 		metadata.Standard{ID: "standard2"},
 	))
-	pairs, err := s.manager.ExpandSelection(manager.Wildcard, manager.Wildcard)
+	pairs, err := s.manager.ExpandSelection(s.testCtx, manager.Wildcard, manager.Wildcard)
 	s.NoError(err)
 	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
 		{ClusterID: "cluster1", StandardID: "standard1"},
@@ -104,6 +106,7 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 }
 
 func (s *managerTestSuite) SetupTest() {
+	s.testCtx = context.Background()
 	s.mockCtrl = gomock.NewController(s.T())
 	s.standardRegistry = standards.NewRegistry(nil, nil)
 	s.mockScheduleStore = complianceMgrMocks.NewMockScheduleStore(s.mockCtrl)
