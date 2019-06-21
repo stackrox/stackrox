@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createDeploymentNode(id, namespace string, selectorLabels map[string]string) *node {
+func createDeploymentNode(id, name, namespace string, selectorLabels map[string]string) *node {
 	return &node{
 		entity: networkgraph.Entity{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -17,6 +17,7 @@ func createDeploymentNode(id, namespace string, selectorLabels map[string]string
 		},
 		deployment: &storage.Deployment{
 			Id:        id,
+			Name:      name,
 			Namespace: namespace,
 			LabelSelector: &storage.LabelSelector{
 				MatchLabels: selectorLabels,
@@ -46,8 +47,8 @@ func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 		},
 	}
 
-	deployment0 := createDeploymentNode("deployment0", "ns", map[string]string{"app": "foo"})
-	deployment1 := createDeploymentNode("deployment1", "ns", nil)
+	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
+	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns", nil)
 	deployment1.incoming[deployment0] = struct{}{}
 	deployment1.incoming[internetNode] = struct{}{}
 
@@ -58,8 +59,8 @@ func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 	t.Parallel()
 
-	deployment0 := createDeploymentNode("deployment0", "ns", map[string]string{"app": "foo"})
-	deployment1 := createDeploymentNode("deployment1", "ns", nil)
+	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
+	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns", nil)
 
 	deployment1.deployment.Ports = []*storage.PortConfig{
 		{
@@ -86,10 +87,10 @@ func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 	t.Parallel()
 
-	deployment0 := createDeploymentNode("deployment0", "ns1", map[string]string{"app": "foo"})
-	deployment1 := createDeploymentNode("deployment1", "ns2", map[string]string{"app": "bar"})
+	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
+	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
 
-	tgtDeployment := createDeploymentNode("tgtDeployment", "ns1", nil)
+	tgtDeployment := createDeploymentNode("tgtDeployment", "tgtDeployment", "ns1", nil)
 	tgtDeployment.incoming[deployment0] = struct{}{}
 	tgtDeployment.incoming[deployment1] = struct{}{}
 
@@ -126,6 +127,72 @@ func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 		},
 	}
 
+	rule := generateIngressRule(tgtDeployment, nss)
+	assert.ElementsMatch(t, expectedPeers, rule.From)
+}
+
+func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
+	t.Parallel()
+
+	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
+	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
+	deployment1.masked = true
+	tgtDeployment := createDeploymentNode("tgtDeployment", "tgtDeployment", "ns1", nil)
+	tgtDeployment.incoming[deployment0] = struct{}{}
+	tgtDeployment.incoming[deployment1] = struct{}{}
+
+	nss := map[string]*storage.NamespaceMetadata{
+		"ns": {
+			Id:   "ns1",
+			Name: "ns1",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "ns1",
+			},
+		},
+	}
+
+	expectedPeers := []*storage.NetworkPolicyPeer{
+		{
+			NamespaceSelector: &storage.LabelSelector{},
+			PodSelector:       &storage.LabelSelector{},
+		},
+	}
+	rule := generateIngressRule(tgtDeployment, nss)
+	assert.Equal(t, expectedPeers, rule.From)
+}
+
+func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
+	t.Parallel()
+
+	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
+	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
+	tgtDeployment := createDeploymentNode("tgtDeployment", "tgtDeployment", "ns1", nil)
+	tgtDeployment.incoming[deployment0] = struct{}{}
+	tgtDeployment.incoming[deployment1] = struct{}{}
+
+	nss := map[string]*storage.NamespaceMetadata{
+		"ns": {
+			Id:   "ns1",
+			Name: "ns1",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "ns1",
+			},
+		},
+	}
+
+	expectedPeers := []*storage.NetworkPolicyPeer{
+		{
+			PodSelector: &storage.LabelSelector{
+				MatchLabels: map[string]string{"app": "foo"},
+			},
+		},
+		{
+			NamespaceSelector: &storage.LabelSelector{},
+			PodSelector: &storage.LabelSelector{
+				MatchLabels: map[string]string{"app": "bar"},
+			},
+		},
+	}
 	rule := generateIngressRule(tgtDeployment, nss)
 	assert.ElementsMatch(t, expectedPeers, rule.From)
 }

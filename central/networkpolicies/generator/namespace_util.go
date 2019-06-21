@@ -5,6 +5,8 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 )
 
+var allowAllNamespaces = &storage.LabelSelector{}
+
 func createNamespacesByNameMap(namespaces []*storage.NamespaceMetadata) map[string]*storage.NamespaceMetadata {
 	result := make(map[string]*storage.NamespaceMetadata, len(namespaces))
 
@@ -15,6 +17,10 @@ func createNamespacesByNameMap(namespaces []*storage.NamespaceMetadata) map[stri
 }
 
 func labelSelectorForNamespace(ns *storage.NamespaceMetadata) *storage.LabelSelector {
+	if ns == nil {
+		return allowAllNamespaces
+	}
+
 	var matchLabels map[string]string
 
 	nsLabels := ns.GetLabels()

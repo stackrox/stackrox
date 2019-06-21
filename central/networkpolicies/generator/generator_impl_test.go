@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -38,9 +37,6 @@ type generatorTestSuite struct {
 
 func TestGenerator(t *testing.T) {
 	t.Parallel()
-	if !features.ScopedAccessControl.Enabled() {
-		t.Skip()
-	}
 	suite.Run(t, new(generatorTestSuite))
 }
 
@@ -274,7 +270,13 @@ func (s *generatorTestSuite) TestGenerate() {
 		}, nil)
 
 	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
-	mockFlowStore.EXPECT().GetAllFlows(s.hasReadCtx, gomock.Eq(ts)).Return(
+
+	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph)))
+
+	mockFlowStore.EXPECT().GetAllFlows(networkGraphElevatedCtx, gomock.Eq(ts)).Return(
 		[]*storage.NetworkFlow{
 			{
 				Props: &storage.NetworkFlowProperties{

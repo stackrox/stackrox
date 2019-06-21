@@ -10,9 +10,12 @@ import (
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -21,6 +24,10 @@ const (
 	generatedNetworkPolicyLabel = `network-policy-generator.stackrox.io/generated`
 
 	networkPolicyAPIVersion = `networking.k8s.io/v1`
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func isGeneratedPolicy(policy *storage.NetworkPolicy) bool {
@@ -89,7 +96,13 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, since *
 		return nil, fmt.Errorf("could not obtain flow store for cluster %q", clusterID)
 	}
 
-	allFlows, _, err := clusterFlowStore.GetAllFlows(ctx, since)
+	// Temporarily elevate permissions to obtain all network flows in cluster.
+	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph)))
+
+	allFlows, _, err := clusterFlowStore.GetAllFlows(networkGraphGenElevatedCtx, since)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}
@@ -110,7 +123,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, since *
 		return nil, errors.Wrapf(err, "could not obtain deployments for cluster %q", clusterID)
 	}
 
-	return buildGraph(deployments, allFlows), nil
+	return buildGraph(ctx, clusterID, deployments, allFlows)
 }
 
 func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
@@ -149,7 +162,7 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, deploy
 		if node.deployment == nil {
 			continue
 		}
-		if isSystemDeployment(node.deployment) || (deploymentIDs.IsInitialized() && !deploymentIDs.Contains(node.deployment.GetId())) {
+		if node.masked || isSystemDeployment(node.deployment) || (deploymentIDs.IsInitialized() && !deploymentIDs.Contains(node.deployment.GetId())) {
 			continue
 		}
 
@@ -167,6 +180,7 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "generating network graph")
 	}
+
 	existingPolicies, toDelete, err := g.getNetworkPolicies(ctx, req.GetDeleteExisting(), req.GetClusterId())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "obtaining existing network policies")

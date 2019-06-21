@@ -85,8 +85,7 @@ type ServiceTestSuite struct {
 	evaluator       *npGraphMocks.MockEvaluator
 	notifiers       *nDataStoreMocks.MockDataStore
 	tested          Service
-
-	mockCtrl *gomock.Controller
+	mockCtrl        *gomock.Controller
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
