@@ -23,6 +23,49 @@ export const ROLE_PERMISSIONS = gql`
     }
 `;
 
+export const K8S_ROLE = gql`
+    query k8sRole($id: ID!) {
+        clusters {
+            id
+            k8srole(role: $id) {
+                id
+                name
+                type
+                verbs
+                createdAt
+                roleNamespace {
+                    metadata {
+                        id
+                        name
+                    }
+                }
+                serviceAccounts {
+                    id
+                    name
+                }
+                subjects {
+                    name
+                }
+                labels {
+                    key
+                    value
+                }
+                annotations {
+                    key
+                    value
+                }
+                rules {
+                    apiGroups
+                    nonResourceUrls
+                    resourceNames
+                    resources
+                    verbs
+                }
+            }
+        }
+    }
+`;
+
 export const K8S_ROLES = gql`
     query k8sroles {
         clusters {

@@ -44,7 +44,7 @@ const common = Object.freeze({
     },
     rbacConfigLabels: {
         SUBJECT: 'users and groups',
-        SERVICE_ACCOUNT: 'serviceaccount',
+        SERVICE_ACCOUNT: 'service account',
         ROLE: 'role'
     },
     stackroxSupport: {

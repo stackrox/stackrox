@@ -8,9 +8,11 @@ import Secret from './Entity/Secret';
 import Deployment from './Entity/Deployment';
 import Cluster from './Entity/Cluster';
 import Namespace from './Entity/Namespace';
+import Role from './Entity/Role';
 
 const entityComponentMap = {
     [entityTypes.SERVICE_ACCOUNT]: ServiceAccount,
+    [entityTypes.ROLE]: Role,
     [entityTypes.SECRET]: Secret,
     [entityTypes.DEPLOYMENT]: Deployment,
     [entityTypes.CLUSTER]: Cluster,
