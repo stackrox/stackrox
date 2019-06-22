@@ -35,7 +35,12 @@ $CMD -n stackrox create configmap authz-plugin-config \
 	--from-file rules.gval="${RULES_FILE}" \
 	--dry-run -o yaml | kubectl apply -f -
 
+if [[ "${CMD}" == "oc" ]]; then
+  $CMD create -f ${DIR}/scopedaccess/deployment/scopedaccess_scc.yaml
+fi
+
 sed -e 's@${IMAGE}@'"$AUTHZ_PLUGIN_IMAGE"'@g' <"${DIR}/scopedaccess/deployment/scopedaccess.yaml" | kubectl apply -f -
 sleep 5
 POD=$($CMD -n stackrox get pod -o jsonpath='{.items[?(@.metadata.labels.app=="authorization-plugin")].metadata.name}')
+echo $POD
 $CMD  -n stackrox wait --for=condition=ready "pod/$POD" --timeout=2m
