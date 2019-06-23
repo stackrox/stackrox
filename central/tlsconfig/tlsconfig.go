@@ -85,12 +85,7 @@ func getInternalCertificate() (*tls.Certificate, error) {
 	return issueInternalCertificate()
 }
 
-func createTLSConfig() (*tls.Config, error) {
-	certPool, err := verifier.TrustedCertPool()
-	if err != nil {
-		return nil, errors.Wrap(err, "loading trusted cert pool")
-	}
-
+func serverCerts() ([]tls.Certificate, error) {
 	var certs []tls.Certificate
 
 	defaultCert, err := loadDefaultCertificate()
@@ -108,6 +103,20 @@ func createTLSConfig() (*tls.Config, error) {
 		return nil, errors.New("no internal cert available")
 	}
 	certs = append(certs, *internalCert)
+	return certs, nil
+
+}
+
+func createTLSConfig() (*tls.Config, error) {
+	certPool, err := verifier.TrustedCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "loading trusted cert pool")
+	}
+
+	certs, err := serverCerts()
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := verifier.DefaultTLSServerConfig(certPool, certs)
 	cfg.BuildNameToCertificate()

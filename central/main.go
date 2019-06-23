@@ -18,7 +18,6 @@ import (
 	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
 	"github.com/stackrox/rox/central/cli"
-	clientCAManager "github.com/stackrox/rox/central/clientca/manager"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
@@ -111,7 +110,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -195,10 +193,6 @@ type invalidLicenseFactory struct {
 	restartingFlag *concurrency.Flag
 }
 
-func (f invalidLicenseFactory) TLSConfigurer() verifier.TLSConfigurer {
-	return tlsconfig.NewCentralTLSConfigurer()
-}
-
 func (f invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
 	return []pkgGRPC.APIService{
 		licenseService.New(true, licenseSingletons.ManagerSingleton()),
@@ -225,21 +219,11 @@ func startLimitedModeServer(restartingFlag *concurrency.Flag) {
 type serviceFactory interface {
 	CustomRoutes() (customRoutes []routes.CustomRoute)
 	ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService
-	TLSConfigurer() verifier.TLSConfigurer
 	StartServices()
 }
 
 type defaultFactory struct {
 	restartingFlag *concurrency.Flag
-	caManager      clientCAManager.ClientCAManager
-}
-
-func (f defaultFactory) TLSConfigurer() verifier.TLSConfigurer {
-	// is nil if feature flag is false
-	if f.caManager != nil {
-		return f.caManager.TLSConfigurer()
-	}
-	return tlsconfig.NewCentralTLSConfigurer()
 }
 
 func (defaultFactory) StartServices() {
@@ -306,9 +290,6 @@ func startMainServer(restartingFlag *concurrency.Flag) {
 	factory := defaultFactory{
 		restartingFlag: restartingFlag,
 	}
-	if features.ClientCAAuth.Enabled() {
-		factory.caManager = clientCAManager.Instance()
-	}
 	startGRPCServer(factory)
 }
 
@@ -339,7 +320,7 @@ func startGRPCServer(factory serviceFactory) {
 	}
 
 	if features.ClientCAAuth.Enabled() {
-		authProviderBackendFactories[clientca.TypeName] = clientca.NewFactoryFactory(clientCAManager.Instance())
+		authProviderBackendFactories[clientca.TypeName] = clientca.NewFactoryFactory(tlsconfig.ManagerInstance())
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
@@ -359,13 +340,15 @@ func startGRPCServer(factory serviceFactory) {
 		userpass.IdentityExtractorOrPanic(basicAuthProvider),
 	}
 
+	tlsConfigurer := tlsconfig.NewCentralTLSConfigurer()
 	if features.ClientCAAuth.Enabled() {
-		idExtractors = append(idExtractors, userpki.NewExtractor(clientCAManager.Instance()))
+		idExtractors = append(idExtractors, userpki.NewExtractor(tlsconfig.ManagerInstance()))
+		tlsConfigurer = tlsconfig.ManagerInstance().TLSConfigurer()
 	}
 
 	config := pkgGRPC.Config{
 		CustomRoutes:          factory.CustomRoutes(),
-		TLS:                   factory.TLSConfigurer(),
+		TLS:                   tlsConfigurer,
 		IdentityExtractors:    idExtractors,
 		AuthProviders:         registry,
 		InsecureLocalEndpoint: insecureLocalEndpoint,

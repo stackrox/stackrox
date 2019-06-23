@@ -1,4 +1,4 @@
-package manager
+package tlsconfig
 
 import (
 	"crypto/x509"
@@ -6,10 +6,11 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
-// ClientCAManager is the manager interface for client CA certificates
-type ClientCAManager interface {
+// Manager is the manager interface for client CA certificates
+type Manager interface {
 	RegisterAuthProvider(provider authproviders.Provider, certs []*x509.Certificate)
 	UnregisterAuthProvider(provider authproviders.Provider)
 	GetProviderForFingerprint(fingerprint string) authproviders.Provider
@@ -21,16 +22,12 @@ var (
 	instanceOnce sync.Once
 )
 
-// Instance returns the ClientCAManager.
-func Instance() ClientCAManager {
+// ManagerInstance returns the Manager.
+func ManagerInstance() Manager {
 	instanceOnce.Do(func() {
-		instance = newManager()
+		i, err := newManager()
+		utils.Must(err)
+		instance = i
 	})
 	return instance
-}
-
-func newManager() *managerImpl {
-	return &managerImpl{
-		providerIDToProviderData: make(map[string]providerData),
-	}
 }
