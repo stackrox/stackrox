@@ -101,7 +101,7 @@ const processSunburstData = (match, location, data, type) => {
             }
         });
 
-    const { passing, total } = Object.values(groupStatsMapping).reduce(
+    const { passing, total } = Object.values(controlStatsMapping).reduce(
         (acc, currVal) => ({
             passing: acc.passing + currVal.passing,
             total: acc.total + currVal.total
@@ -147,17 +147,16 @@ const ComplianceByStandard = ({
         entityTypes.CONTROL,
         ...(entityType ? [entityType] : [])
     ];
-    const where = queryService.objectToWhereClause({
+    const where = {
         Standard: standardLabels[standardType]
-    });
+    };
+    if (entityType) where[`${entityType} ID`] = entityId;
+    const variables = {
+        groupBy,
+        where: queryService.objectToWhereClause(where)
+    };
     return (
-        <Query
-            query={QUERY}
-            variables={{
-                groupBy,
-                where
-            }}
-        >
+        <Query query={QUERY} variables={variables}>
             {({ loading, data, networkStatus }) => {
                 let contents = <Loader />;
                 const headerText = `${standardLabels[standardType]} Compliance`;
@@ -205,11 +204,9 @@ const ComplianceByStandard = ({
 
                     if (!sunburstData.length) {
                         contents = (
-                            <>
-                                <div className="flex flex-1 items-center justify-center p-4 leading-loose">
-                                    No data available. Please run a scan.
-                                </div>
-                            </>
+                            <div className="flex flex-1 items-center justify-center p-4 leading-loose">
+                                No data available. Please run a scan.
+                            </div>
                         );
                     } else {
                         contents = (

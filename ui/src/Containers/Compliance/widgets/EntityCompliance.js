@@ -52,15 +52,13 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
     }
 
     const whereClause = { [entityType]: entityName, [entityTypes.CLUSTER]: clusterName };
+    const variables = {
+        unit: entityTypes.CHECK,
+        groupBy: [entityTypes.STANDARD, entityType],
+        where: queryService.objectToWhereClause(whereClause)
+    };
     return (
-        <Query
-            query={AGGREGATED_RESULTS}
-            variables={{
-                unit: entityTypes.CONTROL,
-                groupBy: [entityTypes.STANDARD, entityType],
-                where: queryService.objectToWhereClause(whereClause)
-            }}
-        >
+        <Query query={AGGREGATED_RESULTS} variables={variables}>
             {({ loading, data }) => {
                 let contents = <Loader />;
                 if (!loading && data && data.results) {

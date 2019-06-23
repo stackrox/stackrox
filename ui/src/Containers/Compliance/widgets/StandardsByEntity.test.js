@@ -9,7 +9,7 @@ import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import StandardsByEntity from './StandardsByEntity';
 
 const groupBy = [entityTypes.STANDARD, entityTypes.CLUSTER];
-const unit = entityTypes.CONTROL;
+const unit = entityTypes.CHECK;
 const mocks = [
     {
         request: {

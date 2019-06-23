@@ -17,12 +17,7 @@ import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 import createPDFTable from 'utils/pdfUtils';
-import {
-    CLUSTERS_LIST_QUERY,
-    NAMESPACES_LIST_QUERY,
-    NODES_LIST_QUERY,
-    DEPLOYMENTS_LIST_QUERY
-} from 'queries/table';
+import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from 'queries/table';
 import { LIST_STANDARD } from 'queries/standard';
 import queryService from 'modules/queryService';
 import orderBy from 'lodash/orderBy';
@@ -30,13 +25,13 @@ import orderBy from 'lodash/orderBy';
 function getQuery(entityType) {
     switch (entityType) {
         case entityTypes.CLUSTER:
-            return CLUSTERS_LIST_QUERY;
+            return CLUSTERS_QUERY;
         case entityTypes.NAMESPACE:
-            return NAMESPACES_LIST_QUERY;
+            return NAMESPACES_QUERY;
         case entityTypes.NODE:
-            return NODES_LIST_QUERY;
+            return NODES_QUERY;
         case entityTypes.DEPLOYMENT:
-            return DEPLOYMENTS_LIST_QUERY;
+            return DEPLOYMENTS_QUERY;
         case entityTypes.CONTROL:
             return LIST_STANDARD;
         default:
@@ -62,7 +57,7 @@ function complianceRate(numPassing, numFailing) {
 }
 
 function formatResourceData(data, resourceType) {
-    if (!data.results || data.results.results.length === 0) return null;
+    if (!data || !data.results || data.results.results.length === 0) return null;
     const formattedData = { results: [] };
     const entityMap = {};
     let standardKeyIndex = 0;
@@ -262,7 +257,6 @@ const ListTable = ({
                         entityType,
                         totalRows
                     )} ${groupedByText}`;
-
                     contents = isControlList ? (
                         <TableGroup
                             groups={tableData}

@@ -6,45 +6,59 @@ import URLService from 'modules/URLService';
 import pluralize from 'pluralize';
 import toLower from 'lodash/toLower';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import merge from 'lodash/merge';
+
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import { withRouter } from 'react-router-dom';
+import { AGGREGATED_RESULTS_ACROSS_ENTITY as QUERY } from 'queries/controls';
 
 function formatAsPercent(x) {
     return `${x}%`;
+}
+
+function setStandardsMapping(data, type) {
+    const mapping = {};
+    data.results.forEach(result => {
+        const standardId = result.aggregationKeys[0].id;
+        const { numPassing, numFailing } = result;
+        if (!mapping[standardId]) {
+            mapping[standardId] = {};
+            mapping[standardId][type] = {
+                passing: numPassing,
+                total: numPassing + numFailing
+            };
+        } else {
+            const { passing, total } = mapping[standardId][type];
+            mapping[standardId][type] = {
+                passing: passing + numPassing,
+                total: total + (numPassing + numFailing)
+            };
+        }
+    });
+    return mapping;
 }
 
 const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, className }) => {
     function processData(data, type) {
         if (!data || !data.results || !data.results.results.length) return [];
         const { complianceStandards } = data;
-        const standardsMapping = {};
-
-        data.results.results.forEach(result => {
-            const standardId = result.aggregationKeys[0].id;
-            const { numPassing, numFailing } = result;
-            if (!standardsMapping[standardId]) {
-                standardsMapping[standardId] = {
-                    passing: numPassing,
-                    total: numPassing + numFailing
-                };
-            } else {
-                standardsMapping[standardId] = {
-                    passing: standardsMapping[standardId].passing + numPassing,
-                    total: standardsMapping[standardId].total + (numPassing + numFailing)
-                };
-            }
-        });
+        const standardsMapping = merge(
+            {},
+            setStandardsMapping(data.results, 'checks'),
+            setStandardsMapping(data.controls, 'controls')
+        );
 
         const barData = Object.keys(standardsMapping).map(standardId => {
             const standard = complianceStandards.find(cs => cs.id === standardId);
-            const { passing, total } = standardsMapping[standardId];
-            const percentagePassing = Math.round((passing / total) * 100) || 0;
+            const { controls, checks } = standardsMapping[standardId];
+            const { passing: passingControls, total: totalControls } = controls;
+            const { passing: passingChecks, total: totalChecks } = checks;
+            const percentagePassing = Math.round((passingChecks / totalChecks) * 100) || 0;
             const link = URLService.getURL(match, location)
                 .base(entityTypes.CONTROL)
                 .query({
@@ -57,7 +71,8 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
                 x: percentagePassing,
                 hint: {
                     title: `${standard.name} Standard - ${percentagePassing}% Passing`,
-                    body: `${total - passing} failing controls across all ${pluralize(
+                    body: `${totalControls -
+                        passingControls} failing controls across all ${pluralize(
                         resourceLabels[type]
                     )}`
                 },
@@ -71,7 +86,7 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
 
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],
-        unit: entityTypes.CONTROL
+        unit: entityTypes.CHECK
     };
     return (
         <Query query={QUERY} variables={variables}>

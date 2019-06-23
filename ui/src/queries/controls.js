@@ -1,5 +1,42 @@
 import gql from 'graphql-tag';
 
+export const AGGREGATED_RESULTS_ACROSS_ENTITY = gql`
+    query getAggregatedResults(
+        $groupBy: [ComplianceAggregation_Scope!]
+        $unit: ComplianceAggregation_Scope!
+        $where: String
+    ) {
+        results: aggregatedResults(groupBy: $groupBy, unit: $unit, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+        controls: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
+            results {
+                __typename
+                aggregationKeys {
+                    __typename
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+        complianceStandards: complianceStandards {
+            id
+            name
+        }
+    }
+`;
+
 export const AGGREGATED_RESULTS = gql`
     query getAggregatedResults(
         $groupBy: [ComplianceAggregation_Scope!]
@@ -7,6 +44,17 @@ export const AGGREGATED_RESULTS = gql`
         $where: String
     ) {
         results: aggregatedResults(groupBy: $groupBy, unit: $unit, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+        controls: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
             results {
                 aggregationKeys {
                     id

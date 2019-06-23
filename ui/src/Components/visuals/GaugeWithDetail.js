@@ -296,20 +296,31 @@ class GaugeWithDetail extends Component {
     getHint = () => {
         if (!this.state.hoveredCell) return null;
         const { hoveredCell } = this.state;
-        const { value: passingValue } = hoveredCell.passing;
-        const { value: failingValue } = hoveredCell.failing;
+        const { passing, failing, title } = hoveredCell;
+        const { value: passingValue, controls: passingControls } = passing;
+        const { value: failingValue, controls: failingControls } = failing;
+        const totalValue = passingValue + failingValue;
+        const totalControls = passingControls + failingControls;
+        const passingPercentage = Math.round((passingValue / totalValue) * 100);
+        const failingPercentage = Math.round((failingValue / totalValue) * 100);
         return (
             <Hint value={buildValue(hoveredCell)}>
                 <div className="text-base-600 text-xs p-2 pb-1 pt-1 border z-10 border-tertiary-400 bg-tertiary-200 rounded min-w-32">
                     <h1 className="text-uppercase border-b-2 border-base-400 leading-loose text-xs pb-1">
-                        {hoveredCell.title}
+                        {title}
                     </h1>
                     <div>
                         {hoveredCell.arc === 'inner' && (
-                            <div className="py-2">Passing: {passingValue}</div>
+                            <div className="py-2">
+                                {passingPercentage}% of checks passing across {totalControls}{' '}
+                                controls
+                            </div>
                         )}
                         {hoveredCell.arc !== 'inner' && (
-                            <div className="py-2">Failing: {failingValue}</div>
+                            <div className="py-2">
+                                {failingPercentage}% of checks failing across {totalControls}{' '}
+                                controls
+                            </div>
                         )}
                     </div>
                 </div>

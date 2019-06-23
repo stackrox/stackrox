@@ -19,7 +19,7 @@ import { withRouter } from 'react-router-dom';
 function processData(match, location, data, entityType) {
     if (!data || !data.results.results.length || !data.entityList) return [];
     const standardsGrouping = {};
-    const { results, entityList, complianceStandards } = data;
+    const { results, controls, entityList, complianceStandards } = data;
     results.results.forEach(result => {
         const entity = entityList.find(
             entityObject => entityObject.id === result.aggregationKeys[1].id
@@ -35,13 +35,18 @@ function processData(match, location, data, entityType) {
                 standard: standardLabels[standard.id]
             })
             .url();
-
+        const controlResult = controls.results.find(
+            controlsResult => controlsResult.aggregationKeys[0].id === result.aggregationKeys[0].id
+        );
+        const { numFailing: numFailingControls } = controlResult;
         const dataPoint = {
             x: entity && entity.name,
             y: percentagePassing,
             hint: {
                 title: standardLabels[standard.id],
-                body: `${numFailing} controls failing in this ${labels.resourceLabels[entityType]}`
+                body: `${numFailingControls} controls failing in this ${
+                    labels.resourceLabels[entityType]
+                }`
             },
             link
         };
@@ -84,7 +89,7 @@ function getLabelLinks(match, location, data, entityType) {
 const StandardsByEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],
-        unit: entityTypes.CONTROL
+        unit: entityTypes.CHECK
     };
     return (
         <Query query={QUERY} variables={variables}>
@@ -100,9 +105,10 @@ const StandardsByEntity = ({ match, location, entityType, bodyClassName, classNa
                         );
                     } else {
                         const formattedData = {
-                            results: data.results,
+                            results: data && data.results,
+                            controls: data && data.controls,
                             complianceStandards: data.complianceStandards,
-                            entityList: data.clusters
+                            entityList: data && data.clusters
                         };
                         const results = processData(match, location, formattedData, entityType);
                         const labelLinks = getLabelLinks(

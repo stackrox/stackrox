@@ -127,7 +127,7 @@ class DashboardCompliance extends Component {
                     <Query
                         query={AGGREGATED_RESULTS}
                         variables={{
-                            unit: entityTypes.CONTROL,
+                            unit: entityTypes.CHECK,
                             groupBy: [entityTypes.STANDARD]
                         }}
                     >

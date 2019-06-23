@@ -18,7 +18,8 @@ export const rbacConfigTypes = {
 export const standardEntityTypes = {
     CONTROL: 'CONTROL',
     CATEGORY: 'CATEGORY',
-    STANDARD: 'STANDARD'
+    STANDARD: 'STANDARD',
+    CHECK: 'CHECK'
 };
 
 export const standardTypes = {

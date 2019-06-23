@@ -49,8 +49,9 @@ class MultiGaugeDetailSection extends Component {
             selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-700' : '';
         const failingClassName =
             selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-700' : '';
-        const { value: passingValue } = d.passing;
-        const { value: failingValue } = d.failing;
+        const { passing, failing, skipped } = d;
+        const { controls: passingValue } = passing;
+        const { controls: failingValue } = failing;
         return (
             <div key={`${d.title}-${d.arc}`}>
                 <div
@@ -86,6 +87,18 @@ class MultiGaugeDetailSection extends Component {
                         failing controls
                     </button>
                 </div>
+                {skipped > 0 && (
+                    <div data-test-id="gauge-detail-bullet" className="widget-detail-bullet">
+                        <button
+                            data-test-id="skipped-controls"
+                            type="button"
+                            className="text-base-600 font-600 pointer-events-none"
+                        >
+                            <span data-test-id="skipped-controls-value">{skipped} </span>
+                            skipped controls
+                        </button>
+                    </div>
+                )}
             </div>
         );
     };
@@ -99,8 +112,6 @@ class MultiGaugeDetailSection extends Component {
             selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-600' : '';
         const { value: passingValue } = d.passing;
         const { value: failingValue } = d.failing;
-        const percentagePassing = Math.round((passingValue / (passingValue + failingValue)) * 100);
-        const percentageFailing = 100 - percentagePassing;
         return (
             <div
                 key={`${d.title}-${d.arc}`}
@@ -121,7 +132,7 @@ class MultiGaugeDetailSection extends Component {
                             passingClassName}`}
                         onClick={this.onClick(d, 'inner', idx)}
                     >
-                        {percentagePassing}%
+                        {passingValue} Passing
                     </button>
                     <span className="px-1"> / </span>
                     <button
@@ -132,7 +143,7 @@ class MultiGaugeDetailSection extends Component {
                             failingClassName}`}
                         onClick={this.onClick(d, 'outer', idx)}
                     >
-                        {percentageFailing}%
+                        {failingValue} Failing
                     </button>
                 </div>
             </div>

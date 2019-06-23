@@ -8,7 +8,7 @@ import entityTypes from 'constants/entityTypes';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import StandardsAcrossEntity from './StandardsAcrossEntity';
 
-const unit = entityTypes.CONTROL;
+const unit = entityTypes.CHECK;
 const getMock = entityType => [
     {
         request: {

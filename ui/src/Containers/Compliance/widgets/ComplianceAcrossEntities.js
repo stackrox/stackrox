@@ -23,7 +23,13 @@ const sortByTitle = (a, b) => {
     return 0;
 };
 
-function processData(match, location, entityType, query, { results, complianceStandards }) {
+function processData(
+    match,
+    location,
+    entityType,
+    query,
+    { results, controls, complianceStandards }
+) {
     let filteredResults;
     if (standardBaseTypes[entityType]) {
         filteredResults = results.results.filter(result =>
@@ -41,49 +47,57 @@ function processData(match, location, entityType, query, { results, complianceSt
                 failing: { value: 0, link: '' }
             }
         ];
-    const standardDataMapping = filteredResults
-        .filter(datum => !(datum.passing === 0 && datum.failing === 0))
-        .reduce((accMapping, currValue) => {
-            const newMapping = { ...accMapping };
-            const { id: standardId } = currValue.aggregationKeys[0];
-            const standard = complianceStandards.find(cs => cs.id === standardId);
-            let { numPassing: totalPassing, numFailing: totalFailing } = currValue;
-            if (newMapping[standardId]) {
-                totalPassing += newMapping[standardId].passing.value;
-                totalFailing += newMapping[standardId].failing.value;
-            }
-            const complianceStateKey = CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE;
+    const standardDataMapping = filteredResults.reduce((accMapping, result) => {
+        const newMapping = { ...accMapping };
+        const { id: standardId } = result.aggregationKeys[0];
+        const standard = complianceStandards.find(cs => cs.id === standardId);
+        let { numPassing: totalPassing, numFailing: totalFailing } = result;
+        let totalSkipped = !(totalPassing + totalFailing > 0) ? 1 : 0;
+        if (newMapping[standardId]) {
+            totalPassing += newMapping[standardId].passing.value;
+            totalFailing += newMapping[standardId].failing.value;
+            totalSkipped += newMapping[standardId].skipped;
+        }
+        const complianceStateKey = CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE;
 
-            const passingLink = URLService.getURL(match, location)
-                .push(entityType)
-                .query({ [complianceStateKey]: 'Pass' })
-                .url();
+        const passingLink = URLService.getURL(match, location)
+            .push(entityType)
+            .query({ [complianceStateKey]: 'Pass' })
+            .url();
 
-            const failingLink = URLService.getURL(match, location)
-                .push(entityType)
-                .query({ [complianceStateKey]: 'Fail' })
-                .url();
+        const failingLink = URLService.getURL(match, location)
+            .push(entityType)
+            .query({ [complianceStateKey]: 'Fail' })
+            .url();
 
-            const defaultLink = URLService.getURL(match, location)
-                .push(entityType)
-                .query({ [complianceStateKey]: null, Standard: null })
-                .url();
+        const defaultLink = URLService.getURL(match, location)
+            .push(entityType)
+            .query({ [complianceStateKey]: null, Standard: null })
+            .url();
 
-            newMapping[standardId] = {
-                id: standard.id,
-                title: standardShortLabels[standard.id],
-                passing: {
-                    value: totalPassing,
-                    link: passingLink
-                },
-                failing: {
-                    value: totalFailing,
-                    link: failingLink
-                },
-                defaultLink
-            };
-            return newMapping;
-        }, {});
+        newMapping[standardId] = {
+            id: standard.id,
+            title: standardShortLabels[standard.id],
+            passing: {
+                value: totalPassing,
+                controls: 0,
+                link: passingLink
+            },
+            failing: {
+                value: totalFailing,
+                controls: 0,
+                link: failingLink
+            },
+            skipped: totalSkipped,
+            defaultLink
+        };
+        return newMapping;
+    }, {});
+    controls.results.forEach(({ numPassing, numFailing, aggregationKeys }) => {
+        const { id: standardId } = aggregationKeys[0];
+        standardDataMapping[standardId].passing.controls += numPassing;
+        standardDataMapping[standardId].failing.controls += numFailing;
+    });
     return Object.values(standardDataMapping).sort(sortByTitle);
 }
 
@@ -92,14 +106,14 @@ const getQueryVariables = (entityType, groupBy, query) => {
     if (!isStandard(entityType)) {
         return {
             groupBy: [entityTypes.STANDARD, entityType],
-            unit: entityType,
+            unit: entityType === entityTypes.CONTROL ? entityTypes.CHECK : entityType,
             where
         };
     }
 
     return {
         groupBy: [entityTypes.STANDARD, ...(groupBy ? [groupBy] : [])],
-        unit: entityTypes.CONTROL,
+        unit: entityTypes.CHECK,
         where
     };
 };

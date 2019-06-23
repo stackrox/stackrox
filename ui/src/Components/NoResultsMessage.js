@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const NoResultsMessage = props => (
-    <div className="flex flex-1 items-center justify-center w-full leading-loose text-center h-full">
+    <div className="flex flex-1 items-center bg-base-100 justify-center w-full leading-loose text-center h-full">
         {props.message}
     </div>
 );

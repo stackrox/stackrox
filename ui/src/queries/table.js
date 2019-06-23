@@ -1,8 +1,8 @@
 import gql from 'graphql-tag';
 
-export const CLUSTERS_LIST_QUERY = gql`
+export const CLUSTERS_QUERY = gql`
     query clustersList($where: String) {
-        results: aggregatedResults(groupBy: [CLUSTER, STANDARD], unit: CONTROL, where: $where) {
+        results: aggregatedResults(groupBy: [CLUSTER, STANDARD], unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -24,9 +24,9 @@ export const CLUSTERS_LIST_QUERY = gql`
     }
 `;
 
-export const NAMESPACES_LIST_QUERY = gql`
+export const NAMESPACES_QUERY = gql`
     query namespaceList($where: String) {
-        results: aggregatedResults(groupBy: [NAMESPACE, STANDARD], unit: CONTROL, where: $where) {
+        results: aggregatedResults(groupBy: [NAMESPACE, STANDARD], unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -52,59 +52,9 @@ export const NAMESPACES_LIST_QUERY = gql`
     }
 `;
 
-export const NODES_LIST_QUERY = gql`
-    query nodesList($where: String) {
-        results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CONTROL, where: $where) {
-            results {
-                aggregationKeys {
-                    id
-                    scope
-                }
-                keys {
-                    ... on Node {
-                        name
-                        clusterName
-                    }
-                    ... on ComplianceStandardMetadata {
-                        name
-                    }
-                    __typename
-                }
-                numPassing
-                numFailing
-            }
-        }
-    }
-`;
-
-export const DEPLOYMENTS_LIST_QUERY = gql`
-    query deploymentsList($where: String) {
-        results: aggregatedResults(groupBy: [DEPLOYMENT, STANDARD], unit: CONTROL, where: $where) {
-            results {
-                aggregationKeys {
-                    id
-                    scope
-                }
-                keys {
-                    ... on Deployment {
-                        name
-                        id
-                        namespace
-                        clusterName
-                    }
-
-                    __typename
-                }
-                numPassing
-                numFailing
-            }
-        }
-    }
-`;
-
 export const NODES_QUERY = gql`
     query nodesList($where: String) {
-        results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CONTROL, where: $where) {
+        results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -122,6 +72,7 @@ export const NODES_QUERY = gql`
                 }
                 numPassing
                 numFailing
+                unit
             }
         }
     }
@@ -129,7 +80,7 @@ export const NODES_QUERY = gql`
 
 export const DEPLOYMENTS_QUERY = gql`
     query deploymentsList($where: String) {
-        results: aggregatedResults(groupBy: [DEPLOYMENT, STANDARD], unit: CONTROL, where: $where) {
+        results: aggregatedResults(groupBy: [DEPLOYMENT, STANDARD], unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -147,6 +98,7 @@ export const DEPLOYMENTS_QUERY = gql`
                 }
                 numPassing
                 numFailing
+                unit
             }
         }
     }

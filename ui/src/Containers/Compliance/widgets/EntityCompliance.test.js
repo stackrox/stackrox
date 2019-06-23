@@ -9,7 +9,7 @@ import { AGGREGATED_RESULTS } from 'queries/controls';
 import queryService from 'modules/queryService';
 import EntityCompliance from './EntityCompliance';
 
-const unit = entityTypes.CONTROL;
+const unit = entityTypes.CHECK;
 const getMock = (entityType, entityName, clusterName) => {
     const whereClause = {
         [entityType]: entityName,
