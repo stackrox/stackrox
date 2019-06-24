@@ -187,7 +187,9 @@ class URL {
     }
 
     push(val, val2) {
-        const newParams = { ...this.urlParams };
+        const { urlParams } = this;
+        let newParams;
+
         const isType = !!entityTypes[val];
 
         // Not pushing a value, return
@@ -196,16 +198,17 @@ class URL {
         }
 
         // Pushing initial values, use base instead
-        if (!newParams.pageEntityListType && !newParams.pageEntityType) {
+        if (!urlParams.pageEntityListType && !urlParams.pageEntityType) {
             return this.base(val, val2);
         }
 
-        let emptyParamName = getNextEmptyParamName(newParams);
+        let emptyParamName = getNextEmptyParamName(urlParams);
         emptyParamName =
             emptyParamName === 'entityType2' && !val2 ? 'entityListType2' : emptyParamName;
-        const replaceParamName = getLastUsedParamName(newParams);
+        const replaceParamName = getLastUsedParamName(urlParams);
 
         if (emptyParamName) {
+            newParams = { ...urlParams };
             if (isIdParam(emptyParamName) === !isType) {
                 // Next empty param type matches the val type, push it.
                 newParams[emptyParamName] = val;
@@ -216,15 +219,14 @@ class URL {
                 // next empty param type is different than input type, replace last used param instead of push
                 newParams[replaceParamName] = val;
             }
-        } else if (isIdParam(replaceParamName) === !isType) {
-            newParams[replaceParamName] = val;
-            if (emptyParamName === 'entityType2') {
-                newParams.entityId2 = val2;
-            }
-        } else {
-            // overflow
-            // TODO: How do we handle pushing onto a full stack?
-            throw new Error(`Cant push ${val} onto a full stack`);
+        } else if (isType) {
+            newParams = {
+                context: urlParams.context,
+                pageEntityType: urlParams.entityType2 || urlParams.entityListType2,
+                pageEntityId: urlParams.entityId2,
+                entityListType1: val
+            };
+            if (val2) newParams.entityId1 = val2;
         }
 
         this.urlParams = newParams;
@@ -235,7 +237,7 @@ class URL {
         const { urlParams } = this;
         const paramName = getLastUsedParamName(urlParams);
         if (paramName) delete urlParams[paramName];
-        // TODO: this isn't always the case.
+
         if (paramName === 'entityId2') {
             delete urlParams.entityType2;
         }
