@@ -9,6 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	datastore "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
@@ -103,6 +104,19 @@ func (m *MockGlobalDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]se
 // Search indicates an expected call of Search
 func (mr *MockGlobalDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockGlobalDataStore)(nil).Search), arg0, arg1)
+}
+
+// SearchRawNodes mocks base method
+func (m *MockGlobalDataStore) SearchRawNodes(arg0 context.Context, arg1 *v1.Query) ([]*storage.Node, error) {
+	ret := m.ctrl.Call(m, "SearchRawNodes", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.Node)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawNodes indicates an expected call of SearchRawNodes
+func (mr *MockGlobalDataStoreMockRecorder) SearchRawNodes(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawNodes", reflect.TypeOf((*MockGlobalDataStore)(nil).SearchRawNodes), arg0, arg1)
 }
 
 // SearchResults mocks base method

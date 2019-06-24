@@ -173,6 +173,33 @@ func (s *globalDataStore) SearchResults(ctx context.Context, q *v1.Query) ([]*v1
 	return searchResults, nil
 }
 
+// SearchRawNodes returns nodes that match a query
+func (s *globalDataStore) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*storage.Node, error) {
+	// We do the filtering in the search, so OK to operate on store directly.
+	stores, err := s.globalStore.GetAllClusterNodeStores()
+	if err != nil {
+		return nil, err
+	}
+
+	results, err := s.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]*storage.Node, 0, len(results))
+	for _, r := range results {
+		var node *storage.Node
+		for _, s := range stores {
+			node, err = s.GetNode(r.ID)
+			if err == nil && node != nil {
+				nodes = append(nodes, node)
+				break
+			}
+		}
+	}
+	return nodes, nil
+}
+
 // Search returns any node matches to the query
 func (s *globalDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return nodesSACSearchHelper.Apply(s.indexer.Search)(ctx, q)

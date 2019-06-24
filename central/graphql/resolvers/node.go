@@ -15,6 +15,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("node(id:ID!): Node"),
+		schema.AddQuery("nodes(query: String): [Node!]!"),
 		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
 	)
 }
@@ -47,6 +48,29 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 		}
 	}
 	return output, nil
+}
+
+// Nodes returns resolvers for a matching nodes, or nil if no node is found in any cluster
+func (resolver *Resolver) Nodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query, err := args.AsV1Query()
+	if err != nil {
+		return nil, err
+	}
+
+	var nodeResolvers []*nodeResolver
+	nodes, err := resolver.NodeGlobalDataStore.SearchRawNodes(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, node := range nodes {
+		nodeResolvers = append(nodeResolvers, &nodeResolver{root: resolver, data: node})
+	}
+
+	return nodeResolvers, nil
 }
 
 func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
