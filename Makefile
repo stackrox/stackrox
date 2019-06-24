@@ -393,7 +393,7 @@ coverage:
 
 # Exists for compatibility reasons. Please consider migrating to using `make main-image`.
 .PHONY: image
-image: main-image monitoring-image
+image: main-image monitoring-image deployer-image
 
 .PHONY: monitoring-image
 monitoring-image:
@@ -409,6 +409,11 @@ main-image: all-builds
 .PHONY: main-image-rhel
 main-image-rhel: all-builds
 	make docker-build-main-image-rhel
+
+.PHONY: deployer-image
+deployer-image: gazelle
+	bazel build $(BAZEL_FLAGS) //roxctl
+	make docker-build-deployer-image
 
 # The following targets copy compiled artifacts into the expected locations and
 # runs the docker build.
@@ -433,6 +438,11 @@ docker-build-data-image:
 	test -f $(CURDIR)/image/keys/data-key
 	test -f $(CURDIR)/image/keys/data-iv
 	docker build -t stackrox-data:$(TAG) image/ --file image/stackrox-data.Dockerfile
+
+.PHONY: docker-build-deployer-image
+docker-build-deployer-image:
+	cp -f bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
+	docker build -t stackrox/deployer:$(TAG) --build-arg MAIN_IMAGE_TAG=$(TAG) --build-arg SCANNER_IMAGE_TAG=$(shell cat SCANNER_VERSION) image/ --file image/Dockerfile_gcp
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir:

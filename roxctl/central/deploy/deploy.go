@@ -94,8 +94,10 @@ func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) er
 	return nil
 }
 
-func outputZip(config renderer.Config) error {
-	fmt.Fprint(os.Stderr, "Generating deployment bundle... ")
+// OutputZip renders a deployment bundle. The deployment bundle can either be
+// written directly into a directory, or as a zipfile to STDOUT.
+func OutputZip(config renderer.Config) error {
+	fmt.Fprint(os.Stderr, "Generating deployment bundle... \n")
 
 	wrapper := zip.NewWrapper()
 

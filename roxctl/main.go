@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/deployment"
+	"github.com/stackrox/rox/roxctl/gcp"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
@@ -40,13 +41,14 @@ func main() {
 	}
 	// Image Commands
 	c.AddCommand(
-		versionCommand(),
-		image.Command(),
-		deployment.Command(),
 		central.Command(),
-		sensor.Command(),
-		scanner.Command(),
 		cluster.Command(),
+		deployment.Command(),
+		gcp.Command(),
+		image.Command(),
+		scanner.Command(),
+		sensor.Command(),
+		versionCommand(),
 	)
 
 	flags.AddPassword(c)

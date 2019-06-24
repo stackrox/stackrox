@@ -7,6 +7,14 @@ namespace: stackrox
 
 image: {{.K8sConfig.MainImage}}
 
+{{if .K8sConfig.AppName}}
+appname: {{.K8sConfig.AppName}}
+{{- else}}
+appname: stackrox
+{{- end}}
+
+gcpMarketplace: {{.GCPMarketplace}}
+
 {{if not .K8sConfig.Monitoring.Type.None}}
 monitoring:
   endpoint: {{.K8sConfig.Monitoring.Endpoint}}

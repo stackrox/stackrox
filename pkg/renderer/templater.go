@@ -142,6 +142,9 @@ type K8sConfig struct {
 	CommonConfig
 	ConfigType v1.DeploymentFormat
 
+	// K8s Application name
+	AppName string
+
 	// k8s fields
 	Registry string
 
@@ -187,6 +190,8 @@ type Config struct {
 	SecretsBase64Map map[string]string
 
 	Environment map[string]string
+
+	GCPMarketplace bool
 }
 
 func executeRawTemplate(raw string, c *Config) ([]byte, error) {

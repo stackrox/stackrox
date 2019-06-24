@@ -25,7 +25,9 @@ spec:
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
       {{- end}}
+{{if not .Values.gcpMarketplace}}
       serviceAccount: central
+{{end}}
       containers:
       - name: central
         image: {{.Values.image}}

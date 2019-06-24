@@ -1,0 +1,16 @@
+FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:0.7.9
+
+RUN apt-get -y update \
+ && apt-get install -y --no-install-recommends unzip=6.0-21+deb9u1 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY ./bin/roxctl-linux /usr/bin/roxctl
+COPY schema.yaml.tpl /data/schema.yaml.tpl
+COPY deploy.sh /bin/deploy.sh
+
+ARG MAIN_IMAGE_TAG
+ARG SCANNER_IMAGE_TAG
+
+RUN MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG SCANNER_IMAGE_TAG=$SCANNER_IMAGE_TAG envsubst < /data/schema.yaml.tpl > /data/schema.yaml \
+ && rm /data/schema.yaml.tpl

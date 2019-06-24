@@ -28,7 +28,7 @@ func externalVolume() *cobra.Command {
 		if err := validateConfig(cfg); err != nil {
 			return err
 		}
-		return outputZip(cfg)
+		return OutputZip(cfg)
 	}
 	c.Flags().StringVarP(&external.Name, "name", "", "stackrox-db", "external volume name")
 	c.Flags().StringVarP(&external.StorageClass, "storage-class", "", "", "storage class name (optional if you have a default StorageClass configured)")
@@ -43,7 +43,7 @@ func noVolume() *cobra.Command {
 		if err := validateConfig(cfg); err != nil {
 			return err
 		}
-		return outputZip(cfg)
+		return OutputZip(cfg)
 	}
 	return c
 }
@@ -56,7 +56,7 @@ func hostPathVolume() *cobra.Command {
 		if err := validateConfig(cfg); err != nil {
 			return err
 		}
-		return outputZip(cfg)
+		return OutputZip(cfg)
 	}
 	c.Flags().StringVarP(&hostpath.HostPath, "hostpath", "", "/var/lib/stackrox", "path on the host")
 	c.Flags().StringVarP(&hostpath.NodeSelectorKey, "node-selector-key", "", "", "node selector key (e.g. kubernetes.io/hostname)")

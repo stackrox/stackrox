@@ -762,6 +762,21 @@ jobs:
 
       - cleanup-clusters-on-fail
 
+  build-deployer:
+    <<: *defaults
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: Build deployer image for GCP Marketplace
+          command: make docker-build-deployer-image
+
+      - cleanup-clusters-on-fail
+
   build-scale-monitoring-and-mock-server:
     <<: *defaults
     resource_class: large
@@ -1920,6 +1935,13 @@ workflows:
             - pre-build-ui
             - pre-build-cli
             - pre-build-go-binaries
+          filters:
+            tags:
+              only: /.*/
+      - build-deployer:
+          context: docker-io-pull
+          requires:
+            - pre-build-cli
           filters:
             tags:
               only: /.*/
