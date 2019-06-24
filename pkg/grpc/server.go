@@ -206,7 +206,6 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	if err != nil {
 		panic(err)
 	}
-	tlsConf.NextProtos = []string{"h2"}
 
 	grpcServer := grpc.NewServer(
 		grpc.StreamInterceptor(

@@ -71,6 +71,7 @@ func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *t
 		Certificates: certs,
 	}
 	cfg.BuildNameToCertificate()
+	cfg.NextProtos = []string{"h2"}
 	return cfg
 }
 
