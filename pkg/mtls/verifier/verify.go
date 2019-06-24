@@ -57,7 +57,7 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 // DefaultTLSServerConfig returns the default TLS config for servers in StackRox
 func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *tls.Config {
 	// Government clients require TLS >=1.2 and require that AES-256 be preferred over AES-128
-	return &tls.Config{
+	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		PreferServerCipherSuites: true,
 		CipherSuites: []uint16{
@@ -70,6 +70,8 @@ func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *t
 		ClientCAs:    certPool,
 		Certificates: certs,
 	}
+	cfg.BuildNameToCertificate()
+	return cfg
 }
 
 func config(serverBundle tls.Certificate) (*tls.Config, error) {

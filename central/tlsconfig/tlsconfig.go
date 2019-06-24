@@ -119,7 +119,6 @@ func createTLSConfig() (*tls.Config, error) {
 	}
 
 	cfg := verifier.DefaultTLSServerConfig(certPool, certs)
-	cfg.BuildNameToCertificate()
 
 	return cfg, nil
 }
