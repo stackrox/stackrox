@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 
 import pluralize from 'pluralize';
@@ -198,10 +198,11 @@ const ListTable = ({
                 })
                 .filter(result => result.rows.length);
         }
-        return results.filter(result => {
-            const { id, name, cluster, overall, ...standards } = result;
-            return Object.values(standards).reduce((acc, strValue) => {
-                const intValue = parseInt(strValue, 10); // strValue comes in the format "100.00%"
+
+        return results.filter(item =>
+            Object.values(standardTypes).reduce((acc, standardId) => {
+                if (!item[standardId]) return acc;
+                const intValue = parseInt(item[standardId], 10);
                 if (isPassing) {
                     if (acc === false) return acc;
                     return intValue === 100;
@@ -211,8 +212,8 @@ const ListTable = ({
                     return intValue !== 100;
                 }
                 return acc;
-            }, null);
-        });
+            }, null)
+        );
     }
 
     function getTotalRows(data, isStandard) {

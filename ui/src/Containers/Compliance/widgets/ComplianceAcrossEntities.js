@@ -15,21 +15,13 @@ import queryService from 'modules/queryService';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
-const isStandard = type => !!standardBaseTypes[type];
-
 const sortByTitle = (a, b) => {
     if (a.title < b.title) return -1;
     if (a.title > b.title) return 1;
     return 0;
 };
 
-function processData(
-    match,
-    location,
-    entityType,
-    query,
-    { results, controls, complianceStandards }
-) {
+function processData(match, location, entityType, { results, controls, complianceStandards }) {
     let filteredResults;
     if (standardBaseTypes[entityType]) {
         filteredResults = results.results.filter(result =>
@@ -60,19 +52,19 @@ function processData(
         }
         const complianceStateKey = CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE;
 
+        const defaultLink = URLService.getURL(match, location)
+            .push(entityType)
+            .query({ [complianceStateKey]: undefined, Standard: undefined })
+            .url();
+
         const passingLink = URLService.getURL(match, location)
             .push(entityType)
-            .query({ [complianceStateKey]: 'Pass' })
+            .query({ [complianceStateKey]: 'Pass', Standard: standardShortLabels[standard.id] })
             .url();
 
         const failingLink = URLService.getURL(match, location)
             .push(entityType)
-            .query({ [complianceStateKey]: 'Fail' })
-            .url();
-
-        const defaultLink = URLService.getURL(match, location)
-            .push(entityType)
-            .query({ [complianceStateKey]: null, Standard: null })
+            .query({ [complianceStateKey]: 'Fail', Standard: standardShortLabels[standard.id] })
             .url();
 
         newMapping[standardId] = {
@@ -98,23 +90,26 @@ function processData(
         standardDataMapping[standardId].passing.controls += numPassing;
         standardDataMapping[standardId].failing.controls += numFailing;
     });
+
     return Object.values(standardDataMapping).sort(sortByTitle);
 }
 
 const getQueryVariables = (entityType, groupBy, query) => {
-    const where = queryService.objectToWhereClause(query);
-    if (!isStandard(entityType)) {
+    if (entityType !== entityTypes.CONTROL) {
+        const queryWithoutStandard = { ...query };
+        delete queryWithoutStandard.standard;
+        delete queryWithoutStandard.Standard;
         return {
             groupBy: [entityTypes.STANDARD, entityType],
             unit: entityType === entityTypes.CONTROL ? entityTypes.CHECK : entityType,
-            where
+            where: queryService.objectToWhereClause(queryWithoutStandard)
         };
     }
 
     return {
         groupBy: [entityTypes.STANDARD, ...(groupBy ? [groupBy] : [])],
         unit: entityTypes.CHECK,
-        where
+        where: queryService.objectToWhereClause(query)
     };
 };
 
@@ -128,7 +123,7 @@ const ComplianceAcrossEntities = ({ match, location, entityType, groupBy, query 
                     ? `Controls in Compliance`
                     : `${resourceLabels[entityType]}s in Compliance`;
                 if (!loading && data) {
-                    const results = processData(match, location, entityType, query, data);
+                    const results = processData(match, location, entityType, data);
                     if (!results.length) {
                         contents = (
                             <NoResultsMessage message="No data available. Please run a scan." />
