@@ -868,6 +868,58 @@ const formDescriptors = {
                 placeholder: ''
             }
         ]
+    },
+    authPlugins: {
+        scopedAccess: [
+            {
+                label: 'Name',
+                jsonpath: 'config.name',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                jsonpath: 'config.endpointConfig.endpoint',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Enabled',
+                jsonpath: 'config.enabled',
+                type: 'toggle',
+                placeholder: ''
+            },
+            {
+                label: 'Skip TLS Verify',
+                jsonpath: 'config.endpointConfig.skipTlsVerify',
+                type: 'toggle',
+                placeholder: ''
+            },
+            {
+                label: 'CA Cert (optional)',
+                jsonpath: 'config.endpointConfig.caCert',
+                type: 'textarea',
+                placeholder: ''
+            },
+            {
+                label: 'Username (optional)',
+                jsonpath: 'config.endpointConfig.username',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Password (optional)',
+                jsonpath: 'config.endpointConfig.password',
+                type: 'password',
+                placeholder: ''
+            },
+            {
+                label: 'Headers',
+                jsonpath: 'config.endpointConfig.headers',
+                type: 'list',
+                listRender: renderKeyValues
+            }
+        ]
     }
 };
 

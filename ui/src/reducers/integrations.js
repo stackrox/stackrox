@@ -6,6 +6,7 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 // Action types
 
 export const types = {
+    FETCH_AUTH_PLUGINS: createFetchingActionTypes('authPlugins/FETCH_AUTH_PLUGINS'),
     FETCH_NOTIFIERS: createFetchingActionTypes('notifiers/FETCH_NOTIFIERS'),
     FETCH_BACKUPS: createFetchingActionTypes('backups/FETCH_BACKUPS'),
     TRIGGER_BACKUP: 'integrations/TRIGGER_BACKUP',
@@ -21,6 +22,7 @@ export const types = {
 // Actions
 
 export const actions = {
+    fetchAuthPlugins: createFetchingActions(types.FETCH_AUTH_PLUGINS),
     fetchNotifiers: createFetchingActions(types.FETCH_NOTIFIERS),
     fetchBackups: createFetchingActions(types.FETCH_BACKUPS),
     fetchImageIntegrations: createFetchingActions(types.FETCH_IMAGE_INTEGRATIONS),
@@ -47,6 +49,13 @@ export const actions = {
 };
 
 // Reducers
+
+const authPlugins = (state = [], action) => {
+    if (action.type === types.FETCH_AUTH_PLUGINS.SUCCESS) {
+        return isEqual(action.response.configs, state) ? state : action.response.configs;
+    }
+    return state;
+};
 
 const backups = (state = [], action) => {
     if (action.type === types.FETCH_BACKUPS.SUCCESS) {
@@ -77,6 +86,7 @@ const isCreating = (state = false, action) => {
 };
 
 const reducer = combineReducers({
+    authPlugins,
     backups,
     notifiers,
     imageIntegrations,
@@ -85,12 +95,14 @@ const reducer = combineReducers({
 
 // Selectors
 
+const getAuthPlugins = state => state.authPlugins;
 const getBackups = state => state.backups;
 const getNotifiers = state => state.notifiers;
 const getImageIntegrations = state => state.imageIntegrations;
 const getCreationState = state => state.isCreating;
 
 export const selectors = {
+    getAuthPlugins,
     getBackups,
     getNotifiers,
     getImageIntegrations,
