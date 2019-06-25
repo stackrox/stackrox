@@ -1,25 +1,10 @@
 import axios from './instance';
 
-function getPath(type, action) {
-    switch (type) {
-        case 'imageIntegrations':
-            return '/v1/imageintegrations';
-        case 'notifiers':
-            return '/v1/notifiers';
-        case 'backups':
-            return '/v1/externalbackups';
-        case 'authPlugins':
-            if (action === 'test') {
-                return '/v1/scopedaccessctrl';
-            }
-            if (action === 'fetch') {
-                return '/v1/scopedaccessctrl/configs';
-            }
-            return '/v1/scopedaccessctrl/config';
-        default:
-            return '';
-    }
-}
+const sourceMap = {
+    imageIntegrations: '/v1/imageintegrations',
+    notifiers: '/v1/notifiers',
+    backups: '/v1/externalbackups'
+};
 
 /**
  * Fetches list of registered integrations based on source.
@@ -27,7 +12,7 @@ function getPath(type, action) {
  * @returns {Promise<Object, Error>} fulfilled with array of the integration source
  */
 export function fetchIntegration(source) {
-    return axios.get(getPath(source, 'fetch')).then(response => ({
+    return axios.get(sourceMap[source]).then(response => ({
         response: response.data
     }));
 }
@@ -39,7 +24,7 @@ export function fetchIntegration(source) {
  */
 export function saveIntegration(source, data) {
     if (!data.id) throw new Error('Integration entity must have an id to be saved');
-    return axios.put(`${getPath(source, 'save')}/${data.id}`, data);
+    return axios.put(`${sourceMap[source]}/${data.id}`, data);
 }
 
 /**
@@ -48,7 +33,7 @@ export function saveIntegration(source, data) {
  * @returns {Promise<Object, Error>}
  */
 export function createIntegration(source, data) {
-    return axios.post(getPath(source, 'create'), data);
+    return axios.post(sourceMap[source], data);
 }
 
 /**
@@ -57,7 +42,7 @@ export function createIntegration(source, data) {
  * @returns {Promise<Object, Error>}
  */
 export function testIntegration(source, data) {
-    return axios.post(`${getPath(source, 'test')}/test`, data);
+    return axios.post(`${sourceMap[source]}/test`, data);
 }
 
 /**
@@ -66,7 +51,7 @@ export function testIntegration(source, data) {
  * @returns {Promise<Object, Error>}
  */
 export function deleteIntegration(source, id) {
-    return axios.delete(`${getPath(source, 'delete')}/${id}`);
+    return axios.delete(`${sourceMap[source]}/${id}`);
 }
 
 /**
@@ -84,5 +69,5 @@ export function deleteIntegrations(source, ids = []) {
  * @returns {Promise<Object, Error>}
  */
 export function triggerBackup(id) {
-    return axios.post(`${getPath('backups', 'trigger')}/${id}`);
+    return axios.post(`${sourceMap.backups}/${id}`);
 }

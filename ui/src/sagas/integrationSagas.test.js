@@ -9,13 +9,11 @@ import saga from './integrationSagas';
 
 describe('Integrations Sagas', () => {
     it('should fetch image integrations and notifiers when location changes to integrations', () => {
-        const authPlugin = { authPlugin: { endpoint: 'endpoint' } };
         const imageIntegrations = { integrations: ['int1'] };
         const notifiers = { notifiers: ['notifier1'] };
         const backups = { backups: ['backup1'] };
         return expectSaga(saga)
             .provide([
-                [call(fetchIntegration, ['authPlugins']), { response: authPlugin }],
                 [call(fetchIntegration, ['imageIntegrations']), { response: imageIntegrations }],
                 [call(fetchIntegration, ['backups']), { response: backups }],
                 [call(fetchIntegration, ['notifiers']), { response: notifiers }]
@@ -46,10 +44,8 @@ describe('Integrations Sagas', () => {
         const fetchImageIntegrationsMock = jest.fn();
         const fetchNotifiersMock = jest.fn();
         const fetchBackupsMock = jest.fn();
-        const fetchAuthPluginMock = jest.fn();
         return expectSaga(saga)
             .provide([
-                [call(fetchIntegration, ['authPlugins']), dynamic(fetchBackupsMock)],
                 [
                     call(fetchIntegration, ['imageIntegrations']),
                     dynamic(fetchImageIntegrationsMock)
@@ -65,7 +61,6 @@ describe('Integrations Sagas', () => {
                 expect(fetchImageIntegrationsMock.mock.calls.length).toBe(0);
                 expect(fetchNotifiersMock.mock.calls.length).toBe(0);
                 expect(fetchBackupsMock.mock.calls.length).toBe(0);
-                expect(fetchAuthPluginMock.mock.calls.length).toBe(0);
             });
     });
 });

@@ -17,11 +17,6 @@ import APITokensModal from './APITokens/APITokensModal';
 
 class IntegrationsPage extends Component {
     static propTypes = {
-        authPlugins: PropTypes.arrayOf(
-            PropTypes.shape({
-                endpoint: PropTypes.string.isRequired
-            })
-        ).isRequired,
         authProviders: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired
@@ -41,7 +36,6 @@ class IntegrationsPage extends Component {
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
-        fetchAuthPlugins: PropTypes.func.isRequired,
         fetchAuthProviders: PropTypes.func.isRequired,
         fetchAPITokens: PropTypes.func.isRequired,
         fetchBackups: PropTypes.func.isRequired,
@@ -59,9 +53,6 @@ class IntegrationsPage extends Component {
 
     getEntities = (source, type) => {
         switch (source) {
-            case 'authPlugins':
-                this.props.fetchAuthPlugins();
-                break;
             case 'authProviders':
                 if (type === 'apitoken') {
                     this.props.fetchAPITokens();
@@ -115,8 +106,6 @@ class IntegrationsPage extends Component {
         const typeLowerMatches = integration => integration.type === type.toLowerCase();
 
         switch (source) {
-            case 'authPlugins':
-                return this.props.authPlugins;
             case 'clusters':
                 return this.getClustersForOrchestrator(type);
             case 'authProviders':
@@ -195,7 +184,6 @@ class IntegrationsPage extends Component {
         const imageIntegrations = this.renderIntegrationTiles('imageIntegrations');
         const orchestrators = this.renderIntegrationTiles('orchestrators');
         const plugins = this.renderIntegrationTiles('plugins');
-        const authPlugins = this.renderIntegrationTiles('authPlugins');
         const authProviders = this.renderIntegrationTiles('authProviders');
         const backups = this.renderIntegrationTiles('backups');
         return (
@@ -250,15 +238,6 @@ class IntegrationsPage extends Component {
                             <div className="flex flex-wrap w-full -mx-6 p-3">{authProviders}</div>
                         </div>
                     </section>
-
-                    <section className="mb-6">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Authorization Plugins
-                        </h2>
-                        <div className="flex flex-col items-center w-full">
-                            <div className="flex flex-wrap w-full -mx-6 p-3">{authPlugins}</div>
-                        </div>
-                    </section>
                 </div>
                 {this.renderIntegrationModal()}
             </div>
@@ -267,7 +246,6 @@ class IntegrationsPage extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    authPlugins: selectors.getAuthPlugins,
     authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
     clusters: selectors.getClusters,
@@ -284,8 +262,7 @@ const mapDispatchToProps = dispatch => ({
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
     fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),
     fetchScanners: () => dispatch(integrationActions.fetchScanners.request()),
-    fetchClusters: () => dispatch(clusterActions.fetchClusters.request()),
-    fetchAuthPlugins: () => dispatch(integrationActions.fetchAuthPlugins.request())
+    fetchClusters: () => dispatch(clusterActions.fetchClusters.request())
 });
 
 export default connect(
