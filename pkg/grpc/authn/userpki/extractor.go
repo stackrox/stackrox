@@ -2,7 +2,6 @@ package userpki
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -54,7 +53,12 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 		}
 		userCert := ri.VerifiedChains[0][0]
 		attributes := ExtractAttributes(userCert)
-		identity := &identity{userCert, provider.ID(), nil, attributes}
+		identity := &identity{
+			info:       userCert,
+			provider:   provider,
+			role:       nil,
+			attributes: attributes,
+		}
 		ud := &permissions.UserDescriptor{
 			UserID:     identity.UID(),
 			Attributes: attributes,
@@ -69,17 +73,41 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	return nil, nil
 }
 
+type attributes map[string][]string
+
+func (a attributes) add(key string, values ...string) {
+	if len(values) == 0 {
+		return
+	}
+	a[key] = append(a[key], values...)
+}
+
 // ExtractAttributes converts a subset of CertInfo into an attribute map for authorization
 func ExtractAttributes(userCert requestinfo.CertInfo) map[string][]string {
-	// TODO(ROX-2190)
-	output := make(map[string][]string)
-	output["CN"] = []string{userCert.Subject.CommonName}
+	output := make(attributes)
+	// these are the canonical stackrox attributes we use in the UI
+	output.add("userid", userID(userCert))
+	output.add("name", userCert.Subject.CommonName)
+	output.add("email", userCert.EmailAddresses...)
+	output.add("groups", userCert.Subject.OrganizationalUnit...)
+
+	// standard LDAP-like attribute naming for external systems
+	output["CN"] = output["name"]
+	output.add("C", userCert.Subject.Country...)
+	output.add("O", userCert.Subject.Organization...)
+	output.add("OU", userCert.Subject.OrganizationalUnit...)
+	output.add("L", userCert.Subject.Locality...)
+	output.add("ST", userCert.Subject.Province...)
+	output.add("STREET", userCert.Subject.StreetAddress...)
+	output.add("POSTALCODE", userCert.Subject.PostalCode...)
+	output.add("DN", userCert.Subject.String())
+
 	return output
 }
 
 type identity struct {
 	info       requestinfo.CertInfo
-	providerID string
+	provider   authproviders.Provider
 	role       *storage.Role
 	attributes map[string][]string
 }
@@ -112,9 +140,13 @@ func (i *identity) Expiry() time.Time {
 }
 
 func (i *identity) ExternalAuthProvider() authproviders.Provider {
-	return nil
+	return i.provider
 }
 
 func (i *identity) UID() string {
-	return fmt.Sprintf("pki/%s/%s", i.providerID, i.info.SerialNumber)
+	return userID(i.info)
+}
+
+func userID(info requestinfo.CertInfo) string {
+	return "userpki:" + info.CertFingerprint
 }

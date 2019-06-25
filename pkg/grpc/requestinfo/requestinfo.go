@@ -46,6 +46,7 @@ type requestInfoKey struct{}
 type CertInfo struct {
 	Subject             pkix.Name
 	NotBefore, NotAfter time.Time
+	EmailAddresses      []string
 	SerialNumber        *big.Int
 	CertFingerprint     string
 }
@@ -83,12 +84,14 @@ type serializedRequestInfo struct {
 	RequestMonotime time.Duration
 }
 
-func extractCertInfo(fullCert *x509.Certificate) CertInfo {
+// ExtractCertInfo gets the cert info from a cert.
+func ExtractCertInfo(fullCert *x509.Certificate) CertInfo {
 	return CertInfo{
 		Subject:         fullCert.Subject,
 		NotBefore:       fullCert.NotBefore,
 		NotAfter:        fullCert.NotAfter,
 		SerialNumber:    fullCert.SerialNumber,
+		EmailAddresses:  fullCert.EmailAddresses,
 		CertFingerprint: cryptoutils.CertFingerprint(fullCert),
 	}
 }
@@ -98,7 +101,7 @@ func extractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
 	for _, chain := range fullCertChains {
 		subjectChain := make([]CertInfo, 0, len(chain))
 		for _, cert := range chain {
-			subjectChain = append(subjectChain, extractCertInfo(cert))
+			subjectChain = append(subjectChain, ExtractCertInfo(cert))
 		}
 		result = append(result, subjectChain)
 	}
