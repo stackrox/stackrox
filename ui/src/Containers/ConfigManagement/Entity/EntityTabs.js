@@ -93,6 +93,18 @@ const entityTabsMap = {
             value: entityTypes.SECRET,
             text: pluralize(entityLabels[entityTypes.SECRET])
         }
+    ],
+    [entityTypes.NODE]: [
+        {
+            group: TAB_GROUPS.RBAC_CONFIG,
+            value: entityTypes.SUBJECT,
+            text: pluralize(entityLabels[entityTypes.SUBJECT])
+        },
+        {
+            group: TAB_GROUPS.RBAC_CONFIG,
+            value: entityTypes.SERVICE_ACCOUNT,
+            text: pluralize(entityLabels[entityTypes.SERVICE_ACCOUNT])
+        }
     ]
 };
 

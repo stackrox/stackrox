@@ -7,7 +7,8 @@ const entityNameKeyMap = {
     [entityTypes.CLUSTER]: 'results.name',
     [entityTypes.DEPLOYMENT]: 'deployment.name',
     [entityTypes.NAMESPACE]: 'results.metadata.name',
-    [entityTypes.ROLE]: 'clusters[0].k8srole.name'
+    [entityTypes.ROLE]: 'clusters[0].k8srole.name',
+    [entityTypes.NODE]: 'node.name'
 };
 
 const getEntityName = (entityType, data) => {

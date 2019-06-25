@@ -30,6 +30,23 @@ export const NODE_QUERY = gql`
                 key
                 value
             }
+            annotations {
+                key
+                value
+            }
+            complianceResults {
+                control {
+                    standardId
+                    name
+                    description
+                }
+                value {
+                    overallState
+                    evidence {
+                        message
+                    }
+                }
+            }
         }
     }
 `;

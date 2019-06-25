@@ -8,6 +8,7 @@ import { K8S_ROLES as ROLES, K8S_ROLE as ROLE } from 'queries/role';
 import { SECRET, SECRETS } from 'queries/secret';
 import { CLUSTER_QUERY as CLUSTER } from 'queries/cluster';
 import { NAMESPACE_QUERY as NAMESPACE } from 'queries/namespace';
+import { NODE_QUERY as NODE, NODES_QUERY as NODES } from 'queries/node';
 
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,
@@ -15,12 +16,14 @@ export const entityQueryMap = {
     [entityTypes.DEPLOYMENT]: DEPLOYMENT,
     [entityTypes.CLUSTER]: CLUSTER,
     [entityTypes.NAMESPACE]: NAMESPACE,
-    [entityTypes.ROLE]: ROLE
+    [entityTypes.ROLE]: ROLE,
+    [entityTypes.NODE]: NODE
 };
 
 export const entityListQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNTS,
     [entityTypes.DEPLOYMENT]: DEPLOYMENTS,
     [entityTypes.ROLE]: ROLES,
-    [entityTypes.SECRET]: SECRETS
+    [entityTypes.SECRET]: SECRETS,
+    [entityTypes.NODE]: NODES
 };

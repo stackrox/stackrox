@@ -6,7 +6,8 @@ export const resourceTypes = {
     NETWORK_POLICY: 'NETWORK_POLICY',
     SECRET: 'SECRET',
     IMAGE: 'IMAGE',
-    POLICY: 'POLICY'
+    POLICY: 'POLICY',
+    CONTROL: 'CONTROL'
 };
 
 export const rbacConfigTypes = {

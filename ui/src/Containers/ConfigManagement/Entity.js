@@ -6,6 +6,7 @@ import PageNotFound from 'Components/PageNotFound';
 import ServiceAccount from './Entity/ServiceAccount';
 import Secret from './Entity/Secret';
 import Deployment from './Entity/Deployment';
+import Node from './Entity/Node';
 import Cluster from './Entity/Cluster';
 import Namespace from './Entity/Namespace';
 import Role from './Entity/Role';
@@ -16,7 +17,8 @@ const entityComponentMap = {
     [entityTypes.SECRET]: Secret,
     [entityTypes.DEPLOYMENT]: Deployment,
     [entityTypes.CLUSTER]: Cluster,
-    [entityTypes.NAMESPACE]: Namespace
+    [entityTypes.NAMESPACE]: Namespace,
+    [entityTypes.NODE]: Node
 };
 
 const Entity = ({ entityType, entityId, onRelatedEntityClick, onRelatedEntityListClick }) => {
