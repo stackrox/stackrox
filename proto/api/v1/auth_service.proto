@@ -7,6 +7,7 @@ import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 import "api/v1/empty.proto";
+import "storage/auth_provider.proto";
 import "storage/service_identity.proto";
 
 package v1;
@@ -18,6 +19,8 @@ message AuthStatus {
     }
     google.protobuf.Timestamp expires     = 3;
     string                    refresh_url = 4;
+
+    storage.AuthProvider      auth_provider = 5;
 }
 
 service AuthService {

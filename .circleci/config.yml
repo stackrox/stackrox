@@ -1026,8 +1026,31 @@ jobs:
           cluster-id: qa-tests
       - *setupGoogleAppCreds
       - *setupLicense
+
+      - run:
+          name: Setup default TLS certificates
+          command: |
+            cert_dir="$(mktemp -d)"
+            ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
+            cci-export ROX_DEFAULT_TLS_CERT_FILE "${cert_dir}/tls.crt"
+            cci-export ROX_DEFAULT_TLS_KEY_FILE "${cert_dir}/tls.key"
+            cci-export ROX_TEST_CA_PEM "$(cat "${cert_dir}/ca.crt")"
+            cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
+
+            cci-export TRUSTSTORE_PATH "${cert_dir}/keystore.p12"
+
       - *deployGKE
       - *setupCIMonitoring
+
+      - run:
+          name: Setup client auth TLS certificates
+          command: |
+            cert_dir="$(mktemp -d)"
+            ./tests/scripts/setup-certs.sh "$cert_dir" "Client Certificate User" "Client CA"
+
+            cci-export KEYSTORE_PATH "${cert_dir}/keystore.p12"
+            cci-export CLIENT_CA_PATH "${cert_dir}/ca.crt"
+
       - *waitForAPI
       - *waitForSensorK8s
 

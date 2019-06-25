@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
@@ -45,6 +46,14 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	if len(ri.VerifiedChains) != 1 {
 		return nil, nil
 	}
+
+	// We need all access for retrieving roles and upserting user info. Note that this context
+	// is not propagated to the user, so the user itself does not get any escalated privileges.
+	// Conversely, the context can't contain any access scope information because the identity has
+	// not yet been extracted, so all code called with this context *must not* depend on a user
+	// identity.
+	ctx = sac.WithAllAccess(ctx)
+
 	log.Debugf("Looking up TLS trust for user cert chain: %+v", ri.VerifiedChains[0])
 	for _, info := range ri.VerifiedChains[0] {
 		provider := i.manager.GetProviderForFingerprint(info.CertFingerprint)
@@ -56,13 +65,13 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 		identity := &identity{
 			info:       userCert,
 			provider:   provider,
-			role:       nil,
 			attributes: attributes,
 		}
 		ud := &permissions.UserDescriptor{
 			UserID:     identity.UID(),
 			Attributes: attributes,
 		}
+
 		role, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 		if err != nil {
 			return nil, err

@@ -40,7 +40,7 @@ func (i identity) User() *storage.UserInfo {
 }
 
 func (i identity) Expiry() time.Time {
-	return timeutil.Max
+	return timeutil.MaxProtoValid
 }
 
 func (i identity) ExternalAuthProvider() authproviders.Provider {

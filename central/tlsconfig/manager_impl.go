@@ -134,7 +134,8 @@ func (m *managerImpl) computeConfigNoLock() *tls.Config {
 			clientCAs.AddCert(cert)
 		}
 	}
-	return verifier.DefaultTLSServerConfig(clientCAs, m.serverCerts)
+	cfg := verifier.DefaultTLSServerConfig(clientCAs, m.serverCerts)
+	return cfg
 }
 
 // TLSConfigurer is called once on server startup. It has to have enough data for tls.Listen() to be happy, so

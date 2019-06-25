@@ -12,26 +12,39 @@ import io.grpc.MethodDescriptor
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
-import io.netty.handler.ssl.SslContext
+import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import util.Env
+import util.Keys
 
 import java.util.concurrent.TimeUnit
 
 class BaseService {
 
     private static String apiToken = null
-    private static Boolean tokenUpdated = false
+    private static boolean useClientCert = false
+
+    private static boolean updated = false
 
     static useApiToken(String apiToken) {
         this.apiToken = apiToken
-        tokenUpdated = true
+        updated = true
     }
 
     static useBasicAuth() {
         apiToken = null
-        tokenUpdated = true
+        updated = true
+    }
+
+    static useNoAuthorizationHeader() {
+        apiToken = ""
+        updated = true
+    }
+
+    static setUseClientCert(boolean use) {
+        useClientCert = use
+        updated = true
     }
 
     private static class CallWithAuthorizationHeader<ReqT, RespT>
@@ -78,7 +91,9 @@ class BaseService {
         def interceptors = new ArrayList<ClientInterceptor>()
 
         if (apiToken != null) {
-            interceptors.add(new AuthInterceptor(apiToken))
+            if (apiToken != "") {
+                interceptors.add(new AuthInterceptor(apiToken))
+            }
         } else if (!username.empty && !password.empty) {
             interceptors.add(new AuthInterceptor(username, password))
         }
@@ -89,10 +104,13 @@ class BaseService {
     static ManagedChannel channelInstance = null
 
     static initializeChannel() {
-        SslContext sslContext = GrpcSslContexts
+        SslContextBuilder sslContextBuilder = GrpcSslContexts
                 .forClient()
                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                .build()
+        if (useClientCert) {
+            sslContextBuilder = sslContextBuilder.keyManager(Keys.keyManagerFactory())
+        }
+        def sslContext = sslContextBuilder.build()
 
         channelInstance = NettyChannelBuilder
                         .forAddress(Env.mustGetHostname(), Env.mustGetPort())
@@ -105,7 +123,7 @@ class BaseService {
     static getChannel() {
         if (channelInstance == null) {
             initializeChannel()
-        } else if (tokenUpdated) {
+        } else if (updated) {
             channelInstance.shutdownNow()
             try {
                 channelInstance.awaitTermination(30, TimeUnit.SECONDS)
@@ -113,7 +131,7 @@ class BaseService {
                 println "Channel did not terminate within timeout...: ${ie}"
             }
             initializeChannel()
-            tokenUpdated = false
+            updated = false
         }
         return channelInstance
     }

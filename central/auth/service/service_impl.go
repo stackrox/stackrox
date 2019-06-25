@@ -51,6 +51,7 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 	}
 	if provider := id.ExternalAuthProvider(); provider != nil {
 		result.RefreshUrl = provider.Backend().RefreshURL()
+		result.AuthProvider = provider.StorageView()
 	}
 	if svc := id.Service(); svc != nil {
 		result.Id = &v1.AuthStatus_ServiceId{ServiceId: svc}

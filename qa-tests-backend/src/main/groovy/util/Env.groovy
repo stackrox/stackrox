@@ -37,5 +37,17 @@ class Env {
         }
         return type
     }
+
+    static String mustGetKeystorePath() {
+        return mustGetEnv("KEYSTORE_PATH")
+    }
+
+    static String mustGetTruststorePath() {
+        return mustGetEnv("TRUSTSTORE_PATH")
+    }
+
+    static String mustGetClientCAPath() {
+        return mustGetEnv("CLIENT_CA_PATH")
+    }
 }
 

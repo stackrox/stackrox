@@ -99,6 +99,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	relativePath := req.URL.Path[len(prefix):]
 	parts := strings.SplitN(relativePath, "/", 2)
 	if len(parts) == 0 {
+		log.Debugf("Could not split URL path %q", req.URL.Path[len(prefix):])
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
@@ -107,6 +108,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	factory := r.getFactory(typ)
 	if factory == nil {
+		log.Debugf("Factory with type %q not found", typ)
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}

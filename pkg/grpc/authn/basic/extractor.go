@@ -59,8 +59,9 @@ func (e *extractor) IdentityForRequest(_ context.Context, ri requestinfo.Request
 	}
 
 	return identity{
-		username: username,
-		role:     e.userRole,
+		username:     username,
+		role:         e.userRole,
+		authProvider: e.authProvider,
 	}, nil
 }
 

@@ -6,13 +6,17 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/prometheus/common/log"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	userDataStore "github.com/stackrox/rox/central/user/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type storeBasedMapperImpl struct {
@@ -33,7 +37,7 @@ func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *perm
 	user := rm.createUser(descriptor)
 	if err := rm.users.Upsert(ctx, user); err != nil {
 		// Just log since we don't actually need the user information.
-		log.Errorf("unable to log user: %s", proto.MarshalTextString(user))
+		log.Errorf("unable to log user: %s: %v", proto.MarshalTextString(user), err)
 	}
 }
 
@@ -44,7 +48,7 @@ func (rm *storeBasedMapperImpl) getRole(ctx context.Context, user *permissions.U
 		return nil, err
 	}
 	if len(groups) == 0 {
-		return nil, fmt.Errorf("no usable groups for user")
+		return &storage.Role{}, nil
 	}
 
 	// Load the roles that apply to the user based on their groups.

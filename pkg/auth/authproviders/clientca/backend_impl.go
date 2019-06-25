@@ -37,7 +37,7 @@ var (
 func newBackend(ctx context.Context, pathPrefix string, callbacks ProviderCallbacks, config map[string]string) (authproviders.Backend, map[string]string, error) {
 	pem := config[ConfigKeys]
 	if pem == "" {
-		return nil, nil, fmt.Errorf("Parameter %q is required", ConfigKeys)
+		return nil, nil, fmt.Errorf("parameter %q is required", ConfigKeys)
 	}
 	certs, err := helpers.ParseCertificatesPEM([]byte(pem))
 	if err != nil {
@@ -83,10 +83,12 @@ func (p *backendImpl) RefreshURL() string {
 func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, p.pathPrefix)
 	if len(restPath) == len(r.URL.Path) {
+		log.Debugf("Invalid URL %q wrt %q", r.URL.Path, p.pathPrefix)
 		return nil, nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 
 	if restPath != authenticateHandlerPath {
+		log.Debugf("Invalid REST path %q", restPath)
 		return nil, nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 	if r.Method != http.MethodGet {
