@@ -14,7 +14,9 @@ import TablePagination from 'Components/TablePagination';
 
 const List = ({
     className,
+    headerText,
     query,
+    variables,
     entityType,
     tableColumns,
     createTableRows,
@@ -30,12 +32,14 @@ const List = ({
     }
 
     return (
-        <Query query={query}>
+        <Query query={query} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader />;
                 if (!data) return <PageNotFound resourceType={entityType} />;
                 const tableRows = createTableRows(data);
-                const header = `${tableRows.length} ${pluralize(entityLabels[entityType])}`;
+                const header = `${tableRows.length} ${pluralize(
+                    headerText || entityLabels[entityType]
+                )}`;
                 const headerComponents = (
                     <TablePagination page={page} dataLength={tableRows.length} setPage={setPage} />
                 );
@@ -69,17 +73,21 @@ const List = ({
 
 List.propTypes = {
     className: PropTypes.string,
-    query: PropTypes.shape().isRequired,
+    query: PropTypes.shape({}).isRequired,
+    variables: PropTypes.shape({}),
     entityType: PropTypes.string.isRequired,
-    tableColumns: PropTypes.arrayOf(PropTypes.shape).isRequired,
+    tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     createTableRows: PropTypes.func.isRequired,
     onRowClick: PropTypes.func.isRequired,
     selectedRowId: PropTypes.string,
-    idAttribute: PropTypes.string.isRequired
+    idAttribute: PropTypes.string.isRequired,
+    headerText: PropTypes.string
 };
 
 List.defaultProps = {
     className: '',
+    variables: {},
+    headerText: '',
     selectedRowId: null
 };
 

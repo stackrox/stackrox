@@ -59,7 +59,6 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
             });
             tbdy.appendChild(tr);
         };
-        // console.log(tbdy);
         tableData.forEach(val => {
             if (val.rows) {
                 val.rows.forEach(row => {

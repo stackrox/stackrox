@@ -13,6 +13,7 @@ import Secrets from './List/Secrets';
 import Roles from './List/Roles';
 import Images from './List/Images';
 import Policies from './List/Policies';
+import CISControls from './List/CISControls';
 
 const entityComponentMap = {
     [entityTypes.SUBJECT]: Subjects,
@@ -24,7 +25,8 @@ const entityComponentMap = {
     [entityTypes.IMAGE]: Images,
     [entityTypes.SECRET]: Secrets,
     [entityTypes.ROLE]: Roles,
-    [entityTypes.POLICY]: Policies
+    [entityTypes.POLICY]: Policies,
+    [entityTypes.CONTROL]: CISControls
 };
 
 const EntityList = ({ className, entityListType, entityId, onRowClick }) => {

@@ -4,6 +4,7 @@ import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import LabelChip from 'Components/LabelChip';
 import List from './List';
 
 const tableColumns = [
@@ -46,11 +47,7 @@ const tableColumns = [
         Cell: ({ original }) => {
             const { alerts } = original;
             if (!alerts.length) return 'No alerts';
-            return (
-                <span className="bg-alert-200 border border-alert-400 px-2 rounded text-alert-800">
-                    {alerts.length} Alerts
-                </span>
-            );
+            return <LabelChip text={`${alerts.length} Alerts`} type="alert" />;
         }
     }
 ];
