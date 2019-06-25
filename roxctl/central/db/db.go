@@ -18,6 +18,6 @@ func Command() *cobra.Command {
 	}
 	c.AddCommand(backup.Command())
 	c.AddCommand(restore.Command())
-	flags.AddTimeoutWithDefault(c, 2*time.Minute)
+	flags.AddTimeoutWithDefault(c, 60*time.Minute)
 	return c
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/odirect"
 )
 
 var (
@@ -25,8 +26,9 @@ var (
 )
 
 func tryRestoreBolt(r io.Reader, outDir string) error {
+	odirectFlag := odirect.GetODirectFlag()
 	boltFilePath := path.Join(outDir, bolthelper.DBFileName)
-	boltFile, err := os.OpenFile(boltFilePath, os.O_CREATE|os.O_RDWR, 0600)
+	boltFile, err := os.OpenFile(boltFilePath, os.O_CREATE|os.O_RDWR|odirectFlag, 0600)
 	if err != nil {
 		return errors.Wrap(err, "could not create bolt file")
 	}

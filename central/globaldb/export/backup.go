@@ -10,6 +10,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/odirect"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -72,7 +73,10 @@ func backupBolt(db *bolt.DB, out io.Writer, scrubSecrets bool) error {
 	}()
 	defer utils.IgnoreError(tempFile.Close)
 
+	odirect := odirect.GetODirectFlag()
+
 	err = db.View(func(tx *bolt.Tx) error {
+		tx.WriteFlag = odirect
 		_, err := tx.WriteTo(out)
 		return err
 	})
