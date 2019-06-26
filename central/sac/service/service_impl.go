@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sac/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,6 +31,29 @@ var (
 			"/v1.ScopedAccessControlService/DeleteAuthzPlugin",
 		},
 	})
+
+	testPrincipal = payload.Principal{
+		AuthProvider: payload.AuthProviderInfo{
+			ID:   "test_id",
+			Type: "test_type",
+			Name: "test_name",
+		},
+		Attributes: map[string]interface{}{
+			"user": []string{"test_user"},
+		},
+	}
+
+	testScope = payload.AccessScope{
+		Verb: sac.AccessModeScopeKey(storage.Access_READ_ACCESS).Verb(),
+		Noun: sac.ResourceScopeKey(resources.Cluster.GetResource()).String(),
+		Attributes: payload.NounAttributes{
+			Cluster: payload.Cluster{
+				ID:   "test_cluster_id",
+				Name: "test_cluster_name",
+			},
+			Namespace: "test_namespace",
+		},
+	}
 )
 
 type serviceImpl struct {
@@ -47,11 +73,13 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 }
 
 func (s *serviceImpl) DryRunAuthzPluginConfig(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*v1.Empty, error) {
-	// Build client.
-
-	// Test
-
-	return nil, status.Error(codes.Unimplemented, "Unimplemented")
+	if err := validateConfig(req.GetConfig()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := s.testConfig(ctx, req.GetConfig()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) GetAuthzPluginConfigs(ctx context.Context, _ *v1.Empty) (*v1.GetAuthzPluginConfigsResponse, error) {
@@ -65,10 +93,13 @@ func (s *serviceImpl) GetAuthzPluginConfigs(ctx context.Context, _ *v1.Empty) (*
 }
 
 func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*storage.AuthzPluginConfig, error) {
-	config := req.GetConfig()
-	if err := validateConfig(config); err != nil {
+	if err := validateConfig(req.GetConfig()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	if err := s.testConfig(ctx, req.GetConfig()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	upsertedConfig, err := s.ds.UpsertAuthzPluginConfig(ctx, req.GetConfig())
 	if err != nil {
 		return nil, err
@@ -81,4 +112,17 @@ func (s *serviceImpl) DeleteAuthzPlugin(ctx context.Context, req *v1.ResourceByI
 		return nil, err
 	}
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) testConfig(ctx context.Context, config *storage.AuthzPluginConfig) error {
+	newClient, err := client.New(config.GetEndpointConfig())
+	if err != nil {
+		return err
+	}
+
+	_, _, err = newClient.ForUser(ctx, testPrincipal, testScope)
+	if err != nil {
+		return err
+	}
+	return nil
 }
