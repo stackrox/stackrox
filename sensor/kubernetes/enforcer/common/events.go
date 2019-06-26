@@ -22,8 +22,8 @@ func MarkNodeConstraintApplied(recorder record.EventRecorder, policyName string,
 }
 
 // MarkPodKilled updates the k8s event logs to reflect that stackrox deleted a pod.
-func MarkPodKilled(recorder record.EventRecorder, policyName string, ref *corev1.ObjectReference) error {
-	message := fmt.Sprintf("Pod violated StackRox policy %q and was killed", policyName)
+func MarkPodKilled(recorder record.EventRecorder, podID string, policyName string, ref *corev1.ObjectReference) error {
+	message := fmt.Sprintf("A pod (%s) violated StackRox policy %q and was killed", podID, policyName)
 	recorder.Event(ref, corev1.EventTypeWarning, "StackRox enforcement", message)
 	return nil
 }

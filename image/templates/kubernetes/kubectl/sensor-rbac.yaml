@@ -169,6 +169,7 @@ rules:
   apiGroups: [""]
   verbs:
   - create
+  - patch
   - list
 ---
 kind: ClusterRoleBinding

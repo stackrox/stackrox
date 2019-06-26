@@ -25,6 +25,6 @@ func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) (err error) 
 
 	// Try to mark the deployment as having the pod killed.
 	return withReasonableRetry(func() error {
-		return common.MarkPodKilled(e.recorder, enforcement.GetContainerInstance().GetDeploymentEnforcement().GetPolicyName(), getRef(enforcement))
+		return common.MarkPodKilled(e.recorder, enforcement.GetContainerInstance().GetPodId(), enforcement.GetContainerInstance().GetDeploymentEnforcement().GetPolicyName(), getRef(enforcement))
 	})
 }
