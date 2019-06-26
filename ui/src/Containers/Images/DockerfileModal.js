@@ -33,11 +33,11 @@ const DockerfileModal = ({ modalOpen, image, onClose }) => {
     let extraColumns = [];
 
     const layers = cloneDeep(image.metadata.v1.layers);
+    layers.forEach((layer, i) => {
+        layers[i].components = [];
+    });
     // If we have a scan, then we can try and assume we have layers
     if (image.scan) {
-        layers.forEach((layer, i) => {
-            layers[i].components = [];
-        });
         image.scan.components.forEach(component => {
             if (component.layerIndex !== undefined) {
                 layers[component.layerIndex].components.push(component);
