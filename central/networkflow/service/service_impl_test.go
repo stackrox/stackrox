@@ -55,6 +55,6 @@ func (suite *NetworkGraphServiceTestSuite) TearDownTest() {
 
 func (suite *NetworkGraphServiceTestSuite) TestFailsIfClusterIsNotSet() {
 	request := &v1.NetworkGraphRequest{}
-	_, err := suite.tested.GetNetworkGraph(context.TODO(), request)
+	_, err := suite.tested.GetNetworkGraph(context.Background(), request)
 	suite.Error(err, "expected graph generation to fail since no cluster is specified")
 }
