@@ -2,8 +2,16 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
+	"github.com/stackrox/rox/pkg/expiringcache"
+)
+
+const (
+	deletedDeploymentsCacheSize            = 10000
+	deletedDeploymentsRetentionPeriod      = 2 * time.Minute
+	deletedDeploymentsCachePruningInterval = 5 * time.Minute
 )
 
 // ClusterDataStore stores the network edges per cluster.
@@ -18,6 +26,7 @@ type ClusterDataStore interface {
 // NewClusterDataStore returns a new instance of ClusterDataStore using the input storage underneath.
 func NewClusterDataStore(storage store.ClusterStore) ClusterDataStore {
 	return &clusterDataStoreImpl{
-		storage: storage,
+		storage:                 storage,
+		deletedDeploymentsCache: expiringcache.NewExpiringCacheOrPanic(deletedDeploymentsCacheSize, deletedDeploymentsRetentionPeriod, deletedDeploymentsCachePruningInterval),
 	}
 }

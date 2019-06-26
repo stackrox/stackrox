@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -403,6 +404,13 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 			L4Proto:   net.L4ProtoFromProtobuf(conn.GetProtocol()),
 		}
 		local := getIPAndPort(conn.GetLocalAddress())
+
+		// Special handling for UDP ports - role reported by collector may be unreliable, so look at which port is more
+		// likely to be ephemeral.
+		if remote.L4Proto == net.UDP {
+			incoming = netutil.IsEphemeralPort(remote.IPAndPort.Port) > netutil.IsEphemeralPort(local.Port)
+		}
+
 		c := connection{
 			local:       local,
 			remote:      remote,

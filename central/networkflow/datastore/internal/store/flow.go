@@ -10,6 +10,7 @@ import (
 //go:generate mockgen-wrapper FlowStore
 type FlowStore interface {
 	GetAllFlows(since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+	GetMatchingFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
 	GetFlow(props *storage.NetworkFlowProperties) (*storage.NetworkFlow, error)
 
 	UpsertFlows(flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error

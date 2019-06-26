@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -17,7 +18,8 @@ var (
 )
 
 type flowDataStoreImpl struct {
-	storage store.FlowStore
+	storage                 store.FlowStore
+	deletedDeploymentsCache expiringcache.Cache
 }
 
 func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
@@ -30,6 +32,19 @@ func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Time
 	return fds.storage.GetAllFlows(since)
 }
 
+func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	if ok, err := networkGraphSAC.ReadAllowed(ctx); err != nil || !ok {
+		return nil, types.Timestamp{}, err
+	}
+
+	return fds.storage.GetMatchingFlows(pred, since)
+}
+
+func (fds *flowDataStoreImpl) isDeletedDeployment(id string) bool {
+	deleted, _ := fds.deletedDeploymentsCache.Get(id).(bool)
+	return deleted
+}
+
 func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -37,7 +52,18 @@ func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.
 		return errors.New("permission denied")
 	}
 
-	return fds.storage.UpsertFlows(flows, lastUpdateTS)
+	filtered := flows[:0]
+	for _, flow := range flows {
+		if flow.GetProps().GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && fds.isDeletedDeployment(flow.GetProps().GetSrcEntity().GetId()) {
+			continue
+		}
+		if flow.GetProps().GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && fds.isDeletedDeployment(flow.GetProps().GetDstEntity().GetId()) {
+			continue
+		}
+		filtered = append(filtered, flow)
+	}
+
+	return fds.storage.UpsertFlows(filtered, lastUpdateTS)
 }
 
 func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
@@ -48,6 +74,8 @@ func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id s
 	} else if !ok {
 		return errors.New("permission denied")
 	}
+
+	fds.deletedDeploymentsCache.Add(id, true)
 
 	return fds.storage.RemoveFlowsForDeployment(id)
 }

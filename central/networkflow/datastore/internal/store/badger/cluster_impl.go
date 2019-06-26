@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	globalPrefix = "networkFlows"
+	globalPrefix = "networkFlows2"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided badger DB instance.

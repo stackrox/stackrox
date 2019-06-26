@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -75,6 +76,9 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	if err != nil {
 		return nil, err
 	}
+	if len(deployments) == 0 {
+		return &v1.NetworkGraph{}, nil
+	}
 
 	builder := newFlowGraphBuilder()
 	builder.AddDeployments(deployments)
@@ -91,7 +95,28 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
-	flows, _, err := flowStore.GetAllFlows(networkGraphGenElevatedCtx, since)
+	var pred func(*storage.NetworkFlowProperties) bool
+	if request.GetQuery() != "" {
+		deploymentIDs := set.NewStringSet()
+		for _, deployment := range deployments {
+			deploymentIDs.Add(deployment.GetId())
+		}
+		pred = func(props *storage.NetworkFlowProperties) bool {
+			if props.GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+				if !deploymentIDs.Contains(props.GetSrcEntity().GetId()) {
+					return false
+				}
+			}
+			if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+				if !deploymentIDs.Contains(props.GetDstEntity().GetId()) {
+					return false
+				}
+			}
+			return true
+		}
+	}
+
+	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
 	if err != nil {
 		return nil, err
 	}

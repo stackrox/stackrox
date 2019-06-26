@@ -5,10 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
+	"github.com/stackrox/rox/pkg/expiringcache"
 )
 
 type clusterDataStoreImpl struct {
-	storage store.ClusterStore
+	storage                 store.ClusterStore
+	deletedDeploymentsCache expiringcache.Cache
 }
 
 func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID string) FlowDataStore {
@@ -17,7 +19,8 @@ func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID str
 	}
 
 	return &flowDataStoreImpl{
-		storage: cds.storage.GetFlowStore(clusterID),
+		storage:                 cds.storage.GetFlowStore(clusterID),
+		deletedDeploymentsCache: cds.deletedDeploymentsCache,
 	}
 }
 
@@ -33,7 +36,8 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 		return nil, err
 	}
 	return &flowDataStoreImpl{
-		storage: underlying,
+		storage:                 underlying,
+		deletedDeploymentsCache: cds.deletedDeploymentsCache,
 	}, nil
 }
 

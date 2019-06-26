@@ -38,6 +38,23 @@ func BoolFind(slice []bool, elem bool) int {
 	return -1
 }
 
+// ConcatBoolSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatBoolSlices(slices ...[]bool) []bool {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]bool, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // ByteDiff returns, given two sorted byte slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) {
@@ -69,6 +86,23 @@ func ByteFind(slice []byte, elem byte) int {
 		}
 	}
 	return -1
+}
+
+// ConcatByteSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatByteSlices(slices ...[]byte) []byte {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]byte, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // Complex128Diff returns, given two sorted complex128 slices a and b, a slice of the elements occurring in a and b only,
@@ -104,6 +138,23 @@ func Complex128Find(slice []complex128, elem complex128) int {
 	return -1
 }
 
+// ConcatComplex128Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatComplex128Slices(slices ...[]complex128) []complex128 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]complex128, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // Complex64Diff returns, given two sorted complex64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly, bOnly []complex64) {
@@ -135,6 +186,23 @@ func Complex64Find(slice []complex64, elem complex64) int {
 		}
 	}
 	return -1
+}
+
+// ConcatComplex64Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatComplex64Slices(slices ...[]complex64) []complex64 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]complex64, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // ErrorDiff returns, given two sorted error slices a and b, a slice of the elements occurring in a and b only,
@@ -170,6 +238,23 @@ func ErrorFind(slice []error, elem error) int {
 	return -1
 }
 
+// ConcatErrorSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatErrorSlices(slices ...[]error) []error {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]error, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // Float32Diff returns, given two sorted float32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly []float32) {
@@ -201,6 +286,23 @@ func Float32Find(slice []float32, elem float32) int {
 		}
 	}
 	return -1
+}
+
+// ConcatFloat32Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatFloat32Slices(slices ...[]float32) []float32 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]float32, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // Float64Diff returns, given two sorted float64 slices a and b, a slice of the elements occurring in a and b only,
@@ -236,6 +338,23 @@ func Float64Find(slice []float64, elem float64) int {
 	return -1
 }
 
+// ConcatFloat64Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatFloat64Slices(slices ...[]float64) []float64 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]float64, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // IntDiff returns, given two sorted int slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
@@ -267,6 +386,23 @@ func IntFind(slice []int, elem int) int {
 		}
 	}
 	return -1
+}
+
+// ConcatIntSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatIntSlices(slices ...[]int) []int {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]int, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // Int16Diff returns, given two sorted int16 slices a and b, a slice of the elements occurring in a and b only,
@@ -302,6 +438,23 @@ func Int16Find(slice []int16, elem int16) int {
 	return -1
 }
 
+// ConcatInt16Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatInt16Slices(slices ...[]int16) []int16 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]int16, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // Int32Diff returns, given two sorted int32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int32) {
@@ -333,6 +486,23 @@ func Int32Find(slice []int32, elem int32) int {
 		}
 	}
 	return -1
+}
+
+// ConcatInt32Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatInt32Slices(slices ...[]int32) []int32 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]int32, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // Int64Diff returns, given two sorted int64 slices a and b, a slice of the elements occurring in a and b only,
@@ -368,6 +538,23 @@ func Int64Find(slice []int64, elem int64) int {
 	return -1
 }
 
+// ConcatInt64Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatInt64Slices(slices ...[]int64) []int64 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]int64, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // Int8Diff returns, given two sorted int8 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) {
@@ -399,6 +586,23 @@ func Int8Find(slice []int8, elem int8) int {
 		}
 	}
 	return -1
+}
+
+// ConcatInt8Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatInt8Slices(slices ...[]int8) []int8 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]int8, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // RuneDiff returns, given two sorted rune slices a and b, a slice of the elements occurring in a and b only,
@@ -434,6 +638,23 @@ func RuneFind(slice []rune, elem rune) int {
 	return -1
 }
 
+// ConcatRuneSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatRuneSlices(slices ...[]rune) []rune {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]rune, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // StringDiff returns, given two sorted string slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []string) {
@@ -465,6 +686,23 @@ func StringFind(slice []string, elem string) int {
 		}
 	}
 	return -1
+}
+
+// ConcatStringSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatStringSlices(slices ...[]string) []string {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]string, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // UintDiff returns, given two sorted uint slices a and b, a slice of the elements occurring in a and b only,
@@ -500,6 +738,23 @@ func UintFind(slice []uint, elem uint) int {
 	return -1
 }
 
+// ConcatUintSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatUintSlices(slices ...[]uint) []uint {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]uint, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // Uint16Diff returns, given two sorted uint16 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []uint16) {
@@ -531,6 +786,23 @@ func Uint16Find(slice []uint16, elem uint16) int {
 		}
 	}
 	return -1
+}
+
+// ConcatUint16Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatUint16Slices(slices ...[]uint16) []uint16 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]uint16, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // Uint32Diff returns, given two sorted uint32 slices a and b, a slice of the elements occurring in a and b only,
@@ -566,6 +838,23 @@ func Uint32Find(slice []uint32, elem uint32) int {
 	return -1
 }
 
+// ConcatUint32Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatUint32Slices(slices ...[]uint32) []uint32 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]uint32, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // Uint64Diff returns, given two sorted uint64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []uint64) {
@@ -597,6 +886,23 @@ func Uint64Find(slice []uint64, elem uint64) int {
 		}
 	}
 	return -1
+}
+
+// ConcatUint64Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatUint64Slices(slices ...[]uint64) []uint64 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]uint64, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }
 
 // Uint8Diff returns, given two sorted uint8 slices a and b, a slice of the elements occurring in a and b only,
@@ -632,6 +938,23 @@ func Uint8Find(slice []uint8, elem uint8) int {
 	return -1
 }
 
+// ConcatUint8Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatUint8Slices(slices ...[]uint8) []uint8 {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]uint8, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 // UintptrDiff returns, given two sorted uintptr slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly []uintptr) {
@@ -663,4 +986,21 @@ func UintptrFind(slice []uintptr, elem uintptr) int {
 		}
 	}
 	return -1
+}
+
+// ConcatUintptrSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatUintptrSlices(slices ...[]uintptr) []uintptr {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]uintptr, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
 }

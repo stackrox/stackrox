@@ -12,6 +12,9 @@ import (
 //go:generate mockgen-wrapper FlowDataStore
 type FlowDataStore interface {
 	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+	// UpsertFlows upserts the given flows to the store. The flows slice might be modified by this function, so if you
+	// need to use it afterwards, create a copy.
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
 }

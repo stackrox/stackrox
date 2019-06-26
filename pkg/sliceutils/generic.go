@@ -38,4 +38,21 @@ func ElemTypeFind(slice []ElemType, elem ElemType) int {
 	return -1
 }
 
+// ConcatElemTypeSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
+// size.
+func ConcatElemTypeSlices(slices ...[]ElemType) []ElemType {
+	length := 0
+	for _, slice := range slices {
+		length += len(slice)
+	}
+	result := make([]ElemType, length)
+	i := 0
+	for _, slice := range slices {
+		nextI := i + len(slice)
+		copy(result[i:nextI], slice)
+		i = nextI
+	}
+	return result
+}
+
 //go:generate genny -in=$GOFILE -out=gen-builtins-$GOFILE gen "ElemType=BUILTINS"

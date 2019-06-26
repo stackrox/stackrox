@@ -129,6 +129,19 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows)
 	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+
+	node1Flows, readUpdateTS, err := suite.tested.GetMatchingFlows(func(props *storage.NetworkFlowProperties) bool {
+		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == "someNode1" {
+			return true
+		}
+		if props.GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetSrcEntity().GetId() == "someNode1" {
+			return true
+		}
+		return false
+	}, nil)
+	suite.NoError(err)
+	suite.ElementsMatch(node1Flows, flows[:1])
+	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 }
 
 func TestGetDeploymentIDsFromKey(t *testing.T) {

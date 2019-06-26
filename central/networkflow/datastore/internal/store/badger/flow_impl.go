@@ -3,11 +3,14 @@ package badger
 import (
 	"bytes"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
@@ -34,7 +37,13 @@ var (
 // GetAllFlows returns all the flows in the store.
 func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
-	flows, ts, err = s.readAllFlows(since)
+	flows, ts, err = s.readFlows(nil, since)
+	return flows, ts, err
+}
+
+func (s *flowStoreImpl) GetMatchingFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
+	flows, ts, err = s.readFlows(pred, since)
 	return flows, ts, err
 }
 
@@ -103,7 +112,9 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
 				}
 				srcID, dstID := s.getDeploymentIDsFromKey(k)
 				if bytes.Equal(idBytes, srcID) || bytes.Equal(idBytes, dstID) {
-					return tx.Delete(append(s.keyPrefix, k...))
+					// Delete is lazy, so we must ensure the byte slice is not modified until the transaction is
+					// complete.
+					return tx.Delete(s.getFullKey(k))
 				}
 				return nil
 			})
@@ -118,7 +129,7 @@ func (s *flowStoreImpl) getFullKey(localKey []byte) []byte {
 }
 
 func (s *flowStoreImpl) getID(props *storage.NetworkFlowProperties) []byte {
-	return s.getFullKey([]byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", props.GetSrcEntity().GetType(), props.GetSrcEntity().GetId(), props.GetDstEntity().GetType(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol())))
+	return s.getFullKey(getID(props))
 }
 
 func (s *flowStoreImpl) getDeploymentIDsFromKey(id []byte) ([]byte, []byte) {
@@ -126,19 +137,31 @@ func (s *flowStoreImpl) getDeploymentIDsFromKey(id []byte) ([]byte, []byte) {
 	return bytesSlices[1], bytesSlices[3]
 }
 
-func (s *flowStoreImpl) readAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
+func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
 	// The entry for this should be present, but make sure we have a sane default if it is not
 	lastUpdateTS = *types.TimestampNow()
 
+	iteratorOpts := badger.DefaultIteratorOptions
+
 	err = s.db.View(func(txn *badger.Txn) error {
-		return badgerhelper.ForEachWithPrefix(txn, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true},
-			func(k, v []byte) error {
+		return badgerhelper.ForEachItemWithPrefix(txn, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true, IteratorOptions: &iteratorOpts},
+			func(k []byte, item *badger.Item) error {
 				if bytes.Equal(k, updatedTSKey) {
-					return proto.Unmarshal(v, &lastUpdateTS)
+					return badgerhelper.UnmarshalProtoValue(item, &lastUpdateTS)
+				}
+
+				if pred != nil {
+					props, err := parseID(k)
+					if err != nil {
+						return err
+					}
+					if !pred(props) {
+						return nil
+					}
 				}
 
 				flow := new(storage.NetworkFlow)
-				if err := proto.Unmarshal(v, flow); err != nil {
+				if err := badgerhelper.UnmarshalProtoValue(item, flow); err != nil {
 					return err
 				}
 				if since != nil && flow.LastSeenTimestamp != nil {
@@ -155,6 +178,48 @@ func (s *flowStoreImpl) readAllFlows(since *types.Timestamp) (flows []*storage.N
 
 // Static helper functions.
 /////////////////////////
+
+func getID(props *storage.NetworkFlowProperties) []byte {
+	return []byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", int32(props.GetSrcEntity().GetType()), props.GetSrcEntity().GetId(), int32(props.GetDstEntity().GetType()), props.GetDstEntity().GetId(), props.GetDstPort(), int32(props.GetL4Protocol())))
+}
+
+func parseID(id []byte) (*storage.NetworkFlowProperties, error) {
+	parts := strings.Split(string(id), ":")
+	if len(parts) != 6 {
+		return nil, errors.Errorf("expected 6 parts when parsing network flow ID, got %d", len(parts))
+	}
+
+	srcType, err := strconv.ParseInt(parts[0], 16, 32)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing source type of network flow ID")
+	}
+	dstType, err := strconv.ParseInt(parts[2], 16, 32)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing dest type of network flow ID")
+	}
+	dstPort, err := strconv.ParseUint(parts[4], 16, 32)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing dest port of network flow ID")
+	}
+	l4proto, err := strconv.ParseInt(parts[5], 16, 32)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing l4 proto of network flow ID")
+	}
+
+	result := &storage.NetworkFlowProperties{
+		SrcEntity: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_Type(srcType),
+			Id:   parts[1],
+		},
+		DstEntity: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_Type(dstType),
+			Id:   parts[3],
+		},
+		DstPort:    uint32(dstPort),
+		L4Protocol: storage.L4Protocol(l4proto),
+	}
+	return result, nil
+}
 
 func readFlow(txn *badger.Txn, id []byte) (flow *storage.NetworkFlow, err error) {
 	item, err := txn.Get(id)

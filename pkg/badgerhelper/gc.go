@@ -22,7 +22,12 @@ func RunGC(db *badger.DB, discardRatio float64, gcInterval time.Duration) {
 
 	for range ticker.C {
 		var err error
-		for err = db.RunValueLogGC(discardRatio); err == nil; err = db.RunValueLogGC(discardRatio) {
+		actualRatio := discardRatio
+		for err = db.RunValueLogGC(discardRatio); (err == nil || err == badger.ErrTxnTooBig) && actualRatio < 1.0; err = db.RunValueLogGC(discardRatio) {
+			if err == badger.ErrTxnTooBig {
+				// A higher ratio should lead to fewer rewrites.
+				actualRatio += 0.05
+			}
 		}
 		switch err {
 		case badger.ErrNoRewrite:

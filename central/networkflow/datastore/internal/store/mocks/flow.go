@@ -62,6 +62,20 @@ func (mr *MockFlowStoreMockRecorder) GetFlow(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFlow", reflect.TypeOf((*MockFlowStore)(nil).GetFlow), arg0)
 }
 
+// GetMatchingFlows mocks base method
+func (m *MockFlowStore) GetMatchingFlows(arg0 func(*storage.NetworkFlowProperties) bool, arg1 *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	ret := m.ctrl.Call(m, "GetMatchingFlows", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
+	ret1, _ := ret[1].(types.Timestamp)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetMatchingFlows indicates an expected call of GetMatchingFlows
+func (mr *MockFlowStoreMockRecorder) GetMatchingFlows(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchingFlows", reflect.TypeOf((*MockFlowStore)(nil).GetMatchingFlows), arg0, arg1)
+}
+
 // RemoveFlow mocks base method
 func (m *MockFlowStore) RemoveFlow(arg0 *storage.NetworkFlowProperties) error {
 	ret := m.ctrl.Call(m, "RemoveFlow", arg0)
