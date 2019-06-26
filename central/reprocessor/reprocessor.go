@@ -6,10 +6,13 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/mappings"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,6 +28,11 @@ var (
 
 	once sync.Once
 	loop Loop
+
+	getDeploymentsContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment)))
 )
 
 // Singleton returns the singleton reprocessor loop
@@ -125,7 +133,7 @@ func (l *loopImpl) sendDeployments(riskOnly bool, deploymentIDs ...string) {
 		query = query.AddDocIDs(deploymentIDs...)
 	}
 
-	results, err := l.deployments.SearchDeployments(context.TODO(), query.ProtoQuery())
+	results, err := l.deployments.SearchDeployments(getDeploymentsContext, query.ProtoQuery())
 	if err != nil {
 		log.Errorf("error getting results for reprocessing: %v", err)
 		return

@@ -1,7 +1,6 @@
 package reprocessor
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -40,7 +39,7 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 		timesSpec = (*gomock.Call).MinTimes
 	}
 	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).ProtoQuery()
-	timesSpec(suite.mockDeployment.EXPECT().SearchDeployments(context.TODO(), query), times).Return(nil, nil)
+	timesSpec(suite.mockDeployment.EXPECT().SearchDeployments(getDeploymentsContext, query), times).Return(nil, nil)
 }
 
 func (suite *loopTestSuite) TestTimerDoesNotTick() {

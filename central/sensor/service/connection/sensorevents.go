@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 )
 
-const workerQueueSize = 16
+const workerQueueSize = 64
 
 var deploymentQueueKey = reflectutils.Type((*central.SensorEvent_Deployment)(nil))
 
@@ -68,7 +68,6 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	queue := s.typeToQueue[typ]
 	// Lazily create the queue for a type if necessary
 	if queue == nil {
-		log.Infof("Creating working queue for %s", typ)
 		queue = newWorkerQueue(workerQueueSize)
 		s.typeToQueue[typ] = queue
 		go queue.run(ctx, s.stopSig, s.handleMessages)
