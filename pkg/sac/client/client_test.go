@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
@@ -18,7 +17,7 @@ var (
 	allowEndpoint = "/authRequestSuccess"
 	denyEndpoint  = "/authRequestFailure"
 	errorEndpoint = "/authRequestError"
-	errCode       = http.StatusTeapot
+	errText       = "contacting auth server"
 	scopes        = []payload.AccessScope{
 		{
 			Verb: "Verb",
@@ -80,7 +79,7 @@ func (suite *clientTestSuite) denyAll(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (suite *clientTestSuite) errorResponse(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(errCode)
+	w.WriteHeader(http.StatusTeapot)
 }
 
 func (suite *clientTestSuite) TestAllow() {
@@ -103,7 +102,7 @@ func (suite *clientTestSuite) TestError() {
 	client := suite.getTestClient(errorEndpoint)
 	allowed, denied, err := client.ForUser(context.Background(), payload.Principal{}, scopes...)
 	suite.Error(err)
-	suite.Contains(err.Error(), strconv.Itoa(errCode))
+	suite.Equal(err.Error(), errText)
 	suite.Nil(allowed)
 	suite.Nil(denied)
 }

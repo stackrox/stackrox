@@ -4,20 +4,24 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-var (
+const (
 	contentType = "application/json"
-	log         = logging.LoggerForModule()
+)
+
+var (
+	log                   = logging.LoggerForModule()
+	errAuthzPluginContact = errors.New("contacting auth server")
 )
 
 type clientImpl struct {
@@ -29,39 +33,44 @@ func (c *clientImpl) ForUser(ctx context.Context, principal payload.Principal, s
 	request := &payload.AuthorizationRequest{Principal: principal, RequestedScopes: scopes}
 	jsonBytes, err := json.Marshal(request)
 	if err != nil {
-		return nil, nil, err
+		log.Warnf("serializing: %s", err)
+		return nil, nil, errAuthzPluginContact
 	}
 	httpReq, err := http.NewRequest(http.MethodPost, c.config.GetEndpoint(), bytes.NewBuffer(jsonBytes))
 	if err != nil {
-		return nil, nil, err
+		log.Warnf("creating: %s, %s", err, string(jsonBytes))
+		return nil, nil, errAuthzPluginContact
 	}
 	httpReq.Header.Set("content-type", contentType)
 	httpReq = httpReq.WithContext(ctx)
 	applyConfig(c.config, httpReq)
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
-		return nil, nil, err
+		log.Warnf("sending: %s", err)
+		return nil, nil, errAuthzPluginContact
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 	if resp.StatusCode != http.StatusOK {
-		errString := fmt.Sprintf("Auth plugin returned non-200 status code %s", resp.Status)
+		statusString := fmt.Sprintf("Auth plugin returned non-200 status code %s", resp.Status)
 		respBytes, bodyErr := ioutil.ReadAll(resp.Body)
 		bodyOrErr := ""
 		if bodyErr != nil {
-			bodyOrErr = fmt.Sprintf(".  Error retrieving response body was %s", bodyErr.Error())
+			bodyOrErr = fmt.Sprintf(".  Error retrieving response body was %s", bodyErr)
 		} else {
 			bodyOrErr = fmt.Sprintf(".  Response body: %s", string(respBytes))
 		}
-		log.Warnf("%s%s", errString, bodyOrErr)
-		return nil, nil, errors.New(errString)
+		log.Warnf("%s%s", statusString, bodyOrErr)
+		return nil, nil, errAuthzPluginContact
 	}
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, nil, err
+		log.Warnf("reading: %s", err)
+		return nil, nil, errAuthzPluginContact
 	}
 	var response payload.AuthorizationResponse
 	if err = json.Unmarshal(respBytes, &response); err != nil {
-		return nil, nil, err
+		log.Warnf("deserializing: %s, %s", err, string(respBytes))
+		return nil, nil, errAuthzPluginContact
 	}
 	responseSet := make(map[payload.AccessScope]struct{}, len(response.AuthorizedScopes))
 	for _, authScope := range response.AuthorizedScopes {
