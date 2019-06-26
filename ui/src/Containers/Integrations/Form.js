@@ -29,7 +29,8 @@ class Form extends Component {
             'notifiers',
             'authProviders',
             'clusters',
-            'backups'
+            'backups',
+            'authPlugins'
         ]).isRequired,
         type: PropTypes.string.isRequired,
         formFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,

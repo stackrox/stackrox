@@ -9,14 +9,16 @@ import saga from './integrationSagas';
 
 describe('Integrations Sagas', () => {
     it('should fetch image integrations and notifiers when location changes to integrations', () => {
+        const authPlugin = { authPlugin: { endpoint: 'endpoint' } };
         const imageIntegrations = { integrations: ['int1'] };
         const notifiers = { notifiers: ['notifier1'] };
         const backups = { backups: ['backup1'] };
         return expectSaga(saga)
             .provide([
-                [call(fetchIntegration, ['imageIntegrations']), { response: imageIntegrations }],
-                [call(fetchIntegration, ['backups']), { response: backups }],
-                [call(fetchIntegration, ['notifiers']), { response: notifiers }]
+                [call(fetchIntegration, 'authPlugins'), { response: authPlugin }],
+                [call(fetchIntegration, 'imageIntegrations'), { response: imageIntegrations }],
+                [call(fetchIntegration, 'backups'), { response: backups }],
+                [call(fetchIntegration, 'notifiers'), { response: notifiers }]
             ])
             .put(actions.fetchImageIntegrations.success(imageIntegrations))
             .put(actions.fetchNotifiers.success(notifiers))
@@ -29,7 +31,7 @@ describe('Integrations Sagas', () => {
         const fetchMock = jest.fn().mockReturnValueOnce({ response: notifiers });
 
         return expectSaga(saga)
-            .provide([[call(fetchIntegration, ['notifiers']), dynamic(fetchMock)]])
+            .provide([[call(fetchIntegration, 'notifiers'), dynamic(fetchMock)]])
             .put(actions.fetchNotifiers.success(notifiers))
             .dispatch(createLocationChange('/main/policies'))
             .dispatch(createLocationChange('/main/policies/123'))
@@ -44,14 +46,13 @@ describe('Integrations Sagas', () => {
         const fetchImageIntegrationsMock = jest.fn();
         const fetchNotifiersMock = jest.fn();
         const fetchBackupsMock = jest.fn();
+        const fetchAuthPluginMock = jest.fn();
         return expectSaga(saga)
             .provide([
-                [
-                    call(fetchIntegration, ['imageIntegrations']),
-                    dynamic(fetchImageIntegrationsMock)
-                ],
-                [call(fetchIntegration, ['notifiers']), dynamic(fetchNotifiersMock)],
-                [call(fetchIntegration, ['backups']), dynamic(fetchBackupsMock)]
+                [call(fetchIntegration, 'authPlugins'), dynamic(fetchBackupsMock)],
+                [call(fetchIntegration, 'imageIntegrations'), dynamic(fetchImageIntegrationsMock)],
+                [call(fetchIntegration, 'notifiers'), dynamic(fetchNotifiersMock)],
+                [call(fetchIntegration, 'backups'), dynamic(fetchBackupsMock)]
             ])
             .dispatch(createLocationChange('/main/violations'))
             .dispatch(createLocationChange('/main/compliance'))
@@ -61,6 +62,7 @@ describe('Integrations Sagas', () => {
                 expect(fetchImageIntegrationsMock.mock.calls.length).toBe(0);
                 expect(fetchNotifiersMock.mock.calls.length).toBe(0);
                 expect(fetchBackupsMock.mock.calls.length).toBe(0);
+                expect(fetchAuthPluginMock.mock.calls.length).toBe(0);
             });
     });
 });

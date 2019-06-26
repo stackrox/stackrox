@@ -266,6 +266,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		processWhitelistService.Singleton(),
 		roleService.Singleton(),
 		rbacService.Singleton(),
+		sacService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		serviceAccountService.Singleton(),
@@ -280,9 +281,6 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
-	if features.ScopedAccessControl.Enabled() {
-		servicesToRegister = append(servicesToRegister, sacService.Singleton())
-	}
 	return servicesToRegister
 }
 

@@ -21,7 +21,7 @@ const (
 
 var (
 	log                   = logging.LoggerForModule()
-	errAuthzPluginContact = errors.New("contacting auth server")
+	errAuthzPluginContact = errors.New("unable to contact auth plugin")
 )
 
 type clientImpl struct {

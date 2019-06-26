@@ -197,6 +197,14 @@ const integrationsList = {
             source: 'backups',
             image: s3
         }
+    ],
+    authPlugins: [
+        {
+            label: 'Scoped Access Plugin',
+            type: 'scopedAccess',
+            source: 'authPlugins',
+            image: logo
+        }
     ]
 };
 

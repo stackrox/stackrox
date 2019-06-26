@@ -150,6 +150,12 @@ const tableColumnDescriptor = Object.freeze({
                 Header: 'Schedule'
             }
         ]
+    },
+    authPlugins: {
+        scopedAccess: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'endpointConfig.endpoint', Header: 'Endpoint' }
+        ]
     }
 });
 

@@ -12,6 +12,7 @@ import { actions as apiTokenActions } from 'reducers/apitokens';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 const fetchIntegrationsActionMap = {
+    authPlugins: actions.fetchAuthPlugins.request(),
     authProviders: authActions.fetchAuthProviders.request(),
     backups: actions.fetchBackups.request(),
     imageIntegrations: actions.fetchImageIntegrations.request(),
@@ -24,11 +25,15 @@ const fetchIntegrationsActionMap = {
 // with the given action type.
 function* fetchIntegrationWrapper(source, action) {
     try {
-        const result = yield call(service.fetchIntegration, [source]);
+        const result = yield call(service.fetchIntegration, source);
         yield put(action.success(result.response));
     } catch (error) {
         yield put(action.failure(error));
     }
+}
+
+function* getAuthPlugins() {
+    yield call(fetchIntegrationWrapper, 'authPlugins', actions.fetchAuthPlugins);
 }
 
 function* getBackups() {
@@ -44,8 +49,8 @@ function* getImageIntegrations() {
 }
 
 function* watchLocation() {
-    const effects = [getImageIntegrations, getNotifiers, getBackups].map(fetchFunc =>
-        takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
+    const effects = [getImageIntegrations, getNotifiers, getBackups, getAuthPlugins].map(
+        fetchFunc => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
     );
     yield all([
         ...effects,
@@ -57,11 +62,15 @@ function* watchLocation() {
 function* watchFetchRequest() {
     while (true) {
         const action = yield take([
+            types.FETCH_AUTH_PLUGINS.REQUEST,
             types.FETCH_BACKUPS.REQUEST,
             types.FETCH_IMAGE_INTEGRATIONS.REQUEST,
             types.FETCH_NOTIFIERS.REQUEST
         ]);
         switch (action.type) {
+            case types.FETCH_AUTH_PLUGINS.REQUEST:
+                yield fork(getAuthPlugins);
+                break;
             case types.FETCH_BACKUPS.REQUEST:
                 yield fork(getBackups);
                 break;

@@ -17,7 +17,7 @@ var (
 	allowEndpoint = "/authRequestSuccess"
 	denyEndpoint  = "/authRequestFailure"
 	errorEndpoint = "/authRequestError"
-	errText       = "contacting auth server"
+	errText       = "unable to contact auth plugin"
 	scopes        = []payload.AccessScope{
 		{
 			Verb: "Verb",
