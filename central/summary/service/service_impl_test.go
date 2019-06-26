@@ -20,7 +20,7 @@ func TestSummaryTypeToResourceMap(t *testing.T) {
 		if strings.HasPrefix(name, "XXX_") {
 			continue
 		}
-		_, ok := summaryTypeToResource[name]
+		_, ok := summaryTypeToResourceMetadata[name]
 		// This is a programming error. If you see this, add the new summarized type you've added to the
 		// summaryTypeToResource map!
 		assert.True(t, ok, "Please add type %s to the summaryTypeToResource map used by the authorizer", name)

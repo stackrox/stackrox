@@ -358,11 +358,19 @@ func startGRPCServer(factory serviceFactory) {
 
 	log.Infof("Scoped access control enabled: %v", features.ScopedAccessControl.Enabled())
 	if features.ScopedAccessControl.Enabled() {
-		config.ContextEnrichers = append(config.ContextEnrichers,
-			centralSAC.GetEnricher().RootScopeCheckerCoreContextEnricher,
-		)
+		// When sac is enabled, this helps validate that it is being use correctly. Should be removed with feature flag.
 		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
+
+	// The below enrichers handle SAC being off or on.
+	// Before authorization is checked, we want to inject the sac client into the context.
+	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
+		centralSAC.GetEnricher().PreAuthContextEnricher,
+	)
+	// After auth checks are run, we want to use the client (if available) to add scope checking.
+	config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,
+		centralSAC.GetEnricher().PostAuthContextEnricher,
+	)
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(factory.ServicesToRegister(registry)...)

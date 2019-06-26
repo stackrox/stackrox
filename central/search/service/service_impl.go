@@ -96,8 +96,8 @@ var (
 	}()
 )
 
-// GetSearchCategoryToResource gets a map of search category to corresponding resource
-func GetSearchCategoryToResource() map[v1.SearchCategory]permissions.ResourceHandle {
+// GetSearchCategoryToResourceMetadata gets a map of search category to corresponding resource metadata.s
+func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.ResourceMetadata {
 
 	// SearchCategoryToResource maps search categories to resources.
 	// To access search, we require users to have view access to every searchable resource.
@@ -105,7 +105,7 @@ func GetSearchCategoryToResource() map[v1.SearchCategory]permissions.ResourceHan
 	// but that requires non-trivial refactoring, so we'll do it if we feel the need later.
 	// This variable is package-level to facilitate the unit test that asserts
 	// that it covers all the searchable categories.
-	searchCategoryToResource := map[v1.SearchCategory]permissions.ResourceHandle{
+	searchCategoryToResource := map[v1.SearchCategory]permissions.ResourceMetadata{
 		v1.SearchCategory_ALERTS:      resources.Alert,
 		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
 		v1.SearchCategory_IMAGES:      resources.Image,
@@ -292,10 +292,10 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (s *serviceImpl) initializeAuthorizer() {
-	searchCategoryToResource := GetSearchCategoryToResource()
-	requiredPermissions := make([]*v1.Permission, 0, len(searchCategoryToResource))
-	for _, resource := range searchCategoryToResource {
-		requiredPermissions = append(requiredPermissions, permissions.View(resource))
+	searchCategoryToResource := GetSearchCategoryToResourceMetadata()
+	requiredPermissions := make([]permissions.ResourceWithAccess, 0, len(searchCategoryToResource))
+	for _, resourceMetadata := range searchCategoryToResource {
+		requiredPermissions = append(requiredPermissions, permissions.View(resourceMetadata))
 	}
 
 	s.authorizer = perrpc.FromMap(map[authz.Authorizer][]string{

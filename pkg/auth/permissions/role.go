@@ -14,6 +14,18 @@ func NewRoleWithGlobalAccess(name string, globalAccessLevel storage.Access) *sto
 	}
 }
 
+// NewRoleWithAccess returns a new role with the given resource accesses.
+func NewRoleWithAccess(name string, resourceWithAccess ...ResourceWithAccess) *storage.Role {
+	var permissions []*v1.Permission
+	for _, rAndA := range resourceWithAccess {
+		permissions = append(permissions, &v1.Permission{
+			Resource: string(rAndA.Resource.GetResource()),
+			Access:   rAndA.Access,
+		})
+	}
+	return NewRoleWithPermissions(name, permissions...)
+}
+
 // NewRoleWithPermissions returns a new role with the given name and permissions.
 func NewRoleWithPermissions(name string, permissions ...*v1.Permission) *storage.Role {
 	// Combine permissions into a map by resource, using the maximum access level for any
@@ -69,11 +81,11 @@ func NewUnionRole(roles []*storage.Role) *storage.Role {
 }
 
 // RoleHasPermission is a helper function that returns if the given roles provides the given permission.
-func RoleHasPermission(role *storage.Role, permission *v1.Permission) bool {
-	if role.GetGlobalAccess() >= permission.GetAccess() {
+func RoleHasPermission(role *storage.Role, perm ResourceWithAccess) bool {
+	if role.GetGlobalAccess() >= perm.Access {
 		return true
 	}
-	return role.GetResourceToAccess()[permission.GetResource()] >= permission.GetAccess()
+	return role.GetResourceToAccess()[string(perm.Resource.GetResource())] >= perm.Access
 }
 
 func maxAccess(access1, access2 storage.Access) storage.Access {

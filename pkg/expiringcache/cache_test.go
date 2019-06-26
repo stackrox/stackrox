@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/pkg/expiringcache/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,35 +29,62 @@ func TestExpiringCache(t *testing.T) {
 	var pairs = []pair{
 		pair1,
 		pair2,
+		pair3,
 	}
 
-	ec := NewExpiringCacheOrPanic(2, 10*time.Second, 0)
+	mockCtrl := gomock.NewController(t)
+	clock := mocks.NewMockClock(mockCtrl)
+
+	ec := NewExpiringCacheWithClockOrPanic(3, clock, 10*time.Second, time.Minute)
+
+	// Insert all values one second apart.
+	addTime := time.Time{}
 	for _, p := range pairs {
+		clock.EXPECT().Now().Return(addTime)
 		ec.Add(p.key, p.value)
+
+		addTime = addTime.Add(time.Second)
 	}
+
+	// Check that at time 0 all values are accessable.
+	getTime := time.Time{}
 	for _, p := range pairs {
-		assert.Equal(t, p.value, ec.Get(p.key))
+		clock.EXPECT().Now().Return(getTime)
+		assert.Equal(t, p.value, ec.Get(p.key).(string))
 	}
-	values := []string{pair1.value, pair2.value}
-	assert.ElementsMatch(t, values, ec.GetAll())
 
-	ec.Add(pair3.key, pair3.value)
-	values = []string{pair2.value, pair3.value}
-	assert.ElementsMatch(t, values, ec.GetAll())
+	// Move forward 11 seconds, and the first element should get pruned but the rest should be available.
+	getTime = getTime.Add(11 * time.Second)
 
-	assert.False(t, ec.Remove(pair1.key))
-	assert.True(t, ec.Remove(pair3.key))
+	// First is gone.
+	clock.EXPECT().Now().Return(getTime)
+	assert.Nil(t, ec.Get(pairs[0].key))
 
-	values = []string{pair2.value}
-	assert.ElementsMatch(t, values, ec.GetAll())
-}
-
-func TestExpiringCacheExpired(t *testing.T) {
-	pair1 := pair{
-		key:   "key1",
-		value: "value1",
+	// Other two are still available.
+	clock.EXPECT().Now().Return(getTime)
+	currentValues := ec.GetAll()
+	assert.Equal(t, 2, len(currentValues))
+	for i, value := range currentValues {
+		assert.Equal(t, pairs[i+1].value, value.(string))
 	}
-	ec := NewExpiringCacheOrPanic(2, 1*time.Nanosecond, 0)
-	ec.Add(pair1.key, pair1.value)
-	assert.Nil(t, ec.Get(pair1.key))
+
+	// Move forward another second, and the second element should drop off.
+	getTime = getTime.Add(1 * time.Second)
+
+	// First and second elements are gone.
+	clock.EXPECT().Now().Return(getTime)
+	assert.Nil(t, ec.Get(pairs[0].key))
+
+	clock.EXPECT().Now().Return(getTime)
+	assert.Nil(t, ec.Get(pairs[1].key))
+
+	// Third element is still there.
+	clock.EXPECT().Now().Return(getTime)
+	currentValues = ec.GetAll()
+	assert.Equal(t, 1, len(currentValues))
+	for i, value := range currentValues {
+		assert.Equal(t, pairs[i+2].value, value.(string))
+	}
+
+	mockCtrl.Finish()
 }

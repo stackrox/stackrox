@@ -9,12 +9,13 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/client"
+	sacClient "github.com/stackrox/rox/pkg/sac/client"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -24,7 +25,7 @@ var (
 )
 
 func initialize() {
-	enricher = newEnricher()
+	enricher = newEnricher(features.ScopedAccessControl.Enabled())
 }
 
 // GetEnricher returns the singleton Enricher object.
@@ -35,24 +36,39 @@ func GetEnricher() *Enricher {
 
 // Enricher returns a object which will enrich a context with a cached root scope checker core
 type Enricher struct {
-	// In a perfect world we would clear this cache when SAC gets disabled
-	scopeMap      expiringcache.Cache
-	clientManager AuthPluginClientManger
+	sacEnabled bool
 
-	prevClientMutex sync.Mutex
-	prevAuthClient  client.Client
+	// In a perfect world we would clear this cache when SAC gets disabled
+	cacheLock     sync.Mutex
+	clientCaches  expiringcache.Cache
+	clientManager AuthPluginClientManger
 }
 
-func newEnricher() *Enricher {
+func newEnricher(sacEnabled bool) *Enricher {
 	return &Enricher{
-		scopeMap:      expiringcache.NewExpiringCacheOrPanic(5000, env.PermissionTimeout.DurationSetting(), time.Minute),
+		sacEnabled:    sacEnabled,
+		clientCaches:  newConfiguredCache(),
 		clientManager: AuthPluginClientManagerSingleton(),
 	}
 }
 
-// RootScopeCheckerCoreContextEnricher enriches the given context with a root scope checker which can be used to check a
-// user's permissions.  If SAC is disabled we will instead enrich with an AllowAllAccessScopeChecker and skip caching
-func (se *Enricher) RootScopeCheckerCoreContextEnricher(ctx context.Context) (context.Context, error) {
+// PreAuthContextEnricher adds the client in use at the time of request to the context for use in scope checking.
+func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context, error) {
+	if client := se.clientManager.GetClient(); se.sacEnabled && client != nil {
+		return sacClient.SetInContext(ctx, client), nil
+	}
+	return ctx, nil
+}
+
+// PostAuthContextEnricher enriches the given context with a root scope checker which can be used to check a
+// user's permissions. If SAC is disabled we will instead enrich with an AllowAllAccessScopeChecker and skip caching
+func (se *Enricher) PostAuthContextEnricher(ctx context.Context) (context.Context, error) {
+	// If SAC is turned off, just allow all access for SAC checks.
+	if !se.sacEnabled {
+		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
+	}
+
+	// Check the id of the context and decide scope checker to use.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), nil
@@ -60,35 +76,54 @@ func (se *Enricher) RootScopeCheckerCoreContextEnricher(ctx context.Context) (co
 	if id.Service() != nil {
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
 	}
+	if basic.IsBasicIdentity(id) {
+		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
+	}
 
-	// If SAC is configured create and cache a RootScopeCheckerCore with a Client object.  The Client object will
-	// encapsulate the actual connected/disconnected state of the plugin
-	authClient := se.clientManager.GetClient()
-	if authClient == nil {
+	// If no client is present, then just return a scope checker that uses local identity information.
+	client := sacClient.GetFromContext(ctx)
+	if client == nil {
 		return sac.WithGlobalAccessScopeChecker(ctx, scopeCheckerForIdentity(id)), nil
 	}
-	concurrency.WithLock(&se.prevClientMutex, func() {
-		if se.prevAuthClient == authClient {
-			return
-		}
-		se.scopeMap.RemoveAll()
-		se.prevAuthClient = authClient
-	})
 
-	principal := idToPrincipal(id)
-	principalJSONBytes, err := json.Marshal(principal)
+	// Get the principal and the cache key for it.
+	principal, idCacheKey, err := idToPrincipalAndCacheKey(id)
 	if err != nil {
 		return nil, err
 	}
-	principalJSON := string(principalJSONBytes)
-	rsc, _ := se.scopeMap.Get(principalJSON).(sac.ScopeCheckerCore)
+
+	// If we have a scope checker cached for the user, use that, otherwise generate a new one and add it to the cache.
+	cacheForClient := se.cacheForClient(client)
+	rsc, _ := cacheForClient.Get(idCacheKey).(sac.ScopeCheckerCore)
 	if rsc == nil {
-		rsc = sac.NewRootScopeCheckerCore(NewRequestTracker(authClient, datastore.Singleton(), principal))
+		rsc = sac.NewRootScopeCheckerCore(NewRequestTracker(client, datastore.Singleton(), principal))
 		// Not locking here can cause multiple root contexts to be created for one user.  This will have correct results
 		// and be eventually consistent but it will be slightly inefficient.
-		se.scopeMap.Add(principalJSON, rsc)
+		cacheForClient.Add(idCacheKey, rsc)
 	}
 	return sac.WithGlobalAccessScopeChecker(ctx, rsc), nil
+}
+
+func (se *Enricher) cacheForClient(client sacClient.Client) expiringcache.Cache {
+	se.cacheLock.Lock()
+	defer se.cacheLock.Unlock()
+
+	clientCache, _ := se.clientCaches.Get(client).(expiringcache.Cache)
+	if clientCache == nil {
+		clientCache = newConfiguredCache()
+		se.clientCaches.Add(client, clientCache)
+	}
+	return clientCache
+}
+
+func idToPrincipalAndCacheKey(id authn.Identity) (*payload.Principal, string, error) {
+	// Generate a JSON body for the user we are using the auth plugin for.
+	principal := idToPrincipal(id)
+	principalJSONBytes, err := json.Marshal(principal)
+	if err != nil {
+		return nil, "", err
+	}
+	return principal, string(principalJSONBytes), nil
 }
 
 func idToPrincipal(id authn.Identity) *payload.Principal {
@@ -146,4 +181,8 @@ func scopeCheckerForIdentity(id authn.Identity) sac.ScopeCheckerCore {
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS):       sac.AllowFixedScopes(sac.ResourceScopeKeys(readResources...)),
 		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(sac.ResourceScopeKeys(writeResources...)),
 	}
+}
+
+func newConfiguredCache() expiringcache.Cache {
+	return expiringcache.NewExpiringCacheOrPanic(5000, env.PermissionTimeout.DurationSetting(), time.Minute)
 }

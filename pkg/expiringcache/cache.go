@@ -1,17 +1,10 @@
 package expiringcache
 
 import (
-	"container/list"
 	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
 )
-
-type elem struct {
-	key    interface{}
-	data   interface{}
-	expiry time.Time
-}
 
 // Cache implements a cache where the elements expire after a specific time
 type Cache interface {
@@ -22,128 +15,167 @@ type Cache interface {
 	RemoveAll()
 }
 
-type expiringCacheImpl struct {
-	lock sync.RWMutex
-
-	size  int
-	queue *list.List
-	items map[interface{}]*list.Element
-
-	expiry          time.Duration
-	pruningInterval time.Duration
-}
-
-// NewExpiringCacheOrPanic returns a new Cache and only panics if the size is negative
-// per the lru.Cache spec
+// NewExpiringCacheOrPanic returns a new lru Cache with time based expiration on values.
 func NewExpiringCacheOrPanic(size int, expiry time.Duration, pruningInterval time.Duration) Cache {
 	e := &expiringCacheImpl{
-		size:            size,
+		mq: newMappedQueue(size),
+
+		clock:           realClock{},
 		expiry:          expiry,
 		pruningInterval: pruningInterval,
-
-		queue: list.New(),
-		items: make(map[interface{}]*list.Element),
-	}
-	if pruningInterval > 0 {
-		go e.start()
 	}
 	return e
 }
 
-func (e *expiringCacheImpl) start() {
-	t := time.NewTicker(e.pruningInterval)
-	for range t.C {
-		e.clean()
+// NewExpiringCacheWithClockOrPanic returns a new lru Cache with time based expiration on values, using the input clock.
+func NewExpiringCacheWithClockOrPanic(size int, clock Clock, expiry time.Duration, pruningInterval time.Duration) Cache {
+	e := &expiringCacheImpl{
+		mq: newMappedQueue(size),
+
+		clock:           clock,
+		expiry:          expiry,
+		pruningInterval: pruningInterval,
 	}
+	return e
 }
 
-func (e *expiringCacheImpl) clean() {
-	e.lock.Lock()
-	defer e.lock.Unlock()
+type expiringCacheImpl struct {
+	lock sync.Mutex
 
-	for {
-		front := e.queue.Front()
-		if front == nil {
-			break
-		}
-		if front.Value.(*elem).expiry.Before(time.Now()) {
-			e.removeNoLock(e.queue.Front())
-		} else {
-			break
-		}
-	}
+	mq mappedQueue
+
+	clock           Clock
+	expiry          time.Duration
+	pruningInterval time.Duration
+	lastPrune       time.Time
 }
 
+// Add adds a new key/value pair to the cache.
 func (e *expiringCacheImpl) Add(key, value interface{}) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	// The closest one to expiring will be removed first
-	if e.queue.Len() == e.size {
-		// Front has the oldest
-		e.removeNoLock(e.queue.Front())
-	}
-	listElement := e.queue.PushBack(&elem{
-		key:    key,
-		data:   value,
-		expiry: time.Now().Add(e.expiry)})
-	e.items[key] = listElement
-}
+	addTime := e.clock.Now()
+	e.maybeCleanAsync(addTime)
 
-func (e *expiringCacheImpl) getNoLock(k interface{}) interface{} {
-	listElem, ok := e.items[k]
-	if !ok {
-		return nil
-	}
-	element := listElem.Value.(*elem)
-	if element.expiry.Before(time.Now()) {
-		e.removeNoLock(listElem)
-		return nil
-	}
-	return element.data
+	e.mq.push(key, wrap(value, addTime))
 }
 
 // Get takes in a key and returns nil if the item doesn't exist or if the item has expired
-func (e *expiringCacheImpl) Get(k interface{}) interface{} {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-	return e.getNoLock(k)
-}
-
-func (e *expiringCacheImpl) GetAll() []interface{} {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-
-	ret := make([]interface{}, 0, len(e.items))
-	for k := range e.items {
-		if val := e.getNoLock(k); val != nil {
-			ret = append(ret, val)
-		}
-	}
-	return ret
-}
-
-func (e *expiringCacheImpl) removeNoLock(deleteElement *list.Element) {
-	e.queue.Remove(deleteElement)
-	delete(e.items, deleteElement.Value.(*elem).key)
-}
-
-func (e *expiringCacheImpl) Remove(key interface{}) bool {
+func (e *expiringCacheImpl) Get(key interface{}) interface{} {
 	e.lock.Lock()
 	defer e.lock.Unlock()
-	value, ok := e.items[key]
-	if !ok {
-		return false
+
+	getTime := e.clock.Now()
+	e.maybeCleanAsync(getTime)
+
+	value, at := e.getValueAndTimeNoLock(key)
+	if value != nil && getTime.Sub(at) > e.expiry {
+		e.mq.remove(key)
+		return nil
 	}
-	e.removeNoLock(value)
-	return true
+	return value
 }
 
+// GetAll returns all non-expired values in the cache.
+func (e *expiringCacheImpl) GetAll() []interface{} {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	getAllTime := e.clock.Now()
+	e.cleanNoLock(getAllTime) // remove all expired values before getting the list.
+
+	cachedValues := e.mq.getAllValues()
+	actualValues := make([]interface{}, 0, len(cachedValues))
+	for _, cv := range cachedValues {
+		v, _ := unwrap(cv)
+		actualValues = append(actualValues, v)
+	}
+	return actualValues
+}
+
+// Remove removes a key in the cache if present. Returns if it was present.
+func (e *expiringCacheImpl) Remove(key interface{}) (wasPresent bool) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	removeTime := e.clock.Now()
+	e.maybeCleanAsync(removeTime)
+
+	value, at := e.getValueAndTimeNoLock(key)
+	if value != nil {
+		e.mq.remove(key)
+		if removeTime.Sub(at) < e.expiry {
+			wasPresent = true // only return true if it was present and unexpired.
+		}
+	}
+	return
+}
+
+// RemoveAll removes all values from the cache.
 func (e *expiringCacheImpl) RemoveAll() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	for e.queue.Front() != nil {
-		e.removeNoLock(e.queue.Front())
+	e.mq.removeAll()
+}
+
+func (e *expiringCacheImpl) getValueAndTimeNoLock(key interface{}) (interface{}, time.Time) {
+	value := e.mq.get(key)
+	if value == nil {
+		return nil, time.Time{}
+	}
+	return unwrap(value)
+}
+
+// Store the value and the time of insertion in the mappedQueue.
+type cacheValue struct {
+	value interface{}
+	at    time.Time
+}
+
+func wrap(value interface{}, at time.Time) *cacheValue {
+	return &cacheValue{
+		value: value,
+		at:    at,
+	}
+}
+
+func unwrap(value interface{}) (interface{}, time.Time) {
+	cv := value.(*cacheValue)
+	return cv.value, cv.at
+}
+
+// Intermittent clean up of expired values.
+// Called during Add or Get when needed.
+////////////////////////////////////////
+
+func (e *expiringCacheImpl) maybeCleanAsync(at time.Time) {
+	// If we reached the prune interval, flush expired items.
+	if e.lastPrune.Sub(at) > e.pruningInterval {
+		e.lastPrune = at
+		go e.clean(at)
+	}
+}
+
+func (e *expiringCacheImpl) clean(at time.Time) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	e.cleanNoLock(at)
+}
+
+func (e *expiringCacheImpl) cleanNoLock(at time.Time) {
+	for {
+		key, value := e.mq.front()
+		if key == nil {
+			break
+		}
+		cv := value.(*cacheValue)
+		if at.Sub(cv.at) > e.expiry {
+			e.mq.pop()
+		} else {
+			break
+		}
 	}
 }

@@ -10,6 +10,13 @@ import (
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
+// IsBasicIdentity returns whether or not the input Identity is a basic identity.
+func IsBasicIdentity(id authn.Identity) bool {
+	_, isBasic := id.(Identity)
+	return isBasic
+}
+
+// Basic identity implementation.
 type identity struct {
 	username     string
 	role         *storage.Role

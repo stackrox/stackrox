@@ -17,6 +17,7 @@ var (
 type perRPC struct {
 	// Default is applied if no specific authorization is listed in Authorizers.
 	Default authz.Authorizer
+
 	// Authorizers maps full RPC method names (e.g., /v1.MyGRPCService/MyMethod)
 	// to the Authorizer that should be used for them.
 	Authorizers map[string]authz.Authorizer

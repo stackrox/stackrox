@@ -69,7 +69,9 @@ type Config struct {
 	IdentityExtractors []authn.IdentityExtractor
 	AuthProviders      authproviders.Registry
 	Auditor            audit.Auditor
-	ContextEnrichers   []contextutil.ContextUpdater
+
+	PreAuthContextEnrichers  []contextutil.ContextUpdater
+	PostAuthContextEnrichers []contextutil.ContextUpdater
 
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
@@ -111,15 +113,18 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 		u = append(u, a.config.Auditor.UnaryServerInterceptor())
 	}
 
+	if len(a.config.PreAuthContextEnrichers) > 0 {
+		u = append(u, contextutil.UnaryServerInterceptor(a.config.PreAuthContextEnrichers...))
+	}
+
 	// Check if there was an auth failure and return error if so
 	u = append(u, interceptor.AuthCheckerInterceptor())
 
-	if len(a.config.ContextEnrichers) > 0 {
-		u = append(u, contextutil.UnaryServerInterceptor(a.config.ContextEnrichers...))
+	if len(a.config.PostAuthContextEnrichers) > 0 {
+		u = append(u, contextutil.UnaryServerInterceptor(a.config.PostAuthContextEnrichers...))
 	}
 
 	u = append(u, a.config.UnaryInterceptors...)
-
 	u = append(u, a.unaryRecovery())
 	return u
 }
@@ -131,11 +136,15 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 		contextutil.StreamServerInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
+	if len(a.config.PreAuthContextEnrichers) > 0 {
+		s = append(s, contextutil.StreamServerInterceptor(a.config.PreAuthContextEnrichers...))
+	}
+
 	// Default to deny all access. This forces services to properly override the AuthFunc.
 	s = append(s, grpc_auth.StreamServerInterceptor(deny.AuthFunc))
 
-	if len(a.config.ContextEnrichers) > 0 {
-		s = append(s, contextutil.StreamServerInterceptor(a.config.ContextEnrichers...))
+	if len(a.config.PostAuthContextEnrichers) > 0 {
+		s = append(s, contextutil.StreamServerInterceptor(a.config.PostAuthContextEnrichers...))
 	}
 
 	s = append(s, a.config.StreamInterceptors...)
@@ -167,7 +176,8 @@ func (a *apiImpl) connectToLocalEndpoint() (*grpc.ClientConn, error) {
 
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
-	contextUpdaters = append(contextUpdaters, a.config.ContextEnrichers...)
+	contextUpdaters = append(contextUpdaters, a.config.PreAuthContextEnrichers...)
+	contextUpdaters = append(contextUpdaters, a.config.PostAuthContextEnrichers...)
 
 	// Interceptors for HTTP/1.1 requests (in order of processing):
 	// - RequestInfo handler (consumed by other handlers)

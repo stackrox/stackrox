@@ -28,7 +28,7 @@ var (
 	// This variable is package-level to facilitate the unit test that asserts
 	// that it covers all the summarized categories.
 	// The keys are matched to fields in the v1.SummaryCountsResponse struct.
-	summaryTypeToResource = map[string]permissions.ResourceHandle{
+	summaryTypeToResourceMetadata = map[string]permissions.ResourceMetadata{
 		"NumAlerts":      resources.Alert,
 		"NumClusters":    resources.Cluster,
 		"NumNodes":       resources.Node,
@@ -61,8 +61,8 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (s *serviceImpl) initializeAuthorizer() {
-	requiredPermissions := make([]*v1.Permission, 0, len(summaryTypeToResource))
-	for _, resource := range summaryTypeToResource {
+	requiredPermissions := make([]permissions.ResourceWithAccess, 0, len(summaryTypeToResourceMetadata))
+	for _, resource := range summaryTypeToResourceMetadata {
 		requiredPermissions = append(requiredPermissions, permissions.View(resource))
 	}
 	s.authorizer = perrpc.FromMap(

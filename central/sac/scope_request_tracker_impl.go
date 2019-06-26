@@ -50,6 +50,7 @@ func NewRequestTracker(client client.Client, clusterDatastore datastore.DataStor
 func (srt *ScopeRequestTrackerImpl) AddRequested(scopes ...sac.ScopeRequest) {
 	srt.requestSetLock.Lock()
 	defer srt.requestSetLock.Unlock()
+
 	srt.requestList = append(srt.requestList, scopes...)
 }
 
@@ -57,6 +58,7 @@ func (srt *ScopeRequestTrackerImpl) AddRequested(scopes ...sac.ScopeRequest) {
 func (srt *ScopeRequestTrackerImpl) getAndClearPendingRequests() []sac.ScopeRequest {
 	srt.requestSetLock.Lock()
 	defer srt.requestSetLock.Unlock()
+
 	requestList := srt.requestList
 	srt.requestList = nil
 	return requestList

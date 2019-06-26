@@ -35,7 +35,7 @@ import (
 
 func TestSearchCategoryToResourceMap(t *testing.T) {
 	allCategories := set.NewV1SearchCategorySet(GetAllSearchableCategories()...).Union(autocompleteCategories)
-	categoryToResource := GetSearchCategoryToResource()
+	categoryToResource := GetSearchCategoryToResourceMetadata()
 	for _, searchCategory := range allCategories.AsSlice() {
 		_, ok := categoryToResource[searchCategory]
 		// This is a programming error. If you see this, add the new category you've added to the

@@ -76,8 +76,8 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 }
 
 func checkSearchAuth(ctx context.Context) error {
-	for _, resource := range searchService.GetSearchCategoryToResource() {
-		if err := readAuth(resource.GetResource())(ctx); err != nil {
+	for _, resourceMetadata := range searchService.GetSearchCategoryToResourceMetadata() {
+		if err := readAuth(resourceMetadata)(ctx); err != nil {
 			return err
 		}
 	}

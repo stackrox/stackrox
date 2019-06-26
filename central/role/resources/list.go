@@ -2,7 +2,9 @@
 package resources
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"sort"
+
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
@@ -47,40 +49,61 @@ var (
 	K8sRoleBinding        = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject            = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
 
-	allResources = permissions.NewResourceSet()
+	resourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
 )
 
 func newResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
-	allResources.Add(name)
-	return permissions.ResourceMetadata{
+	md := permissions.ResourceMetadata{
 		Resource: name,
 		Scope:    scope,
 	}
+	resourceToMetadata[name] = md
+	return md
 }
 
 // ListAll returns a list of all resources.
 func ListAll() []permissions.Resource {
-	return allResources.AsSortedSlice(func(i, j permissions.Resource) bool {
-		return i < j
+	resources := make([]permissions.Resource, 0, len(resourceToMetadata))
+	for _, metadata := range ListAllMetadata() {
+		resources = append(resources, metadata.Resource)
+	}
+	return resources
+}
+
+// ListAllMetadata returns a list of all resource metadata.
+func ListAllMetadata() []permissions.ResourceMetadata {
+	metadatas := make([]permissions.ResourceMetadata, 0, len(resourceToMetadata))
+	for _, metadata := range resourceToMetadata {
+		metadatas = append(metadatas, metadata)
+	}
+	sort.SliceStable(metadatas, func(i, j int) bool {
+		return string(metadatas[i].Resource) < string(metadatas[j].Resource)
 	})
+	return metadatas
 }
 
 // AllResourcesViewPermissions returns a slice containing view permissions for all resource types.
-func AllResourcesViewPermissions() []*v1.Permission {
-	resourceLst := ListAll()
-	result := make([]*v1.Permission, len(resourceLst))
-	for i, resource := range resourceLst {
-		result[i] = permissions.View(resource)
+func AllResourcesViewPermissions() []permissions.ResourceWithAccess {
+	metadatas := ListAllMetadata()
+	result := make([]permissions.ResourceWithAccess, len(metadatas))
+	for i, metadata := range metadatas {
+		result[i] = permissions.ResourceWithAccess{
+			Resource: metadata,
+			Access:   storage.Access_READ_ACCESS,
+		}
 	}
 	return result
 }
 
 // AllResourcesModifyPermissions returns a slice containing view permissions for all resource types.
-func AllResourcesModifyPermissions() []*v1.Permission {
-	resourceLst := ListAll()
-	result := make([]*v1.Permission, len(resourceLst))
-	for i, resource := range resourceLst {
-		result[i] = permissions.Modify(resource)
+func AllResourcesModifyPermissions() []permissions.ResourceWithAccess {
+	metadatas := ListAllMetadata()
+	result := make([]permissions.ResourceWithAccess, len(metadatas))
+	for i, metadata := range metadatas {
+		result[i] = permissions.ResourceWithAccess{
+			Resource: metadata,
+			Access:   storage.Access_READ_WRITE_ACCESS,
+		}
 	}
 	return result
 }
