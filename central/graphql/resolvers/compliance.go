@@ -229,7 +229,7 @@ func (resolver *Resolver) ComplianceResults(ctx context.Context, query rawQuery)
 		return nil, err
 	}
 	return resolver.wrapComplianceControlResults(
-		resolver.ComplianceDataStore.QueryControlResults(q))
+		resolver.ComplianceDataStore.QueryControlResults(ctx, q))
 }
 
 func (resolver *complianceStandardMetadataResolver) Controls(ctx context.Context) ([]*complianceControlResolver, error) {

@@ -139,8 +139,8 @@ func (c ScopeChecker) AccessMode(am storage.Access) ScopeChecker {
 }
 
 // Resource returns a scope checker for the subscope corresponding to the given resource.
-func (c ScopeChecker) Resource(resource permissions.Resource) ScopeChecker {
-	return c.SubScopeChecker(ResourceScopeKey(resource))
+func (c ScopeChecker) Resource(resource permissions.ResourceHandle) ScopeChecker {
+	return c.SubScopeChecker(ResourceScopeKey(resource.GetResource()))
 }
 
 // ClusterID returns a scope checker for the subscope corresponding to the given cluster ID.

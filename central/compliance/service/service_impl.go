@@ -4,8 +4,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
+	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
+	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
-	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -33,20 +34,20 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(aggregator aggregation.Aggregator, complianceStore store.Store, standardsRepo standards.Repository, clusterStore datastore.DataStore) Service {
+func New(aggregator aggregation.Aggregator, complianceDataStore complianceDS.DataStore, standardsRepo standards.Repository, clusterStore datastore.DataStore) Service {
 	return &serviceImpl{
-		aggregator:    aggregator,
-		store:         complianceStore,
-		standardsRepo: standardsRepo,
-		clusters:      clusterStore,
+		aggregator:          aggregator,
+		complianceDataStore: complianceDataStore,
+		standardsRepo:       standardsRepo,
+		clusters:            clusterStore,
 	}
 }
 
 type serviceImpl struct {
-	aggregator    aggregation.Aggregator
-	store         store.Store
-	standardsRepo standards.Repository
-	clusters      datastore.DataStore
+	aggregator          aggregation.Aggregator
+	complianceDataStore complianceDS.DataStore
+	standardsRepo       standards.Repository
+	clusters            datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -99,7 +100,7 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 	}
-	results, err := s.store.QueryControlResults(q)
+	results, err := s.complianceDataStore.QueryControlResults(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,7 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 }
 
 func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplianceRunResultsRequest) (*v1.GetComplianceRunResultsResponse, error) {
-	results, err := s.store.GetLatestRunResults(request.GetClusterId(), request.GetStandardId(), store.WithMessageStrings)
+	results, err := s.complianceDataStore.GetLatestRunResults(ctx, request.GetClusterId(), request.GetStandardId(), complianceDSTypes.WithMessageStrings)
 	if err != nil {
 		return nil, err
 	}

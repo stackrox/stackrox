@@ -292,12 +292,12 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return err
 	}
 
-	dockerCISRunResults, err := f.complianceStore.GetLatestRunResults(clusterID, cisDockerStandardID, 0)
+	dockerCISRunResults, err := f.complianceStore.GetLatestRunResults(ctx, clusterID, cisDockerStandardID, 0)
 	if err == nil && dockerCISRunResults.LastSuccessfulResults != nil {
 		r.cisDockerRunCheck = true
 	}
 
-	kubeCISRunResults, err := f.complianceStore.GetLatestRunResults(clusterID, cisKubernetesStandardID, 0)
+	kubeCISRunResults, err := f.complianceStore.GetLatestRunResults(ctx, clusterID, cisKubernetesStandardID, 0)
 	if err == nil && kubeCISRunResults.LastSuccessfulResults != nil {
 		r.cisKubernetesRunCheck = true
 	}

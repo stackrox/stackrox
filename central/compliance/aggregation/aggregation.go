@@ -8,9 +8,10 @@ import (
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
+	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
+	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
 	standardsIndex "github.com/stackrox/rox/central/compliance/standards/index"
-	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMappings "github.com/stackrox/rox/central/deployment/mappings"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
@@ -52,7 +53,7 @@ type Aggregator interface {
 }
 
 // New returns a new aggregator
-func New(compliance complianceStore.Store,
+func New(compliance complianceDS.DataStore,
 	standards standards.Repository,
 	clusters clusterDatastore.DataStore,
 	namespaces namespaceStore.DataStore,
@@ -69,7 +70,7 @@ func New(compliance complianceStore.Store,
 }
 
 type aggregatorImpl struct {
-	compliance  complianceStore.Store
+	compliance  complianceDS.DataStore
 	standards   standards.Repository
 	clusters    clusterDatastore.DataStore
 	namespaces  namespaceStore.DataStore
@@ -210,12 +211,12 @@ func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString stri
 		return nil, nil, mask, err
 	}
 
-	runResults, err := a.compliance.GetLatestRunResultsBatch(clusterIDs, standardIDs, complianceStore.RequireMessageStrings)
+	runResults, err := a.compliance.GetLatestRunResultsBatch(ctx, clusterIDs, standardIDs, complianceDSTypes.RequireMessageStrings)
 	if err != nil {
 		return nil, nil, mask, err
 	}
 
-	validResults, sources := complianceStore.ValidResultsAndSources(runResults)
+	validResults, sources := complianceDS.ValidResultsAndSources(runResults)
 
 	mask, err = a.getCheckMask(ctx, query, querySpecifiedFields)
 	if err != nil {

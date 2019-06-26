@@ -6,11 +6,12 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
-	"github.com/stackrox/rox/central/compliance/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -48,7 +49,7 @@ func createRun(id string, domain framework.ComplianceDomain, standard *standards
 		status:   v1.ComplianceRun_READY,
 	}
 
-	r.ctx, r.cancel = context.WithCancel(context.Background())
+	r.ctx, r.cancel = context.WithCancel(sac.WithAllAccess(context.Background()))
 
 	return r
 }
@@ -60,11 +61,11 @@ func (r *runInstance) updateStatus(s v1.ComplianceRun_State) {
 	r.status = s
 }
 
-func (r *runInstance) Start(dataPromise dataPromise, resultsStore store.Store) {
+func (r *runInstance) Start(dataPromise dataPromise, resultsStore complianceDS.DataStore) {
 	go r.Run(dataPromise, resultsStore)
 }
 
-func (r *runInstance) Run(dataPromise dataPromise, resultsStore store.Store) {
+func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.DataStore) {
 	defer r.cancel()
 
 	if r.schedule != nil {
@@ -80,7 +81,7 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore store.Store) {
 
 	if err == nil {
 		results := r.collectResults(run)
-		if storeErr := resultsStore.StoreRunResults(results); storeErr != nil {
+		if storeErr := resultsStore.StoreRunResults(r.ctx, results); storeErr != nil {
 			err = errors.Wrap(err, "storing results")
 		}
 	}
@@ -89,7 +90,7 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore store.Store) {
 			r.err = err
 		})
 		metadata := r.metadataProto(true)
-		if storeErr := resultsStore.StoreFailure(metadata); storeErr != nil {
+		if storeErr := resultsStore.StoreFailure(r.ctx, metadata); storeErr != nil {
 			log.Errorf("Failed to store metadata for failed compliance run: %v", storeErr)
 		}
 		log.Errorf("Compliance run %s for standard %s on cluster %s failed: %v", r.id, r.standard.Name, r.domain.Cluster().ID(), err)

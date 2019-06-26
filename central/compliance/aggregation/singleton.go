@@ -2,8 +2,8 @@ package aggregation
 
 import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/standards"
-	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
@@ -17,7 +17,7 @@ var (
 
 func initialize() {
 	ag = New(
-		complianceStore.Singleton(),
+		complianceDS.Singleton(),
 		standards.RegistrySingleton(),
 		clusterDatastore.Singleton(),
 		namespaceStore.Singleton(),

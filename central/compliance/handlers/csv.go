@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/compliance/datastore"
+	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
-	"github.com/stackrox/rox/central/compliance/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -173,19 +174,19 @@ func fromTS(timestamp *types.Timestamp) string {
 
 // CSVHandler is an HTTP handler that outputs CSV exports of compliance data
 func CSVHandler() http.HandlerFunc {
-	complianceStore := store.Singleton()
+	complianceDS := datastore.Singleton()
 	return func(w http.ResponseWriter, r *http.Request) {
 		options, err := parseOptions(r)
 		if err != nil {
 			writeErr(w, http.StatusBadRequest, err)
 			return
 		}
-		data, err := complianceStore.GetLatestRunResultsFiltered(options.clusterIDFilter(), options.standardIDFilter(), store.WithMessageStrings)
+		data, err := complianceDS.GetLatestRunResultsFiltered(r.Context(), options.clusterIDFilter(), options.standardIDFilter(), complianceDSTypes.WithMessageStrings)
 		if err != nil {
 			writeErr(w, http.StatusInternalServerError, err)
 			return
 		}
-		validResults, _ := store.ValidResultsAndSources(data)
+		validResults, _ := datastore.ValidResultsAndSources(data)
 		var output csvResults
 		output.header = []string{"Standard", "Cluster", "Namespace", "Object Type", "Object Name", "Control", "Control Description", "State", "Evidence", "Assessment Time"}
 		standards := standards.RegistrySingleton()

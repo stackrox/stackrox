@@ -4,9 +4,9 @@ import (
 	"context"
 
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
+	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
-	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	imageStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
@@ -35,7 +35,7 @@ type factory struct {
 	processIndicatorStore processIndicatorStore.DataStore
 	networkFlowDataStore  nfDS.ClusterDataStore
 	notifierDataStore     notifierDataStore.DataStore
-	complianceStore       complianceStore.Store
+	complianceStore       complianceDS.DataStore
 	standardsRepo         standards.Repository
 	roleDataStore         k8sRoleDataStore.DataStore
 	bindingDataStore      k8sBindingDataStore.DataStore
@@ -53,7 +53,7 @@ func NewDefaultFactory() RepositoryFactory {
 		processIndicatorStore: processIndicatorStore.Singleton(),
 		networkFlowDataStore:  nfDS.Singleton(),
 		notifierDataStore:     notifierDataStore.Singleton(),
-		complianceStore:       complianceStore.Singleton(),
+		complianceStore:       complianceDS.Singleton(),
 		standardsRepo:         standards.RegistrySingleton(),
 		roleDataStore:         k8sRoleDataStore.Singleton(),
 		bindingDataStore:      k8sBindingDataStore.Singleton(),

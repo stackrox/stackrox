@@ -6,6 +6,7 @@ import (
 
 	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/types"
+	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -84,7 +85,7 @@ func (s *boltStoreTestSuite) TestStoreSuccesses() {
 
 	storedResults, err := s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: results1}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: results1}, storedResults)
 
 	// Store results for standardB at 12pm. For cluster1, standardA the previous results should still be returned as the
 	// most recent.
@@ -103,11 +104,11 @@ func (s *boltStoreTestSuite) TestStoreSuccesses() {
 
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: results1}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: results1}, storedResults)
 
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardB", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: results2}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: results2}, storedResults)
 
 	// Store results for standardA from 8pm. These should now be the most recent results for cluster1, standardA.
 	results3 := &storage.ComplianceRunResults{
@@ -125,7 +126,7 @@ func (s *boltStoreTestSuite) TestStoreSuccesses() {
 
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: results3}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: results3}, storedResults)
 
 	// Store results for standardA from 4pm. The previous results from 8pm should still be the most recent for
 	// cluster1, standardA.
@@ -144,7 +145,7 @@ func (s *boltStoreTestSuite) TestStoreSuccesses() {
 
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: results3}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: results3}, storedResults)
 }
 
 func (s *boltStoreTestSuite) TestStoreFailures() {
@@ -169,7 +170,7 @@ func (s *boltStoreTestSuite) TestStoreFailures() {
 
 	storedResults, err := s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{FailedRuns: []*storage.ComplianceRunMetadata{run1MD}}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{FailedRuns: []*storage.ComplianceRunMetadata{run1MD}}, storedResults)
 
 	run2Results := &storage.ComplianceRunResults{
 		RunMetadata: &storage.ComplianceRunMetadata{
@@ -186,7 +187,7 @@ func (s *boltStoreTestSuite) TestStoreFailures() {
 
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: run2Results}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: run2Results}, storedResults)
 
 	run3MD := &storage.ComplianceRunMetadata{
 		RunId:           "run3",
@@ -202,7 +203,7 @@ func (s *boltStoreTestSuite) TestStoreFailures() {
 
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: run2Results, FailedRuns: []*storage.ComplianceRunMetadata{run3MD}}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: run2Results, FailedRuns: []*storage.ComplianceRunMetadata{run3MD}}, storedResults)
 
 	run4MD := &storage.ComplianceRunMetadata{
 		RunId:           "run4",
@@ -218,7 +219,7 @@ func (s *boltStoreTestSuite) TestStoreFailures() {
 
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: run2Results, FailedRuns: []*storage.ComplianceRunMetadata{run4MD, run3MD}}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: run2Results, FailedRuns: []*storage.ComplianceRunMetadata{run4MD, run3MD}}, storedResults)
 
 	run5Results := &storage.ComplianceRunResults{
 		RunMetadata: &storage.ComplianceRunMetadata{
@@ -235,5 +236,5 @@ func (s *boltStoreTestSuite) TestStoreFailures() {
 
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
-	s.Equal(ResultsWithStatus{LastSuccessfulResults: run5Results}, storedResults)
+	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: run5Results}, storedResults)
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
@@ -46,17 +46,13 @@ type boltStore struct {
 	resultsBucket bolthelper.BucketRef
 }
 
-func (s *boltStore) QueryControlResults(query *v1.Query) ([]*storage.ComplianceControlResult, error) {
-	return nil, errors.New("not yet implemented")
-}
-
-func (s *boltStore) GetLatestRunResults(clusterID, standardID string, flags GetFlags) (ResultsWithStatus, error) {
+func (s *boltStore) GetLatestRunResults(clusterID, standardID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
 	allResults, err := s.GetLatestRunResultsBatch([]string{clusterID}, []string{standardID}, flags)
 	if err != nil {
-		return ResultsWithStatus{}, err
+		return dsTypes.ResultsWithStatus{}, err
 	}
 	if len(allResults) == 0 {
-		return ResultsWithStatus{}, fmt.Errorf("no results found for cluster %q and standard %q", clusterID, standardID)
+		return dsTypes.ResultsWithStatus{}, fmt.Errorf("no results found for cluster %q and standard %q", clusterID, standardID)
 	}
 	return allResults[compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}], nil
 }
@@ -75,7 +71,7 @@ func loadMessageStrings(resultsBucket *bbolt.Bucket, resultsProto *storage.Compl
 	return nil
 }
 
-func readResults(resultsBucket *bbolt.Bucket, flags GetFlags) (*storage.ComplianceRunMetadata, *storage.ComplianceRunResults, error) {
+func readResults(resultsBucket *bbolt.Bucket, flags dsTypes.GetFlags) (*storage.ComplianceRunMetadata, *storage.ComplianceRunResults, error) {
 	metadataBytes := resultsBucket.Get(metadataKey)
 	if metadataBytes == nil {
 		return nil, nil, errors.New("bucket does not have a metadata entry")
@@ -100,9 +96,9 @@ func readResults(resultsBucket *bbolt.Bucket, flags GetFlags) (*storage.Complian
 	}
 	results.RunMetadata = &metadata
 
-	if flags&(WithMessageStrings|RequireMessageStrings) != 0 {
+	if flags&(dsTypes.WithMessageStrings|dsTypes.RequireMessageStrings) != 0 {
 		if err := loadMessageStrings(resultsBucket, &results); err != nil {
-			if flags&RequireMessageStrings != 0 {
+			if flags&dsTypes.RequireMessageStrings != 0 {
 				return nil, nil, errors.Wrap(err, "loading message strings")
 			}
 			log.Errorf("Could not load message strings for compliance run results: %v", err)
@@ -111,10 +107,10 @@ func readResults(resultsBucket *bbolt.Bucket, flags GetFlags) (*storage.Complian
 	return &metadata, &results, nil
 }
 
-func getLatestRunResults(standardBucket *bbolt.Bucket, flags GetFlags) ResultsWithStatus {
+func getLatestRunResults(standardBucket *bbolt.Bucket, flags dsTypes.GetFlags) dsTypes.ResultsWithStatus {
 	cursor := standardBucket.Cursor()
 
-	var results ResultsWithStatus
+	var results dsTypes.ResultsWithStatus
 	for latestRunBucketKey, _ := cursor.Last(); latestRunBucketKey != nil; latestRunBucketKey, _ = cursor.Prev() {
 		runBucket := standardBucket.Bucket(latestRunBucketKey)
 		if runBucket == nil {
@@ -138,8 +134,8 @@ func getLatestRunResults(standardBucket *bbolt.Bucket, flags GetFlags) ResultsWi
 	return results
 }
 
-func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, flags GetFlags) (map[compliance.ClusterStandardPair]ResultsWithStatus, error) {
-	results := make(map[compliance.ClusterStandardPair]ResultsWithStatus)
+func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {
+	results := make(map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus)
 	err := s.resultsBucket.View(func(b *bbolt.Bucket) error {
 		for _, clusterID := range clusterIDs {
 			clusterBucket := b.Bucket([]byte(clusterID))
@@ -164,8 +160,8 @@ func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, f
 	return results, nil
 }
 
-func (s *boltStore) GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter func(string) bool, flags GetFlags) (map[compliance.ClusterStandardPair]ResultsWithStatus, error) {
-	results := make(map[compliance.ClusterStandardPair]ResultsWithStatus)
+func (s *boltStore) GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter func(string) bool, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {
+	results := make(map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus)
 	err := s.resultsBucket.View(func(b *bbolt.Bucket) error {
 		clusterCursor := b.Cursor()
 		for clusterKey, _ := clusterCursor.First(); clusterKey != nil; clusterKey, _ = clusterCursor.Next() {

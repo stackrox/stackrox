@@ -9,11 +9,11 @@ import (
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/compliance"
 	complianceDataMocks "github.com/stackrox/rox/central/compliance/data/mocks"
+	complianceDSMocks "github.com/stackrox/rox/central/compliance/datastore/mocks"
 	"github.com/stackrox/rox/central/compliance/manager"
 	complianceMgrMocks "github.com/stackrox/rox/central/compliance/manager/mocks"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
-	complianceStoreMocks "github.com/stackrox/rox/central/compliance/store/mocks"
 	deploymentDatastoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	scrapeMocks "github.com/stackrox/rox/central/scrape/factory/mocks"
@@ -35,7 +35,7 @@ type managerTestSuite struct {
 	mockDeploymentStore *deploymentDatastoreMocks.MockDataStore
 	mockDataRepoFactory *complianceDataMocks.MockRepositoryFactory
 	mockScrapeFactory   *scrapeMocks.MockScrapeFactory
-	mockResultsStore    *complianceStoreMocks.MockStore
+	mockResultsStore    *complianceDSMocks.MockDataStore
 }
 
 func TestManager(t *testing.T) {
@@ -114,7 +114,7 @@ func (s *managerTestSuite) SetupTest() {
 	s.mockNodeStore = nodeDatastoreMocks.NewMockGlobalDataStore(s.mockCtrl)
 	s.mockDeploymentStore = deploymentDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.mockScrapeFactory = scrapeMocks.NewMockScrapeFactory(s.mockCtrl)
-	s.mockResultsStore = complianceStoreMocks.NewMockStore(s.mockCtrl)
+	s.mockResultsStore = complianceDSMocks.NewMockDataStore(s.mockCtrl)
 
 	s.mockScheduleStore.EXPECT().ListSchedules().Return(nil, nil)
 	var err error

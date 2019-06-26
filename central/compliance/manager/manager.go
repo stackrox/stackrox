@@ -6,8 +6,8 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/data"
+	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/standards"
-	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	"github.com/stackrox/rox/central/scrape/factory"
@@ -52,6 +52,6 @@ func NewManager(standardsRegistry *standards.Registry,
 	deploymentStore datastore.DataStore,
 	dataRepoFactory data.RepositoryFactory,
 	scrapeFactory factory.ScrapeFactory,
-	resultsStore complianceResultsStore.Store) (ComplianceManager, error) {
+	resultsStore complianceDS.DataStore) (ComplianceManager, error) {
 	return newManager(standardsRegistry, scheduleStore, clusterStore, nodeStore, deploymentStore, dataRepoFactory, scrapeFactory, resultsStore)
 }

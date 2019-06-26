@@ -1,0 +1,36 @@
+package datastore
+
+import (
+	"context"
+
+	"github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/central/compliance"
+	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
+	"github.com/stackrox/rox/central/compliance/datastore/types"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+)
+
+// DataStore is the interface for accessing stored compliance data
+//go:generate mockgen-wrapper DataStore
+type DataStore interface {
+	QueryControlResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceControlResult, error)
+
+	GetLatestRunResults(ctx context.Context, clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error)
+	GetLatestRunResultsBatch(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
+	GetLatestRunResultsFiltered(ctx context.Context, clusterIDFilter, standardIDFilter func(string) bool, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
+
+	StoreRunResults(ctx context.Context, results *storage.ComplianceRunResults) error
+	StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error
+}
+
+// NewDataStore returns a new instance of a DataStore.
+func NewDataStore(db *bbolt.DB) (DataStore, error) {
+	boltStore, err := store.NewBoltStore(db)
+	if err != nil {
+		return nil, err
+	}
+	return &datastoreImpl{
+		boltStore: boltStore,
+	}, nil
+}

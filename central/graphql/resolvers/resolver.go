@@ -11,11 +11,11 @@ import (
 	"github.com/stackrox/rox/central/apitoken/backend"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
+	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	complianceManager "github.com/stackrox/rox/central/compliance/manager"
 	"github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
-	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -43,7 +43,7 @@ type Resolver struct {
 	ComplianceAggregator        aggregation.Aggregator
 	APITokenBackend             backend.Backend
 	ClusterDataStore            clusterDatastore.DataStore
-	ComplianceDataStore         complianceStore.Store
+	ComplianceDataStore         complianceDS.DataStore
 	ComplianceStandardStore     complianceStandards.Repository
 	ComplianceService           v1.ComplianceServiceServer
 	ComplianceManagementService v1.ComplianceManagementServiceServer
@@ -71,7 +71,7 @@ func New() *Resolver {
 	resolver := &Resolver{
 		ComplianceAggregator:        aggregation.Singleton(),
 		APITokenBackend:             backend.Singleton(),
-		ComplianceDataStore:         complianceStore.Singleton(),
+		ComplianceDataStore:         complianceDS.Singleton(),
 		ComplianceStandardStore:     complianceStandards.RegistrySingleton(),
 		ComplianceManagementService: service.Singleton(),
 		ComplianceManager:           complianceManager.Singleton(),

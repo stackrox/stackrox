@@ -1,14 +1,15 @@
-package store
+package datastore
 
 import (
 	"github.com/stackrox/rox/central/compliance"
+	"github.com/stackrox/rox/central/compliance/datastore/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // ValidResultsAndSources decomposes the given map into the valid, most recent results, and a list of sources that store the
 // metadata of all referenced cluster/standard pair and their successful/failed runs.
-func ValidResultsAndSources(allResults map[compliance.ClusterStandardPair]ResultsWithStatus) ([]*storage.ComplianceRunResults, []*v1.ComplianceAggregation_Source) {
+func ValidResultsAndSources(allResults map[compliance.ClusterStandardPair]types.ResultsWithStatus) ([]*storage.ComplianceRunResults, []*v1.ComplianceAggregation_Source) {
 	var validResults []*storage.ComplianceRunResults
 	var sources []*v1.ComplianceAggregation_Source
 
