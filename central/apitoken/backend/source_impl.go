@@ -6,13 +6,17 @@ import (
 
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 const (
-	id = `https://stackrox.io/jwt-sources#api-tokens`
+	id       = `https://stackrox.io/jwt-sources#api-tokens`
+	apiToken = "api-token"
 )
 
 type sourceImpl struct {
@@ -48,4 +52,41 @@ func (s *sourceImpl) Revoke(tokenID string, expiry time.Time) {
 
 func (s *sourceImpl) ID() string {
 	return id
+}
+
+func (s *sourceImpl) Name() string {
+	return apiToken
+}
+
+func (s *sourceImpl) Type() string {
+	return apiToken
+}
+
+func (s *sourceImpl) Enabled() bool {
+	return true
+}
+
+func (s *sourceImpl) StorageView() *storage.AuthProvider {
+	// API token sources have no storage view.
+	return nil
+}
+
+func (s *sourceImpl) Backend() authproviders.Backend {
+	// API token sources have no Backend
+	return nil
+}
+
+func (s *sourceImpl) RoleMapper() permissions.RoleMapper {
+	// API token sources have no RoleMapper
+	return nil
+}
+
+func (s *sourceImpl) Issuer() tokens.Issuer {
+	// API token sources have an Issuer but it isn't accessed from here
+	return nil
+}
+
+func (s *sourceImpl) ApplyOptions(options ...authproviders.ProviderOption) error {
+	// API token sources are not modified through Options methods as they aren't in the registry
+	return nil
 }

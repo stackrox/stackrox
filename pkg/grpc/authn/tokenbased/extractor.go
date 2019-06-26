@@ -43,9 +43,21 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		return nil, errors.Wrap(err, "token validation failed")
 	}
 
+	// All tokens should have a source.
+	if len(token.Sources) != 1 {
+		return nil, errors.New("tokens must originate from exactly one source")
+	}
+	authProviderSrc, ok := token.Sources[0].(authproviders.Provider)
+	if !ok {
+		return nil, errors.New("API tokens must originate from an authentication provider source")
+	}
+	if !authProviderSrc.Enabled() {
+		return nil, fmt.Errorf("auth provider %s is not enabled", authProviderSrc.Name())
+	}
+
 	// Anonymous permission-based tokens (true bearer tokens).
 	if token.Permissions != nil {
-		return e.withPermissions(token)
+		return e.withPermissions(token, authProviderSrc)
 	}
 
 	// We need all access for retrieving roles and upserting user info. Note that this context
@@ -57,24 +69,27 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	// Anonymous role-based tokens.
 	if token.RoleName != "" {
-		return e.withRoleName(ctx, token)
+		return e.withRoleName(ctx, token, authProviderSrc)
 	}
 
 	// External user token
 	if token.ExternalUser != nil {
-		return e.withExternalUser(ctx, token)
+		return e.withExternalUser(ctx, token, authProviderSrc)
 	}
 
 	return nil, errors.New("could not determine token type")
 }
 
-func (e *extractor) withPermissions(token *tokens.TokenInfo) (authn.Identity, error) {
+func (e *extractor) withPermissions(token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
+	attributes := map[string][]string{"name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("auth-token:%s", token.ID),
 		username:     token.ExternalUser.Email,
 		friendlyName: token.Subject,
 		role:         permissions.NewRoleWithPermissions("unnamed", token.Permissions...),
 		expiry:       token.Expiry(),
+		authProvider: authProvider,
+		attributes:   attributes,
 	}
 	if id.friendlyName == "" {
 		id.friendlyName = fmt.Sprintf("anonymous bearer token (expires %v)", token.Expiry())
@@ -82,7 +97,7 @@ func (e *extractor) withPermissions(token *tokens.TokenInfo) (authn.Identity, er
 	return id, nil
 }
 
-func (e *extractor) withRoleName(ctx context.Context, token *tokens.TokenInfo) (authn.Identity, error) {
+func (e *extractor) withRoleName(ctx context.Context, token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
 	role, err := e.roleStore.GetRole(ctx, token.RoleName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read role role %q", token.RoleName)
@@ -94,12 +109,15 @@ func (e *extractor) withRoleName(ctx context.Context, token *tokens.TokenInfo) (
 	if token.ExternalUser != nil {
 		email = token.ExternalUser.Email
 	}
+	attributes := map[string][]string{"role": {role.GetName()}, "name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("auth-token:%s", token.ID),
 		username:     email,
 		friendlyName: token.Subject,
 		role:         role,
 		expiry:       token.Expiry(),
+		attributes:   attributes,
+		authProvider: authProvider,
 	}
 	if id.friendlyName == "" {
 		id.friendlyName = fmt.Sprintf("anonymous bearer token with role %s (expires %v)", role.GetName(), token.Expiry())
@@ -107,20 +125,12 @@ func (e *extractor) withRoleName(ctx context.Context, token *tokens.TokenInfo) (
 	return id, nil
 }
 
-func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInfo) (authn.Identity, error) {
+func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
 	if len(token.Sources) != 1 {
 		return nil, errors.New("external user tokens must originate from exactly one source")
 	}
 
-	authProviderSrc, ok := token.Sources[0].(authproviders.Provider)
-	if !ok {
-		return nil, errors.New("external user tokens must originate from an authentication provider source")
-	}
-	if !authProviderSrc.Enabled() {
-		return nil, fmt.Errorf("auth provider %s is not enabled", authProviderSrc.Name())
-	}
-
-	roleMapper := authProviderSrc.RoleMapper()
+	roleMapper := authProvider.RoleMapper()
 	if roleMapper == nil {
 		return nil, errors.New("misconfigured authentication provider: no role mapper defined")
 	}
@@ -138,7 +148,7 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		return nil, fmt.Errorf("external user %s has no assigned role", token.ExternalUser.UserID)
 	}
 
-	id := createRoleBasedIdentity(role, token, authProviderSrc)
+	id := createRoleBasedIdentity(role, token, authProvider)
 	return id, nil
 }
 

@@ -145,7 +145,7 @@ func (r *registryImpl) RegisterBackendFactory(ctx context.Context, typ string, f
 			continue
 		}
 		go func(p Provider) {
-			if err := p.applyOptions(WithBackendFromFactory(ctx, factory)); err != nil {
+			if err := p.ApplyOptions(WithBackendFromFactory(ctx, factory)); err != nil {
 				log.Errorf("Failed to apply options: %v", err)
 			}
 		}(provider)
@@ -179,7 +179,7 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 
 	// Run the updates with an update to the store added.
 	// This will perform name validation since it is a secondary key in the store.
-	if err := provider.applyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
+	if err := provider.ApplyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
 		return nil, err
 	}
 	r.updatedNoLock(provider)
@@ -196,7 +196,7 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, id string) error {
 		return nil
 	}
 
-	if err := provider.applyOptions(DeleteFromStore(ctx, r.store)); err != nil {
+	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store)); err != nil {
 		return err
 	}
 	delete(r.providers, id)

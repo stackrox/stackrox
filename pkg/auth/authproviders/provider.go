@@ -22,7 +22,7 @@ type Provider interface {
 	RoleMapper() permissions.RoleMapper
 	Issuer() tokens.Issuer
 
-	applyOptions(options ...ProviderOption) error
+	ApplyOptions(options ...ProviderOption) error
 }
 
 // NewProvider creates a new provider with the input options.

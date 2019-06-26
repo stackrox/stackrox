@@ -95,7 +95,7 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 }
 
 // We must lock the provider when applying options to it.
-func (p *providerImpl) applyOptions(options ...ProviderOption) error {
+func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
