@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -57,7 +58,7 @@ type pipelineImpl struct {
 	enrichAndDetectLoop reprocessor.Loop
 }
 
-func (s *pipelineImpl) Reconcile(_ context.Context, _ string) error {
+func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	// Nothing to reconcile for image integrations
 	return nil
 }

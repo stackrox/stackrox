@@ -1,12 +1,14 @@
 package reprocessor
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/central/deployment/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,12 +20,14 @@ type loopTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	mockManager *connectionMocks.MockManager
+	mockManager    *connectionMocks.MockManager
+	mockDeployment *mocks.MockDataStore
 }
 
 func (suite *loopTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockManager = connectionMocks.NewMockManager(suite.mockCtrl)
+	suite.mockDeployment = mocks.NewMockDataStore(suite.mockCtrl)
 }
 
 func (suite *loopTestSuite) TearDownTest() {
@@ -35,11 +39,12 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 	if allowMore {
 		timesSpec = (*gomock.Call).MinTimes
 	}
-	timesSpec(suite.mockManager.EXPECT().GetActiveConnections(), times).Return([]connection.SensorConnection{})
+	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).ProtoQuery()
+	timesSpec(suite.mockDeployment.EXPECT().SearchDeployments(context.TODO(), query), times).Return(nil, nil)
 }
 
 func (suite *loopTestSuite) TestTimerDoesNotTick() {
-	loop := NewLoop(suite.mockManager)
+	loop := NewLoop(suite.mockManager, suite.mockDeployment)
 	loop.Start()
 	loop.Stop()
 	suite.mockManager.EXPECT().GetActiveConnections().MaxTimes(0)
@@ -47,7 +52,7 @@ func (suite *loopTestSuite) TestTimerDoesNotTick() {
 
 func (suite *loopTestSuite) TestTimerTicksOnce() {
 	duration := 1 * time.Second // Need this to be long enough that the enrichAndDetectTicker won't get called twice during the test.
-	loop := newLoopWithDuration(suite.mockManager, duration, duration)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockDeployment, duration, duration)
 	suite.expectCalls(1, false)
 	loop.Start()
 	time.Sleep(duration + 10*time.Millisecond)
@@ -56,7 +61,7 @@ func (suite *loopTestSuite) TestTimerTicksOnce() {
 
 func (suite *loopTestSuite) TestTimerTicksTwice() {
 	duration := 100 * time.Millisecond
-	loop := newLoopWithDuration(suite.mockManager, duration, duration)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockDeployment, duration, duration)
 	suite.expectCalls(2, true)
 	loop.Start()
 	time.Sleep((2 * duration) + (10 * time.Millisecond))
@@ -64,7 +69,7 @@ func (suite *loopTestSuite) TestTimerTicksTwice() {
 }
 
 func (suite *loopTestSuite) TestShortCircuitOnce() {
-	loop := NewLoop(suite.mockManager)
+	loop := NewLoop(suite.mockManager, suite.mockDeployment)
 	suite.expectCalls(1, false)
 	loop.Start()
 	go loop.ShortCircuit()
@@ -74,7 +79,7 @@ func (suite *loopTestSuite) TestShortCircuitOnce() {
 }
 
 func (suite *loopTestSuite) TestShortCircuitTwice() {
-	loop := NewLoop(suite.mockManager)
+	loop := NewLoop(suite.mockManager, suite.mockDeployment)
 	suite.expectCalls(2, false)
 	loop.Start()
 	go loop.ShortCircuit()
@@ -85,7 +90,7 @@ func (suite *loopTestSuite) TestShortCircuitTwice() {
 }
 
 func (suite *loopTestSuite) TestStopWorks() {
-	loop := NewLoop(suite.mockManager)
+	loop := NewLoop(suite.mockManager, suite.mockDeployment)
 	suite.expectCalls(1, false)
 	loop.Start()
 	go loop.ShortCircuit()

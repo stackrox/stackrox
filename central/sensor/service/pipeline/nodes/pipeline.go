@@ -35,19 +35,17 @@ func GetPipeline() pipeline.Fragment {
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(clusters clusterDataStore.DataStore, nodes globaldatastore.GlobalDataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		clusterStore:   clusters,
-		nodeStore:      nodes,
-		reconcileStore: reconciliation.NewStore(),
+		clusterStore: clusters,
+		nodeStore:    nodes,
 	}
 }
 
 type pipelineImpl struct {
-	clusterStore   clusterDataStore.DataStore
-	nodeStore      globaldatastore.GlobalDataStore
-	reconcileStore reconciliation.Store
+	clusterStore clusterDataStore.DataStore
+	nodeStore    globaldatastore.GlobalDataStore
 }
 
-func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
+func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := p.nodeStore.Search(ctx, query)
 	if err != nil {
@@ -59,7 +57,8 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
 		return errors.Wrap(err, "getting cluster-local node store")
 	}
 
-	return reconciliation.Perform(p.reconcileStore, search.ResultsToIDSet(results), "nodes", func(id string) error {
+	store := storeMap.Get((*central.SensorEvent_Node)(nil))
+	return reconciliation.Perform(store, search.ResultsToIDSet(results), "nodes", func(id string) error {
 		return p.processRemove(clusterStore, &storage.Node{Id: id})
 	})
 }
@@ -92,8 +91,6 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		return p.processRemove(store, node)
 	}
-
-	p.reconcileStore.Add(event.GetId())
 
 	node = proto.Clone(node).(*storage.Node)
 	node.ClusterId = clusterID

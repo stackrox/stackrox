@@ -60,7 +60,7 @@ func (e *managerImpl) ReprocessDeploymentRiskWithImages(deployment *storage.Depl
 func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	images, err := e.deploymentStorage.GetImagesForDeployment(depAndImageCtx, deployment)
 	if err != nil {
-		log.Errorf("error fetching images for deployment %s", deployment.GetName())
+		log.Errorf("error fetching images for deployment %s: %v", deployment.GetName(), err)
 		return
 	}
 	e.ReprocessDeploymentRiskWithImages(deployment, images)

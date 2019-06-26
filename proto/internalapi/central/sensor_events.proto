@@ -28,6 +28,11 @@ enum ResourceAction {
 // Event updates from sensor to central.
 ////////////////////////////////////////
 
+message ReprocessDeployment {
+    string deployment_id = 1;
+    bool   risk_only     = 2;
+}
+
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
     string         id                           = 1;
@@ -50,6 +55,7 @@ message SensorEvent {
         ResourcesSynced                 synced                  = 11;
         storage.OrchestratorMetadata    orchestrator_metadata   = 12;
         storage.ImageIntegration        image_integration       = 13;
+        ReprocessDeployment             reprocess_deployment    = 17;
     }
 }
 
@@ -75,7 +81,6 @@ message DeploymentEnforcement {
 }
 
 message ContainerInstanceEnforcement {
-    string container_instance_id = 1;
     string pod_id                = 2;
 
     DeploymentEnforcement deployment_enforcement = 3;

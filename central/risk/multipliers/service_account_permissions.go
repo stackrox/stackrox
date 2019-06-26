@@ -140,7 +140,6 @@ func (c *saPermissionsMultiplier) tokenAutomounted(ctx context.Context, deployme
 		return nil, false
 	}
 	if len(serviceAccounts) == 0 {
-		log.Warnf("could not find service account %q for deployment %q", saName, deployment.GetName())
 		return nil, false
 	}
 

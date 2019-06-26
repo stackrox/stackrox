@@ -8,6 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/central/sensor/service/common"
+	reconciliation "github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	reflect "reflect"
 )
@@ -58,15 +59,15 @@ func (mr *MockFragmentMockRecorder) OnFinish(arg0 interface{}) *gomock.Call {
 }
 
 // Reconcile mocks base method
-func (m *MockFragment) Reconcile(arg0 context.Context, arg1 string) error {
-	ret := m.ctrl.Call(m, "Reconcile", arg0, arg1)
+func (m *MockFragment) Reconcile(arg0 context.Context, arg1 string, arg2 *reconciliation.StoreMap) error {
+	ret := m.ctrl.Call(m, "Reconcile", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Reconcile indicates an expected call of Reconcile
-func (mr *MockFragmentMockRecorder) Reconcile(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockFragment)(nil).Reconcile), arg0, arg1)
+func (mr *MockFragmentMockRecorder) Reconcile(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockFragment)(nil).Reconcile), arg0, arg1, arg2)
 }
 
 // Run mocks base method

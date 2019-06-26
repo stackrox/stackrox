@@ -10,6 +10,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -45,7 +46,7 @@ type pipelineImpl struct {
 }
 
 // Reconcile runs after all updates for a cluster have be run through their respective pipelines.
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, _ *reconciliation.StoreMap) error {
 	// Recompile all policies that might need it, but throttle.
 	s.throttler.Run(func() {
 		err := s.updatePolicies(ctx, msgAndPolicyPredicates)

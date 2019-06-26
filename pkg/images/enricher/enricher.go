@@ -32,7 +32,7 @@ func New(is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache, scan
 	return &enricherImpl{
 		integrations: is,
 
-		metadataLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
+		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
 
 		scanLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),

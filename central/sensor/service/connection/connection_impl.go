@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc/metadata"
 )
@@ -28,7 +30,10 @@ type sensorConnection struct {
 	scrapeCtrl          scrape.Controller
 	networkPoliciesCtrl networkpolicies.Controller
 
-	eventQueue    *dedupingQueue
+	sensorEventHandler *sensorEventHandler
+
+	queues map[string]*dedupingQueue
+
 	eventPipeline pipeline.ClusterPipeline
 
 	clusterMgr               ClusterManager
@@ -46,13 +51,16 @@ func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, c
 		stoppedSig:    concurrency.NewErrorSignal(),
 		sendC:         make(chan *central.MsgToSensor),
 		eventPipeline: eventPipeline,
-		eventQueue:    newDedupingQueue(),
+		queues:        make(map[string]*dedupingQueue),
 
 		clusterID:  clusterID,
 		clusterMgr: clusterMgr,
 
 		checkInRecordRateLimiter: rate.NewLimiter(rate.Every(10*time.Second), 1),
 	}
+
+	// Need a reference to conn for injector
+	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig)
 
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
@@ -77,6 +85,17 @@ func (c *sensorConnection) recordCheckInRateLimited(ctx context.Context) {
 	}
 }
 
+func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.MsgFromSensor) {
+	typ := reflectutils.Type(msg.Msg)
+	queue := c.queues[typ]
+	if queue == nil {
+		queue = newDedupingQueue()
+		c.queues[typ] = queue
+		go c.handleMessages(ctx, queue)
+	}
+	queue.push(msg)
+}
+
 func (c *sensorConnection) runRecv(ctx context.Context, server central.SensorService_CommunicateServer) {
 	for !c.stopSig.IsDone() {
 		msg, err := server.Recv()
@@ -86,19 +105,12 @@ func (c *sensorConnection) runRecv(ctx context.Context, server central.SensorSer
 		}
 		c.recordCheckInRateLimited(ctx)
 
-		switch msg.Msg.(type) {
-		case *central.MsgFromSensor_ScrapeUpdate:
-			if err := c.handleMessage(ctx, msg); err != nil {
-				log.Errorf("Error handling sensor msg: %v", err)
-			}
-		default:
-			c.eventQueue.push(msg)
-		}
+		c.multiplexedPush(ctx, msg)
 	}
 }
 
-func (c *sensorConnection) handleMessages(ctx context.Context) {
-	for msg := c.eventQueue.pullBlocking(&c.stopSig); msg != nil; msg = c.eventQueue.pullBlocking(&c.stopSig) {
+func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQueue) {
+	for msg := queue.pullBlocking(&c.stopSig); msg != nil; msg = queue.pullBlocking(&c.stopSig) {
 		if err := c.handleMessage(ctx, msg); err != nil {
 			log.Errorf("Error handling sensor message: %v", err)
 		}
@@ -129,7 +141,7 @@ func (c *sensorConnection) Scrapes() scrape.Controller {
 }
 
 func (c *sensorConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
-	c.eventQueue.push(msg)
+	c.multiplexedPush(sac.WithAllAccess(context.Background()), msg)
 }
 
 func (c *sensorConnection) NetworkPolicies() networkpolicies.Controller {
@@ -154,12 +166,22 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	case *central.MsgFromSensor_Event:
+		// Special case the reprocess deployment because its fields are already set
+		if msg.GetEvent().GetReprocessDeployment() != nil {
+			c.sensorEventHandler.addMultiplexed(ctx, msg)
+			return nil
+		}
+		// Only dedupe on non-creates
 		if msg.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE {
 			msg.DedupeKey = msg.GetEvent().GetId()
 		}
+		// Set the hash key for all values
+		msg.HashKey = msg.GetEvent().GetId()
+
+		c.sensorEventHandler.addMultiplexed(ctx, msg)
+		return nil
 	}
 	return c.eventPipeline.Run(ctx, msg, c)
-
 }
 
 func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.MsgToSensor, error) {
@@ -195,7 +217,6 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 	}
 
 	go c.runSend(server)
-	go c.handleMessages(ctx)
 
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()

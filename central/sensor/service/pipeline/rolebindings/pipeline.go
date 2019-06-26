@@ -33,7 +33,6 @@ func NewPipeline(clusters clusterDatastore.DataStore, bindings datastore.DataSto
 	return &pipelineImpl{
 		clusters:        clusters,
 		bindings:        bindings,
-		reconcileStore:  reconciliation.NewStore(),
 		riskReprocessor: reprocessor.Singleton(),
 	}
 }
@@ -41,18 +40,18 @@ func NewPipeline(clusters clusterDatastore.DataStore, bindings datastore.DataSto
 type pipelineImpl struct {
 	clusters        clusterDatastore.DataStore
 	bindings        datastore.DataStore
-	reconcileStore  reconciliation.Store
 	riskReprocessor reprocessor.Loop
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.bindings.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	err = reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "k8srolebindings", func(id string) error {
+	store := storeMap.Get((*central.SensorEvent_Binding)(nil))
+	err = reconciliation.Perform(store, search.ResultsToIDSet(results), "k8srolebindings", func(id string) error {
 		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.K8SRoleBinding{Id: id})
 	})
 
@@ -84,7 +83,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), binding)
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
-		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(ctx, event.GetAction(), binding)
 	default:
 		return fmt.Errorf("Event action '%s' for k8s role binding does not exist", event.GetAction())

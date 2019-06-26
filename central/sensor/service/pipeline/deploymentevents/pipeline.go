@@ -53,7 +53,6 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		graphEvaluator: graphEvaluator,
 		deployments:    deployments,
 		clusters:       clusters,
-		reconcileStore: reconciliation.NewStore(),
 	}
 }
 
@@ -69,18 +68,17 @@ type pipelineImpl struct {
 	clusters    clusterDataStore.DataStore
 
 	graphEvaluator graph.Evaluator
-
-	reconcileStore reconciliation.Store
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.deployments.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "deployments", func(id string) error {
+	store := storeMap.Get((*central.SensorEvent_Deployment)(nil))
+	return reconciliation.Perform(store, search.ResultsToIDSet(results), "deployments", func(id string) error {
 		_, err := s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
 		return err
 	})
@@ -104,7 +102,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		resp, err = s.runRemovePipeline(ctx, event.GetAction(), deployment)
 	default:
-		s.reconcileStore.Add(event.GetId())
 		resp, err = s.runGeneralPipeline(ctx, event.GetAction(), deployment)
 	}
 	if err != nil {

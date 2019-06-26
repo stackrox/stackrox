@@ -33,7 +33,6 @@ func NewPipeline(clusters clusterDatastore.DataStore, roles datastore.DataStore)
 	return &pipelineImpl{
 		clusters:        clusters,
 		roles:           roles,
-		reconcileStore:  reconciliation.NewStore(),
 		riskReprocessor: reprocessor.Singleton(),
 	}
 }
@@ -41,26 +40,24 @@ func NewPipeline(clusters clusterDatastore.DataStore, roles datastore.DataStore)
 type pipelineImpl struct {
 	clusters        clusterDatastore.DataStore
 	roles           datastore.DataStore
-	reconcileStore  reconciliation.Store
 	riskReprocessor reprocessor.Loop
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
-
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.roles.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	err = reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "k8sroles", func(id string) error {
+	store := storeMap.Get((*central.SensorEvent_Role)(nil))
+	err = reconciliation.Perform(store, search.ResultsToIDSet(results), "k8sroles", func(id string) error {
 		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.K8SRole{Id: id})
 	})
 
 	if err != nil {
 		return err
 	}
-
 	s.riskReprocessor.ReprocessRisk()
 	return nil
 }
@@ -85,7 +82,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), role)
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
-		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(ctx, event.GetAction(), role)
 	default:
 		return fmt.Errorf("event action '%s' for k8s role does not exist", event.GetAction())

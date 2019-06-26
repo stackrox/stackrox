@@ -32,26 +32,25 @@ func GetPipeline() pipeline.Fragment {
 // NewPipeline returns a new instance of Pipeline for secrets
 func NewPipeline(clusters clusterDataStore.DataStore, secrets datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		clusters:       clusters,
-		secrets:        secrets,
-		reconcileStore: reconciliation.NewStore(),
+		clusters: clusters,
+		secrets:  secrets,
 	}
 }
 
 type pipelineImpl struct {
-	clusters       clusterDataStore.DataStore
-	secrets        datastore.DataStore
-	reconcileStore reconciliation.Store
+	clusters clusterDataStore.DataStore
+	secrets  datastore.DataStore
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.secrets.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "secrets", func(id string) error {
+	store := storeMap.Get((*central.SensorEvent_Secret)(nil))
+	return reconciliation.Perform(store, search.ResultsToIDSet(results), "secrets", func(id string) error {
 		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.Secret{Id: id})
 	})
 }
@@ -72,7 +71,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), secret)
 	default:
-		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(ctx, event.GetAction(), secret)
 	}
 }

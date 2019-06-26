@@ -9,27 +9,15 @@ import "internalapi/central/sensor_events.proto";
 
 package central;
 
-message ReprocessDeployments {
-    message AllTarget  {}
-    message RiskTarget {}
-
-    repeated string deployment_ids = 1;
-    oneof Target {
-        AllTarget  all   = 2;
-        RiskTarget risk  = 3;
-    }
-
-}
-
 message MsgFromSensor {
-    string dedupe_key = 7;
+    string hash_key          = 7;
+    string dedupe_key        = 8;
     oneof msg {
         SensorEvent                  event                           = 1;
         NetworkFlowUpdate            network_flow_update             = 2;
         ScrapeUpdate                 scrape_update                   = 3;
         NetworkPoliciesResponse      network_policies_response       = 4;
         ClusterStatusUpdate          cluster_status_update           = 5;
-        ReprocessDeployments         reprocess_deployments           = 6;
     }
 }
 

@@ -409,27 +409,10 @@ func (m *managerImpl) generateAndSendEnforcements(alerts []*storage.Alert, indic
 		// If the alert has enforcement, we want to generate a list of enforcement and injector pairs.
 		for _, singleIndicator := range alert.GetProcessViolation().GetProcesses() {
 			if infoWithInjector, ok := indicatorsToInfo[singleIndicator.GetId()]; ok {
-				// Get the deployment details to check that the deployment is still running.
-				deployment, exists, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, alert.GetDeployment().GetId())
-				if err != nil {
-					log.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", alert.GetDeployment().GetId(), err)
-					continue
-				}
-				if !exists {
-					log.Errorf("Couldn't enforce on deployment %s: not found in store", alert.GetDeployment().GetId())
-					continue
-				}
-
 				// Generate the enforcement action.
-				containerID := infoWithInjector.indicator.GetSignal().GetContainerId()
-				enforcement := createEnforcementAction(alert, deployment, containerID)
-				if enforcement == nil {
-					log.Errorf("Couldn't enforce on container %s, not found in deployment %s/%s", containerID, deployment.GetNamespace(), deployment.GetName())
-					continue
-				}
-
+				enforcement := createEnforcementAction(alert, infoWithInjector.indicator.GetPodId())
 				// Attempt to send the enforcement with the injector.
-				err = infoWithInjector.msgToSensorInjector.InjectMessage(context.Background(), &central.MsgToSensor{
+				err := infoWithInjector.msgToSensorInjector.InjectMessage(context.Background(), &central.MsgToSensor{
 					Msg: &central.MsgToSensor_Enforcement{
 						Enforcement: enforcement,
 					},
@@ -442,34 +425,14 @@ func (m *managerImpl) generateAndSendEnforcements(alerts []*storage.Alert, indic
 	}
 }
 
-func createEnforcementAction(alert *storage.Alert, deployment *storage.Deployment, containerID string) *central.SensorEnforcement {
-	// Find the container instance in the deployment, and generate an enforcement action for it.
-	for _, container := range deployment.GetContainers() {
-		for _, instance := range container.GetInstances() {
-			// Skip instances without well formed IDs.
-			if len(instance.GetInstanceId().GetId()) < 12 {
-				continue
-			}
-
-			// If the id matches the container we are generating enforcement from, create an eforcement action for the instance.
-			if containerID == instance.GetInstanceId().GetId()[:12] {
-				return createEnforcementActionFromInstance(alert, deployment, instance)
-			}
-		}
-	}
-	return nil
-}
-
-func createEnforcementActionFromInstance(alert *storage.Alert, deployment *storage.Deployment, instance *storage.ContainerInstance) *central.SensorEnforcement {
+func createEnforcementAction(alert *storage.Alert, podID string) *central.SensorEnforcement {
 	resource := &central.SensorEnforcement_ContainerInstance{
 		ContainerInstance: &central.ContainerInstanceEnforcement{
-			ContainerInstanceId: instance.GetInstanceId().GetId(),
-			PodId:               instance.GetContainingPodId(),
+			PodId: podID,
 			DeploymentEnforcement: &central.DeploymentEnforcement{
-				DeploymentId:   deployment.GetId(),
-				DeploymentName: deployment.GetName(),
-				Namespace:      deployment.GetNamespace(),
-				DeploymentType: deployment.GetType(),
+				DeploymentId:   alert.GetDeployment().GetId(),
+				DeploymentName: alert.GetDeployment().GetName(),
+				Namespace:      alert.GetDeployment().GetNamespace(),
 				PolicyName:     alert.GetPolicy().GetName(),
 			},
 		},

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -31,17 +32,19 @@ type pipelineImpl struct {
 	fragments []pipeline.Fragment
 }
 
+// Reconcile passes through the reconciliation store to all the fragments and allows them to handle their reconciliation
+// This will only happen once per cluster because the pipeline is generated every time the streamer connects
+func (s *pipelineImpl) Reconcile(ctx context.Context, reconciliationStore *reconciliation.StoreMap) error {
+	log.Infof("Received Synced message from Sensor. Determining if there is any reconciliation to be done")
+	errList := errorhelpers.NewErrorList("Reconciling state")
+	for _, fragment := range s.fragments {
+		errList.AddError(fragment.Reconcile(ctx, s.clusterID, reconciliationStore))
+	}
+	return errList.ToError()
+}
+
 // Run looks for one fragment (and only one) that matches the input message and runs that fragment on the message and injector.
 func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, injector common.MessageInjector) error {
-	// This will only happen once per cluster because the pipeline is generated every time the streamer connects
-	if msg.GetEvent().GetSynced() != nil {
-		log.Infof("Received Synced message from Sensor. Determining if there is any reconciliation to be done")
-		errList := errorhelpers.NewErrorList("Reconciling state")
-		for _, fragment := range s.fragments {
-			errList.AddError(fragment.Reconcile(ctx, s.clusterID))
-		}
-		return errList.ToError()
-	}
 	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg))
 
 	var matchCount int

@@ -36,7 +36,6 @@ func NewPipeline(clusters clusterDataStore.DataStore, namespaces namespaceDataSt
 		clusters:       clusters,
 		namespaces:     namespaces,
 		graphEvaluator: graphEvaluator,
-		reconcileStore: reconciliation.NewStore(),
 	}
 }
 
@@ -44,16 +43,16 @@ type pipelineImpl struct {
 	clusters       clusterDataStore.DataStore
 	namespaces     namespaceDataStore.DataStore
 	graphEvaluator graph.Evaluator
-	reconcileStore reconciliation.Store
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.namespaces.Search(ctx, query)
 	if err != nil {
 		return err
 	}
-	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "namespaces", func(id string) error {
+	store := storeMap.Get((*central.SensorEvent_Namespace)(nil))
+	return reconciliation.Perform(store, search.ResultsToIDSet(results), "namespaces", func(id string) error {
 		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.NamespaceMetadata{Id: id})
 	})
 }
@@ -74,7 +73,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), namespace)
 	default:
-		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(ctx, event.GetAction(), namespace)
 	}
 }

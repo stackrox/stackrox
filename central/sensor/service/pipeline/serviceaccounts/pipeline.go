@@ -39,7 +39,6 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		clusters:        clusters,
 		deployments:     deployments,
 		serviceaccounts: serviceaccounts,
-		reconcileStore:  reconciliation.NewStore(),
 		riskReprocessor: reprocessor.Singleton(),
 	}
 }
@@ -48,20 +47,18 @@ type pipelineImpl struct {
 	clusters        clusterDataStore.DataStore
 	deployments     deploymentDataStore.DataStore
 	serviceaccounts datastore.DataStore
-	reconcileStore  reconciliation.Store
 	riskReprocessor reprocessor.Loop
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
-	defer s.reconcileStore.Close()
-
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.serviceaccounts.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	idsToDelete := search.ResultsToIDSet(results).Difference(s.reconcileStore.GetSet()).AsSlice()
+	store := storeMap.Get((*central.SensorEvent_ServiceAccount)(nil))
+	idsToDelete := search.ResultsToIDSet(results).Difference(store.GetSet()).AsSlice()
 	if len(idsToDelete) > 0 {
 		log.Infof("Deleting service accounts %+v as a part of reconciliation", idsToDelete)
 	}
@@ -92,7 +89,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), sa)
 	default:
-		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(ctx, event.GetAction(), sa)
 	}
 }

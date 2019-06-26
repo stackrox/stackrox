@@ -1,12 +1,16 @@
 package reprocessor
 
 import (
+	"context"
 	"time"
 
+	"github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/deployment/mappings"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/throttle"
@@ -16,8 +20,8 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	fullRiskReprocessKey = uuid.NewV4().String()
-	fullReprocessKey     = uuid.NewV4().String()
+	riskDedupeNamespace = uuid.NewV4()
+	dedupeNamespace     = uuid.NewV4()
 
 	once sync.Once
 	loop Loop
@@ -26,7 +30,7 @@ var (
 // Singleton returns the singleton reprocessor loop
 func Singleton() Loop {
 	once.Do(func() {
-		loop = NewLoop(connection.ManagerSingleton())
+		loop = NewLoop(connection.ManagerSingleton(), datastore.Singleton())
 	})
 	return loop
 }
@@ -43,18 +47,19 @@ type Loop interface {
 }
 
 // NewLoop returns a new instance of a Loop.
-func NewLoop(connManager connection.Manager) Loop {
-	return newLoopWithDuration(connManager, 8*time.Hour, 15*time.Second)
+func NewLoop(connManager connection.Manager, deployments datastore.DataStore) Loop {
+	return newLoopWithDuration(connManager, deployments, time.Hour, 15*time.Second)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
-func newLoopWithDuration(connManager connection.Manager, enrichAndDetectDuration, deploymentRiskDuration time.Duration) Loop {
+func newLoopWithDuration(connManager connection.Manager, deployments datastore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration) Loop {
 	return &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
 		deploymenRiskTickerDuration:   deploymentRiskDuration,
 
+		deployments:       deployments,
 		deploymentRiskSet: set.NewStringSet(),
 
 		stopChan:  concurrency.NewSignal(),
@@ -70,6 +75,7 @@ type loopImpl struct {
 	enrichAndDetectTickerDuration time.Duration
 	enrichAndDetectTicker         *time.Ticker
 
+	deployments                 datastore.DataStore
 	deploymentRiskSet           set.StringSet
 	deploymentRiskLock          sync.Mutex
 	deploymentRiskTicker        *time.Ticker
@@ -84,7 +90,7 @@ type loopImpl struct {
 }
 
 func (l *loopImpl) ReprocessRisk() {
-	l.throttler.Run(func() { l.sendRisk() })
+	l.throttler.Run(func() { l.sendDeployments(true) })
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
@@ -113,46 +119,56 @@ func (l *loopImpl) ShortCircuit() {
 	}
 }
 
-func (l *loopImpl) sendEnrichAndDetect(deploymentIDs ...string) {
-	var key string
-	if len(deploymentIDs) == 0 {
-		key = fullReprocessKey
+func (l *loopImpl) sendDeployments(riskOnly bool, deploymentIDs ...string) {
+	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
+	if len(deploymentIDs) > 0 {
+		query = query.AddDocIDs(deploymentIDs...)
 	}
-	msg := &central.MsgFromSensor{
-		DedupeKey: key,
-		Msg: &central.MsgFromSensor_ReprocessDeployments{
-			ReprocessDeployments: &central.ReprocessDeployments{
-				DeploymentIds: deploymentIDs,
-				Target: &central.ReprocessDeployments_All{
-					All: &central.ReprocessDeployments_AllTarget{},
+
+	results, err := l.deployments.SearchDeployments(context.TODO(), query.ProtoQuery())
+	if err != nil {
+		log.Errorf("error getting results for reprocessing: %v", err)
+		return
+	}
+
+	path, ok := mappings.OptionsMap.Get(search.ClusterID.String())
+	if !ok {
+		panic("No Cluster ID option for deployments")
+	}
+
+	for _, r := range results {
+		clusterIDs := r.FieldToMatches[path.FieldPath].GetValues()
+		if len(clusterIDs) == 0 {
+			log.Error("no cluster id found in fields")
+			continue
+		}
+
+		conn := l.connManager.GetConnection(clusterIDs[0])
+		if conn == nil {
+			continue
+		}
+
+		var dedupeKey string
+		if riskOnly {
+			dedupeKey = uuid.NewV5(riskDedupeNamespace, r.Id).String()
+		} else {
+			dedupeKey = uuid.NewV5(dedupeNamespace, r.Id).String()
+		}
+
+		msg := &central.MsgFromSensor{
+			HashKey:   r.Id,
+			DedupeKey: dedupeKey,
+			Msg: &central.MsgFromSensor_Event{
+				Event: &central.SensorEvent{
+					Resource: &central.SensorEvent_ReprocessDeployment{
+						ReprocessDeployment: &central.ReprocessDeployment{
+							DeploymentId: r.Id,
+							RiskOnly:     riskOnly,
+						},
+					},
 				},
 			},
-		},
-	}
-	l.sendMessageToPipeline(msg)
-}
-
-func (l *loopImpl) sendRisk(deploymentIDs ...string) {
-	var key string
-	if len(deploymentIDs) == 0 {
-		key = fullRiskReprocessKey
-	}
-	msg := &central.MsgFromSensor{
-		DedupeKey: key,
-		Msg: &central.MsgFromSensor_ReprocessDeployments{
-			ReprocessDeployments: &central.ReprocessDeployments{
-				DeploymentIds: deploymentIDs,
-				Target: &central.ReprocessDeployments_Risk{
-					Risk: &central.ReprocessDeployments_RiskTarget{},
-				},
-			},
-		},
-	}
-	l.sendMessageToPipeline(msg)
-}
-
-func (l *loopImpl) sendMessageToPipeline(msg *central.MsgFromSensor) {
-	for _, conn := range l.connManager.GetActiveConnections() {
+		}
 		conn.InjectMessageIntoQueue(msg)
 	}
 }
@@ -166,13 +182,13 @@ func (l *loopImpl) loop() {
 		case <-l.stopChan.Done():
 			return
 		case <-l.shortChan:
-			l.sendEnrichAndDetect()
+			l.sendDeployments(false)
 		case <-l.enrichAndDetectTicker.C:
-			l.sendEnrichAndDetect()
+			l.sendDeployments(false)
 		case <-l.deploymentRiskTicker.C:
 			l.deploymentRiskLock.Lock()
 			if l.deploymentRiskSet.Cardinality() > 0 {
-				l.sendRisk(l.deploymentRiskSet.AsSlice()...)
+				l.sendDeployments(true, l.deploymentRiskSet.AsSlice()...)
 				l.deploymentRiskSet.Clear()
 			}
 			l.deploymentRiskLock.Unlock()

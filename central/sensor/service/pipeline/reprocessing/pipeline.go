@@ -9,10 +9,10 @@ import (
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -39,36 +39,30 @@ type pipelineImpl struct {
 	manager     enrichanddetect.EnricherAndDetector
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string) error {
+func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, _ *reconciliation.StoreMap) error {
 	// Nothing to reconcile
 	return nil
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetReprocessDeployments() != nil
+	return msg.GetEvent().GetReprocessDeployment() != nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.DeploymentReprocess)
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).AddExactMatches(search.DeploymentID, msg.GetReprocessDeployments().GetDeploymentIds()...).ProtoQuery()
-	deployments, err := s.deployments.SearchRawDeployments(ctx, q)
-	if err != nil {
+	reprocessMsg := msg.GetEvent().GetReprocessDeployment()
+
+	deployment, exists, err := s.deployments.GetDeployment(ctx, reprocessMsg.GetDeploymentId())
+	if err != nil || !exists {
 		return err
 	}
 
-	switch msg.GetReprocessDeployments().Target.(type) {
-	case *central.ReprocessDeployments_Risk:
-		for _, d := range deployments {
-			s.riskManager.ReprocessDeploymentRisk(d)
-		}
-	case *central.ReprocessDeployments_All:
-		for _, d := range deployments {
-			if err := s.manager.EnrichAndDetect(d); err != nil {
-				log.Error(err)
-			}
-		}
+	if reprocessMsg.RiskOnly {
+		s.riskManager.ReprocessDeploymentRisk(deployment)
+	} else {
+		return s.manager.EnrichAndDetect(deployment)
 	}
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/deploymentenvs"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -37,7 +38,7 @@ type pipelineImpl struct {
 	deploymentEnvsMgr deploymentenvs.Manager
 }
 
-func (s *pipelineImpl) Reconcile(_ context.Context, _ string) error {
+func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	// Nothing to reconcile
 	return nil
 }

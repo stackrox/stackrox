@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	rateLimitDuration = 20 * time.Second
+	rateLimitDuration = 10 * time.Second
 	tickerDuration    = 1 * time.Minute
 )
 

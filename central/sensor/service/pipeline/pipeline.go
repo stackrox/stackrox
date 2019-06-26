@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
@@ -17,6 +18,7 @@ type BasePipeline interface {
 type ClusterPipeline interface {
 	BasePipeline
 
+	Reconcile(ctx context.Context, reconciliationStore *reconciliation.StoreMap) error
 	Run(ctx context.Context, msg *central.MsgFromSensor, injector common.MessageInjector) error
 }
 
@@ -35,7 +37,7 @@ type Fragment interface {
 	Match(msg *central.MsgFromSensor) bool
 
 	Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error
-	Reconcile(ctx context.Context, clusterID string) error
+	Reconcile(ctx context.Context, clusterID string, reconciliationStore *reconciliation.StoreMap) error
 }
 
 // FragmentFactory returns a Fragment for the given cluster.

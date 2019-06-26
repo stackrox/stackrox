@@ -5,14 +5,12 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -35,9 +33,8 @@ type DataStore interface {
 // New returns a new DataStore instance using the provided store and indexer
 func New(store store.Store, indexer index.Indexer) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:      store,
-		indexer:    indexer,
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		store:   store,
+		indexer: indexer,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -53,8 +50,6 @@ var (
 type datastoreImpl struct {
 	store   store.Store
 	indexer index.Indexer
-
-	keyedMutex *concurrency.KeyedMutex
 }
 
 func (b *datastoreImpl) buildIndex() error {
@@ -109,8 +104,6 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return errors.New("permission denied")
 	}
 
-	b.keyedMutex.Lock(namespace.GetId())
-	defer b.keyedMutex.Unlock(namespace.GetId())
 	if err := b.store.AddNamespace(namespace); err != nil {
 		return err
 	}
@@ -125,8 +118,6 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return errors.New("permission denied")
 	}
 
-	b.keyedMutex.Lock(namespace.GetId())
-	defer b.keyedMutex.Unlock(namespace.GetId())
 	if err := b.store.UpdateNamespace(namespace); err != nil {
 		return err
 	}
@@ -141,8 +132,6 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 		return errors.New("permission denied")
 	}
 
-	b.keyedMutex.Lock(id)
-	defer b.keyedMutex.Unlock(id)
 	if err := b.store.RemoveNamespace(id); err != nil {
 		return err
 	}
