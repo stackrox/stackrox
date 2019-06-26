@@ -27,6 +27,7 @@ import (
 	processWhitelistMapping "github.com/stackrox/rox/central/processwhitelist/index/mappings"
 	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
+	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
 	secretOptions "github.com/stackrox/rox/central/secret/mappings"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -81,7 +82,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		entityOptionsMap[v1.SearchCategory_SERVICE_ACCOUNTS] = serviceAccountOptions.OptionsMap
 		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.OptionsMap
 		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.OptionsMap
-
+		entityOptionsMap[v1.SearchCategory_SUBJECTS] = subjectMapping.OptionsMap
 	}
 
 	return entityOptionsMap

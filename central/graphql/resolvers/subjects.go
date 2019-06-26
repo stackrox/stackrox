@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/rbac/service"
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
@@ -15,6 +16,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddQuery("subjects(query: String): [Subject!]!"),
 		schema.AddExtraResolver("SubjectWithClusterID", `name: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `namespace: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
@@ -39,6 +41,37 @@ func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (st
 	}
 
 	return resolver.subject.Namespace(ctx), nil
+}
+
+// Subjects resolves list of subjects matching a query
+func (resolver *Resolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectResolver, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := args.AsV1Query()
+	if err != nil {
+		return nil, err
+	}
+
+	bindings, err := resolver.K8sRoleBindingStore.ListRoleBindings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Subject return only users and groups, there is a separate resolver for service accounts.
+	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
+
+	filteredSubjects, err := service.GetFilteredSubjects(query, subjects)
+	if err != nil {
+		return nil, err
+	}
+
+	var subjectResolvers []*subjectResolver
+	for _, subject := range filteredSubjects {
+		subjectResolvers = append(subjectResolvers, &subjectResolver{root: resolver, data: subject})
+	}
+
+	return subjectResolvers, nil
 }
 
 func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string, error) {

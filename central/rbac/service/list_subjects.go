@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
@@ -20,7 +21,7 @@ import (
 )
 
 func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) (*v1.ListSubjectsResponse, error) {
-	subjectsToList, err := getFilteredSubjects(rawQuery, bindings)
+	subjectsToList, err := getFilteredSubjectsByRoleBinding(rawQuery, bindings)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,7 @@ func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*s
 }
 
 // Filter subjects referenced in a set of bindings with a raw search query.
-func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBinding) ([]*storage.Subject, error) {
+func getFilteredSubjectsByRoleBinding(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBinding) ([]*storage.Subject, error) {
 	subjectsToFilter := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 	if len(subjectsToFilter) == 0 {
 		return nil, nil
@@ -52,7 +53,7 @@ func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBindi
 	// Filter the input query to only have subject fields.
 	subjectQuery := &v1.RawQuery{
 		Query: search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
-			_, isSubjectField := optionsMap.Get(field)
+			_, isSubjectField := mapping.OptionsMap.Get(field)
 			return isSubjectField
 		}),
 	}
@@ -66,7 +67,11 @@ func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBindi
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	return GetFilteredSubjects(parsed, subjectsToFilter)
+}
 
+// GetFilteredSubjects filters subjects based on a proto query
+func GetFilteredSubjects(query *v1.Query, subjectsToFilter []*storage.Subject) ([]*storage.Subject, error) {
 	// Create a temporary index.
 	tempIndex, err := globalindex.MemOnlyIndex()
 	defer utils.IgnoreError(tempIndex.Close)
@@ -74,7 +79,6 @@ func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBindi
 	if err != nil {
 		return nil, errors.Wrapf(err, "initializing temp index")
 	}
-	defer utils.IgnoreError(tempIndex.Close)
 	tempIndexer := indexerImpl{index: tempIndex}
 
 	// Index all of the subjects, and map by name.
@@ -87,7 +91,7 @@ func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBindi
 	}
 
 	// Run the search.
-	resultNames, err := tempIndexer.Search(parsed)
+	resultNames, err := tempIndexer.Search(query)
 	if err != nil {
 		return nil, errors.Wrapf(err, "searching temp index")
 	}
@@ -101,9 +105,6 @@ func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBindi
 }
 
 // Utils to temporarily index subjects.
-///////////////////////////////////////
-
-var optionsMap = blevesearch.Walk(v1.SearchCategory_SUBJECTS, "subject", (*storage.Subject)(nil))
 
 // Wrapper to index subjects within.
 type subjectWrapper struct {
@@ -128,5 +129,5 @@ func (i *indexerImpl) Add(subject *storage.Subject) error {
 
 func (i *indexerImpl) Search(subjectQuery *v1.Query) ([]searchPkg.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Subject")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_SUBJECTS, subjectQuery, i.index, optionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_SUBJECTS, subjectQuery, i.index, mapping.OptionsMap)
 }
