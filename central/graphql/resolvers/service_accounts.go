@@ -17,6 +17,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("serviceAccount(id: ID!): ServiceAccount"),
+		schema.AddQuery("serviceAccounts(query: String): [ServiceAccount!]!"),
 		schema.AddType("StringListEntry", []string{"key: String!", "values: [String!]!"}),
 		schema.AddType("ScopedPermissions", []string{"scope: String!", "permissions: [StringListEntry!]!"}),
 		schema.AddExtraResolver("ServiceAccount", `roles: [K8SRole!]!`),
@@ -33,6 +34,24 @@ func (resolver *Resolver) ServiceAccount(ctx context.Context, args struct{ graph
 		return nil, err
 	}
 	return resolver.wrapServiceAccount(resolver.ServiceAccountsDataStore.GetServiceAccount(ctx, string(args.ID)))
+}
+
+// ServiceAccounts gets service accounts based on a query
+func (resolver *Resolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := args.AsV1Query()
+	if err != nil {
+		return nil, err
+	}
+
+	serviceAccountResolvers, err := resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccountResolvers, nil
 }
 
 func (resolver *serviceAccountResolver) Roles(ctx context.Context) ([]*k8SRoleResolver, error) {
