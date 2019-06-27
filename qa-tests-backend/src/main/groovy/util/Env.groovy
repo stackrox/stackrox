@@ -6,7 +6,7 @@ class Env {
 
     private static String mustGetEnv(String envVar) {
         String value = System.getenv(envVar)
-        if (value == "null") {
+        if (!value) {
             throw new RuntimeException(envVar + " must be defined in the env")
         }
         return value

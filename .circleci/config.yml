@@ -113,6 +113,31 @@ setupCIMonitoring: &setupCIMonitoring
 
       echo "Set up CI monitoring to write to ${INFLUXDB_URL}."
 
+
+setupDefaultTLSCerts: &setupDefaultTLSCerts
+  run:
+    name: Setup default TLS certificates
+    command: |
+      cert_dir="$(mktemp -d)"
+      ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
+      cci-export ROX_DEFAULT_TLS_CERT_FILE "${cert_dir}/tls.crt"
+      cci-export ROX_DEFAULT_TLS_KEY_FILE "${cert_dir}/tls.key"
+      cci-export ROX_TEST_CA_PEM "$(cat "${cert_dir}/ca.crt")"
+      cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
+
+      cci-export TRUSTSTORE_PATH "${cert_dir}/keystore.p12"
+
+setupClientTLSCerts: &setupClientTLSCerts
+  run:
+    name: Setup client auth TLS certificates
+    command: |
+      cert_dir="$(mktemp -d)"
+      ./tests/scripts/setup-certs.sh "$cert_dir" "Client Certificate User" "Client CA"
+
+      cci-export KEYSTORE_PATH "${cert_dir}/keystore.p12"
+      cci-export CLIENT_CA_PATH "${cert_dir}/ca.crt"
+
+
 waitForAPI: &waitForAPI
   run:
     name: Wait for the API server to be up
@@ -940,15 +965,7 @@ jobs:
       - *setupGoogleAppCreds
       - *setupLicense
 
-      - run:
-          name: Setup default TLS certificates
-          command: |
-            cert_dir="$(mktemp -d)"
-            ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local
-            cci-export ROX_DEFAULT_TLS_CERT_FILE "${cert_dir}/tls.crt"
-            cci-export ROX_DEFAULT_TLS_KEY_FILE "${cert_dir}/tls.key"
-            cci-export ROX_TEST_CA_PEM "$(cat "${cert_dir}/ca.crt")"
-            cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
+      - *setupDefaultTLSCerts
 
       - *deployGKE
       - *setupCIMonitoring
@@ -1027,29 +1044,12 @@ jobs:
       - *setupGoogleAppCreds
       - *setupLicense
 
-      - run:
-          name: Setup default TLS certificates
-          command: |
-            cert_dir="$(mktemp -d)"
-            ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
-            cci-export ROX_DEFAULT_TLS_CERT_FILE "${cert_dir}/tls.crt"
-            cci-export ROX_DEFAULT_TLS_KEY_FILE "${cert_dir}/tls.key"
-            cci-export ROX_TEST_CA_PEM "$(cat "${cert_dir}/ca.crt")"
-            cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
-
-            cci-export TRUSTSTORE_PATH "${cert_dir}/keystore.p12"
+      - *setupDefaultTLSCerts
 
       - *deployGKE
       - *setupCIMonitoring
 
-      - run:
-          name: Setup client auth TLS certificates
-          command: |
-            cert_dir="$(mktemp -d)"
-            ./tests/scripts/setup-certs.sh "$cert_dir" "Client Certificate User" "Client CA"
-
-            cci-export KEYSTORE_PATH "${cert_dir}/keystore.p12"
-            cci-export CLIENT_CA_PATH "${cert_dir}/ca.crt"
+      - *setupClientTLSCerts
 
       - *waitForAPI
       - *waitForSensorK8s
@@ -1139,8 +1139,14 @@ jobs:
           cluster-id: qa-tests-kernel-module
       - *setupGoogleAppCreds
       - *setupLicense
+
+      - *setupDefaultTLSCerts
+
       - *deployGKE
       - *setupCIMonitoring
+
+      - *setupClientTLSCerts
+
       - *waitForAPI
       - *waitForSensorK8s
 
@@ -1521,17 +1527,19 @@ jobs:
       - *setupGoogleAppCreds
       - *setupLicense
 
+      - *setupDefaultTLSCerts
+
       - run:
           name: Deploy to remote cluster
           command: |
             ./deploy/openshift/deploy.sh
             oc -n stackrox get all
-
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/openshift/
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
       - *setupCIMonitoring
+      - *setupClientTLSCerts
       - *waitForAPI
       - *waitForSensorK8s
 
@@ -1711,6 +1719,8 @@ jobs:
       - *setupGoogleAppCreds
       - *setupLicense
 
+      - *setupDefaultTLSCerts
+
       - run:
           name: Deploy to remote cluster
           command: |
@@ -1722,6 +1732,7 @@ jobs:
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
       - *setupCIMonitoring
+      - *setupClientTLSCerts
       - *waitForAPI
       - *waitForSensorK8s
 
