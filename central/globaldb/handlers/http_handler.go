@@ -26,7 +26,6 @@ const (
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
 func BackupDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
-	log.Info("Starting DB backup ...")
 	return serializeDB(boltDB, badgerDB, false)
 }
 
@@ -51,8 +50,8 @@ func deferredExit(code int) {
 
 // RestoreDB is a handler that takes in a DB and restores Central to it
 func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
-	log.Info("Starting DB restore ...")
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		log.Info("Starting DB restore ...")
 		filename := filepath.Join(os.TempDir(), time.Now().Format(restoreFileFormat))
 
 		f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
@@ -99,6 +98,7 @@ func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
 
 func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, scrubSecrets bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		log.Info("Starting DB backup ...")
 		filename := time.Now().Format(dbFileFormat)
 
 		w.Header().Set("Content-Type", "application/zip")
