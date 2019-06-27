@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func getDockerData(ret *compliance.ComplianceReturn) (*types.Data, error) {
@@ -17,6 +18,8 @@ func getDockerData(ret *compliance.ComplianceReturn) (*types.Data, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	defer utils.IgnoreError(gzReader.Close)
 
 	var dockerData types.Data
 	if err := easyjson.UnmarshalFromReader(gzReader, &dockerData); err != nil {
