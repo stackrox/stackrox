@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/deploy"
 	"github.com/stackrox/rox/roxctl/central/license"
+	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/debug"
 )
 
@@ -24,6 +25,7 @@ func Command() *cobra.Command {
 		db.Command(),
 		debug.Command(),
 		license.Command(),
+		userpki.Command(),
 	)
 	return c
 }
