@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	storeMocks "github.com/stackrox/rox/central/externalbackups/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,10 +22,6 @@ const (
 	FakeID   = "FAKEID"
 	FakeName = "FAKENAME"
 	FakeType = "FAKETYPE"
-)
-
-var (
-	errFake = errors.New("fake error")
 )
 
 // NewFakeExtBkps constructs and returns a new External Backup object suitable for unit-testing.
@@ -79,11 +74,11 @@ func (s *extBkpDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestUpsertExtBkps() {
-	s.storage.EXPECT().ListBackups().Return(nil, errFake)
+	s.storage.EXPECT().ListBackups().Times(0)
 
 	result, err := s.dataStore.ListBackups(s.hasNoneCtx)
-	s.Equal(errFake, err)
-	s.Nil(result, "expected return value to be nil")
+	s.NoError(err)
+	s.Empty(result)
 
 	s.storage.EXPECT().UpsertBackup(NewFakeExtBkp()).Return(nil)
 
@@ -101,11 +96,11 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesList() {
 	if !features.ScopedAccessControl.Enabled() {
 		s.T().Skip()
 	}
-	s.storage.EXPECT().ListBackups().Return(nil, errFake)
+	s.storage.EXPECT().ListBackups().Times(0)
 
 	result, err := s.dataStore.ListBackups(s.hasNoneCtx)
-	s.Equal(errFake, err)
-	s.Nil(result, "expected return value to be nil")
+	s.NoError(err)
+	s.Empty(result)
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsList() {

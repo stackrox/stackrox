@@ -52,7 +52,7 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Alert)))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -213,11 +213,13 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Alert)))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
+	s.storage.EXPECT().GetTxnCount().Return(uint64(1), nil)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
+	s.indexer.EXPECT().GetTxnCount().Return(uint64(1))
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	var err error
 	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
@@ -230,7 +232,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
 
 	err := s.dataStore.AddAlert(s.hasReadCtx, alerttest.NewFakeAlert())
 
-	s.Equal(errFake, err)
+	s.EqualError(err, "permission denied")
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertEnforced() {
@@ -240,18 +242,18 @@ func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertEnforced() {
 
 	err := s.dataStore.UpdateAlert(s.hasReadCtx, alerttest.NewFakeAlert())
 
-	s.Equal(errFake, err)
+	s.EqualError(err, "permission denied")
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Times(0)
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.storage.EXPECT().UpdateAlert(gomock.Any()).Times(0)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Times(0)
 
 	err := s.dataStore.MarkAlertStale(s.hasReadCtx, alerttest.FakeAlertID)
-	s.NoError(err)
+	s.EqualError(err, "permission denied")
 
-	s.Equal(storage.ViolationState_RESOLVED, fakeAlert.GetState())
+	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
 }

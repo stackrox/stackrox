@@ -178,7 +178,7 @@ func TestImagePruning(t *testing.T) {
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
 			sac.ResourceScopeKeys(resources.Alert, resources.Config, resources.Deployment, resources.Image)),
 		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Alert, resources.Image)),
+			sac.ResourceScopeKeys(resources.Alert, resources.Image, resources.Deployment)),
 	}
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)

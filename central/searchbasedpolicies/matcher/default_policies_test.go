@@ -50,7 +50,9 @@ type DefaultPoliciesTestSuite struct {
 	bleveIndex bleve.Index
 	db         *bolt.DB
 
-	testCtx context.Context
+	testCtx  context.Context
+	setupCtx context.Context
+	matchCtx context.Context
 
 	deploymentIndexer  deploymentIndex.Indexer
 	deploymentSearcher search.Searcher
@@ -62,14 +64,21 @@ type DefaultPoliciesTestSuite struct {
 	defaultPolicies map[string]*storage.Policy
 }
 
-func (suite *DefaultPoliciesTestSuite) SetupTest() {
+func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	suite.testCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment),
 			sac.ResourceScopeKeys(resources.Image),
 			sac.ResourceScopeKeys(resources.Indicator)))
+	suite.setupCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Indicator)))
+	suite.matchCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+}
 
+func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	var err error
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
@@ -189,7 +198,7 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 			Uid:          uid,
 		},
 	}
-	err := suite.processDataStore.AddProcessIndicator(suite.testCtx, indicator)
+	err := suite.processDataStore.AddProcessIndicator(suite.setupCtx, indicator)
 	suite.NoError(err)
 	return indicator
 }
@@ -968,7 +977,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		suite.T().Run(fmt.Sprintf("%s (on deployments)", c.policyName), func(t *testing.T) {
 			m, err := suite.matcherBuilder.ForPolicy(p)
 			require.NoError(t, err)
-			matches, err := m.Match(suite.testCtx, suite.deploymentSearcher)
+			matches, err := m.Match(suite.matchCtx, suite.deploymentSearcher)
 			require.NoError(t, err)
 			validateDeploymentMatches(matches, allDeployments, c, t)
 
@@ -976,7 +985,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			for _, deployment := range allDeployments {
 				allIDs = append(allIDs, deployment.ID)
 			}
-			matchesFromMatchMany, err := m.MatchMany(suite.testCtx, suite.deploymentSearcher, allIDs...)
+			matchesFromMatchMany, err := m.MatchMany(suite.matchCtx, suite.deploymentSearcher, allIDs...)
 			require.NoError(t, err)
 			validateDeploymentMatches(matchesFromMatchMany, allDeployments, c, t)
 
@@ -984,13 +993,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			for id := range c.expectedViolations {
 				matchingIDs = append(matchingIDs, id)
 			}
-			matchesFromExactlyMatchMany, err := m.MatchMany(suite.testCtx, suite.deploymentSearcher, matchingIDs...)
+			matchesFromExactlyMatchMany, err := m.MatchMany(suite.matchCtx, suite.deploymentSearcher, matchingIDs...)
 			require.NoError(t, err)
 			validateDeploymentMatches(matchesFromExactlyMatchMany, allDeployments, c, t)
 
 			for id, violations := range c.expectedViolations {
 				// Test match one
-				gotFromMatchOne, err := m.MatchOne(suite.testCtx, suite.deploymentSearcher, id)
+				gotFromMatchOne, err := m.MatchOne(suite.matchCtx, suite.deploymentSearcher, id)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, violations.AlertViolations, gotFromMatchOne.AlertViolations, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 				assert.Equal(t, violations.ProcessViolation, gotFromMatchOne.ProcessViolation)

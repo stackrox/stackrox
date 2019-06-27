@@ -48,11 +48,15 @@ func (s *netPolDataStoreTestSuite) SetupTest() {
 	s.hasNS1ReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkPolicy), sac.NamespaceScopeKeys(FakeNamespace1)))
+			sac.ResourceScopeKeys(resources.NetworkPolicy),
+			sac.ClusterScopeKeys(FakeClusterID),
+			sac.NamespaceScopeKeys(FakeNamespace1)))
 	s.hasNS2ReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkPolicy), sac.NamespaceScopeKeys(FakeNamespace2)))
+			sac.ResourceScopeKeys(resources.NetworkPolicy),
+			sac.ClusterScopeKeys(FakeClusterID),
+			sac.NamespaceScopeKeys(FakeNamespace2)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -72,22 +76,10 @@ func (s *netPolDataStoreTestSuite) TestEnforceGet() {
 	if !features.ScopedAccessControl.Enabled() {
 		s.T().Skip()
 	}
-	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Times(0)
+	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
 
 	netPol, found, err := s.dataStore.GetNetworkPolicy(s.hasNoneCtx, FakeID1)
-	s.Error(err, "expected an error trying to write without permissions")
-	s.False(found)
-	s.Nil(netPol, "expected return value to be nil")
-}
-
-func (s *netPolDataStoreTestSuite) TestEnforceGetAll() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
-	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Times(0)
-
-	netPol, found, err := s.dataStore.GetNetworkPolicy(s.hasNoneCtx, FakeID1)
-	s.NoError(err, "expected no error, should return nil without access")
+	s.NoError(err, "expected an error trying to write without permissions")
 	s.False(found)
 	s.Nil(netPol, "expected return value to be nil")
 }
@@ -106,6 +98,10 @@ func (s *netPolDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
+	if !features.ScopedAccessControl.Enabled() {
+		s.T().Skip()
+	}
+
 	netPolNm1 := &storage.NetworkPolicy{
 		Id:        FakeID1,
 		Name:      FakeName1,
@@ -119,16 +115,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 		Namespace: FakeNamespace2,
 	}
 
-	filterResult := []*storage.NetworkPolicy{
-		netPolNm1,
-	}
-	s.storage.EXPECT().AddNetworkPolicy(gomock.Any()).Return(nil).Times(2)
-
-	err := s.dataStore.AddNetworkPolicy(s.hasNS1ReadCtx, netPolNm1)
-	s.NoError(err)
-	err = s.dataStore.AddNetworkPolicy(s.hasNS2ReadCtx, netPolNm2)
-	s.NoError(err)
-
+	// Test we can get with NS1 permissions
 	s.storage.EXPECT().GetNetworkPolicy(FakeID1).Return(netPolNm1, true, nil)
 
 	result, found, err := s.dataStore.GetNetworkPolicy(s.hasNS1ReadCtx, FakeID1)
@@ -136,6 +123,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	s.True(found)
 	s.Equal(result, netPolNm1)
 
+	// Test we can get with NS2 permissions.
 	s.storage.EXPECT().GetNetworkPolicy(FakeID2).Return(netPolNm2, true, nil)
 
 	result, found, err = s.dataStore.GetNetworkPolicy(s.hasNS2ReadCtx, FakeID2)
@@ -143,15 +131,18 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	s.True(found)
 	s.Equal(result, netPolNm2)
 
-	s.storage.EXPECT().GetNetworkPolicies(FakeClusterID, gomock.Any()).Return(filterResult, nil).Times(2)
+	// Test we cannot do the opposite.
+	s.storage.EXPECT().GetNetworkPolicies(FakeClusterID, FakeNamespace2).Return([]*storage.NetworkPolicy{netPolNm2}, nil)
 
-	netPols, err := s.dataStore.GetNetworkPolicies(s.hasNS1ReadCtx, FakeClusterID, FakeNamespace1)
+	netPols, err := s.dataStore.GetNetworkPolicies(s.hasNS1ReadCtx, FakeClusterID, FakeNamespace2)
 	s.NoError(err)
-	s.Equal(netPols, filterResult)
+	s.Equal(0, len(netPols))
 
-	netPols, err = s.dataStore.GetNetworkPolicies(s.hasNS1ReadCtx, FakeClusterID, "")
+	s.storage.EXPECT().GetNetworkPolicies(FakeClusterID, FakeNamespace1).Return([]*storage.NetworkPolicy{netPolNm1}, nil)
+
+	netPols, err = s.dataStore.GetNetworkPolicies(s.hasNS2ReadCtx, FakeClusterID, FakeNamespace1)
 	s.NoError(err)
-	s.Equal(netPols, filterResult)
+	s.Equal(0, len(netPols))
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforcesUpdate() {
@@ -168,10 +159,7 @@ func (s *netPolDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowsUpdate() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
-	s.storage.EXPECT().UpdateNetworkPolicy(gomock.Any()).Times(0)
+	s.storage.EXPECT().UpdateNetworkPolicy(gomock.Any()).Return(nil)
 
 	err := s.dataStore.UpdateNetworkPolicy(s.hasWriteCtx, &storage.NetworkPolicy{})
 	s.NoError(err, "expected no error, should return nil without access")
@@ -181,22 +169,25 @@ func (s *netPolDataStoreTestSuite) TestEnforcesRemove() {
 	if !features.ScopedAccessControl.Enabled() {
 		s.T().Skip()
 	}
-	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Times(0)
+	// None should be removed...
 	s.storage.EXPECT().RemoveNetworkPolicy(gomock.Any()).Times(0)
+
+	// ...whether we have no access...
+	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
 
 	err := s.dataStore.RemoveNetworkPolicy(s.hasNoneCtx, FakeID1)
 	s.Error(err, "expected an error trying to write without permissions")
+
+	// ...or we only have read access.
+	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
 
 	err = s.dataStore.RemoveNetworkPolicy(s.hasNS1ReadCtx, FakeID1)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowsRemove() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
-	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Times(0)
-	s.storage.EXPECT().RemoveNetworkPolicy(gomock.Any()).Times(0)
+	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
+	s.storage.EXPECT().RemoveNetworkPolicy(gomock.Any()).Return(nil)
 
 	err := s.dataStore.RemoveNetworkPolicy(s.hasWriteCtx, FakeID1)
 	s.NoError(err, "expected no error, should return nil without access")
@@ -209,19 +200,16 @@ func (s *netPolDataStoreTestSuite) TestEnforceGetUndo() {
 	s.undoStorage.EXPECT().GetUndoRecord(gomock.Any()).Times(0)
 
 	_, found, err := s.dataStore.GetUndoRecord(s.hasNoneCtx, FakeID1)
-	s.Error(err, "expected an error trying to write without permissions")
+	s.NoError(err, "expected no error trying to read without permissions")
 	s.False(found)
 
 	_, found, err = s.dataStore.GetUndoRecord(s.hasNS1ReadCtx, FakeID1)
-	s.Error(err, "expected an error trying to write without permissions")
+	s.NoError(err, "expected no error trying to read without permissions")
 	s.False(found)
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowGetUndo() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
-	s.undoStorage.EXPECT().GetUndoRecord(gomock.Any()).Times(0)
+	s.undoStorage.EXPECT().GetUndoRecord(gomock.Any()).Return(&storage.NetworkPolicyApplicationUndoRecord{}, true, nil)
 
 	_, found, err := s.dataStore.GetUndoRecord(s.hasWriteCtx, FakeClusterID)
 	s.NoError(err, "expected an error trying to write without permissions")
@@ -242,10 +230,7 @@ func (s *netPolDataStoreTestSuite) TestEnforceUpdateUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowUpdateUndo() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
-	s.undoStorage.EXPECT().UpsertUndoRecord(gomock.Any(), gomock.Any()).Times(0)
+	s.undoStorage.EXPECT().UpsertUndoRecord(gomock.Any(), gomock.Any()).Return(nil)
 
 	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, FakeClusterID, &storage.NetworkPolicyApplicationUndoRecord{})
 	s.NoError(err, "expected an error trying to write without permissions")

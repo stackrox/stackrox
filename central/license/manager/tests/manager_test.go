@@ -40,6 +40,17 @@ type managerTestSuite struct {
 	mgr manager.LicenseManager
 }
 
+var (
+	isReadCtx = testutils.PredMatcher("context allows read access", func(ctx context.Context) bool {
+		ok, _ := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Licenses).Allowed(ctx)
+		return ok
+	})
+	isWriteCtx = testutils.PredMatcher("context allows write access", func(ctx context.Context) bool {
+		ok, _ := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Licenses).Allowed(ctx)
+		return ok
+	})
+)
+
 func TestManager(t *testing.T) {
 	t.Parallel()
 	if !features.ScopedAccessControl.Enabled() {
@@ -53,11 +64,11 @@ func (s *managerTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Licenses)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Licenses)))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockStore = mocks.NewMockDataStore(s.mockCtrl)
@@ -78,7 +89,7 @@ func (s *managerTestSuite) TearDownTest() {
 }
 
 func (s *managerTestSuite) TestInitializeEmpty() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return(nil, nil)
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return(nil, nil)
 	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.Nil(activeLicense)
@@ -87,7 +98,7 @@ func (s *managerTestSuite) TestInitializeEmpty() {
 }
 
 func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return([]*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return([]*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -140,7 +151,7 @@ func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
 }
 
 func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return([]*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return([]*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -185,7 +196,7 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 
 	s.mockListener.EXPECT().OnInitialize(s.mgr, license2)
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx,
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx,
 		testutils.AssertionMatcher(
 			assert.ElementsMatch,
 			[]*storage.StoredLicenseKey{
@@ -209,7 +220,7 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 }
 
 func (s *managerTestSuite) TestInitializeWithNoneSelected() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return([]*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return([]*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -254,7 +265,7 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 
 	s.mockListener.EXPECT().OnInitialize(s.mgr, license2)
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx,
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx,
 		[]*storage.StoredLicenseKey{
 			{
 				LicenseKey: "KEY2",
@@ -271,7 +282,7 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 }
 
 func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return([]*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return([]*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -357,7 +368,7 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 }
 
 func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return([]*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return([]*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -418,7 +429,7 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 			return l.GetStatus() == v1.LicenseInfo_EXPIRED
 		}))
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -433,7 +444,7 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 }
 
 func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return([]*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return([]*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -471,7 +482,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 		}),
 		nil)
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -486,7 +497,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 }
 
 func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return(nil, nil)
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return(nil, nil)
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
@@ -518,7 +529,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 		}),
 		nil)
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -537,7 +548,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 }
 
 func (s *managerTestSuite) TestLicenseNotReplacedWithActivateFalse() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return([]*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return([]*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -584,7 +595,7 @@ func (s *managerTestSuite) TestLicenseNotReplacedWithActivateFalse() {
 	}
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(license2, nil)
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY2",
 			LicenseId:  "license2",
@@ -603,7 +614,7 @@ func (s *managerTestSuite) TestLicenseNotReplacedWithActivateFalse() {
 }
 
 func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return([]*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return([]*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -650,7 +661,7 @@ func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
 	}
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(license2, nil)
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, testutils.AssertionMatcher(assert.ElementsMatch, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, testutils.AssertionMatcher(assert.ElementsMatch, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY2",
 			LicenseId:  "license2",
@@ -688,7 +699,7 @@ func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
 }
 
 func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return(nil, nil)
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return(nil, nil)
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
@@ -711,7 +722,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 	s.Nil(activeLicense)
 	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -738,7 +749,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 		}),
 		nil)
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -754,7 +765,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 }
 
 func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
-	s.mockStore.EXPECT().ListLicenseKeys(s.hasReadCtx).Return(nil, nil)
+	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return(nil, nil)
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
@@ -786,7 +797,7 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 		}),
 		nil)
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",
@@ -814,7 +825,7 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 			return l.GetStatus() == v1.LicenseInfo_EXPIRED
 		}))
 
-	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{
+	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
 			LicenseKey: "KEY1",
 			LicenseId:  "license1",

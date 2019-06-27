@@ -26,6 +26,9 @@ import (
 )
 
 var (
+	hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.ProcessWhitelist)))
 	hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.ProcessWhitelist)))
@@ -127,7 +130,7 @@ func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelist() {
 			fillDB(t, suite.datastore, c.whitelists)
 			defer emptyDB(t, suite.datastore, c.whitelists)
 			requestByKey := &v1.GetProcessWhitelistRequest{Key: knownWhitelist.GetKey()}
-			whitelist, err := suite.service.GetProcessWhitelist((context.Context)(nil), requestByKey)
+			whitelist, err := suite.service.GetProcessWhitelist(hasReadCtx, requestByKey)
 			if c.shouldFail {
 				assert.Error(t, err)
 			} else {
@@ -238,7 +241,7 @@ func (suite *ProcessWhitelistServiceTestSuite) TestUpdateProcessWhitelist() {
 				RemoveElements: fixtures.MakeWhitelistItems(c.toRemove...),
 			}
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
-			response, err := suite.service.UpdateProcessWhitelists((context.Context)(nil), request)
+			response, err := suite.service.UpdateProcessWhitelists(hasWriteCtx, request)
 			assert.NoError(t, err)
 			var successKeys []*storage.ProcessWhitelistKey
 			for _, wl := range response.Whitelists {

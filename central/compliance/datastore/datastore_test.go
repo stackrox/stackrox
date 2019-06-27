@@ -151,6 +151,7 @@ type complianceDataStoreWithSACTestSuite struct {
 
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
+	hasNoneCtx  context.Context
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
@@ -167,6 +168,7 @@ func (s *complianceDataStoreWithSACTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Role)))
+	s.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -187,36 +189,52 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceGetLatestRunResults() {
 	// Call tested.
 	clusterID := "cid"
 	standardID := "sid"
-	_, err := s.dataStore.GetLatestRunResults(context.Background(), clusterID, standardID, types.WithMessageStrings)
+	_, err := s.dataStore.GetLatestRunResults(s.hasNoneCtx, clusterID, standardID, types.WithMessageStrings)
 
 	// Check results match.
-	s.NotNil(err)
+	s.EqualError(err, "not found")
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceGetLatestRunResultsBatch() {
-	// Expect no storage fetch.
-	s.storage.EXPECT().GetLatestRunResultsBatch(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-
-	// Call tested.
+	// Expect storage fetch since filtering is performed afterwards.
 	clusterIDs := []string{"cid"}
 	standardIDs := []string{"sid"}
-	_, err := s.dataStore.GetLatestRunResultsBatch(context.Background(), clusterIDs, standardIDs, types.WithMessageStrings)
+	csPair := compliance.ClusterStandardPair{
+		ClusterID:  "cid",
+		StandardID: "sid",
+	}
+	expectedReturn := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
+		csPair: {LastSuccessfulResults: &storage.ComplianceRunResults{}},
+	}
+	s.storage.EXPECT().GetLatestRunResultsBatch(clusterIDs, standardIDs, types.WithMessageStrings).Return(expectedReturn, nil)
+
+	// Call tested.
+	results, err := s.dataStore.GetLatestRunResultsBatch(s.hasNoneCtx, clusterIDs, standardIDs, types.WithMessageStrings)
 
 	// Check results match.
-	s.NotNil(err)
+	s.NoError(err)
+	s.Empty(results)
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceGetLatestRunResultsFiltered() {
-	// Expect no storage fetch.
-	s.storage.EXPECT().GetLatestRunResultsFiltered(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	// Expect storage fetch since filtering is performed afterwards.
+	csPair := compliance.ClusterStandardPair{
+		ClusterID:  "cid",
+		StandardID: "sid",
+	}
+	expectedReturn := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
+		csPair: {LastSuccessfulResults: &storage.ComplianceRunResults{}},
+	}
+	s.storage.EXPECT().GetLatestRunResultsFiltered(gomock.Any(), gomock.Any(), types.WithMessageStrings).Return(expectedReturn, nil)
 
 	// Call tested.
 	clusterIDs := func(id string) bool { return true }
 	standardIDs := func(id string) bool { return true }
-	_, err := s.dataStore.GetLatestRunResultsFiltered(context.Background(), clusterIDs, standardIDs, types.WithMessageStrings)
+	results, err := s.dataStore.GetLatestRunResultsFiltered(s.hasNoneCtx, clusterIDs, standardIDs, types.WithMessageStrings)
 
 	// Check results match.
-	s.NotNil(err)
+	s.NoError(err)
+	s.Empty(results)
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreRunResults() {
@@ -225,14 +243,5 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreRunResults() {
 	rr := &storage.ComplianceRunResults{}
 	err := s.dataStore.StoreRunResults(s.hasReadCtx, rr)
 
-	s.Equal(errFake, err)
-}
-
-func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreFailure() {
-	s.storage.EXPECT().StoreFailure(gomock.Any()).Times(0)
-
-	md := &storage.ComplianceRunMetadata{}
-	err := s.dataStore.StoreFailure(s.hasReadCtx, md)
-
-	s.Equal(errFake, err)
+	s.EqualError(err, "permission denied")
 }

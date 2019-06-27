@@ -36,11 +36,11 @@ func (s *serviceIdentityDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Group)))
+			sac.ResourceScopeKeys(resources.ServiceIdentity)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Group)))
+			sac.ResourceScopeKeys(resources.ServiceIdentity)))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -63,7 +63,7 @@ func (s *serviceIdentityDataStoreTestSuite) TestAddSrvId() {
 	err := s.dataStore.AddServiceIdentity(s.hasWriteCtx, srvID)
 	s.NoError(err)
 
-	result, err := s.dataStore.GetServiceIdentities(s.hasNoneCtx)
+	result, err := s.dataStore.GetServiceIdentities(s.hasReadCtx)
 	s.Equal(allSrvIDs, result)
 	s.NoError(err)
 }
