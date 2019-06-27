@@ -51,6 +51,7 @@ function processData(match, location, entityType, { results, controls, complianc
             totalSkipped += newMapping[standardId].skipped;
         }
         const complianceStateKey = CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE;
+        const currentUrl = URLService.getURL(match, location).url();
 
         const defaultLink = URLService.getURL(match, location)
             .push(entityType)
@@ -73,12 +74,14 @@ function processData(match, location, entityType, { results, controls, complianc
             passing: {
                 value: totalPassing,
                 controls: 0,
-                link: passingLink
+                link: passingLink,
+                selected: currentUrl === passingLink
             },
             failing: {
                 value: totalFailing,
                 controls: 0,
-                link: failingLink
+                link: failingLink,
+                selected: currentUrl === failingLink
             },
             skipped: totalSkipped,
             defaultLink

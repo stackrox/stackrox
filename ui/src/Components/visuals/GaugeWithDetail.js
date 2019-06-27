@@ -1,14 +1,8 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
-import findIndex from 'lodash/findIndex';
-import URLService from 'modules/URLService';
 import colors from 'constants/visuals/colors';
-import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
-import { standardTypes } from 'constants/entityTypes';
-import { standardLabels } from 'messages/standards';
-
 import { XYPlot, ArcSeries, LabelSeries, Hint } from 'react-vis';
 import MultiGaugeDetailSection from './MultiGaugeDetailSection';
 
@@ -27,275 +21,71 @@ const buildValue = hoveredCell => {
     };
 };
 
-class GaugeWithDetail extends Component {
-    static propTypes = {
-        data: PropTypes.arrayOf(
-            PropTypes.shape({
-                id: PropTypes.string.isRequired,
-                title: PropTypes.string.isRequired,
-                passing: PropTypes.shape({
-                    value: PropTypes.number.isRequired,
-                    link: PropTypes.string.isRequired
-                }),
-                failing: PropTypes.shape({
-                    value: PropTypes.number.isRequired,
-                    link: PropTypes.string.isRequired
-                }),
-                defaultLink: PropTypes.string.isRequired
-            })
-        ).isRequired,
-        history: ReactRouterPropTypes.history.isRequired
-    };
+const GaugeWithDetail = ({ data, history }) => {
+    const [hoveredCell, setHoveredCell] = useState();
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            selectedData: null,
-            data: null,
-            hoveredCell: null
-        };
-    }
+    const selectedData = data.find(datum => {
+        return datum.passing.selected || datum.failing.selected;
+    });
 
-    componentDidMount() {
-        this.setState({ data: this.calculateMultiGaugeData(this.props.data) });
-        this.setDefaultSelectedData(this.props);
-    }
+    const failingSelected = selectedData && selectedData.failing.selected;
+    const passingSelected = selectedData && selectedData.passing.selected;
+    const totalPassing = data.reduce((acc, datum) => acc + datum.passing.value, 0);
+    const totalFailing = data.reduce((acc, datum) => acc + datum.failing.value, 0);
+    const totalChecks = totalPassing + totalFailing;
+    const pctPassing = totalChecks ? Math.round((totalPassing / totalChecks) * 100) : 0;
+    const pctFailing = totalChecks ? Math.round((totalFailing / totalChecks) * 100) : 0;
 
-    componentWillReceiveProps(nextProps) {
-        if (!this.state.selectedData && nextProps.data !== this.props.data) {
-            const data = this.calculateMultiGaugeData(nextProps.data);
-            this.setState({ data });
-        }
-        this.setDefaultSelectedData(nextProps);
-    }
-
-    setDefaultSelectedData = props => {
-        const { match, location } = props;
-        const params = URLService.getParams(match, location);
-        const isStandard = Object.values(standardTypes).includes(params.entityType);
-        if (isStandard) {
-            this.setSingleGaugeDefault(props);
-        } else {
-            this.setMultiGaugeDefault(props);
-        }
-    };
-
-    setSingleGaugeDefault = props => {
-        const { data, match, location } = props;
-        const params = URLService.getParams(match, location);
-        const complianceState = params.query[CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE];
-        if (complianceState && data.length) {
-            if (
-                complianceState.toLowerCase() !== 'pass' &&
-                complianceState.toLowerCase() !== 'fail'
-            ) {
-                this.setSelectedData(null);
-            } else {
-                const arc = complianceState.toLowerCase() === 'pass' ? 'inner' : 'outer';
-                const selectedData = { ...data[0] };
-                selectedData.arc = arc;
-                selectedData.index = 0;
-                this.setSelectedData(selectedData);
-            }
-        } else {
-            this.setSelectedData(null);
-        }
-    };
-
-    setMultiGaugeDefault = props => {
-        const { data, match, location } = props;
-        const params = URLService.getParams(match, location);
-        const complianceState = params.query[CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE];
-        const standardName = params.query.Standard;
-        if (complianceState && standardName) {
-            if (
-                complianceState.toLowerCase() !== 'pass' &&
-                complianceState.toLowerCase() !== 'fail'
-            ) {
-                this.setSelectedData(null);
-            } else {
-                const arc = complianceState.toLowerCase() === 'pass' ? 'inner' : 'outer';
-                const index = findIndex(data, datum => standardLabels[datum.id] === standardName);
-                if (index !== -1) {
-                    const selectedData = { ...data[index] };
-                    selectedData.arc = arc;
-                    selectedData.index = index;
-                    this.setSelectedData(selectedData);
-                }
-            }
-        } else {
-            this.setSelectedData(null);
-        }
-    };
-
-    getPropsData = () => {
-        const modifiedData = this.calculateMultiGaugeData(this.props.data);
-        this.setState({ data: modifiedData });
-        return modifiedData;
-    };
-
-    calculateMultiGaugeData = datum => {
-        if (!datum.length) return null;
+    function calculateGaugeData(inputData) {
+        if (!inputData.length) return null;
         const pi = Math.PI;
         const fullAngle = 2 * pi;
         // TODO: Dynamic technique to assign  radius & font size to the gauges.
-        let radius = datum.length > 1 ? 1 : 1.5;
-        LABEL_STYLE.fontSize = datum.length > 1 ? '24px' : '36px';
-        const data = [];
-        [...datum].forEach((d, index) => {
+        let radius = inputData.length > 1 ? 1 : 1.5;
+        LABEL_STYLE.fontSize = inputData.length > 1 ? '24px' : '36px';
+        const returnData = [];
+
+        [...inputData].forEach((d, index) => {
             const { value: passingValue } = d.passing;
             const { value: failingValue } = d.failing;
             const radius0 = radius + 0.1;
             const radius1 = radius + 0.2;
             radius = radius1;
-            const outerCircle = {
+            const failingCircle = {
                 ...d,
-                color: colors[index],
+                color: failingSelected ? 'var(--alert-400)' : colors[index],
                 angle0: 2 * pi * (passingValue / (passingValue + failingValue)),
                 angle: fullAngle,
-                opacity: 0.2,
+                opacity: failingSelected ? 1 : 0.2,
                 radius0,
                 radius: radius1,
                 index,
                 arc: 'outer'
             };
 
-            const innerCircle = {
+            const passingCircle = {
                 ...d,
-                color: colors[index],
+                color: passingSelected ? 'var(--success-400)' : colors[index],
                 angle0: 0,
                 angle: 2 * pi * (passingValue / (passingValue + failingValue)),
                 radius0,
                 radius: radius1,
                 index,
-                arc: 'inner'
+                arc: 'inner',
+                opacity: failingSelected ? 0.2 : 1
             };
-            data.push(outerCircle, innerCircle);
+            returnData.push(failingCircle, passingCircle);
         });
-        return data;
-    };
+        return returnData;
+    }
+    const gaugeData = calculateGaugeData(data);
 
-    setPathWithLink = selectedData => {
-        if (
-            selectedData &&
-            this.state.selectedData &&
-            selectedData.arc === this.state.selectedData.arc &&
-            selectedData.title === this.state.selectedData.title
-        ) {
-            this.props.history.replace(selectedData.defaultLink);
-        }
-        if (!selectedData) {
-            this.props.history.replace(this.props.data[0].defaultLink);
-        } else {
-            this.props.history.replace(
-                selectedData.arc === 'outer' ? selectedData.failing.link : selectedData.passing.link
-            );
-        }
-    };
+    function onClick(d) {
+        history.replace(d.value === 'failing' ? d.failing.link : d.passing.link);
+    }
 
-    setSelectedData = selectedData => {
-        if (!selectedData) {
-            this.setState({
-                selectedData: null,
-                data: this.getPropsData()
-            });
-            return;
-        }
-        const index = selectedData && selectedData.index;
-        this.setState({ selectedData });
-        const data = this.getPropsData();
-        const newData = data.filter((val, idx) => {
-            if (selectedData) {
-                if (idx !== index * 2 && idx !== index * 2 + 1) {
-                    Object.assign(val, { color: 'var(--base-300)', opacity: 1 });
-                } else {
-                    if (selectedData.arc === val.arc) {
-                        Object.assign(val, { opacity: 1 });
-                    } else {
-                        Object.assign(val, { opacity: 0.2 });
-                    }
-                    if (idx === index * 2 + 1) {
-                        Object.assign(val, { color: 'var(--success-400)' });
-                    }
-
-                    if (idx === index * 2) {
-                        Object.assign(val, { color: 'var(--alert-400)' });
-                    }
-                }
-            }
-            return val;
-        });
-        this.setState({ data: newData });
-    };
-
-    onMultiGaugeDetailClick = data => {
-        this.setSelectedData(data);
-        this.setPathWithLink(data);
-    };
-
-    onArcClick = data => {
-        const { selectedData } = this.state;
-        const newData = selectedData && selectedData.arc === data.arc ? null : data;
-        this.setSelectedData(newData);
-        this.setPathWithLink(newData);
-    };
-
-    getTotalPassing = () => {
-        const { data } = this.state;
-        let totalPassing = 0;
-        if (data) {
-            const totalValues = data.reduce(
-                (accumulator, d) => {
-                    const { value: passingValue } = d.passing;
-                    const { value: failingValue } = d.failing;
-                    return {
-                        passing: accumulator.passing + passingValue,
-                        total: accumulator.total + passingValue + failingValue
-                    };
-                },
-                { passing: 0, total: 0 }
-            );
-            if (totalValues.total === 0) return 0;
-            totalPassing = Math.round((totalValues.passing / totalValues.total) * 100);
-        }
-        return totalPassing;
-    };
-
-    getSelectedPassingFailing = () => {
-        let value = 0;
-        const { arc, passing, failing } = this.state.selectedData;
-        const { value: passingValue } = passing;
-        const { value: failingValue } = failing;
-        // 'inner' refers to passing and 'outer' refers to failing
-        if (passingValue === 0 && failingValue === 0) return 0;
-        value =
-            arc === 'inner'
-                ? Math.round((passingValue / (passingValue + failingValue)) * 100)
-                : Math.round((failingValue / (passingValue + failingValue)) * 100);
-        return value;
-    };
-
-    getCenterLabel = () => {
-        let label = '';
-        const { selectedData } = this.state;
-        label = selectedData ? this.getSelectedPassingFailing() : this.getTotalPassing();
-        return (
-            <LabelSeries
-                data={[
-                    {
-                        x: 0.1,
-                        y: this.props.data.length > 1 ? -0.8 : -1.3,
-                        label: `${label}%`,
-                        style: LABEL_STYLE
-                    }
-                ]}
-            />
-        );
-    };
-
-    getHint = () => {
-        if (!this.state.hoveredCell) return null;
-        const { hoveredCell } = this.state;
+    function getHint() {
+        if (!hoveredCell) return null;
         const { passing, failing, title } = hoveredCell;
         const { value: passingValue, controls: passingControls } = passing;
         const { value: failingValue, controls: failingControls } = failing;
@@ -326,44 +116,72 @@ class GaugeWithDetail extends Component {
                 </div>
             </Hint>
         );
-    };
-
-    onValueMouseOver = data => this.setState({ hoveredCell: data });
-
-    onValueMouseOut = () => this.setState({ hoveredCell: null });
-
-    render() {
-        const { data } = this.props;
-        return (
-            <div className="flex w-full">
-                <XYPlot
-                    xDomain={[-2, 4]}
-                    yDomain={[4, 4]}
-                    width={200}
-                    height={200}
-                    className="w-48 z-1"
-                >
-                    {this.getCenterLabel()}
-                    {this.getHint()}
-                    <ArcSeries
-                        arcClassName="cursor-pointer"
-                        radiusDomain={[0, 2]}
-                        data={this.state.data}
-                        colorType="literal"
-                        onValueClick={this.onArcClick}
-                        onValueMouseOver={this.onValueMouseOver}
-                        onValueMouseOut={this.onValueMouseOut}
-                    />
-                </XYPlot>
-                <MultiGaugeDetailSection
-                    data={data}
-                    onClick={this.onMultiGaugeDetailClick}
-                    selectedData={this.state.selectedData}
-                    colors={colors}
-                />
-            </div>
-        );
     }
-}
+
+    function onValueMouseOver(d) {
+        setHoveredCell(d);
+    }
+    function onValueMouseOut() {
+        setHoveredCell();
+    }
+
+    return (
+        <div className="flex w-full">
+            <XYPlot
+                xDomain={[-2, 4]}
+                yDomain={[4, 4]}
+                width={200}
+                height={200}
+                className="w-48 z-1"
+            >
+                <LabelSeries
+                    data={[
+                        {
+                            x: 0.1,
+                            y: data.length > 1 ? -0.8 : -1.3,
+                            label: `${failingSelected ? pctFailing : pctPassing}%`,
+                            style: LABEL_STYLE
+                        }
+                    ]}
+                />
+                {getHint()}
+                <ArcSeries
+                    arcClassName="cursor-pointer"
+                    radiusDomain={[0, 2]}
+                    data={gaugeData}
+                    colorType="literal"
+                    onValueClick={onClick}
+                    onValueMouseOver={onValueMouseOver}
+                    onValueMouseOut={onValueMouseOut}
+                />
+            </XYPlot>
+            <MultiGaugeDetailSection
+                data={data}
+                onClick={onClick}
+                selectedData={selectedData}
+                colors={colors}
+            />
+        </div>
+    );
+};
+
+GaugeWithDetail.propTypes = {
+    data: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            title: PropTypes.string.isRequired,
+            passing: PropTypes.shape({
+                value: PropTypes.number.isRequired,
+                link: PropTypes.string.isRequired
+            }),
+            failing: PropTypes.shape({
+                value: PropTypes.number.isRequired,
+                link: PropTypes.string.isRequired
+            }),
+            defaultLink: PropTypes.string.isRequired
+        })
+    ).isRequired,
+    history: ReactRouterPropTypes.history.isRequired
+};
 
 export default withRouter(GaugeWithDetail);

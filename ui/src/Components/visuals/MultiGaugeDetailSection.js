@@ -15,40 +15,20 @@ class MultiGaugeDetailSection extends Component {
         colors: []
     };
 
-    state = {
-        selectedData: { ...this.props.selectedData }
-    };
-
-    componentWillReceiveProps(props) {
-        this.setState({ selectedData: props.selectedData });
-    }
-
-    onClick = (data, arc, index) => () => {
-        if (
-            this.state.selectedData &&
-            data &&
-            arc === this.state.selectedData.arc &&
-            data.title === this.state.selectedData.title
-        ) {
-            this.setState({ selectedData: null });
-            this.props.onClick(null);
-            return;
-        }
-        const selectedData = {
+    onClick = (data, value, index) => () => {
+        this.props.onClick({
             ...data,
-            arc,
+            value,
             index
-        };
-        this.setState({ selectedData });
-        this.props.onClick(selectedData);
+        });
     };
 
     getSingleGaugeContent = (d, idx) => {
-        const selectedGauge = this.state.selectedData;
-        const passingClassName =
-            selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-700' : '';
-        const failingClassName =
-            selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-700' : '';
+        const { selectedData } = this.props;
+        const passingSelected = selectedData && selectedData.passing.selected;
+        const failingSelected = selectedData && selectedData.failing.selected;
+        const passingClassName = passingSelected ? 'text-success-700' : '';
+        const failingClassName = failingSelected ? 'text-alert-700' : '';
         const { passing, failing, skipped } = d;
         const { controls: passingValue } = passing;
         const { controls: failingValue } = failing;
@@ -56,15 +36,13 @@ class MultiGaugeDetailSection extends Component {
             <div key={`${d.title}-${d.arc}`}>
                 <div
                     data-test-id="gauge-detail-bullet"
-                    className={`widget-detail-bullet ${
-                        selectedGauge && selectedGauge.arc === 'inner' ? '' : 'text-base-500'
-                    }`}
+                    className={`widget-detail-bullet ${passingSelected ? '' : 'text-base-500'}`}
                 >
                     <button
                         data-test-id="passing-controls"
                         type="button"
                         className={`text-base-600 font-600 hover:text-success-700 underline cursor-pointer ${passingClassName}`}
-                        onClick={this.onClick(d, 'inner', idx)}
+                        onClick={this.onClick(d, 'passing', idx)}
                     >
                         <span data-test-id="passing-controls-value">{passingValue} </span>
                         passing controls
@@ -73,15 +51,13 @@ class MultiGaugeDetailSection extends Component {
                 <div
                     key={d.title}
                     data-test-id="gauge-detail-bullet"
-                    className={`widget-detail-bullet ${
-                        selectedGauge && selectedGauge.arc === 'outer' ? '' : 'text-base-500'
-                    }`}
+                    className={`widget-detail-bullet ${failingSelected ? '' : 'text-base-500'}`}
                 >
                     <button
                         data-test-id="failing-controls"
                         type="button"
                         className={`text-base-600 font-600 hover:text-alert-700 underline cursor-pointer ${failingClassName}`}
-                        onClick={this.onClick(d, 'outer', idx)}
+                        onClick={this.onClick(d, 'failing', idx)}
                     >
                         <span data-test-id="failing-controls-value">{failingValue} </span>
                         failing controls
@@ -105,18 +81,18 @@ class MultiGaugeDetailSection extends Component {
 
     getMultiGaugeContent = (d, idx) => {
         const { colors } = this.props;
-        const selectedGauge = this.state.selectedData;
-        const passingClassName =
-            selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-600' : '';
-        const failingClassName =
-            selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-600' : '';
+        const { selectedData } = this.props;
+        const passingSelected = selectedData && selectedData.passing.selected;
+        const failingSelected = selectedData && selectedData.failing.selected;
+        const passingClassName = passingSelected ? 'text-success-600' : '';
+        const failingClassName = failingSelected ? 'text-alert-600' : '';
         const { value: passingValue } = d.passing;
         const { value: failingValue } = d.failing;
         return (
             <div
                 key={`${d.title}-${d.arc}`}
                 className={`widget-detail-bullet flex items-center word-break leading-tight border-b border-base-300 py-2 ${
-                    selectedGauge && selectedGauge.index === idx ? '' : 'text-base-600 font-600'
+                    selectedData && selectedData.index === idx ? '' : 'text-base-600 font-600'
                 }`}
             >
                 <div>
@@ -127,10 +103,10 @@ class MultiGaugeDetailSection extends Component {
                     <button
                         type="button"
                         title="Passing"
-                        className={`text-sm text-base-600 font-600 hover:text-success-600 underline pl-2 cursor-pointer ${selectedGauge &&
-                            selectedGauge.index === idx &&
+                        className={`text-sm text-base-600 font-600 hover:text-success-600 underline pl-2 cursor-pointer ${selectedData &&
+                            selectedData.index === idx &&
                             passingClassName}`}
-                        onClick={this.onClick(d, 'inner', idx)}
+                        onClick={this.onClick(d, 'passing', idx)}
                     >
                         {passingValue} Passing
                     </button>
@@ -138,10 +114,10 @@ class MultiGaugeDetailSection extends Component {
                     <button
                         type="button"
                         title="Failing"
-                        className={`text-sm text-base-600 hover:text-alert-600 font-600 underline cursor-pointer ${selectedGauge &&
-                            selectedGauge.index === idx &&
+                        className={`text-sm text-base-600 hover:text-alert-600 font-600 underline cursor-pointer ${selectedData &&
+                            selectedData.index === idx &&
                             failingClassName}`}
-                        onClick={this.onClick(d, 'outer', idx)}
+                        onClick={this.onClick(d, 'failing', idx)}
                     >
                         {failingValue} Failing
                     </button>
