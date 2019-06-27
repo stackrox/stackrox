@@ -12,13 +12,14 @@ import (
 func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.SortOption) search.Searcher {
 	return search.WrapSearchFunc(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 		// Add pagination sort order if needed.
-		if q.Pagination == nil {
-			q.Pagination = new(v1.Pagination)
+		local := proto.Clone(q).(*v1.Query)
+		if local.Pagination == nil {
+			local.Pagination = new(v1.Pagination)
 		}
-		if q.Pagination.SortOption == nil {
-			q.Pagination.SortOption = defaultSortOption
+		if local.Pagination.SortOption == nil {
+			local.Pagination.SortOption = defaultSortOption
 		}
-		return searcher.Search(ctx, q)
+		return searcher.Search(ctx, local)
 	})
 }
 
