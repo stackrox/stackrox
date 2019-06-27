@@ -27,14 +27,17 @@ const EntityStage = ({ match, location, history, entityType1, entityId1 }) => {
 };
 
 EntityStage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.match.isRequired,
-    history: ReactRouterPropTypes.match.isRequired,
+    match: ReactRouterPropTypes.match,
+    location: ReactRouterPropTypes.location,
+    history: ReactRouterPropTypes.history,
     entityType1: PropTypes.string,
     entityId1: PropTypes.string
 };
 
 EntityStage.defaultProps = {
+    match: null,
+    location: null,
+    history: null,
     entityType1: null,
     entityId1: null
 };

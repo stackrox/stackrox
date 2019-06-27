@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
+import { withRouter } from 'react-router-dom';
 
 import PageNotFound from 'Components/PageNotFound';
 import Namespaces from './List/Namespaces';
@@ -29,22 +30,19 @@ const entityComponentMap = {
     [entityTypes.CONTROL]: CISControls
 };
 
-const EntityList = ({ className, entityListType, entityId, onRowClick }) => {
+const EntityList = ({ entityListType, entityId, ...rest }) => {
     const Component = entityComponentMap[entityListType];
     if (!Component) return <PageNotFound resourceType={entityListType} />;
-    return <Component className={className} selectedRowId={entityId} onRowClick={onRowClick} />;
+    return <Component selectedRowId={entityId} {...rest} />;
 };
 
 EntityList.propTypes = {
-    className: PropTypes.string,
     entityListType: PropTypes.string.isRequired,
-    entityId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
+    entityId: PropTypes.string
 };
 
 EntityList.defaultProps = {
-    className: '',
     entityId: null
 };
 
-export default EntityList;
+export default withRouter(EntityList);

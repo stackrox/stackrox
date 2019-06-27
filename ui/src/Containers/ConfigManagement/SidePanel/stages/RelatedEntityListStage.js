@@ -11,17 +11,34 @@ const RelatedEntityListStage = ({ match, location, history, entityListType2 }) =
         history.push(urlBuilder.url());
     }
 
-    return <List entityListType={entityListType2} onRowClick={onRowClick} />;
+    function onRowLinkClick(entityId, relatedEntityType, relatedEntityId) {
+        const urlBuilder = URLService.getURL(match, location).base(
+            relatedEntityType,
+            relatedEntityId
+        );
+        history.push(urlBuilder.url());
+    }
+
+    return (
+        <List
+            entityListType={entityListType2}
+            onRowClick={onRowClick}
+            onRowLinkClick={onRowLinkClick}
+        />
+    );
 };
 
 RelatedEntityListStage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.match.isRequired,
-    history: ReactRouterPropTypes.match.isRequired,
+    match: ReactRouterPropTypes.match,
+    location: ReactRouterPropTypes.location,
+    history: ReactRouterPropTypes.history,
     entityListType2: PropTypes.string
 };
 
 RelatedEntityListStage.defaultProps = {
+    match: null,
+    location: null,
+    history: null,
     entityListType2: null
 };
 

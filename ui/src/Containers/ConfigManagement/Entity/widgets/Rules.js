@@ -4,9 +4,9 @@ import { ArrowRight } from 'react-feather';
 
 const Rules = ({ rules, ...rest }) => {
     const header = `${rules.length} Rules`;
-    const verbs = rules.map(rule => {
+    const verbs = rules.map((rule, i) => {
         return (
-            <li className="flex items-center">
+            <li className="flex items-center" key={i}>
                 <div className="min-w-48 text-sm bg-base-200 border border-base-400 my-3 p-3 rounded w-full leading-normal">
                     {rule.verbs.join(', ')}
                 </div>
@@ -14,10 +14,10 @@ const Rules = ({ rules, ...rest }) => {
             </li>
         );
     });
-    const resourcesAndNonResourcesURL = rules.map(rule => {
+    const resourcesAndNonResourcesURL = rules.map((rule, i) => {
         const { nonResourceUrls, resources } = rule;
         return (
-            <li className="flex items-center">
+            <li className="flex items-center" key={i}>
                 <div className="text-sm bg-base-200 border border-base-400 my-3 p-3 rounded leading-normal">
                     {[...resources, ...nonResourceUrls].join(', ')}
                 </div>

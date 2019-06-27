@@ -61,7 +61,7 @@ const BreadCrumbLinks = props => {
             state
         );
         return (
-            <span className="flex items-center" key={state}>
+            <span className="flex items-center" key={i}>
                 {content} {icon}
             </span>
         );
@@ -81,7 +81,7 @@ const BreadCrumbLinks = props => {
 BreadCrumbLinks.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.location.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
     className: PropTypes.string
 };
 

@@ -45,8 +45,9 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
                 const td = document.createElement('td');
                 let colValue = '';
                 if (columns[index + 1] && columns[index + 1].Cell) {
-                    colValue = ReactDOMServer.renderToString(
-                        columns[index + 1].Cell({ original: val })
+                    colValue = 'test';
+                    ReactDOMServer.renderToString(
+                        columns[index + 1].Cell({ original: val, pdf: true })
                     );
                 } else {
                     const flattenedObj = flattenObject(val);

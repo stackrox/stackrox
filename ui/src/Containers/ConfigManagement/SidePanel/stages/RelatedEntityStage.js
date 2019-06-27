@@ -36,15 +36,18 @@ const RelatedEntityStage = ({
 };
 
 RelatedEntityStage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.match.isRequired,
-    history: ReactRouterPropTypes.match.isRequired,
+    match: ReactRouterPropTypes.match,
+    location: ReactRouterPropTypes.location,
+    history: ReactRouterPropTypes.history,
     entityType2: PropTypes.string,
     entityListType2: PropTypes.string,
     entityId2: PropTypes.string
 };
 
 RelatedEntityStage.defaultProps = {
+    match: null,
+    location: null,
+    history: null,
     entityType2: null,
     entityListType2: null,
     entityId2: null

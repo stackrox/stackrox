@@ -227,6 +227,8 @@ class URL {
                 entityListType1: val
             };
             if (val2) newParams.entityId1 = val2;
+        } else {
+            return this;
         }
 
         this.urlParams = newParams;
