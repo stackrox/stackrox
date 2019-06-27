@@ -31,6 +31,8 @@ import (
 const (
 	k8sStandalonePodType = "StaticPods"
 	kubeSystemNamespace  = "kube-system"
+	labelMaxLength       = 63
+	trailingUIDLen       = 5
 )
 
 var (
@@ -257,9 +259,24 @@ func matchesOwnerName(name string, p *v1.Pod) bool {
 		// then miss the pods altogether
 		return true
 	}
-	if spl := strings.Split(p.GetName(), "-"); len(spl) > numExpectedDashes {
-		return name == strings.Join(spl[:len(spl)-numExpectedDashes], "-")
+	spl := strings.Split(p.GetName(), "-")
+	if len(spl) > numExpectedDashes && name == strings.Join(spl[:len(spl)-numExpectedDashes], "-") {
+		return true
 	}
+
+	if len(p.GetName()) < labelMaxLength {
+		log.Warnf("Could not parse pod %q with owner type %q", p.GetName(), kind)
+		return false
+	}
+
+	if name[0:len(name)-trailingUIDLen] == p.GetName()[0:len(p.GetName())-trailingUIDLen] {
+		return true
+	}
+
+	if name == strings.Join(spl[:len(spl)-1], "-") {
+		return true
+	}
+
 	log.Warnf("Could not parse pod %q with owner type %q", p.GetName(), kind)
 	return false
 }

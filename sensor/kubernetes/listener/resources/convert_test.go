@@ -461,6 +461,29 @@ func TestFilterOnName(t *testing.T) {
 			},
 		},
 		{
+			name: "nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx63",
+			pods: []*v1.Pod{
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxx", kubernetes.Deployment),
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx12345", kubernetes.Deployment),
+			},
+			expected: []*v1.Pod{
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx12345", kubernetes.Deployment),
+			},
+		},
+		{
+			name: "nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57",
+			pods: []*v1.Pod{
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-abcde", kubernetes.Deployment),
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-86d59dd769-12345", kubernetes.Deployment),
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx577xxxxx", kubernetes.Deployment),
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-12345", kubernetes.Deployment),
+			},
+			expected: []*v1.Pod{
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-abcde", kubernetes.Deployment),
+				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-12345", kubernetes.Deployment),
+			},
+		},
+		{
 			name: "collector",
 			pods: []*v1.Pod{
 				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
