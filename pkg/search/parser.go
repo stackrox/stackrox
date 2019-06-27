@@ -38,7 +38,8 @@ func ParseRawQueryOrEmpty(query string) (*v1.Query, error) {
 	if query == "" {
 		return EmptyQuery(), nil
 	}
-	return parseRawQuery(query, false)
+	parsed, _, err := parseRawQuery(query, false)
+	return parsed, err
 }
 
 // ParseRawQuery takes the text based query and converts to the query proto.
@@ -47,18 +48,20 @@ func ParseRawQuery(query string) (*v1.Query, error) {
 	if query == "" {
 		return nil, errors.New("empty query received")
 	}
-	return parseRawQuery(query, false)
+	parsed, _, err := parseRawQuery(query, false)
+	return parsed, err
 }
 
 // ParseAutocompleteRawQuery parses the query, but extends the last value with .* and highlights
-func ParseAutocompleteRawQuery(query string) (*v1.Query, error) {
+func ParseAutocompleteRawQuery(query string) (*v1.Query, string, error) {
 	return parseRawQuery(query, true)
 }
 
-func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, error) {
+func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, string, error) {
 	pairs := strings.Split(query, "+")
 
 	queries := make([]*v1.Query, 0, len(pairs))
+	var autocompleteKey string
 	for i, pair := range pairs {
 		key, commaSeparatedValues, valid := parsePair(pair, isAutocompleteQuery)
 		if !valid {
@@ -66,6 +69,7 @@ func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, error) {
 		}
 		if i == len(pairs)-1 && isAutocompleteQuery {
 			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), true))
+			autocompleteKey = key
 		} else {
 			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), false))
 		}
@@ -73,10 +77,10 @@ func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, error) {
 
 	// We always want to return an error here, because it means that the query is ill-defined.
 	if len(queries) == 0 {
-		return nil, errors.New("after parsing, query is empty")
+		return nil, "", errors.New("after parsing, query is empty")
 	}
 
-	return ConjunctionQuery(queries...), nil
+	return ConjunctionQuery(queries...), autocompleteKey, nil
 }
 
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2

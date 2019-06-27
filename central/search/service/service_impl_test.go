@@ -44,6 +44,15 @@ func TestSearchCategoryToResourceMap(t *testing.T) {
 	}
 }
 
+func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
+	t.Parallel()
+
+	for _, cat := range autocompleteCategories.AsSlice() {
+		_, ok := categoryToOptionsMultimap[cat]
+		assert.True(t, ok, "no options multimap for category", cat)
+	}
+}
+
 func TestSearchFuncs(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

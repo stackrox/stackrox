@@ -439,6 +439,8 @@ func wrapContextLessSearchFunc(f func(*v1.Query) ([]search.Result, error)) func(
 }
 
 func (a *aggregatorImpl) getSearchFuncs() map[v1.ComplianceAggregation_Scope]searchFuncAndOptionsMap {
+	// Careful: If you modify something here, be sure to also modify the options multimap in
+	// `compliance/search/options.go`.
 	return map[v1.ComplianceAggregation_Scope]searchFuncAndOptionsMap{
 		v1.ComplianceAggregation_STANDARD: {
 			searchFunc: wrapContextLessSearchFunc(a.standards.SearchStandards),

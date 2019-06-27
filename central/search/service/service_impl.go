@@ -11,7 +11,9 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/compliance/aggregation"
+	complianceSearch "github.com/stackrox/rox/central/compliance/search"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globalindex"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
@@ -30,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -38,6 +41,17 @@ import (
 )
 
 const maxAutocompleteResults = 10
+
+var (
+	categoryToOptionsMultimap = func() map[v1.SearchCategory]search.OptionsMultiMap {
+		result := make(map[v1.SearchCategory]search.OptionsMultiMap)
+		for cat, optMap := range globalindex.GetEntityOptionsMap() {
+			result[cat] = search.MultiMapFromMaps(optMap)
+		}
+		result[v1.SearchCategory_COMPLIANCE] = complianceSearch.SearchOptionsMultiMap
+		return result
+	}()
+)
 
 type autocompleteResult struct {
 	value string
@@ -205,9 +219,20 @@ func isMapMatch(matches map[string][]string) bool {
 	return true
 }
 
+func trimMatches(matches map[string][]string, fieldPaths []string) map[string][]string {
+	result := make(map[string][]string, len(fieldPaths))
+	for _, fp := range fieldPaths {
+		vals, ok := matches[fp]
+		if ok {
+			result[fp] = vals
+		}
+	}
+	return result
+}
+
 // RunAutoComplete runs an autocomplete request. It's a free function used by both regular search and by GraphQL.
 func RunAutoComplete(ctx context.Context, queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
-	query, err := search.ParseAutocompleteRawQuery(queryString)
+	query, autocompleteKey, err := search.ParseAutocompleteRawQuery(queryString)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "unable to parse query %q: %v", queryString, err)
 	}
@@ -229,20 +254,44 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 			if ok {
 				errorhelpers.PanicOnDevelopmentf("searchers map has an entry for category %v, but the returned searcher was nil", category)
 			}
-			return nil, status.Errorf(codes.InvalidArgument, "Search category '%s' is not implemented", category.String())
+			return nil, status.Errorf(codes.InvalidArgument, "Search category %q is not implemented", category.String())
 		}
+
+		optMultiMap := categoryToOptionsMultimap[category]
+		if optMultiMap == nil {
+			return nil, status.Errorf(codes.InvalidArgument, "Search category %q is not implemented", category.String())
+		}
+
+		autocompleteFields := optMultiMap.GetAll(autocompleteKey)
+		if len(autocompleteFields) == 0 {
+			// Category for field to be autocompleted not applicable.
+			continue
+		}
+
+		// All the field paths to consider for the autocomplete field.
+		fieldPaths := make([]string, 0, 3*len(autocompleteFields))
+		for _, field := range autocompleteFields {
+			fieldPaths = append(fieldPaths,
+				field.GetFieldPath(),
+				blevesearch.ToMapKeyPath(field.GetFieldPath()),
+				blevesearch.ToMapValuePath(field.GetFieldPath()),
+			)
+		}
+
 		results, err := searcher.Search(ctx, query)
 		if err != nil {
 			log.Errorf("failed to search category %s: %s", category.String(), err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 		for _, r := range results {
+			matches := trimMatches(r.Matches, fieldPaths)
 			// This implies that the object is a map because it has multiple values
-			if isMapMatch(r.Matches) {
-				autocompleteResults = append(autocompleteResults, handleMapResults(r.Matches, r.Score)...)
+			if isMapMatch(matches) {
+				autocompleteResults = append(autocompleteResults, handleMapResults(matches, r.Score)...)
 				continue
 			}
-			for fieldPath, match := range r.Matches {
+
+			for fieldPath, match := range matches {
 				for _, v := range match {
 					value := handleMatch(fieldPath, v)
 					autocompleteResults = append(autocompleteResults, autocompleteResult{value: value, score: r.Score})
