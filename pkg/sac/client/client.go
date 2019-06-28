@@ -37,6 +37,13 @@ func New(config *storage.HTTPEndpointConfig) (Client, error) {
 		}
 		tlsConfig.RootCAs = caCertPool
 	}
+	if config.GetClientCertPem() != "" || config.GetClientKeyPem() != "" {
+		cert, err := tls.X509KeyPair([]byte(config.GetClientCertPem()), []byte(config.GetClientKeyPem()))
+		if err != nil {
+			return nil, errors.Wrap(err, "loading client certificate")
+		}
+		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
+	}
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 	client := &http.Client{Transport: transport}
 	return &clientImpl{

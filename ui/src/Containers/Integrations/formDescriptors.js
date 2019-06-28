@@ -918,6 +918,20 @@ const formDescriptors = {
                 jsonpath: 'config.endpointConfig.headers',
                 type: 'list',
                 listRender: renderKeyValues
+            },
+            {
+                label: 'Client Certificate (optional)',
+                jsonpath: 'config.endpointConfig.clientCertPem',
+                type: 'textarea',
+                placeholder:
+                    '-----BEGIN CERTIFICATE-----\nPEM-encoded client certificate\n-----END CERTIFICATE-----'
+            },
+            {
+                label: 'Client Key (optional)',
+                jsonpath: 'config.endpointConfig.clientKeyPem',
+                type: 'textarea',
+                placeholder:
+                    '-----BEGIN RSA PRIVATE KEY-----\nPEM-encoded private key\n-----END RSA PRIVATE KEY-----'
             }
         ]
     }
