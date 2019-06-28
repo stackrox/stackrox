@@ -17,7 +17,7 @@ var (
 	AuthProvider          = newResourceMetadata("AuthProvider", permissions.GlobalScope)
 	BackupPlugins         = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
 	Cluster               = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance            = newResourceMetadata("Compliance", permissions.GlobalScope)
+	Compliance            = newResourceMetadata("Compliance", permissions.ClusterScope)
 	ComplianceRunSchedule = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
 	ComplianceRuns        = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
 	Config                = newResourceMetadata("Config", permissions.GlobalScope)
