@@ -2,8 +2,10 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,6 +20,7 @@ func init() {
 		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
 		schema.AddExtraResolver("Deployment", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
+		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String): [Deployment!]!"),
 	)
@@ -96,4 +99,20 @@ func (resolver *deploymentResolver) ComplianceResults(ctx context.Context, args 
 	})
 
 	return *output, nil
+}
+
+func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (string, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return "", err
+	}
+	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.ListServiceAccounts(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, serviceAccount := range serviceAccounts {
+		if serviceAccount.ClusterId == resolver.ClusterId(ctx) && serviceAccount.Name == resolver.ServiceAccount(ctx) {
+			return serviceAccount.Id, nil
+		}
+	}
+	return "", errors.Wrap(nil, fmt.Sprintf("No matching service accounts found for deployment id: %s", resolver.Id(ctx)))
 }
