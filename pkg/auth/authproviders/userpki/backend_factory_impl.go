@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/httputil"
 )
 
 const (
@@ -35,7 +34,7 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, err error) {
 	ri := requestinfo.FromContext(r.Context())
 	if len(ri.VerifiedChains) != 1 {
-		return "", httputil.NewError(http.StatusBadRequest, "User certificate required")
+		return "", errNoCertificate
 	}
 	for _, cert := range ri.VerifiedChains[0] {
 		if prov := f.callbacks.GetProviderForFingerprint(cert.CertFingerprint); prov != nil {
@@ -43,7 +42,7 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (pr
 		}
 	}
 
-	return "", httputil.NewError(http.StatusBadRequest, "No matching certificates found")
+	return "", errInvalidCertificate
 }
 
 func (f *factory) ResolveProvider(state string) (providerID string, err error) {
