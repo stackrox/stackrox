@@ -1,6 +1,8 @@
 package create
 
 import (
+	"bytes"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -45,6 +47,10 @@ func Command() *cobra.Command {
 	return c
 }
 
+func isSelfSigned(cert *x509.Certificate) bool {
+	return bytes.Equal(cert.RawSubject, cert.RawIssuer)
+}
+
 func createProvider(c *cobra.Command, args []string) error {
 	if len(flagPEMFiles) == 0 {
 		return errNoPEMFiles
@@ -64,7 +70,7 @@ func createProvider(c *cobra.Command, args []string) error {
 		if err != nil {
 			return errors.Wrap(err, fn)
 		}
-		if !cert.IsCA {
+		if !cert.IsCA && !isSelfSigned(cert) {
 			return errors.Wrap(errNotCA, fn)
 		}
 		_, err = pems.Write(b)
