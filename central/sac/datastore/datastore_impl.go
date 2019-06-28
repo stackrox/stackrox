@@ -18,6 +18,17 @@ var (
 	authPluginSAC = sac.ForResource(resources.AuthPlugin)
 )
 
+type mayModifyEnabledPluginContextKey struct{}
+
+// WithModifyEnabledPluginCap returns a context that has the explicit power to modify the enabled plugin configuration.
+func WithModifyEnabledPluginCap(ctx context.Context) context.Context {
+	return context.WithValue(ctx, mayModifyEnabledPluginContextKey{}, struct{}{})
+}
+
+func mayModifyEnabledPlugin(ctx context.Context) bool {
+	return ctx.Value(mayModifyEnabledPluginContextKey{}) != nil
+}
+
 type datastoreImpl struct {
 	storage       store.Store
 	clientMgr     centralSAC.AuthPluginClientManger
@@ -55,7 +66,8 @@ func (ds *datastoreImpl) Initialize() error {
 			}
 		}
 	}
-	err = ds.setEnabledAuthzPluginUnlocked(enabledConfig)
+
+	err = ds.setEnabledAuthzPluginUnlocked(WithModifyEnabledPluginCap(context.Background()), enabledConfig)
 	if err != nil {
 		log.Errorf("Authorization plugin is not configured properly on initialization: %v.  API "+
 			"requests will be rejected until authorization plugin configuration is fixed.  Please log in with "+
@@ -103,12 +115,12 @@ func (ds *datastoreImpl) UpsertAuthzPluginConfig(ctx context.Context, config *st
 	// Validate the plugin config and set the current auth plugin client
 	if !config.GetEnabled() && oldEnabledPlugin != nil && oldEnabledPlugin.GetId() == config.GetId() {
 		// We are turning off the previously enabled plugin
-		err := ds.setEnabledAuthzPluginUnlocked(nil)
+		err := ds.setEnabledAuthzPluginUnlocked(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
 	} else if config.GetEnabled() {
-		err := ds.setEnabledAuthzPluginUnlocked(config)
+		err := ds.setEnabledAuthzPluginUnlocked(ctx, config)
 		if err != nil {
 			return nil, err
 		}
@@ -138,6 +150,10 @@ func (ds *datastoreImpl) DeleteAuthzPluginConfig(ctx context.Context, id string)
 		return errors.New("permission denied")
 	}
 
+	if err := checkCanSetEnabledAuthzPlugin(ctx); err != nil {
+		return err
+	}
+
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
@@ -146,7 +162,7 @@ func (ds *datastoreImpl) DeleteAuthzPluginConfig(ctx context.Context, id string)
 	}
 
 	if ds.enabledPlugin.GetId() == id {
-		err := ds.setEnabledAuthzPluginUnlocked(nil)
+		err := ds.setEnabledAuthzPluginUnlocked(ctx, nil)
 		if err != nil {
 			return err
 		}
@@ -154,7 +170,18 @@ func (ds *datastoreImpl) DeleteAuthzPluginConfig(ctx context.Context, id string)
 	return nil
 }
 
-func (ds *datastoreImpl) setEnabledAuthzPluginUnlocked(config *storage.AuthzPluginConfig) error {
+func checkCanSetEnabledAuthzPlugin(ctx context.Context) error {
+	if !mayModifyEnabledPlugin(ctx) {
+		return errors.New("only the local administrator (basic auth `admin` user) may perform changes that affect the enabled authorization plugin")
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) setEnabledAuthzPluginUnlocked(ctx context.Context, config *storage.AuthzPluginConfig) error {
+	if err := checkCanSetEnabledAuthzPlugin(ctx); err != nil {
+		return err
+	}
+
 	if config == nil {
 		ds.clientMgr.SetClient(nil)
 		ds.enabledPlugin = nil

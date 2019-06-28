@@ -33,10 +33,10 @@ type authzDataStoreTestSuite struct {
 }
 
 func (s *authzDataStoreTestSuite) SetupTest() {
-	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	s.hasWriteCtx = WithModifyEnabledPluginCap(sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.AuthPlugin)))
+			sac.ResourceScopeKeys(resources.AuthPlugin))))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockStorage = storeMocks.NewMockStore(s.mockCtrl)
@@ -256,10 +256,10 @@ func (s *authzDataStoreAccessTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.AuthPlugin)))
-	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	s.hasWriteCtx = WithModifyEnabledPluginCap(sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.AuthPlugin)))
+			sac.ResourceScopeKeys(resources.AuthPlugin))))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockStorage = storeMocks.NewMockStore(s.mockCtrl)
