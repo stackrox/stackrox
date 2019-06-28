@@ -19,8 +19,10 @@ func init() {
 		schema.AddExtraResolver("K8SRole", `resources: [String!]!`),
 		schema.AddExtraResolver("K8SRole", `urls: [String!]!`),
 		schema.AddExtraResolver("K8SRole", `subjects: [SubjectWithClusterID!]!`),
-		schema.AddExtraResolver("K8SRole", `serviceAccounts: [ServiceAccount!]!`),
+		schema.AddExtraResolver("K8SRole", `serviceAccounts: [ServiceAccountResponse!]!`),
 		schema.AddExtraResolver("K8SRole", `roleNamespace: Namespace`),
+		schema.AddType("NonExistentServiceAccount", []string{"message: String!"}),
+		schema.AddUnionType("ServiceAccountResponse", []string{"NonExistentServiceAccount", "ServiceAccount"}),
 	)
 }
 
@@ -109,8 +111,28 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context) ([]*subjectWithCl
 	return wrapSubjects(resolver.data.GetClusterId(), subs), nil
 }
 
+type serviceAccountResponseResolver struct {
+	wrapped interface{}
+}
+
+type messageResolver string
+
+func (m messageResolver) Message() string {
+	return string(m)
+}
+
+func (resolver *serviceAccountResponseResolver) ToNonExistentServiceAccount() (*messageResolver, bool) {
+	r, ok := resolver.wrapped.(*messageResolver)
+	return r, ok
+}
+
+func (resolver *serviceAccountResponseResolver) ToServiceAccount() (*serviceAccountResolver, bool) {
+	r, ok := resolver.wrapped.(*serviceAccountResolver)
+	return r, ok
+}
+
 // ServiceAccounts returns the set of service accounts granted permissions to by a given k8s role
-func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context) ([]*serviceAccountResolver, error) {
+func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context) ([]*serviceAccountResponseResolver, error) {
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
@@ -124,16 +146,21 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context) ([]*servic
 	}
 
 	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_SERVICE_ACCOUNT)
-	serviceAccounts := make([]*storage.ServiceAccount, 0, len(subjects))
+	resolvers := make([]*serviceAccountResponseResolver, 0, len(subjects))
 	for _, subject := range subjects {
 		sa, err := resolver.convertSubjectToServiceAccount(ctx, resolver.data.GetClusterId(), subject)
 		if err != nil {
 			continue
 		}
-		serviceAccounts = append(serviceAccounts, sa)
+		if sa == nil {
+			m := messageResolver("service account does not exist")
+			resolvers = append(resolvers, &serviceAccountResponseResolver{&m})
+			continue
+		}
+		sar := &serviceAccountResolver{data: sa, root: resolver.root}
+		resolvers = append(resolvers, &serviceAccountResponseResolver{sar})
 	}
-
-	return resolver.root.wrapServiceAccounts(serviceAccounts, nil)
+	return resolvers, nil
 }
 
 // RoleNamespace returns the namespace of the k8s role

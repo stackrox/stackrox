@@ -40,8 +40,13 @@ export const K8S_ROLE = gql`
                     }
                 }
                 serviceAccounts {
-                    id
-                    name
+                    ... on NonExistentServiceAccount {
+                        message
+                    }
+                    ... on ServiceAccount {
+                        id
+                        name
+                    }
                 }
                 subjects {
                     name
@@ -83,8 +88,13 @@ export const K8S_ROLES = gql`
                     }
                 }
                 serviceAccounts {
-                    id
-                    name
+                    ... on NonExistentServiceAccount {
+                        message
+                    }
+                    ... on ServiceAccount {
+                        id
+                        name
+                    }
                 }
             }
         }

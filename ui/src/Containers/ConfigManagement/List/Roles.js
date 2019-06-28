@@ -74,6 +74,7 @@ const buildTableColumns = (match, location) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { serviceAccounts, id } = original;
                 const { length } = serviceAccounts;
@@ -84,7 +85,9 @@ const buildTableColumns = (match, location) => {
                     .url();
                 if (length > 1)
                     return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
-                return original.serviceAccounts[0].name;
+                const serviceAccount = serviceAccounts[0];
+                if (serviceAccount.name) return serviceAccount.name;
+                return <LabelChip text={serviceAccount.message} type="alert" />;
             }
         }
     ];
