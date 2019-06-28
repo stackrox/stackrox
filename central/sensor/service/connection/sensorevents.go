@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 )
 
-const workerQueueSize = 64
+const workerQueueSize = 16
 
 var deploymentQueueKey = reflectutils.Type((*central.SensorEvent_Deployment)(nil))
 
