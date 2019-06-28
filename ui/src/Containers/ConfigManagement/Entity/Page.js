@@ -103,6 +103,7 @@ const EntityPage = ({ match, location, history }) => {
                 </div>
             </PageHeader>
             <Tabs
+                pageEntityId={pageEntityId}
                 entityType={pageEntityType}
                 entityListType={entityListType1}
                 onClick={onTabClick}

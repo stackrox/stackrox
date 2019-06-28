@@ -4,7 +4,7 @@ import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import { CONTROL_QUERY as QUERY } from 'queries/controls';
-import ControlDetails from 'Containers/Compliance/widgets/ControlDetails';
+import ControlDetails from 'Components/ControlDetails';
 import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRelatedResourceList';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import { withRouter } from 'react-router-dom';

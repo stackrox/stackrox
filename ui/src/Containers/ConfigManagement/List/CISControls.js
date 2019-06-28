@@ -52,6 +52,8 @@ const tableColumns = [
 ];
 
 const createTableRows = data => {
+    if (!data || !data.results || !data.results.results.length) return [];
+
     let standardKeyIndex = 0;
     let controlKeyIndex = 0;
     let nodeKeyIndex = 0;

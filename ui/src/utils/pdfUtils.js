@@ -8,7 +8,7 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
     const { standardId } = query;
     const table = document.getElementById('pdf-table');
     const parent = document.getElementById(pdfId);
-    if (table) {
+    if (table && parent.contains(table)) {
         parent.removeChild(table);
     }
     let type = null;

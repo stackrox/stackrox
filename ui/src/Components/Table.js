@@ -78,6 +78,7 @@ class Table extends Component {
 
     render() {
         const { rows, columns, ...rest } = this.props;
+        if (!columns || !columns.length) return null;
         columns.forEach(column =>
             Object.assign(column, {
                 className: this.getColumnClassName(column),

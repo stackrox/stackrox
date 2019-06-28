@@ -5,7 +5,7 @@ import entityTypes from 'constants/entityTypes';
 import cluster from 'images/cluster.svg';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
-import entityToColumns from 'constants/listColumns';
+import { entityToColumns } from 'constants/listColumns';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';

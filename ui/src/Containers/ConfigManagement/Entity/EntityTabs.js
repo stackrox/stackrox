@@ -105,10 +105,24 @@ const entityTabsMap = {
             value: entityTypes.SERVICE_ACCOUNT,
             text: pluralize(entityLabels[entityTypes.SERVICE_ACCOUNT])
         }
+    ],
+    [entityTypes.CIS_Docker_v1_1_0]: [
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.NODE,
+            text: pluralize(entityLabels[entityTypes.NODE])
+        }
+    ],
+    [entityTypes.CIS_Kubernetes_v1_2_0]: [
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.NODE,
+            text: pluralize(entityLabels[entityTypes.NODE])
+        }
     ]
 };
 
-const EntityTabs = ({ entityType, entityListType, onClick }) => {
+const EntityTabs = ({ entityType, entityListType, pageEntityId, onClick }) => {
     const [activeTab, setActiveTab] = useState(entityListType);
     useEffect(
         () => {
@@ -116,8 +130,10 @@ const EntityTabs = ({ entityType, entityListType, onClick }) => {
         },
         [entityListType]
     );
-
-    const entityTabs = entityTabsMap[entityType];
+    // this is because each standard relates to different resources, so we need to show different tabs
+    const getStandardId = controlId => controlId.split(':')[0];
+    const key = entityType === entityTypes.CONTROL ? getStandardId(pageEntityId) : entityType;
+    const entityTabs = entityTabsMap[key];
     if (!entityTabs) return null;
 
     const groups = Object.values(TAB_GROUPS);
@@ -130,6 +146,7 @@ const EntityTabs = ({ entityType, entityListType, onClick }) => {
 EntityTabs.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityListType: PropTypes.string,
+    pageEntityId: PropTypes.string.isRequired,
     onClick: PropTypes.func.isRequired
 };
 

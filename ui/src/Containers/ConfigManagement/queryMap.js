@@ -9,6 +9,7 @@ import { SECRET, SECRETS } from 'queries/secret';
 import { CLUSTER_QUERY as CLUSTER } from 'queries/cluster';
 import { NAMESPACE_QUERY as NAMESPACE } from 'queries/namespace';
 import { NODE_QUERY as NODE, NODES_QUERY as NODES } from 'queries/node';
+import { CONTROL_QUERY as CONTROL } from 'queries/controls';
 
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,
@@ -17,7 +18,8 @@ export const entityQueryMap = {
     [entityTypes.CLUSTER]: CLUSTER,
     [entityTypes.NAMESPACE]: NAMESPACE,
     [entityTypes.ROLE]: ROLE,
-    [entityTypes.NODE]: NODE
+    [entityTypes.NODE]: NODE,
+    [entityTypes.CONTROL]: CONTROL
 };
 
 export const entityListQueryMap = {

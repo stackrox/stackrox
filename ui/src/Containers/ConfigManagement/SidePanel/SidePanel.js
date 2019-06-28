@@ -107,7 +107,6 @@ const SidePanel = ({
         const urlBuilder = URLService.getURL(match, location).base(entityType, entityId);
         history.push(urlBuilder.url());
     }
-
     return (
         <div className={className}>
             <Panel

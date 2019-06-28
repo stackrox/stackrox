@@ -6,6 +6,7 @@ import { withRouter, Link } from 'react-router-dom';
 import URLService from 'modules/URLService';
 
 import { ArrowLeft } from 'react-feather';
+import control from 'images/side-panel-icons/control.svg';
 import cluster from 'images/side-panel-icons/cluster.svg';
 import deployment from 'images/side-panel-icons/deployment.svg';
 import group from 'images/side-panel-icons/group.svg';
@@ -18,6 +19,7 @@ import secrets from 'images/side-panel-icons/secrets.svg';
 import serviceAccount from 'images/side-panel-icons/service-account.svg';
 
 const imageMap = {
+    [entityTypes.CONTROL]: control,
     [entityTypes.CLUSTER]: cluster,
     [entityTypes.DEPLOYMENT]: deployment,
     [entityTypes.SUBJECT]: group,

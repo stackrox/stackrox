@@ -28,7 +28,7 @@ const ControlDetails = ({ standardId, control, description, className }) => (
     >
         <div className="flex bg-tertiary-200 m-1">
             <img src={svgMapping[standardId]} alt={standardId} className="h-18" />
-            <div className="flex flex-col justify-center pl-3">
+            <div className="flex flex-col justify-center px-3">
                 <div className="pb-2">
                     <span className="font-700 pr-1">Standard:</span>
                     <span data-test-id="standard-name">{standardLabels[standardId]}</span>

@@ -120,7 +120,7 @@ export const AGGREGATED_RESULTS_WITH_CONTROLS = gql`
 `;
 
 export const CONTROL_QUERY = gql`
-    query controlById($id: ID!) {
+    query controlById($id: ID!, $groupBy: [ComplianceAggregation_Scope!], $where: String) {
         results: complianceControl(id: $id) {
             interpretationText
             description
@@ -132,6 +132,24 @@ export const CONTROL_QUERY = gql`
         complianceStandards {
             id
             name
+        }
+
+        entities: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                keys {
+                    ... on Node {
+                        clusterName
+                        id
+                        name
+                    }
+                }
+                numFailing
+                numPassing
+            }
         }
     }
 `;
