@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/authproviders/clientca"
+	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 )
@@ -40,7 +40,7 @@ func listProviders(cmd *cobra.Command, args []string) error {
 
 	authClient := v1.NewAuthProviderServiceClient(conn)
 	groupClient := v1.NewGroupServiceClient(conn)
-	providers, err := authClient.GetAuthProviders(ctx, &v1.GetAuthProvidersRequest{Type: clientca.TypeName})
+	providers, err := authClient.GetAuthProviders(ctx, &v1.GetAuthProvidersRequest{Type: userpki.TypeName})
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func PrintProviderDetails(p *storage.AuthProvider, defaultRoles map[string]strin
 	if len(defaultRoles) > 0 {
 		fmt.Printf("  Default role: %q\n", defaultRoles[p.GetId()])
 	}
-	pem := p.GetConfig()[clientca.ConfigKeys]
+	pem := p.GetConfig()[userpki.ConfigKeys]
 	certs, err := helpers.ParseCertificatesPEM([]byte(pem))
 	if err != nil {
 		fmt.Printf("  Certificates: %v\n", err)

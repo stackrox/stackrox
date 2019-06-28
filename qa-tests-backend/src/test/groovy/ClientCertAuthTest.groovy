@@ -30,7 +30,7 @@ class ClientCertAuthTest extends BaseSpecification {
         String caPath = Env.mustGetClientCAPath()
         byte[] encoded = Files.readAllBytes(Paths.get(caPath))
         def cert = new String(encoded)
-        providerID = AuthProviderService.createAuthProvider("Test Client CA Auth", "clientca", ["keys" : cert])
+        providerID = AuthProviderService.createAuthProvider("Test Client CA Auth", "userpki", ["keys" : cert])
         println "Client cert auth provider ID is ${providerID}"
         certToken = AuthProviderService.getAuthProviderLoginToken(providerID)
         println "Certificate token is ${certToken}"
@@ -79,8 +79,8 @@ class ClientCertAuthTest extends BaseSpecification {
         false         | "none"      | "error"
         false         | "basic"     | "basic"
         true          | "basic"     | "basic"
-        true          | "none"      | "clientca"
-        true          | "certtoken" | "clientca"
+        true          | "none"      | "userpki"
+        true          | "certtoken" | "userpki"
         false         | "certtoken" | "error"
     }
 }

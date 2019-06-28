@@ -1,4 +1,4 @@
-package clientca
+package userpki
 
 import (
 	"context"

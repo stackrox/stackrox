@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/authproviders/clientca"
+	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/central/userpki/list"
@@ -44,7 +44,7 @@ func getAuthProviderByID(ctx context.Context, svc v1.AuthProviderServiceClient, 
 }
 
 func getAuthProviderByName(ctx context.Context, svc v1.AuthProviderServiceClient, name string) (*storage.AuthProvider, error) {
-	provs, err := svc.GetAuthProviders(ctx, &v1.GetAuthProvidersRequest{Name: name, Type: clientca.TypeName})
+	provs, err := svc.GetAuthProviders(ctx, &v1.GetAuthProvidersRequest{Name: name, Type: userpki.TypeName})
 	if err != nil {
 		return nil, err
 	}

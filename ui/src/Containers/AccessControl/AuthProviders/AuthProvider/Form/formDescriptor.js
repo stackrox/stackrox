@@ -201,7 +201,7 @@ const formDescriptors = {
             type: 'html'
         }
     ],
-    clientca: [
+    userpki: [
         {
             label: 'Integration Name',
             jsonPath: 'name',
@@ -213,7 +213,7 @@ const formDescriptors = {
             jsonPath: 'config.keys',
             type: 'textarea',
             placeholder:
-                '-----BEGIN CERTIFICATE-----Authority certificate data\n-----END CERTIFICATE-----',
+                '-----BEGIN CERTIFICATE-----\nAuthority certificate data\n-----END CERTIFICATE-----',
             immutable: true
         }
     ],

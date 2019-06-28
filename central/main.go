@@ -88,9 +88,9 @@ import (
 	"github.com/stackrox/rox/central/version"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/auth/authproviders/clientca"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
+	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -99,7 +99,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
-	"github.com/stackrox/rox/pkg/grpc/authn/userpki"
+	authnUserpki "github.com/stackrox/rox/pkg/grpc/authn/userpki"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -120,7 +120,7 @@ var (
 		oidc.TypeName: oidc.NewFactory,
 		"auth0":       oidc.NewFactory, // legacy
 		saml.TypeName: saml.NewFactory,
-		// clientca.TypeName: clientca.NewFactory,
+		// authProviderUserpki.TypeName: authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance()),
 	}
 
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -318,7 +318,7 @@ func startGRPCServer(factory serviceFactory) {
 	}
 
 	if features.ClientCAAuth.Enabled() {
-		authProviderBackendFactories[clientca.TypeName] = clientca.NewFactoryFactory(tlsconfig.ManagerInstance())
+		authProviderBackendFactories[authProviderUserpki.TypeName] = authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance())
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
@@ -340,7 +340,7 @@ func startGRPCServer(factory serviceFactory) {
 
 	tlsConfigurer := tlsconfig.NewCentralTLSConfigurer()
 	if features.ClientCAAuth.Enabled() {
-		idExtractors = append(idExtractors, userpki.NewExtractor(tlsconfig.ManagerInstance()))
+		idExtractors = append(idExtractors, authnUserpki.NewExtractor(tlsconfig.ManagerInstance()))
 		tlsConfigurer = tlsconfig.ManagerInstance().TLSConfigurer()
 	}
 

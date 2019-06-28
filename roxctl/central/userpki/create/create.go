@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/authproviders/clientca"
+	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 )
@@ -89,11 +89,11 @@ func createProvider(c *cobra.Command, args []string) error {
 
 	req := &v1.PostAuthProviderRequest{
 		Provider: &storage.AuthProvider{
-			Type:    clientca.TypeName,
+			Type:    userpki.TypeName,
 			Name:    providerName,
 			Enabled: true,
 			Config: map[string]string{
-				clientca.ConfigKeys: pems.String(),
+				userpki.ConfigKeys: pems.String(),
 			},
 		},
 	}

@@ -1,4 +1,4 @@
-package clientca
+package userpki
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 const (
 	// TypeName is the unique identifier for providers of this type
-	TypeName = "clientca"
+	TypeName = "userpki"
 )
 
 type factory struct {
