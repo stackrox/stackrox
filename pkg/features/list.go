@@ -10,5 +10,5 @@ var (
 	ScopedAccessControl = registerFeature("Scoped Access Control", "ROX_SCOPED_ACCESS_CONTROL", true)
 
 	// ClientCAAuth will enable authenticating to central via client certificate authentication
-	ClientCAAuth = registerFeature("Client Certificate Authentication", "ROX_CLIENT_CA_AUTH", false)
+	ClientCAAuth = registerFeature("Client Certificate Authentication", "ROX_CLIENT_CA_AUTH", true)
 )

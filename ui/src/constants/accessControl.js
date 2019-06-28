@@ -27,7 +27,7 @@ export const availableAuthProviders = [
     }
 ];
 
-if (process.env.REACT_APP_ROX_CLIENT_CA_AUTH === 'true') {
+if (process.env.REACT_APP_ROX_CLIENT_CA_AUTH !== 'false') {
     availableAuthProviders.push({
         label: 'User Certificates',
         value: 'userpki'
