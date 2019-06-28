@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
 	"github.com/stackrox/rox/pkg/sac"
-	sacClient "github.com/stackrox/rox/pkg/sac/client"
 )
 
 // With returns an authorizer that only authorizes users/tokens
@@ -35,9 +34,9 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 		return authz.ErrNoCredentials
 	}
 
-	// If sac client is configured and sac is enabled, skip role check.
-	if client := sacClient.GetFromContext(ctx); client != nil {
-		return p.checkGlobalSACPermissions(ctx, client)
+	// If sac scope checker is configured, skip role check.
+	if rootScopeChecker := sac.GlobalAccessScopeCheckerOrNil(ctx); rootScopeChecker != nil {
+		return p.checkGlobalSACPermissions(ctx, *rootScopeChecker)
 	}
 
 	// Fall back to checking user role.
@@ -51,7 +50,7 @@ func (p *permissionChecker) collectPermissions(pc permissions.PermissionMap) err
 	return permissioncheck.ErrPermissionCheckOnly
 }
 
-func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, client sacClient.Client) error {
+func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootSC sac.ScopeChecker) error {
 	globalScopes := make([][]sac.ScopeKey, 0)
 	for _, perm := range p.requiredPermissions {
 		if perm.Resource.Scope != permissions.GlobalScope {
@@ -63,7 +62,7 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, clien
 		})
 	}
 
-	allowed, err := sac.GlobalAccessScopeChecker(ctx).AllAllowed(ctx, globalScopes)
+	allowed, err := rootSC.AllAllowed(ctx, globalScopes)
 	if err != nil {
 		return err
 	}

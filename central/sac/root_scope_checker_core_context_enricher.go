@@ -7,8 +7,6 @@ import (
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -54,18 +52,13 @@ func newEnricher(sacEnabled bool) *Enricher {
 
 // PreAuthContextEnricher adds the client in use at the time of request to the context for use in scope checking.
 func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context, error) {
-	if client := se.clientManager.GetClient(); se.sacEnabled && client != nil {
-		return sacClient.SetInContext(ctx, client), nil
-	}
-	return ctx, nil
-}
-
-// PostAuthContextEnricher enriches the given context with a root scope checker which can be used to check a
-// user's permissions. If SAC is disabled we will instead enrich with an AllowAllAccessScopeChecker and skip caching
-func (se *Enricher) PostAuthContextEnricher(ctx context.Context) (context.Context, error) {
-	// If SAC is turned off, just allow all access for SAC checks.
 	if !se.sacEnabled {
-		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
+		return ctx, nil
+	}
+
+	client := se.clientManager.GetClient()
+	if client == nil {
+		return ctx, nil
 	}
 
 	// Check the id of the context and decide scope checker to use.
@@ -78,12 +71,6 @@ func (se *Enricher) PostAuthContextEnricher(ctx context.Context) (context.Contex
 	}
 	if basic.IsBasicIdentity(id) {
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
-	}
-
-	// If no client is present, then just return a scope checker that uses local identity information.
-	client := sacClient.GetFromContext(ctx)
-	if client == nil {
-		return sac.WithGlobalAccessScopeChecker(ctx, scopeCheckerForIdentity(id)), nil
 	}
 
 	// Get the principal and the cache key for it.
@@ -102,6 +89,18 @@ func (se *Enricher) PostAuthContextEnricher(ctx context.Context) (context.Contex
 		cacheForClient.Add(idCacheKey, rsc)
 	}
 	return sac.WithGlobalAccessScopeChecker(ctx, rsc), nil
+}
+
+// PostAuthContextEnricher enriches the given context with a root scope checker which can be used to check a
+// user's permissions. If SAC is disabled we will instead enrich with an AllowAllAccessScopeChecker and skip caching
+func (se *Enricher) PostAuthContextEnricher(ctx context.Context) (context.Context, error) {
+	// If SAC is turned off (or no authz plugin is configured), just allow all access for SAC checks.
+	// This means we don't reap the benefit of more fine-grained checks if SAC is not configured, but we also won't
+	// break APIs due to stricter enforcement of access rules.
+	if rootSC := sac.GlobalAccessScopeCheckerOrNil(ctx); rootSC == nil {
+		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
+	}
+	return ctx, nil
 }
 
 func (se *Enricher) cacheForClient(client sacClient.Client) expiringcache.Cache {
@@ -148,39 +147,6 @@ func idToPrincipal(id authn.Identity) *payload.Principal {
 		attributes[k] = v
 	}
 	return &payload.Principal{AuthProvider: authProvider, Attributes: attributes}
-}
-
-func scopeCheckerForIdentity(id authn.Identity) sac.ScopeCheckerCore {
-	var globalAccessModes []storage.Access
-	switch id.Role().GlobalAccess {
-	case storage.Access_READ_WRITE_ACCESS:
-		globalAccessModes = append(globalAccessModes, storage.Access_READ_WRITE_ACCESS)
-		fallthrough
-	case storage.Access_READ_ACCESS:
-		globalAccessModes = append(globalAccessModes, storage.Access_READ_ACCESS)
-	}
-	if len(globalAccessModes) > 0 {
-		return sac.AllowFixedScopes(sac.AccessModeScopeKeys(globalAccessModes...))
-	}
-
-	var readResources []permissions.ResourceHandle
-	var writeResources []permissions.ResourceHandle
-
-	for resourceName, access := range id.Role().GetResourceToAccess() {
-		resource := permissions.Resource(resourceName)
-		switch access {
-		case storage.Access_READ_WRITE_ACCESS:
-			writeResources = append(writeResources, resource)
-			fallthrough
-		case storage.Access_READ_ACCESS:
-			readResources = append(readResources, resource)
-		}
-	}
-
-	return sac.OneStepSCC{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS):       sac.AllowFixedScopes(sac.ResourceScopeKeys(readResources...)),
-		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(sac.ResourceScopeKeys(writeResources...)),
-	}
 }
 
 func newConfiguredCache() expiringcache.Cache {

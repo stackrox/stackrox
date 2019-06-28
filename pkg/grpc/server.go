@@ -105,16 +105,16 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
 
+	if len(a.config.PreAuthContextEnrichers) > 0 {
+		u = append(u, contextutil.UnaryServerInterceptor(a.config.PreAuthContextEnrichers...))
+	}
+
 	// Check auth and update the context with the error
 	u = append(u, interceptor.AuthContextUpdaterInterceptor())
 
 	if a.config.Auditor != nil {
 		// Audit the request
 		u = append(u, a.config.Auditor.UnaryServerInterceptor())
-	}
-
-	if len(a.config.PreAuthContextEnrichers) > 0 {
-		u = append(u, contextutil.UnaryServerInterceptor(a.config.PreAuthContextEnrichers...))
 	}
 
 	// Check if there was an auth failure and return error if so

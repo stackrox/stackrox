@@ -29,6 +29,21 @@ func GlobalAccessScopeChecker(ctx context.Context) ScopeChecker {
 	return NewScopeChecker(core)
 }
 
+// GlobalAccessScopeCheckerOrNil retrieves the global access scope checker if it is stored in the context; otherwise,
+// it returns `nil`.
+func GlobalAccessScopeCheckerOrNil(ctx context.Context) *ScopeChecker {
+	if noSAC {
+		return nil
+	}
+
+	core, _ := ctx.Value(globalAccessScopeContextKey{}).(ScopeCheckerCore)
+	if core == nil {
+		return nil
+	}
+	sc := NewScopeChecker(core)
+	return &sc
+}
+
 // WithGlobalAccessScopeChecker returns a context that is a child of the given context and contains
 // the given global access scope.
 func WithGlobalAccessScopeChecker(ctx context.Context, as ScopeCheckerCore) context.Context {
