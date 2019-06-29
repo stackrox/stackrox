@@ -1,10 +1,8 @@
-## Summary
-
-A one-line summary of your PR.
-
 ## Description
 
-A more detailed explanation of the changes in your PR. Feel free to remove this section if it is overkill for your PR.
+A detailed explanation of the changes in your PR.
+
+Feel free to remove this section if it is overkill for your PR, and the title of your PR is sufficiently descriptive.
 
 ## Testing Performed
 
