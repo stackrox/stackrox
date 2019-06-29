@@ -969,8 +969,17 @@ jobs:
 
       - *deployGKE
       - *setupCIMonitoring
+
+      - *setupClientTLSCerts
+
       - *waitForAPI
       - *waitForSensorK8s
+
+      - run:
+          name: Set up client CA auth provider
+          command: |
+            roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+              central userpki create test-userpki -r None -c "$CLIENT_CA_PATH"
 
       - run:
           name: API tests
