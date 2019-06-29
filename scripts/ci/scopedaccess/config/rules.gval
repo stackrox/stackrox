@@ -1,1 +1,11 @@
-# Sample GVal rules file
+principal.authProvider.type != "api-token"
+principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "deployments-access-token" && \
+    scope.verb == "view" && \
+    scope.noun == "Deployment" && \
+    ( \
+        scope.attributes.cluster.name == "remote" && \
+        scope.attributes.namespace =~ "test-qa2" \
+        || \
+        scope.attributes.cluster.name == "local" \
+    )
