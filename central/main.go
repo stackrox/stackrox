@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -369,6 +370,15 @@ func startGRPCServer(factory serviceFactory) {
 	config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,
 		centralSAC.GetEnricher().PostAuthContextEnricher,
 	)
+
+	if features.PlaintextExposure.Enabled() {
+		var plaintextEndpoint string
+		portName := env.PlaintextPort.Setting()
+		if portName != "" {
+			plaintextEndpoint = fmt.Sprintf(":%s", portName)
+		}
+		config.PlaintextEndpoint = plaintextEndpoint
+	}
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(factory.ServicesToRegister(registry)...)

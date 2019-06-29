@@ -78,6 +78,8 @@ type Config struct {
 
 	InsecureLocalEndpoint string
 	PublicEndpoint        string
+
+	PlaintextEndpoint string
 }
 
 // NewAPI returns an API object.
@@ -254,6 +256,14 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		log.Panicf("Could not listen on public API endpoint: %v", err)
 	}
 
+	var plaintextListener net.Listener
+	if a.config.PlaintextEndpoint != "" {
+		plaintextListener, err = net.Listen("tcp", a.config.PlaintextEndpoint)
+		if err != nil {
+			log.Panicf("Could not listen on plaintext API endpoint %q: %v", a.config.PlaintextEndpoint, err)
+		}
+	}
+
 	srv := &http.Server{
 		Addr:      listener.Addr().String(),
 		Handler:   wireOrJSONMuxer(grpcServer, a.muxer(localConn)),
@@ -266,8 +276,16 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		startedSig.Signal()
 	}
 
-	err = srv.Serve(listener)
-	if err != nil {
+	errC := make(chan error, 2)
+
+	go serveAsync(srv, listener, errC)
+
+	if plaintextListener != nil {
+		go serveAsync(srv, plaintextListener, errC)
+		log.Infof("Plaintext listener started on %s", plaintextListener.Addr())
+	}
+
+	if err := <-errC; err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
@@ -280,4 +298,10 @@ func wireOrJSONMuxer(grpcServer *grpc.Server, httpHandler http.Handler) http.Han
 			httpHandler.ServeHTTP(w, r)
 		}
 	})
+}
+
+func serveAsync(srv *http.Server, listener net.Listener, errC chan<- error) {
+	if err := srv.Serve(listener); err != nil {
+		errC <- err
+	}
 }
