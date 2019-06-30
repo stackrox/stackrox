@@ -250,6 +250,12 @@ func Command() *cobra.Command {
 		c.PersistentFlags().SetAnnotation("default-tls-key", flags.MandatoryKey, []string{"true"}),
 	)
 
+	if features.PlaintextExposure.Enabled() {
+		c.PersistentFlags().VarPF(flags.ForSetting(env.PlaintextPort), "plaintext-port", "", "The port to use for plaintext (unencrypted) exposure")
+		utils.Must(
+			c.PersistentFlags().SetAnnotation("plaintext-port", flags.NoInteractiveKey, []string{"true"}))
+	}
+
 	c.AddCommand(interactive())
 
 	c.AddCommand(k8s())

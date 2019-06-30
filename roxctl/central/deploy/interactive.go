@@ -37,6 +37,14 @@ func readUserInput(prompt string) (string, error) {
 	return strings.TrimSpace(text), nil
 }
 
+func isNoInteractive(f *pflag.Flag) bool {
+	noIntAnn := f.Annotations[flags.NoInteractiveKey]
+	if len(noIntAnn) == 0 {
+		return false
+	}
+	return noIntAnn[0] == "true"
+}
+
 func isOptional(f *pflag.Flag) bool {
 	optAnn := f.Annotations[flags.OptionalKey]
 	if len(optAnn) == 0 {
@@ -294,7 +302,7 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 	}
 
 	for _, fw := range fws {
-		if fw.Hidden {
+		if fw.Hidden || isNoInteractive(fw.Flag) {
 			continue
 		}
 

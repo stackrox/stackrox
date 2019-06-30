@@ -1,6 +1,8 @@
 package flags
 
 const (
+	// NoInteractiveKey can be used to mark a flag as to not be prompted for in the interactive installer.
+	NoInteractiveKey = "no-interactive"
 	// OptionalKey can be used to mark a flag as optional.
 	OptionalKey = "optional"
 	// MandatoryKey can be used to mark a flag as mandatory in the interactive installer, meaning that
