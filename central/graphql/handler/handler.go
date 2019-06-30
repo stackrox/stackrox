@@ -8,7 +8,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -63,9 +62,6 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Handler returns an HTTP handler for the graphql api endpoint
 func Handler() http.Handler {
 	opts := []graphql.SchemaOpt{graphql.Logger(&logger{})}
-	if buildinfo.ReleaseBuild {
-		opts = append(opts, graphql.DisableIntrospection())
-	}
 	s := resolvers.Schema()
 	ourSchema, err := graphql.ParseSchema(s, resolvers.New(), opts...)
 	if err != nil {
