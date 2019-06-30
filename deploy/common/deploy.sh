@@ -236,7 +236,7 @@ function setup_auth0() {
 		"client_id": "bu63HaVAuVPEgMUeRVfL5PzrqTXaedA2",
 		"mode": "post"
 	},
-	"extraUiEndpoints": ["localhost:3000", "prevent.stackrox.com"]
+	"extraUiEndpoints": ["localhost:8000", "localhost:3000", "localhost:8001", "prevent.stackrox.com"]
 }
 EOF
     )

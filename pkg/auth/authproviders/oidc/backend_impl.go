@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/oauth2"
 )
@@ -158,7 +159,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		noncePool: cryptoutils.NewThreadSafeNoncePool(
 			cryptoutils.NewNonceGenerator(nonceByteLen, rand.Reader), nonceTTL),
 		defaultUIEndpoint:  uiEndpoints[0],
-		allowedUIEndpoints: set.NewStringSet(uiEndpoints[1:]...),
+		allowedUIEndpoints: set.NewStringSet(uiEndpoints...),
 	}
 
 	p.baseRedirectURL = url.URL{
@@ -214,9 +215,14 @@ func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) 
 	redirectURL := p.baseRedirectURL
 	if p.allowedUIEndpoints.Contains(ri.Hostname) {
 		redirectURL.Host = ri.Hostname
+		// Allow HTTP only if the client did not use TLS and the host is localhost.
+		if !ri.ClientUsedTLS && netutil.IsLocalEndpoint(redirectURL.Host) {
+			redirectURL.Scheme = "http"
+		}
 	} else {
 		redirectURL.Host = p.defaultUIEndpoint
 	}
+
 	oauthCfg := p.baseOauthConfig
 	oauthCfg.RedirectURL = redirectURL.String()
 	return oauthCfg.AuthCodeURL(state, options...)

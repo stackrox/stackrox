@@ -70,6 +70,9 @@ type RequestInfo struct {
 	// `X-Forwarded-Host` (if present) or the `Hostname` header for a HTTP/1.1 request, and from the TLS ServerName
 	// otherwise.
 	Hostname string
+	// ClientUsedTLS indicates whether the client used TLS (i.e., "https") to connect. This is populated from
+	// the `X-Forwarded-Proto` header (if present), or the TLS connection state.
+	ClientUsedTLS bool
 	// VerifiedSubjectChains are the subjects of the verified certificate chains presented by the client.
 	VerifiedChains [][]CertInfo
 	// Metadata is the request metadata. For *pure* HTTP/1.1 requests, these are the actual HTTP headers. Otherwise,
@@ -155,6 +158,12 @@ func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD
 		ri.Hostname = fwdHost
 	} else if tlsState != nil {
 		ri.Hostname = tlsState.ServerName
+	}
+
+	if fwdProto := req.Header.Get("X-Forwarded-Proto"); fwdProto != "" {
+		ri.ClientUsedTLS = fwdProto != "http"
+	} else {
+		ri.ClientUsedTLS = tlsState != nil
 	}
 
 	if tlsState != nil {
@@ -251,11 +260,15 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 		return nil, status.Errorf(codes.InvalidArgument, "malformed request")
 	}
 
+	tlsState := tlsStateFromContext(ctx)
 	if ri == nil {
-		ri = &RequestInfo{}
+		ri = &RequestInfo{
+			ClientUsedTLS: tlsState != nil,
+		}
 	}
+
 	// Populate request info from TLS state.
-	if tlsState := tlsStateFromContext(ctx); tlsState != nil {
+	if tlsState != nil {
 		ri.Hostname = tlsState.ServerName
 		ri.VerifiedChains = extractCertInfoChains(tlsState.VerifiedChains)
 	}
@@ -278,6 +291,12 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 		if fwdHost := r.Header.Get("X-Forwarded-Host"); fwdHost != "" {
 			ri.Hostname = fwdHost
 		}
+		if fwdProto := r.Header.Get("X-Forwarded-Proto"); fwdProto != "" {
+			ri.ClientUsedTLS = fwdProto != "http"
+		} else {
+			ri.ClientUsedTLS = r.TLS != nil
+		}
+
 		if r.TLS != nil {
 			ri.VerifiedChains = extractCertInfoChains(r.TLS.VerifiedChains)
 		}
