@@ -216,7 +216,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 			w.populatePorts()
 			w.populateDataFromPods(pod)
 		} else {
-			pods, err := w.getPods(w.Name, labelSelector, lister)
+			pods, err := w.getPods(labelSelector, lister)
 			if err != nil {
 				return err
 			}
@@ -239,33 +239,37 @@ func (w *deploymentWrap) GetDeployment() *storage.Deployment {
 	return w.Deployment
 }
 
-func matchesOwnerName(name string, p *v1.Pod) bool {
+func matchesOwnerName(name, topLevelType string, p *v1.Pod) bool {
 	// Edge case that happens for Standalone Pods
 	if len(p.GetOwnerReferences()) == 0 {
 		return true
 	}
-	kind := p.GetOwnerReferences()[0].Kind
 	var numExpectedDashes int
-	switch kind {
-	case kubernetes.ReplicaSet, kubernetes.CronJob, kubernetes.Job, kubernetes.Deployment, kubernetes.DeploymentConfig: // 2 dash in pod
+	switch topLevelType {
+	case kubernetes.CronJob, kubernetes.Deployment, kubernetes.DeploymentConfig: // 2 dash in pod
 		// nginx-deployment-86d59dd769-7gmsk we want nginx-deployment
 		numExpectedDashes = 2
-	case kubernetes.DaemonSet, kubernetes.StatefulSet, kubernetes.ReplicationController: // 1 dash in pod
+	case kubernetes.DaemonSet, kubernetes.StatefulSet, kubernetes.ReplicationController, kubernetes.ReplicaSet, kubernetes.Job: // 1 dash in pod
 		// nginx-deployment-7gmsk we want nginx-deployment
 		numExpectedDashes = 1
 	default:
-		log.Warnf("Currently do not handle owner kind %q. Attributing the pod", kind)
+		log.Warnf("Currently do not handle top level owner type %q. Adding to top level object %q", topLevelType, name)
 		// By default if we can't parse, then we'll hit the mis-attribution edge case, but I'd rather do that
 		// then miss the pods altogether
 		return true
 	}
 	spl := strings.Split(p.GetName(), "-")
-	if len(spl) > numExpectedDashes && name == strings.Join(spl[:len(spl)-numExpectedDashes], "-") {
-		return true
-	}
-
-	if len(p.GetName()) < labelMaxLength {
-		log.Warnf("Could not parse pod %q with owner type %q", p.GetName(), kind)
+	if len(spl) > numExpectedDashes {
+		if name == strings.Join(spl[:len(spl)-numExpectedDashes], "-") {
+			return true
+		}
+		// We were able to parse the name, but didn't find a match
+		if len(p.GetName()) < labelMaxLength {
+			return false
+		}
+	} else if len(p.GetName()) < labelMaxLength {
+		// We should have been able to parse the name normally as it was < max length, but we were not
+		log.Warnf("Could not parse pod %q with top level owner type %q", p.GetName(), topLevelType)
 		return false
 	}
 
@@ -277,22 +281,22 @@ func matchesOwnerName(name string, p *v1.Pod) bool {
 		return true
 	}
 
-	log.Warnf("Could not parse pod %q with owner type %q", p.GetName(), kind)
+	log.Warnf("Could not parse pod %q with owner type %q", p.GetName(), topLevelType)
 	return false
 }
 
 // Do cheap filtering on pod name based on name of higher level object (deployment, daemonset, etc)
-func filterOnName(name string, pods []*v1.Pod) []*v1.Pod {
+func filterOnName(name, topLevelType string, pods []*v1.Pod) []*v1.Pod {
 	filteredPods := pods[:0]
 	for _, p := range pods {
-		if matchesOwnerName(name, p) {
+		if matchesOwnerName(name, topLevelType, p) {
 			filteredPods = append(filteredPods, p)
 		}
 	}
 	return filteredPods
 }
 
-func (w *deploymentWrap) getPods(topLevelName string, labelSelector *metav1.LabelSelector, lister v1listers.PodLister) ([]*v1.Pod, error) {
+func (w *deploymentWrap) getPods(labelSelector *metav1.LabelSelector, lister v1listers.PodLister) ([]*v1.Pod, error) {
 	compiledLabelSelector, err := metav1.LabelSelectorAsSelector(labelSelector)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not compile label selector")
@@ -302,7 +306,7 @@ func (w *deploymentWrap) getPods(topLevelName string, labelSelector *metav1.Labe
 	if err != nil {
 		return nil, err
 	}
-	return filterOnName(topLevelName, pods), nil
+	return filterOnName(w.Name, w.Type, pods), nil
 }
 
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {

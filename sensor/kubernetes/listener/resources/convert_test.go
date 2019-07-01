@@ -431,12 +431,14 @@ func getPod(name string, owner string) *v1.Pod {
 
 func TestFilterOnName(t *testing.T) {
 	var cases = []struct {
-		name     string
-		pods     []*v1.Pod
-		expected []*v1.Pod
+		name         string
+		topLevelType string
+		pods         []*v1.Pod
+		expected     []*v1.Pod
 	}{
 		{
-			name: "nginx",
+			name:         "nginx",
+			topLevelType: kubernetes.Deployment,
 			pods: []*v1.Pod{
 				getPod("nginx-deployment-86d59dd769-7gmsk", kubernetes.Deployment),
 				getPod("nginx-86d59dd769-abcde", kubernetes.Deployment),
@@ -449,7 +451,8 @@ func TestFilterOnName(t *testing.T) {
 			},
 		},
 		{
-			name: "nginx-deployment",
+			name:         "nginx-deployment",
+			topLevelType: kubernetes.Deployment,
 			pods: []*v1.Pod{
 				getPod("nginx-deployment-7gmsk", kubernetes.Deployment),
 				getPod("nginx-86d59dd769-abcde", kubernetes.Deployment),
@@ -461,7 +464,8 @@ func TestFilterOnName(t *testing.T) {
 			},
 		},
 		{
-			name: "nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx63",
+			name:         "nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx63",
+			topLevelType: kubernetes.Deployment,
 			pods: []*v1.Pod{
 				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxx", kubernetes.Deployment),
 				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx12345", kubernetes.Deployment),
@@ -471,7 +475,8 @@ func TestFilterOnName(t *testing.T) {
 			},
 		},
 		{
-			name: "nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57",
+			name:         "nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57",
+			topLevelType: kubernetes.Deployment,
 			pods: []*v1.Pod{
 				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-abcde", kubernetes.Deployment),
 				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-86d59dd769-12345", kubernetes.Deployment),
@@ -484,7 +489,8 @@ func TestFilterOnName(t *testing.T) {
 			},
 		},
 		{
-			name: "collector",
+			name:         "collector",
+			topLevelType: kubernetes.DaemonSet,
 			pods: []*v1.Pod{
 				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
 				getPod("collector-7gmsk", kubernetes.DaemonSet),
@@ -496,7 +502,8 @@ func TestFilterOnName(t *testing.T) {
 			},
 		},
 		{
-			name: "collector-ds",
+			name:         "collector-ds",
+			topLevelType: kubernetes.DaemonSet,
 			pods: []*v1.Pod{
 				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
 				getPod("collector-7gmsk", kubernetes.DaemonSet),
@@ -511,7 +518,7 @@ func TestFilterOnName(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, filterOnName(c.name, c.pods))
+			assert.Equal(t, c.expected, filterOnName(c.name, c.topLevelType, c.pods))
 		})
 	}
 }
