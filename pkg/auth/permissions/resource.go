@@ -23,7 +23,8 @@ const (
 // ResourceMetadata contains metadata about a resource.
 type ResourceMetadata struct {
 	Resource
-	Scope ResourceScope
+	Scope              ResourceScope
+	NoLegacyAuthForSAC bool // do not perform legacy auth with SAC enabled (only affects globally scoped resources).
 }
 
 // GetResource returns the resource for this metadata object.
@@ -45,4 +46,11 @@ func (m ResourceMetadata) String() string {
 // or a ResourceMetadata object.
 type ResourceHandle interface {
 	GetResource() Resource
+}
+
+// WithNoLegacyAuthForSAC returns a resource metadata that instructs the legacy auth handler to not enforce on global
+// resources in a SAC world.
+func WithNoLegacyAuthForSAC(md ResourceMetadata) ResourceMetadata {
+	md.NoLegacyAuthForSAC = true
+	return md
 }

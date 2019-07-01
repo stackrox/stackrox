@@ -123,11 +123,14 @@ func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.Res
 		v1.SearchCategory_ALERTS:      resources.Alert,
 		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
 		v1.SearchCategory_IMAGES:      resources.Image,
-		v1.SearchCategory_POLICIES:    resources.Policy,
-		v1.SearchCategory_SECRETS:     resources.Secret,
-		v1.SearchCategory_COMPLIANCE:  resources.Compliance,
-		v1.SearchCategory_NODES:       resources.Node,
-		v1.SearchCategory_NAMESPACES:  resources.Namespace,
+		// Policies are the only search resource with a global scope. With SAC enabled, we check SAC permissions for
+		// legacy auth restrictions for globally-scoped resources. This would break search, so exempt policies from this
+		// in search contexts.
+		v1.SearchCategory_POLICIES:   permissions.WithNoLegacyAuthForSAC(resources.Policy),
+		v1.SearchCategory_SECRETS:    resources.Secret,
+		v1.SearchCategory_COMPLIANCE: resources.Compliance,
+		v1.SearchCategory_NODES:      resources.Node,
+		v1.SearchCategory_NAMESPACES: resources.Namespace,
 	}
 
 	if features.K8sRBAC.Enabled() {

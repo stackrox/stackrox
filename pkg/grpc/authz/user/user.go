@@ -53,7 +53,7 @@ func (p *permissionChecker) collectPermissions(pc permissions.PermissionMap) err
 func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootSC sac.ScopeChecker) error {
 	globalScopes := make([][]sac.ScopeKey, 0)
 	for _, perm := range p.requiredPermissions {
-		if perm.Resource.Scope != permissions.GlobalScope {
+		if !checkSACPermissionsForResource(perm.Resource) {
 			continue
 		}
 		globalScopes = append(globalScopes, []sac.ScopeKey{
@@ -82,4 +82,8 @@ func (p *permissionChecker) checkRole(role *storage.Role) error {
 		}
 	}
 	return nil
+}
+
+func checkSACPermissionsForResource(md permissions.ResourceMetadata) bool {
+	return md.Scope == permissions.GlobalScope && !md.NoLegacyAuthForSAC
 }
