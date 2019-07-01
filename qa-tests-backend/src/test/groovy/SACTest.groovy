@@ -55,7 +55,7 @@ class SACTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
-    def "Verify that only deployment #sacResource is visible when using SAC"() {
+    def "Verify that only namespace #sacResource is visible when using SAC"() {
         when:
         "Create test API token with a built-in role"
         GenerateTokenResponse token = ApiTokenService.
