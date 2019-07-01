@@ -196,7 +196,7 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, id string) error {
 		return nil
 	}
 
-	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store)); err != nil {
+	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store), UnregisterSource(r.issuerFactory)); err != nil {
 		return err
 	}
 	delete(r.providers, id)

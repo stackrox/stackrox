@@ -13,6 +13,7 @@ import (
 type IssuerFactory interface {
 	// CreateIssuer creates an issuer for the given source. This must only be invoked once per source (ID).
 	CreateIssuer(source Source, options ...Option) (Issuer, error)
+	UnregisterSource(source Source) error
 }
 
 func newIssuerFactory(id string, signer jose.Signer, sources *sourceStore, globalOptions ...Option) IssuerFactory {
@@ -73,4 +74,8 @@ func translateExtra(extra map[string]json.RawMessage) map[string]interface{} {
 		result[k] = v
 	}
 	return result
+}
+
+func (f *issuerFactory) UnregisterSource(source Source) error {
+	return f.sources.Unregister(source)
 }

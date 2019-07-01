@@ -4,10 +4,15 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	errProviderDisabled = errors.New("provider has been deleted or disabled")
 )
 
 // If you add new data fields to this class, make sure you make commensurate modifications
@@ -90,6 +95,10 @@ func (p *providerImpl) Issuer() tokens.Issuer {
 //////////////////////
 
 func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+	enabled := p.Enabled()
+	if !enabled {
+		return errProviderDisabled
+	}
 	backend := p.Backend()
 	return backend.Validate(ctx, claims)
 }

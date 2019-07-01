@@ -8,6 +8,7 @@ import services.AuthService
 import services.BaseService
 import services.FeatureFlagService
 import spock.lang.Shared
+import spock.lang.Stepwise
 import spock.lang.Unroll
 import util.Env
 
@@ -15,6 +16,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 @Category(BAT)
+@Stepwise
 class ClientCertAuthTest extends BaseSpecification {
 
     @Shared
@@ -82,5 +84,45 @@ class ClientCertAuthTest extends BaseSpecification {
         true          | "none"      | "userpki"
         true          | "certtoken" | "userpki"
         false         | "certtoken" | "error"
+    }
+
+    def "Delete Auth provider"() {
+        when:
+        "Delete auth provider"
+        if (providerID) {
+            AuthProviderService.deleteAuthProvider(providerID)
+            providerID = null
+        }
+
+        then:
+        "Deletion should have taken place"
+        assert !providerID
+    }
+
+    @Unroll
+    def "Test authentication fails with client cert: #useClientCert and auth header #authHeader after deletion"() {
+        when:
+        "Set up channel"
+        BaseService.setUseClientCert(useClientCert)
+        switch (authHeader) {
+            case "certtoken":
+                BaseService.useApiToken(certToken)
+                break
+            case "none":
+                BaseService.useNoAuthorizationHeader()
+                break
+        }
+
+        then:
+        "Verify that authorization fails"
+        assert getAuthProviderType() == "error"
+
+        where:
+        "Data inputs"
+
+        useClientCert | authHeader
+        true          | "none"
+        true          | "certtoken"
+        false         | "certtoken"
     }
 }

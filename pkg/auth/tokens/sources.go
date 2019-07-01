@@ -47,3 +47,14 @@ func (s *sourceStore) Register(source Source) error {
 	s.sources[source.ID()] = source
 	return nil
 }
+
+func (s *sourceStore) Unregister(source Source) error {
+	s.sourcesMutex.Lock()
+	defer s.sourcesMutex.Unlock()
+	if _, exists := s.sources[source.ID()]; !exists {
+		return fmt.Errorf("source with id %s does not exist", source.ID())
+	}
+	log.Debug("removing token source ", source.ID())
+	delete(s.sources, source.ID())
+	return nil
+}
