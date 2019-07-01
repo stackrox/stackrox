@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "google/protobuf/timestamp.proto";
+
+package central;
+
+message ServiceCertAuth {
+    bytes cert_der                         = 1;
+    google.protobuf.Timestamp current_time = 2;
+}

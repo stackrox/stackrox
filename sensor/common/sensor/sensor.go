@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -129,7 +130,11 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 	var err error
-	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject)
+	if features.PlaintextExposure.Enabled() {
+		s.centralConnection, err = clientconn.GRPCConnectionWithServiceCertToken(s.centralEndpoint, mtls.CentralSubject)
+	} else {
+		s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject)
+	}
 	if err != nil {
 		log.Fatalf("Error connecting to central: %s", err)
 	}
@@ -148,10 +153,15 @@ func (s *Sensor) Start() {
 	customRoutes = append(customRoutes, admissionControllerRoute)
 
 	// Create grpc server with custom routes
+	mtlsServiceIDExtractor, err := serviceAuthn.NewExtractor()
+	if err != nil {
+		log.Panicf("Error creating mTLS-based service identity extractor: %v", err)
+	}
+
 	config := pkgGRPC.Config{
 		TLS:                   verifier.NonCA{},
 		CustomRoutes:          customRoutes,
-		IdentityExtractors:    []authn.IdentityExtractor{serviceAuthn.NewExtractor()},
+		IdentityExtractors:    []authn.IdentityExtractor{mtlsServiceIDExtractor},
 		PublicEndpoint:        publicAPIEndpoint,
 		InsecureLocalEndpoint: localAPIEndpoint,
 	}

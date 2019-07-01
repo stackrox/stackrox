@@ -99,6 +99,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
+	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	authnUserpki "github.com/stackrox/rox/pkg/grpc/authn/userpki"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -139,6 +140,8 @@ const (
 
 	publicAPIEndpoint     = ":8443"
 	insecureLocalEndpoint = "127.0.0.1:8444"
+
+	maxServiceCertTokenLeeway = 1 * time.Minute
 )
 
 func main() {
@@ -333,10 +336,22 @@ func startGRPCServer(factory serviceFactory) {
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, registry)
 
+	serviceMTLSExtractor, err := service.NewExtractor()
+	if err != nil {
+		log.Panicf("Could not create mTLS-based service identity extractor: %v", err)
+	}
 	idExtractors := []authn.IdentityExtractor{
-		service.NewExtractor(), // internal services
+		serviceMTLSExtractor, // internal services
 		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
 		userpass.IdentityExtractorOrPanic(basicAuthProvider),
+	}
+
+	if features.PlaintextExposure.Enabled() {
+		serviceTokenExtractor, err := servicecerttoken.NewExtractor(maxServiceCertTokenLeeway)
+		if err != nil {
+			log.Panicf("Could not create ServiceCert token-based identity extractor: %v", err)
+		}
+		idExtractors = append(idExtractors, serviceTokenExtractor)
 	}
 
 	tlsConfigurer := tlsconfig.NewCentralTLSConfigurer()

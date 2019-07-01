@@ -64,7 +64,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		Timeout: 2 * time.Second,
 	}
 
-	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject)
+	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize TLS config")
 	}

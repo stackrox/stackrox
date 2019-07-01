@@ -42,7 +42,7 @@ func LoadFileContents(filename string) (string, error) {
 }
 
 // ReadFileAndTemplate reads and renders the template for the file
-func ReadFileAndTemplate(path string) (*template.Template, error) {
+func ReadFileAndTemplate(path string, funcs template.FuncMap) (*template.Template, error) {
 	templatePath := filepath.Join(templatePath, path)
 	contents, err := LoadFileContents(templatePath)
 	if err != nil {
@@ -50,6 +50,9 @@ func ReadFileAndTemplate(path string) (*template.Template, error) {
 	}
 
 	tpl := template.New(templatePath)
+	if funcs != nil {
+		tpl = tpl.Funcs(funcs)
+	}
 	return tpl.Parse(contents)
 }
 

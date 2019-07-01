@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
@@ -15,26 +16,32 @@ import (
 )
 
 // TLSConfig returns a TLS config that can be used to talk to the given server via MTLS.
-func TLSConfig(server mtls.Subject) (*tls.Config, error) {
-	clientCert, err := mtls.LeafCertificateFromFile()
-	if err != nil {
-		return nil, errors.Wrap(err, "client credentials")
-	}
+func TLSConfig(server mtls.Subject, useClientCert bool) (*tls.Config, error) {
 	rootCAs, err := verifier.TrustedCertPool()
 	if err != nil {
 		return nil, errors.Wrap(err, "trusted pool")
 	}
-	return &tls.Config{
-		Certificates: []tls.Certificate{clientCert},
-		ServerName:   server.Hostname(),
-		RootCAs:      rootCAs,
-	}, nil
+
+	conf := &tls.Config{
+		ServerName: server.Hostname(),
+		RootCAs:    rootCAs,
+	}
+
+	if useClientCert {
+		clientCert, err := mtls.LeafCertificateFromFile()
+		if err != nil {
+			return nil, errors.Wrap(err, "client credentials")
+		}
+		conf.Certificates = []tls.Certificate{clientCert}
+	}
+
+	return conf, nil
 }
 
 // AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
 // client certificates found on the local file system.
 func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject) (conn *grpc.ClientConn, err error) {
-	tlsConfig, err := TLSConfig(server)
+	tlsConfig, err := TLSConfig(server, true)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +59,16 @@ func GRPCConnectionWithBasicAuth(endpoint string, serverName, username, password
 // GRPCConnectionWithToken returns a grpc.ClientConn using the given token to authenticate
 func GRPCConnectionWithToken(endpoint, serverName, token string) (*grpc.ClientConn, error) {
 	return grpcConnectionWithPerRPCCreds(endpoint, serverName, tokenbased.PerRPCCredentials(token))
+}
+
+// GRPCConnectionWithServiceCertToken returns a grpc.ClientConn using ServiceCert tokens derived from a client
+// certificate for authentication.
+func GRPCConnectionWithServiceCertToken(endpoint string, server mtls.Subject) (*grpc.ClientConn, error) {
+	leafCert, err := mtls.LeafCertificateFromFile()
+	if err != nil {
+		return nil, errors.Wrap(err, "loading client certificate")
+	}
+	return grpcConnectionWithPerRPCCreds(endpoint, server.Hostname(), servicecerttoken.NewServiceCertClientCreds(&leafCert))
 }
 
 func grpcConnectionWithPerRPCCreds(endpoint string, serverName string, perRPCCreds credentials.PerRPCCredentials) (*grpc.ClientConn, error) {

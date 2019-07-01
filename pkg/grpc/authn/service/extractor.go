@@ -10,9 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
-type extractor struct{}
+type extractor struct {
+	caFP string
+}
 
-func (extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (e extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	l := len(ri.VerifiedChains)
 	if l == 0 {
 		return nil, nil
@@ -20,23 +22,25 @@ func (extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInf
 	if l != 1 {
 		return nil, errors.New("client presented multiple certificates; this is unsupported")
 	}
-	ca, _, err := mtls.CACert()
 
-	if err != nil {
-		return nil, err
-	}
-
-	fingerprint := cryptoutils.CertFingerprint(ca)
 	requestCA := ri.VerifiedChains[0][len(ri.VerifiedChains[0])-1]
-	if fingerprint != requestCA.CertFingerprint {
+	if requestCA.CertFingerprint != e.caFP {
 		return nil, nil
 	}
 
 	leaf := ri.VerifiedChains[0][0]
-	return identity{id: mtls.IdentityFromCert(leaf)}, nil
+	return WrapMTLSIdentity(mtls.IdentityFromCert(leaf)), nil
 }
 
 // NewExtractor returns a new identity extractor for internal services.
-func NewExtractor() authn.IdentityExtractor {
-	return extractor{}
+func NewExtractor() (authn.IdentityExtractor, error) {
+	ca, _, err := mtls.CACert()
+	if err != nil {
+		return nil, err
+	}
+
+	caFP := cryptoutils.CertFingerprint(ca)
+	return extractor{
+		caFP: caFP,
+	}, nil
 }

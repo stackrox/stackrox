@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"path"
 	"path/filepath"
+	"strconv"
 	"text/template"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -104,6 +106,11 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 		return nil, err
 	}
 
+	envVars := make(map[string]string)
+	for _, feature := range features.Flags {
+		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
+	}
+
 	fields := map[string]interface{}{
 		"Image":         mainImageName.GetFullName(),
 		"ImageRegistry": mainRegistry,
@@ -130,6 +137,8 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 		"AdmissionController": c.AdmissionController,
 
 		"OfflineMode": env.OfflineModeEnv.Setting(),
+
+		"EnvVars": envVars,
 	}
 
 	return fields, nil
@@ -138,7 +147,7 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 func renderFilenames(filenames []string, c map[string]interface{}, staticFilenames ...string) ([]*zip.File, error) {
 	var files []*zip.File
 	for _, f := range filenames {
-		t, err := image.ReadFileAndTemplate(f)
+		t, err := image.ReadFileAndTemplate(f, builtinFuncs)
 		if err != nil {
 			return nil, err
 		}

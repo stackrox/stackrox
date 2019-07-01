@@ -55,6 +55,10 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
+        {{ range $var, $value := .EnvVars -}}
+        - name: {{ $var }}
+          value: {{ jsonquote $value }}
+        {{ end }}
         - name: {{.PublicEndpointEnv}}
           value: {{.PublicEndpoint}}
         - name: {{.ClusterIDEnv}}

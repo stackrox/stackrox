@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
@@ -43,4 +44,11 @@ func (i identity) ExternalAuthProvider() authproviders.Provider {
 
 func (i identity) Attributes() map[string][]string {
 	return nil
+}
+
+// WrapMTLSIdentity wraps an mTLS identity.
+func WrapMTLSIdentity(id mtls.Identity) authn.Identity {
+	return identity{
+		id: id,
+	}
 }
