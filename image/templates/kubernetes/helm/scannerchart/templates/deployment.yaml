@@ -35,7 +35,7 @@ spec:
         - name: CLAIR_ARGS
           value: "-insecure-tls"
         command:
-        - /init
+        - /entrypoint.sh
         - /clairify
         imagePullPolicy: Always
         ports:
