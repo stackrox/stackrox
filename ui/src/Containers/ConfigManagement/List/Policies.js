@@ -32,7 +32,8 @@ const tableColumns = [
         Cell: ({ original }) => {
             const { lifecycleStages } = original;
             return lifecycleStages[0];
-        }
+        },
+        accessor: 'lifecycleStages'
     }
 ];
 

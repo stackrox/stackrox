@@ -7,7 +7,7 @@ import uniq from 'lodash/uniq';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import URLService from 'modules/URLService';
-
+import { sortValueByLength, sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import List from './List';
 import TableCellLink from './Link';
@@ -33,7 +33,9 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original }) => {
                 const { createdAt } = original;
                 return format(createdAt, dateTimeFormat);
-            }
+            },
+            accessor: 'createdAt',
+            sortMethod: sortDate
         },
         {
             Header: `File Types`,
@@ -52,7 +54,8 @@ const buildTableColumns = (match, location) => {
                             .toLowerCase()}
                     </span>
                 );
-            }
+            },
+            sortMethod: sortValueByLength
         },
         {
             Header: `Namespace`,
@@ -84,7 +87,8 @@ const buildTableColumns = (match, location) => {
                     .push(entityTypes.DEPLOYMENT)
                     .url();
                 return <TableCellLink pdf={pdf} url={url} text={`${deployments.length} matches`} />;
-            }
+            },
+            sortMethod: sortValueByLength
         }
     ];
     return tableColumns;

@@ -4,7 +4,7 @@ import entityTypes from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
-import { sortVersion } from 'sorters/sorters';
+import { sortVersion, sortValueByLength } from 'sorters/sorters';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
@@ -37,7 +37,8 @@ const tableColumns = [
         // eslint-disable-next-line
         Cell: ({ original }) => {
             return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
-        }
+        },
+        accessor: 'passing'
     },
     {
         Header: `Nodes`,
@@ -47,7 +48,9 @@ const tableColumns = [
             const { length } = original.nodes;
             if (length > 1) return `${length} Nodes`;
             return original.nodes[0];
-        }
+        },
+        accessor: 'nodes',
+        sortMethod: sortValueByLength
     }
 ];
 

@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import URLService from 'modules/URLService';
 
+import { sortValueByLength, sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import List from './List';
@@ -41,7 +42,9 @@ const buildTableColumns = (match, location) => {
                 const { verbs: permissions } = original;
                 if (!permissions.length) return 'No Permissions';
                 return <div className="capitalize">{permissions.join(', ')}</div>;
-            }
+            },
+            accessor: 'verbs',
+            sortMethod: sortValueByLength
         },
         {
             Header: `Created`,
@@ -50,7 +53,9 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original }) => {
                 const { createdAt } = original;
                 return format(createdAt, dateTimeFormat);
-            }
+            },
+            accessor: 'createdAt',
+            sortMethod: sortDate
         },
         {
             Header: `Namespace Scope`,
@@ -68,7 +73,8 @@ const buildTableColumns = (match, location) => {
                     .push(entityTypes.NAMESPACE, namespaceId)
                     .url();
                 return <TableCellLink pdf={pdf} url={url} text={name} />;
-            }
+            },
+            accessor: 'roleNamespace.metadata.name'
         },
         {
             Header: `Service Accounts`,
@@ -88,7 +94,9 @@ const buildTableColumns = (match, location) => {
                 const serviceAccount = serviceAccounts[0];
                 if (serviceAccount.name) return serviceAccount.name;
                 return <LabelChip text={serviceAccount.message} type="alert" />;
-            }
+            },
+            accessor: 'serviceAccounts',
+            sortMethod: sortValueByLength
         }
     ];
     return tableColumns;

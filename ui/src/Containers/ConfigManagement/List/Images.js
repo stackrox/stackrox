@@ -5,6 +5,7 @@ import { IMAGES as QUERY } from 'queries/image';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
+import { sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import List from './List';
 
@@ -29,7 +30,9 @@ const tableColumns = [
             const { metadata } = original;
             if (!metadata) return null;
             return format(metadata.v1.created, dateTimeFormat);
-        }
+        },
+        accessor: 'metadata.v1.created',
+        sortMethod: sortDate
     }
 ];
 

@@ -5,6 +5,7 @@ import entityTypes from 'constants/entityTypes';
 import { CLUSTERS_QUERY as QUERY } from 'queries/cluster';
 import URLService from 'modules/URLService';
 
+import { sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import List from './List';
@@ -52,7 +53,10 @@ const buildTableColumns = (match, location) => {
                 if (length > 1)
                     return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
                 return original.serviceAccounts[0].name;
-            }
+            },
+            id: 'serviceAccounts',
+            accessor: d => d.serviceAccounts,
+            sortMethod: sortValueByLength
         },
         {
             Header: `Roles`,
@@ -68,7 +72,10 @@ const buildTableColumns = (match, location) => {
                 if (length > 1)
                     return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
                 return original.k8sroles[0].name;
-            }
+            },
+            id: 'k8sroles',
+            accessor: d => d.k8sroles,
+            sortMethod: sortValueByLength
         }
     ];
     return tableColumns;

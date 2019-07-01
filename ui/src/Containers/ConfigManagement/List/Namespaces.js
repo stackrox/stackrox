@@ -5,6 +5,7 @@ import entityTypes from 'constants/entityTypes';
 import { ALL_NAMESPACES as QUERY } from 'queries/namespace';
 import URLService from 'modules/URLService';
 
+import { sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import List from './List';
 import TableCellLink from './Link';
@@ -54,7 +55,10 @@ const buildTableColumns = (match, location) => {
                     .push(entityTypes.SECRET)
                     .url();
                 return <TableCellLink pdf={pdf} url={url} text={`${numSecrets} matches`} />;
-            }
+            },
+            id: 'numSecrets',
+            accessor: d => d.numSecrets,
+            sortMethod: sortValueByLength
         }
     ];
     return tableColumns;

@@ -55,14 +55,27 @@ const sortValue = (a, b) => {
 const sortVersion = (a, b) => {
     if (a === undefined) return -1;
     if (b === undefined) return 1;
-    const aArray = a.split('.');
-    const bArray = b.split('.');
-    let sortedValue;
-    for (let i = 0; i < aArray.length || i < bArray.length; i += 1) {
-        sortedValue = sortValue(aArray[i], bArray[i]);
-        if (sortedValue !== 0) break;
+    const aSplit = a.split('.');
+    const bSplit = b.split('.');
+
+    const length = Math.min(aSplit.length, bSplit.length);
+    for (let i = 0; i < length; i += 1) {
+        if (parseInt(aSplit[i], 10) < parseInt(bSplit[i], 10)) {
+            return -1;
+        }
+        if (parseInt(aSplit[i], 10) > parseInt(bSplit[i], 10)) {
+            return 1;
+        }
     }
-    return sortedValue;
+
+    if (aSplit.length < bSplit.length) {
+        return -1;
+    }
+    if (aSplit.length > bSplit.length) {
+        return 1;
+    }
+
+    return 0;
 };
 
 /**
@@ -100,4 +113,26 @@ const sortDate = (a, b) => {
     if (bDate === undefined) return 1;
     return aDate - bDate;
 };
-export { sortSeverity, sortValue, sortVersion, sortNumberByKey, sortLifecycle, sortDate };
+
+/**
+ * Sort by array length
+ * @returns {string}
+ */
+const sortValueByLength = (a, b) => {
+    if (a === undefined) return -1;
+    if (b === undefined) return 1;
+    if (a.length > b.length) return 1;
+    if (a.length < b.length) return -1;
+    if (a.length === b.length) return 0;
+    return a.length - b.length;
+};
+
+export {
+    sortSeverity,
+    sortValue,
+    sortVersion,
+    sortNumberByKey,
+    sortLifecycle,
+    sortDate,
+    sortValueByLength
+};

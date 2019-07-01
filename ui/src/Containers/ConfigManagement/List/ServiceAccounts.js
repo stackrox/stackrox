@@ -5,6 +5,7 @@ import entityTypes from 'constants/entityTypes';
 import { SERVICE_ACCOUNTS as QUERY } from 'queries/serviceAccount';
 import URLService from 'modules/URLService';
 
+import { sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import List from './List';
 import TableCellLink from './Link';
@@ -34,7 +35,9 @@ const buildTableColumns = (match, location) => {
                     .map(({ scope, permissions }) => `${scope} (${permissions.length})`)
                     .join(', ');
                 return result;
-            }
+            },
+            accessor: 'scopedPermissions[0].permissions',
+            sortMethod: sortValueByLength
         },
         {
             Header: `Cluster Admin Role`,
@@ -43,7 +46,8 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original }) => {
                 const { clusterAdmin } = original;
                 return clusterAdmin ? 'Enabled' : 'Disabled';
-            }
+            },
+            accessor: 'clusterAdmin'
         },
         {
             Header: `Namespace`,
@@ -80,7 +84,9 @@ const buildTableColumns = (match, location) => {
                 if (length > 1)
                     return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
                 return original.roles[0].name;
-            }
+            },
+            accessor: 'roles',
+            sortMethod: sortValueByLength
         }
     ];
     return tableColumns;
