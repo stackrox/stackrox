@@ -13,6 +13,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("images(query:String): [Image!]!"),
 		schema.AddQuery("image(sha:ID!): Image"),
+		schema.AddExtraResolver("ImageScanComponent", "layerIndex: Int"),
 	)
 }
 
@@ -47,4 +48,13 @@ func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Imag
 		return nil
 	}
 	return alert
+}
+
+func (resolver *imageScanComponentResolver) LayerIndex() *int32 {
+	w, ok := resolver.data.GetHasLayerIndex().(*storage.ImageScanComponent_LayerIndex)
+	if !ok {
+		return nil
+	}
+	v := w.LayerIndex
+	return &v
 }
