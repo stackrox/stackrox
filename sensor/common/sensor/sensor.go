@@ -130,11 +130,11 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 	var err error
+	var opts []clientconn.ConnectionOption
 	if features.PlaintextExposure.Enabled() {
-		s.centralConnection, err = clientconn.GRPCConnectionWithServiceCertToken(s.centralEndpoint, mtls.CentralSubject)
-	} else {
-		s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject)
+		opts = append(opts, clientconn.UseServiceCertToken(true))
 	}
+	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, opts...)
 	if err != nil {
 		log.Fatalf("Error connecting to central: %s", err)
 	}

@@ -38,16 +38,59 @@ func TLSConfig(server mtls.Subject, useClientCert bool) (*tls.Config, error) {
 	return conf, nil
 }
 
+type connectionOptions struct {
+	useServiceCertToken bool
+}
+
+// ConnectionOption allows specifying additional options when establishing GRPC connections.
+type ConnectionOption interface {
+	apply(opts *connectionOptions) error
+}
+
+type connectOptFunc func(opts *connectionOptions) error
+
+func (f connectOptFunc) apply(opts *connectionOptions) error {
+	return f(opts)
+}
+
+// UseServiceCertToken specifies whether or not a `ServiceCert` token should be used.
+func UseServiceCertToken(use bool) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.useServiceCertToken = use
+		return nil
+	})
+}
+
 // AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
 // client certificates found on the local file system.
-func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject) (conn *grpc.ClientConn, err error) {
+func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConnOpts ...ConnectionOption) (conn *grpc.ClientConn, err error) {
 	tlsConfig, err := TLSConfig(server, true)
 	if err != nil {
 		return nil, err
 	}
 
+	var connOpts connectionOptions
+	for _, opt := range extraConnOpts {
+		if err := opt.apply(&connOpts); err != nil {
+			return nil, errors.Wrap(err, "failed to apply connection option")
+		}
+	}
+
 	creds := credentials.NewTLS(tlsConfig)
-	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), keepAliveDialOption())
+	dialOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(creds),
+		keepAliveDialOption(),
+	}
+
+	if connOpts.useServiceCertToken {
+		leafCert, err := mtls.LeafCertificateFromFile()
+		if err != nil {
+			return nil, errors.Wrap(err, "loading client certificate")
+		}
+		dialOpts = append(dialOpts, grpc.WithPerRPCCredentials(servicecerttoken.NewServiceCertClientCreds(&leafCert)))
+	}
+
+	return grpc.Dial(endpoint, dialOpts...)
 }
 
 // GRPCConnectionWithBasicAuth returns a grpc.ClientConn using the given username/password to authenticate
@@ -59,16 +102,6 @@ func GRPCConnectionWithBasicAuth(endpoint string, serverName, username, password
 // GRPCConnectionWithToken returns a grpc.ClientConn using the given token to authenticate
 func GRPCConnectionWithToken(endpoint, serverName, token string) (*grpc.ClientConn, error) {
 	return grpcConnectionWithPerRPCCreds(endpoint, serverName, tokenbased.PerRPCCredentials(token))
-}
-
-// GRPCConnectionWithServiceCertToken returns a grpc.ClientConn using ServiceCert tokens derived from a client
-// certificate for authentication.
-func GRPCConnectionWithServiceCertToken(endpoint string, server mtls.Subject) (*grpc.ClientConn, error) {
-	leafCert, err := mtls.LeafCertificateFromFile()
-	if err != nil {
-		return nil, errors.Wrap(err, "loading client certificate")
-	}
-	return grpcConnectionWithPerRPCCreds(endpoint, server.Hostname(), servicecerttoken.NewServiceCertClientCreds(&leafCert))
 }
 
 func grpcConnectionWithPerRPCCreds(endpoint string, serverName string, perRPCCreds credentials.PerRPCCredentials) (*grpc.ClientConn, error) {

@@ -23,6 +23,8 @@ func NewServiceCertClientCreds(cert *tls.Certificate) credentials.PerRPCCredenti
 }
 
 func (i *serviceCertClientCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	// There is no way to derived from the TLS connection state whether a client certificate is in use, so just inject
+	// the authorization header in any case to be on the safe side.
 	token, err := createToken(i.cert, time.Now())
 	if err != nil {
 		return nil, errors.Wrap(err, "creating service cert token")
