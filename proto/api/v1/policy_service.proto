@@ -33,9 +33,10 @@ message RenamePolicyCategoryRequest {
     string new_category = 2;
 }
 
-message EnablePolicyNotificationRequest {
+message EnableDisablePolicyNotificationRequest {
     string                     policy_id   = 1;
     repeated string            notifier_ids = 2;
+    bool disable = 3;
 }
 
 message DeletePolicyCategoryRequest {
@@ -101,8 +102,8 @@ service PolicyService {
         };
     }
 
-    // EnablePolicyNotification enables notifications for a policy by ID.
-    rpc EnablePolicyNotification (EnablePolicyNotificationRequest) returns (Empty) {
+    // EnableDisablePolicyNotification enables or disables notifications for a policy by ID.
+    rpc EnableDisablePolicyNotification (EnableDisablePolicyNotificationRequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/policies/{policy_id}/notifiers"
             body: "*"

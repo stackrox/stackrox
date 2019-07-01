@@ -2,6 +2,7 @@ import { combineReducers } from 'redux';
 import bindSelectors from 'utils/bindSelectors';
 
 import backendReducer, { selectors as backendSelectors } from 'reducers/policies/backend';
+import notifierReducer, { selectors as notifierSelectors } from 'reducers/policies/notifier';
 import pageReducer, { selectors as pageSelectors } from 'reducers/policies/page';
 import searchReducer, { selectors as searchSelectors } from 'reducers/policies/search';
 import tableReducer, { selectors as tableSelectors } from 'reducers/policies/table';
@@ -14,6 +15,7 @@ import wizardReducer, { selectors as wizardSelectors } from 'reducers/policies/w
 
 const reducer = combineReducers({
     backend: backendReducer,
+    notifier: notifierReducer,
     page: pageReducer,
     search: searchReducer,
     table: tableReducer,
@@ -26,6 +28,7 @@ export default reducer;
 //----------
 
 const getBackend = state => state.backend;
+const getNotifier = state => state.notifier;
 const getPage = state => state.page;
 const getSearch = state => state.search;
 const getTable = state => state.table;
@@ -33,6 +36,7 @@ const getWizard = state => state.wizard;
 
 export const selectors = {
     ...bindSelectors(getBackend, backendSelectors),
+    ...bindSelectors(getNotifier, notifierSelectors),
     ...bindSelectors(getPage, pageSelectors),
     ...bindSelectors(getSearch, searchSelectors),
     ...bindSelectors(getTable, tableSelectors),

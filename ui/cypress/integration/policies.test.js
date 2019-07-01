@@ -13,6 +13,10 @@ describe('Policies page', () => {
         cy.wait('@metadataOptions');
     });
 
+    const openActionMenu = () => {
+        cy.get(selectors.actionMenuBtn).click();
+    };
+
     const addPolicy = () => {
         cy.get(selectors.newPolicyButton).click();
     };
@@ -268,13 +272,17 @@ describe('Policies page', () => {
             .should('have.class', selectors.enabledIconColor);
     });
 
-    it('should show delete button when the checkboxes are chosen', () => {
+    it('should show action menu when the checkboxes are chosen', () => {
         cy.get(selectors.reassessAllButton).should('be.visible');
         cy.get(selectors.newPolicyButton).should('be.visible');
         cy.get(selectors.checkboxes)
             .eq(1)
             .click({ force: true });
-        cy.get(selectors.deleteButton).should('contain', '1');
+        cy.get(selectors.actionMenuBtn).should('be.visible');
+        openActionMenu();
+        cy.get(selectors.actionMenu).contains('Delete');
+        cy.get(selectors.actionMenu).contains('Enable');
+        cy.get(selectors.actionMenu).contains('Disable');
         cy.get(selectors.reassessAllButton).should('not.be.visible');
         cy.get(selectors.newPolicyButton).should('not.be.visible');
     });

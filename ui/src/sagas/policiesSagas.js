@@ -164,10 +164,25 @@ function* reassessPolicies() {
     }
 }
 
-function* enablePoliciesNotification({ policyIds, notifierIds }) {
+function* enableNotificationsForPolicies({ policyIds, notifierIds }) {
     try {
-        yield call(service.enablePoliciesNotification, policyIds, notifierIds);
+        yield call(service.enableDisableNotificationsForPolicies, policyIds, notifierIds, false);
         const successToastMessage = `Successfully enabled ${
+            policyIds.length === 1 ? 'policy' : 'policies'
+        } notification`;
+        yield put(notificationActions.addNotification(successToastMessage));
+        yield put(notificationActions.removeOldestNotification());
+        yield fork(filterPoliciesPageBySearch);
+    } catch (error) {
+        // TODO-ivan: use global user notification system to display the problem to the user as well
+        Raven.captureException(error);
+    }
+}
+
+function* disableNotificationsForPolicies({ policyIds, notifierIds }) {
+    try {
+        yield call(service.enableDisableNotificationsForPolicies, policyIds, notifierIds, true);
+        const successToastMessage = `Successfully disabled ${
             policyIds.length === 1 ? 'policy' : 'policies'
         } notification`;
         yield put(notificationActions.addNotification(successToastMessage));
@@ -231,8 +246,12 @@ function* watchDeletePolicies() {
     yield takeLatest(backendTypes.DELETE_POLICIES, deletePolicies);
 }
 
-function* watchEnablePoliciesNotification() {
-    yield takeLatest(backendTypes.ENABLE_POLICIES_NOTIFICATION, enablePoliciesNotification);
+function* watchEnableNotificationsForPolicies() {
+    yield takeLatest(backendTypes.ENABLE_POLICIES_NOTIFICATION, enableNotificationsForPolicies);
+}
+
+function* watchDisableNotificationsForPolicies() {
+    yield takeLatest(backendTypes.DISABLE_POLICIES_NOTIFICATION, disableNotificationsForPolicies);
 }
 
 function* watchWizardState() {
@@ -274,7 +293,8 @@ export default function* policies() {
         fork(watchWizardState),
         fork(watchReassessPolicies),
         fork(watchDeletePolicies),
-        fork(watchEnablePoliciesNotification),
+        fork(watchEnableNotificationsForPolicies),
+        fork(watchDisableNotificationsForPolicies),
         fork(watchUpdateRequest),
         fork(watchPoliciesSearchOptions),
         takeEvery(tableTypes.UPDATE_POLICY_DISABLED_STATE, updatePolicyDisabled)

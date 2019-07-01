@@ -10,7 +10,8 @@ export const selectors = {
     prevButton: 'button:contains("Previous")',
     cancelButton: 'button[data-test-id="cancel"]',
     reassessAllButton: 'button:contains("Reassess")',
-    deleteButton: 'button:contains("Delete")',
+    actionMenuBtn: 'button:contains("Actions")',
+    actionMenu: '[data-test-id="menu-list"]',
     checkboxes: 'input:checkbox',
     policies: {
         scanImage: 'div.rt-tr:contains("90-Day")',

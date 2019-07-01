@@ -15,7 +15,8 @@ export const types = {
     UPDATE_POLICY: 'policies/UPDATE_POLICY',
     REASSESS_POLICIES: 'policies/REASSESS_POLICIES',
     DELETE_POLICIES: 'policies/DELETE_POLICIES',
-    ENABLE_POLICIES_NOTIFICATION: 'policies/ENABLE_POLICIES_NOTIFICATION'
+    ENABLE_POLICIES_NOTIFICATION: 'policies/ENABLE_POLICIES_NOTIFICATION',
+    DISABLE_POLICIES_NOTIFICATION: 'policies/DISABLE_POLICIES_NOTIFICATION'
 };
 
 // Actions
@@ -30,6 +31,11 @@ export const actions = {
     updatePolicy: policy => ({ type: types.UPDATE_POLICY, policy }),
     enablePoliciesNotification: (policyIds, notifierIds) => ({
         type: types.ENABLE_POLICIES_NOTIFICATION,
+        policyIds,
+        notifierIds
+    }),
+    disablePoliciesNotification: (policyIds, notifierIds) => ({
+        type: types.DISABLE_POLICIES_NOTIFICATION,
         policyIds,
         notifierIds
     })

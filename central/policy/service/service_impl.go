@@ -52,7 +52,7 @@ var (
 			"/v1.PolicyService/DryRunPolicy",
 			"/v1.PolicyService/RenamePolicyCategory",
 			"/v1.PolicyService/DeletePolicyCategory",
-			"/v1.PolicyService/EnablePolicyNotification",
+			"/v1.PolicyService/EnableDisablePolicyNotification",
 		},
 	})
 )
@@ -376,46 +376,96 @@ func (s *serviceImpl) removeActivePolicy(policy *storage.Policy) error {
 	return errorList.ToError()
 }
 
-func (s *serviceImpl) EnablePolicyNotification(ctx context.Context, request *v1.EnablePolicyNotificationRequest) (*v1.Empty, error) {
+func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, request *v1.EnableDisablePolicyNotificationRequest) (*v1.Empty, error) {
 	if request.GetPolicyId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Policy ID must be specified")
 	}
-	if len(request.GetNotifierIds()) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "Notifier IDs must be specified")
+	var err error
+	if request.GetDisable() {
+		err = s.disablePolicyNotification(ctx, request.GetPolicyId(), request.GetNotifierIds())
+	} else {
+		err = s.enablePolicyNotification(ctx, request.GetPolicyId(), request.GetNotifierIds())
 	}
 
-	policy, exists, err := s.policies.GetPolicy(ctx, request.GetPolicyId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to retrieve policy: %v", err)
+		return nil, err
+	}
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID string, notifierIDs []string) error {
+	if len(notifierIDs) == 0 {
+		return status.Errorf(codes.InvalidArgument, "Notifier IDs must be specified")
+	}
+
+	policy, exists, err := s.policies.GetPolicy(ctx, policyID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "Policy '%q' not found", request.GetPolicyId())
+		return status.Errorf(codes.NotFound, "Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.Notifiers...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
-	for _, notifierID := range request.GetNotifierIds() {
+	for _, notifierID := range notifierIDs {
 		_, exists, err := s.notifiers.GetNotifier(ctx, notifierID)
 		if err != nil {
 			errorList.AddError(err)
 			continue
 		}
 		if !exists {
-			errorList.AddStringf("notifier with id:%s not found", notifierID)
+			errorList.AddStringf("notifier with id: %s not found", notifierID)
 			continue
 		} else {
 			if notifierSet.Contains(notifierID) {
 				continue
 			}
 			policy.Notifiers = append(policy.Notifiers, notifierID)
-			_, err := s.PutPolicy(ctx, policy)
-			if err != nil {
-				errorList.AddStringf("policy could not be updated with notifier %s", err.Error())
-			}
 		}
 	}
+
+	_, err = s.PutPolicy(ctx, policy)
+	if err != nil {
+		errorList.AddStringf("policy could not be updated with notifier %v", err)
+	}
+
 	err = errorList.ToError()
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return status.Error(codes.Internal, err.Error())
 	}
-	return &v1.Empty{}, nil
+	return nil
+}
+
+func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID string, notifierIDs []string) error {
+	policy, exists, err := s.policies.GetPolicy(ctx, policyID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to retrieve policy: %v", err)
+	}
+	if !exists {
+		return status.Errorf(codes.NotFound, "Policy %q not found", policyID)
+	}
+	notifierSet := set.NewStringSet(policy.Notifiers...)
+	if notifierSet.Cardinality() == 0 {
+		return nil
+	}
+	errorList := errorhelpers.NewErrorList("unable to delete all requested notifiers")
+	for _, notifierID := range notifierIDs {
+		if !notifierSet.Contains(notifierID) {
+			continue
+		}
+		notifierSet.Remove(notifierID)
+	}
+
+	policy.Notifiers = notifierSet.AsSlice()
+	_, err = s.PutPolicy(ctx, policy)
+	if err != nil {
+		errorList.AddStringf("policy could not be updated with notifier %v", err)
+	}
+
+	err = errorList.ToError()
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	return nil
 }

@@ -34,7 +34,7 @@ const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
         return (
             <Menu
                 className={`${topNavMenuBtnClass} border-l border-base-400`}
-                triggerComponent={<NavItem />}
+                buttonContent={<NavItem />}
                 options={options}
             />
         );

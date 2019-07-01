@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
-const optionsClass = 'text-left p-4 border-b border-base-300 hover:bg-base-200';
+const optionsClass =
+    'flex items-center relative text-left px-2 py-3 border-b border-base-300 hover:bg-base-200';
 
-const Menu = ({ triggerComponent, className, options }) => {
+const Menu = ({ buttonClass, buttonContent, className, options }) => {
     const [isMenuOpen, setMenuState] = useState(false);
 
     const hideMenu = () => {
@@ -25,31 +26,38 @@ const Menu = ({ triggerComponent, className, options }) => {
             return (
                 <Link
                     to={option.link}
-                    className={`${optionsClass} no-underline text-base-600`}
+                    className={`${optionsClass} ${option.className} no-underline text-base-600`}
                     key={option.label}
                     data-test-id={option.label}
                 >
-                    {option.label}
+                    {option.icon}
+                    {option.label && <span className="pl-2">{option.label}</span>}
                 </Link>
             );
         }
+
         return (
             <button
                 type="button"
-                className={optionsClass}
+                className={`${optionsClass} ${option.className}`}
                 onClick={option.onClick}
                 key={option.label}
                 data-test-id={option.label}
             >
-                {option.label}
+                {option.icon}
+                {option.label && <span className="pl-2">{option.label}</span>}
             </button>
         );
     });
 
     return (
         <div className={`${className} inline-block relative z-60`}>
-            <button className="flex h-full w-full" type="button" onClick={onClickHandler()}>
-                {triggerComponent}
+            <button
+                className={`flex h-full w-full ${buttonClass}`}
+                type="button"
+                onClick={onClickHandler()}
+            >
+                {buttonContent}
             </button>
             {isMenuOpen && (
                 <div
@@ -64,15 +72,22 @@ const Menu = ({ triggerComponent, className, options }) => {
 };
 
 Menu.propTypes = {
-    triggerComponent: PropTypes.node.isRequired,
+    buttonClass: PropTypes.string,
+    buttonContent: PropTypes.node.isRequired,
     className: PropTypes.string.isRequired,
     options: PropTypes.arrayOf(
         PropTypes.shape({
+            className: PropTypes.string,
+            icon: PropTypes.func,
             label: PropTypes.string.isRequired,
             link: PropTypes.string,
             onClick: PropTypes.func
         })
     ).isRequired
+};
+
+Menu.defaultProps = {
+    buttonClass: ''
 };
 
 export default Menu;

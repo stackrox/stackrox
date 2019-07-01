@@ -6,7 +6,7 @@ import { combineReducers } from 'redux';
 export const types = {
     OPEN_WIZARD: 'policies/OPEN_WIZARD',
     CLOSE_WIZARD: 'policies/CLOSE_WIZARD',
-    OPEN_DIALOGUE: 'policies/OPEN_DIALOGUE',
+    SET_POLICIES_ACTION: 'policies/SET_POLICIES_ACTION',
     CLOSE_DIALOGUE: 'policies/CLOSE_DIALOGUE'
 };
 
@@ -16,7 +16,7 @@ export const types = {
 export const actions = {
     openWizard: () => ({ type: types.OPEN_WIZARD }),
     closeWizard: () => ({ type: types.CLOSE_WIZARD }),
-    openDialogue: () => ({ type: types.OPEN_DIALOGUE }),
+    setPoliciesAction: policiesAction => ({ type: types.SET_POLICIES_ACTION, policiesAction }),
     closeDialogue: () => ({ type: types.CLOSE_DIALOGUE })
 };
 
@@ -34,19 +34,19 @@ const wizardOpen = (state = false, action) => {
     return state;
 };
 
-const dialogueOpen = (state = false, action) => {
-    if (action.type === types.OPEN_DIALOGUE && state !== true) {
-        return true;
+const policiesAction = (state = '', action) => {
+    if (action.type === types.SET_POLICIES_ACTION && !state) {
+        return action.policiesAction;
     }
-    if (action.type === types.CLOSE_DIALOGUE && state !== false) {
-        return false;
+    if (action.type === types.CLOSE_DIALOGUE && state) {
+        return '';
     }
     return state;
 };
 
 const reducer = combineReducers({
     wizardOpen,
-    dialogueOpen
+    policiesAction
 });
 
 export default reducer;
@@ -57,9 +57,9 @@ export default reducer;
 
 const getWizardOpen = state => state.wizardOpen;
 
-const getDialogueOpen = state => state.dialogueOpen;
+const getPoliciesAction = state => state.policiesAction;
 
 export const selectors = {
     getWizardOpen,
-    getDialogueOpen
+    getPoliciesAction
 };

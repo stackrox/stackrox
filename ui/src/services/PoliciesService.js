@@ -74,25 +74,27 @@ export function deletePolicies(policyIds = []) {
 }
 
 /**
- * Enable notification to notifiers given by notifierIds for policy given by policyId.
+ * Enable / Disable notification to notifiers given by notifierIds for policy given by policyId.
  *
  * @param {!string} policyId
- * @param {!string[]} notifierIds
+ * @param {!object} data
  * @returns {Promise<AxiosResponse, Error>}
  */
-export function enablePolicyNotification(policyId, notifierIds) {
-    return axios.patch(`${baseUrl}/${policyId}/notifiers`, { notifierIds });
+export function enableDisablePolicyNotifications(policyId, data) {
+    return axios.patch(`${baseUrl}/${policyId}/notifiers`, data);
 }
 
 /**
- * Enable notification to notifiers given by notifierIds for list of policies given by policyIds.
+ * Enable / Disable notification to notifiers given by notifierIds for list of policies given by policyIds.
  *
  * @param {!string[]} policyIds
  * @param {!string[]} notifierIds
+ * @param {!boolean} disable
  * @returns {Promise<AxiosResponse, Error>}
  */
-export function enablePoliciesNotification(policyIds, notifierIds) {
-    return Promise.all(policyIds.map(policyId => enablePolicyNotification(policyId, notifierIds)));
+export function enableDisableNotificationsForPolicies(policyIds, notifierIds, disable) {
+    const data = { notifierIds, disable };
+    return Promise.all(policyIds.map(policyId => enableDisablePolicyNotifications(policyId, data)));
 }
 
 /**
