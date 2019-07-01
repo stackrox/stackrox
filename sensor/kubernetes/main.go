@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
@@ -18,8 +19,12 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 func main() {
-	logger := logging.LoggerForModule()
+	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt)
@@ -42,13 +47,13 @@ func main() {
 	for {
 		select {
 		case sig := <-sigs:
-			logger.Infof("Caught %s signal", sig)
+			log.Infof("Caught %s signal", sig)
 			s.Stop()
 		case <-s.Stopped().Done():
 			if err := s.Stopped().Err(); err != nil {
-				logger.Fatalf("Sensor exited with error: %v", err)
+				log.Fatalf("Sensor exited with error: %v", err)
 			} else {
-				logger.Info("Sensor exited normally")
+				log.Info("Sensor exited normally")
 			}
 			return
 		}

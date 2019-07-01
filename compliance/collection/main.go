@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 var (
@@ -28,6 +29,7 @@ var (
 const requestTimeout = time.Second * 5
 
 func main() {
+	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 	thisNodeName := os.Getenv(string(orchestrators.NodeName))
 	if thisNodeName == "" {
 		log.Fatal("No node name found in the environment")

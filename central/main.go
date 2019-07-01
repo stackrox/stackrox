@@ -113,6 +113,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/sac"
+	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
 
 var (
@@ -145,6 +146,7 @@ const (
 )
 
 func main() {
+	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	ensureDB()
 
 	// Now that we verified that the DB can be loaded, remove the .backup directory
