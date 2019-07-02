@@ -46,7 +46,7 @@ properties:
 
   password:
     type: string
-    title: License key
+    title: Admin password
     description: Stackrox administrator password
 
   # Networking.
@@ -60,11 +60,11 @@ properties:
       - np
       - none
 
-  offline:
-    type: boolean
-    title: run StackRox in offline mode which avoids reaching out to the internet
-    description: run StackRox in offline mode which avoids reaching out to the internet
-    default: false
+#  offline:
+#    type: boolean
+#    title: run StackRox in offline mode which avoids reaching out to the internet
+#    description: run StackRox in offline mode which avoids reaching out to the internet
+#    default: false
 
   # Storage
 #  name:
@@ -84,7 +84,20 @@ properties:
 #    title: storage class name (optional if you have a default StorageClass configured)
 #    description: storage class name (optional if you have a default StorageClass configured)
 
-
+  svcacct:
+    type: string
+    title: StackRox Deployer Service Account
+    description: Service account used by the Deployer to install StackRox
+    x-google-marketplace:
+      type: SERVICE_ACCOUNT
+      serviceAccount:
+        roles:
+        - type: ClusterRole
+          rulesType: CUSTOM
+          rules:
+          - apiGroups: ['*']
+            resources: ['*']
+            verbs: ['*']
 
 required:
 - name
@@ -95,4 +108,4 @@ required:
 - license
 - password
 - lb-type
-- offline
+- svcacct

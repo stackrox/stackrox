@@ -5,6 +5,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central/deploy"
 )
 
@@ -33,6 +34,7 @@ func Generate() *cobra.Command {
 
 func generate(outputDir string, values *Values) error {
 	config := renderer.Config{
+		Version:        version.GetMainVersion(),
 		OutputDir:      outputDir,
 		GCPMarketplace: true,
 		ClusterType:    storage.ClusterType_KUBERNETES_CLUSTER,
@@ -46,7 +48,7 @@ func generate(outputDir string, values *Values) error {
 			ConfigType:       v1.DeploymentFormat_HELM,
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			LoadBalancerType: v1.LoadBalancerType_NONE,
-			OfflineMode:      values.Offline,
+			OfflineMode:      false,
 		},
 		Password:    values.Password,
 		LicenseData: []byte(values.License),

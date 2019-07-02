@@ -6,11 +6,16 @@ RUN apt-get -y update \
  && rm -rf /var/lib/apt/lists/*
 
 COPY ./bin/roxctl-linux /usr/bin/roxctl
-COPY schema.yaml.tpl /data/schema.yaml.tpl
-COPY deploy.sh /bin/deploy.sh
+COPY gcp/application.yaml.tpl /data/application.yaml.tpl
+COPY gcp/create_manifests.sh /bin/create_manifests.sh
+COPY gcp/deploy.sh /bin/deploy.sh
+COPY gcp/kubectl /usr/local/bin/kubectl
+COPY gcp/schema.yaml.tpl /data/schema.yaml.tpl
 
 ARG MAIN_IMAGE_TAG
 ARG SCANNER_IMAGE_TAG
 
 RUN MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG SCANNER_IMAGE_TAG=$SCANNER_IMAGE_TAG envsubst < /data/schema.yaml.tpl > /data/schema.yaml \
  && rm /data/schema.yaml.tpl
+
+ENTRYPOINT ["/bin/bash"]

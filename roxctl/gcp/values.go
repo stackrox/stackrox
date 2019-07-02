@@ -19,7 +19,8 @@ type Values struct {
 	License          string `yaml:"license"`
 	Password         string `yaml:"password"`
 	LoadBalancerType string `yaml:"lb-type"`
-	Offline          bool   `yaml:"offline"`
+
+	ServiceAccount string `yaml:"svcacct"`
 }
 
 func loadValues(filename string) (*Values, error) {

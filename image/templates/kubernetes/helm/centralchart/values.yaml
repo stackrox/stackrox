@@ -1,5 +1,5 @@
 
-version: {{.K8sConfig.MainImageTag}}
+version: {{.Version}}
 
 clusterType: {{.ClusterType.String}}
 

@@ -192,6 +192,7 @@ type Config struct {
 	Environment map[string]string
 
 	GCPMarketplace bool
+	Version        string
 }
 
 func executeRawTemplate(raw string, c *Config) ([]byte, error) {

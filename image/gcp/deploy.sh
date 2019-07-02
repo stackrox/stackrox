@@ -41,6 +41,17 @@ handle_failure() {
 }
 trap "handle_failure" EXIT
 
+get_token() {
+    resource="$(kubectl -n "$NAMESPACE" get secret | grep "${NAME}-svcacct-token" | head -n1 | awk '{print $1}')"
+    token="$(kubectl -n "$NAMESPACE" get secret "$resource" -o jsonpath='{.data.token}' | base64 -d)"
+    if [[ -z "$token" ]]; then
+        echo "Kube token could not be obtained for ${resource}" 1>&2
+        return 1
+    fi
+    echo "Kube token was obtained for ${resource}" 1>&2
+    echo "$token"
+}
+
 NAME="$(/bin/print_config.py \
     --xtype NAME \
     --values_mode raw)"
@@ -50,7 +61,18 @@ NAMESPACE="$(/bin/print_config.py \
 export NAME
 export NAMESPACE
 
+# Obtain service account token and assume identity
+export KUBE_TOKEN="$(get_token)"
+
+# Create and check for the stackrox namespace
+kubectl create namespace stackrox || true
+kubectl get namespace stackrox
+export NAMESPACE=stackrox
+
 echo "Deploying application \"$NAME\""
+
+cat /data/application.yaml.tpl | envsubst > /data/application.yaml
+kubectl apply --namespace="$NAMESPACE" -f /data/application.yaml
 
 app_uid=$(kubectl get "applications.app.k8s.io/$NAME" \
   --namespace="$NAMESPACE" \
@@ -84,8 +106,12 @@ create_manifests.sh
 # Apply the manifest.
 kubectl apply --namespace="$NAMESPACE" --filename="/data/resources.yaml"
 
-patch_assembly_phase.sh --status="Success"
 
-clean_iam_resources.sh
+# Clean up IAM resources
+export NAMESPACE="$(cat /data/values/namespace)"
+patch_assembly_phase.sh --status="Success"
+kubectl -n "$NAMESPACE" delete serviceaccount "${NAME}-deployer-sa"
+kubectl -n "$NAMESPACE" delete rolebinding    "${NAME}-deployer-rb"
+kubectl -n "$NAMESPACE" delete serviceaccount "${NAME}-svcacct"
 
 trap - EXIT
