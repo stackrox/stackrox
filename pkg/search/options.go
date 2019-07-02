@@ -26,6 +26,7 @@ var (
 	Description    = newFieldLabel("Description")
 	Category       = newFieldLabel("Category")
 	Severity       = newFieldLabel("Severity")
+	Disabled       = newFieldLabel("Disabled")
 
 	CVE                          = newFieldLabel("CVE")
 	CVELink                      = newFieldLabel("CVE Link")

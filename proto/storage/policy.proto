@@ -17,7 +17,7 @@ message Policy {
     string description                          = 3 [(gogoproto.moretags) = "search:\"Description\""];
     string rationale                            = 4;
     string remediation                          = 5;
-    bool disabled                               = 6;
+    bool disabled                               = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
     repeated string categories                  = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
     PolicyFields fields                         = 8;
 
