@@ -99,5 +99,11 @@ echo "Creating secrets for collector..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
 {{- end}}
 
+if [[ -d "$DIR/additional-cas" ]]; then
+	echo "Creating secret for additional CAs for sensor..."
+	${KUBE_COMMAND} -n stackrox create secret generic additional-ca-sensor --from-file="$DIR/additional-cas/"
+	${KUBE_COMMAND} -n stackrox label secret/additional-ca-sensor app.kubernetes.io/name=stackrox
+fi
+
 echo "Creating deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"

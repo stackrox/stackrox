@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -21,6 +24,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
+)
+
+const (
+	additionalCAsDir       = "/usr/local/share/ca-certificates"
+	additionalCAsZipSubdir = "additional-cas"
 )
 
 var (
@@ -58,6 +66,31 @@ func (z zipHandler) createIdentity(wrapper *zip.Wrapper, id string, servicePrefi
 		zip.NewFile(fmt.Sprintf("%s-key.pem", servicePrefix), issuedCert.KeyPEM, zip.Sensitive),
 	)
 	return nil
+}
+
+func (z zipHandler) getAdditionalCAs() ([]*zip.File, error) {
+	certFileInfos, err := ioutil.ReadDir(additionalCAsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var files []*zip.File
+	for _, fileInfo := range certFileInfos {
+		if fileInfo.IsDir() || filepath.Ext(fileInfo.Name()) != ".crt" {
+			continue
+		}
+		fullPath := path.Join(additionalCAsDir, fileInfo.Name())
+		contents, err := ioutil.ReadFile(fullPath)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, zip.NewFile(path.Join(additionalCAsZipSubdir, fileInfo.Name()), contents, 0))
+	}
+
+	return files, nil
 }
 
 // ServeHTTP serves a ZIP file for the cluster upon request.
@@ -140,6 +173,13 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		wrapper.AddFiles(zip.NewFile("monitoring-ca.pem", monitoringCA, 0))
 	}
+
+	additionalCAFiles, err := z.getAdditionalCAs()
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+		return
+	}
+	wrapper.AddFiles(additionalCAFiles...)
 
 	bytes, err := wrapper.Zip()
 	if err != nil {

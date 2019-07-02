@@ -63,4 +63,10 @@ oc create secret -n "stackrox" generic monitoring-client --from-file="$DIR/monit
 oc create cm -n "stackrox" telegraf --from-file="$DIR/telegraf.conf"
 {{- end}}
 
+if [[ -d "$DIR/additional-cas" ]]; then
+	echo "Creating secret for additional CAs for sensor..."
+	oc -n stackrox create secret generic additional-ca-sensor --from-file="$DIR/additional-cas/"
+	oc -n stackrox label secret/additional-ca-sensor app.kubernetes.io/name=stackrox
+fi
+
 oc apply -f "$DIR/sensor.yaml"

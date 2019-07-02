@@ -2,7 +2,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 oc delete -f "$DIR/sensor.yaml"
-oc delete -n stackrox secret sensor-tls benchmark-tls
+oc delete -n stackrox secret sensor-tls benchmark-tls additional-ca-sensor
 oc delete -f "$DIR/sensor-rbac.yaml"
 
 {{if ne .CollectionMethod "NO_COLLECTION"}}
