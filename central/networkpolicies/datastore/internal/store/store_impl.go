@@ -15,12 +15,13 @@ type storeImpl struct {
 }
 
 func (b *storeImpl) upsertNetworkPolicy(np *storage.NetworkPolicy) error {
+	bytes, err := proto.Marshal(np)
+	if err != nil {
+		return err
+	}
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(networkPolicyBucket)
-		bytes, err := proto.Marshal(np)
-		if err != nil {
-			return err
-		}
+
 		return bucket.Put([]byte(np.GetId()), bytes)
 	})
 }
