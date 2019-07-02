@@ -16,13 +16,19 @@ const TableWidget = ({ header, ...rest }) => {
         setTableRef,
         trClassName,
         showThead,
+        SubComponent,
         ...widgetProps
     } = { ...rest };
     const headerComponents = (
         <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
     );
     return (
-        <Widget header={header} headerComponents={headerComponents} {...widgetProps}>
+        <Widget
+            header={header}
+            headerComponents={headerComponents}
+            {...widgetProps}
+            className="w-full"
+        >
             <Table
                 columns={columns}
                 rows={rows}
@@ -33,6 +39,7 @@ const TableWidget = ({ header, ...rest }) => {
                 setTableRef={setTableRef}
                 trClassName={trClassName}
                 showThead={showThead}
+                SubComponent={SubComponent}
             />
         </Widget>
     );

@@ -97,13 +97,15 @@ const entityTabsMap = {
     [entityTypes.NODE]: [
         {
             group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.SUBJECT,
-            text: pluralize(entityLabels[entityTypes.SUBJECT])
-        },
+            value: entityTypes.CONTROL,
+            text: pluralize(entityLabels[entityTypes.CONTROL])
+        }
+    ],
+    [entityTypes.IMAGE]: [
         {
-            group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.SERVICE_ACCOUNT,
-            text: pluralize(entityLabels[entityTypes.SERVICE_ACCOUNT])
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.DEPLOYMENT,
+            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
         }
     ],
     [entityTypes.CIS_Docker_v1_1_0]: [

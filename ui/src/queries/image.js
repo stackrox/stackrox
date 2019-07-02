@@ -9,6 +9,11 @@ export const IMAGE = gql`
                 layerShas
                 v1 {
                     created
+                    layers {
+                        instruction
+                        created
+                        value
+                    }
                 }
                 v2 {
                     digest
@@ -19,6 +24,24 @@ export const IMAGE = gql`
                 registry
                 remote
                 tag
+            }
+            scan {
+                components {
+                    name
+                    layerIndex
+                    version
+                    license {
+                        name
+                        type
+                        url
+                    }
+                    vulns {
+                        cve
+                        cvss
+                        link
+                        summary
+                    }
+                }
             }
         }
     }

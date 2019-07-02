@@ -10,6 +10,7 @@ import { CLUSTER_QUERY as CLUSTER } from 'queries/cluster';
 import { NAMESPACE_QUERY as NAMESPACE } from 'queries/namespace';
 import { NODE_QUERY as NODE, NODES_QUERY as NODES } from 'queries/node';
 import { CONTROL_QUERY as CONTROL } from 'queries/controls';
+import { IMAGE, IMAGES } from 'queries/image';
 
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,
@@ -19,7 +20,8 @@ export const entityQueryMap = {
     [entityTypes.NAMESPACE]: NAMESPACE,
     [entityTypes.ROLE]: ROLE,
     [entityTypes.NODE]: NODE,
-    [entityTypes.CONTROL]: CONTROL
+    [entityTypes.CONTROL]: CONTROL,
+    [entityTypes.IMAGE]: IMAGE
 };
 
 export const entityListQueryMap = {
@@ -27,5 +29,6 @@ export const entityListQueryMap = {
     [entityTypes.DEPLOYMENT]: DEPLOYMENTS,
     [entityTypes.ROLE]: ROLES,
     [entityTypes.SECRET]: SECRETS,
-    [entityTypes.NODE]: NODES
+    [entityTypes.NODE]: NODES,
+    [entityTypes.IMAGE]: IMAGES
 };

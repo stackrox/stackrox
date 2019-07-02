@@ -1,8 +1,10 @@
 import React from 'react';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { defaultHeaderClassName, defaultColumnClassName, wrapClassName } from 'Components/Table';
 import { resourceTypes } from 'constants/entityTypes';
 import { sortVersion } from 'sorters/sorters';
 import LabelChip from 'Components/LabelChip';
+import { format } from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 
 const getNameCell = name => <div data-test-id="table-row-name">{name}</div>;
 
@@ -84,8 +86,55 @@ const nodesAcrossControlsColumns = [
     }
 ];
 
+const imageColumns = [
+    {
+        expander: true,
+        headerClassName: `w-1/8 ${defaultHeaderClassName} pointer-events-none`,
+        className: 'w-1/8 pointer-events-none flex items-center justify-end',
+        // eslint-disable-next-line react/prop-types
+        Expander: ({ isExpanded, ...rest }) => {
+            if (rest.original.components.length === 0) return '';
+            const className = 'rt-expander w-1 pt-2 pointer-events-auto';
+            return <div className={`${className} ${isExpanded ? '-open' : ''}`} />;
+        }
+    },
+    {
+        accessor: 'instruction',
+        Header: 'Instruction',
+        headerClassName: `text-left ${wrapClassName} ${defaultHeaderClassName}`,
+        className: `text-left pl-3 ${wrapClassName} ${defaultColumnClassName}`
+    },
+    {
+        accessor: 'value',
+        Header: 'Value',
+        headerClassName: `w-3/5 text-left ${wrapClassName} ${defaultHeaderClassName}`,
+        className: `w-3/5 text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`
+    },
+    {
+        accessor: 'created',
+        Header: 'Created',
+        align: 'right',
+        widthClassName: `text-left pr-3 ${wrapClassName} ${defaultHeaderClassName}`,
+        className: `text-left pr-3 ${wrapClassName} ${defaultColumnClassName}`,
+        Cell: ({ original }) => format(original.created, dateTimeFormat)
+    },
+    {
+        accessor: 'components.length',
+        Header: 'Components',
+        headerClassName: `text-left ${wrapClassName} ${defaultHeaderClassName}`,
+        className: `text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`
+    },
+    {
+        accessor: 'cvesCount',
+        Header: 'CVEs',
+        headerClassName: `text-left ${wrapClassName} ${defaultHeaderClassName}`,
+        className: `text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`
+    }
+];
+
 export const entityToColumns = {
-    [resourceTypes.CONTROL]: controlColumns
+    [resourceTypes.CONTROL]: controlColumns,
+    [resourceTypes.IMAGE]: imageColumns
 };
 
 export const entityAcrossControlsColumns = {

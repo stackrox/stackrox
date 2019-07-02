@@ -13,7 +13,8 @@ const entityNameKeyMap = {
     [entityTypes.CONTROL]: data => {
         if (!data.results) return null;
         return `${data.results.name} - ${data.results.description}`;
-    }
+    },
+    [entityTypes.IMAGE]: data => resolvePath(data, 'image.name.fullName')
 };
 
 const getEntityName = (entityType, data) => {

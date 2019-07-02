@@ -75,3 +75,15 @@ export const DEPLOYMENTS_QUERY = gql`
         }
     }
 `;
+
+export const DEPLOYMENTS_WITH_IMAGE = gql`
+    query getDeployments($query: String) {
+        deployments(query: $query) {
+            id
+            name
+            clusterName
+            namespace
+            serviceAccount
+        }
+    }
+`;

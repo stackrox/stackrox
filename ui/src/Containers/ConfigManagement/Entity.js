@@ -11,6 +11,7 @@ import Cluster from './Entity/Cluster';
 import Namespace from './Entity/Namespace';
 import Role from './Entity/Role';
 import Control from './Entity/Control';
+import Image from './Entity/Image';
 
 const entityComponentMap = {
     [entityTypes.SERVICE_ACCOUNT]: ServiceAccount,
@@ -20,7 +21,9 @@ const entityComponentMap = {
     [entityTypes.CLUSTER]: Cluster,
     [entityTypes.NAMESPACE]: Namespace,
     [entityTypes.NODE]: Node,
-    [entityTypes.CONTROL]: Control
+    [entityTypes.CONTROL]: Control,
+    [entityTypes.NODE]: Node,
+    [entityTypes.IMAGE]: Image
 };
 
 const Entity = ({ entityType, entityId, onRelatedEntityClick, onRelatedEntityListClick }) => {
