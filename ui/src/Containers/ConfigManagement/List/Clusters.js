@@ -32,9 +32,9 @@ const buildTableColumns = (match, location) => {
             accessor: 'alerts',
             // eslint-disable-next-line
             Cell: ({ original, pdf  }) => {
-                const { alerts } = original;
-                if (!alerts.length) return 'No alerts';
-                return <LabelChip text={`${alerts.length} Alerts`} type="alert" />;
+                const { alertsCount } = original;
+                if (!alertsCount) return 'No alerts';
+                return <LabelChip text={`${alertsCount} Alerts`} type="alert" />;
             }
         },
         {

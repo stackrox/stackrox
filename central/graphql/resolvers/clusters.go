@@ -19,6 +19,7 @@ func init() {
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
+		schema.AddExtraResolver("Cluster", `alertsCount: Int`),
 		schema.AddExtraResolver("Cluster", `deployments: [Deployment!]!`),
 		schema.AddExtraResolver("Cluster", `nodes: [Node!]!`),
 		schema.AddExtraResolver("Cluster", `node(node: ID!): Node`),
@@ -65,6 +66,19 @@ func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, 
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
 	return resolver.root.wrapAlerts(
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
+}
+
+func (resolver *clusterResolver) AlertsCount(ctx context.Context) (*int32, error) {
+	if err := readAlerts(ctx); err != nil {
+		return nil, err // could return nil, nil to prevent errors from propagating.
+	}
+	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	l := int32(len(results))
+	return &l, nil
 }
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster

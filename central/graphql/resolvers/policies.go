@@ -15,6 +15,7 @@ func init() {
 		schema.AddQuery("policies(query: String): [Policy!]!"),
 		schema.AddQuery("policy(id: ID): Policy"),
 		schema.AddExtraResolver("Policy", `alerts: [Alert!]!`),
+		schema.AddExtraResolver("Policy", `alertsCount: Int`),
 	)
 }
 
@@ -49,4 +50,17 @@ func (resolver *policyResolver) Alerts(ctx context.Context) ([]*alertResolver, e
 	query := search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).ProtoQuery()
 	return resolver.root.wrapAlerts(
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
+}
+
+func (resolver *policyResolver) AlertsCount(ctx context.Context) (*int32, error) {
+	if err := readAlerts(ctx); err != nil {
+		return nil, err // could return nil, nil to prevent errors from propagating.
+	}
+	query := search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).ProtoQuery()
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	l := int32(len(results))
+	return &l, nil
 }

@@ -24,7 +24,7 @@ const Cluster = ({ id, onRelatedEntityListClick }) => (
             const {
                 admissionController = false,
                 centralApiEndpoint = 'N/A',
-                alerts = [],
+                alertsCount = 'N/A',
                 nodes = [],
                 namespaces = [],
                 deployments = [],
@@ -43,7 +43,7 @@ const Cluster = ({ id, onRelatedEntityListClick }) => (
                     value: centralApiEndpoint
                 }
             ];
-            const metadataCounts = [{ value: alerts.length, text: 'Alerts' }];
+            const metadataCounts = [{ value: alertsCount, text: 'Alerts' }];
 
             return (
                 <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">

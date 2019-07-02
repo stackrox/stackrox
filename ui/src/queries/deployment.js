@@ -68,9 +68,7 @@ export const DEPLOYMENTS_QUERY = gql`
             name
             clusterName
             namespace
-            alerts {
-                id
-            }
+            alertsCount
             serviceAccount
         }
     }

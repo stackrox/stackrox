@@ -56,12 +56,12 @@ const buildTableColumns = (match, location) => {
             Header: `Policies Violated`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'alerts',
+            accessor: 'alertsCount',
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const { alerts } = original;
-                if (!alerts.length) return 'No alerts';
-                return <LabelChip text={`${alerts.length} Alerts`} type="alert" />;
+                const { alertsCount } = original;
+                if (alertsCount === 0) return 'No alerts';
+                return <LabelChip text={`${alertsCount} Alerts`} type="alert" />;
             },
             sortMethod: sortValueByLength
         }

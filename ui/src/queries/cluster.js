@@ -5,9 +5,7 @@ export const CLUSTERS_QUERY = gql`
         results: clusters {
             id
             name
-            alerts {
-                id
-            }
+            alertsCount
             serviceAccounts {
                 id
                 name
@@ -27,9 +25,7 @@ export const CLUSTER_QUERY = gql`
             name
             admissionController
             centralApiEndpoint
-            alerts {
-                id
-            }
+            alertsCount
             nodes {
                 id
                 name

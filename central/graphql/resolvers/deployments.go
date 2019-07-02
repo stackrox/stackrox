@@ -19,6 +19,7 @@ func init() {
 		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
 		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
 		schema.AddExtraResolver("Deployment", `alerts: [Alert!]!`),
+		schema.AddExtraResolver("Deployment", `alertsCount: Int`),
 		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
 		schema.AddQuery("deployment(id: ID): Deployment"),
@@ -73,6 +74,19 @@ func (resolver *deploymentResolver) Alerts(ctx context.Context) ([]*alertResolve
 	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
 	return resolver.root.wrapAlerts(
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
+}
+
+func (resolver *deploymentResolver) AlertsCount(ctx context.Context) (*int32, error) {
+	if err := readAlerts(ctx); err != nil {
+		return nil, err // could return nil, nil to prevent errors from propagating.
+	}
+	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	l := int32(len(results))
+	return &l, nil
 }
 
 func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage.Deployment {
