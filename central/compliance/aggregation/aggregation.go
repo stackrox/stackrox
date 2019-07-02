@@ -193,7 +193,7 @@ func (a *aggregatorImpl) filterOnRunResult(runResults *storage.ComplianceRunResu
 	}
 }
 
-func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString string) ([]*storage.ComplianceRunResults, []*v1.ComplianceAggregation_Source, [numScopes]set.StringSet, error) {
+func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString string, flags complianceDSTypes.GetFlags) ([]*storage.ComplianceRunResults, []*v1.ComplianceAggregation_Source, [numScopes]set.StringSet, error) {
 	var mask [numScopes]set.StringSet
 	query, err := search.ParseRawQueryOrEmpty(queryString)
 	if err != nil {
@@ -211,7 +211,7 @@ func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString stri
 		return nil, nil, mask, err
 	}
 
-	runResults, err := a.compliance.GetLatestRunResultsBatch(ctx, clusterIDs, standardIDs, complianceDSTypes.RequireMessageStrings)
+	runResults, err := a.compliance.GetLatestRunResultsBatch(ctx, clusterIDs, standardIDs, flags)
 	if err != nil {
 		return nil, nil, mask, err
 	}
@@ -230,7 +230,7 @@ func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString stri
 }
 
 func (a *aggregatorImpl) GetResultsWithEvidence(ctx context.Context, queryString string) ([]*storage.ComplianceRunResults, error) {
-	validResults, _, mask, err := a.getResultsAndMask(ctx, queryString)
+	validResults, _, mask, err := a.getResultsAndMask(ctx, queryString, complianceDSTypes.RequireMessageStrings)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (a *aggregatorImpl) GetResultsWithEvidence(ctx context.Context, queryString
 
 // Aggregate takes in a search query, groupby scopes and unit scope and returns the results of the aggregation
 func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-	validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString)
+	validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString, 0)
 	if err != nil {
 		return nil, nil, nil, err
 	}
