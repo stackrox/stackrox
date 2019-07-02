@@ -17,7 +17,6 @@ func init() {
 		schema.AddType("SubjectWithClusterID", []string{"clusterID: String!", "subject: Subject!"}),
 		schema.AddQuery("clusters(query: String): [Cluster!]!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
-
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Cluster", `alertsCount: Int`),
 		schema.AddExtraResolver("Cluster", `deployments: [Deployment!]!`),
@@ -32,6 +31,10 @@ func init() {
 		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
 		schema.AddExtraResolver("Cluster", `subjects: [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID!`),
+		schema.AddExtraResolver("Cluster", `policies: [Policy!]!`),
+		schema.AddExtraResolver("Cluster", `policyCount: Int!`),
+		schema.AddExtraResolver("Cluster", `secrets: [Secret!]!`),
+		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
 	)
 }
 
@@ -268,4 +271,74 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 	}
 
 	return wrapSubject(resolver.data.GetId(), subject), nil
+}
+
+func (resolver *clusterResolver) Policies(ctx context.Context) ([]*policyResolver, error) {
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+
+	policies, err := resolver.root.PolicyDataStore.GetPolicies(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var filteredPolicies []*storage.Policy
+	for _, policy := range policies {
+		if resolver.policyAppliesToCluster(ctx, policy) {
+			filteredPolicies = append(filteredPolicies, policy)
+		}
+	}
+	return resolver.root.wrapPolicies(filteredPolicies, nil)
+}
+
+func (resolver *clusterResolver) policyAppliesToCluster(ctx context.Context, policy *storage.Policy) bool {
+	// Global Policy
+	if len(policy.Scope) == 0 {
+		return true
+	}
+	// Clustered or namespaced scope policy
+	for _, scope := range policy.Scope {
+		if scope.GetCluster() != "" {
+			if scope.GetCluster() == resolver.data.GetId() {
+				return true
+			}
+		} else if scope.GetNamespace() != "" {
+			q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
+				AddExactMatches(search.Namespace, scope.GetNamespace()).ProtoQuery()
+			result, err := resolver.root.NamespaceDataStore.Search(ctx, q)
+			if err != nil {
+				continue
+			}
+			if len(result) != 0 {
+				return true
+			}
+		} else {
+			return true
+		}
+	}
+	return false
+}
+
+func (resolver *clusterResolver) PolicyCount(ctx context.Context) (int32, error) {
+	resolvers, err := resolver.Policies(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(resolvers)), nil
+}
+
+func (resolver *clusterResolver) Secrets(ctx context.Context) ([]*secretResolver, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	return resolver.root.wrapListSecrets(resolver.root.SecretsDataStore.SearchListSecrets(ctx, query))
+}
+
+func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	result, err := resolver.root.SecretsDataStore.Search(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(result)), nil
 }
