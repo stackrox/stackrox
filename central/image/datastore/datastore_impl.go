@@ -10,12 +10,12 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/txn"
 )
 
@@ -26,7 +26,7 @@ var (
 )
 
 type datastoreImpl struct {
-	lock sync.Mutex
+	keyedMutex *concurrency.KeyedMutex
 
 	storage  store.Store
 	indexer  index.Indexer
@@ -38,6 +38,8 @@ func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher searc
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
+
+		keyedMutex: concurrency.NewKeyedMutex(16),
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -173,8 +175,8 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 		return errors.New("permission denied")
 	}
 
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
+	ds.keyedMutex.Lock(image.GetId())
+	defer ds.keyedMutex.Unlock(image.GetId())
 
 	oldImage, exists, err := ds.storage.GetImage(image.GetId())
 	if err != nil {
