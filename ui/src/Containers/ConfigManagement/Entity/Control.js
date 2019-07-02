@@ -12,7 +12,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import ControlDetails from 'Components/ControlDetails';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Widget from 'Components/Widget';
-import TableWidget from './TableWidget';
+import TableWidget from './widgets/TableWidget';
 
 const getVariables = (id, relatedEntityType) => {
     const query = {
@@ -45,7 +45,7 @@ const getRelatedEntities = (data, entityType) => {
     return Object.values(relatedEntities);
 };
 
-const Control = ({ id, onRelatedEntityListClick, onRelatedEntityClick }) => (
+const Control = ({ id, onRelatedEntityListClick }) => (
     <Query query={QUERY} variables={getVariables(id, entityTypes.NODE)}>
         {({ loading, data }) => {
             if (loading) return <Loader />;
@@ -54,10 +54,6 @@ const Control = ({ id, onRelatedEntityListClick, onRelatedEntityClick }) => (
 
             const onRelatedEntityListClickHandler = entityListType => () => {
                 onRelatedEntityListClick(entityListType);
-            };
-
-            const onRelatedEntityClickHandler = entityType => ({ id: entityId }) => {
-                onRelatedEntityClick(entityType, entityId);
             };
 
             const {
@@ -102,12 +98,13 @@ const Control = ({ id, onRelatedEntityListClick, onRelatedEntityClick }) => (
                     <CollapsibleSection title="Control Findings">
                         <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                             <TableWidget
+                                entityType={entityTypes.NODE}
                                 header={tableHeader}
                                 rows={failingRelatedEntities}
                                 noDataText="No Nodes"
                                 className="bg-base-100 w-full"
                                 columns={entityAcrossControlsColumns[entityTypes.NODE]}
-                                onRowClick={onRelatedEntityClickHandler(entityTypes.NODE)}
+                                idAttribute="id"
                             />
                         </div>
                     </CollapsibleSection>
@@ -119,8 +116,7 @@ const Control = ({ id, onRelatedEntityListClick, onRelatedEntityClick }) => (
 
 Control.propTypes = {
     id: PropTypes.string.isRequired,
-    onRelatedEntityListClick: PropTypes.func.isRequired,
-    onRelatedEntityClick: PropTypes.func.isRequired
+    onRelatedEntityListClick: PropTypes.func.isRequired
 };
 
 export default Control;

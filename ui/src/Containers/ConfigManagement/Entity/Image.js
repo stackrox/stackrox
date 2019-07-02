@@ -17,7 +17,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import CVETable from 'Containers/Images/CVETable';
-import TableWidget from './TableWidget';
+import TableWidget from './widgets/TableWidget';
 
 const DeploymentsCount = ({ variables, onClick }) => {
     return (
@@ -62,12 +62,13 @@ const Image = ({ id, onRelatedEntityListClick }) => (
                 }
             ];
             const metadataCounts = [];
-            function onRowClick() {}
+
             const variables = {
                 query: queryService.objectToWhereClause({
                     'Image Sha': id
                 })
             };
+
             function renderCVEsTable(row) {
                 const layer = row.original;
                 if (!layer.components || layer.components.length === 0) {
@@ -81,7 +82,9 @@ const Image = ({ id, onRelatedEntityListClick }) => (
                     />
                 );
             }
+
             const layers = cloneDeep(metadata.v1.layers);
+
             // If we have a scan, then we can try and assume we have layers
             if (scan) {
                 layers.forEach((layer, i) => {
@@ -100,6 +103,7 @@ const Image = ({ id, onRelatedEntityListClick }) => (
                     );
                 });
             }
+
             return (
                 <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
                     <CollapsibleSection title="Image Details">
@@ -123,7 +127,6 @@ const Image = ({ id, onRelatedEntityListClick }) => (
                                 noDataText="No Layers"
                                 className="bg-base-100"
                                 columns={entityToColumns[entityTypes.IMAGE]}
-                                onRowClick={onRowClick}
                                 SubComponent={renderCVEsTable}
                             />
                         </div>

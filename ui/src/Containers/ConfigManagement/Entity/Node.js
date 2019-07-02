@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { NODE_QUERY as QUERY } from 'queries/node';
 import entityTypes from 'constants/entityTypes';
-import cluster from 'images/cluster.svg';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 import { entityToColumns } from 'constants/listColumns';
@@ -14,7 +13,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
-import TableWidget from './TableWidget';
+import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 
 const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
     return (
@@ -67,8 +66,6 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
                     { value: annotations.length, text: 'Annotations' }
                 ];
 
-                function onRowClick() {}
-
                 const failedComplianceResults = complianceResults.filter(
                     cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE'
                 );
@@ -85,7 +82,7 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
                                 <RelatedEntity
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Cluster"
-                                    icon={cluster}
+                                    entityType={entityTypes.CLUSTER}
                                     value={clusterName}
                                     onClick={onRelatedEntityClickHandler(
                                         entityTypes.CLUSTER,
@@ -103,6 +100,7 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
                         <CollapsibleSection title="Node Findings">
                             <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                 <TableWidget
+                                    entityType={entityTypes.CONTROL}
                                     header={`${
                                         failedComplianceResults.length
                                     } failed controls accross this node`}
@@ -110,7 +108,7 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
                                     noDataText="No Controls"
                                     className="bg-base-100"
                                     columns={entityToColumns[entityTypes.CONTROL]}
-                                    onRowClick={onRowClick}
+                                    idAttribute="id"
                                 />
                             </div>
                         </CollapsibleSection>

@@ -14,12 +14,19 @@ const entityNameKeyMap = {
         if (!data.results) return null;
         return `${data.results.name} - ${data.results.description}`;
     },
-    [entityTypes.IMAGE]: data => resolvePath(data, 'image.name.fullName')
+    [entityTypes.IMAGE]: data => resolvePath(data, 'image.name.fullName'),
+    [entityTypes.POLICY]: data => resolvePath(data, 'policy.name')
 };
 
 const getEntityName = (entityType, data) => {
     if (isEmpty(data)) return null;
-    return entityNameKeyMap[entityType](data);
+    try {
+        return entityNameKeyMap[entityType](data);
+    } catch (error) {
+        throw new Error(
+            `Entity (${entityType}) is not mapped correctly in the "entityToNameResolverMapping"`
+        );
+    }
 };
 
 export default getEntityName;

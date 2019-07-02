@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { SECRET as QUERY } from 'queries/secret';
 import entityTypes from 'constants/entityTypes';
-import clusterIcon from 'images/cluster.svg';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 
@@ -60,8 +59,8 @@ const Secret = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => (
                             />
                             <RelatedEntity
                                 className="mx-4 min-w-48 h-48 mb-4"
+                                entityType={entityTypes.CLUSTER}
                                 name="Cluster"
-                                icon={clusterIcon}
                                 value={clusterName}
                                 onClick={onRelatedEntityClickHandler(
                                     entityTypes.CLUSTER,

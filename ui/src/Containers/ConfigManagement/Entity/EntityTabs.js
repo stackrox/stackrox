@@ -121,7 +121,8 @@ const entityTabsMap = {
             value: entityTypes.NODE,
             text: pluralize(entityLabels[entityTypes.NODE])
         }
-    ]
+    ],
+    [entityTypes.POLICY]: []
 };
 
 const EntityTabs = ({ entityType, entityListType, pageEntityId, onClick }) => {

@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { DEPLOYMENT_QUERY as QUERY } from 'queries/deployment';
 import entityTypes from 'constants/entityTypes';
-import nsIcon from 'images/ns-icon.svg';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 
@@ -66,8 +65,8 @@ const Deployment = ({ id, onRelatedEntityClick }) => (
                             />
                             <RelatedEntity
                                 className="mx-4 min-w-48 h-48 mb-4"
+                                entityType={entityTypes.NAMESPACE}
                                 name="Namespace"
-                                icon={nsIcon}
                                 value={namespace}
                                 onClick={onRelatedEntityClickHandler(
                                     entityTypes.NAMESPACE,
@@ -76,8 +75,8 @@ const Deployment = ({ id, onRelatedEntityClick }) => (
                             />
                             <RelatedEntity
                                 className="mx-4 min-w-48 h-48 mb-4"
+                                entityType={entityTypes.SERVICE_ACCOUNT}
                                 name="Service Account"
-                                icon={nsIcon}
                                 value={serviceAccount}
                                 onClick={onRelatedEntityClickHandler(
                                     entityTypes.SERVICE_ACCOUNT,

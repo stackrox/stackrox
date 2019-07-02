@@ -80,24 +80,33 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = data => data.clusters.reduce((acc, curr) => [...acc, ...curr.subjects], []);
 
-const Subjects = ({ match, location, onRowClick }) => {
+const Subjects = ({ match, location, className, selectedRowId, onRowClick }) => {
     const tableColumns = buildTableColumns(match, location);
     return (
         <List
+            className={className}
             query={QUERY}
             entityType={entityTypes.SUBJECT}
             tableColumns={tableColumns}
             createTableRows={createTableRows}
             onRowClick={onRowClick}
+            selectedRowId={selectedRowId}
             idAttribute="id"
         />
     );
 };
 
 Subjects.propTypes = {
+    className: PropTypes.string,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    onRowClick: PropTypes.func.isRequired
+    onRowClick: PropTypes.func.isRequired,
+    selectedRowId: PropTypes.string
+};
+
+Subjects.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Subjects;

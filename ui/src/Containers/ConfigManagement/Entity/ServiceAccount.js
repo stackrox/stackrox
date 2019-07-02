@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { SERVICE_ACCOUNT } from 'queries/serviceAccount';
 import entityTypes from 'constants/entityTypes';
-import nsIcon from 'images/ns-icon.svg';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 
@@ -69,8 +68,8 @@ const ServiceAccount = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) 
                             />
                             <RelatedEntity
                                 className="mx-4 min-w-48 h-48 mb-4"
+                                entityType={entityTypes.NAMESPACE}
                                 name="Namespace"
-                                icon={nsIcon}
                                 value={namespaceName}
                                 onClick={onRelatedEntityClickHandler(
                                     entityTypes.NAMESPACE,

@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { K8S_ROLE } from 'queries/role';
 import entityTypes from 'constants/entityTypes';
-import nsIcon from 'images/ns-icon.svg';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 
@@ -73,8 +72,8 @@ const Role = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => (
                             {roleNamespace && (
                                 <RelatedEntity
                                     className="mx-4 min-w-48 h-48 mb-4"
+                                    entityType={entityTypes.NAMESPACE}
                                     name="Namespace Scope"
-                                    icon={nsIcon}
                                     value={namespaceName}
                                     onClick={onRelatedEntityClickHandler(
                                         entityTypes.NAMESPACE,

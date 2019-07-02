@@ -132,6 +132,31 @@ const imageColumns = [
     }
 ];
 
+const deploymentViolationsColumns = [
+    {
+        Header: 'Id',
+        headerClassName: 'hidden',
+        className: 'hidden',
+        accessor: 'deployment.id'
+    },
+    {
+        Header: `Deployment`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        accessor: 'deployment.name'
+    },
+    {
+        Header: `Time`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        accessor: 'time',
+        Cell: ({ original }) => {
+            const { time } = original;
+            return format(time, dateTimeFormat);
+        }
+    }
+];
+
 export const entityToColumns = {
     [resourceTypes.CONTROL]: controlColumns,
     [resourceTypes.IMAGE]: imageColumns
@@ -139,4 +164,8 @@ export const entityToColumns = {
 
 export const entityAcrossControlsColumns = {
     [resourceTypes.NODE]: nodesAcrossControlsColumns
+};
+
+export const entityViolationsColumns = {
+    [resourceTypes.DEPLOYMENT]: deploymentViolationsColumns
 };

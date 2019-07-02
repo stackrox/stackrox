@@ -12,6 +12,7 @@ import Namespace from './Entity/Namespace';
 import Role from './Entity/Role';
 import Control from './Entity/Control';
 import Image from './Entity/Image';
+import Policy from './Entity/Policy';
 
 const entityComponentMap = {
     [entityTypes.SERVICE_ACCOUNT]: ServiceAccount,
@@ -23,26 +24,19 @@ const entityComponentMap = {
     [entityTypes.NODE]: Node,
     [entityTypes.CONTROL]: Control,
     [entityTypes.NODE]: Node,
-    [entityTypes.IMAGE]: Image
+    [entityTypes.IMAGE]: Image,
+    [entityTypes.POLICY]: Policy
 };
 
-const Entity = ({ entityType, entityId, onRelatedEntityClick, onRelatedEntityListClick }) => {
+const Entity = ({ entityType, entityId, ...rest }) => {
     const Component = entityComponentMap[entityType];
     if (!Component) return <PageNotFound resourceType={entityType} />;
-    return (
-        <Component
-            id={entityId}
-            onRelatedEntityClick={onRelatedEntityClick}
-            onRelatedEntityListClick={onRelatedEntityListClick}
-        />
-    );
+    return <Component id={entityId} {...rest} />;
 };
 
 Entity.propTypes = {
     entityType: PropTypes.string.isRequired,
-    entityId: PropTypes.string.isRequired,
-    onRelatedEntityClick: PropTypes.func.isRequired,
-    onRelatedEntityListClick: PropTypes.func.isRequired
+    entityId: PropTypes.string.isRequired
 };
 
 export default Entity;

@@ -4,6 +4,7 @@ import entityTypes from 'constants/entityTypes';
 import { POLICIES as QUERY } from 'queries/policy';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 import List from './List';
 
 const tableColumns = [
@@ -31,7 +32,13 @@ const tableColumns = [
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { lifecycleStages } = original;
-            return lifecycleStages[0];
+            return lifecycleStages.map(lifecycleStage => (
+                <LifecycleStageLabel
+                    key={lifecycleStage}
+                    className="mr-2"
+                    lifecycleStage={lifecycleStage}
+                />
+            ));
         },
         accessor: 'lifecycleStages'
     }
@@ -39,19 +46,28 @@ const tableColumns = [
 
 const createTableRows = data => data.policies;
 
-const Policies = ({ onRowClick }) => (
+const Policies = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
         entityType={entityTypes.POLICY}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
         idAttribute="id"
     />
 );
 
 Policies.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+Policies.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Policies;

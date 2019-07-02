@@ -14,6 +14,7 @@ import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 
 import * as Icon from 'react-feather';
 import CheckboxTable from 'Components/CheckboxTable';
+import SeverityLabel from 'Components/SeverityLabel';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import {
     defaultColumnClassName,
@@ -21,23 +22,8 @@ import {
     wrapClassName,
     rtTrActionsClassName
 } from 'Components/Table';
-import { lifecycleStageLabels, severityLabels } from 'messages/common';
+import { lifecycleStageLabels } from 'messages/common';
 import { sortSeverity, sortLifecycle } from 'sorters/sorters';
-
-const getSeverityClassName = severity => {
-    switch (severity) {
-        case 'Low':
-            return 'px-2 rounded-full bg-base-200 border-2 border-base-300 text-base-600';
-        case 'Medium':
-            return 'px-2 rounded-full bg-warning-200 border-2 border-warning-300 text-warning-800';
-        case 'High':
-            return 'px-2 rounded-full bg-caution-200 border-2 border-caution-300 text-caution-800';
-        case 'Critical':
-            return 'px-2 rounded-full bg-alert-200 border-2 border-alert-300 text-alert-800';
-        default:
-            return '';
-    }
-};
 
 // TableContents are the policy rows.
 class TableContents extends Component {
@@ -190,8 +176,8 @@ class TableContents extends Component {
                 Header: 'Severity',
                 accessor: 'severity',
                 Cell: ci => {
-                    const severity = severityLabels[ci.value];
-                    return <span className={getSeverityClassName(severity)}>{severity}</span>;
+                    const severity = ci.value;
+                    return <SeverityLabel severity={severity} />;
                 },
                 width: 100,
                 sortMethod: sortSeverity

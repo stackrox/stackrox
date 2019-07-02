@@ -1,12 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
+import EntityIcon from 'Components/EntityIcon';
+import hexagonal from 'images/side-panel-icons/hexagonal.svg';
 
 // @TODO We should try to use this component for Compliance as well
-const RelatedEntity = ({ name, icon, value, link, onClick, ...rest }) => {
+const RelatedEntity = ({ name, entityType, value, link, onClick, ...rest }) => {
     const content = (
-        <div className="text-center">
-            <img className="mb-4" src={icon} alt="Namespace Icon" />
+        <div className="h-full flex flex-col items-center justify-center">
+            <div className="relative flex items-center justify-center mb-4">
+                <img src={hexagonal} alt="hexagonal" />
+                <EntityIcon className="z-1 absolute" entityType={entityType} />
+            </div>
             <div>{value}</div>
         </div>
     );
@@ -30,7 +35,7 @@ const RelatedEntity = ({ name, icon, value, link, onClick, ...rest }) => {
 
 RelatedEntity.propTypes = {
     name: PropTypes.string.isRequired,
-    icon: PropTypes.string.isRequired,
+    entityType: PropTypes.string.isRequired,
     value: PropTypes.string.isRequired,
     link: PropTypes.string
 };

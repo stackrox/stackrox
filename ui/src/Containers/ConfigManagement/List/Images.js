@@ -38,19 +38,28 @@ const tableColumns = [
 
 const createTableRows = data => data.images;
 
-const Images = ({ onRowClick }) => (
+const Images = ({ className, selectedRowId, onRowClick }) => (
     <List
+        className={className}
         query={QUERY}
         entityType={entityTypes.IMAGE}
         tableColumns={tableColumns}
         createTableRows={createTableRows}
         onRowClick={onRowClick}
+        selectedRowId={selectedRowId}
         idAttribute="id"
     />
 );
 
 Images.propTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
     onRowClick: PropTypes.func.isRequired
+};
+
+Images.defaultProps = {
+    className: '',
+    selectedRowId: null
 };
 
 export default Images;

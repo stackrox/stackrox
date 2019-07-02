@@ -4,21 +4,21 @@ import Widget from 'Components/Widget';
 
 const Metadata = ({ keyValuePairs, counts, ...rest }) => {
     const keyValueList = keyValuePairs.map(({ key, value }) => (
-        <div className="border-b border-base-300 px-4 py-2 capitalize" key={key}>
+        <li className="border-b border-base-300 px-4 py-2 capitalize" key={key}>
             <span className="text-base-700 font-600 mr-2">{key}:</span>
             {value}
-        </div>
+        </li>
     ));
     const countsList = counts.map(({ value, text }) => (
-        <div className="rounded border border-base-400 m-4 p-1 px-4 text-center" key={text}>
+        <li className="rounded border border-base-400 m-4 p-1 px-4 text-center" key={text}>
             {value} {text}
-        </div>
+        </li>
     ));
     return (
         <Widget header="Metadata" {...rest}>
             <div className="flex w-full text-sm">
-                <div className="border-r border-base-300">{keyValueList}</div>
-                <div className="">{countsList}</div>
+                <ul className="flex-1 list-reset border-r border-base-300">{keyValueList}</ul>
+                <ul className="list-reset">{countsList}</ul>
             </div>
         </Widget>
     );
@@ -28,7 +28,7 @@ PropTypes.propTypes = {
     keyValuePairs: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string.isRequired,
-            value: PropTypes.string.isRequired
+            value: PropTypes.oneOf([PropTypes.string.isRequired, PropTypes.element.isRequired])
         })
     ),
     counts: PropTypes.arrayOf(

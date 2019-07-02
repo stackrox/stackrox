@@ -7,6 +7,42 @@ export const POLICY = gql`
             name
             description
             lifecycleStages
+            categories
+            disabled
+            enforcementActions
+            fields {
+                cve
+            }
+            notifiers
+            rationale
+            remediation
+            scope {
+                cluster
+                label {
+                    key
+                    value
+                }
+                namespace
+            }
+            severity
+            whitelists {
+                expiration
+            }
+            alerts {
+                id
+                deployment {
+                    id
+                    name
+                }
+                enforcement {
+                    action
+                    message
+                }
+                policy {
+                    severity
+                }
+                time
+            }
         }
     }
 `;
