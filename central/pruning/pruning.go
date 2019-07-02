@@ -108,14 +108,13 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			log.Error(err)
 			continue
 		}
-		log.Infof("[Image pruning] Found %d search results", len(results))
 		// If there are no deployment queries that match, then allow the image to be pruned
 		if len(results) == 0 {
 			imagesToPrune = append(imagesToPrune, result.ID)
 		}
 	}
 	if len(imagesToPrune) > 0 {
-		log.Infof("[Image Pruning] Removing the following images: %+v", imagesToPrune)
+		log.Infof("[Image Pruning] Removing the following images (total %d): %+v", len(imagesToPrune), imagesToPrune)
 		if err := g.images.DeleteImages(pruningCtx, imagesToPrune...); err != nil {
 			log.Error(err)
 		}
