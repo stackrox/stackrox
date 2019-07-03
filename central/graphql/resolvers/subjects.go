@@ -17,6 +17,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("subjects(query: String): [Subject!]!"),
+		schema.AddExtraResolver("Subject", `subjectWithClusterID: [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `name: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `namespace: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
@@ -25,6 +26,34 @@ func init() {
 		schema.AddExtraResolver("SubjectWithClusterID", `scopedPermissions: [ScopedPermissions!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `clusterAdmin: Boolean!`),
 	)
+}
+
+func (resolver *subjectResolver) SubjectWithClusterID(ctx context.Context) ([]*subjectWithClusterIDResolver, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+	if err := readK8sRoleBindings(ctx); err != nil {
+		return nil, err
+	}
+	clusters, err := resolver.root.ClusterDataStore.GetClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var resolvers []*subjectWithClusterIDResolver
+	for _, cluster := range clusters {
+		q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.Id).ProtoQuery()
+		bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+		if err != nil {
+			continue
+		}
+
+		subjectResolver, err := resolver.root.wrapSubject(k8srbac.GetSubject(resolver.Name(ctx), bindings))
+		if err != nil {
+			continue
+		}
+		resolvers = append(resolvers, wrapSubject(cluster.GetId(), subjectResolver))
+	}
+	return resolvers, nil
 }
 
 func (resolver *subjectWithClusterIDResolver) Name(ctx context.Context) (string, error) {
