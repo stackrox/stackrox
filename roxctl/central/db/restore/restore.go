@@ -1,13 +1,14 @@
 package restore
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -31,13 +32,14 @@ func Command() *cobra.Command {
 	return c
 }
 
-func restore(file string, timeout time.Duration) error {
-	data, err := ioutil.ReadFile(file)
+func restore(filename string, timeout time.Duration) error {
+	file, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
+	defer utils.IgnoreError(file.Close)
 
-	req, err := http.NewRequest("POST", common.GetURL("/db/restore"), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", common.GetURL("/db/restore"), file)
 	if err != nil {
 		return err
 	}
