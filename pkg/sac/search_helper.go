@@ -38,6 +38,7 @@ type SearchHelper interface {
 type searchResultsChecker interface {
 	TryAllowed(resourceSC ScopeChecker, result search.Result) TryAllowedResult
 	SearchFieldLabels() []search.FieldLabel
+	PostProcess(result *search.Result)
 }
 
 type searchHelper struct {
@@ -149,6 +150,9 @@ func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker S
 		}
 		allowed = append(allowed, extraAllowed...)
 	}
+	for i := range allowed {
+		h.resultsChecker.PostProcess(&allowed[i])
+	}
 
 	return allowed, nil
 }
@@ -178,8 +182,6 @@ func newClusterNSScopesBasedResultsChecker(opts map[search.FieldLabel]*v1.Search
 
 func (c *clusterNSScopesBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, result search.Result) TryAllowedResult {
 	clusterNSScopeVals, _ := result.Fields[c.clusterNSScopesValuePath].([]interface{})
-	// Make sure this doesn't get leaked via search results.
-	delete(result.Fields, c.clusterNSScopesValuePath)
 
 	tryAllowedRes := Deny
 	for _, clusterNSScopeVal := range clusterNSScopeVals {
@@ -201,6 +203,11 @@ func (c *clusterNSScopesBasedResultsChecker) TryAllowed(resourceSC ScopeChecker,
 
 func (c *clusterNSScopesBasedResultsChecker) SearchFieldLabels() []search.FieldLabel {
 	return []search.FieldLabel{search.ClusterNSScopes}
+}
+
+func (c *clusterNSScopesBasedResultsChecker) PostProcess(result *search.Result) {
+	// Make sure this doesn't get leaked via search results.
+	delete(result.Fields, c.clusterNSScopesValuePath)
 }
 
 // clusterNSFieldBasedResultsChecker inspects the `Cluster ID` and optionally the `Namespace`
@@ -255,4 +262,8 @@ func (c *clusterNSFieldBasedResultsChecker) SearchFieldLabels() []search.FieldLa
 		fieldLabels = append(fieldLabels, search.Namespace)
 	}
 	return fieldLabels
+}
+
+func (c *clusterNSFieldBasedResultsChecker) PostProcess(result *search.Result) {
+
 }
