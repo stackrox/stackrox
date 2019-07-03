@@ -1,12 +1,11 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import PropTypes from 'prop-types';
+import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
 import QUERY from 'queries/subject';
-import URLService from 'modules/URLService';
-
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import queryService from 'modules/queryService';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -78,35 +77,29 @@ const buildTableColumns = (match, location) => {
     return tableColumns;
 };
 
-const createTableRows = data => data.clusters.reduce((acc, curr) => [...acc, ...curr.subjects], []);
+const createTableRows = data =>
+    data.subjects.reduce((acc, curr) => [...acc, ...curr.subjectWithClusterID], []);
 
-const Subjects = ({ match, location, className, selectedRowId, onRowClick }) => {
+const Subjects = ({ match, location, selectedRowId, onRowClick, query, className }) => {
     const tableColumns = buildTableColumns(match, location);
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
     return (
         <List
             className={className}
             query={QUERY}
+            variables={variables}
             entityType={entityTypes.SUBJECT}
             tableColumns={tableColumns}
             createTableRows={createTableRows}
-            onRowClick={onRowClick}
             selectedRowId={selectedRowId}
+            onRowClick={onRowClick}
             idAttribute="id"
         />
     );
 };
 
-Subjects.propTypes = {
-    className: PropTypes.string,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    onRowClick: PropTypes.func.isRequired,
-    selectedRowId: PropTypes.string
-};
-
-Subjects.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+Subjects.propTypes = entityListPropTypes;
+Subjects.defaultProps = entityListDefaultprops;
 
 export default Subjects;

@@ -1,12 +1,11 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import PropTypes from 'prop-types';
+import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
 import { SERVICE_ACCOUNTS as QUERY } from 'queries/serviceAccount';
-import URLService from 'modules/URLService';
-
 import { sortValueByLength } from 'sorters/sorters';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import queryService from 'modules/queryService';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -92,15 +91,17 @@ const buildTableColumns = (match, location) => {
     return tableColumns;
 };
 
-const createTableRows = data =>
-    data.clusters.reduce((acc, curr) => [...acc, ...curr.serviceAccounts], []);
+const createTableRows = data => data.results;
 
-const ServiceAccounts = ({ match, location, className, selectedRowId, onRowClick }) => {
+const ServiceAccounts = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
     return (
         <List
             className={className}
             query={QUERY}
+            variables={variables}
             entityType={entityTypes.SERVICE_ACCOUNT}
             tableColumns={tableColumns}
             createTableRows={createTableRows}
@@ -110,18 +111,7 @@ const ServiceAccounts = ({ match, location, className, selectedRowId, onRowClick
         />
     );
 };
-
-ServiceAccounts.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
-};
-
-ServiceAccounts.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+ServiceAccounts.propTypes = entityListPropTypes;
+ServiceAccounts.defaultProps = entityListDefaultprops;
 
 export default ServiceAccounts;

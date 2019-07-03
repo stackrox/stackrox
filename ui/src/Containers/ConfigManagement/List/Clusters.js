@@ -1,13 +1,12 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { CLUSTERS_QUERY as QUERY } from 'queries/cluster';
 import URLService from 'modules/URLService';
-
 import { sortValueByLength } from 'sorters/sorters';
+import { CLUSTERS_SEARCH as QUERY } from 'queries/cluster';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
+import queryService from 'modules/queryService';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -83,12 +82,15 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = data => data.results;
 
-const Clusters = ({ match, location, className, selectedRowId, onRowClick }) => {
+const Clusters = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
     return (
         <List
             className={className}
             query={QUERY}
+            variables={variables}
             entityType={entityTypes.CLUSTER}
             tableColumns={tableColumns}
             createTableRows={createTableRows}
@@ -99,17 +101,7 @@ const Clusters = ({ match, location, className, selectedRowId, onRowClick }) => 
     );
 };
 
-Clusters.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
-};
-
-Clusters.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+Clusters.propTypes = entityListPropTypes;
+Clusters.defaultProps = entityListDefaultprops;
 
 export default Clusters;

@@ -69,7 +69,7 @@ describe('Compliance dashboard page', () => {
         cy.get(selectors.widget.passingStandardsAcrossClusters.axisLinks)
             .first()
             .click();
-        cy.url().should('contain', '?groupBy=CLUSTER');
+        cy.url().should('contain', '?s[groupBy]=CLUSTER');
         cy.get(selectors.list.table.header).contains('CLUSTER');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });
@@ -78,7 +78,7 @@ describe('Compliance dashboard page', () => {
         cy.get(selectors.widget.passingStandardsAcrossNamespaces.axisLinks)
             .first()
             .click();
-        cy.url().should('contain', '?groupBy=NAMESPACE');
+        cy.url().should('contain', '?s[groupBy]=NAMESPACE');
         cy.get(selectors.list.table.header).contains('NAMESPACE');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });
@@ -87,7 +87,7 @@ describe('Compliance dashboard page', () => {
         cy.get(selectors.widget.passingStandardsAcrossNodes.axisLinks)
             .first()
             .click();
-        cy.url().should('contain', '?groupBy=NODE');
+        cy.url().should('contain', '?s[groupBy]=NODE');
         cy.get(selectors.list.table.header).contains('NODE');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });

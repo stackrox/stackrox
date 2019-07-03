@@ -18,6 +18,26 @@ export const CLUSTERS_QUERY = gql`
     }
 `;
 
+export const CLUSTERS_SEARCH = gql`
+    query clusters($query: String) {
+        results: clusters(query: $query) {
+            id
+            name
+            alerts {
+                id
+            }
+            serviceAccounts {
+                id
+                name
+            }
+            k8sroles {
+                id
+                name
+            }
+        }
+    }
+`;
+
 export const CLUSTER_QUERY = gql`
     query getCluster($id: ID!) {
         results: cluster(id: $id) {

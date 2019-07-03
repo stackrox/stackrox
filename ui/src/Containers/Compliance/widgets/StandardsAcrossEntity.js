@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import { standardLabels } from 'messages/standards';
@@ -16,6 +16,7 @@ import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { withRouter } from 'react-router-dom';
 import { AGGREGATED_RESULTS_ACROSS_ENTITY as QUERY } from 'queries/controls';
+import searchContext from 'Containers/searchContext';
 
 function formatAsPercent(x) {
     return `${x}%`;
@@ -44,6 +45,8 @@ function setStandardsMapping(data, type) {
 }
 
 const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, className }) => {
+    const searchParam = useContext(searchContext);
+
     function processData(data, type) {
         if (!data || !data.results || !data.results.results.length) return [];
         const { complianceStandards } = data;
@@ -62,8 +65,10 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
             const link = URLService.getURL(match, location)
                 .base(entityTypes.CONTROL)
                 .query({
-                    groupBy: type,
-                    Standard: standardLabels[standardId]
+                    [searchParam]: {
+                        groupBy: type,
+                        Standard: standardLabels[standardId]
+                    }
                 })
                 .url();
             const dataPoint = {

@@ -1,11 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
 import { sortVersion, sortValueByLength } from 'sorters/sorters';
-
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import List from './List';
@@ -67,6 +66,7 @@ const createTableRows = data => {
     });
     const controls = {};
     data.results.results.forEach(({ keys, numFailing }) => {
+        if (!keys[controlKeyIndex]) return;
         const controlId = keys[controlKeyIndex].id;
         if (controls[controlId]) {
             controls[controlId].nodes.push(keys[nodeKeyIndex].name);
@@ -85,37 +85,30 @@ const createTableRows = data => {
     });
     return Object.values(controls);
 };
-const variables = {
-    where: queryService.objectToWhereClause({
-        Standard: 'CIS'
-    }),
-    groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE]
+
+const CISControls = ({ className, selectedRowId, onRowClick, query }) => {
+    const variables = {
+        where: queryService.objectToWhereClause({ Standard: 'CIS', ...query }),
+        groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE]
+    };
+
+    return (
+        <List
+            className={className}
+            query={QUERY}
+            variables={variables}
+            headerText="CIS Controls"
+            entityType={entityTypes.CONTROL}
+            tableColumns={tableColumns}
+            createTableRows={createTableRows}
+            onRowClick={onRowClick}
+            selectedRowId={selectedRowId}
+            idAttribute="id"
+        />
+    );
 };
 
-const CISControls = ({ className, selectedRowId, onRowClick }) => (
-    <List
-        className={className}
-        query={QUERY}
-        headerText="CIS Controls"
-        variables={variables}
-        entityType={entityTypes.CONTROL}
-        tableColumns={tableColumns}
-        createTableRows={createTableRows}
-        onRowClick={onRowClick}
-        selectedRowId={selectedRowId}
-        idAttribute="id"
-    />
-);
-
-CISControls.propTypes = {
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
-};
-
-CISControls.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+CISControls.propTypes = entityListPropTypes;
+CISControls.defaultProps = entityListDefaultprops;
 
 export default CISControls;

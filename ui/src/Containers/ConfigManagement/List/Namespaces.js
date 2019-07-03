@@ -1,12 +1,12 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { ALL_NAMESPACES as QUERY } from 'queries/namespace';
 import URLService from 'modules/URLService';
 
 import { sortValueByLength } from 'sorters/sorters';
+import { NAMESPACES_QUERY as QUERY } from 'queries/namespace';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import queryService from 'modules/queryService';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -66,12 +66,15 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = data => data.results;
 
-const Namespaces = ({ match, location, className, selectedRowId, onRowClick }) => {
+const Namespaces = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
     return (
         <List
             className={className}
             query={QUERY}
+            variables={variables}
             entityType={entityTypes.NAMESPACE}
             tableColumns={tableColumns}
             createTableRows={createTableRows}
@@ -81,18 +84,7 @@ const Namespaces = ({ match, location, className, selectedRowId, onRowClick }) =
         />
     );
 };
-
-Namespaces.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
-};
-
-Namespaces.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+Namespaces.propTypes = entityListPropTypes;
+Namespaces.defaultProps = entityListDefaultprops;
 
 export default Namespaces;

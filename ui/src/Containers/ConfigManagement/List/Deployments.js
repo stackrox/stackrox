@@ -1,11 +1,11 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
 import URLService from 'modules/URLService';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 
 import { sortValueByLength } from 'sorters/sorters';
+import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import List from './List';
@@ -71,12 +71,15 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = data => data.results;
 
-const Deployments = ({ match, location, className, selectedRowId, onRowClick }) => {
+const Deployments = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
     return (
         <List
             className={className}
             query={QUERY}
+            variables={variables}
             entityType={entityTypes.DEPLOYMENT}
             tableColumns={tableColumns}
             createTableRows={createTableRows}
@@ -86,18 +89,7 @@ const Deployments = ({ match, location, className, selectedRowId, onRowClick }) 
         />
     );
 };
-
-Deployments.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
-};
-
-Deployments.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+Deployments.propTypes = entityListPropTypes;
+Deployments.defaultProps = entityListDefaultprops;
 
 export default Deployments;

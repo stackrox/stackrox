@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import LinkListWidget from 'Components/LinkListWidget';
 import URLService from 'modules/URLService';
@@ -11,6 +11,7 @@ import queryService from 'modules/queryService';
 import { NODES_BY_CLUSTER } from 'queries/node';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter, Link } from 'react-router-dom';
+import searchContext from 'Containers/searchContext';
 
 const queryMap = {
     [entityTypes.NAMESPACE]: ALL_NAMESPACES,
@@ -42,6 +43,7 @@ const ResourceRelatedEntitiesList = ({
 }) => {
     const linkContext = getPageContext(listEntityType);
     const resourceLabel = resourceLabels[listEntityType];
+    const searchParam = useContext(searchContext);
 
     function processData(data) {
         if (!data || !data.results) return [];
@@ -73,8 +75,10 @@ const ResourceRelatedEntitiesList = ({
                 to={URLService.getURL(match, location)
                     .base(listEntityType, null, linkContext)
                     .query({
-                        [pageEntityType]: pageEntity.name,
-                        [entityTypes.CLUSTER]: clusterName
+                        [searchParam]: {
+                            [pageEntityType]: pageEntity.name,
+                            [entityTypes.CLUSTER]: clusterName
+                        }
                     })
                     .url()}
                 className="no-underline"

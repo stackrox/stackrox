@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
@@ -6,55 +6,21 @@ import URLService from 'modules/URLService';
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Button from 'Components/Button';
 import Panel from 'Components/Panel';
-import EntityStage from './stages/EntityStage';
-import RelatedEntityListStage from './stages/RelatedEntityListStage';
-import RelatedEntityStage from './stages/RelatedEntityStage';
-
+import searchContext from 'Containers/searchContext';
+import EntityOverview from 'Containers/ConfigManagement/Entity';
+import List from 'Containers/ConfigManagement/EntityList';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import BreadCrumbs from './BreadCrumbs';
 
-const STAGES = {
-    ENTITY: 'ENTITY',
-    RELATED_ENTITY_LIST: 'RELATED_ENTITY_LIST',
-    RELATED_ENTITY: 'RELATED_ENTITY'
-};
-
-const getStage = (entityId1, entityListType2, entityId2) => {
-    if (!entityId1) return null;
-    if (entityId2) return STAGES.RELATED_ENTITY;
-    if (entityListType2 && !entityId2) return STAGES.RELATED_ENTITY_LIST;
-    return STAGES.ENTITY;
-};
-
-const getStageComponent = (entityId1, entityListType2, entityId2) => {
-    const stage = getStage(entityId1, entityListType2, entityId2);
-    let component = null;
-    switch (stage) {
-        case STAGES.ENTITY:
-            component = EntityStage;
-            break;
-        case STAGES.RELATED_ENTITY_LIST:
-            component = RelatedEntityListStage;
-            break;
-        case STAGES.RELATED_ENTITY:
-            component = RelatedEntityStage;
-            break;
-        default:
-            break;
-    }
-    return component;
-};
-
-const ExternalLink = ({ onClick }) => {
-    return (
-        <div className="flex items-center h-full hover:bg-base-300">
-            <Button
-                className="border-l border-base-300 h-full px-4"
-                icon={<ExternalLinkIcon className="h-6 w-6 text-base-600" />}
-                onClick={onClick}
-            />
-        </div>
-    );
-};
+const ExternalLink = ({ onClick }) => (
+    <div className="flex items-center h-full hover:bg-base-300">
+        <Button
+            className="border-l border-base-300 h-full px-4"
+            icon={<ExternalLinkIcon className="h-6 w-6 text-base-600" />}
+            onClick={onClick}
+        />
+    </div>
+);
 
 ExternalLink.propTypes = {
     onClick: PropTypes.func.isRequired
@@ -70,43 +36,74 @@ const SidePanel = ({
     entityId1,
     entityType2,
     entityListType2,
-    entityId2
+    entityId2,
+    query
 }) => {
-    const StageComponent = getStageComponent(entityId1, entityListType2, entityId2);
-    const stageProps = {
-        match,
-        location,
-        history,
-        entityType1,
-        entityId1,
-        entityType2,
-        entityListType2,
-        entityId2,
-        onClose
-    };
+    const searchParam = useContext(searchContext);
+    const isList = !entityId1 || ((entityType2 || entityListType2) && !entityId2);
 
-    function onExternalLinkClick() {
-        const stage = getStage(entityId1, entityListType2, entityId2);
-        let entityType = null;
-        let entityId = null;
-        switch (stage) {
-            case STAGES.ENTITY:
-                entityType = entityType1;
-                entityId = entityId1;
-                break;
-            case STAGES.RELATED_ENTITY_LIST:
-                entityType = entityListType2;
-                break;
-            case STAGES.RELATED_ENTITY:
-                entityType = entityType2 || entityListType2;
-                entityId = entityId2;
-                break;
-            default:
-                break;
-        }
-        const urlBuilder = URLService.getURL(match, location).base(entityType, entityId);
+    function onRelatedEntityClick(entityType, entityId) {
+        const urlBuilder = URLService.getURL(match, location).push(entityType, entityId);
         history.push(urlBuilder.url());
     }
+
+    function onRelatedEntityListClick(entityListType) {
+        const urlBuilder = URLService.getURL(match, location).push(entityListType);
+        history.push(urlBuilder.url());
+    }
+
+    function onRowClick(entityId) {
+        const urlBuilder = URLService.getURL(match, location).push(entityId);
+        history.push(urlBuilder.url());
+    }
+
+    function getCurrentEntityId() {
+        if (isList) return null;
+        return entityId2 || entityId1;
+    }
+
+    function getCurrentEntityType() {
+        return entityType2 || entityListType2 || entityType1;
+    }
+
+    function getSearchParams() {
+        return query[searchParam];
+    }
+
+    function getComponent() {
+        const entityId = getCurrentEntityId();
+        const entityType = getCurrentEntityType();
+
+        if (!isList) {
+            return (
+                <EntityOverview
+                    entityType={entityType}
+                    entityId={entityId}
+                    onRelatedEntityClick={onRelatedEntityClick}
+                    onRelatedEntityListClick={onRelatedEntityListClick}
+                />
+            );
+        }
+
+        // Add entityId query parameter if there is another entity in the stack
+        const panelQuery = {};
+        if (entityId1 && entityType2) panelQuery[`${entityType1} ID`] = entityId1;
+
+        return (
+            <List entityListType={entityType} onRowClick={onRowClick} query={getSearchParams()} />
+        );
+    }
+
+    function onExternalLinkClick() {
+        const url = URLService.getURL(match, location)
+            .base(getCurrentEntityType(), getCurrentEntityId())
+            .query()
+            .query(getSearchParams())
+            .url();
+        history.push(url);
+    }
+
+    const component = getComponent();
     return (
         <div className={className}>
             <Panel
@@ -124,20 +121,24 @@ const SidePanel = ({
                 headerComponents={<ExternalLink onClick={onExternalLinkClick} />}
                 onClose={onClose}
             >
-                <StageComponent {...stageProps} />
+                {component}
             </Panel>
         </div>
     );
 };
 
 SidePanel.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
     className: PropTypes.string,
     entityType1: PropTypes.string,
     entityId1: PropTypes.string,
     entityType2: PropTypes.string,
     entityListType2: PropTypes.string,
     entityId2: PropTypes.string,
-    onClose: PropTypes.func
+    onClose: PropTypes.func,
+    query: PropTypes.shape().isRequired
 };
 
 SidePanel.defaultProps = {

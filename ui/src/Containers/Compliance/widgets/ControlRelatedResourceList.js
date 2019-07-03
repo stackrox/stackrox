@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import LinkListWidget from 'Components/LinkListWidget';
 import URLService from 'modules/URLService';
@@ -10,6 +10,7 @@ import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import queryService from 'modules/queryService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter, Link } from 'react-router-dom';
+import searchContext from 'Containers/searchContext';
 
 const ControlRelatedEntitiesList = ({
     match,
@@ -22,6 +23,7 @@ const ControlRelatedEntitiesList = ({
     className
 }) => {
     const linkContext = contextTypes.COMPLIANCE;
+    const searchParam = useContext(searchContext);
 
     function processData(data) {
         if (!data || !data.results) return [];
@@ -90,7 +92,7 @@ const ControlRelatedEntitiesList = ({
             <Link
                 to={URLService.getURL(match, location)
                     .base(listEntityType, null, linkContext)
-                    .query({ standard, [pageEntityType]: pageEntity.name })
+                    .query({ [searchParam]: { standard, [pageEntityType]: pageEntity.name } })
                     .url()}
                 className="no-underline"
             >

@@ -9,7 +9,13 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
     const table = document.getElementById('pdf-table');
     const parent = document.getElementById(pdfId);
     if (table && parent.contains(table)) {
-        parent.removeChild(table);
+        // TODO: fix this.
+        // Throwing error sometimes but not related to this PR
+        try {
+            parent.removeChild(table);
+        } catch (err) {
+            return;
+        }
     }
     let type = null;
     if (query.groupBy) {

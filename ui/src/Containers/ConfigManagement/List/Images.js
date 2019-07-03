@@ -1,12 +1,13 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { IMAGES as QUERY } from 'queries/image';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
 import { sortDate } from 'sorters/sorters';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import queryService from 'modules/queryService';
 import List from './List';
 
 const tableColumns = [
@@ -38,24 +39,25 @@ const tableColumns = [
 
 const createTableRows = data => data.images;
 
-const Images = ({ className, selectedRowId, onRowClick }) => (
-    <List
-        className={className}
-        query={QUERY}
-        entityType={entityTypes.IMAGE}
-        tableColumns={tableColumns}
-        createTableRows={createTableRows}
-        onRowClick={onRowClick}
-        selectedRowId={selectedRowId}
-        idAttribute="id"
-    />
-);
-
-Images.propTypes = {
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
+const Images = ({ className, selectedRowId, onRowClick, query }) => {
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
+    return (
+        <List
+            className={className}
+            query={QUERY}
+            variables={variables}
+            entityType={entityTypes.IMAGE}
+            tableColumns={tableColumns}
+            createTableRows={createTableRows}
+            onRowClick={onRowClick}
+            selectedRowId={selectedRowId}
+            idAttribute="id"
+        />
+    );
 };
+Images.propTypes = entityListPropTypes;
+Images.defaultProps = entityListDefaultprops;
 
 Images.defaultProps = {
     className: '',

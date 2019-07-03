@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { Link, withRouter } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
 import { AGGREGATED_RESULTS } from 'queries/controls';
@@ -9,20 +9,15 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import Loader from 'Components/Loader';
 import Query from 'Components/ThrowingQuery';
 import { standardLabels } from 'messages/standards';
+import searchContexts from 'constants/searchContexts';
 
 const standardsResultsMap = {
     passing: 'var(--tertiary-400)',
     failing: 'var(--alert-400)'
 };
 
-class DashboardCompliance extends Component {
-    static propTypes = {
-        match: ReactRouterPropTypes.match.isRequired,
-        location: ReactRouterPropTypes.location.isRequired
-    };
-
-    processData = data => {
-        const { match, location } = this.props;
+const DashboardCompliance = ({ match, location }) => {
+    function processData(data) {
         if (!data || !data.results || !data.results.results.length) return [];
         const { complianceStandards } = data;
         const modifiedData = data.results.results.map(result => {
@@ -32,7 +27,7 @@ class DashboardCompliance extends Component {
                 Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
             const link = URLService.getURL(match, location)
                 .base(entityTypes.CONTROL, null, contextTypes.COMPLIANCE)
-                .query({ standard: standardLabels[standard.id] })
+                .query({ [searchContexts.page]: { standard: standardLabels[standard.id] } })
                 .url();
             const modifiedResult = {
                 name: standard.name,
@@ -43,11 +38,12 @@ class DashboardCompliance extends Component {
             return modifiedResult;
         });
         return sortBy(modifiedData, [datum => datum.name]);
-    };
+    }
 
-    renderStandardsData = standards =>
-        standards.map(standard => {
+    function renderStandardsData(standards) {
+        return standards.map(standard => {
             const standardResults = ['passing', 'failing'];
+
             return (
                 <div className="pb-3 flex w-full items-center" key={standard.name}>
                     <Link
@@ -77,8 +73,9 @@ class DashboardCompliance extends Component {
                 </div>
             );
         });
+    }
 
-    renderLegend = () =>
+    function renderLegend() {
         Object.keys(standardsResultsMap).map(result => {
             const backgroundStyle = {
                 backgroundColor: standardsResultsMap[result]
@@ -92,8 +89,9 @@ class DashboardCompliance extends Component {
                 </div>
             );
         });
+    }
 
-    renderScanButton = () => {
+    function renderScanButton() {
         const link = URLService.getURL()
             .base(null, null, contextTypes.COMPLIANCE)
             .url();
@@ -110,47 +108,50 @@ class DashboardCompliance extends Component {
                 </Link>
             </div>
         );
-    };
-
-    render() {
-        return (
-            <div className="w-full">
-                <h2 className="-ml-6 bg-base-100 inline-block leading-normal mb-6 px-3 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
-                    <Link
-                        className="text-base-600 hover:text-primary-600 flex items-center h-10"
-                        to="/main/compliance"
-                    >
-                        Compliance
-                    </Link>
-                </h2>
-                <div className="flex">
-                    <Query
-                        query={AGGREGATED_RESULTS}
-                        variables={{
-                            unit: entityTypes.CHECK,
-                            groupBy: [entityTypes.STANDARD]
-                        }}
-                    >
-                        {({ loading, data }) => {
-                            if (loading) return <Loader transparent />;
-                            const results = this.processData(data);
-                            if (!results.length) return this.renderScanButton();
-                            return (
-                                <div className="flex w-full">
-                                    <div className="pr-6 flex flex-1 flex-col">
-                                        {this.renderStandardsData(results)}
-                                    </div>
-                                    <div className="flex items-start">
-                                        <div className="flex flex-col">{this.renderLegend()}</div>
-                                    </div>
-                                </div>
-                            );
-                        }}
-                    </Query>
-                </div>
-            </div>
-        );
     }
-}
+
+    return (
+        <div className="w-full">
+            <h2 className="-ml-6 bg-base-100 inline-block leading-normal mb-6 px-3 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
+                <Link
+                    className="text-base-600 hover:text-primary-600 flex items-center h-10"
+                    to="/main/compliance"
+                >
+                    Compliance
+                </Link>
+            </h2>
+            <div className="flex">
+                <Query
+                    query={AGGREGATED_RESULTS}
+                    variables={{
+                        unit: entityTypes.CONTROL,
+                        groupBy: [entityTypes.STANDARD]
+                    }}
+                >
+                    {({ loading, data }) => {
+                        if (loading) return <Loader transparent />;
+                        const results = processData(data);
+                        if (!results.length) return renderScanButton();
+                        return (
+                            <div className="flex w-full">
+                                <div className="pr-6 flex flex-1 flex-col">
+                                    {renderStandardsData(results)}
+                                </div>
+                                <div className="flex items-start">
+                                    <div className="flex flex-col">{renderLegend()}</div>
+                                </div>
+                            </div>
+                        );
+                    }}
+                </Query>
+            </div>
+        </div>
+    );
+};
+
+DashboardCompliance.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired
+};
 
 export default withRouter(DashboardCompliance);

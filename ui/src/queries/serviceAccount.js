@@ -1,31 +1,28 @@
 import gql from 'graphql-tag';
 
 export const SERVICE_ACCOUNTS = gql`
-    query serviceAccounts {
-        clusters {
+    query serviceAccounts($query: String) {
+        results: serviceAccounts(query: $query) {
             id
-            serviceAccounts {
-                id
-                name
-                scopedPermissions {
-                    scope
-                    permissions {
-                        key
-                        values
-                    }
+            name
+            scopedPermissions {
+                scope
+                permissions {
+                    key
+                    values
                 }
-                clusterAdmin
-                namespace
-                saNamespace {
-                    metadata {
-                        id
-                        name
-                    }
-                }
-                roles {
+            }
+            clusterAdmin
+            namespace
+            saNamespace {
+                metadata {
                     id
                     name
                 }
+            }
+            roles {
+                id
+                name
             }
         }
     }

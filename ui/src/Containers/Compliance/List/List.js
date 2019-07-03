@@ -4,6 +4,8 @@ import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
+import searchContext from 'Containers/searchContext';
+import searchContexts from 'constants/searchContexts';
 import ListTable from './Table';
 import SidePanel from './SidePanel';
 import SearchInput from '../SearchInput';
@@ -30,21 +32,24 @@ const ComplianceList = ({
     if (selectedRowId) {
         sidepanel = <SidePanel entityType={entityType} entityId={selectedRowId} />;
     }
-    const listQuery = Object.assign({}, query, URLService.getParams(match, location).query);
+
     const searchComponent = noSearch ? null : (
         <SearchInput categories={[searchCategoryTypes[entityType]]} />
     );
+
     return (
         <div className="flex flex-1 overflow-y-auto h-full bg-base-100">
             <ListTable
                 searchComponent={searchComponent}
                 selectedRowId={selectedRowId}
                 entityType={entityType}
-                query={listQuery}
+                query={query}
                 updateSelectedRow={setSelectedRowId}
                 pdfId="capture-list"
             />
-            {sidepanel}
+            <searchContext.Provider value={searchContexts.sidePanel}>
+                {sidepanel}
+            </searchContext.Provider>
         </div>
     );
 };

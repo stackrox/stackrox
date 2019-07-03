@@ -27,3 +27,18 @@ export const entityPageDefaultProps = {
     sidePanelMode: false,
     controlResult: null
 };
+
+export const entityListPropTypes = {
+    className: PropTypes.string,
+    selectedRowId: PropTypes.string,
+    onRowClick: PropTypes.func.isRequired,
+    query: PropTypes.shape({}),
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired
+};
+
+export const entityListDefaultprops = {
+    className: '',
+    selectedRowId: null,
+    query: null
+};

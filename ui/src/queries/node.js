@@ -13,6 +13,16 @@ export const NODES_QUERY = gql`
     }
 `;
 
+export const NODES_SEARCH = gql`
+    query nodes($query: String) {
+        results: nodes(query: $query) {
+            id
+            name
+            clusterName
+        }
+    }
+`;
+
 export const NODE_QUERY = gql`
     query getNode($id: ID!) {
         node(id: $id) {

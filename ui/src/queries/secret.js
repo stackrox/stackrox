@@ -29,8 +29,8 @@ export const SECRET = gql`
 `;
 
 export const SECRETS = gql`
-    query secrets {
-        secrets {
+    query secrets($query: String) {
+        secrets(query: $query) {
             id
             name
             createdAt

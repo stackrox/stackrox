@@ -40,9 +40,6 @@ export const K8S_ROLE = gql`
                     }
                 }
                 serviceAccounts {
-                    ... on NonExistentServiceAccount {
-                        message
-                    }
                     ... on ServiceAccount {
                         id
                         name
@@ -72,29 +69,23 @@ export const K8S_ROLE = gql`
 `;
 
 export const K8S_ROLES = gql`
-    query k8sroles {
-        clusters {
+    query k8sRoles($query: String) {
+        results: k8sRoles(query: $query) {
             id
-            k8sroles {
-                id
-                name
-                type
-                verbs
-                createdAt
-                roleNamespace {
-                    metadata {
-                        id
-                        name
-                    }
+            name
+            type
+            verbs
+            createdAt
+            roleNamespace {
+                metadata {
+                    id
+                    name
                 }
-                serviceAccounts {
-                    ... on NonExistentServiceAccount {
-                        message
-                    }
-                    ... on ServiceAccount {
-                        id
-                        name
-                    }
+            }
+            serviceAccounts {
+                ... on ServiceAccount {
+                    id
+                    name
                 }
             }
         }

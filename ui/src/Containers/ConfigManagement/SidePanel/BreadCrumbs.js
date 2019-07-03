@@ -60,6 +60,7 @@ const BreadCrumbLinks = props => {
         ) : (
             state
         );
+        if (!state) return null;
         return (
             <span className="flex items-center" key={i}>
                 {content} {icon}

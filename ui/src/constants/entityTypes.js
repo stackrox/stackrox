@@ -45,7 +45,12 @@ export const searchCategories = {
     CLUSTER: 'CLUSTERS',
     CONTROL: 'COMPLIANCE_CONTROL',
     DEPLOYMENT: 'DEPLOYMENTS',
-    SECRET: 'SECRETS'
+    SECRET: 'SECRETS',
+    POLICY: 'POLICIES',
+    IMAGE: 'IMAGES',
+    ROLE: 'ROLES',
+    SERVICE_ACCOUNT: 'SERVICE_ACCOUNTS',
+    SUBJECT: 'SUBJECTS'
 };
 
 export default {

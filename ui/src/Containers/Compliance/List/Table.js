@@ -236,61 +236,69 @@ const ListTable = ({
                 let contents = <Loader />;
                 let headerComponent;
                 let headerText;
+                let totalRows = 0;
+
                 if (!loading || (data && data.results)) {
                     const formattedData = formatData(data, entityType);
-                    if (!formattedData)
-                        return (
+                    if (!formattedData) {
+                        contents = (
                             <NoResultsMessage message="No compliance data available. Please run a scan." />
                         );
+                    } else {
+                        tableData = filterByComplianceState(formattedData, query, isControlList);
 
-                    tableData = filterByComplianceState(formattedData, query, isControlList);
+                        if (tableData.length) {
+                            createPDFTable(tableData, entityType, query, pdfId);
+                        }
+                        totalRows = getTotalRows(tableData, isControlList);
+                        const { groupBy } = query;
 
-                    if (tableData.length) {
-                        createPDFTable(tableData, entityType, query, pdfId);
+                        const groupedByText = groupBy
+                            ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
+                            : '';
+                        headerText = `${totalRows} ${pluralize(
+                            entityType,
+                            totalRows
+                        )} ${groupedByText}`;
+
+                        contents = isControlList ? (
+                            <TableGroup
+                                groups={tableData}
+                                totalRows={totalRows}
+                                tableColumns={tableColumns}
+                                onRowClick={updateSelectedRow}
+                                entityType={entityType}
+                                idAttribute="id"
+                                selectedRowId={selectedRowId}
+                            />
+                        ) : (
+                            <Table
+                                rows={tableData}
+                                columns={tableColumns}
+                                onRowClick={updateSelectedRow}
+                                idAttribute="id"
+                                selectedRowId={selectedRowId}
+                                noDataText="No results found. Please refine your search."
+                                page={page}
+                                defaultSorted={[
+                                    {
+                                        id: 'name',
+                                        desc: false
+                                    }
+                                ]}
+                            />
+                        );
+                        headerComponent = (
+                            <>
+                                <div className="flex flex-1 justify-start">{searchComponent}</div>
+                                <TablePagination
+                                    page={page}
+                                    dataLength={totalRows}
+                                    setPage={setPage}
+                                />
+                            </>
+                        );
                     }
-                    const totalRows = getTotalRows(tableData, isControlList);
-                    const { groupBy } = query;
-
-                    const groupedByText = groupBy
-                        ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
-                        : '';
-                    headerText = `${totalRows} ${pluralize(
-                        entityType,
-                        totalRows
-                    )} ${groupedByText}`;
-                    contents = isControlList ? (
-                        <TableGroup
-                            groups={tableData}
-                            totalRows={totalRows}
-                            tableColumns={tableColumns}
-                            onRowClick={updateSelectedRow}
-                            entityType={entityType}
-                            idAttribute="id"
-                            selectedRowId={selectedRowId}
-                        />
-                    ) : (
-                        <Table
-                            rows={tableData}
-                            columns={tableColumns}
-                            onRowClick={updateSelectedRow}
-                            idAttribute="id"
-                            selectedRowId={selectedRowId}
-                            noDataText="No results found. Please refine your search."
-                            page={page}
-                            defaultSorted={[
-                                {
-                                    id: 'name',
-                                    desc: false
-                                }
-                            ]}
-                        />
-                    );
-                    headerComponent = (
-                        <>
-                            <div className="flex flex-1 justify-start">{searchComponent}</div>
-                            <TablePagination page={page} dataLength={totalRows} setPage={setPage} />
-                        </>
-                    );
                 }
                 return (
                     <Panel

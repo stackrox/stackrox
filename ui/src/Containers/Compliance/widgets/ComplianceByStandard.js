@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { standardLabels } from 'messages/standards';
 import URLService from 'modules/URLService';
@@ -13,6 +13,7 @@ import networkStatuses from 'constants/networkStatuses';
 import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
 import { Link, withRouter } from 'react-router-dom';
+import searchContext from 'Containers/searchContext';
 
 const colors = [
     'var(--tertiary-400)',
@@ -120,7 +121,7 @@ const processSunburstData = (match, location, data, type) => {
 const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
-const createURLLink = (match, location, entityType, standardId, entityName) => {
+const createURLLink = (match, location, entityType, standardId, entityName, searchParam) => {
     const query = { groupBy: entityTypes.CATEGORY };
     if (entityName) {
         const entityKey = capitalize(entityType);
@@ -128,7 +129,7 @@ const createURLLink = (match, location, entityType, standardId, entityName) => {
     }
     return URLService.getURL(match, location)
         .base(entityTypes.CONTROL)
-        .query({ standard: standardLabels[standardId], ...query })
+        .query({ [searchParam]: { standard: standardLabels[standardId] } })
         .url();
 };
 
@@ -147,10 +148,12 @@ const ComplianceByStandard = ({
         entityTypes.CONTROL,
         ...(entityType ? [entityType] : [])
     ];
+    const searchParam = useContext(searchContext);
     const where = {
         Standard: standardLabels[standardType]
     };
     if (entityType) where[`${entityType} ID`] = entityId;
+
     const variables = {
         groupBy,
         where: queryService.objectToWhereClause(where)
@@ -174,7 +177,8 @@ const ComplianceByStandard = ({
                         location,
                         entityType,
                         standardType,
-                        entityName
+                        entityName,
+                        searchParam
                     );
                     const sunburstRootData = [
                         {
@@ -189,8 +193,10 @@ const ComplianceByStandard = ({
                     const linkTo = URLService.getURL(match, location)
                         .base(entityTypes.CONTROL)
                         .query({
-                            standard: standardLabels[standardType],
-                            groupBy: entityTypes.CATEGORY
+                            [searchParam]: {
+                                standard: standardLabels[standardType],
+                                groupBy: entityTypes.CATEGORY
+                            }
                         })
                         .url();
 

@@ -1,16 +1,41 @@
 import gql from 'graphql-tag';
 
 export const NAMESPACES_QUERY = gql`
-    query list {
-        results: deployments {
-            id
-            namespace
-            clusterId
+    query namespaces($query: String) {
+        results: namespaces(query: $query) {
+            metadata {
+                name
+                id
+                clusterId
+                clusterName
+                labels {
+                    key
+                    value
+                }
+            }
+            numSecrets
         }
     }
 `;
 
 export const ALL_NAMESPACES = gql`
+    query namespaces {
+        results: namespaces {
+            metadata {
+                name
+                id
+                clusterId
+                clusterName
+                labels {
+                    key
+                    value
+                }
+            }
+            numSecrets
+        }
+    }
+`;
+export const NAMESPACES = gql`
     query namespaces {
         results: namespaces {
             metadata {

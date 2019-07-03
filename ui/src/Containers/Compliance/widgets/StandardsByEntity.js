@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
@@ -15,8 +15,9 @@ import { standardLabels } from 'messages/standards';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
+import searchContext from 'Containers/searchContext';
 
-function processData(match, location, data, entityType) {
+function processData(match, location, data, entityType, searchParam) {
     if (!data || !data.results.results.length || !data.entityList) return [];
     const standardsGrouping = {};
     const { results, controls, entityList, complianceStandards } = data;
@@ -31,8 +32,10 @@ function processData(match, location, data, entityType) {
         const link = URLService.getURL(match, location)
             .base(entityTypes.CONTROL)
             .query({
-                [`${capitalize(entityType)}`]: entity.name,
-                standard: standardLabels[standard.id]
+                [searchParam]: {
+                    [`${capitalize(entityType)}`]: entity.name,
+                    standard: standardLabels[standard.id]
+                }
             })
             .url();
         const controlResult = controls.results.find(
@@ -91,6 +94,8 @@ const StandardsByEntity = ({ match, location, entityType, bodyClassName, classNa
         groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CHECK
     };
+    const searchParam = useContext(searchContext);
+
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
@@ -110,7 +115,13 @@ const StandardsByEntity = ({ match, location, entityType, bodyClassName, classNa
                             complianceStandards: data.complianceStandards,
                             entityList: data && data.clusters
                         };
-                        const results = processData(match, location, formattedData, entityType);
+                        const results = processData(
+                            match,
+                            location,
+                            formattedData,
+                            entityType,
+                            searchParam
+                        );
                         const labelLinks = getLabelLinks(
                             match,
                             location,

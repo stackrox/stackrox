@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
 import VerticalBarChart from 'Components/visuals/VerticalBar';
@@ -14,9 +14,11 @@ import { AGGREGATED_RESULTS } from 'queries/controls';
 import queryService from 'modules/queryService';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
+import searchContext from 'Containers/searchContext';
 
 const EntityCompliance = ({ match, location, entityType, entityName, clusterName, history }) => {
     const entityTypeLabel = resourceLabels[entityType];
+    const searchParam = useContext(searchContext);
 
     function getBarData(results) {
         return results
@@ -42,9 +44,11 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
         const URL = URLService.getURL(match, location)
             .base(entityTypes.CONTROL)
             .query({
-                [entityType]: entityName,
-                [entityTypes.CLUSTER]: clusterName,
-                standard: standardLabels[datum.standard]
+                [searchParam]: {
+                    [entityType]: entityName,
+                    [entityTypes.CLUSTER]: clusterName,
+                    standard: standardLabels[datum.standard]
+                }
             })
             .url();
 

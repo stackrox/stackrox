@@ -21,6 +21,7 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, match, location }) =
         return URLService.getURL(match, location)
             .base(entityType, entityId)
             .push(listEntityType)
+            .query()
             .url();
     }
 

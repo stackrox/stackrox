@@ -1,8 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { POLICIES as QUERY } from 'queries/policy';
-
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 import List from './List';
@@ -46,28 +46,25 @@ const tableColumns = [
 
 const createTableRows = data => data.policies;
 
-const Policies = ({ className, selectedRowId, onRowClick }) => (
-    <List
-        className={className}
-        query={QUERY}
-        entityType={entityTypes.POLICY}
-        tableColumns={tableColumns}
-        createTableRows={createTableRows}
-        onRowClick={onRowClick}
-        selectedRowId={selectedRowId}
-        idAttribute="id"
-    />
-);
-
-Policies.propTypes = {
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
+const Policies = ({ className, onRowClick, query, selectedRowId }) => {
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
+    return (
+        <List
+            className={className}
+            query={QUERY}
+            variables={variables}
+            entityType={entityTypes.POLICY}
+            tableColumns={tableColumns}
+            createTableRows={createTableRows}
+            selectedRowId={selectedRowId}
+            onRowClick={onRowClick}
+            idAttribute="id"
+        />
+    );
 };
 
-Policies.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+Policies.propTypes = entityListPropTypes;
+Policies.defaultProps = entityListDefaultprops;
 
 export default Policies;

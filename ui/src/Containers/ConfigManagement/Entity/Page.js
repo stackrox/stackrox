@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
@@ -7,6 +7,8 @@ import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
 
 import pluralize from 'pluralize';
 import ExportButton from 'Components/ExportButton';
+import searchContext from 'Containers/searchContext';
+import searchContexts from 'constants/searchContexts';
 import PageHeader from './EntityPageHeader';
 import Tabs from './EntityTabs';
 import Overview from '../Entity';
@@ -22,8 +24,10 @@ const EntityPage = ({ match, location, history }) => {
         entityId1,
         entityType2,
         entityListType2,
-        entityId2
+        entityId2,
+        query
     } = params;
+    const searchParam = useContext(searchContext);
 
     function onTabClick({ value }) {
         const urlBuilder = URLService.getURL(match, location).base(pageEntityType, pageEntityId);
@@ -50,35 +54,49 @@ const EntityPage = ({ match, location, history }) => {
         const urlBuilder = URLService.getURL(match, location).clearSidePanelParams();
         history.replace(urlBuilder.url());
     }
-
-    const component = !entityListType1 ? (
-        <Overview
-            entityType={pageEntityType}
-            entityId={pageEntityId}
-            onRelatedEntityClick={onRelatedEntityClick}
-            onRelatedEntityListClick={onRelatedEntityListClick}
-        />
-    ) : (
-        <div className="flex flex-1 w-full h-full bg-base-100 relative">
-            <List
-                className={entityId1 ? 'overlay' : ''}
-                entityListType={entityListType1}
-                entityId={entityId1}
-                onRowClick={onRowClick}
+    let component;
+    if (!entityListType1) {
+        component = (
+            <Overview
+                entityType={pageEntityType}
+                entityId={pageEntityId}
+                onRelatedEntityClick={onRelatedEntityClick}
+                onRelatedEntityListClick={onRelatedEntityListClick}
             />
-            <SidePanelAnimation className="w-3/4" condition={!!entityId1}>
-                <SidePanel
-                    className="w-full h-full bg-base-100 border-l-2 border-base-300"
-                    entityType1={entityListType1}
-                    entityId1={entityId1}
-                    entityType2={entityType2}
-                    entityListType2={entityListType2}
-                    entityId2={entityId2}
-                    onClose={onSidePanelClose}
+        );
+    } else {
+        const listQuery = {
+            [`${entityListType1} Id`]: entityId1,
+            ...query[searchParam]
+        };
+
+        component = (
+            <div className="flex flex-1 w-full h-full bg-base-100 relative">
+                <List
+                    className={entityId1 ? 'overlay' : ''}
+                    entityListType={entityListType1}
+                    entityId={entityId1}
+                    onRowClick={onRowClick}
+                    query={listQuery}
                 />
-            </SidePanelAnimation>
-        </div>
-    );
+                <searchContext.Provider value={searchContexts.sidePanel}>
+                    <SidePanelAnimation className="w-3/4" condition={!!entityId1}>
+                        <SidePanel
+                            className="w-full h-full bg-base-100 border-l-2 border-base-300"
+                            entityType1={entityListType1}
+                            entityId1={entityId1}
+                            entityType2={entityType2}
+                            entityListType2={entityListType2}
+                            entityId2={entityId2}
+                            onClose={onSidePanelClose}
+                            query={query}
+                        />
+                    </SidePanelAnimation>
+                </searchContext.Provider>
+            </div>
+        );
+    }
+
     const exportFilename = `${pluralize(pageEntityType)}`;
     const { urlParams } = URLService.getURL(match, location);
     let pdfId = 'capture-dashboard-stretch';

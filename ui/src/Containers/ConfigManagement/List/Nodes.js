@@ -1,11 +1,10 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { NODES_QUERY as QUERY } from 'queries/node';
 import URLService from 'modules/URLService';
-
+import { NODES_SEARCH as QUERY } from 'queries/node';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import queryService from 'modules/queryService';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -42,14 +41,17 @@ const buildTableColumns = (match, location) => {
     return tableColumns;
 };
 
-const createTableRows = data => data.results.reduce((acc, curr) => [...acc, ...curr.nodes], []);
+const createTableRows = data => data.results;
 
-const Nodes = ({ match, location, className, selectedRowId, onRowClick }) => {
+const Nodes = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
     return (
         <List
             className={className}
             query={QUERY}
+            variables={variables}
             entityType={entityTypes.NODE}
             tableColumns={tableColumns}
             createTableRows={createTableRows}
@@ -59,18 +61,7 @@ const Nodes = ({ match, location, className, selectedRowId, onRowClick }) => {
         />
     );
 };
-
-Nodes.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
-};
-
-Nodes.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+Nodes.propTypes = entityListPropTypes;
+Nodes.defaultProps = entityListDefaultprops;
 
 export default Nodes;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { components } from 'react-select';
 import queryString from 'qs';
@@ -8,6 +8,7 @@ import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplet
 import * as Icon from 'react-feather';
 import { Creatable } from 'Components/ReactSelect';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import searchContext from 'Containers/searchContext';
 
 const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
@@ -69,6 +70,8 @@ export const inputMatchesTopOption = (input, selectOptions) =>
     selectOptions.length && selectOptions[0].label === input;
 
 const URLSearchInputWithAutocomplete = props => {
+    const paramName = useContext(searchContext);
+
     function createCategoryOption(category) {
         return {
             label: `${category}:`,
@@ -103,9 +106,19 @@ const URLSearchInputWithAutocomplete = props => {
         return options.map(createCategoryOption);
     }
 
+    function getQueryJSON(search) {
+        return queryString.parse(search, { ignoreQueryPrefix: true })[paramName] || {};
+    }
+
+    function setQueryJSON(obj) {
+        const currentQuery = queryString.parse(props.location.search, { ignoreQueryPrefix: true });
+        const queryJSON = { ...currentQuery, [paramName]: obj };
+        return queryString.stringify(queryJSON, { arrayFormat: 'repeat', encodeValuesOnly: true });
+    }
+
     function transformSearchOptionsToQueryString(searchOptions) {
         const { search: prevSearch } = props.location;
-        const prevQueryJSON = queryString.parse(prevSearch, { ignoreQueryPrefix: true });
+        const prevQueryJSON = getQueryJSON(prevSearch);
         const queryJSON = {};
         let categoryKey = '';
         searchOptions.forEach(option => {
@@ -116,21 +129,22 @@ const URLSearchInputWithAutocomplete = props => {
             } else {
                 const value = getValue(option);
                 if (!queryJSON[categoryKey]) {
-                    queryJSON[categoryKey] = [value];
+                    queryJSON[categoryKey] = value;
                 } else {
+                    queryJSON[categoryKey] = [queryJSON[categoryKey]];
                     queryJSON[categoryKey].push(value);
                 }
             }
         });
         // to not clear the `groupBy` query. will need to remove once search officially supports groupBy
         if (prevQueryJSON.groupBy) queryJSON.groupBy = prevQueryJSON.groupBy;
-        const search = queryString.stringify(queryJSON, { arrayFormat: 'repeat' });
-        return search;
+
+        return setQueryJSON(queryJSON);
     }
 
     function transformQueryStringToSearchOptions(search) {
         const queryStringOptions = [];
-        const queryJSON = queryString.parse(search, { ignoreQueryPrefix: true });
+        const queryJSON = getQueryJSON(search);
         Object.keys(queryJSON).forEach(key => {
             const matchedOptionKey = props.categoryOptions.find(
                 category => category.toLowerCase() === key.toLowerCase()

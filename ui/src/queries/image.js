@@ -48,8 +48,8 @@ export const IMAGE = gql`
 `;
 
 export const IMAGES = gql`
-    query images {
-        images {
+    query images($query: String) {
+        images(query: $query) {
             id
             lastUpdated
             metadata {

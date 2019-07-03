@@ -1,6 +1,4 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { SECRETS as QUERY } from 'queries/secret';
 import uniq from 'lodash/uniq';
@@ -9,6 +7,8 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import URLService from 'modules/URLService';
 import { sortValueByLength, sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import queryService from 'modules/queryService';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -96,12 +96,15 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = data => data.secrets;
 
-const Secrets = ({ match, location, className, selectedRowId, onRowClick }) => {
+const Secrets = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
+    const queryText = queryService.objectToWhereClause(query);
+    const variables = queryText ? { query: queryText } : null;
     return (
         <List
             className={className}
             query={QUERY}
+            variables={variables}
             entityType={entityTypes.SECRET}
             tableColumns={tableColumns}
             createTableRows={createTableRows}
@@ -111,18 +114,7 @@ const Secrets = ({ match, location, className, selectedRowId, onRowClick }) => {
         />
     );
 };
-
-Secrets.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    className: PropTypes.string,
-    selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired
-};
-
-Secrets.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
+Secrets.propTypes = entityListPropTypes;
+Secrets.defaultProps = entityListDefaultprops;
 
 export default Secrets;

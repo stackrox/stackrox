@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -14,6 +14,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
 import queryService from 'modules/queryService';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import searchContext from 'Containers/searchContext';
 
 const sortByTitle = (a, b) => {
     if (a.title < b.title) return -1;
@@ -21,7 +22,13 @@ const sortByTitle = (a, b) => {
     return 0;
 };
 
-function processData(match, location, entityType, { results, controls, complianceStandards }) {
+function processData(
+    match,
+    location,
+    entityType,
+    { results, controls, complianceStandards },
+    searchParam
+) {
     let filteredResults;
     if (standardBaseTypes[entityType]) {
         filteredResults = results.results.filter(result =>
@@ -55,17 +62,27 @@ function processData(match, location, entityType, { results, controls, complianc
 
         const defaultLink = URLService.getURL(match, location)
             .push(entityType)
-            .query({ [complianceStateKey]: undefined, Standard: undefined })
+            .query({ [searchParam]: { [complianceStateKey]: undefined, Standard: undefined } })
             .url();
 
         const passingLink = URLService.getURL(match, location)
             .push(entityType)
-            .query({ [complianceStateKey]: 'Pass', Standard: standardShortLabels[standard.id] })
+            .query({
+                [searchParam]: {
+                    [complianceStateKey]: 'Pass',
+                    Standard: standardShortLabels[standard.id]
+                }
+            })
             .url();
 
         const failingLink = URLService.getURL(match, location)
             .push(entityType)
-            .query({ [complianceStateKey]: 'Fail', Standard: standardShortLabels[standard.id] })
+            .query({
+                [searchParam]: {
+                    [complianceStateKey]: 'Fail',
+                    Standard: standardShortLabels[standard.id]
+                }
+            })
             .url();
 
         newMapping[standardId] = {
@@ -118,6 +135,7 @@ const getQueryVariables = (entityType, groupBy, query) => {
 
 const ComplianceAcrossEntities = ({ match, location, entityType, groupBy, query }) => {
     const variables = getQueryVariables(entityType, groupBy, query);
+    const searchParam = useContext(searchContext);
     return (
         <Query query={AGGREGATED_RESULTS} variables={variables}>
             {({ loading, data }) => {
@@ -126,13 +144,13 @@ const ComplianceAcrossEntities = ({ match, location, entityType, groupBy, query 
                     ? `Controls in Compliance`
                     : `${resourceLabels[entityType]}s in Compliance`;
                 if (!loading && data) {
-                    const results = processData(match, location, entityType, data);
+                    const results = processData(match, location, entityType, data, searchParam);
                     if (!results.length) {
                         contents = (
                             <NoResultsMessage message="No data available. Please run a scan." />
                         );
                     } else {
-                        contents = <Gauge data={results} />;
+                        contents = <Gauge query={query} data={results} />;
                     }
                 }
                 return (

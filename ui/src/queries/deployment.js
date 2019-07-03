@@ -62,8 +62,8 @@ export const DEPLOYMENT_NAME = gql`
 `;
 
 export const DEPLOYMENTS_QUERY = gql`
-    query getDeployments {
-        results: deployments {
+    query getDeployments($query: String) {
+        results: deployments(query: $query) {
             id
             name
             clusterName

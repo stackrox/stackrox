@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENT_QUERY } from 'queries/deployment';
 import Widget from 'Components/Widget';
@@ -16,6 +16,7 @@ import IconWidget from 'Components/IconWidget';
 import pluralize from 'pluralize';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
+import searchContext from 'Containers/searchContext';
 
 import Header from './Header';
 
@@ -37,149 +38,159 @@ const DeploymentPage = ({
     entityId2,
     query,
     sidePanelMode
-}) => (
-    <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
-        {({ loading, data }) => {
-            if (loading || !data) return <Loader />;
-            const deployment = processData(data);
-            const { name, id, labels, clusterName, namespace, clusterId, namespaceId } = deployment;
-            const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
-            let contents;
+}) => {
+    const searchParam = useContext(searchContext);
 
-            if (listEntityType && !sidePanelMode) {
-                const listQueryParams = { ...query };
-                listQueryParams.deployment = name;
-                const listQuery = {
-                    groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : '',
-                    ...listQueryParams
-                };
-                contents = (
-                    <section
-                        id="capture-list"
-                        className="flex flex-col flex-1 overflow-y-auto h-full"
-                    >
-                        <ComplianceList
-                            entityType={listEntityType}
-                            query={listQuery}
-                            selectedRowId={entityId1}
-                            entityType2={entityType2}
-                            entityListType2={entityListType2}
-                            entityId2={entityId2}
-                        />
-                    </section>
-                );
-            } else {
-                const clusterUrl = URLService.getURL(match, location)
-                    .base(entityTypes.CLUSTER, clusterId)
-                    .url();
+    return (
+        <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
+            {({ loading, data }) => {
+                if (loading || !data) return <Loader />;
+                const deployment = processData(data);
+                const {
+                    name,
+                    id,
+                    labels,
+                    clusterName,
+                    namespace,
+                    clusterId,
+                    namespaceId
+                } = deployment;
+                const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
+                let contents;
 
-                const namespaceUrl = URLService.getURL(match, location)
-                    .base(entityTypes.NAMESPACE, namespaceId)
-                    .url();
+                if (listEntityType && !sidePanelMode) {
+                    const listQuery = {
+                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        deployment: name,
+                        ...query[searchParam]
+                    };
+                    contents = (
+                        <section
+                            id="capture-list"
+                            className="flex flex-col flex-1 overflow-y-auto h-full"
+                        >
+                            <ComplianceList
+                                entityType={listEntityType}
+                                query={listQuery}
+                                selectedRowId={entityId1}
+                                entityType2={entityType2}
+                                entityListType2={entityListType2}
+                                entityId2={entityId2}
+                            />
+                        </section>
+                    );
+                } else {
+                    const clusterUrl = URLService.getURL(match, location)
+                        .base(entityTypes.CLUSTER, clusterId)
+                        .url();
 
-                contents = (
-                    <div
-                        className={`flex-1 relative bg-base-200 overflow-auto ${
-                            !sidePanelMode ? `p-6` : `p-4`
-                        } `}
-                        id="capture-dashboard"
-                    >
+                    const namespaceUrl = URLService.getURL(match, location)
+                        .base(entityTypes.NAMESPACE, namespaceId)
+                        .url();
+
+                    contents = (
                         <div
-                            className={`grid ${
-                                !sidePanelMode
-                                    ? `grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense`
-                                    : ``
-                            } sm:grid-columns-1 grid-gap-5`}
+                            className={`flex-1 relative bg-base-200 overflow-auto ${
+                                !sidePanelMode ? `p-6` : `p-4`
+                            } `}
+                            id="capture-dashboard"
                         >
                             <div
-                                className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
-                                style={{ '--min-tile-width': '50%' }}
+                                className={`grid ${
+                                    !sidePanelMode
+                                        ? `grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense`
+                                        : ``
+                                } sm:grid-columns-1 grid-gap-5`}
                             >
-                                <div className="s-full pb-3">
-                                    <EntityCompliance
-                                        entityType={entityTypes.DEPLOYMENT}
-                                        entityId={id}
-                                        entityName={name}
-                                        clusterName={clusterName}
-                                    />
+                                <div
+                                    className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                    style={{ '--min-tile-width': '50%' }}
+                                >
+                                    <div className="s-full pb-3">
+                                        <EntityCompliance
+                                            entityType={entityTypes.DEPLOYMENT}
+                                            entityId={id}
+                                            entityName={name}
+                                            clusterName={clusterName}
+                                        />
+                                    </div>
+                                    <div className="md:pr-3 pt-3">
+                                        <IconWidget
+                                            title="Parent Cluster"
+                                            icon={Cluster}
+                                            description={clusterName}
+                                            loading={loading}
+                                            linkUrl={clusterUrl}
+                                        />
+                                    </div>
+                                    <div className="md:pl-3 pt-3">
+                                        <IconWidget
+                                            title="Parent Namespace"
+                                            icon={Namespace}
+                                            description={namespace}
+                                            loading={loading}
+                                            linkUrl={namespaceUrl}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="md:pr-3 pt-3">
-                                    <IconWidget
-                                        title="Parent Cluster"
-                                        icon={Cluster}
-                                        description={clusterName}
-                                        loading={loading}
-                                        linkUrl={clusterUrl}
-                                    />
-                                </div>
-                                <div className="md:pl-3 pt-3">
-                                    <IconWidget
-                                        title="Parent Namespace"
-                                        icon={Namespace}
-                                        description={namespace}
-                                        loading={loading}
-                                        linkUrl={namespaceUrl}
-                                    />
-                                </div>
+
+                                <Widget
+                                    className={`sx-2 ${pdfClassName}`}
+                                    header={`${labels.length} ${pluralize('Label', labels.length)}`}
+                                >
+                                    <Labels labels={labels} />
+                                </Widget>
+
+                                <ComplianceByStandard
+                                    standardType={entityTypes.PCI_DSS_3_2}
+                                    entityName={name}
+                                    entityId={id}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    className={pdfClassName}
+                                />
+                                <ComplianceByStandard
+                                    standardType={entityTypes.NIST_800_190}
+                                    entityName={name}
+                                    entityId={id}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    className={pdfClassName}
+                                />
+                                <ComplianceByStandard
+                                    standardType={entityTypes.HIPAA_164}
+                                    entityName={name}
+                                    entityId={id}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    className={pdfClassName}
+                                />
                             </div>
-
-                            <Widget
-                                className={`sx-2 ${pdfClassName}`}
-                                header={`${labels.length} ${pluralize('Label', labels.length)}`}
-                            >
-                                <Labels labels={labels} />
-                            </Widget>
-
-                            <ComplianceByStandard
-                                standardType={entityTypes.PCI_DSS_3_2}
-                                entityName={name}
-                                entityId={id}
-                                entityType={entityTypes.DEPLOYMENT}
-                                className={pdfClassName}
-                            />
-                            <ComplianceByStandard
-                                standardType={entityTypes.NIST_800_190}
-                                entityName={name}
-                                entityId={id}
-                                entityType={entityTypes.DEPLOYMENT}
-                                className={pdfClassName}
-                            />
-                            <ComplianceByStandard
-                                standardType={entityTypes.HIPAA_164}
-                                entityName={name}
-                                entityId={id}
-                                entityType={entityTypes.DEPLOYMENT}
-                                className={pdfClassName}
-                            />
                         </div>
-                    </div>
+                    );
+                }
+
+                return (
+                    <section className="flex flex-col h-full w-full">
+                        {!sidePanelMode && (
+                            <>
+                                <Header
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    listEntityType={listEntityType}
+                                    entityName={name}
+                                    entityId={id}
+                                />
+                                <ResourceTabs
+                                    entityId={id}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    resourceTabs={[entityTypes.CONTROL]}
+                                />
+                            </>
+                        )}
+                        {contents}
+                    </section>
                 );
-            }
-
-            return (
-                <section className="flex flex-col h-full w-full">
-                    {!sidePanelMode && (
-                        <>
-                            <Header
-                                entityType={entityTypes.DEPLOYMENT}
-                                listEntityType={listEntityType}
-                                entityName={name}
-                                entityId={id}
-                            />
-                            <ResourceTabs
-                                entityId={id}
-                                entityType={entityTypes.DEPLOYMENT}
-                                resourceTabs={[entityTypes.CONTROL]}
-                            />
-                        </>
-                    )}
-                    {contents}
-                </section>
-            );
-        }}
-    </Query>
-);
-
+            }}
+        </Query>
+    );
+};
 DeploymentPage.propTypes = entityPagePropTypes;
 DeploymentPage.defaultProps = entityPageDefaultProps;
 

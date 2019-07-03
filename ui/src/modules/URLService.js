@@ -4,7 +4,15 @@ import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
 import { entityParamNames, listParamNames } from 'constants/url';
 import entityTypes from 'constants/entityTypes';
-import { nestedPaths, riskPath, secretsPath, urlEntityListTypes, urlEntityTypes } from 'routePaths';
+
+import merge from 'deepmerge';
+import {
+    nestedPaths,
+    riskPath,
+    secretsPath,
+    urlEntityListTypes,
+    urlEntityTypes
+} from '../routePaths';
 
 export function getTypeKeyFromParamValue(value, listOnly) {
     const listMatch = Object.entries(urlEntityListTypes).find(entry => entry[1] === value);
@@ -113,7 +121,13 @@ function getParams(match, location) {
 function getLinkTo(params) {
     const { query, ...urlParams } = params;
     const pathname = getPath(urlParams);
-    const search = query ? qs.stringify(query, { addQueryPrefix: true }) : '';
+    const search = query
+        ? qs.stringify(query, {
+              addQueryPrefix: true,
+              arrayFormat: 'repeat',
+              encodeValuesOnly: true
+          })
+        : '';
 
     return {
         pathname,
@@ -239,11 +253,11 @@ class URL {
         const { urlParams } = this;
         const paramName = getLastUsedParamName(urlParams);
         if (paramName) delete urlParams[paramName];
-
         if (paramName === 'entityId2') {
             delete urlParams.entityType2;
         }
         if (paramName === 'pageEntityId') delete urlParams.pageEntityType;
+        if (paramName === 'entityListType2') delete this.q.s2;
 
         return this;
     }
@@ -255,8 +269,9 @@ class URL {
     }
 
     query(queryChanges) {
-        const newQuery = { ...this.q, ...queryChanges };
-        this.q = newQuery;
+        if (!queryChanges) this.q = {};
+        else this.q = merge(this.q, queryChanges);
+
         return this;
     }
 
@@ -267,6 +282,7 @@ class URL {
         delete p.entityListType2;
         delete p.entityId2;
         delete p.entityListType1;
+        delete this.q.s2;
 
         return this;
     }

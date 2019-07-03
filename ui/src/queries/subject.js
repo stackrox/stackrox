@@ -1,10 +1,9 @@
 import gql from 'graphql-tag';
 
 export const SUBJECTS_QUERY = gql`
-    query subjects {
-        clusters {
-            id
-            subjects {
+    query subjects($query: String) {
+        subjects(query: $query) {
+            subjectWithClusterID {
                 subject {
                     name
                     kind

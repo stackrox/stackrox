@@ -9,9 +9,9 @@ import { SECRET, SECRETS } from 'queries/secret';
 import { CLUSTER_QUERY as CLUSTER, CLUSTERS_QUERY as CLUSTERS } from 'queries/cluster';
 import { NAMESPACE_QUERY as NAMESPACE, NAMESPACES_QUERY as NAMESPACES } from 'queries/namespace';
 import { POLICY, POLICIES } from 'queries/policy';
-import { NODE_QUERY as NODE, NODES_QUERY as NODES } from 'queries/node';
 import { CONTROL_QUERY as CONTROL } from 'queries/controls';
 import { IMAGE, IMAGES } from 'queries/image';
+import { NODES_QUERY as NODES, NODE_QUERY as NODE } from 'queries/node';
 
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,
@@ -34,7 +34,8 @@ export const entityListQueryMap = {
     [entityTypes.NAMESPACE]: NAMESPACES,
     [entityTypes.ROLE]: ROLES,
     [entityTypes.SECRET]: SECRETS,
-    [entityTypes.NODE]: NODES,
+    [entityTypes.POLICY]: POLICIES,
     [entityTypes.IMAGE]: IMAGES,
-    [entityTypes.POLICY]: POLICIES
+    [entityTypes.NODE]: NODES,
+    [entityTypes.NAMESPACE]: NAMESPACES
 };

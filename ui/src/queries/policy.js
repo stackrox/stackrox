@@ -46,10 +46,9 @@ export const POLICY = gql`
         }
     }
 `;
-
 export const POLICIES = gql`
-    query policies {
-        policies {
+    query policies($query: String) {
+        policies(query: $query) {
             id
             name
             description

@@ -11,6 +11,9 @@ import PageNotFound from 'Components/PageNotFound';
 import Panel from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
+import URLSearchInput from 'Components/URLSearchInput';
+import { SEARCH_OPTIONS_QUERY } from 'queries/search';
+import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 
 const List = ({
     className,
@@ -25,7 +28,6 @@ const List = ({
     idAttribute
 }) => {
     const [page, setPage] = useState(0);
-
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
         onRowClick(id);
@@ -36,12 +38,37 @@ const List = ({
             {({ loading, data }) => {
                 if (loading) return <Loader />;
                 if (!data) return <PageNotFound resourceType={entityType} />;
-                const tableRows = createTableRows(data);
+                const tableRows = createTableRows(data) || [];
                 const header = `${tableRows.length} ${pluralize(
                     headerText || entityLabels[entityType]
                 )}`;
+                const categories = [searchCategoryTypes[entityType]];
                 const headerComponents = (
-                    <TablePagination page={page} dataLength={tableRows.length} setPage={setPage} />
+                    <>
+                        <div className="flex flex-1 justify-start">
+                            <Query
+                                query={SEARCH_OPTIONS_QUERY}
+                                action="list"
+                                variables={{ categories }}
+                            >
+                                {({ data: results }) => {
+                                    const searchOptions = results ? results.searchOptions : [];
+                                    return (
+                                        <URLSearchInput
+                                            className="w-full"
+                                            categoryOptions={searchOptions}
+                                            categories={categories}
+                                        />
+                                    );
+                                }}
+                            </Query>
+                        </div>
+                        <TablePagination
+                            page={page}
+                            dataLength={tableRows.length}
+                            setPage={setPage}
+                        />
+                    </>
                 );
                 if (tableRows.length) {
                     createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
@@ -73,8 +100,8 @@ const List = ({
 
 List.propTypes = {
     className: PropTypes.string,
-    query: PropTypes.shape({}).isRequired,
-    variables: PropTypes.shape({}),
+    query: PropTypes.shape().isRequired,
+    variables: PropTypes.shape(),
     entityType: PropTypes.string.isRequired,
     tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     createTableRows: PropTypes.func.isRequired,
