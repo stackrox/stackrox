@@ -190,9 +190,11 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		contextutil.HTTPInterceptor(contextUpdaters...),
 	)
 
+	postAuthHTTPInterceptor := contextutil.HTTPInterceptor(a.config.PostAuthContextEnrichers...)
+
 	mux := http.NewServeMux()
 	for _, route := range a.config.CustomRoutes {
-		mux.Handle(route.Route, httpInterceptors(route.Handler()))
+		mux.Handle(route.Route, httpInterceptors(route.Handler(postAuthHTTPInterceptor)))
 	}
 
 	if a.config.AuthProviders != nil {

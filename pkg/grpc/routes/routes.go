@@ -7,15 +7,16 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
+	"github.com/stackrox/rox/pkg/httputil"
 )
 
-func authorizerHandler(h http.Handler, authorizer authz.Authorizer, route string) http.Handler {
+func authorizerHandler(h http.Handler, authorizer authz.Authorizer, postAuthInterceptor httputil.HTTPInterceptor, route string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if err := authorizer.Authorized(req.Context(), RPCNameForHTTP(route, req.Method)); err != nil {
 			writeHTTPStatus(w, err)
 			return
 		}
-		h.ServeHTTP(w, req)
+		postAuthInterceptor(h).ServeHTTP(w, req)
 	})
 }
 
@@ -39,11 +40,11 @@ func RPCNameForHTTP(route, method string) string {
 }
 
 // Handler is the http.Handler for the CustomRoute
-func (c CustomRoute) Handler() http.Handler {
+func (c CustomRoute) Handler(postAuthInterceptor httputil.HTTPInterceptor) http.Handler {
 	if c.Authorizer == nil {
 		c.Authorizer = deny.Everyone()
 	}
-	h := authorizerHandler(c.ServerHandler, c.Authorizer, c.Route)
+	h := authorizerHandler(c.ServerHandler, c.Authorizer, postAuthInterceptor, c.Route)
 	if c.Compression {
 		return gziphandler.GzipHandler(h)
 	}
