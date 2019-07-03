@@ -67,7 +67,7 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
                 .query({
                     [searchParam]: {
                         groupBy: type,
-                        Standard: standardLabels[standardId]
+                        standard: standardLabels[standardId]
                     }
                 })
                 .url();

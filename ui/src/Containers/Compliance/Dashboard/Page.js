@@ -20,7 +20,7 @@ const ComplianceDashboardPage = () => {
           };
 
     return (
-        <section className="flex flex-col relative min-h-full">
+        <section>
             <DashboardHeader
                 classes={`bg-gradient-horizontal z-10 sticky pin-t ${
                     isDarkMode ? 'text-base-600' : 'text-base-100'

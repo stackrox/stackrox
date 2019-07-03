@@ -62,7 +62,7 @@ function processData(
 
         const defaultLink = URLService.getURL(match, location)
             .push(entityType)
-            .query({ [searchParam]: { [complianceStateKey]: undefined, Standard: undefined } })
+            .query({ [searchParam]: { [complianceStateKey]: undefined, standard: undefined } })
             .url();
 
         const passingLink = URLService.getURL(match, location)
@@ -70,7 +70,7 @@ function processData(
             .query({
                 [searchParam]: {
                     [complianceStateKey]: 'Pass',
-                    Standard: standardShortLabels[standard.id]
+                    standard: standardShortLabels[standard.id]
                 }
             })
             .url();
@@ -80,7 +80,7 @@ function processData(
             .query({
                 [searchParam]: {
                     [complianceStateKey]: 'Fail',
-                    Standard: standardShortLabels[standard.id]
+                    standard: standardShortLabels[standard.id]
                 }
             })
             .url();
@@ -140,9 +140,9 @@ const ComplianceAcrossEntities = ({ match, location, entityType, groupBy, query 
         <Query query={AGGREGATED_RESULTS} variables={variables}>
             {({ loading, data }) => {
                 let contents = <Loader />;
-                const headerText = standardBaseTypes[entityType]
-                    ? `Controls in Compliance`
-                    : `${resourceLabels[entityType]}s in Compliance`;
+                const headerText = `${
+                    standardBaseTypes[entityType] ? 'Control' : resourceLabels[entityType]
+                }s in Compliance`;
                 if (!loading && data) {
                     const results = processData(match, location, entityType, data, searchParam);
                     if (!results.length) {
