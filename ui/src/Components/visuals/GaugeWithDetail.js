@@ -56,7 +56,7 @@ const GaugeWithDetail = ({ data, history }) => {
                 color: failingSelected ? 'var(--alert-400)' : colors[index],
                 angle0: 2 * pi * (passingValue / (passingValue + failingValue)),
                 angle: fullAngle,
-                opacity: failingSelected ? 1 : 0.2,
+                opacity: d.failing.selected ? 1 : 0.2,
                 radius0,
                 radius: radius1,
                 index,
@@ -72,7 +72,7 @@ const GaugeWithDetail = ({ data, history }) => {
                 radius: radius1,
                 index,
                 arc: 'inner',
-                opacity: failingSelected ? 0.2 : 1
+                opacity: d.failing.selected ? 0.2 : 1
             };
             returnData.push(failingCircle, passingCircle);
         });

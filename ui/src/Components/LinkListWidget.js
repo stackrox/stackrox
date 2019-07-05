@@ -63,7 +63,7 @@ const LinkListWidget = ({
                     if (!showEmpty) {
                         return null;
                     }
-                    contents = <NoResultsMessage message="No data matched your search" />;
+                    contents = <NoResultsMessage message="No data matched your search." />;
                 } else {
                     contents = (
                         <ul
@@ -79,7 +79,7 @@ const LinkListWidget = ({
 
             return (
                 <Widget
-                    className={`${className}`}
+                    className={`${className} h-full`}
                     header={headline}
                     headerComponents={headerComponents}
                     id={id}

@@ -241,9 +241,7 @@ const ListTable = ({
                 if (!loading || (data && data.results)) {
                     const formattedData = formatData(data, entityType);
                     if (!formattedData) {
-                        contents = (
-                            <NoResultsMessage message="No compliance data available. Please run a scan." />
-                        );
+                        contents = <NoResultsMessage message="No data matched your search." />;
                     } else {
                         tableData = filterByComplianceState(formattedData, query, isControlList);
 
