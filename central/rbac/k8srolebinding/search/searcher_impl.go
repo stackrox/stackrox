@@ -3,9 +3,9 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
