@@ -44,7 +44,7 @@ const ConfigBannerDetailWidget = ({ type, config }) => {
                     </div>
                     <div className="border-base-300 border-t flex justify-between mt-6 pt-4 w-full">
                         <div className="w-full pr-4">
-                            <div className={keyClassName}>Text Size</div>
+                            <div className={keyClassName}>Text Size:</div>
                             <div>{capitalize(getValue('size'))}</div>
                         </div>
                         <div className="w-1/6">

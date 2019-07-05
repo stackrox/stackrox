@@ -8,7 +8,7 @@ import ReduxColorPickerField from 'Components/forms/ReduxColorPickerField';
 
 import { keyClassName } from './Page';
 
-const backgroundSizeOptions = [
+const sizeOptions = [
     {
         label: 'Small',
         value: 'SMALL'
@@ -48,10 +48,10 @@ const ConfigBannerFormWidget = ({ type }) => (
                 </div>
                 <div className="border-base-300 border-t flex justify-between mt-6 pt-4 w-full">
                     <div className="w-full pr-4">
-                        <div className={keyClassName}>{`${type} Size:`}</div>
+                        <div className={keyClassName}>Text Size:</div>
                         <ReduxSelectField
                             name={`publicConfig.${type}.size`}
-                            options={backgroundSizeOptions}
+                            options={sizeOptions}
                         />
                     </div>
                     <div className="w-1/6">

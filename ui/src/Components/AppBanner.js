@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 
 const sizeClassMap = {
     UNSET: '',
-    SMALL: 'h-12',
-    MEDIUM: 'h-18',
-    LARGE: 'h-24'
+    SMALL: 'text-sm',
+    MEDIUM: 'text-xl',
+    LARGE: 'text-2xl'
 };
 
 const AppBanner = ({ type, enabled, text, color, size, backgroundColor }) => {
