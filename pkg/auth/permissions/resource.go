@@ -23,8 +23,13 @@ const (
 // ResourceMetadata contains metadata about a resource.
 type ResourceMetadata struct {
 	Resource
-	Scope              ResourceScope
-	NoLegacyAuthForSAC bool // do not perform legacy auth with SAC enabled (only affects globally scoped resources).
+	Scope ResourceScope
+	// legacyAuthForSAC is a tri-state bool determining whether legacy auth for SAC is forced on or off. If false,
+	// no legacy auth for SAC is performed (only affects globally-scoped resources). If true, legacy auth for SAC
+	// (at the global scope) is performed even for non-globally scoped resources. If `nil`, the default behavior is used
+	// (i.e., performing legacy auth for globally-scoped resources, and not performing it for resources with cluster
+	// or namespace scopes).
+	legacyAuthForSAC *bool
 }
 
 // GetResource returns the resource for this metadata object.
@@ -42,15 +47,23 @@ func (m ResourceMetadata) String() string {
 	return string(m.Resource)
 }
 
+// PerformLegacyAuthForSAC checks whether legacy authorizers should be enforced even if SAC is enabled.
+func (m ResourceMetadata) PerformLegacyAuthForSAC() bool {
+	if m.legacyAuthForSAC != nil {
+		return *m.legacyAuthForSAC
+	}
+	return m.Scope == GlobalScope
+}
+
 // ResourceHandle allows referring to a resource, without having to specify whether it is a Resource
 // or a ResourceMetadata object.
 type ResourceHandle interface {
 	GetResource() Resource
 }
 
-// WithNoLegacyAuthForSAC returns a resource metadata that instructs the legacy auth handler to not enforce on global
-// resources in a SAC world.
-func WithNoLegacyAuthForSAC(md ResourceMetadata) ResourceMetadata {
-	md.NoLegacyAuthForSAC = true
+// WithLegacyAuthForSAC returns a resource metadata that instructs the legacy auth handler to either force or force
+// skip legacy auth for SAC.
+func WithLegacyAuthForSAC(md ResourceMetadata, use bool) ResourceMetadata {
+	md.legacyAuthForSAC = &use
 	return md
 }

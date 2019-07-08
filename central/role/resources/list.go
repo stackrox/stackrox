@@ -106,3 +106,14 @@ func AllResourcesModifyPermissions() []permissions.ResourceWithAccess {
 	}
 	return result
 }
+
+// MetadataForResource returns the metadata for the given resource. If the resource is unknown, metadata for this
+// resource with global scope is returned.
+func MetadataForResource(res permissions.Resource) (permissions.ResourceMetadata, bool) {
+	md, found := resourceToMetadata[res]
+	if !found {
+		md.Resource = res
+		md.Scope = permissions.GlobalScope
+	}
+	return md, found
+}

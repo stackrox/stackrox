@@ -126,7 +126,7 @@ func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.Res
 		// Policies are the only search resource with a global scope. With SAC enabled, we check SAC permissions for
 		// legacy auth restrictions for globally-scoped resources. This would break search, so exempt policies from this
 		// in search contexts.
-		v1.SearchCategory_POLICIES:   permissions.WithNoLegacyAuthForSAC(resources.Policy),
+		v1.SearchCategory_POLICIES:   permissions.WithLegacyAuthForSAC(resources.Policy, false),
 		v1.SearchCategory_SECRETS:    resources.Secret,
 		v1.SearchCategory_COMPLIANCE: resources.Compliance,
 		v1.SearchCategory_NODES:      resources.Node,

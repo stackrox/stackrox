@@ -375,7 +375,9 @@ func startGRPCServer(factory serviceFactory) {
 	log.Infof("Scoped access control enabled: %v", features.ScopedAccessControl.Enabled())
 	if features.ScopedAccessControl.Enabled() {
 		// When sac is enabled, this helps validate that it is being use correctly. Should be removed with feature flag.
-		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
+		if env.DevelopmentBuild.Setting() == "true" {
+			config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
+		}
 	}
 
 	// The below enrichers handle SAC being off or on.

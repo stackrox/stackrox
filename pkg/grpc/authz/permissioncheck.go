@@ -8,11 +8,11 @@ import (
 
 // GetPermissionMapForServiceMethod retrieves a PermissionMap of all permissions checked
 // by a service method.
-func GetPermissionMapForServiceMethod(srv interface{}, fullMethodName string) permissions.PermissionMap {
+func GetPermissionMapForServiceMethod(srv interface{}, fullMethodName string) []permissions.ResourceWithAccess {
 	if authFunc, ok := srv.(grpc_auth.ServiceAuthFuncOverride); ok {
 		ctx, perms := permissioncheck.ContextWithPermissionCheck()
 		_, _ = authFunc.AuthFuncOverride(ctx, fullMethodName)
-		return perms
+		return *perms
 	}
 	return nil
 }

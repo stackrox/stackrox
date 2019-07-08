@@ -30,6 +30,8 @@ var (
 		user.With(permissions.View(resources.Image)): {
 			"/v1.ImageService/GetImage",
 			"/v1.ImageService/ListImages",
+		},
+		user.With(permissions.View(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/InvalidateScanAndRegistryCaches",
 		},
 	})

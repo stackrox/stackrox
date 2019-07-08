@@ -43,17 +43,15 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	return p.checkRole(id.Role())
 }
 
-func (p *permissionChecker) collectPermissions(pc permissions.PermissionMap) error {
-	for _, perm := range p.requiredPermissions {
-		pc.Add(perm.Resource, perm.Access)
-	}
+func (p *permissionChecker) collectPermissions(pc *[]permissions.ResourceWithAccess) error {
+	*pc = append(*pc, p.requiredPermissions...)
 	return permissioncheck.ErrPermissionCheckOnly
 }
 
 func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootSC sac.ScopeChecker) error {
 	globalScopes := make([][]sac.ScopeKey, 0)
 	for _, perm := range p.requiredPermissions {
-		if !checkSACPermissionsForResource(perm.Resource) {
+		if !perm.Resource.PerformLegacyAuthForSAC() {
 			continue
 		}
 		globalScopes = append(globalScopes, []sac.ScopeKey{
@@ -82,8 +80,4 @@ func (p *permissionChecker) checkRole(role *storage.Role) error {
 		}
 	}
 	return nil
-}
-
-func checkSACPermissionsForResource(md permissions.ResourceMetadata) bool {
-	return md.Scope == permissions.GlobalScope && !md.NoLegacyAuthForSAC
 }

@@ -30,7 +30,7 @@ func (d *datastoreImpl) UpsertWhitelistResults(ctx context.Context, results *sto
 
 func (d *datastoreImpl) GetWhitelistResults(ctx context.Context, deploymentID string) (*storage.ProcessWhitelistResults, error) {
 	pWResults, err := d.storage.GetWhitelistResults(deploymentID)
-	if err != nil {
+	if err != nil || pWResults == nil {
 		return nil, err
 	}
 
