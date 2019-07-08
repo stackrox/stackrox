@@ -21,7 +21,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
 
-${KUBE_COMMAND} get namespace stackrox > /dev/null || ${KUBE_COMMAND} create namespace stackrox
+if ! ${KUBE_COMMAND} get namespace stackrox > /dev/null; then
+  ${KUBE_COMMAND} create -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    openshift.io/node-selector: ""
+  name: stackrox
+EOF
+fi
 
 if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox > /dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.ImageRegistry}}")"

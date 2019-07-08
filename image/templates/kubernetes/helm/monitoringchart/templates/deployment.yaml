@@ -24,6 +24,28 @@ spec:
       {{if .Values.nodeSelector -}}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
+      {{else if eq .Values.clusterType "OPENSHIFT_CLUSTER"}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 25
+              preference:
+                matchLabels:
+                  node-role.kubernetes.io/compute: "true"
+            - weight: 75
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: NotIn
+                    values:
+                    - "true"
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: NotIn
+                    values:
+                    - "true"
       {{- end}}
       serviceAccount: monitoring
       containers:

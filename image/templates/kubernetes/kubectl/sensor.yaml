@@ -21,6 +21,29 @@ spec:
       labels:
         app: sensor
     spec:
+      {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 25
+              preference:
+                matchLabels:
+                  node-role.kubernetes.io/compute: "true"
+            - weight: 75
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: NotIn
+                    values:
+                    - "true"
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: NotIn
+                    values:
+                    - "true"
+      {{- end}}
       securityContext:
         runAsUser: 4000
         fsGroup: 4000

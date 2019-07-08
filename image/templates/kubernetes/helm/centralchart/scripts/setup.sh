@@ -19,7 +19,17 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 KUBE_COMMAND=${KUBE_COMMAND:-{{.K8sConfig.Command}}}
 
-${KUBE_COMMAND} get namespace stackrox > /dev/null || ${KUBE_COMMAND} create namespace stackrox
+if ! ${KUBE_COMMAND} get namespace stackrox > /dev/null; then
+  ${KUBE_COMMAND} create -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    openshift.io/node-selector: ""
+  name: stackrox
+EOF
+fi
+
 if ! ${KUBE_COMMAND} get crd/applications.app.k8s.io &>/dev/null; then
   ${KUBE_COMMAND} create -f "$DIR/app-crd.yaml.txt"
 fi
