@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2/google"
@@ -71,7 +71,8 @@ func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
 		return errors.Wrap(err, "request")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	return c.handleResponse(resp)
+
+	return notifiers.CreateError("Cloud SCC", resp)
 }
 
 func (c *Config) request(finding *findings.Finding, id string) (*http.Request, error) {
@@ -86,18 +87,6 @@ func (c *Config) request(finding *findings.Finding, id string) (*http.Request, e
 		return nil, errors.Wrap(err, "build")
 	}
 	return req, nil
-}
-
-func (c *Config) handleResponse(r *http.Response) error {
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		c.Logger.Warnf("Response decoding failed: %s", err)
-	}
-	c.Logger.Debugf("Cloud SCC response: %d %s; %s", r.StatusCode, r.Status, string(b))
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("Unexpected response code %d: %s", r.StatusCode, string(b))
-	}
-	return nil
 }
 
 func (c *Config) getTokenSource(ctx context.Context) (*google.DefaultCredentials, error) {

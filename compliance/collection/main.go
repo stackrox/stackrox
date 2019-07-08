@@ -101,7 +101,7 @@ func main() {
 			return err
 		},
 		retry.Tries(5), // 5 attempts.
-		retry.BetweenAttempts(func() { // Sleep for a second between attempts
+		retry.BetweenAttempts(func(_ int) { // Sleep for a second between attempts
 			log.Info("Sleeping between attempts to post compliance data")
 			time.Sleep(time.Second)
 		}),

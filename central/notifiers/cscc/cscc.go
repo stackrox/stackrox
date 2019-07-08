@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -178,7 +179,17 @@ func (c *cscc) AlertNotify(alert *storage.Alert) error {
 		}.Map(),
 	}
 
-	return c.client.CreateFinding(finding, findingID)
+	return retry.WithRetry(
+		func() error {
+			return c.client.CreateFinding(finding, findingID)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
 }
 
 func newCSCC(protoNotifier *storage.Notifier, clusters clusterDatastore.DataStore) (*cscc, error) {

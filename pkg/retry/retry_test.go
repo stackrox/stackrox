@@ -33,7 +33,7 @@ func (suite *RetryTestSuite) TestWithRetryable() {
 		OnFailedAttempts(func(e error) {
 			failCount = failCount + 1
 		}),
-		BetweenAttempts(func() {
+		BetweenAttempts(func(previousAttempt int) {
 			inBetweenCount = inBetweenCount + 1
 		})),
 	)
@@ -58,7 +58,7 @@ func (suite *RetryTestSuite) TestWithoutRetryable() {
 		OnFailedAttempts(func(e error) {
 			failCount = failCount + 1
 		}),
-		BetweenAttempts(func() {
+		BetweenAttempts(func(previousAttempt int) {
 			inBetweenCount = inBetweenCount + 1
 		})),
 	)
@@ -85,7 +85,7 @@ func (suite *RetryTestSuite) TestAlwaysRetryable() {
 		OnFailedAttempts(func(e error) {
 			failCount = failCount + 1
 		}),
-		BetweenAttempts(func() {
+		BetweenAttempts(func(previousAttempt int) {
 			inBetweenCount = inBetweenCount + 1
 		})),
 	)
@@ -109,7 +109,7 @@ func (suite *RetryTestSuite) TestLimitsTries() {
 		OnFailedAttempts(func(e error) {
 			failCount = failCount + 1
 		}),
-		BetweenAttempts(func() {
+		BetweenAttempts(func(previousAttempt int) {
 			inBetweenCount = inBetweenCount + 1
 		})),
 	)
@@ -136,7 +136,7 @@ func (suite *RetryTestSuite) TestAlwaysRetryableNoTries() {
 		OnFailedAttempts(func(e error) {
 			failCount = failCount + 1
 		}),
-		BetweenAttempts(func() {
+		BetweenAttempts(func(previousAttempt int) {
 			inBetweenCount = inBetweenCount + 1
 		})),
 	)

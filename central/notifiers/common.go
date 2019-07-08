@@ -2,9 +2,14 @@ package notifiers
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/retry"
 )
 
 const (
@@ -56,4 +61,23 @@ func GetLabelValue(alert *storage.Alert, labelKey, def string) string {
 		return value
 	}
 	return def
+}
+
+// CreateError formats a returned HTTP response's status into an error, or nil.
+func CreateError(notifier string, resp *http.Response) error {
+	if resp.StatusCode == 503 { // Error codes we want to retry go here.
+		return retry.MakeRetryable(wrapError(notifier, resp))
+	}
+	return wrapError(notifier, resp)
+}
+
+func wrapError(notifier string, resp *http.Response) error {
+	if !httputil.Is2xxStatusCode(resp.StatusCode) {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrapf(err, "Error reading %s response body", notifier)
+		}
+		return fmt.Errorf("Received error response from %s: %d %s", notifier, resp.StatusCode, string(body))
+	}
+	return nil
 }

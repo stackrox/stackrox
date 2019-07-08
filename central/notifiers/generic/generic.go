@@ -7,22 +7,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -48,7 +45,7 @@ type generic struct {
 
 // AlertNotify takes in an alert and generates the Slack message
 func (g *generic) AlertNotify(alert *storage.Alert) error {
-	return g.postMessage(alert, alertMessageKey)
+	return g.postMessageWithRetry(alert, alertMessageKey)
 }
 
 // YamlNotify takes in a yaml file and generates the Slack message
@@ -57,7 +54,7 @@ func (g *generic) NetworkPolicyYAMLNotify(yaml string, clusterName string) error
 		Cluster: clusterName,
 		Yaml:    yaml,
 	}
-	return g.postMessage(msg, networkPolicyMessageKey)
+	return g.postMessageWithRetry(msg, networkPolicyMessageKey)
 }
 
 func validateConfig(generic *storage.Generic) error {
@@ -195,22 +192,28 @@ func (g *generic) postMessage(message proto.Message, msgKey string) error {
 		return err
 	}
 
-	defer utils.IgnoreError(resp.Body.Close)
-	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errors.Wrap(err, "Error reading generic response body")
-		}
-		return fmt.Errorf("Generic error response: %d %s", resp.StatusCode, string(body))
-	}
-	return nil
+	return notifiers.CreateError("webhook", resp)
+}
+
+func (g *generic) postMessageWithRetry(message proto.Message, msgKey string) error {
+	return retry.WithRetry(
+		func() error {
+			return g.postMessage(message, msgKey)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
 }
 
 func (g *generic) SendAuditMessage(msg *v1.Audit_Message) error {
 	if !g.AuditLoggingEnabled() {
 		return nil
 	}
-	return g.postMessage(msg, auditMessageKey)
+	return g.postMessageWithRetry(msg, auditMessageKey)
 }
 
 func (g *generic) AuditLoggingEnabled() bool {

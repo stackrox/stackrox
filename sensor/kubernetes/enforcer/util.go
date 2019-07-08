@@ -55,7 +55,7 @@ func withReasonableRetry(f func() error) error {
 	return retry.WithRetry(f,
 		retry.Tries(5),
 		retry.OnlyRetryableErrors(),
-		retry.BetweenAttempts(func() {
+		retry.BetweenAttempts(func(_ int) {
 			time.Sleep(500 * time.Millisecond)
 		}),
 		retry.OnFailedAttempts(func(e error) {

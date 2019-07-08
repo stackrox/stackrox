@@ -13,10 +13,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -64,7 +65,18 @@ func (s *splunk) postAlert(alert *storage.Alert) error {
 	// More details on HEC limitation: https://developers.perfectomobile.com/display/TT/Splunk+-+Configure+HTTP+Event+Collector
 	// Check section on "Increasing the Event Data Truncate Limit"
 	notifiers.PruneAlert(clonedAlert, int(s.conf.GetTruncate()))
-	return s.sendHTTPPayload(clonedAlert)
+
+	return retry.WithRetry(
+		func() error {
+			return s.sendHTTPPayload(clonedAlert)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
 }
 
 func getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
@@ -83,7 +95,18 @@ func (s *splunk) SendAuditMessage(msg *v1.Audit_Message) error {
 	if !s.AuditLoggingEnabled() {
 		return nil
 	}
-	return s.sendHTTPPayload(msg)
+
+	return retry.WithRetry(
+		func() error {
+			return s.sendHTTPPayload(msg)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
 }
 
 func (s *splunk) AuditLoggingEnabled() bool {
@@ -122,14 +145,9 @@ func (s *splunk) sendHTTPPayload(msg proto.Message) error {
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != http.StatusOK {
-		body, err := httputil.ReadResponse(resp)
-		if err != nil {
-			return fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
-		}
-		return fmt.Errorf("HTTP Status Code: %d - %s", resp.StatusCode, string(body))
-	}
-	return nil
+	defer utils.IgnoreError(resp.Body.Close)
+
+	return notifiers.CreateError("Splunk", resp)
 }
 
 func init() {

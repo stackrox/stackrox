@@ -27,7 +27,7 @@ func OnFailedAttempts(onFailure func(error)) OptionsModifier {
 
 // BetweenAttempts allows you to run any function in between different attempts, such as a backoff wait.
 // BetweenAttempts and OnFailedAttempts are called at the same logical step, so you can use either or both.
-func BetweenAttempts(between func()) OptionsModifier {
+func BetweenAttempts(between func(previousAttemptNumber int)) OptionsModifier {
 	return func(o *retryOptions) { o.between = between }
 }
 
@@ -38,7 +38,7 @@ type retryOptions struct {
 	function  func() error
 	onFailure func(error)
 	canRetry  func(error) bool
-	between   func()
+	between   func(int)
 	tries     int
 }
 
@@ -52,7 +52,7 @@ func (t *retryOptions) do() (err error) {
 					t.onFailure(err)
 				}
 				if t.between != nil {
-					t.between()
+					t.between(i)
 				}
 			} else {
 				// If we can't retry then return.

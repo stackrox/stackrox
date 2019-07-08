@@ -182,7 +182,7 @@ func (c *commandHandlerImpl) killScrapeWithRetry(name, scrapeID string) error {
 			return c.orchestrator.Kill(name)
 		},
 		retry.Tries(5),
-		retry.BetweenAttempts(func() {
+		retry.BetweenAttempts(func(_ int) {
 			time.Sleep(time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) {

@@ -4,20 +4,18 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -43,8 +41,22 @@ func (s *sumologic) AlertNotify(alert *storage.Alert) error {
 	clonedAlert := protoutils.CloneStorageAlert(alert)
 	notifiers.PruneAlert(clonedAlert, 10000)
 
+	return retry.WithRetry(
+		func() error {
+			return s.sendProtoPayload(clonedAlert)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
+}
+
+func (s *sumologic) sendProtoPayload(msg proto.Message) error {
 	var buf bytes.Buffer
-	if err := new(jsonpb.Marshaler).Marshal(&buf, clonedAlert); err != nil {
+	if err := new(jsonpb.Marshaler).Marshal(&buf, msg); err != nil {
 		return err
 	}
 	return s.sendPayload(&buf)
@@ -61,16 +73,9 @@ func (s *sumologic) sendPayload(buf io.Reader) error {
 	if err != nil {
 		return err
 	}
-
 	defer utils.IgnoreError(resp.Body.Close)
-	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errors.Wrap(err, "Error reading Sumo Logic response body")
-		}
-		return fmt.Errorf("Received error response from Sumo Logic: %d %s", resp.StatusCode, string(body))
-	}
-	return nil
+
+	return notifiers.CreateError("Sumo Logic", resp)
 }
 
 func validateConfig(sumologic *storage.SumoLogic) error {

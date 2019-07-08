@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"text/template"
@@ -13,9 +12,10 @@ import (
 
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -115,7 +115,17 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 		return err
 	}
 
-	return postMessage(webhook, jsonPayload)
+	return retry.WithRetry(
+		func() error {
+			return postMessage(webhook, jsonPayload)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
 }
 
 // YamlNotify takes in a yaml file and generates the Slack message
@@ -163,8 +173,17 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 		return err
 	}
 
-	return postMessage(webhook, jsonPayload)
-
+	return retry.WithRetry(
+		func() error {
+			return postMessage(webhook, jsonPayload)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
 }
 
 func newSlack(notifier *storage.Notifier) (*slack, error) {
@@ -191,7 +210,17 @@ func (s *slack) Test() error {
 		return err
 	}
 
-	return postMessage(webhook, jsonPayload)
+	return retry.WithRetry(
+		func() error {
+			return postMessage(webhook, jsonPayload)
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
 }
 
 func postMessage(url string, jsonPayload []byte) (err error) {
@@ -206,19 +235,9 @@ func postMessage(url string, jsonPayload []byte) (err error) {
 		log.Errorf("Error posting to slack: %v", err)
 		return
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		var bytes []byte
-		bytes, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Errorf("Error reading slack response body: %v", err)
-			return
-		}
-		log.Errorf("Slack error response: %v %v", resp.StatusCode, string(bytes))
-	}
-	return
+	defer utils.IgnoreError(resp.Body.Close)
+
+	return notifiers.CreateError("Slack", resp)
 }
 
 // GetAttachmentColor returns the corresponding color for each severity.

@@ -99,7 +99,7 @@ func (k *kubernetesOrchestrator) waitForDesired(name string) (int, error) {
 			return nil
 		},
 		retry.Tries(30),
-		retry.BetweenAttempts(func() {
+		retry.BetweenAttempts(func(_ int) {
 			time.Sleep(2 * time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) {
