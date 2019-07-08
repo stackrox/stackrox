@@ -117,7 +117,7 @@ func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage
 func (ds *datastoreImpl) GetDeployments(ctx context.Context) ([]*storage.Deployment, error) {
 	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
-	} else if !ok {
+	} else if ok {
 		return ds.deploymentStore.GetDeployments()
 	}
 
