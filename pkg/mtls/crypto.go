@@ -7,9 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"math/big"
-	"strconv"
 	"time"
 
 	"github.com/cloudflare/cfssl/config"
@@ -40,6 +38,16 @@ const (
 	beforeGracePeriod = 1 * time.Hour
 
 	certLifetime = 365 * 24 * time.Hour
+)
+
+var (
+	// serialMax is the max value to be used with `rand.Int` to obtain a `*big.Int` with 64 bits of random data
+	// (i.e., 1 << 64).
+	serialMax = func() *big.Int {
+		max := big.NewInt(1)
+		max.Lsh(max, 64)
+		return max
+	}()
 )
 
 func init() {
@@ -167,7 +175,7 @@ func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (cert *IssuedCert, e
 		return returnErr(err, "signer creation")
 	}
 
-	serial, err := randomSerial()
+	serial, err := RandomSerial()
 	if err != nil {
 		return returnErr(err, "serial generation")
 	}
@@ -185,7 +193,7 @@ func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (cert *IssuedCert, e
 		Subject: &cfsigner.Subject{
 			CN:           subj.CN(),
 			Names:        []cfcsr.Name{subj.Name()},
-			SerialNumber: strconv.FormatInt(serial, 10),
+			SerialNumber: serial.String(),
 		},
 	}
 	certBytes, err := s.Sign(req)
@@ -226,7 +234,7 @@ func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
 		return returnErr(err, "signer creation")
 	}
 
-	serial, err := randomSerial()
+	serial, err := RandomSerial()
 	if err != nil {
 		return returnErr(err, "serial generation")
 	}
@@ -244,7 +252,7 @@ func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
 		Subject: &cfsigner.Subject{
 			CN:           subj.CN(),
 			Names:        []cfcsr.Name{subj.Name()},
-			SerialNumber: strconv.FormatInt(serial, 10),
+			SerialNumber: serial.String(),
 		},
 	}
 	certBytes, err := s.Sign(req)
@@ -261,18 +269,23 @@ func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
 	}, nil
 }
 
-func randomSerial() (int64, error) {
-	serial, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+// RandomSerial returns a new integer that can be used as a certificate serial number (i.e., it is positive and contains
+// 64 bits of random data).
+func RandomSerial() (*big.Int, error) {
+	serial, err := rand.Int(rand.Reader, serialMax)
 	if err != nil {
-		return 0, errors.Wrap(err, "serial number generation")
+		return nil, errors.Wrap(err, "serial number generation")
 	}
-	return serial.Int64(), nil
+	serial.Add(serial, big.NewInt(1)) // Serial numbers must be positive.
+	return serial, nil
 }
 
-func generateIdentity(subj Subject, serial int64) *storage.ServiceIdentity {
+func generateIdentity(subj Subject, serial *big.Int) *storage.ServiceIdentity {
 	return &storage.ServiceIdentity{
-		Id:     subj.Identifier,
-		Type:   subj.ServiceType,
-		Serial: serial,
+		Id:   subj.Identifier,
+		Type: subj.ServiceType,
+		Srl: &storage.ServiceIdentity_SerialStr{
+			SerialStr: serial.String(),
+		},
 	}
 }

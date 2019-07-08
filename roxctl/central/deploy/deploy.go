@@ -36,9 +36,14 @@ func generateJWTSigningKey(fileMap map[string][]byte) error {
 
 func generateMTLSFiles(fileMap map[string][]byte) (caCert, caKey []byte, err error) {
 	// Add MTLS files
+	serial, err := mtls.RandomSerial()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "could not generate a serial number")
+	}
 	req := csr.CertificateRequest{
-		CN:         "StackRox Certificate Authority",
-		KeyRequest: csr.NewBasicKeyRequest(),
+		CN:           "StackRox Certificate Authority",
+		KeyRequest:   csr.NewBasicKeyRequest(),
+		SerialNumber: serial.String(),
 	}
 	caCert, _, caKey, err = initca.New(&req)
 	if err != nil {

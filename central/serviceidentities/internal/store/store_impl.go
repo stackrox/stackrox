@@ -40,7 +40,7 @@ func (b *storeImpl) upsertServiceIdentity(serviceIdentity *storage.ServiceIdenti
 		if err != nil {
 			return err
 		}
-		err = b.Put(serviceIdentityKey(serviceIdentity.Serial), bytes)
+		err = b.Put(serviceIdentityKey(serviceIdentity), bytes)
 		return err
 	})
 }
@@ -51,6 +51,10 @@ func (b *storeImpl) AddServiceIdentity(serviceIdentity *storage.ServiceIdentity)
 	return b.upsertServiceIdentity(serviceIdentity)
 }
 
-func serviceIdentityKey(serial int64) []byte {
-	return []byte(strconv.FormatInt(serial, 10))
+func serviceIdentityKey(serviceID *storage.ServiceIdentity) []byte {
+	serialStr := serviceID.GetSerialStr()
+	if serialStr == "" {
+		serialStr = strconv.FormatInt(serviceID.GetSerial(), 10)
+	}
+	return []byte(serialStr)
 }

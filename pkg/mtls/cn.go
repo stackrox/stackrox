@@ -30,9 +30,11 @@ func IdentityFromCert(cert requestinfo.CertInfo) Identity {
 // V1 returns the identity represented as a v1 API ServiceIdentity.
 func (id Identity) V1() *storage.ServiceIdentity {
 	return &storage.ServiceIdentity{
-		Serial: id.Serial.Int64(),
-		Type:   id.Subject.ServiceType,
-		Id:     id.Subject.Identifier,
+		Srl: &storage.ServiceIdentity_SerialStr{
+			SerialStr: id.Serial.String(),
+		},
+		Type: id.Subject.ServiceType,
+		Id:   id.Subject.Identifier,
 	}
 }
 
