@@ -10,7 +10,7 @@
         "apollo-link-context": "^1.0.17",
         "apollo-link-error": "^1.1.10",
         "apollo-link-http": "^1.5.14",
-        "axios": "^0.18.0",
+        "axios": "^0.18.1",
         "computed-style-to-inline-style": "^3.0.0",
         "cytoscape": "^3.5.0",
         "cytoscape-cose-bilkent": "^4.0.0",
