@@ -13,6 +13,7 @@ import Role from './Entity/Role';
 import Control from './Entity/Control';
 import Image from './Entity/Image';
 import Policy from './Entity/Policy';
+import Subject from './Entity/Subject';
 
 const entityComponentMap = {
     [entityTypes.SERVICE_ACCOUNT]: ServiceAccount,
@@ -25,7 +26,8 @@ const entityComponentMap = {
     [entityTypes.CONTROL]: Control,
     [entityTypes.NODE]: Node,
     [entityTypes.IMAGE]: Image,
-    [entityTypes.POLICY]: Policy
+    [entityTypes.POLICY]: Policy,
+    [entityTypes.SUBJECT]: Subject
 };
 
 const Entity = ({ entityType, entityId, ...rest }) => {

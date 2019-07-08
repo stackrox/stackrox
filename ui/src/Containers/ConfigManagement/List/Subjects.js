@@ -1,8 +1,9 @@
 import React from 'react';
-import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
-import QUERY from 'queries/subject';
+import { SUBJECTS_QUERY } from 'queries/subject';
+import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+
 import { sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import queryService from 'modules/queryService';
@@ -87,7 +88,7 @@ const Subjects = ({ match, location, selectedRowId, onRowClick, query, className
     return (
         <List
             className={className}
-            query={QUERY}
+            query={SUBJECTS_QUERY}
             variables={variables}
             entityType={entityTypes.SUBJECT}
             tableColumns={tableColumns}
@@ -101,5 +102,10 @@ const Subjects = ({ match, location, selectedRowId, onRowClick, query, className
 
 Subjects.propTypes = entityListPropTypes;
 Subjects.defaultProps = entityListDefaultprops;
+
+Subjects.defaultProps = {
+    className: '',
+    selectedRowId: null
+};
 
 export default Subjects;

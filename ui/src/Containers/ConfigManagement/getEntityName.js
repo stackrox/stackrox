@@ -15,7 +15,14 @@ const entityNameKeyMap = {
         return `${data.results.name} - ${data.results.description}`;
     },
     [entityTypes.IMAGE]: data => resolvePath(data, 'image.name.fullName'),
-    [entityTypes.POLICY]: data => resolvePath(data, 'policy.name')
+    [entityTypes.POLICY]: data => resolvePath(data, 'policy.name'),
+    [entityTypes.SUBJECT]: data => {
+        if (!data || !data.clusters.length) return null;
+        const result = data.clusters.reduce((acc, curr) => {
+            return curr.subject.subject.name;
+        }, null);
+        return result;
+    }
 };
 
 const getEntityName = (entityType, data) => {

@@ -12,6 +12,7 @@ import { POLICY, POLICIES } from 'queries/policy';
 import { CONTROL_QUERY as CONTROL } from 'queries/controls';
 import { IMAGE, IMAGES } from 'queries/image';
 import { NODES_QUERY as NODES, NODE_QUERY as NODE } from 'queries/node';
+import { SUBJECTS_QUERY as SUBJECTS, SUBJECT_QUERY as SUBJECT } from 'queries/subject';
 
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,
@@ -23,7 +24,8 @@ export const entityQueryMap = {
     [entityTypes.NODE]: NODE,
     [entityTypes.CONTROL]: CONTROL,
     [entityTypes.IMAGE]: IMAGE,
-    [entityTypes.POLICY]: POLICY
+    [entityTypes.POLICY]: POLICY,
+    [entityTypes.SUBJECT]: SUBJECT
 };
 
 export const entityListQueryMap = {
@@ -37,5 +39,7 @@ export const entityListQueryMap = {
     [entityTypes.POLICY]: POLICIES,
     [entityTypes.IMAGE]: IMAGES,
     [entityTypes.NODE]: NODES,
-    [entityTypes.NAMESPACE]: NAMESPACES
+    [entityTypes.NAMESPACE]: NAMESPACES,
+    [entityTypes.POLICY]: POLICIES,
+    [entityTypes.SUBJECT]: SUBJECTS
 };

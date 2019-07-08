@@ -122,7 +122,14 @@ const entityTabsMap = {
             text: pluralize(entityLabels[entityTypes.NODE])
         }
     ],
-    [entityTypes.POLICY]: []
+    [entityTypes.POLICY]: [],
+    [entityTypes.SUBJECT]: [
+        {
+            group: TAB_GROUPS.RBAC_CONFIG,
+            value: entityTypes.ROLE,
+            text: pluralize(entityLabels[entityTypes.ROLE])
+        }
+    ]
 };
 
 const EntityTabs = ({ entityType, entityListType, pageEntityId, onClick }) => {
