@@ -11,5 +11,6 @@ import (
 // OptionsMap is exposed for e2e test
 var OptionsMap = blevesearch.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil)).
 	Add(search.Cluster, mappings.OptionsMap.MustGet(search.Cluster.String())).
+	Add(search.ClusterID, mappings.OptionsMap.MustGet(search.ClusterID.String())).
 	Add(search.Namespace, mappings.OptionsMap.MustGet(search.Namespace.String())).
 	Add(search.Label, mappings.OptionsMap.MustGet(search.Label.String()))

@@ -31,6 +31,8 @@ func init() {
 		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
 		schema.AddExtraResolver("Cluster", `subjects: [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID!`),
+		schema.AddExtraResolver("Cluster", `images: [Image!]!`),
+		schema.AddExtraResolver("Cluster", `imageCount: Int!`),
 		schema.AddExtraResolver("Cluster", `policies: [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount: Int!`),
 		schema.AddExtraResolver("Cluster", `secrets: [Secret!]!`),
@@ -271,6 +273,26 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 	}
 
 	return wrapSubject(resolver.data.GetId(), subject), nil
+}
+
+func (resolver *clusterResolver) Images(ctx context.Context) ([]*imageResolver, error) {
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	return resolver.root.wrapListImages(resolver.root.ImageDataStore.SearchListImages(ctx, q))
+}
+
+func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) {
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	results, err := resolver.root.ImageDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 func (resolver *clusterResolver) Policies(ctx context.Context) ([]*policyResolver, error) {

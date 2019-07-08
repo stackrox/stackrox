@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -16,7 +17,9 @@ func init() {
 		schema.AddQuery("namespaces(query: String): [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
-		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
+		schema.AddExtraResolver("Namespace", `complianceResults(query: String): [ControlResult!]!`),
+		schema.AddExtraResolver("Namespace", `images(clusterId : ID!): [Image!]!`),
+		schema.AddExtraResolver("Namespace", `imageCount(clusterId : ID!): Int!`),
 	)
 }
 
@@ -72,4 +75,26 @@ func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args r
 	})
 
 	return *output, nil
+}
+
+func (resolver *namespaceResolver) Images(ctx context.Context, args struct{ ClusterID graphql.ID }) ([]*imageResolver, error) {
+	if err := readNamespaces(ctx); err != nil {
+		return nil, err
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
+	return resolver.root.wrapListImages(resolver.root.ImageDataStore.SearchListImages(ctx, q))
+}
+
+func (resolver *namespaceResolver) ImageCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+	if err := readNamespaces(ctx); err != nil {
+		return 0, err
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
+	results, err := resolver.root.ImageDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
