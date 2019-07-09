@@ -59,6 +59,10 @@ func NewUnionRole(roles []*storage.Role) *storage.Role {
 	globalAccess := storage.Access_NO_ACCESS
 	resourceToAccess := make(map[string]storage.Access)
 	for _, role := range roles {
+		if role.GetGlobalAccess() == storage.Access_READ_WRITE_ACCESS {
+			return role
+		}
+
 		if role.GetGlobalAccess() > globalAccess {
 			globalAccess = role.GetGlobalAccess()
 		}

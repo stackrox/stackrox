@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [25.0]
+### Changed
+- Removed _DebugMetrics_ resource.
+- Only users with _Admin_ role can access `/debug` endpoint. 
+  _Note: This is also applicable with authorization plugin for scoped access control enabled._
+
+
 ## [24.0]
 ### Changed
 - Queries against time fields involving a duration have now flipped directionality to a more intuitive way.

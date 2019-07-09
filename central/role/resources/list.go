@@ -21,7 +21,6 @@ var (
 	ComplianceRunSchedule = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
 	ComplianceRuns        = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
 	Config                = newResourceMetadata("Config", permissions.GlobalScope)
-	DebugMetrics          = newResourceMetadata("DebugMetrics", permissions.GlobalScope)
 	DebugLogs             = newResourceMetadata("DebugLogs", permissions.GlobalScope)
 	Deployment            = newResourceMetadata("Deployment", permissions.NamespaceScope)
 	Detection             = newResourceMetadata("Detection", permissions.GlobalScope)

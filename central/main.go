@@ -64,6 +64,7 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
@@ -565,7 +566,7 @@ func debugRoutes() []routes.CustomRoute {
 	for r, h := range routes.DebugRoutes {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         r,
-			Authorizer:    authzUser.With(permissions.View(resources.DebugMetrics)),
+			Authorizer:    authzUser.WithRole(role.Admin),
 			ServerHandler: h,
 			Compression:   true,
 		})

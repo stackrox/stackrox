@@ -184,6 +184,7 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 
 	// Permissions should be the two roles' permissions combined.
 	unionRole := &storage.Role{
+		Name:         "TeamAwesome",
 		GlobalAccess: storage.Access_READ_WRITE_ACCESS,
 	}
 	s.Equal(unionRole, role, "since a single role was mapped, that role should be returned")
