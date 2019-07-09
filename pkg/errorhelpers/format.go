@@ -29,12 +29,22 @@ func NewErrorListWithErrors(start string, errors []error) *ErrorList {
 	return errorList
 }
 
-// AddError adds the passes error to the list of errors if it is not nil
+// AddError adds the passed error to the list of errors if it is not nil
 func (e *ErrorList) AddError(err error) {
 	if err == nil {
 		return
 	}
 	e.errors = append(e.errors, err.Error())
+}
+
+// AddErrors adds the non-nil errors in the given slice to the list of errors.
+func (e *ErrorList) AddErrors(errs ...error) {
+	for _, err := range errs {
+		if err == nil {
+			continue
+		}
+		e.errors = append(e.errors, err.Error())
+	}
 }
 
 // AddWrap is a convenient wrapper around `AddError(errors.Wrap(err, msg))`.
@@ -64,10 +74,14 @@ func (e *ErrorList) AddStrings(errs ...string) {
 
 // ToError returns an error if there were errors added or nil
 func (e *ErrorList) ToError() error {
-	if len(e.errors) > 0 {
+	switch len(e.errors) {
+	case 0:
+		return nil
+	case 1:
+		return fmt.Errorf("%s error: %s", e.start, e.errors[0])
+	default:
 		return fmt.Errorf("%s errors: [%s]", e.start, strings.Join(e.errors, ", "))
 	}
-	return nil
 }
 
 // String converts the list to a string, returning empty if no errors were added.

@@ -1,6 +1,6 @@
 package env
 
 var (
-	// PlaintextPort specifies the non-TLS port, if any.
-	PlaintextPort = RegisterSetting("ROX_PLAINTEXT_PORT", AllowEmpty())
+	// PlaintextEndpoints specifies non-TLS endpoints to expose, if any.
+	PlaintextEndpoints = RegisterSetting("ROX_PLAINTEXT_ENDPOINTS", AllowEmpty())
 )

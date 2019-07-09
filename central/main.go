@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -391,12 +390,12 @@ func startGRPCServer(factory serviceFactory) {
 	)
 
 	if features.PlaintextExposure.Enabled() {
-		var plaintextEndpoint string
-		portName := env.PlaintextPort.Setting()
-		if portName != "" {
-			plaintextEndpoint = fmt.Sprintf(":%s", portName)
+		if err := config.PlaintextEndpoints.AddFromParsedSpec(env.PlaintextEndpoints.Setting()); err != nil {
+			log.Panicf("Could not parse plaintext endpoints specification: %v", err)
 		}
-		config.PlaintextEndpoint = plaintextEndpoint
+		if err := config.PlaintextEndpoints.Validate(); err != nil {
+			log.Panicf("Could not validate plaintext endpoints specificaton: %v", err)
+		}
 	}
 
 	server := pkgGRPC.NewAPI(config)

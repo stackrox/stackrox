@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -256,9 +257,19 @@ func Command() *cobra.Command {
 	)
 
 	if features.PlaintextExposure.Enabled() {
-		c.PersistentFlags().VarPF(flags.ForSetting(env.PlaintextPort), "plaintext-port", "", "The port to use for plaintext (unencrypted) exposure")
+		c.PersistentFlags().VarPF(
+			flags.ForSettingWithOptions(env.PlaintextEndpoints, flags.SettingVarOpts{
+				Validator: func(spec string) error {
+					cfg := grpc.EndpointsConfig{}
+					if err := cfg.AddFromParsedSpec(spec); err != nil {
+						return err
+					}
+					return cfg.Validate()
+				},
+			}), "plaintext-endpoints", "",
+			"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list.")
 		utils.Must(
-			c.PersistentFlags().SetAnnotation("plaintext-port", flags.NoInteractiveKey, []string{"true"}))
+			c.PersistentFlags().SetAnnotation("plaintext-endpoints", flags.NoInteractiveKey, []string{"true"}))
 	}
 
 	c.AddCommand(interactive())

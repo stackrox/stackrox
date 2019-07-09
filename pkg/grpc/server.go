@@ -42,6 +42,16 @@ var (
 	log = logging.LoggerForModule()
 )
 
+type server interface {
+	Serve(l net.Listener) error
+}
+
+type serverAndListener struct {
+	srv      server
+	listener net.Listener
+	kind     string
+}
+
 // APIService is the service interface
 type APIService interface {
 	RegisterServiceServer(server *grpc.Server)
@@ -79,7 +89,7 @@ type Config struct {
 	InsecureLocalEndpoint string
 	PublicEndpoint        string
 
-	PlaintextEndpoint string
+	PlaintextEndpoints EndpointsConfig
 }
 
 // NewAPI returns an API object.
@@ -257,33 +267,73 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		log.Panicf("Could not listen on public API endpoint: %v", err)
 	}
 
-	var plaintextListener net.Listener
-	if a.config.PlaintextEndpoint != "" {
-		plaintextListener, err = net.Listen("tcp", a.config.PlaintextEndpoint)
-		if err != nil {
-			log.Panicf("Could not listen on plaintext API endpoint %q: %v", a.config.PlaintextEndpoint, err)
-		}
-	}
+	httpHandler := a.muxer(localConn)
 
-	srv := &http.Server{
-		Addr:      listener.Addr().String(),
-		Handler:   wireOrJSONMuxer(grpcServer, a.muxer(localConn)),
+	muxedSrv := &http.Server{
+		Handler:   wireOrJSONMuxer(grpcServer, httpHandler),
 		ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		TLSConfig: tlsConf,
 	}
 
-	log.Infof("gRPC server started on %s", srv.Addr)
+	serverAndListeners := []serverAndListener{
+		{
+			srv:      muxedSrv,
+			listener: listener,
+			kind:     "TLS-enabled HTTP/gRPC",
+		},
+	}
+
+	for _, plaintextEndpoint := range a.config.PlaintextEndpoints.MultiplexedEndpoints {
+		plaintextListener, err := net.Listen("tcp", plaintextEndpoint)
+		if err != nil {
+			log.Panicf("Could not listen on plaintext API endpoint %q: %v", plaintextEndpoint, err)
+		}
+		serverAndListeners = append(serverAndListeners, serverAndListener{
+			srv:      muxedSrv,
+			listener: plaintextListener,
+			kind:     "Plaintext multiplexed HTTP/gRPC",
+		})
+	}
+
+	if len(a.config.PlaintextEndpoints.HTTPEndpoints) > 0 {
+		httpSrv := &http.Server{
+			Handler:  httpHandler,
+			ErrorLog: golog.New(httpErrorLogger{}, "", golog.LstdFlags),
+		}
+		for _, plaintextEndpoint := range a.config.PlaintextEndpoints.HTTPEndpoints {
+			plaintextListener, err := net.Listen("tcp", plaintextEndpoint)
+			if err != nil {
+				log.Panicf("Could not listen on plaintext HTTP API endpoint %q: %v", plaintextEndpoint, err)
+			}
+			serverAndListeners = append(serverAndListeners, serverAndListener{
+				srv:      httpSrv,
+				listener: plaintextListener,
+				kind:     "Plaintext HTTP",
+			})
+		}
+	}
+
+	for _, plaintextEndpoint := range a.config.PlaintextEndpoints.GRPCEndpoints {
+		plaintextListener, err := net.Listen("tcp", plaintextEndpoint)
+		if err != nil {
+			log.Panicf("Could not listen on plaintext GRPC endpoint %q: %v", plaintextEndpoint, err)
+		}
+		serverAndListeners = append(serverAndListeners, serverAndListener{
+			srv:      grpcServer,
+			listener: plaintextListener,
+			kind:     "Plaintext gRPC",
+		})
+	}
+
 	if startedSig != nil {
 		startedSig.Signal()
 	}
 
-	errC := make(chan error, 2)
+	errC := make(chan error, len(serverAndListeners))
 
-	go serveAsync(srv, listener, errC)
-
-	if plaintextListener != nil {
-		go serveAsync(srv, plaintextListener, errC)
-		log.Infof("Plaintext listener started on %s", plaintextListener.Addr())
+	for _, srvAndListener := range serverAndListeners {
+		log.Infof("%s server listening on %s", srvAndListener.kind, srvAndListener.listener.Addr())
+		go serveAsync(srvAndListener.srv, srvAndListener.listener, errC)
 	}
 
 	if err := <-errC; err != nil {
@@ -301,7 +351,7 @@ func wireOrJSONMuxer(grpcServer *grpc.Server, httpHandler http.Handler) http.Han
 	})
 }
 
-func serveAsync(srv *http.Server, listener net.Listener, errC chan<- error) {
+func serveAsync(srv server, listener net.Listener, errC chan<- error) {
 	if err := srv.Serve(listener); err != nil {
 		errC <- err
 	}
