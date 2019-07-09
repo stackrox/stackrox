@@ -30,8 +30,8 @@ const GaugeWithDetail = ({ data, history }) => {
 
     const failingSelected = selectedData && selectedData.failing.selected;
     const passingSelected = selectedData && selectedData.passing.selected;
-    const totalPassing = data.reduce((acc, datum) => acc + datum.passing.value, 0);
-    const totalFailing = data.reduce((acc, datum) => acc + datum.failing.value, 0);
+    const totalPassing = data.reduce((acc, datum) => acc + datum.passing.controls, 0);
+    const totalFailing = data.reduce((acc, datum) => acc + datum.failing.controls, 0);
     const totalChecks = totalPassing + totalFailing;
     const pctPassing = totalChecks ? Math.round((totalPassing / totalChecks) * 100) : 0;
     const pctFailing = totalChecks ? Math.round((totalFailing / totalChecks) * 100) : 0;
@@ -46,8 +46,8 @@ const GaugeWithDetail = ({ data, history }) => {
         const returnData = [];
 
         [...inputData].forEach((d, index) => {
-            const { value: passingValue } = d.passing;
-            const { value: failingValue } = d.failing;
+            const { controls: passingValue } = d.passing;
+            const { controls: failingValue } = d.failing;
             const radius0 = radius + 0.1;
             const radius1 = radius + 0.2;
             radius = radius1;
@@ -87,8 +87,8 @@ const GaugeWithDetail = ({ data, history }) => {
     function getHint() {
         if (!hoveredCell) return null;
         const { passing, failing, title } = hoveredCell;
-        const { value: passingValue, controls: passingControls } = passing;
-        const { value: failingValue, controls: failingControls } = failing;
+        const { controls: passingValue, controls: passingControls } = passing;
+        const { controls: failingValue, controls: failingControls } = failing;
         const totalValue = passingValue + failingValue;
         const totalControls = passingControls + failingControls;
         const passingPercentage = Math.round((passingValue / totalValue) * 100);

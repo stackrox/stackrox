@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import Gauge from 'Components/visuals/GaugeWithDetail';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
-import { standardShortLabels } from 'messages/standards';
+import { standardShortLabels, standardLabels } from 'messages/standards';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import URLService from 'modules/URLService';
@@ -70,7 +70,7 @@ function processData(
             .query({
                 [searchParam]: {
                     [complianceStateKey]: 'Pass',
-                    standard: standardShortLabels[standard.id]
+                    standard: standardLabels[standard.id]
                 }
             })
             .url();
@@ -80,7 +80,7 @@ function processData(
             .query({
                 [searchParam]: {
                     [complianceStateKey]: 'Fail',
-                    standard: standardShortLabels[standard.id]
+                    standard: standardLabels[standard.id]
                 }
             })
             .url();
