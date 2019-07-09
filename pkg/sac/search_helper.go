@@ -181,16 +181,15 @@ func newClusterNSScopesBasedResultsChecker(opts map[search.FieldLabel]*v1.Search
 }
 
 func (c *clusterNSScopesBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, result search.Result) TryAllowedResult {
-	clusterNSScopeVals, _ := result.Fields[c.clusterNSScopesValuePath].([]interface{})
+	clusterNSScopeStrs := blevesearch.GetValuesFromFields(c.clusterNSScopesValuePath, result.Fields)
 
 	tryAllowedRes := Deny
-	for _, clusterNSScopeVal := range clusterNSScopeVals {
-		str, _ := clusterNSScopeVal.(string)
-		if str == "" {
+	for _, clusterNSScopeStr := range clusterNSScopeStrs {
+		if clusterNSScopeStr == "" {
 			continue
 		}
 
-		scopeKey := ParseClusterNSScopeString(str)
+		scopeKey := ParseClusterNSScopeString(clusterNSScopeStr)
 		switch resourceSC.TryAllowed(scopeKey...) {
 		case Allow:
 			return Allow

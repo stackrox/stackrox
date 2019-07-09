@@ -62,3 +62,9 @@ principal.authProvider.type == "api-token" && \
         scope.attributes.cluster.name == "remote" && \
         scope.attributes.namespace == "test-qa1" \
     )
+
+principal.authProvider.type == "api-token" && \
+	principal.attributes["name"][0] == "kubeSystemImagesToken" && \
+	scope.verb == "view" && \
+	scope.noun == "Image" && \
+	scope.attributes.namespace == "kube-system"

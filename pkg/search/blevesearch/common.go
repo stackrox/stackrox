@@ -146,7 +146,8 @@ type searchFieldAndValue struct {
 	highlight bool
 }
 
-func getValuesFromFields(field string, m map[string]interface{}) []string {
+// GetValuesFromFields returns the values from the given field as a string slice.
+func GetValuesFromFields(field string, m map[string]interface{}) []string {
 	val, ok := m[field]
 	if !ok {
 		return nil
@@ -229,7 +230,7 @@ func resolveMatchFieldQuery(ctx bleveContext, index bleve.Index, category v1.Sea
 	// Reference set is the overall references so we can dedupe if there are many results for the same top level id
 	refSet := make(map[string]struct{})
 	for _, r := range results {
-		fieldValues := getValuesFromFields(relationshipField.dstField, r.Fields)
+		fieldValues := GetValuesFromFields(relationshipField.dstField, r.Fields)
 		if len(fieldValues) == 0 {
 			continue
 		}

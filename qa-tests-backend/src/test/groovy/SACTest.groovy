@@ -1,5 +1,8 @@
 import static Services.waitForViolation
 
+import groups.BAT
+import org.junit.experimental.categories.Category
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
@@ -18,6 +21,7 @@ import services.SummaryService
 import spock.lang.Shared
 import spock.lang.Unroll
 
+@Category(BAT)
 class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
@@ -220,9 +224,11 @@ class SACTest extends BaseSpecification {
         createSecret(DEPLOYMENT_QA2.namespace)
         useToken("listSecretsToken")
         def result = SecretService.listSecrets()
+
         then:
         "Verify no secrets are returned by ListSecrets"
         assert result.secretsCount > 0
+
         cleanup:
         "Cleanup"
         BaseService.useBasicAuth()
@@ -237,12 +243,15 @@ class SACTest extends BaseSpecification {
         def query = getAllQuery()
         useToken(tokenName)
         def result = SearchService.search(query)
+
         then:
         "Verify the specified number of results are returned"
         assert result.resultsCount == numResults
+
         cleanup:
         "Cleanup"
         BaseService.useBasicAuth()
+
         where:
         "Data inputs are: "
         tokenName                | category                        | numResults
@@ -260,9 +269,11 @@ class SACTest extends BaseSpecification {
         def query = getAllQuery()
         useToken(tokenName)
         def result = SearchService.search(query)
+
         then:
         "Verify >= the specified number of results are returned"
         assert result.resultsCount >= minReturned
+
         cleanup:
         "Cleanup"
         BaseService.useBasicAuth()
@@ -418,5 +429,55 @@ class SACTest extends BaseSpecification {
         "noAccess"              | true    | true
         "searchNamespacesToken" | false   | true
         "allAccessToken"        | false   | false
+    }
+
+    @Unroll
+    def "Verify search with SAC and token #tokenName yields the same number of results as restricted search"() {
+        when:
+        "Searching for categories ${categories} in namespace ${namespace} with basic auth"
+        def restrictedQuery = SSOC.RawSearchRequest.newBuilder()
+            .addAllCategories(categories)
+            .setQuery("Cluster:remote+Namespace:${namespace}")
+            .build()
+        BaseService.useBasicAuth()
+        def restrictedWithBasicAuthCount = SearchService.search(restrictedQuery).resultsCount
+
+        and:
+        "Searching for categories ${categories} in namespace ${namespace} with a token with all access"
+        useToken("allAccessToken")
+        def restrictedWithAllAccessCount = SearchService.search(restrictedQuery).resultsCount
+
+        and:
+        "Searching for categories ${categories} in all NS with token ${tokenName} restricted to namespace ${namespace}"
+        useToken(tokenName)
+        def unrestrictedQuery = SSOC.RawSearchRequest.newBuilder()
+                .addAllCategories(categories)
+                .setQuery("Cluster:remote")
+                .build()
+        def unrestrictedWithSACCount = SearchService.search(unrestrictedQuery).resultsCount
+
+        then:
+        "The number of results should be the same for everything"
+
+        println "With basic auth + restricted query: ${restrictedWithBasicAuthCount}"
+        println "With all access token + restricted query: ${restrictedWithAllAccessCount}"
+        println "With SAC restricted token + unrestricted query: ${unrestrictedWithSACCount}"
+
+        assert restrictedWithBasicAuthCount == restrictedWithAllAccessCount
+        assert restrictedWithAllAccessCount == unrestrictedWithSACCount
+
+        cleanup:
+        "Cleanup"
+        BaseService.useBasicAuth()
+
+        where:
+        "Data inputs are: "
+        tokenName                | namespace      | categories
+        "noAccess"               | "non_existent" | [SSOC.SearchCategory.NAMESPACES, SSOC.SearchCategory.IMAGES,
+                                                     SSOC.SearchCategory.DEPLOYMENTS]
+        "kubeSystemImagesToken"  | "kube-system"  | [SSOC.SearchCategory.IMAGES]
+        "searchNamespacesToken"  | "test-qa1"     | [SSOC.SearchCategory.NAMESPACES]
+        "searchDeploymentsToken" | "test-qa1"     | [SSOC.SearchCategory.DEPLOYMENTS]
+        "searchImagesToken"      | "test-qa1"     | [SSOC.SearchCategory.IMAGES]
     }
 }
