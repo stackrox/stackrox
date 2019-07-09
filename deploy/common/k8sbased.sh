@@ -29,6 +29,7 @@ function launch_central {
 
     local EXTRA_ARGS=()
     local EXTRA_DOCKER_ARGS=()
+    local STORAGE_ARGS=()
 
 	local use_docker=1
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
@@ -37,6 +38,9 @@ function launch_central {
 
     add_args() {
     	EXTRA_ARGS+=("$@")
+    }
+    add_storage_args() {
+        STORAGE_ARGS+=("$@")
     }
     add_maybe_file_arg() {
     	if [[ -f "$1" ]]; then
@@ -82,16 +86,29 @@ function launch_central {
     pkill -f "$ORCH_CMD"'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f "$ORCH_CMD"'.*port-forward.*' || true
 
+    if [[ "${STORAGE_CLASS}" == "faster" ]]; then
+        kubectl apply -f "${k8s_dir}/ssd-storageclass.yaml"
+    fi
+
+    if [[ "${STORAGE}" == "none" && -n $STORAGE_CLASS ]]; then
+        echo "Invalid deploy script config. STORAGE is set to none, but STORAGE_CLASS is set"
+        exit 1
+    fi
+
+    if [[ -n $STORAGE_CLASS ]]; then
+        add_storage_args "--storage-class=$STORAGE_CLASS"
+    fi
+
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
         rm -rf central-bundle "${k8s_dir}/central-bundle"
-        roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}"
+        roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
         docker run --rm "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$MAIN_IMAGE" \
-        	central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" > "${k8s_dir}/central.zip"
+        	central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" "${STORAGE_ARGS[@]}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
 
