@@ -75,6 +75,14 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 	}
 	image.Metadata = metadata
 	e.metadataCache.Add(ref, metadata)
+	if image.GetId() == "" {
+		if digest := image.Metadata.GetV2().GetDigest(); digest != "" {
+			e.metadataCache.Add(digest, metadata)
+		}
+		if digest := image.Metadata.GetV1().GetDigest(); digest != "" {
+			e.metadataCache.Add(digest, metadata)
+		}
+	}
 	return true
 }
 
@@ -118,5 +126,13 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	}
 	image.Scan = scan
 	e.scanCache.Add(ref, scan)
+	if image.GetId() == "" {
+		if digest := image.GetMetadata().GetV2().GetDigest(); digest != "" {
+			e.scanCache.Add(digest, scan)
+		}
+		if digest := image.GetMetadata().GetV1().GetDigest(); digest != "" {
+			e.scanCache.Add(digest, scan)
+		}
+	}
 	return true
 }
