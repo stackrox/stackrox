@@ -14,9 +14,10 @@ spec:
       labels:
         app: webhookserver
     spec:
-      serviceAccount: webhookserver
+      imagePullSecrets:
+      - name: stackrox
       containers:
-      - image: stackrox/webhookserver:1.0
+      - image: stackrox/webhookserver:1.1
         name: webhookserver
         command: ["/webhookserver"]
         imagePullPolicy: IfNotPresent
@@ -27,6 +28,17 @@ spec:
           limits:
             memory: "100Mi"
             cpu: "100m"
+        volumeMounts:
+        - name: certtmp
+          mountPath: /tmp/certs/
+          readOnly: false
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
+      volumes:
+      - name: certtmp
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

@@ -1232,11 +1232,12 @@
   revision = "52856608eab5d2703730450e3440d2765766e200"
 
 [[projects]]
-  digest = "1:1753c713177f229c5224a6dd4c6a67ee3087968b6bccc9bcb7cfc89b3dcec676"
+  digest = "1:7b519cb6a975d2a6758dcab920f0f83491216dc792ef5a64bd09515abca26918"
   name = "github.com/stackrox/default-authz-plugin"
   packages = ["pkg/payload"]
   pruneopts = "NUT"
-  revision = "9418288b1ab00ce3c682f0c0879693bebcbbe3d2"
+  revision = "070801f52e6eaa15dd99b673d1b0eeb424206852"
+  version = "1.0"
 
 [[projects]]
   branch = "master"

@@ -481,7 +481,7 @@ webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bazel-bin/webhookserver/linux_amd64_pure_stripped/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
-	docker build -t stackrox/webhookserver:1.0 -f webhookserver/Dockerfile webhookserver
+	docker build -t stackrox/webhookserver:1.1 -f webhookserver/Dockerfile webhookserver
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image

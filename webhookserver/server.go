@@ -119,7 +119,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func tlsServer() {
-	err := http.ListenAndServeTLS(":8443", "server.crt", "server.key", http.HandlerFunc(rootHandler))
+	err := http.ListenAndServeTLS(":8443", "/tmp/certs/server.crt", "/tmp/certs/server.key", http.HandlerFunc(rootHandler))
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
@@ -132,10 +132,10 @@ func nonTLSServer() {
 }
 
 func writeCerts() {
-	if err := ioutil.WriteFile("server.crt", []byte(serverCRT), 0777); err != nil {
+	if err := ioutil.WriteFile("/tmp/certs/server.crt", []byte(serverCRT), 0700); err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile("server.key", []byte(serverKey), 0777); err != nil {
+	if err := ioutil.WriteFile("/tmp/certs/server.key", []byte(serverKey), 0700); err != nil {
 		panic(err)
 	}
 }

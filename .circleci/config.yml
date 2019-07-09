@@ -555,6 +555,20 @@ commands:
           command: |
             source .circleci/create-cluster.sh && wait-for-cluster
 
+  deploy-webhook-server:
+    steps:
+      - run:
+          name: Deploy Webhook server
+          command: |
+            ./scripts/ci/create-webhookserver.sh
+
+  deploy-authz-plugin:
+    steps:
+      - run:
+          name: Deploy Default Authorization Plugin
+          command: |
+            ./scripts/ci/create-scopedaccessserver.sh
+
 jobs:
 
   provision-cluster-k8s-tests:
@@ -1102,6 +1116,9 @@ jobs:
       - *waitForAPI
       - *waitForSensorK8s
 
+      - deploy-webhook-server
+      - deploy-authz-plugin
+
       - *restoreGradle
       - run:
           name: QA Automation Platform Part 1
@@ -1109,8 +1126,6 @@ jobs:
             export CLUSTER=K8S
             export HOSTNAME="${API_HOSTNAME}"
             export PORT="${API_PORT}"
-            ./scripts/ci/create-webhookserver.sh kubectl
-            ./scripts/ci/create-scopedaccessserver.sh kubectl
             if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test
@@ -1198,6 +1213,9 @@ jobs:
       - *waitForAPI
       - *waitForSensorK8s
 
+      - deploy-webhook-server
+      - deploy-authz-plugin
+
       - *restoreGradle
       - run:
           name: QA Automation Platform Part 1
@@ -1205,8 +1223,6 @@ jobs:
             export CLUSTER=K8S
             export HOSTNAME="${API_HOSTNAME}"
             export PORT="${API_PORT}"
-            ./scripts/ci/create-webhookserver.sh kubectl
-            ./scripts/ci/create-scopedaccessserver.sh kubectl
             if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test
@@ -1591,6 +1607,9 @@ jobs:
       - *waitForAPI
       - *waitForSensorK8s
 
+      - deploy-webhook-server
+      - deploy-authz-plugin
+
       - *restoreGradle
       - run:
           name: QA Automation Platform Part 1
@@ -1601,8 +1620,6 @@ jobs:
               export CLUSTER=OPENSHIFT
               export HOSTNAME=localhost
               export PORT=${LOCAL_PORT}
-              ./scripts/ci/create-webhookserver.sh oc
-              ./scripts/ci/create-scopedaccessserver.sh oc
               if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
                 echo "On master, running all QA tests..."
                 make -C qa-tests-backend test
@@ -1784,6 +1801,9 @@ jobs:
       - *waitForAPI
       - *waitForSensorK8s
 
+      - deploy-webhook-server
+      - deploy-authz-plugin
+
       - *restoreGradle
       - run:
           name: QA Automation Platform
@@ -1791,8 +1811,6 @@ jobs:
             export CLUSTER=K8S
             export HOSTNAME=localhost
             export PORT=${LOCAL_PORT}
-            ./scripts/ci/create-webhookserver.sh kubectl
-            ./scripts/ci/create-scopedaccessserver.sh kubectl
             make -C qa-tests-backend test
 
       - *storeQATestResults
