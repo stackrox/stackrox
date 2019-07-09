@@ -941,6 +941,8 @@ jobs:
       - LOAD_BALANCER: lb
       - ROX_SCOPED_ACCESS_CONTROL: true
       - ROX_CLIENT_CA_AUTH: true
+      - ROX_PLAINTEXT_EXPOSURE: true
+      - ROX_PLAINTEXT_ENDPOINTS: "http@8080,grpc@8081"
 
     steps:
       - checkout
@@ -986,6 +988,43 @@ jobs:
           command: |
             ./tests/yamls/roxctl_verification.sh
             make -C tests
+
+      - run:
+          name: Deploy NGINX proxies
+          command: |
+            export PROXY_CERTS_DIR="$(mktemp -d)"
+            scripts/ci/proxy/deploy.sh
+            cci-export PROXY_CERTS_DIR "$PROXY_CERTS_DIR"
+
+      - run:
+          name: Port-forward to NGINX proxies
+          command: |
+            nohup kubectl -n proxies port-forward svc/nginx-proxy-plain-http 10080:80 </dev/null >/dev/null 2>&1 &
+            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-multiplexed 10443:443 </dev/null >/dev/null 2>&1 &
+            sleep 1
+
+      - run:
+          name: Test HTTP access to plain HTTP proxy
+          command: |
+            version="$(curl -f 'http://localhost:10080/v1/metadata' | jq -r '.version')"
+            echo "Got version ${version} from server"
+            [[ "$version" == "$(make tag)" ]]
+
+      - run:
+          name: Test HTTPS access to multiplexed TLS proxy
+          command: |
+            version="$(
+              curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
+                --resolve "central-proxy.stackrox.local:10443:127.0.0.1" \
+                -f \
+                'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.version')"
+            echo "Got version ${version} from server"
+            [[ "$version" == "$(make tag)" ]]
+
+      - run:
+          name: Test roxctl access to multiplexed TLS proxy
+          command: |
+            roxctl -e "localhost:10443" -p "$ROX_PASSWORD" central debug log
 
       - *restoreUI
       - *determineWhetherToRunUIDevServer

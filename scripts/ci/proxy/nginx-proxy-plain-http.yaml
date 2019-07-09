@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-proxy-plain-http
+  namespace: proxies
+  labels:
+    app: nginx-proxy-plain-http
+    stackrox-proxies/central: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-proxy-plain-http
+  template:
+    metadata:
+      namespace: proxies
+      labels:
+        app: nginx-proxy-plain-http
+        stackrox-proxies/central: "true"
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.17.1
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/nginx/conf.d/
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: nginx-proxy-plain-http-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: proxies
+  name: nginx-proxy-plain-http
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-proxy-plain-http
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http
