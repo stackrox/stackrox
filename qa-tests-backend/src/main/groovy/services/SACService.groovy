@@ -1,6 +1,7 @@
 package services
 
 import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.ScopedAccessControlServiceGrpc
 import io.stackrox.proto.api.v1.ScopedAccessControlServiceOuterClass
 import io.stackrox.proto.storage.AuthzPlugin
@@ -23,6 +24,10 @@ class SACService extends BaseService {
                                 )
                         ).build()
         )
+    }
+
+    static getAuthPluginConfig() {
+        return getSACService().getAuthzPluginConfigs(EmptyOuterClass.Empty.newBuilder().build())
     }
 
     static deleteAuthPluginConfig(String pluginConfigID) {

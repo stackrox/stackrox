@@ -1,3 +1,4 @@
+# Sample GVal rules file
 principal.authProvider.type != "api-token"
 principal.authProvider.type == "api-token" && \
     principal.attributes["name"][0] == "deployments-access-token" && \
@@ -8,4 +9,56 @@ principal.authProvider.type == "api-token" && \
         scope.attributes.namespace =~ "test-qa2" \
         || \
         scope.attributes.cluster.name == "local" \
+    )
+
+principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "allAccessToken"
+
+principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "getSummaryCountsToken" && \
+    scope.verb == "view" && \
+    ( \
+        scope.attributes.cluster.name == "remote" && \
+        scope.attributes.namespace == "test-qa1" \
+    )
+
+principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "listSecretsToken" && \
+    scope.verb == "view" && \
+    scope.noun == "Secret"
+
+principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "searchAlertsToken" && \
+    scope.verb == "view" && \
+    ( \
+        scope.noun == "Alert" && \
+        scope.attributes.cluster.name == "remote" && \
+        scope.attributes.namespace == "test-qa1" \
+    )
+
+principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "searchImagesToken" && \
+    scope.verb == "view" && \
+    ( \
+        scope.noun == "Image" && \
+        scope.attributes.cluster.name == "remote" && \
+        scope.attributes.namespace == "test-qa1" \
+    )
+
+principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "searchDeploymentsToken" && \
+    scope.verb == "view" && \
+    ( \
+        scope.noun == "Deployment" && \
+        scope.attributes.cluster.name == "remote" && \
+        scope.attributes.namespace == "test-qa1" \
+    )
+
+principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "searchNamespacesToken" && \
+    scope.verb == "view" && \
+    ( \
+        scope.noun == "Namespace" && \
+        scope.attributes.cluster.name == "remote" && \
+        scope.attributes.namespace == "test-qa1" \
     )

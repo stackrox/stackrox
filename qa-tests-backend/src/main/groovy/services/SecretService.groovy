@@ -3,6 +3,7 @@ package services
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.SecretServiceGrpc
+import io.stackrox.proto.api.v1.SecretServiceOuterClass
 import io.stackrox.proto.storage.SecretOuterClass
 import io.stackrox.proto.storage.SecretOuterClass.ListSecret
 
@@ -46,6 +47,10 @@ class SecretService extends BaseService {
         }
         println "Failed to add secret ${id} after waiting ${waitTime * intervalSeconds} seconds"
         return null
+    }
+
+    static SecretServiceOuterClass.ListSecretsResponse listSecrets() {
+        return getSecretClient().listSecrets()
     }
 
 }
