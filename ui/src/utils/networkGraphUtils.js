@@ -1,3 +1,5 @@
+import featureFlags from 'utils/featureFlags';
+
 export const nonIsolated = node => node.nonIsolatedIngress && node.nonIsolatedEgress;
 
 /**
@@ -24,7 +26,8 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
             targetNS === 'stackrox' ||
             isBetweenNonIsolated(source, target) ||
             !!(networkEdgeMap[key] && networkEdgeMap[key].allowed);
-        const isDisallowed = (key, link) => isActive(key) && !isAllowed(key, link);
+        const isDisallowed = (key, link) =>
+            featureFlags.showDisallowedConnections && isActive(key) && !isAllowed(key, link);
 
         // For nodes that are egress non-isolated, add outgoing edges to ingress non-isolated nodes, as long as the pair
         // of nodes is not fully non-isolated. This is a compromise to make the non-isolation highlight only apply in

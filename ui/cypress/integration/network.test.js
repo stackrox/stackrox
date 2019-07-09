@@ -45,10 +45,6 @@ describe('Network page', () => {
             .eq(2)
             .children()
             .should('have.class', 'icon-node');
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(3)
-            .children()
-            .should('have.class', 'icon-node');
 
         cy.get(networkPageSelectors.legend.namespaces)
             .eq(0)
@@ -62,10 +58,6 @@ describe('Network page', () => {
             .eq(2)
             .children()
             .should('have.attr', 'alt', 'namespace-connection');
-        cy.get(networkPageSelectors.legend.namespaces)
-            .eq(3)
-            .children()
-            .should('have.attr', 'alt', 'namespace-disallowed-connection');
 
         cy.get(networkPageSelectors.legend.connections)
             .eq(0)
@@ -77,10 +69,6 @@ describe('Network page', () => {
             .should('have.attr', 'alt', 'allowed-connection');
         cy.get(networkPageSelectors.legend.connections)
             .eq(2)
-            .children()
-            .should('have.attr', 'alt', 'disallowed-connection');
-        cy.get(networkPageSelectors.legend.connections)
-            .eq(3)
             .children()
             .should('have.class', 'icon-ingress-egress');
     });

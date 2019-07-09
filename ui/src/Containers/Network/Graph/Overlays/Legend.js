@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 import LegendTile from 'Components/LegendTile';
+import featureFlags from 'utils/featureFlags';
 
 const LegendContent = ({ isOpen, toggleLegend }) => {
     if (!isOpen) return null;
@@ -27,11 +28,13 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                         tooltip="Non-isolated deployment (all connections allowed)"
                         type="font"
                     />
-                    <LegendTile
-                        name="disallowed-deployment"
-                        tooltip="Disallowed deployment (no connections allowed)"
-                        type="font"
-                    />
+                    {featureFlags.showDisallowedConnections && (
+                        <LegendTile
+                            name="disallowed-deployment"
+                            tooltip="Disallowed deployment (no connections allowed)"
+                            type="font"
+                        />
+                    )}
                 </div>
                 <div className="flex border-b border-base-400" data-test-id="namespace-legend">
                     <LegendTile name="namespace" tooltip="Namespace" type="svg" />
@@ -45,20 +48,24 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                         tooltip="Namespace connection"
                         type="svg"
                     />
-                    <LegendTile
-                        name="namespace-disallowed-connection"
-                        tooltip="Active but disallowed namespace connection"
-                        type="svg"
-                    />
+                    {featureFlags.showDisallowedConnections && (
+                        <LegendTile
+                            name="namespace-disallowed-connection"
+                            tooltip="Active but disallowed namespace connection"
+                            type="svg"
+                        />
+                    )}
                 </div>
                 <div className="flex border-b border-base-400" data-test-id="connection-legend">
                     <LegendTile name="active-connection" tooltip="Active connection" type="svg" />
                     <LegendTile name="allowed-connection" tooltip="Allowed connection" type="svg" />
-                    <LegendTile
-                        name="disallowed-connection"
-                        tooltip="Active but disallowed connection"
-                        type="svg"
-                    />
+                    {featureFlags.showDisallowedConnections && (
+                        <LegendTile
+                            name="disallowed-connection"
+                            tooltip="Active but disallowed connection"
+                            type="svg"
+                        />
+                    )}
                     <LegendTile
                         name="namespace-egress-ingress"
                         tooltip="Namespace external egress/ingress traffic"
