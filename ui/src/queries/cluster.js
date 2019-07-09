@@ -1,8 +1,8 @@
 import gql from 'graphql-tag';
 
 export const CLUSTERS_QUERY = gql`
-    query list {
-        results: clusters {
+    query clusters($query: String) {
+        results: clusters(query: $query) {
             id
             name
             alertsCount
@@ -14,25 +14,21 @@ export const CLUSTERS_QUERY = gql`
                 id
                 name
             }
-        }
-    }
-`;
-
-export const CLUSTERS_SEARCH = gql`
-    query clusters($query: String) {
-        results: clusters(query: $query) {
-            id
-            name
-            alerts {
-                id
+            subjects {
+                id: name
             }
-            serviceAccounts {
-                id
-                name
+            status {
+                orchestratorMetadata {
+                    version
+                }
             }
-            k8sroles {
-                id
-                name
+            complianceResults {
+                resource {
+                    __typename
+                }
+                control {
+                    id
+                }
             }
         }
     }
@@ -68,6 +64,12 @@ export const CLUSTER_QUERY = gql`
             }
             serviceAccounts {
                 id
+            }
+            status {
+                orchestratorMetadata {
+                    version
+                    buildDate
+                }
             }
         }
     }

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { CONTROL_QUERY as QUERY } from 'queries/controls';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'modules/queryService';
-import { entityAcrossControlsColumns } from 'constants/listColumns';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -12,7 +11,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import ControlDetails from 'Components/ControlDetails';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Widget from 'Components/Widget';
-import TableWidget from './widgets/TableWidget';
+import EntityWithFailedControls, { getRelatedEntities } from './widgets/EntityWithFailedControls';
 
 const getVariables = (id, relatedEntityType) => {
     const query = {
@@ -26,26 +25,7 @@ const getVariables = (id, relatedEntityType) => {
     };
 };
 
-const getRelatedEntities = (data, entityType) => {
-    const relatedEntities = {};
-    let entityKey = 0;
-    data.results[0].aggregationKeys.forEach(({ scope }, idx) => {
-        if (scope === entityTypes[entityType]) entityKey = idx;
-    });
-    data.results.forEach(({ keys, numFailing }) => {
-        const { id, name, clusterName } = keys[entityKey];
-        if (!relatedEntities[id]) {
-            relatedEntities[id] = {
-                id,
-                name,
-                clusterName
-            };
-        } else if (numFailing) relatedEntities[id].passing = false;
-    });
-    return Object.values(relatedEntities);
-};
-
-const Control = ({ id, onRelatedEntityListClick }) => (
+const Control = ({ id, onRelatedEntityListClick, onRelatedEntityClick }) => (
     <Query query={QUERY} variables={getVariables(id, entityTypes.NODE)}>
         {({ loading, data }) => {
             if (loading) return <Loader />;
@@ -63,10 +43,6 @@ const Control = ({ id, onRelatedEntityListClick }) => (
                 interpretationText = ''
             } = entity;
             const relatedEntities = getRelatedEntities(entities, entityTypes.NODE);
-            const failingRelatedEntities = relatedEntities.filter(
-                relatedEntity => !relatedEntity.passing
-            );
-            const tableHeader = `${relatedEntities.length} nodes have failed across this control`;
             return (
                 <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
                     <CollapsibleSection title="Control Details">
@@ -97,14 +73,10 @@ const Control = ({ id, onRelatedEntityListClick }) => (
                     </CollapsibleSection>
                     <CollapsibleSection title="Control Findings">
                         <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                            <TableWidget
+                            <EntityWithFailedControls
                                 entityType={entityTypes.NODE}
-                                header={tableHeader}
-                                rows={failingRelatedEntities}
-                                noDataText="No Nodes"
-                                className="bg-base-100 w-full"
-                                columns={entityAcrossControlsColumns[entityTypes.NODE]}
-                                idAttribute="id"
+                                entities={entities}
+                                onRelatedEntityClick={onRelatedEntityClick}
                             />
                         </div>
                     </CollapsibleSection>
@@ -116,7 +88,8 @@ const Control = ({ id, onRelatedEntityListClick }) => (
 
 Control.propTypes = {
     id: PropTypes.string.isRequired,
-    onRelatedEntityListClick: PropTypes.func.isRequired
+    onRelatedEntityListClick: PropTypes.func.isRequired,
+    onRelatedEntityClick: PropTypes.func.isRequired
 };
 
 export default Control;

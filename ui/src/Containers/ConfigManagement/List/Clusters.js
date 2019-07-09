@@ -2,7 +2,7 @@ import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import { sortValueByLength } from 'sorters/sorters';
-import { CLUSTERS_SEARCH as QUERY } from 'queries/cluster';
+import { CLUSTERS_QUERY as QUERY } from 'queries/cluster';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
@@ -25,6 +25,12 @@ const buildTableColumns = (match, location) => {
             accessor: 'name'
         },
         {
+            Header: `K8S Version`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'status.orchestratorMetadata.version'
+        },
+        {
             Header: `Policies Violated`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
@@ -35,6 +41,49 @@ const buildTableColumns = (match, location) => {
                 if (!alertsCount) return 'No alerts';
                 return <LabelChip text={`${alertsCount} Alerts`} type="alert" />;
             }
+        },
+        {
+            Header: `CIS Controls`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'complianceResults',
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { complianceResults = [] } = original;
+                const filteredComplianceResults = complianceResults.filter(
+                    // eslint-disable-next-line
+                    result => result.resource.__typename === 'Cluster'
+                );
+                const { length } = filteredComplianceResults;
+                if (!length) {
+                    return <LabelChip text="No Matches" type="alert" />;
+                }
+                const url = URLService.getURL(match, location)
+                    .push(original.id)
+                    .push(entityTypes.CONTROL)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+            }
+        },
+        {
+            Header: `Users & Groups`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { length } = original.subjects;
+                if (!length) {
+                    return <LabelChip text="No Matches" type="alert" />;
+                }
+                const url = URLService.getURL(match, location)
+                    .push(original.id)
+                    .push(entityTypes.SUBJECT)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+            },
+            id: 'subjects',
+            accessor: d => d.subjects,
+            sortMethod: sortValueByLength
         },
         {
             Header: `Service Accounts`,

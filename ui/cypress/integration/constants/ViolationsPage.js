@@ -9,8 +9,8 @@ export const selectors = {
     panels: '[data-test-id="panel"]',
     sidePanel: {
         header: '[data-test-id="panel-header"]',
-        tabs: 'button.tab',
-        getTabByIndex: index => `button.tab:nth(${index})`
+        tabs: 'button[data-test-id="tab"]',
+        getTabByIndex: index => `button[data-test-id="tab"]:nth(${index})`
     },
     clusterTableHeader: '.rt-thead > .rt-tr > div:contains("Cluster")',
     viewDeploymentsButton: 'button:contains("View Deployments")',

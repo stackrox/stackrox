@@ -27,9 +27,7 @@ describe('Risk page', () => {
 
     it('should open the panel to view risk indicators', () => {
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
-        cy.get(RiskPageSelectors.panelTabs.riskIndicators)
-            .first()
-            .should('have.class', 'tab-active');
+        cy.get(RiskPageSelectors.panelTabs.riskIndicators);
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 

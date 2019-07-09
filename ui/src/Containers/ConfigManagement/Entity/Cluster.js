@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
 import entityTypes from 'constants/entityTypes';
+import { distanceInWordsToNow } from 'date-fns';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -9,6 +10,10 @@ import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
+import Tabs from 'Components/Tabs';
+import TabContent from 'Components/TabContent';
+import NodesWithFailedControls from './widgets/NodesWithFailedControls';
+import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
 
 const Cluster = ({ id, onRelatedEntityListClick }) => (
     <Query query={QUERY} variables={{ id }}>
@@ -22,25 +27,26 @@ const Cluster = ({ id, onRelatedEntityListClick }) => (
             };
 
             const {
-                admissionController = false,
-                centralApiEndpoint = 'N/A',
                 alertsCount = 'N/A',
                 nodes = [],
                 namespaces = [],
                 deployments = [],
                 subjects = [],
                 serviceAccounts = [],
-                k8sroles = []
+                k8sroles = [],
+                status: { orchestratorMetadata = null }
             } = entity;
+
+            const { buildDate, version = 'N/A' } = orchestratorMetadata;
 
             const metadataKeyValuePairs = [
                 {
-                    key: 'Admission Controller',
-                    value: admissionController.toString()
+                    key: 'K8s version',
+                    value: version
                 },
                 {
-                    key: 'Central API Endpoint',
-                    value: centralApiEndpoint
+                    key: 'Cluster age',
+                    value: buildDate ? distanceInWordsToNow(buildDate) : 'N/A'
                 }
             ];
             const metadataCounts = [{ value: alertsCount, text: 'Alerts' }];
@@ -92,6 +98,21 @@ const Cluster = ({ id, onRelatedEntityListClick }) => (
                                 value={k8sroles.length}
                                 onClick={onRelatedEntityListClickHandler(entityTypes.ROLE)}
                             />
+                        </div>
+                    </CollapsibleSection>
+                    <CollapsibleSection title="Cluster Findings">
+                        <div className="flex pdf-page pdf-stretch rounded relative rounded mb-4 ml-4 mr-4">
+                            <Tabs
+                                hasTabSpacing
+                                headers={[{ text: 'Policies' }, { text: 'CIS Controls' }]}
+                            >
+                                <TabContent>
+                                    <DeploymentsWithFailedPolicies />
+                                </TabContent>
+                                <TabContent>
+                                    <NodesWithFailedControls />
+                                </TabContent>
+                            </Tabs>
                         </div>
                     </CollapsibleSection>
                 </div>

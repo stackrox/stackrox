@@ -3,8 +3,8 @@ export const url = '/main/risk';
 export const selectors = {
     risk: 'nav.left-navigation li:contains("Risk") a',
     panelTabs: {
-        riskIndicators: 'button.tab:contains("Risk Indicators")',
-        deploymentDetails: 'button.tab:contains("Deployment Details")'
+        riskIndicators: 'button[data-test-id="tab"]:contains("Risk Indicators")',
+        deploymentDetails: 'button[data-test-id="tab"]:contains("Deployment Details")'
     },
     cancelButton: 'button[data-test-id="cancel"]',
     search: {

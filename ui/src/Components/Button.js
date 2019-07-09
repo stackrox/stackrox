@@ -37,7 +37,7 @@ const Button = ({
 };
 
 Button.propTypes = {
-    className: PropTypes.string.isRequired,
+    className: PropTypes.string,
     icon: PropTypes.element,
     text: PropTypes.string,
     textCondensed: PropTypes.string,
@@ -48,6 +48,7 @@ Button.propTypes = {
 };
 
 Button.defaultProps = {
+    className: '',
     icon: null,
     text: null,
     textCondensed: null,

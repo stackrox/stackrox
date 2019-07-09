@@ -11,6 +11,6 @@ export const selectors = {
         roleName: 'div[data-test-id="role-name"] input'
     },
     tabs: {
-        roles: '.tab:contains("Roles and Permissions")'
+        roles: '[data-test-id="tab"]:contains("Roles and Permissions")'
     }
 };

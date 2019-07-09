@@ -10,12 +10,13 @@ class Tabs extends Component {
         onTabClick: null,
         default: null,
         tabClass:
-            'tab tracking-wide bg-base-100 font-700 hover:text-base-600 px-2 px-3 py-3 text-base-500 text-sm uppercase',
+            'tracking-wide font-700 hover:text-base-600 px-2 text-base-500 text-sm uppercase border-r border-l border-t border-base-400 rounded-t-sm',
         tabActiveClass:
-            'tab tab-active tracking-wide bg-base-200 text-primary-700 font-700 px-2 text-sm uppercase px-3 py-3',
+            'tracking-wide bg-base-100 font-700 text-sm uppercase px-2 py-3 border-r border-l border-t border-base-400 rounded-t-sm',
         tabDisabledClass:
-            'tab disabled tracking-wide bg-base-100 font-700 px-2 px-3 py-3 text-base-500 text-sm uppercase',
-        tabContentBgColor: 'bg-base-200'
+            'disabled tracking-wide bg-base-100 font-700 px-2 px-3 py-3 text-base-500 text-sm uppercase',
+        tabContentBgColor: 'bg-base-200 border-r border-l border-b border-base-400',
+        hasTabSpacing: false
     };
 
     static propTypes = {
@@ -45,7 +46,8 @@ class Tabs extends Component {
         tabClass: PropTypes.string,
         tabActiveClass: PropTypes.string,
         tabDisabledClass: PropTypes.string,
-        tabContentBgColor: PropTypes.string
+        tabContentBgColor: PropTypes.string,
+        hasTabSpacing: PropTypes.bool
     };
 
     // If the number of tabs reduces to being less than the active index,
@@ -72,15 +74,17 @@ class Tabs extends Component {
 
     getHeaders() {
         const { activeIndex } = this.state;
-        return this.props.headers.map((header, i) => {
-            let tabClass = activeIndex === i ? this.props.tabActiveClass : this.props.tabClass;
-            if (header.disabled) tabClass = this.props.tabDisabledClass;
+        const { headers, tabActiveClass, tabClass, tabDisabledClass, hasTabSpacing } = this.props;
+        return headers.map((header, i) => {
+            let className = activeIndex === i ? tabActiveClass : tabClass;
+            if (header.disabled) className = tabDisabledClass;
             return (
                 <button
                     type="button"
-                    className={`${tabClass}`}
+                    className={`${className} ${hasTabSpacing && i !== 0 && 'ml-2'}`}
                     key={`${header.text}`}
                     onClick={this.tabClickHandler(header, i)}
+                    data-test-id="tab"
                 >
                     {header.text}
                 </button>
@@ -101,10 +105,8 @@ class Tabs extends Component {
 
     render() {
         return (
-            <div className="w-full h-full bg-base-100 flex flex-col">
-                <div
-                    className={`tab-row flex z-1 shadow-underline font-700 ${this.props.className}`}
-                >
+            <div className="w-full h-full flex flex-col">
+                <div className={`flex z-1 shadow-underline font-700 ${this.props.className}`}>
                     {this.getHeaders()}
                 </div>
                 <div className={`overflow-hidden h-full flex-1 ${this.props.tabContentBgColor}`}>

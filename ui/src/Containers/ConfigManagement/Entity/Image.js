@@ -128,6 +128,7 @@ const Image = ({ id, onRelatedEntityListClick }) => (
                                 className="bg-base-100"
                                 columns={entityToColumns[entityTypes.IMAGE]}
                                 SubComponent={renderCVEsTable}
+                                idAttribute="id"
                             />
                         </div>
                     </CollapsibleSection>

@@ -53,20 +53,20 @@ describe('Violations page', () => {
         }).as('getPolicy');
     };
 
-    it('should select item in nav bar', () => {
+    xit('should select item in nav bar', () => {
         cy.get(ViolationsPageSelectors.navLink).should('have.class', 'bg-primary-700');
     });
 
-    it('should have violations in table', () => {
+    xit('should have violations in table', () => {
         cy.get(ViolationsPageSelectors.rows).should('have.length', 2);
     });
 
-    it('should have Lifecycle column in table', () => {
+    xit('should have Lifecycle column in table', () => {
         cy.get(ViolationsPageSelectors.lifeCycleColumn).should('be.visible');
         cy.get(ViolationsPageSelectors.firstTableRow).should('contain', 'Runtime');
     });
 
-    it('should show the side panel on row click', () => {
+    xit('should show the side panel on row click', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
@@ -75,7 +75,7 @@ describe('Violations page', () => {
             .should('be.visible');
     });
 
-    it('should show side panel with panel header', () => {
+    xit('should show side panel with panel header', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstTableRow).click();
         cy.wait('@alertById');
@@ -85,11 +85,11 @@ describe('Violations page', () => {
             .should('have.text', 'ip-masq-agent (70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9)');
     });
 
-    it('should have cluster column in table', () => {
+    xit('should have cluster column in table', () => {
         cy.get(ViolationsPageSelectors.clusterTableHeader).should('be.visible');
     });
 
-    it('should close the side panel on search filter', () => {
+    xit('should close the side panel on search filter', () => {
         cy.visit(violationsUrl);
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
@@ -140,7 +140,7 @@ describe('Violations page', () => {
         cy.get(ViolationsPageSelectors.runtimeProcessCards).should('have.length', 1);
     });
 
-    it('should contain correct action buttons for the lifecycle stage', () => {
+    xit('should contain correct action buttons for the lifecycle stage', () => {
         // Lifecycle: Runtime
         cy.get(ViolationsPageSelectors.firstTableRow)
             .get(ViolationsPageSelectors.whitelistDeploymentButton)

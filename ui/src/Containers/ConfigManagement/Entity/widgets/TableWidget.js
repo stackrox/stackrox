@@ -25,6 +25,7 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
         <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
     );
     function onRowClick(row) {
+        if (SubComponent) return; // If the "SubComponent" exists, clicking on the row shouldn't do anything because the expander is used
         const id = resolvePath(row, idAttribute);
         const url = URLService.getURL(match, location)
             .push(entityType, id)
