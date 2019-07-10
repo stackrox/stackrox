@@ -5,6 +5,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/stackrox/rox/pkg/debughandler"
+	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -25,6 +27,10 @@ var (
 )
 
 func main() {
+	if devbuild.IsEnabled() {
+		debughandler.MustStartServerAsync("")
+	}
+
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
 	// Start the prometheus metrics server

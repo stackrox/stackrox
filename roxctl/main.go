@@ -15,6 +15,9 @@ import (
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
+
+	// Make sure devbuild setting is registered.
+	_ "github.com/stackrox/rox/pkg/devbuild"
 )
 
 func versionCommand() *cobra.Command {

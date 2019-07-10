@@ -93,6 +93,8 @@ import (
 	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/debughandler"
+	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
@@ -145,6 +147,10 @@ const (
 )
 
 func main() {
+	if devbuild.IsEnabled() {
+		debughandler.MustStartServerAsync("")
+	}
+
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	ensureDB()
 
@@ -282,7 +288,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 	}
 
-	if env.DevelopmentBuild.Setting() == "true" {
+	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
@@ -374,7 +380,7 @@ func startGRPCServer(factory serviceFactory) {
 	log.Infof("Scoped access control enabled: %v", features.ScopedAccessControl.Enabled())
 	if features.ScopedAccessControl.Enabled() {
 		// When sac is enabled, this helps validate that it is being use correctly. Should be removed with feature flag.
-		if env.DevelopmentBuild.Setting() == "true" {
+		if devbuild.IsEnabled() {
 			config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 		}
 	}

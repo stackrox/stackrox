@@ -3,7 +3,7 @@ package errorhelpers
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -14,7 +14,7 @@ var (
 // PanicOnDevelopment will panic if we are in a development build (environment variable will be injected by dev scripts)
 // It will not panic in a release version and instead log the error
 func PanicOnDevelopment(err error) {
-	if env.DevelopmentBuild.Setting() == "true" {
+	if devbuild.IsEnabled() {
 		panic(err)
 	}
 	log.Error(err)
