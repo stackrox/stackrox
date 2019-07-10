@@ -3,13 +3,13 @@ package slack
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"text/template"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -106,7 +106,7 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 	}
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
-		return fmt.Errorf("Could not marshal notification for alert %v", alert.Id)
+		return errors.Errorf("Could not marshal notification for alert %v", alert.Id)
 	}
 
 	webhookURL := notifiers.GetLabelValue(alert, s.GetLabelKey(), s.GetLabelDefault())
@@ -131,10 +131,10 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 // YamlNotify takes in a yaml file and generates the Slack message
 func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	if strings.Count(yaml, "\n") > 300 { // Looks like messages are truncated at ~340 lines.
-		return fmt.Errorf("yaml is too large (>300 lines) to send over slack")
+		return errors.Errorf("yaml is too large (>300 lines) to send over slack")
 	}
 	if len(yaml) > 35000 { // Slack hard limit is 40,000 characters, so leave 5,000 as a buffer to a round number.
-		return fmt.Errorf("yaml is too large (>35,000 characters) to send over slack")
+		return errors.Errorf("yaml is too large (>35,000 characters) to send over slack")
 	}
 
 	tagLine := fmt.Sprintf("*Network policy YAML to be applied on cluster '%s'*", clusterName)
@@ -164,7 +164,7 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	}
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
-		return fmt.Errorf("Could not marshal notification for yaml for cluster %s", clusterName)
+		return errors.Errorf("Could not marshal notification for yaml for cluster %s", clusterName)
 	}
 
 	webhookURL := s.GetLabelDefault()
@@ -223,17 +223,20 @@ func (s *slack) Test() error {
 	)
 }
 
-func postMessage(url string, jsonPayload []byte) (err error) {
+func postMessage(url string, jsonPayload []byte) error {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		return err
+	}
 
 	client := &http.Client{
 		Timeout: timeout,
 	}
 	resp, err := client.Do(req)
-	if err != nil || resp == nil {
+	if err != nil {
 		log.Errorf("Error posting to slack: %v", err)
-		return
+		return errors.Wrap(err, "Error posting to slack")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -115,8 +116,10 @@ func (d *tenable) Test() error {
 	if err != nil {
 		return err
 	} else if status != http.StatusOK {
-		return fmt.Errorf("unexpected status code '%d' when calling %s. Body: %s",
+		log.Errorf("unexpected status code '%d' when calling %s. Body: %s",
 			status, apiEndpoint+"/container-security/api/v1/container/list", string(body))
+		return errors.Errorf("unexpected status code '%d' when calling %s.",
+			status, apiEndpoint+"/container-security/api/v1/container/list")
 	}
 	return nil
 }

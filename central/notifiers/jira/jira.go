@@ -173,10 +173,15 @@ func (j *jira) ProtoNotifier() *storage.Notifier {
 
 func (j *jira) createIssue(i *jiraLib.Issue) error {
 	_, resp, err := j.client.Issue.Create(i)
+	if err != nil && resp == nil {
+		return errors.Errorf("Error creating issue. Response: %v", err)
+	}
+
 	if err != nil {
 		bytes, readErr := ioutil.ReadAll(resp.Body)
 		if readErr == nil {
-			return errors.Wrapf(err, "Error creating issue. Response: %v", string(bytes))
+			log.Errorf("Error creating issue. Response: %v %v", err, string(bytes))
+			return errors.Errorf("Error creating issue: received HTTP status code %d. Check central logs for full error.", resp.StatusCode)
 		}
 	}
 	return err

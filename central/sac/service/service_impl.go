@@ -99,7 +99,7 @@ func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *v1.UpsertAu
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	if err := s.testConfig(ctx, req.GetConfig()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%v\nCheck the central logs for full error.", err)
 	}
 
 	// Allow modifying enabled plugin only for basic auth user.

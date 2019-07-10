@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cloudflare/cfssl/log"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -98,9 +100,10 @@ func (q *Quay) Test() error {
 		body, err := ioutil.ReadAll(resp.Body)
 		defer utils.IgnoreError(resp.Body.Close)
 		if err != nil {
-			return fmt.Errorf("Error reaching quay.io with HTTP code %d", resp.StatusCode)
+			return errors.Errorf("Error reaching quay.io with HTTP code %d", resp.StatusCode)
 		}
-		return fmt.Errorf("Error reaching quay.io with HTTP code %d: %s", resp.StatusCode, string(body))
+		log.Errorf("Quay error response: %d %s", resp.StatusCode, string(body))
+		return errors.Errorf("Received http status code %d from Quay. Check central logs for full error.", resp.StatusCode)
 	}
 	return nil
 }

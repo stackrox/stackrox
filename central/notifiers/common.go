@@ -77,7 +77,8 @@ func wrapError(notifier string, resp *http.Response) error {
 		if err != nil {
 			return errors.Wrapf(err, "Error reading %s response body", notifier)
 		}
-		return fmt.Errorf("Received error response from %s: %d %s", notifier, resp.StatusCode, string(body))
+		log.Errorf("Received error response from %s: %d %s", notifier, resp.StatusCode, string(body))
+		return errors.Errorf("Received error response from %s: %d. Check central logs for full error.", notifier, resp.StatusCode)
 	}
 	return nil
 }

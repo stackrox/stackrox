@@ -2,7 +2,6 @@ package clair
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -91,7 +91,7 @@ func (c *clair) sendRequest(method string, values url.Values, pathSegments ...st
 	defer utils.IgnoreError(resp.Body.Close)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, resp.StatusCode, err
+		return nil, resp.StatusCode, errors.Wrap(err, "Error reading Clair response body")
 	}
 	return body, resp.StatusCode, nil
 }

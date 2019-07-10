@@ -2,12 +2,12 @@ package dtr
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -108,11 +108,11 @@ func (d *dtr) sendRequest(client *http.Client, method, urlPrefix string) ([]byte
 	if err := errorFromStatusCode(resp.StatusCode); err != nil {
 		return nil, err
 	}
+	defer utils.IgnoreError(resp.Body.Close)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error reading Docker Trusted Registry response body")
 	}
-	defer utils.IgnoreError(resp.Body.Close)
 	return body, nil
 }
 

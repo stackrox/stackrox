@@ -3,11 +3,15 @@ package pagerduty
 import (
 	"bytes"
 	"fmt"
+	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	pd "github.com/PagerDuty/go-pagerduty"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -111,6 +115,21 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 	resp, err := pd.ManageEvent(pagerDutyEvent)
 	if err != nil {
 		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
+
+		re := regexp.MustCompile(`^HTTP Status Code: ([0-9]{3})\b`)
+		matches := re.FindAllString(err.Error(), 1)
+		if len(matches) == 0 {
+			return err
+		}
+		statusCodeStr := strings.TrimSpace(strings.Split(matches[0], ":")[1])
+		statusCode, convErr := strconv.Atoi(statusCodeStr)
+		if convErr != nil {
+			return err
+		}
+		if statusCode != http.StatusAccepted {
+			log.Errorf("PagerDuty error response: %v", err)
+			return errors.Errorf("Received HTTP status code %d from PagerDuty. Check central logs for full error.", statusCode)
+		}
 	}
 	return err
 }
