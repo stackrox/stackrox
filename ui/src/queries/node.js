@@ -1,24 +1,23 @@
 import gql from 'graphql-tag';
 
 export const NODES_QUERY = gql`
-    query nodes {
-        results: clusters {
-            id
-            nodes {
-                id
-                name
-                clusterName
-            }
-        }
-    }
-`;
-
-export const NODES_SEARCH = gql`
     query nodes($query: String) {
         results: nodes(query: $query) {
             id
             name
             clusterName
+            clusterId
+            osImage
+            containerRuntimeVersion
+            joinedAt
+            complianceResults {
+                resource {
+                    __typename
+                }
+                control {
+                    id
+                }
+            }
         }
     }
 `;
@@ -45,7 +44,11 @@ export const NODE_QUERY = gql`
                 value
             }
             complianceResults {
+                resource {
+                    __typename
+                }
                 control {
+                    id
                     standardId
                     name
                     description

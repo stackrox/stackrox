@@ -103,12 +103,12 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
                                     entityType={entityTypes.CONTROL}
                                     header={`${
                                         failedComplianceResults.length
-                                    } failed controls accross this node`}
+                                    } controls failed across this node`}
                                     rows={failedComplianceResults}
                                     noDataText="No Controls"
                                     className="bg-base-100"
                                     columns={entityToColumns[entityTypes.CONTROL]}
-                                    idAttribute="id"
+                                    idAttribute="control.id"
                                 />
                             </div>
                         </CollapsibleSection>

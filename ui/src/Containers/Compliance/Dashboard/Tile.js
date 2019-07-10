@@ -38,8 +38,6 @@ const processNumValue = (data, entityType) => {
             });
         });
         value = set.size;
-    } else if (entityType === entityTypes.NODE) {
-        value = data.results.reduce((acc, curr) => acc + curr.nodes.length, 0);
     } else {
         value = data.results.length;
     }
