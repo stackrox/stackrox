@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/types"
@@ -10,12 +11,16 @@ import (
 	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 const (
 	maxFailedRuns = 10
+
+	resultCacheExpiry = 30 * time.Second
 )
 
 var (
@@ -37,13 +42,30 @@ func newBoltStore(db *bbolt.DB) (*boltStore, error) {
 	if err := bolthelper.RegisterBucket(db, resultsBucketName); err != nil {
 		return nil, err
 	}
+	cache := expiringcache.NewExpiringCache(10, resultCacheExpiry, expiringcache.UpdateExpirationOnGets)
+
 	return &boltStore{
 		resultsBucket: bolthelper.TopLevelRef(db, resultsBucketName),
+		cacheResults:  cache,
 	}, nil
 }
 
 type boltStore struct {
 	resultsBucket bolthelper.BucketRef
+
+	cacheResults expiringcache.Cache
+}
+
+type resultsFuture struct {
+	resultsWithStatus dsTypes.ResultsWithStatus
+	once              sync.Once
+}
+
+func (r *resultsFuture) Get(bucket *bbolt.Bucket, flags dsTypes.GetFlags) dsTypes.ResultsWithStatus {
+	r.once.Do(func() {
+		r.resultsWithStatus = getLatestRunResults(bucket, flags)
+	})
+	return r.resultsWithStatus
 }
 
 func (s *boltStore) GetLatestRunResults(clusterID, standardID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
@@ -94,6 +116,7 @@ func readResults(resultsBucket *bbolt.Bucket, flags dsTypes.GetFlags) (*storage.
 	if err := results.Unmarshal(resultsBytes); err != nil {
 		return nil, nil, errors.Wrap(err, "unmarshalling results")
 	}
+
 	results.RunMetadata = &metadata
 
 	if flags&(dsTypes.WithMessageStrings|dsTypes.RequireMessageStrings) != 0 {
@@ -148,8 +171,17 @@ func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, f
 					continue
 				}
 
-				resultsWithStatus := getLatestRunResults(standardBucket, flags)
-				results[compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}] = resultsWithStatus
+				pair := compliance.ClusterStandardPair{
+					ClusterID:  clusterID,
+					StandardID: standardID,
+				}
+
+				// Top level caches (cluster, standard) tuple and returns an expiring cache that is keyed off the flags
+				flagCache := s.cacheResults.GetOrSet(pair, expiringcache.NewExpiringCache(10, resultCacheExpiry)).(expiringcache.Cache)
+
+				future := &resultsFuture{}
+				future = flagCache.GetOrSet(flags, future).(*resultsFuture)
+				results[pair] = future.Get(standardBucket, flags)
 			}
 		}
 		return nil
@@ -247,6 +279,9 @@ func (s *boltStore) StoreRunResults(runResults *storage.ComplianceRunResults) er
 		return errors.New("metadata indicates failure")
 	}
 
+	pair := compliance.ClusterStandardPair{ClusterID: metadata.ClusterId, StandardID: metadata.StandardId}
+	s.cacheResults.Remove(pair)
+
 	serializedMD, err := metadata.Marshal()
 	if err != nil {
 		return errors.Wrap(err, "serializing metadata")
@@ -283,6 +318,9 @@ func (s *boltStore) StoreFailure(metadata *storage.ComplianceRunMetadata) error 
 		return errors.New("metadata passed to StoreFailure must indicate failure and have an error message set")
 	}
 
+	pair := compliance.ClusterStandardPair{ClusterID: metadata.ClusterId, StandardID: metadata.StandardId}
+	s.cacheResults.Remove(pair)
+
 	serializedMD, err := metadata.Marshal()
 	if err != nil {
 		return errors.Wrap(err, "serializing metadata")
@@ -298,6 +336,7 @@ func (s *boltStore) StoreFailure(metadata *storage.ComplianceRunMetadata) error 
 }
 
 func (s *boltStore) clear() error {
+	s.cacheResults.RemoveAll()
 	return s.resultsBucket.Update(func(b *bbolt.Bucket) error {
 		return b.ForEach(func(k, _ []byte) error {
 			return b.DeleteBucket(k)

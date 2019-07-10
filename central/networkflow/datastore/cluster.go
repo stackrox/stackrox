@@ -9,9 +9,8 @@ import (
 )
 
 const (
-	deletedDeploymentsCacheSize            = 10000
-	deletedDeploymentsRetentionPeriod      = 2 * time.Minute
-	deletedDeploymentsCachePruningInterval = 5 * time.Minute
+	deletedDeploymentsCacheSize       = 10000
+	deletedDeploymentsRetentionPeriod = 2 * time.Minute
 )
 
 // ClusterDataStore stores the network edges per cluster.
@@ -27,6 +26,6 @@ type ClusterDataStore interface {
 func NewClusterDataStore(storage store.ClusterStore) ClusterDataStore {
 	return &clusterDataStoreImpl{
 		storage:                 storage,
-		deletedDeploymentsCache: expiringcache.NewExpiringCacheOrPanic(deletedDeploymentsCacheSize, deletedDeploymentsRetentionPeriod, deletedDeploymentsCachePruningInterval),
+		deletedDeploymentsCache: expiringcache.NewExpiringCache(deletedDeploymentsCacheSize, deletedDeploymentsRetentionPeriod),
 	}
 }

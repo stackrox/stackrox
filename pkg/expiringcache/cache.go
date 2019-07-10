@@ -3,6 +3,7 @@ package expiringcache
 import (
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -11,30 +12,33 @@ type Cache interface {
 	Add(key, value interface{})
 	Get(key interface{}) interface{}
 	GetAll() []interface{}
+	GetOrSet(key interface{}, value interface{}) interface{}
 	Remove(key interface{}) bool
 	RemoveAll()
 }
 
-// NewExpiringCacheOrPanic returns a new lru Cache with time based expiration on values.
-func NewExpiringCacheOrPanic(size int, expiry time.Duration, pruningInterval time.Duration) Cache {
-	e := &expiringCacheImpl{
-		mq: newMappedQueue(size),
+type opts func(*expiringCacheImpl)
 
-		clock:           realClock{},
-		expiry:          expiry,
-		pruningInterval: pruningInterval,
-	}
-	return e
+// UpdateExpirationOnGets resets the clock for a specific object when it is retrieved
+func UpdateExpirationOnGets(e *expiringCacheImpl) {
+	e.updateOnGets = true
 }
 
-// NewExpiringCacheWithClockOrPanic returns a new lru Cache with time based expiration on values, using the input clock.
-func NewExpiringCacheWithClockOrPanic(size int, clock Clock, expiry time.Duration, pruningInterval time.Duration) Cache {
+// NewExpiringCache returns a new lru Cache with time based expiration on values.
+func NewExpiringCache(size int, expiry time.Duration, options ...opts) Cache {
+	return NewExpiringCacheWithClock(size, realClock{}, expiry, options...)
+}
+
+// NewExpiringCacheWithClock returns a new lru Cache with time based expiration on values, using the input clock.
+func NewExpiringCacheWithClock(size int, clock Clock, expiry time.Duration, options ...opts) Cache {
 	e := &expiringCacheImpl{
 		mq: newMappedQueue(size),
 
-		clock:           clock,
-		expiry:          expiry,
-		pruningInterval: pruningInterval,
+		clock:  clock,
+		expiry: expiry,
+	}
+	for _, o := range options {
+		o(e)
 	}
 	return e
 }
@@ -44,10 +48,11 @@ type expiringCacheImpl struct {
 
 	mq mappedQueue
 
-	clock           Clock
-	expiry          time.Duration
-	pruningInterval time.Duration
-	lastPrune       time.Time
+	clock        Clock
+	expiry       time.Duration
+	updateOnGets bool
+
+	latestScheduledPrune time.Time
 }
 
 // Add adds a new key/value pair to the cache.
@@ -55,10 +60,39 @@ func (e *expiringCacheImpl) Add(key, value interface{}) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	addTime := e.clock.Now()
-	e.maybeCleanAsync(addTime)
+	e.addNoLock(key, value)
+}
 
-	e.mq.push(key, wrap(value, addTime))
+func (e *expiringCacheImpl) addNoLock(key, value interface{}) {
+	now := e.clock.Now()
+	e.cleanNoLock(now)
+
+	// Look at scheduled runs
+	var newTime time.Time
+
+	// Expiry time plus padding of 1 second
+	interval := e.expiry + 1*time.Second
+
+	// If there is no next scheduled prune time or it's in the past, then the next scheduled time
+	// is Now + interval
+	if e.latestScheduledPrune.IsZero() || e.latestScheduledPrune.Before(now) {
+		newTime = now.Add(interval)
+	} else if e.latestScheduledPrune.Before(now.Add(interval)) {
+		// there is a scheduled prune, but it's not after now + interval then schedule one from the next prune + interval
+		newTime = e.latestScheduledPrune.Add(interval)
+	}
+	// The final case is that there is a prune scheduled after now.Add(interval) which will automatically clean up the value being added
+	if !newTime.IsZero() {
+		e.latestScheduledPrune = newTime
+		go func(sleepDuration time.Duration) {
+			time.Sleep(sleepDuration)
+			concurrency.WithLock(&e.lock, func() {
+				e.cleanNoLock(time.Now())
+			})
+		}(newTime.Sub(now))
+	}
+
+	e.mq.push(key, wrap(value, now))
 }
 
 // Get takes in a key and returns nil if the item doesn't exist or if the item has expired
@@ -66,13 +100,15 @@ func (e *expiringCacheImpl) Get(key interface{}) interface{} {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	getTime := e.clock.Now()
-	e.maybeCleanAsync(getTime)
-
-	value, at := e.getValueAndTimeNoLock(key)
-	if value != nil && getTime.Sub(at) > e.expiry {
-		e.mq.remove(key)
+	e.cleanNoLock(e.clock.Now())
+	value := e.getValue(key)
+	if value == nil {
 		return nil
+	}
+
+	if e.updateOnGets {
+		e.removeNoLock(key)
+		e.addNoLock(key, value)
 	}
 	return value
 }
@@ -82,8 +118,7 @@ func (e *expiringCacheImpl) GetAll() []interface{} {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	getAllTime := e.clock.Now()
-	e.cleanNoLock(getAllTime) // remove all expired values before getting the list.
+	e.cleanNoLock(e.clock.Now())
 
 	cachedValues := e.mq.getAllValues()
 	actualValues := make([]interface{}, 0, len(cachedValues))
@@ -94,22 +129,18 @@ func (e *expiringCacheImpl) GetAll() []interface{} {
 	return actualValues
 }
 
+func (e *expiringCacheImpl) removeNoLock(key interface{}) bool {
+	present := e.getValue(key) != nil
+	e.mq.remove(key)
+	return present
+}
+
 // Remove removes a key in the cache if present. Returns if it was present.
-func (e *expiringCacheImpl) Remove(key interface{}) (wasPresent bool) {
+func (e *expiringCacheImpl) Remove(key interface{}) bool {
 	e.lock.Lock()
 	defer e.lock.Unlock()
-
-	removeTime := e.clock.Now()
-	e.maybeCleanAsync(removeTime)
-
-	value, at := e.getValueAndTimeNoLock(key)
-	if value != nil {
-		e.mq.remove(key)
-		if removeTime.Sub(at) < e.expiry {
-			wasPresent = true // only return true if it was present and unexpired.
-		}
-	}
-	return
+	e.cleanNoLock(e.clock.Now())
+	return e.removeNoLock(key)
 }
 
 // RemoveAll removes all values from the cache.
@@ -120,12 +151,32 @@ func (e *expiringCacheImpl) RemoveAll() {
 	e.mq.removeAll()
 }
 
-func (e *expiringCacheImpl) getValueAndTimeNoLock(key interface{}) (interface{}, time.Time) {
+// GetOrPut returns the value for the key if it exists or sets the value if it does not
+// In the case of setting the value, it will return the passed value
+func (e *expiringCacheImpl) GetOrSet(key, value interface{}) interface{} {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	currValue := e.getValue(key)
+	if currValue != nil {
+		if e.updateOnGets {
+			e.removeNoLock(key)
+			e.addNoLock(key, currValue)
+		}
+		return currValue
+	}
+
+	e.addNoLock(key, value)
+	return value
+}
+
+func (e *expiringCacheImpl) getValue(key interface{}) interface{} {
 	value := e.mq.get(key)
 	if value == nil {
-		return nil, time.Time{}
+		return nil
 	}
-	return unwrap(value)
+	cv := value.(*cacheValue)
+	return cv.value
 }
 
 // Store the value and the time of insertion in the mappedQueue.
@@ -149,21 +200,6 @@ func unwrap(value interface{}) (interface{}, time.Time) {
 // Intermittent clean up of expired values.
 // Called during Add or Get when needed.
 ////////////////////////////////////////
-
-func (e *expiringCacheImpl) maybeCleanAsync(at time.Time) {
-	// If we reached the prune interval, flush expired items.
-	if e.lastPrune.Sub(at) > e.pruningInterval {
-		e.lastPrune = at
-		go e.clean(at)
-	}
-}
-
-func (e *expiringCacheImpl) clean(at time.Time) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
-	e.cleanNoLock(at)
-}
 
 func (e *expiringCacheImpl) cleanNoLock(at time.Time) {
 	for {

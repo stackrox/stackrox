@@ -3,7 +3,6 @@ package sac
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/central/cluster/datastore"
@@ -150,5 +149,5 @@ func idToPrincipal(id authn.Identity) *payload.Principal {
 }
 
 func newConfiguredCache() expiringcache.Cache {
-	return expiringcache.NewExpiringCacheOrPanic(5000, env.PermissionTimeout.DurationSetting(), time.Minute)
+	return expiringcache.NewExpiringCache(5000, env.PermissionTimeout.DurationSetting())
 }
