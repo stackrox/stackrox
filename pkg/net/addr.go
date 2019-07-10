@@ -86,6 +86,21 @@ type IPAddress struct {
 	data ipAddrData
 }
 
+// IPAddressLess checks if the IP address a is less than the IP address b according to some defined ordering.
+func IPAddressLess(a, b IPAddress) bool {
+	aBytes, bBytes := a.data.bytes(), b.data.bytes()
+
+	if len(aBytes) != len(bBytes) {
+		return len(aBytes) < len(bBytes)
+	}
+
+	if a.data.family() != b.data.family() {
+		return a.data.family() < b.data.family()
+	}
+
+	return bytes.Compare(aBytes, bBytes) < 0
+}
+
 // Family returns the address family of this IP address.
 func (a IPAddress) Family() Family {
 	if a.data == nil {

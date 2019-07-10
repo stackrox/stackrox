@@ -40,17 +40,18 @@ func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 	node := obj.(*v1.Node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)
+		h.endpointManager.OnNodeUpdateOrRemove(node.Name)
 	} else {
 		wrap := wrapNode(node)
-		h.nodeStore.addOrUpdateNode(wrap)
 
-		if action == central.ResourceAction_CREATE_RESOURCE {
-			h.endpointManager.OnNodeCreate(wrap)
+		// Only perform endpoint manager updates if the IP addresses of the node changed.
+		if h.nodeStore.addOrUpdateNode(wrap) {
+			if action == central.ResourceAction_CREATE_RESOURCE {
+				h.endpointManager.OnNodeCreate(wrap)
+			} else {
+				h.endpointManager.OnNodeUpdateOrRemove(node.Name)
+			}
 		}
-	}
-
-	if action != central.ResourceAction_CREATE_RESOURCE {
-		h.endpointManager.OnNodeUpdateOrRemove(node.Name)
 	}
 
 	var internal, external []string
