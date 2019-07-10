@@ -34,8 +34,8 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messages
 
 func (d deduper) Send(msg *central.MsgFromSensor) error {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
-	if !ok {
-		// We only dedupe event messages, other messages get forwarded directly.
+	if !ok || eventMsg.Event.GetProcessIndicator() != nil {
+		// We only dedupe event messages (excluding process indicators which are always unique), other messages get forwarded directly.
 		return d.stream.Send(msg)
 	}
 	event := eventMsg.Event
