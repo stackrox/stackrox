@@ -4,6 +4,10 @@ import (
 	"context"
 	"sort"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -90,9 +94,36 @@ func wrapSubjects(clusterID string, subjects []*subjectResolver) []*subjectWithC
 	}
 
 	return output
-
 }
 
 func wrapSubject(clusterID string, subject *subjectResolver) *subjectWithClusterIDResolver {
 	return &subjectWithClusterIDResolver{clusterID, subject}
+}
+
+func (resolver *clusterResolver) getRoleBindings(ctx context.Context) ([]*storage.K8SRoleBinding, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+	if err := readK8sRoleBindings(ctx); err != nil {
+		return nil, err
+	}
+	q := resolver.getClusterQuery()
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	return bindings, nil
+}
+
+func (resolver *clusterResolver) getClusterSubjects(ctx context.Context) ([]*storage.Subject, error) {
+	bindings, err := resolver.getRoleBindings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
+	return subjects, nil
+}
+
+func (resolver *clusterResolver) getClusterQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
 }

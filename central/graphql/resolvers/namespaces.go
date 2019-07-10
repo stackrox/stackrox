@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -17,7 +18,12 @@ func init() {
 		schema.AddQuery("namespaces(query: String): [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
-		schema.AddExtraResolver("Namespace", `complianceResults(query: String): [ControlResult!]!`),
+		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
+		schema.AddExtraResolver("Namespace", `subjectCount(clusterId: ID!): Int!`),
+		schema.AddExtraResolver("Namespace", `serviceAccountCount(clusterId: ID!): Int!`),
+		schema.AddExtraResolver("Namespace", `k8sroleCount(clusterId: ID!): Int!`),
+		schema.AddExtraResolver("Namespace", `policyCount(clusterId: ID!): Int!`),
+		schema.AddExtraResolver("Namespace", `policyStatus(clusterId: ID!): Boolean!`),
 		schema.AddExtraResolver("Namespace", `images(clusterId : ID!): [Image!]!`),
 		schema.AddExtraResolver("Namespace", `imageCount(clusterId : ID!): Int!`),
 	)
@@ -77,6 +83,52 @@ func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args r
 	return *output, nil
 }
 
+// SubjectCount returns the count of Subjects which have any permission on this cluster namespace
+func (resolver *namespaceResolver) SubjectCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return 0, err
+	}
+	if err := readK8sRoleBindings(ctx); err != nil {
+		return 0, err
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
+	return int32(len(subjects)), nil
+}
+
+// ServiceAccountCount returns the count of ServiceAccounts which have any permission on this cluster namespace
+func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return 0, err
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
+	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
+}
+
+// K8sRoleCount returns count of K8s roles in this cluster namespace
+func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+	if err := readK8sRoles(ctx); err != nil {
+		return 0, err
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
+	results, err := resolver.root.K8sRoleStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
+}
+
 func (resolver *namespaceResolver) Images(ctx context.Context, args struct{ ClusterID graphql.ID }) ([]*imageResolver, error) {
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
@@ -97,4 +149,71 @@ func (resolver *namespaceResolver) ImageCount(ctx context.Context, args struct{ 
 		return 0, err
 	}
 	return int32(len(results)), nil
+}
+
+func (resolver *namespaceResolver) Policies(ctx context.Context, clusterID string) ([]*storage.Policy, error) {
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+	policies, err := resolver.root.PolicyDataStore.GetPolicies(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var filteredPolicies []*storage.Policy
+	for _, policy := range policies {
+		if resolver.policyAppliesToNamespace(ctx, policy, clusterID) {
+			filteredPolicies = append(filteredPolicies, policy)
+		}
+	}
+	return filteredPolicies, nil
+}
+
+// K8sRoleCount returns count of K8s roles in this cluster
+func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+	policies, err := resolver.Policies(ctx, string(args.ClusterID))
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(policies)), nil
+}
+
+func (resolver *namespaceResolver) policyAppliesToNamespace(ctx context.Context, policy *storage.Policy, clusterID string) bool {
+	// Global Policy
+	if len(policy.Scope) == 0 {
+		return true
+	}
+	// Clustered or namespaced scope policy, evaluate all scopes
+	for _, scope := range policy.Scope {
+		if scope.GetCluster() != "" {
+			if scope.GetCluster() == clusterID &&
+				(scope.GetNamespace() == "" || scope.GetNamespace() == resolver.data.Metadata.GetName()) {
+				return true
+			}
+		} else if scope.GetNamespace() != "" {
+			if scope.GetNamespace() == resolver.data.GetMetadata().GetName() {
+				return true
+			}
+		} else {
+			return true
+		}
+	}
+	return false
+}
+
+// PolicyStatus returns true if there is no policy violation for this cluster
+func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args struct{ ClusterID graphql.ID }) (bool, error) {
+	if err := readAlerts(ctx); err != nil {
+		return false, err
+	}
+	q1 := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
+	q2 := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
+	cq := search.NewConjunctionQuery(q1, q2)
+	cq.Pagination = &v1.Pagination{Limit: 1}
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, cq)
+	if err != nil {
+		return false, err
+	}
+	return len(results) == 0, nil
 }

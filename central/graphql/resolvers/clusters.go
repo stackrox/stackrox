@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/namespace"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,14 +28,18 @@ func init() {
 		schema.AddExtraResolver("Cluster", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Cluster", `k8sroles: [K8SRole!]!`),
 		schema.AddExtraResolver("Cluster", `k8srole(role: ID!): K8SRole`),
+		schema.AddExtraResolver("Cluster", `k8sroleCount: Int!`),
 		schema.AddExtraResolver("Cluster", `serviceAccounts: [ServiceAccount!]!`),
 		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
+		schema.AddExtraResolver("Cluster", `serviceAccountCount: Int!`),
 		schema.AddExtraResolver("Cluster", `subjects: [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID!`),
+		schema.AddExtraResolver("Cluster", `subjectCount: Int!`),
 		schema.AddExtraResolver("Cluster", `images: [Image!]!`),
 		schema.AddExtraResolver("Cluster", `imageCount: Int!`),
 		schema.AddExtraResolver("Cluster", `policies: [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount: Int!`),
+		schema.AddExtraResolver("Cluster", `policyStatus: Boolean!`),
 		schema.AddExtraResolver("Cluster", `secrets: [Secret!]!`),
 		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
 	)
@@ -165,6 +170,19 @@ func (resolver *clusterResolver) K8sRoles(ctx context.Context) ([]*k8SRoleResolv
 	return resolver.root.wrapK8SRoles(resolver.root.K8sRoleStore.SearchRawRoles(ctx, q))
 }
 
+// K8sRoleCount returns count of K8s roles in this cluster
+func (resolver *clusterResolver) K8sRoleCount(ctx context.Context) (int32, error) {
+	if err := readK8sRoles(ctx); err != nil {
+		return 0, err
+	}
+	q := resolver.getClusterQuery()
+	results, err := resolver.root.K8sRoleStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
+}
+
 // K8sRole returns clusterResolver GraphQL resolver for a given k8s role
 func (resolver *clusterResolver) K8sRole(ctx context.Context, args struct{ Role graphql.ID }) (*k8SRoleResolver, error) {
 	if err := readK8sRoles(ctx); err != nil {
@@ -197,6 +215,19 @@ func (resolver *clusterResolver) ServiceAccounts(ctx context.Context) ([]*servic
 	return resolver.root.wrapServiceAccounts(resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, q))
 }
 
+// ServiceAccountCount returns count of Service Accounts in this cluster
+func (resolver *clusterResolver) ServiceAccountCount(ctx context.Context) (int32, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return 0, err
+	}
+	q := resolver.getClusterQuery()
+	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
+}
+
 // ServiceAccount returns clusterResolver GraphQL resolver for a given service account
 func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct{ Sa graphql.ID }) (*serviceAccountResolver, error) {
 	if err := readK8sRoles(ctx); err != nil {
@@ -221,57 +252,32 @@ func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct
 
 // Subjects returns GraphQL resolvers for all subjects in this cluster
 func (resolver *clusterResolver) Subjects(ctx context.Context) ([]*subjectWithClusterIDResolver, error) {
-	if err := readK8sSubjects(ctx); err != nil {
-		return nil, err
-	}
-
-	if err := readK8sRoleBindings(ctx); err != nil {
-		return nil, err
-	}
-
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
-
+	subjectResolvers, err := resolver.root.wrapSubjects(resolver.getClusterSubjects(ctx))
 	if err != nil {
 		return nil, err
 	}
-
-	if len(bindings) == 0 {
-		return nil, nil
-	}
-
-	subjectResolvers, err := resolver.root.wrapSubjects(k8srbac.GetAllSubjects(bindings,
-		storage.SubjectKind_USER, storage.SubjectKind_GROUP), nil)
-
-	if err != nil {
-		return nil, err
-	}
-
 	return wrapSubjects(resolver.data.GetId(), subjectResolvers), nil
+}
+
+// SubjectCount returns count of Users and Groups in this cluster
+func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error) {
+	subjects, err := resolver.getClusterSubjects(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(subjects)), nil
 }
 
 // ServiceAccount returns clusterResolver GraphQL resolver for a given service account
 func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectWithClusterIDResolver, error) {
-	if err := readK8sRoles(ctx); err != nil {
-		return nil, err
-	}
-
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
-
+	bindings, err := resolver.getRoleBindings(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(bindings) == 0 {
-		return nil, nil
-	}
-
 	subject, err := resolver.root.wrapSubject(k8srbac.GetSubject(args.Name, bindings))
 	if err != nil {
 		return nil, err
 	}
-
 	return wrapSubject(resolver.data.GetId(), subject), nil
 }
 
@@ -349,15 +355,30 @@ func (resolver *clusterResolver) PolicyCount(ctx context.Context) (int32, error)
 	return int32(len(resolvers)), nil
 }
 
+// PolicyStatus returns true if there is no policy violation for this cluster
+func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (bool, error) {
+	if err := readAlerts(ctx); err != nil {
+		return false, err // could return nil, nil to prevent errors from propagating.
+	}
+	q1 := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
+	q2 := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
+	cq := search.NewConjunctionQuery(q1, q2)
+	cq.Pagination = &v1.Pagination{Limit: 1}
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, cq)
+	if err != nil {
+		return false, err
+	}
+	return len(results) == 0, nil
+}
+
 func (resolver *clusterResolver) Secrets(ctx context.Context) ([]*secretResolver, error) {
-	query := search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	query := resolver.getClusterQuery()
 	return resolver.root.wrapListSecrets(resolver.root.SecretsDataStore.SearchListSecrets(ctx, query))
 }
 
 func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error) {
-	query := search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	query := resolver.getClusterQuery()
 	result, err := resolver.root.SecretsDataStore.Search(ctx, query)
 	if err != nil {
 		return 0, err
