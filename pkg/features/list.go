@@ -13,5 +13,5 @@ var (
 	ClientCAAuth = registerFeature("Client Certificate Authentication", "ROX_CLIENT_CA_AUTH", true)
 
 	// PlaintextExposure enables specifying a port under which to expose the UI and API without TLS.
-	PlaintextExposure = registerFeature("Plaintext UI & API exposure", "ROX_PLAINTEXT_EXPOSURE", false)
+	PlaintextExposure = registerFeature("Plaintext UI & API exposure", "ROX_PLAINTEXT_EXPOSURE", true)
 )
