@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
@@ -496,12 +495,6 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/db/restore",
 			Authorizer:    authzUser.With(resources.AllResourcesModifyPermissions()...),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
-		},
-		{
-			Route:         "/metrics",
-			Authorizer:    allow.Anonymous(),
-			ServerHandler: promhttp.Handler(),
-			Compression:   false,
 		},
 		{
 			Route:         "/api/docs/swagger",
