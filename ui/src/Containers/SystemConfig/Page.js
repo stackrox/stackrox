@@ -13,6 +13,18 @@ import Detail from './Detail';
 export const keyClassName = 'py-2 text-base-600 font-700 capitalize';
 export const pageLayoutClassName = 'flex flex-col overflow-auto px-2 py-5 w-full';
 
+const defaultPublicConfig = {
+    header: {
+        color: '#000000',
+        backgroundColor: '#ffffff'
+    },
+    footer: {
+        color: '#000000',
+        backgroundColor: '#ffffff'
+    },
+    loginNotice: null
+};
+
 const Page = ({ systemConfig, saveSystemConfig }) => {
     const [isEditing, setIsEditing] = useState(false);
 
@@ -59,10 +71,12 @@ const Page = ({ systemConfig, saveSystemConfig }) => {
     }
 
     function getContent() {
+        const modifiedSystemConfig = { ...systemConfig };
+        if (!systemConfig.publicConfig) modifiedSystemConfig.publicConfig = defaultPublicConfig;
         if (isEditing) {
-            return <Form initialValues={systemConfig} onSubmit={saveHandler} />;
+            return <Form initialValues={modifiedSystemConfig} onSubmit={saveHandler} />;
         }
-        return <Detail config={systemConfig} />;
+        return <Detail config={modifiedSystemConfig} />;
     }
 
     return (
@@ -86,11 +100,7 @@ Page.propTypes = {
 
 Page.defaultProps = {
     systemConfig: {
-        publicConfig: {
-            header: null,
-            footer: null,
-            loginNotice: null
-        }
+        publicConfig: defaultPublicConfig
     }
 };
 
