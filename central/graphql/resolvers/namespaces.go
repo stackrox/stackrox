@@ -19,13 +19,13 @@ func init() {
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
 		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddExtraResolver("Namespace", `subjectCount(clusterId: ID!): Int!`),
-		schema.AddExtraResolver("Namespace", `serviceAccountCount(clusterId: ID!): Int!`),
-		schema.AddExtraResolver("Namespace", `k8sroleCount(clusterId: ID!): Int!`),
-		schema.AddExtraResolver("Namespace", `policyCount(clusterId: ID!): Int!`),
-		schema.AddExtraResolver("Namespace", `policyStatus(clusterId: ID!): Boolean!`),
-		schema.AddExtraResolver("Namespace", `images(clusterId : ID!): [Image!]!`),
-		schema.AddExtraResolver("Namespace", `imageCount(clusterId : ID!): Int!`),
+		schema.AddExtraResolver("Namespace", `subjectCount: Int!`),
+		schema.AddExtraResolver("Namespace", `serviceAccountCount: Int!`),
+		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
+		schema.AddExtraResolver("Namespace", `policyCount: Int!`),
+		schema.AddExtraResolver("Namespace", `policyStatus: Boolean!`),
+		schema.AddExtraResolver("Namespace", `images: [Image!]!`),
+		schema.AddExtraResolver("Namespace", `imageCount: Int!`),
 	)
 }
 
@@ -84,14 +84,14 @@ func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args r
 }
 
 // SubjectCount returns the count of Subjects which have any permission on this cluster namespace
-func (resolver *namespaceResolver) SubjectCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, error) {
 	if err := readK8sSubjects(ctx); err != nil {
 		return 0, err
 	}
 	if err := readK8sRoleBindings(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
 	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
@@ -102,11 +102,11 @@ func (resolver *namespaceResolver) SubjectCount(ctx context.Context, args struct
 }
 
 // ServiceAccountCount returns the count of ServiceAccounts which have any permission on this cluster namespace
-func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context) (int32, error) {
 	if err := readServiceAccounts(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
 	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
 	if err != nil {
@@ -116,11 +116,11 @@ func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context, args
 }
 
 // K8sRoleCount returns count of K8s roles in this cluster namespace
-func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context) (int32, error) {
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
 	results, err := resolver.root.K8sRoleStore.Search(ctx, q)
 	if err != nil {
@@ -129,20 +129,20 @@ func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context, args struct
 	return int32(len(results)), nil
 }
 
-func (resolver *namespaceResolver) Images(ctx context.Context, args struct{ ClusterID graphql.ID }) ([]*imageResolver, error) {
+func (resolver *namespaceResolver) Images(ctx context.Context) ([]*imageResolver, error) {
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
 	return resolver.root.wrapListImages(resolver.root.ImageDataStore.SearchListImages(ctx, q))
 }
 
-func (resolver *namespaceResolver) ImageCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
+func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error) {
 	if err := readNamespaces(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
 	results, err := resolver.root.ImageDataStore.Search(ctx, q)
 	if err != nil {
@@ -169,8 +169,8 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, clusterID strin
 }
 
 // K8sRoleCount returns count of K8s roles in this cluster
-func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args struct{ ClusterID graphql.ID }) (int32, error) {
-	policies, err := resolver.Policies(ctx, string(args.ClusterID))
+func (resolver *namespaceResolver) PolicyCount(ctx context.Context) (int32, error) {
+	policies, err := resolver.Policies(ctx, resolver.data.GetMetadata().GetClusterId())
 	if err != nil {
 		return 0, err
 	}
@@ -201,11 +201,11 @@ func (resolver *namespaceResolver) policyAppliesToNamespace(ctx context.Context,
 }
 
 // PolicyStatus returns true if there is no policy violation for this cluster
-func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args struct{ ClusterID graphql.ID }) (bool, error) {
+func (resolver *namespaceResolver) PolicyStatus(ctx context.Context) (bool, error) {
 	if err := readAlerts(ctx); err != nil {
 		return false, err
 	}
-	q1 := search.NewQueryBuilder().AddExactMatches(search.ClusterID, string(args.ClusterID)).
+	q1 := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
 	q2 := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
