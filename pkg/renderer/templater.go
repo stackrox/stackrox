@@ -10,7 +10,6 @@ import (
 	"github.com/docker/distribution/reference"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -20,14 +19,6 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-
-	dockerAuthFile = func() *zip.File {
-		str, err := image.AssetBox.FindString("docker-auth.sh")
-		if err != nil {
-			log.Panicf("docker auth file could not be found: %v", err)
-		}
-		return zip.NewFile("docker-auth.sh", []byte(str), zip.Executable)
-	}()
 )
 
 // ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
@@ -200,13 +191,14 @@ func executeRawTemplate(raw string, c *Config) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return executeTemplate(t, c)
+	return ExecuteTemplate(t, c)
 }
 
-func executeTemplate(temp *template.Template, c *Config) ([]byte, error) {
+// ExecuteTemplate renders a given template, injecting the given values.
+func ExecuteTemplate(temp *template.Template, values interface{}) ([]byte, error) {
 	var b []byte
 	buf := bytes.NewBuffer(b)
-	err := temp.Execute(buf, c)
+	err := temp.Execute(buf, values)
 	if err != nil {
 		log.Errorf("Template execution failed: %s", err)
 		return nil, err

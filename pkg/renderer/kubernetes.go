@@ -19,6 +19,15 @@ const (
 	defaultMonitoringPort = 443
 )
 
+var (
+	assetFileNameMap = NewFileNameMap("docker-auth.sh")
+
+	caSetupScriptsFileNameMap = FileNameMap{
+		"kubernetes/common/ca-setup.sh":  "central/scripts/ca-setup.sh",
+		"kubernetes/common/delete-ca.sh": "central/scripts/delete-ca.sh",
+	}
+)
+
 // mode is the mode we want the renderer to function in.
 //go:generate stringer -type=mode
 type mode int
@@ -137,7 +146,20 @@ func render(c Config, mode mode) ([]*zip.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	renderedFiles = append(renderedFiles, dockerAuthFile)
+
+	if mode == renderAll {
+		caSetupFiles, err := RenderFiles(caSetupScriptsFileNameMap, c)
+		if err != nil {
+			return nil, err
+		}
+		renderedFiles = append(renderedFiles, caSetupFiles...)
+	}
+
+	assets, err := LoadAssets(assetFileNameMap)
+	if err != nil {
+		return nil, err
+	}
+	renderedFiles = append(renderedFiles, assets...)
 
 	readmeFile, err := generateReadmeFile(&c, mode)
 	if err != nil {

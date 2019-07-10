@@ -1,14 +1,9 @@
 package clusters
 
 import (
-	"bytes"
-	"path"
-	"path/filepath"
 	"strconv"
-	"text/template"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -49,17 +44,6 @@ type Deployer interface {
 }
 
 var deployers = make(map[storage.ClusterType]Deployer)
-
-func executeTemplate(temp *template.Template, fields map[string]interface{}) ([]byte, error) {
-	var b []byte
-	buf := bytes.NewBuffer(b)
-	err := temp.Execute(buf, fields)
-	if err != nil {
-		log.Errorf("template execution: %s", err)
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
 
 func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.ImageName, error) {
 	image, _, err := utils.GenerateImageNameFromString(collectorImage)
@@ -142,36 +126,4 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 	}
 
 	return fields, nil
-}
-
-func renderFilenames(filenames []string, c map[string]interface{}, staticFilenames ...string) ([]*zip.File, error) {
-	var files []*zip.File
-	for _, f := range filenames {
-		t, err := image.ReadFileAndTemplate(f, builtinFuncs)
-		if err != nil {
-			return nil, err
-		}
-		d, err := executeTemplate(t, c)
-		if err != nil {
-			return nil, err
-		}
-		var flags zip.FileFlags
-		if path.Ext(f) == ".sh" {
-			flags |= zip.Executable
-		}
-		files = append(files, zip.NewFile(filepath.Base(f), d, flags))
-	}
-	for _, staticFilename := range staticFilenames {
-		var flags zip.FileFlags
-		if path.Ext(staticFilename) == ".sh" {
-			flags |= zip.Executable
-		}
-		contents, err := image.LoadFileContents(staticFilename)
-		if err != nil {
-			return nil, err
-		}
-		f := zip.NewFile(path.Base(staticFilename), []byte(contents), flags)
-		files = append(files, f)
-	}
-	return files, nil
 }

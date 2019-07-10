@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -29,22 +30,39 @@ func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
 		return nil, err
 	}
 
-	filenames := []string{
+	fields["K8sCommand"] = "kubectl"
+
+	filenames := renderer.FileNameMap{
+		"kubernetes/common/ca-setup.sh":  "ca-setup-sensor.sh",
+		"kubernetes/common/delete-ca.sh": "delete-ca-sensor.sh",
+	}
+	filenames.Add(
 		"kubernetes/kubectl/sensor.sh",
 		"kubernetes/kubectl/sensor.yaml",
 		"kubernetes/kubectl/sensor-rbac.yaml",
 		"kubernetes/kubectl/sensor-netpol.yaml",
 		"kubernetes/kubectl/delete-sensor.sh",
-	}
+	)
 
 	if c.MonitoringEndpoint != "" {
-		filenames = append(filenames, monitoringFilenames...)
+		filenames.Add(monitoringFilenames...)
 	}
 
 	if c.AdmissionController {
 		fields["CABundle"] = base64.StdEncoding.EncodeToString(ca)
-		filenames = append(filenames, admissionController)
+		filenames.Add(admissionController)
 	}
 
-	return renderFilenames(filenames, fields, dockerAuthFile)
+	allFiles, err := renderer.RenderFiles(filenames, fields)
+	if err != nil {
+		return nil, err
+	}
+
+	assetFiles, err := renderer.LoadAssets(renderer.NewFileNameMap(dockerAuthAssetFile))
+	if err != nil {
+		return nil, err
+	}
+
+	allFiles = append(allFiles, assetFiles...)
+	return allFiles, err
 }

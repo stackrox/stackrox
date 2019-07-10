@@ -1,4 +1,4 @@
-package clusters
+package renderer
 
 import (
 	"encoding/json"

@@ -1,5 +1,5 @@
 package clusters
 
 const (
-	dockerAuthFile = "assets/docker-auth.sh"
+	dockerAuthAssetFile = "docker-auth.sh"
 )
