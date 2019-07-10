@@ -19,9 +19,10 @@ func init() {
 		schema.AddQuery("clusters(query: String): [Cluster!]!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
-		schema.AddExtraResolver("Cluster", `alertsCount: Int`),
+		schema.AddExtraResolver("Cluster", `alertsCount: Int!`),
 		schema.AddExtraResolver("Cluster", `deployments: [Deployment!]!`),
 		schema.AddExtraResolver("Cluster", `nodes: [Node!]!`),
+		schema.AddExtraResolver("Cluster", `nodeCount: Int!`),
 		schema.AddExtraResolver("Cluster", `node(node: ID!): Node`),
 		schema.AddExtraResolver("Cluster", `namespaces: [Namespace!]!`),
 		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
@@ -78,17 +79,17 @@ func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, 
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
 
-func (resolver *clusterResolver) AlertsCount(ctx context.Context) (*int32, error) {
+func (resolver *clusterResolver) AlertsCount(ctx context.Context) (int32, error) {
 	if err := readAlerts(ctx); err != nil {
-		return nil, err // could return nil, nil to prevent errors from propagating.
+		return 0, err
 	}
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
 	results, err := resolver.root.ViolationsDataStore.Search(ctx, query)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	l := int32(len(results))
-	return &l, nil
+
+	return int32(len(results)), nil
 }
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster
@@ -111,6 +112,24 @@ func (resolver *clusterResolver) Nodes(ctx context.Context) ([]*nodeResolver, er
 		return nil, err
 	}
 	return resolver.root.wrapNodes(store.ListNodes())
+}
+
+// NodeCount returns count of all nodes on the cluster
+func (resolver *clusterResolver) NodeCount(ctx context.Context) (int32, error) {
+	if err := readNodes(ctx); err != nil {
+		return 0, err
+	}
+	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, resolver.data.GetId(), false)
+	if err != nil {
+		return 0, err
+	}
+
+	nodeCount, err := store.CountNodes()
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(nodeCount), nil
 }
 
 // Node returns a given node on a cluster

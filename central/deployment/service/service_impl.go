@@ -142,7 +142,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 
 // GetLabels returns label keys and values for current deployments.
 func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.DeploymentLabelsResponse, error) {
-	deployments, err := s.datastore.GetDeployments(ctx)
+	deployments, err := s.datastore.GetAllDeployments(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

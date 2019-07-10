@@ -1,4 +1,4 @@
-package matcher
+package policyutils
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -6,7 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func scopeToQuery(scopes []*storage.Scope) *v1.Query {
+// ScopeToQuery generates a proto query for objects in the specified scopes.
+func ScopeToQuery(scopes []*storage.Scope) *v1.Query {
 	if len(scopes) == 0 {
 		return nil
 	}

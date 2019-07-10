@@ -114,7 +114,21 @@ func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage
 }
 
 // GetDeployments
-func (ds *datastoreImpl) GetDeployments(ctx context.Context) ([]*storage.Deployment, error) {
+func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error) {
+	var deployments []*storage.Deployment
+	var err error
+	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return ds.SearchRawDeployments(ctx, pkgSearch.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery())
+	}
+
+	deployments, _, err = ds.deploymentStore.GetDeploymentsWithIDs(ids...)
+	return deployments, err
+}
+
+// GetAllDeployments
+func (ds *datastoreImpl) GetAllDeployments(ctx context.Context) ([]*storage.Deployment, error) {
 	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if ok {

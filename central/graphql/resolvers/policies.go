@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -15,7 +16,9 @@ func init() {
 		schema.AddQuery("policies(query: String): [Policy!]!"),
 		schema.AddQuery("policy(id: ID): Policy"),
 		schema.AddExtraResolver("Policy", `alerts: [Alert!]!`),
-		schema.AddExtraResolver("Policy", `alertsCount: Int`),
+		schema.AddExtraResolver("Policy", `alertsCount: Int!`),
+		schema.AddExtraResolver("Policy", `deployments: [Deployment!]!`),
+		schema.AddExtraResolver("Policy", `deploymentsCount: Int!`),
 	)
 }
 
@@ -52,15 +55,58 @@ func (resolver *policyResolver) Alerts(ctx context.Context) ([]*alertResolver, e
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
 
-func (resolver *policyResolver) AlertsCount(ctx context.Context) (*int32, error) {
+func (resolver *policyResolver) AlertsCount(ctx context.Context) (int32, error) {
 	if err := readAlerts(ctx); err != nil {
-		return nil, err // could return nil, nil to prevent errors from propagating.
+		return 0, err // could return nil, nil to prevent errors from propagating.
 	}
 	query := search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).ProtoQuery()
 	results, err := resolver.root.ViolationsDataStore.Search(ctx, query)
 	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
+}
+
+// Deployments returns GraphQL resolvers for all deployments that this policy applies to
+func (resolver *policyResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
+	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	l := int32(len(results))
-	return &l, nil
+
+	deploymentIDs, err := resolver.getDeploymentsForPolicy(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deployments, err := resolver.root.DeploymentDataStore.GetDeployments(ctx, deploymentIDs)
+	return resolver.root.wrapDeployments(deployments, err)
+}
+
+// DeploymentCount returns the count of all deployments that this policy applies to
+func (resolver *policyResolver) DeploymentsCount(ctx context.Context) (int32, error) {
+	if err := readDeployments(ctx); err != nil {
+		return 0, err
+	}
+
+	deploymentIDs, err := resolver.getDeploymentsForPolicy(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(deploymentIDs)), nil
+}
+
+func (resolver *policyResolver) getDeploymentsForPolicy(ctx context.Context) ([]string, error) {
+	scopeQuery := policyutils.ScopeToQuery(resolver.data.GetScope())
+	scopeQueryResults, err := resolver.root.DeploymentDataStore.Search(ctx, scopeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentWhitelistQuery := policyutils.DeploymentWhitelistToQuery(resolver.data.GetWhitelists())
+	whitelistResults, err := resolver.root.DeploymentDataStore.Search(ctx, deploymentWhitelistQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return search.ResultsToIDSet(scopeQueryResults).
+		Difference(search.ResultsToIDSet(whitelistResults)).AsSlice(), nil
 }

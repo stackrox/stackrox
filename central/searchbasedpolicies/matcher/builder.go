@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -46,7 +47,7 @@ func (mb *builderImpl) ForPolicy(policy *storage.Policy) (searchbasedpolicies.Ma
 	if q == nil || v == nil {
 		return nil, fmt.Errorf("failed to construct matcher for policy %+v: no fields specified", policy)
 	}
-	if scopeQuery := scopeToQuery(policy.GetScope()); scopeQuery != nil {
+	if scopeQuery := policyutils.ScopeToQuery(policy.GetScope()); scopeQuery != nil {
 		q = search.NewConjunctionQuery(scopeQuery, q)
 	}
 	return &matcherImpl{

@@ -49,6 +49,19 @@ func (mr *MockDataStoreMockRecorder) CountDeployments(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeployments", reflect.TypeOf((*MockDataStore)(nil).CountDeployments), arg0)
 }
 
+// GetAllDeployments mocks base method
+func (m *MockDataStore) GetAllDeployments(arg0 context.Context) ([]*storage.Deployment, error) {
+	ret := m.ctrl.Call(m, "GetAllDeployments", arg0)
+	ret0, _ := ret[0].([]*storage.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllDeployments indicates an expected call of GetAllDeployments
+func (mr *MockDataStoreMockRecorder) GetAllDeployments(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllDeployments", reflect.TypeOf((*MockDataStore)(nil).GetAllDeployments), arg0)
+}
+
 // GetDeployment mocks base method
 func (m *MockDataStore) GetDeployment(arg0 context.Context, arg1 string) (*storage.Deployment, bool, error) {
 	ret := m.ctrl.Call(m, "GetDeployment", arg0, arg1)
@@ -64,16 +77,16 @@ func (mr *MockDataStoreMockRecorder) GetDeployment(arg0, arg1 interface{}) *gomo
 }
 
 // GetDeployments mocks base method
-func (m *MockDataStore) GetDeployments(arg0 context.Context) ([]*storage.Deployment, error) {
-	ret := m.ctrl.Call(m, "GetDeployments", arg0)
+func (m *MockDataStore) GetDeployments(arg0 context.Context, arg1 []string) ([]*storage.Deployment, error) {
+	ret := m.ctrl.Call(m, "GetDeployments", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.Deployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetDeployments indicates an expected call of GetDeployments
-func (mr *MockDataStoreMockRecorder) GetDeployments(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeployments", reflect.TypeOf((*MockDataStore)(nil).GetDeployments), arg0)
+func (mr *MockDataStoreMockRecorder) GetDeployments(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeployments", reflect.TypeOf((*MockDataStore)(nil).GetDeployments), arg0, arg1)
 }
 
 // GetImagesForDeployment mocks base method

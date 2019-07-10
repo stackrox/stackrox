@@ -91,7 +91,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	b.Run("GetAllRetrievalFull", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			deployments, err := deploymentsDatastore.GetDeployments(ctx)
+			deployments, err := deploymentsDatastore.GetAllDeployments(ctx)
 			assert.NoError(b, err)
 			assert.Len(b, deployments, numDeployments)
 		}
