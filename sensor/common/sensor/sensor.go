@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -47,15 +46,6 @@ const (
 )
 
 var (
-	customRoutes = []routes.CustomRoute{
-		{
-			Route:         "/metrics",
-			ServerHandler: promhttp.Handler(),
-			Authorizer:    allow.Anonymous(),
-			Compression:   false,
-		},
-	}
-
 	log = logging.LoggerForModule()
 )
 
@@ -150,7 +140,7 @@ func (s *Sensor) Start() {
 		Compression:   false,
 	}
 
-	customRoutes = append(customRoutes, admissionControllerRoute)
+	customRoutes := []routes.CustomRoute{admissionControllerRoute}
 
 	// Create grpc server with custom routes
 	mtlsServiceIDExtractor, err := serviceAuthn.NewExtractor()

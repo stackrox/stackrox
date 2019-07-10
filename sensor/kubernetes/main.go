@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -25,6 +26,9 @@ var (
 
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
+
+	// Start the prometheus metrics server
+	metrics.NewDefaultHTTPServer().RunForever()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt)
