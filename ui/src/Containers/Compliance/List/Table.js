@@ -174,7 +174,8 @@ const ListTable = ({
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
     function filterByComplianceState(data, filterQuery, isControlList) {
         const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
-        if (!filterQuery[complianceStateKey]) return data.results;
+        if (!filterQuery[complianceStateKey] || filterQuery[complianceStateKey].length > 1)
+            return data.results;
         const val = filterQuery[complianceStateKey].toLowerCase();
         const isPassing = val === 'pass';
         const isFailing = val === 'fail';
