@@ -873,62 +873,62 @@ const formDescriptors = {
         scopedAccess: [
             {
                 label: 'Name',
-                jsonpath: 'config.name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Endpoint',
-                jsonpath: 'config.endpointConfig.endpoint',
+                jsonpath: 'endpointConfig.endpoint',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Enabled',
-                jsonpath: 'config.enabled',
+                jsonpath: 'enabled',
                 type: 'toggle',
                 placeholder: ''
             },
             {
                 label: 'Skip TLS Verify',
-                jsonpath: 'config.endpointConfig.skipTlsVerify',
+                jsonpath: 'endpointConfig.skipTlsVerify',
                 type: 'toggle',
                 placeholder: ''
             },
             {
                 label: 'CA Cert (optional)',
-                jsonpath: 'config.endpointConfig.caCert',
+                jsonpath: 'endpointConfig.caCert',
                 type: 'textarea',
                 placeholder: ''
             },
             {
                 label: 'Username (optional)',
-                jsonpath: 'config.endpointConfig.username',
+                jsonpath: 'endpointConfig.username',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Password (optional)',
-                jsonpath: 'config.endpointConfig.password',
+                jsonpath: 'endpointConfig.password',
                 type: 'password',
                 placeholder: ''
             },
             {
                 label: 'Headers',
-                jsonpath: 'config.endpointConfig.headers',
+                jsonpath: 'endpointConfig.headers',
                 type: 'list',
                 listRender: renderKeyValues
             },
             {
                 label: 'Client Certificate (optional)',
-                jsonpath: 'config.endpointConfig.clientCertPem',
+                jsonpath: 'endpointConfig.clientCertPem',
                 type: 'textarea',
                 placeholder:
                     '-----BEGIN CERTIFICATE-----\nPEM-encoded client certificate\n-----END CERTIFICATE-----'
             },
             {
                 label: 'Client Key (optional)',
-                jsonpath: 'config.endpointConfig.clientKeyPem',
+                jsonpath: 'endpointConfig.clientKeyPem',
                 type: 'textarea',
                 placeholder:
                     '-----BEGIN RSA PRIVATE KEY-----\nPEM-encoded private key\n-----END RSA PRIVATE KEY-----'

@@ -74,11 +74,11 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) DryRunAuthzPluginConfig(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*v1.Empty, error) {
-	if err := validateConfig(req.GetConfig()); err != nil {
+func (s *serviceImpl) DryRunAuthzPluginConfig(ctx context.Context, req *storage.AuthzPluginConfig) (*v1.Empty, error) {
+	if err := validateConfig(req); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.testConfig(ctx, req.GetConfig()); err != nil {
+	if err := s.testConfig(ctx, req); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	return &v1.Empty{}, nil
@@ -94,11 +94,11 @@ func (s *serviceImpl) GetAuthzPluginConfigs(ctx context.Context, _ *v1.Empty) (*
 	}, nil
 }
 
-func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*storage.AuthzPluginConfig, error) {
-	if err := validateConfig(req.GetConfig()); err != nil {
+func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *storage.AuthzPluginConfig) (*storage.AuthzPluginConfig, error) {
+	if err := validateConfig(req); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.testConfig(ctx, req.GetConfig()); err != nil {
+	if err := s.testConfig(ctx, req); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "%v\nCheck the central logs for full error.", err)
 	}
 
@@ -107,7 +107,7 @@ func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *v1.UpsertAu
 		ctx = datastore.WithModifyEnabledPluginCap(ctx)
 	}
 
-	upsertedConfig, err := s.ds.UpsertAuthzPluginConfig(ctx, req.GetConfig())
+	upsertedConfig, err := s.ds.UpsertAuthzPluginConfig(ctx, req)
 	if err != nil {
 		return nil, err
 	}
