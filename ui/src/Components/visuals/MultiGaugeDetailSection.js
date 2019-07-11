@@ -86,8 +86,8 @@ class MultiGaugeDetailSection extends Component {
         const failingSelected = selectedData && selectedData.failing.selected;
         const passingClassName = passingSelected ? 'text-success-600' : '';
         const failingClassName = failingSelected ? 'text-alert-600' : '';
-        const { controls: passingValue } = d.passing;
-        const { controls: failingValue } = d.failing;
+        const { value: passingValue } = d.passing;
+        const { value: failingValue } = d.failing;
         return (
             <div
                 key={`${d.title}-${d.arc}`}
