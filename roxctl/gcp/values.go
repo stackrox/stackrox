@@ -17,12 +17,8 @@ type Values struct {
 	MonitoringImage string `yaml:"monitoring-image"`
 
 	License string `yaml:"license"`
-	Network string `yaml:"network"`
-	Storage string `yaml:"storage"`
 
-	StorageHostpathPath              string `yaml:"storage-hostpath-path"`
-	StorageHostpathNodeselectorKey   string `yaml:"storage-hostpath-nodeselector-key"`
-	StorageHostpathNodeselectorValue string `yaml:"storage-hostpath-nodeselector-value"`
+	Network string `yaml:"network"`
 
 	PVCName         string `yaml:"pvc-name"`
 	PVCStorageclass string `yaml:"pvc-storageclass"`

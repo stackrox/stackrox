@@ -814,6 +814,14 @@ jobs:
           name: Build deployer image for GCP Marketplace
           command: make docker-build-deployer-image
 
+      - run:
+          name: Push new image
+          command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+
+            TAG="$(make tag)"
+            docker push "docker.io/stackrox/deployer:${TAG}" | cat
+
       - cleanup-clusters-on-fail
 
   build-scale-monitoring-and-mock-server:
@@ -1938,6 +1946,30 @@ jobs:
               gsutil cp windows_amd64_pure_stripped/roxctl.exe "gs://sr-roxc/${release}/bin/Windows/roxctl.exe"
             done
 
+
+
+      - run:
+          name: Push image into gcr.io for GCP Marketplace
+          command: |
+            docker login -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER" https://gcr.io
+
+            MAIN_TAG=$(make tag)
+            SCANNER_TAG=$(make scanner-tag)
+
+            docker tag  docker.io/stackrox/deployer:$MAIN_TAG gcr.io/stackrox-launcher-project-1/stackrox/deployer:$MAIN_TAG
+            docker push gcr.io/stackrox-launcher-project-1/stackrox/deployer:$MAIN_TAG | cat
+
+            docker tag  stackrox.io/main:$MAIN_TAG gcr.io/stackrox-launcher-project-1/stackrox:$MAIN_TAG
+            docker push gcr.io/stackrox-launcher-project-1/stackrox:$MAIN_TAG | cat
+
+            docker tag  stackrox.io/monitoring:$MAIN_TAG gcr.io/stackrox-launcher-project-1/stackrox/monitoring:$MAIN_TAG
+            docker push gcr.io/stackrox-launcher-project-1/stackrox/monitoring:$MAIN_TAG | cat
+
+            docker pull stackrox.io/scanner:$SCANNER_TAG | cat
+            docker tag  stackrox.io/scanner:$SCANNER_TAG gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG
+            docker push gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG | cat
+
+
   regenerate-dev-license:
     <<: *defaults
     resource_class: small
@@ -2044,7 +2076,7 @@ workflows:
             tags:
               only: /.*/
       - build-deployer:
-          context: docker-io-pull
+          context: docker-io-push
           requires:
             - pre-build-cli
           filters:
@@ -2194,6 +2226,7 @@ workflows:
           context: docker-io-and-stackrox-io-push
           requires:
             - build
+            - build-deployer
             - unit-tests
           filters:
             branches:

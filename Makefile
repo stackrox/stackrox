@@ -521,3 +521,7 @@ ossls-notice:
 .PHONY: collector-tag
 collector-tag:
 	@cat COLLECTOR_VERSION
+
+.PHONY: scanner-tag
+scanner-tag:
+	@cat SCANNER_VERSION
