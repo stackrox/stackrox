@@ -7,13 +7,14 @@ import (
 // GetPolicy returns a Mock Policy
 func GetPolicy() *storage.Policy {
 	return &storage.Policy{
-		Id:          "b3523d84-ac1a-4daa-a908-62d196c5a741",
-		Name:        "Vulnerable Container",
-		Categories:  []string{"Image Assurance", "Privileges Capabilities", "Container Configuration"},
-		Description: "Alert if the container contains vulnerabilities",
-		Severity:    storage.Severity_LOW_SEVERITY,
-		Rationale:   "This is the rationale",
-		Remediation: "This is the remediation",
+		Id:              "b3523d84-ac1a-4daa-a908-62d196c5a741",
+		Name:            "Vulnerable Container",
+		Categories:      []string{"Image Assurance", "Privileges Capabilities", "Container Configuration"},
+		Description:     "Alert if the container contains vulnerabilities",
+		Severity:        storage.Severity_LOW_SEVERITY,
+		Rationale:       "This is the rationale",
+		Remediation:     "This is the remediation",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		Scope: []*storage.Scope{
 			{
 				Cluster:   "prod cluster",

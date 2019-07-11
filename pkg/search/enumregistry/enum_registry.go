@@ -26,16 +26,31 @@ func Add(path string, enumDescriptor *descriptor.EnumDescriptorProto) {
 	}
 }
 
+// GetComplement takes in a field path and a string to evaluate against, and returns the int32 form
+// of the complement of matching enums.
+func GetComplement(fieldPath string, s string) []int32 {
+	lowerS := strings.ToLower(s)
+	return get(fieldPath, func(k string) bool {
+		return !strings.HasPrefix(k, lowerS)
+	})
+}
+
 // Get takes in a field path and a string to evaluate against and returns the int32 form of any matching enums
 func Get(fieldPath string, s string) []int32 {
-	s = strings.ToLower(s)
+	lowerS := strings.ToLower(s)
+	return get(fieldPath, func(k string) bool {
+		return strings.HasPrefix(k, lowerS)
+	})
+}
+
+func get(fieldPath string, include func(string) bool) []int32 {
 	m, ok := enumMap[fieldPath]
 	if !ok {
 		return nil
 	}
 	var matches []int32
 	for k, v := range m {
-		if strings.HasPrefix(k, s) {
+		if include(k) {
 			matches = append(matches, v)
 		}
 	}

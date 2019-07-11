@@ -6,6 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ const (
 	fakeID = "ABC"
 )
 
-func TestPolicyIndex(t *testing.T) {
+func TestSecretIndex(t *testing.T) {
 	suite.Run(t, new(SecretIndexTestSuite))
 }
 
@@ -37,6 +38,12 @@ func (suite *SecretIndexTestSuite) SetupSuite() {
 	suite.indexer = New(tmpIndex)
 
 	secret := fixtures.GetSecret()
+	secret.Files = []*storage.SecretDataFile{
+		{
+			Name: "blah",
+			Type: storage.SecretType_CERTIFICATE_REQUEST,
+		},
+	}
 	suite.NoError(suite.indexer.AddSecret(secret))
 
 	secondSecret := fixtures.GetSecret()
@@ -54,6 +61,16 @@ func (suite *SecretIndexTestSuite) TestSecretSearch() {
 			name:        "Empty",
 			q:           search.EmptyQuery(),
 			expectedIDs: []string{fakeID, fixtures.GetSecret().GetId()},
+		},
+		{
+			name:        "Secret type",
+			q:           search.NewQueryBuilder().AddStrings(search.SecretType, storage.SecretType_CERTIFICATE_REQUEST.String()).ProtoQuery(),
+			expectedIDs: []string{fixtures.GetSecret().GetId()},
+		},
+		{
+			name:        "Secret type",
+			q:           search.NewQueryBuilder().AddStrings(search.SecretType, search.NegateQueryString(storage.SecretType_IMAGE_PULL_SECRET.String())).ProtoQuery(),
+			expectedIDs: []string{fixtures.GetSecret().GetId()},
 		},
 	}
 

@@ -79,6 +79,11 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "deploy").ProtoQuery(),
 			expectedIDs: []string{fakeID},
 		},
+		{
+			name:        "Lifecycle stage with negation",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "!deploy").ProtoQuery(),
+			expectedIDs: []string{fixtures.GetPolicy().GetId()},
+		},
 	}
 
 	for _, c := range cases {

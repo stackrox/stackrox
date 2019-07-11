@@ -108,7 +108,12 @@ func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query,
 }
 
 func newEnumQuery(_ v1.SearchCategory, field, value string) (query.Query, error) {
-	enumValues := enumregistry.Get(field, value)
+	var enumValues []int32
+	if strings.HasPrefix(value, pkgSearch.NegationPrefix) {
+		enumValues = enumregistry.GetComplement(field, strings.TrimPrefix(value, pkgSearch.NegationPrefix))
+	} else {
+		enumValues = enumregistry.Get(field, value)
+	}
 	if len(enumValues) == 0 {
 		return nil, fmt.Errorf("could not find corresponding enum at field %q with value %q", field, value)
 	}
