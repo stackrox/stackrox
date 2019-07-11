@@ -74,7 +74,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 							ContainerStatuses: []v1.ContainerStatus{
 								{
 									Name:  "container1",
-									Image: "docker.io/stackrox/kafka:1.3",
+									Image: "docker.io/stackrox/kafka:latest",
 								},
 								{
 									Name:        "container2",

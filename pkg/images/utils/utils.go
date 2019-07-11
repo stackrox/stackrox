@@ -115,8 +115,8 @@ func Reference(img *storage.Image) string {
 	return "latest"
 }
 
-// ExtractImageSha returns the image sha if it exists within the string.
-func ExtractImageSha(imageStr string) string {
+// ExtractImageDigest returns the image sha if it exists within the string.
+func ExtractImageDigest(imageStr string) string {
 	if idx := strings.Index(imageStr, "sha256:"); idx != -1 {
 		return imageStr[idx:]
 	}

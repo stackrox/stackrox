@@ -313,7 +313,7 @@ func (w *deploymentWrap) getPods(labelSelector *metav1.LabelSelector, lister v1l
 
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 	w.pods = pods
-	w.populateImageShas(pods...)
+	w.populateImageIDs(pods...)
 	w.populateContainerInstances(pods...)
 }
 
@@ -334,7 +334,12 @@ func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
 	}
 }
 
-func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
+type digestPair struct {
+	digest       string
+	matchedImage bool
+}
+
+func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 	// All containers have a container status
 	// The downside to this is that if different pods have different versions then we will miss that fact that pods are running
 	// different versions and clobber it. I've added a log to illustrate the clobbering so we can see how often it happens
@@ -344,6 +349,13 @@ func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
 	sort.SliceStable(w.Deployment.Containers, func(i, j int) bool {
 		return w.Deployment.GetContainers()[i].Name < w.Deployment.GetContainers()[j].Name
 	})
+
+	// Sort the pods by time created as that pod will be most likely to have the most updated spec
+	sort.SliceStable(pods, func(i, j int) bool {
+		return pods[j].CreationTimestamp.Before(&pods[i].CreationTimestamp)
+	})
+
+	containersToDigests := make(map[string]digestPair)
 	for _, p := range pods {
 		sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
 			return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
@@ -353,11 +365,49 @@ func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
 				// This should not happened, but could happen if w.Deployment.Containers and container status are out of sync
 				break
 			}
-			if sha := imageUtils.ExtractImageSha(c.ImageID); sha != "" {
-				sha = types.NewDigest(sha).Digest()
-				w.Deployment.Containers[i].Image.Id = types.NewDigest(sha).Digest()
+			// If there already is an image ID for the image then that implies that the name of the image was fully qualified
+			// with an image digest. e.g. stackrox.io/main@sha256:xyz
+			if w.Deployment.Containers[i].Image.GetId() != "" {
+				continue
 			}
+
+			currentDigestPair := containersToDigests[c.Name]
+
+			// Stop early if we have found a container with an image match and a digest that we derived from the ImageID field
+			if currentDigestPair.matchedImage && currentDigestPair.digest != "" {
+				continue
+			}
+
+			digest := imageUtils.ExtractImageDigest(c.ImageID)
+
+			parsedName, err := imageUtils.GenerateImageFromString(c.Image)
+			if err != nil {
+				// This error will only happen if we could not parse the image, this is possible if the image in kubernetes is malformed
+				// e.g. us.gcr.io/$PROJECT/xyz:latest is an example that we have seen
+				continue
+			}
+
+			// If there is an image that matches, always take the value derived from the ImageID field
+			// even if the digest is empty. Putting an empty digest from a matched image is better than
+			// taking a guess with another digest from an image with a different name
+			containerImage := w.Deployment.Containers[i].Image
+			if containerImage.Name.FullName == parsedName.Name.FullName {
+				containersToDigests[c.Name] = digestPair{matchedImage: true, digest: digest}
+				continue
+			}
+
+			// If we have already found a digest from a more up to date Pod, then don't overwrite it
+			if currentDigestPair.matchedImage || currentDigestPair.digest != "" {
+				continue
+			}
+
+			// Add our most up to date guess about the digest
+			containersToDigests[c.Name] = digestPair{digest: digest}
 		}
+	}
+	// Attribute the digests to the container image
+	for i, c := range w.Deployment.Containers {
+		w.Deployment.Containers[i].Image.Id = types.NewDigest(containersToDigests[c.Name].digest).Digest()
 	}
 }
 
