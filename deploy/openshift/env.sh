@@ -6,3 +6,5 @@ export ORCH_CMD="oc"
 export ORCH_FULLNAME="openshift"
 export CLUSTER_TYPE="OPENSHIFT_CLUSTER"
 export OUTPUT_FORMAT=""
+
+export ADMISSION_CONTROLLER="false"

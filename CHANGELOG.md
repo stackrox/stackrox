@@ -2,10 +2,18 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [25.0]
+### Added
+- `roxctl sensor generate openshift` can be used to generate sensor bundles for OpenShift clusters from
+  the command line.
 ### Changed
-- Removed _DebugMetrics_ resource.
-- Only users with _Admin_ role can access `/debug` endpoint. 
+- Removed _DebugMetrics_ resource.  
+  Only users with _Admin_ role can access `/debug` endpoint.  
   _Note: This is also applicable with authorization plugin for scoped access control enabled._
+- Due to the addition of the `roxctl sensor generate openshift` command, the `--admission-controller`
+  flags that are exclusive to Kubernetes (non-OpenShift, `k8s`) clusters must be specified *after* the
+  `k8s` command.  
+  For example, `roxctl sensor generate --admission-controller=true k8s` is no longer a
+  legal invocation; use `roxctl sensor generate k8s --admission-controller=true` instead.
 
 
 ## [24.0]
