@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
 import entityTypes from 'constants/entityTypes';
 import { distanceInWordsToNow } from 'date-fns';
+import queryService from 'modules/queryService';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -27,6 +28,7 @@ const Cluster = ({ id, onRelatedEntityListClick }) => (
             };
 
             const {
+                name,
                 alertsCount = 'N/A',
                 nodes = [],
                 namespaces = [],
@@ -56,7 +58,7 @@ const Cluster = ({ id, onRelatedEntityListClick }) => (
                     <CollapsibleSection title="Cluster Details">
                         <div className="flex flex-wrap pdf-page">
                             <Metadata
-                                className="flex-grow mx-4 bg-base-100 h-48 mb-4"
+                                className="mx-4 bg-base-100 h-48 mb-4"
                                 keyValuePairs={metadataKeyValuePairs}
                                 counts={metadataCounts}
                             />
@@ -107,7 +109,9 @@ const Cluster = ({ id, onRelatedEntityListClick }) => (
                                 headers={[{ text: 'Policies' }, { text: 'CIS Controls' }]}
                             >
                                 <TabContent>
-                                    <DeploymentsWithFailedPolicies />
+                                    <DeploymentsWithFailedPolicies
+                                        query={queryService.objectToWhereClause({ Cluster: name })}
+                                    />
                                 </TabContent>
                                 <TabContent>
                                     <NodesWithFailedControls />

@@ -7,6 +7,7 @@ import resolvePath from 'object-resolve-path';
 import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
+import uniq from 'lodash/uniq';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -83,14 +84,16 @@ Deployments.propTypes = {
     history: PropTypes.string.isRequired
 };
 
-const DeploymentsWithFailedPolicies = () => {
+const DeploymentsWithFailedPolicies = ({ query }) => {
     return (
-        <Query query={VIOLATIONS}>
+        <Query query={VIOLATIONS} variables={{ query }}>
             {({ loading, data }) => {
                 if (loading) return <Loader />;
                 if (!data) return null;
                 const groups = getDeploymentsGroupedByPolicies(data);
-                const header = `${data.violations.length} deployments with failed policies`;
+                const numDeployments = uniq(data.violations.map(violation => violation.deployment))
+                    .length;
+                const header = `${numDeployments} deployments with failed policies`;
                 const groupColumns = [
                     {
                         expander: true,
@@ -146,6 +149,14 @@ const DeploymentsWithFailedPolicies = () => {
             }}
         </Query>
     );
+};
+
+DeploymentsWithFailedPolicies.propTypes = {
+    query: PropTypes.string
+};
+
+DeploymentsWithFailedPolicies.defaultProps = {
+    query: ''
 };
 
 export default DeploymentsWithFailedPolicies;

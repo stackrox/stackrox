@@ -7,6 +7,8 @@ import { NAMESPACES_QUERY as QUERY } from 'queries/namespace';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
+
+import LabelChip from 'Components/LabelChip';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -42,6 +44,34 @@ const buildTableColumns = (match, location) => {
             }
         },
         {
+            Header: `Policies`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { policyCount, metadata } = original;
+                if (!policyCount || policyCount === 0) return 'No matches';
+                const { id } = metadata;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.POLICY)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={`${policyCount} matches`} />;
+            },
+            accessor: 'policyCount'
+        },
+        {
+            Header: `Policy Status`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original }) => {
+                const { policyStatus } = original;
+                return policyStatus ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+            },
+            accessor: 'policyStatus'
+        },
+        {
             Header: `Secrets`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
@@ -59,6 +89,59 @@ const buildTableColumns = (match, location) => {
             id: 'numSecrets',
             accessor: d => d.numSecrets,
             sortMethod: sortValueByLength
+        },
+        {
+            Header: `Users & Groups`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { subjectsCount, metadata } = original;
+                if (!subjectsCount || subjectsCount === 0) return 'No matches';
+                const { id } = metadata;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.SUBJECT)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={`${subjectsCount} matches`} />;
+            },
+            accessor: 'subjectCount'
+        },
+        {
+            Header: `Service Accounts`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { serviceAccountCount, metadata } = original;
+                if (!serviceAccountCount || serviceAccountCount === 0) return 'No matches';
+                const { id } = metadata;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.SERVICE_ACCOUNT)
+                    .url();
+                return (
+                    <TableCellLink pdf={pdf} url={url} text={`${serviceAccountCount} matches`} />
+                );
+            },
+            accessor: 'serviceAccountCount'
+        },
+        {
+            Header: `Roles granted`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { k8sroleCount, metadata } = original;
+                if (!k8sroleCount || k8sroleCount === 0) return 'No matches';
+                const { id } = metadata;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.ROLE)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={`${k8sroleCount} matches`} />;
+            },
+            accessor: 'k8sroleCount'
         }
     ];
     return tableColumns;

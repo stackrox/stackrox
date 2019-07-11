@@ -1,8 +1,8 @@
 import gql from 'graphql-tag';
 
 const VIOLATIONS = gql`
-    query violations {
-        violations {
+    query violations($query: String) {
+        violations(query: $query) {
             time
             deployment {
                 id

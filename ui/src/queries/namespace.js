@@ -14,6 +14,12 @@ export const NAMESPACES_QUERY = gql`
                 }
             }
             numSecrets
+            imageCount
+            policyCount
+            k8sroleCount
+            serviceAccountCount
+            subjectCount
+            policyStatus
         }
     }
 `;
@@ -70,6 +76,8 @@ export const NAMESPACE_QUERY = gql`
             numDeployments
             numNetworkPolicies
             numSecrets
+            imageCount
+            policyCount
         }
     }
 `;

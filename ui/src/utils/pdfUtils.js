@@ -58,7 +58,10 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
                 } else {
                     const flattenedObj = flattenObject(val);
                     colValue =
-                        (flattenedObj[key] && flattenedObj[key].replace(/\s+/g, ' ').trim()) ||
+                        (flattenedObj[key] &&
+                            String(flattenedObj[key])
+                                .replace(/\s+/g, ' ')
+                                .trim()) ||
                         'N/A';
                 }
                 td.innerHTML = colValue;
