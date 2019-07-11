@@ -109,8 +109,6 @@ interface OrchestratorMain {
 
     //Misc
     def execInContainer(Deployment deployment, String cmd)
-    def createClairifyDeployment()
-    String getClairifyEndpoint()
     String generateYaml(Object orchestratorObject)
     String getNameSpace()
     String getSensorContainerName()

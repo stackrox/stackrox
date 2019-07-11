@@ -45,6 +45,9 @@ class BaseSpecification extends Specification {
     private dtrId = ""
 
     @Shared
+    private boolean stackroxScannerIntegrationDidPreExist
+
+    @Shared
     private tokenId = ""
 
     @Shared
@@ -57,6 +60,7 @@ class BaseSpecification extends Specification {
         RestAssured.useRelaxedHTTPSValidation()
         try {
             dtrId = Services.addDockerTrustedRegistry()
+            stackroxScannerIntegrationDidPreExist = Services.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
             orchestrator.setup()
         } catch (Exception e) {
             println "Error setting up orchestrator: ${e.message}"
@@ -88,6 +92,9 @@ class BaseSpecification extends Specification {
     def cleanupSpec() {
         try {
             Services.deleteImageIntegration(dtrId)
+            if (stackroxScannerIntegrationDidPreExist) {
+                Services.addStackroxScannerIntegration()
+            }
             orchestrator.cleanup()
         } catch (Exception e) {
             println "Error to clean up orchestrator: ${e.message}"

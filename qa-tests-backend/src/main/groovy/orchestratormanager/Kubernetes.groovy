@@ -1,7 +1,6 @@
 package orchestratormanager
 
 import common.YamlGenerator
-import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
@@ -995,89 +994,6 @@ class Kubernetes implements OrchestratorMain {
         }
         executorService.shutdown()
         return true
-    }
-
-    def createClairifyDeployment() {
-        //create clairify service
-        Service clairifyService = new Service(
-                apiVersion: "v1",
-                metadata: new ObjectMeta(
-                        name: "clairify",
-                        namespace: "stackrox"
-                ),
-                spec: new ServiceSpec(
-                        ports: [
-                                new ServicePort(
-                                        name: "http-clair",
-                                        port: 6060,
-                                        targetPort: new IntOrString(6060)
-                                ),
-                                new ServicePort(
-                                        name: "http-clairify",
-                                        port: 8080,
-                                        targetPort: new IntOrString(8080)
-                                )
-                        ],
-                        type: "ClusterIP",
-                        selector: ["app":"clairify"]
-                )
-        )
-        client.services().inNamespace("stackrox").createOrReplace(clairifyService)
-
-        //create clairify deployment
-        Container clairifyContainer = new Container(
-                name: "clairify",
-                image: "stackrox/clairify:0.5.3",
-                env: [new EnvVar(
-                        name: "CLAIR_ARGS",
-                        value: "-insecure-tls")
-                ],
-                command: ["/init", "/clairify"],
-                imagePullPolicy: "Always",
-                ports: [new ContainerPort(containerPort: 6060, name: "clair-http"),
-                        new ContainerPort(containerPort: 8080, name: "clairify-http")
-                ],
-                securityContext: new SecurityContext(
-                        capabilities: new Capabilities(
-                                drop: ["NET_RAW"]
-                        )
-                )
-        )
-
-        K8sDeployment clairifyDeployment =
-                new K8sDeployment(
-                        metadata: new ObjectMeta(
-                                name: "clairify",
-                                namespace: "stackrox",
-                                labels: ["app":"clairify"],
-                                annotations: ["owner":"stackrox", "email":"support@stackrox.com"]
-                        ),
-                        spec: new DeploymentSpec(
-                                replicas: 1,
-                                minReadySeconds: 15,
-                                selector: new LabelSelector(
-                                        matchLabels: ["app":"clairify"]
-                                ),
-                                template: new PodTemplateSpec(
-                                        metadata: new ObjectMeta(
-                                                namespace: "stackrox",
-                                                labels: ["app":"clairify"]
-                                        ),
-                                        spec: new PodSpec(
-                                                containers: [clairifyContainer],
-                                                imagePullSecrets: [new LocalObjectReference(
-                                                        name: "stackrox"
-                                                )]
-                                        )
-                                )
-                        )
-                )
-        this.deployments.inNamespace("stackrox").createOrReplace(clairifyDeployment)
-        waitForDeploymentCreation("clairify", "stackrox")
-    }
-
-    String getClairifyEndpoint() {
-        return "clairify.stackrox:8080"
     }
 
     String generateYaml(Object orchestratorObject) {

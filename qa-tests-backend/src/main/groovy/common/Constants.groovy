@@ -18,8 +18,10 @@ class Constants {
             "Assessment Time" : "timestamp",
     ]
     static final VIOLATIONS_WHITELIST = [
-            "Monitoring" : ["CVSS >= 7"],
-            "clairify" : ["Red Hat Package Manager Execution"],
+            // TODO(ROX-2659) Remove the fixable CVSS one from here, that's not okay.
+            "monitoring" : ["CVSS >= 7", "Ubuntu Package Manager in Image", "Curl in Image", "Fixable CVSS >= 7"],
+            "scanner" : ["Red Hat Package Manager Execution", "Red Hat Package Manager in Image", "Curl in Image"],
+            "collector": ["Ubuntu Package Manager in Image"],
             "authorization-plugin" : ["Latest tag", "90-Day Image Age"],
             "webhookserver" : ["90-Day Image Age"],
     ]

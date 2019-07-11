@@ -1,3 +1,4 @@
+import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
@@ -168,6 +169,57 @@ class Services extends BaseService {
         }
         println ("Unable to create image integration")
         return ""
+    }
+
+    static final private String AUTO_REGISTERED_SCANNER_INTEGRATION = "Stackrox Scanner"
+
+    // For now, we delete the auto registered StackRox Scanner integration
+    // since the QA tests are not stable when we run with them.
+    // This function returns whether or not the integration was deleted.
+    static boolean deleteAutoRegisteredStackRoxScannerIntegrationIfExists() {
+        try {
+            // The Stackrox Scanner integration is auto-added by the product,
+            // so we first check whether it already exists.
+            def scannerIntegrations = getIntegrationClient().getImageIntegrations(
+                ImageIntegrationServiceOuterClass.GetImageIntegrationsRequest.
+                    newBuilder().
+                    setName(AUTO_REGISTERED_SCANNER_INTEGRATION).
+                    build()
+            )
+            if (scannerIntegrations.getIntegrationsCount() > 1) {
+                throw new RuntimeException("UNEXPECTED: Got more than one scanner integration: ${scannerIntegrations}")
+            }
+            if (scannerIntegrations.getIntegrationsCount() == 0) {
+                return false
+            }
+            def id = scannerIntegrations.getIntegrations(0).id
+            // Delete
+            getIntegrationClient().deleteImageIntegration(ResourceByID.newBuilder().setId(id).build())
+            return true
+        } catch (Exception e) {
+            println "Unable to delete existing Stackrox scanner integration: ${e.message}"
+        }
+    }
+
+    // This function adds the Stackrox scanner integration.
+    // Currently, we do this if it was deleted by the test on setup,
+    // so that the test leaves things in the same state after cleanup.
+    static String addStackroxScannerIntegration() {
+        try {
+            def integration = getIntegrationClient().postImageIntegration(ImageIntegration.newBuilder().
+                setName(AUTO_REGISTERED_SCANNER_INTEGRATION).
+                setType("clairify").
+                setCategories(0, ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER).
+                setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder().
+                    setEndpoint("https://scanner.stackrox:8080").
+                    build()
+                ).
+                build()
+            )
+            return integration.id
+        } catch (Exception e) {
+            println "Unable to ensure scanner integrations: ${e.message}"
+        }
     }
 
     static String addDockerTrustedRegistry(boolean includeScanner = true) {
@@ -513,7 +565,7 @@ class Services extends BaseService {
         return disappearedFromStackRox
     }
 
-    static waitForDeployment(objects.Deployment deployment, int iterations = 15, int interval = 2) {
+    static waitForDeployment(objects.Deployment deployment, int iterations = 30, int interval = 2) {
         if (deployment.deploymentUid == null) {
             println "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"
             deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)
