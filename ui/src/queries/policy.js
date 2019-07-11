@@ -51,7 +51,9 @@ export const POLICIES = gql`
         policies(query: $query) {
             id
             name
-            description
+            enforcementActions
+            severity
+            categories
             lifecycleStages
         }
     }

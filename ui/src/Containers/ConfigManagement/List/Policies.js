@@ -5,6 +5,8 @@ import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPag
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LifecycleStageLabel from 'Components/LifecycleStageLabel';
+
+import SeverityLabel from 'Components/SeverityLabel';
 import List from './List';
 
 const tableColumns = [
@@ -21,10 +23,35 @@ const tableColumns = [
         accessor: 'name'
     },
     {
-        Header: `Description`,
+        Header: `Enforced`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'description'
+        Cell: ({ original }) => {
+            const { enforcementActions } = original;
+            return enforcementActions ? 'Yes' : 'No';
+        },
+        accessor: 'enforcementActions'
+    },
+    {
+        Header: `Severity`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        // eslint-disable-next-line
+        Cell: ({ original }) => {
+            const { severity } = original;
+            return <SeverityLabel severity={severity} />;
+        },
+        accessor: 'severity'
+    },
+    {
+        Header: `Categories`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        Cell: ({ original }) => {
+            const { categories } = original;
+            return categories.join(', ');
+        },
+        accessor: 'categories'
     },
     {
         Header: `Lifecycle Stage`,

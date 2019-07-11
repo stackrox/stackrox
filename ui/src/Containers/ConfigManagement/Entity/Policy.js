@@ -154,7 +154,7 @@ const Policy = ({ id }) => {
                         </CollapsibleSection>
                         {!!alerts.length && (
                             <CollapsibleSection title="Policy Findings">
-                                <div className="flex mb-4 pdf-page pdf-stretch">
+                                <div className="flex mb-4 pdf-page pdf-stretch p-4">
                                     <DeploymentViolations
                                         className="mx-4 w-full bg-base-100"
                                         alerts={alerts}
