@@ -1,7 +1,9 @@
 applicationApiVersion: v1beta1
 
 properties:
-  # Required solution properties.
+  ##################################
+  #  Required Standard Properties  #
+  ##################################
   name:
     type: string
     default: stackrox
@@ -14,6 +16,9 @@ properties:
     x-google-marketplace:
       type: NAMESPACE
 
+  #############################
+  #  Docker Image Properties  #
+  #############################
   main-image:
     type: string
     title: Stackrox image name
@@ -38,56 +43,55 @@ properties:
     x-google-marketplace:
       type: IMAGE
 
-  # Secrets.
+  ######################
+  #  License Property  #
+  ######################
   license:
     type: string
-    title: License key
-    description: Text of the Stackrox license key
+    title: (OPTIONAL) Enter your StackRox license key
+    description: This is the full license key given to you by StackRox
 
-  password:
+  ###########################
+  #  Networking Properties  #
+  ###########################
+  network:
     type: string
-    title: Admin password
-    description: Stackrox administrator password
-
-  # Networking.
-  lb-type:
-    type: string
-    title: the method of exposing Central (lb, np, none)
-    description: the method of exposing Central (lb, np, none)
-    default: none
+    title: How do you want to expose StackRox over the network?
+    description: This is the method that will be used for exposing StackRox to the network
+    default: Load Balancer
     enum:
-      - lb
-      - np
-      - none
+      - Load Balancer
+      - Node Port
+      - None
 
-#  offline:
-#    type: boolean
-#    title: run StackRox in offline mode which avoids reaching out to the internet
-#    description: run StackRox in offline mode which avoids reaching out to the internet
-#    default: false
+  ########################
+  #  Storage Properties  #
+  ########################
+  pvc-name:
+    type: string
+    title: What do you want to name the volume?
+    description: This is the name that will be given to the persistent volume
+    default: stackrox-db
 
-  # Storage
-#  name:
-#    type: string
-#    title: external volume name
-#    description: external volume name
-#    default: stackrox-db
+  pvc-storageclass:
+    type: string
+    title: What storage class do you want to use?
+    description: This is the storage class that will be used for the persistent volume
+    default: standard
 
-#  size:
-#    type: integer
-#    title: external volume size in Gi (optional, defaults to 100Gi)
-#    description: external volume size in Gi (optional, defaults to 100Gi)
-#    default: "100"
+  pvc-size:
+    type: integer
+    title: How large (in gigabytes) do you want the volume to be?
+    description: This is the size in gigabytes that will be allocated for the persistent volume
+    default: 100
 
-#  storage-class:
-#    type: string
-#    title: storage class name (optional if you have a default StorageClass configured)
-#    description: storage class name (optional if you have a default StorageClass configured)
-
+  ################################
+  #  Service Account Properties  #
+  ################################
   svcacct:
     type: string
-    title: StackRox Deployer Service Account
-    description: Service account used by the Deployer to install StackRox
+    title: (REQUIRED) Temporary service account to be used when installing StackRox
+    description: This is the temporary service account that will be used to install StackRox
     x-google-marketplace:
       type: SERVICE_ACCOUNT
       serviceAccount:
@@ -99,13 +103,21 @@ properties:
             resources: ['*']
             verbs: ['*']
 
+x-google-marketplace:
+  clusterConstraints:
+    resources:
+    - requests:
+        memory: 100Mi
+        cpu: 100m
+
 required:
 - name
 - namespace
 - main-image
 - scanner-image
 - monitoring-image
-- license
-- password
-- lb-type
+- network
+- pvc-name
+- pvc-storageclass
+- pvc-size
 - svcacct

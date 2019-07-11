@@ -16,9 +16,17 @@ type Values struct {
 	ScannerImage    string `yaml:"scanner-image"`
 	MonitoringImage string `yaml:"monitoring-image"`
 
-	License          string `yaml:"license"`
-	Password         string `yaml:"password"`
-	LoadBalancerType string `yaml:"lb-type"`
+	License string `yaml:"license"`
+	Network string `yaml:"network"`
+	Storage string `yaml:"storage"`
+
+	StorageHostpathPath              string `yaml:"storage-hostpath-path"`
+	StorageHostpathNodeselectorKey   string `yaml:"storage-hostpath-nodeselector-key"`
+	StorageHostpathNodeselectorValue string `yaml:"storage-hostpath-nodeselector-value"`
+
+	PVCName         string `yaml:"pvc-name"`
+	PVCStorageclass string `yaml:"pvc-storageclass"`
+	PVCSize         uint32 `yaml:"pvc-size"`
 
 	ServiceAccount string `yaml:"svcacct"`
 }

@@ -7,6 +7,7 @@ RUN apt-get -y update \
 
 COPY ./bin/roxctl-linux /usr/bin/roxctl
 COPY gcp/application.yaml.tpl /data/application.yaml.tpl
+COPY gcp/application-success.yaml.tpl /data/application-success.yaml.tpl
 COPY gcp/create_manifests.sh /bin/create_manifests.sh
 COPY gcp/deploy.sh /bin/deploy.sh
 COPY gcp/kubectl /usr/local/bin/kubectl
@@ -17,5 +18,3 @@ ARG SCANNER_IMAGE_TAG
 
 RUN MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG SCANNER_IMAGE_TAG=$SCANNER_IMAGE_TAG envsubst < /data/schema.yaml.tpl > /data/schema.yaml \
  && rm /data/schema.yaml.tpl
-
-ENTRYPOINT ["/bin/bash"]

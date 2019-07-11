@@ -65,6 +65,7 @@ secrets:
       key.pem: {{index .SecretsBase64Map "key.pem"}}
 
   {{if ne (index .SecretsBase64Map "htpasswd") ""}}
+  password: "{{.Password}}"
   htpasswd:
     data:
       htpasswd: {{index .SecretsBase64Map "htpasswd"}}

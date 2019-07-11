@@ -47,11 +47,23 @@ func generate(outputDir string, values *Values) error {
 			},
 			ConfigType:       v1.DeploymentFormat_HELM,
 			DeploymentFormat: v1.DeploymentFormat_HELM,
-			LoadBalancerType: v1.LoadBalancerType_NONE,
 			OfflineMode:      false,
 		},
-		Password:    values.Password,
+		External: &renderer.ExternalPersistence{
+			Name:         values.PVCName,
+			StorageClass: values.PVCStorageclass,
+			Size:         values.PVCSize,
+		},
 		LicenseData: []byte(values.License),
+	}
+
+	switch values.Network {
+	case "Load Balancer":
+		config.K8sConfig.LoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
+	case "Node Port":
+		config.K8sConfig.LoadBalancerType = v1.LoadBalancerType_NODE_PORT
+	case "None":
+		config.K8sConfig.LoadBalancerType = v1.LoadBalancerType_NONE
 	}
 
 	return deploy.OutputZip(config)

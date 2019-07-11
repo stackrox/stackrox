@@ -52,6 +52,75 @@ get_token() {
     echo "$token"
 }
 
+not_deploying_to_stackrox_namespace() {
+    [[ "$(cat /data/values/namespace)" != stackrox ]]
+}
+
+update_description() {
+    name="$1"
+    connect="$2"
+
+    # Template and update description.
+    markdown="$(kubectl -n stackrox get application "$name" -o jsonpath='{.spec.descriptor.description}')"
+    markdown="$(echo "$markdown" | CONNECT="$connect" envsubst | jq --slurp --raw-input .)"
+    kubectl -n stackrox patch application "$name" --type=json \
+        -p "[{\"op\":\"replace\",\"path\":\"/spec/descriptor/description\",\"value\":${markdown}}]"
+}
+
+update_network_docs() {
+    local name="$(cat /data/values/name)"
+    local network_type="$(cat /data/values/network)"
+    local selector
+    local ip_address
+    local text
+
+    # Use the appropriate selector.
+    case "$network_type" in
+        "Load Balancer")
+            selector='{.status.loadBalancer.ingress[0].ip}'
+            ;;
+        "Node Port")
+            selector='{.spec.clusterIP}'
+            ;;
+        "None")
+            update_description "$name" ''
+            return
+            ;;
+    esac
+
+    # Wait for service to be ready for 60 seconds.
+    echo "Waiting for service address"
+    for i in $(seq 1 24); do
+        ip_address="$(kubectl -n stackrox get svc central-loadbalancer -o jsonpath="$selector")"
+        if [[ -n "$ip_address" ]]; then
+            break
+        fi
+        sleep 5
+    done
+
+    # Bail out if the service wasn't ready in time.
+    if [[ -z "$ip_address" ]]; then
+        return
+    fi
+
+    # Build text for application info.
+    case "$network_type" in
+        "Load Balancer")
+            text="https://${ip_address}/login"
+            update_description "$name" "In a browser, [visit ${text}](${text}) to access StackRox."
+            ;;
+        "Node Port")
+            text="${ip_address}:443"
+            update_description "$name" ''
+            ;;
+    esac
+
+    # Update application info.
+    echo "Got address ${text}"
+    kubectl -n stackrox patch application "$name" --type=json \
+    -p "[{\"op\":\"add\",\"path\":\"/spec/info/-\",\"value\":{\"name\":\"Stackrox address\",\"value\":\"${text}\"}}]"
+}
+
 NAME="$(/bin/print_config.py \
     --xtype NAME \
     --values_mode raw)"
@@ -71,8 +140,10 @@ export NAMESPACE=stackrox
 
 echo "Deploying application \"$NAME\""
 
-cat /data/application.yaml.tpl | envsubst > /data/application.yaml
-kubectl apply --namespace="$NAMESPACE" -f /data/application.yaml
+if not_deploying_to_stackrox_namespace; then
+    cat /data/application.yaml.tpl | envsubst > /data/application.yaml
+    kubectl apply --namespace="$NAMESPACE" -f /data/application.yaml
+fi
 
 app_uid=$(kubectl get "applications.app.k8s.io/$NAME" \
   --namespace="$NAMESPACE" \
@@ -106,10 +177,17 @@ create_manifests.sh
 # Apply the manifest.
 kubectl apply --namespace="$NAMESPACE" --filename="/data/resources.yaml"
 
+update_network_docs
 
 # Clean up IAM resources
-export NAMESPACE="$(cat /data/values/namespace)"
 patch_assembly_phase.sh --status="Success"
+export NAMESPACE="$(cat /data/values/namespace)"
+
+if not_deploying_to_stackrox_namespace; then
+    cat /data/application-success.yaml.tpl | envsubst > /data/application-success.yaml
+    kubectl patch --namespace="$NAMESPACE" application "$NAME" --type merge --patch "$(cat /data/application-success.yaml)"
+fi
+
 kubectl -n "$NAMESPACE" delete serviceaccount "${NAME}-deployer-sa"
 kubectl -n "$NAMESPACE" delete rolebinding    "${NAME}-deployer-rb"
 kubectl -n "$NAMESPACE" delete serviceaccount "${NAME}-svcacct"
