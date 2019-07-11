@@ -75,3 +75,19 @@ func IdentityExtractorOrPanic(authProvider authproviders.Provider) authn.Identit
 	}
 	return extractor
 }
+
+// IsLocalAdmin checks if the given identity is a local administrator (basic auth user, or token derived from that).
+func IsLocalAdmin(id authn.Identity) bool {
+	if id == nil {
+		return false
+	}
+
+	if basicAuthn.IsBasicIdentity(id) {
+		return true
+	}
+	provider := id.ExternalAuthProvider()
+	if provider == nil {
+		return false
+	}
+	return provider.Type() == basicAuthProvider.TypeName && provider.ID() == basicAuthProviderID
+}

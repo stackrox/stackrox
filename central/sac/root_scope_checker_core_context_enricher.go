@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
+	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/sac"
 	sacClient "github.com/stackrox/rox/pkg/sac/client"
 	"github.com/stackrox/rox/pkg/sync"
@@ -68,7 +68,7 @@ func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context
 	if id.Service() != nil {
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
 	}
-	if basic.IsBasicIdentity(id) {
+	if userpass.IsLocalAdmin(id) {
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
 	}
 

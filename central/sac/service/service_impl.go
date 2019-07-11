@@ -5,13 +5,13 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
+	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sac/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -103,7 +103,7 @@ func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *v1.UpsertAu
 	}
 
 	// Allow modifying enabled plugin only for basic auth user.
-	if basic.IsBasicIdentity(authn.IdentityFromContext(ctx)) {
+	if userpass.IsLocalAdmin(authn.IdentityFromContext(ctx)) {
 		ctx = datastore.WithModifyEnabledPluginCap(ctx)
 	}
 
@@ -116,7 +116,7 @@ func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *v1.UpsertAu
 
 func (s *serviceImpl) DeleteAuthzPlugin(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	// Allow modifying enabled plugin only for basic auth user.
-	if basic.IsBasicIdentity(authn.IdentityFromContext(ctx)) {
+	if userpass.IsLocalAdmin(authn.IdentityFromContext(ctx)) {
 		ctx = datastore.WithModifyEnabledPluginCap(ctx)
 	}
 
