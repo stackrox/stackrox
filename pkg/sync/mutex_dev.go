@@ -51,7 +51,8 @@ func watchdog(action string, ch <-chan struct{}, timeout time.Duration, stacktra
 		}
 		return
 	case <-t.C:
-		panic(fmt.Errorf("Action %s took more than %v to complete. Stack trace:\n%s", action, timeout, stacktrace))
+		_, _ = fmt.Fprintf(os.Stderr, "Action %s took more than %v to complete. Stack trace:\n%s", action, timeout, stacktrace)
+		kill()
 	}
 }
 
