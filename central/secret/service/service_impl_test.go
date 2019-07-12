@@ -156,7 +156,11 @@ func (suite *SecretServiceTestSuite) TestSearchSecret() {
 		{Id: "id1"},
 	}
 
-	suite.mockSecretStore.EXPECT().ListSecrets(gomock.Any()).Return(expectedReturns, nil)
+	emptyWithPag := search.EmptyQuery()
+	emptyWithPag.Pagination = &v1.Pagination{
+		Limit: maxSecretsReturned,
+	}
+	suite.mockSecretStore.EXPECT().SearchListSecrets(gomock.Any(), emptyWithPag).Return(expectedReturns, nil)
 
 	_, err := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
@@ -166,7 +170,11 @@ func (suite *SecretServiceTestSuite) TestSearchSecret() {
 func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockSecretStore.EXPECT().ListSecrets(gomock.Any()).Return(([]*storage.ListSecret)(nil), expectedError)
+	emptyWithPag := search.EmptyQuery()
+	emptyWithPag.Pagination = &v1.Pagination{
+		Limit: maxSecretsReturned,
+	}
+	suite.mockSecretStore.EXPECT().SearchListSecrets(gomock.Any(), emptyWithPag).Return(([]*storage.ListSecret)(nil), expectedError)
 
 	_, actualErr := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))

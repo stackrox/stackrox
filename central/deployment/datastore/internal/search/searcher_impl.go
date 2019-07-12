@@ -12,17 +12,22 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 var (
+	defaultSortOption = &v1.SortOption{
+		Field: search.Priority.String(),
+	}
+
 	deploymentsSearchHelper = sac.ForResource(resources.Deployment).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
-	storage store.Store
-
-	indexer index.Indexer
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
@@ -86,7 +91,7 @@ func (ds *searcherImpl) searchDeployments(ctx context.Context, q *v1.Query) ([]*
 }
 
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return deploymentsSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+	return ds.searcher.Search(ctx, q)
 }
 
 // ConvertDeployment returns proto search result from a deployment object and the internal search result
@@ -99,4 +104,14 @@ func convertDeployment(deployment *storage.ListDeployment, result search.Result)
 		Score:          result.Score,
 		Location:       fmt.Sprintf("/%s/%s", deployment.GetCluster(), deployment.GetNamespace()),
 	}
+}
+
+// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+func formatSearcher(unsafeSearcher search.UnsafeSearcher) search.Searcher {
+	filteredSearcher := deploymentsSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	prioritySortCorrected := swapPrioritySort(filteredSearcher)
+	priorityQueryCorrected := swapPriorityQuery(prioritySortCorrected)
+	paginatedSearcher := paginated.Paginated(priorityQueryCorrected)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return defaultSortedSearcher
 }

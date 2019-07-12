@@ -17,8 +17,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/pagination"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -113,30 +113,22 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 
 // ListDeployments returns ListDeployments according to the request.
 func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery) (*v1.ListDeploymentsResponse, error) {
-	var deployments []*storage.ListDeployment
-	var err error
-	if request.GetQuery() == "" {
-		deployments, err = s.datastore.ListDeployments(ctx)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-	} else {
-		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-		deployments, err = s.datastore.SearchListDeployments(ctx, parsedQuery)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
+	// Fill in Query.
+	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	sort.SliceStable(deployments, func(i, j int) bool {
-		return deployments[i].GetPriority() < deployments[j].GetPriority()
-	})
 
-	first, last := pagination.CalculatePaginationIndices(len(deployments), maxDeploymentsReturned, request.GetPagination())
+	// Fill in pagination.
+	paginated.FillPagination(parsedQuery, request.Pagination, maxDeploymentsReturned)
+
+	deployments, err := s.datastore.SearchListDeployments(ctx, parsedQuery)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	return &v1.ListDeploymentsResponse{
-		Deployments: deployments[first:last],
+		Deployments: deployments,
 	}, nil
 }
 

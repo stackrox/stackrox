@@ -1,72 +1,70 @@
 package ranking
 
 import (
-	"sort"
-
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Ranker ranks an object based on its score
 type Ranker struct {
-	objMap           map[string]float32
-	objScoreMap      map[string]int64
+	idToScore map[string]float32
+	sr        scoreRanker
+
 	scoreSorterMutex sync.RWMutex
-}
-
-type scoreElement struct {
-	id    string
-	score float32
-}
-
-func (s *Ranker) compute() {
-	deployments := make([]*scoreElement, 0, len(s.objMap))
-	for k, v := range s.objMap {
-		deployments = append(deployments, &scoreElement{id: k, score: v})
-	}
-	sort.Slice(deployments, func(i, j int) bool { return deployments[i].score > deployments[j].score })
-	prevScore := float32(-1)
-	var currPriority int64
-	for _, d := range deployments {
-		if d.score != prevScore {
-			currPriority++
-			prevScore = d.score
-		}
-		s.objScoreMap[d.id] = currPriority
-	}
 }
 
 // NewRanker initializes an empty Ranker
 func NewRanker() *Ranker {
-	ss := &Ranker{
-		objMap:      make(map[string]float32),
-		objScoreMap: make(map[string]int64),
+	return &Ranker{
+		idToScore: make(map[string]float32),
+		sr:        newScoreRanker(),
 	}
-	return ss
 }
 
-// Get returns the current ranking based on the id
-func (s *Ranker) Get(id string) int64 {
+// GetRankForID returns the current ranking based on the id of the object added with the score.
+func (s *Ranker) GetRankForID(id string) int64 {
 	s.scoreSorterMutex.RLock()
 	defer s.scoreSorterMutex.RUnlock()
-	return s.objScoreMap[id]
+
+	score := s.idToScore[id]
+	return s.sr.getRankForScore(score)
+}
+
+// GetRankForScore returns the rank for an input score, assuming it is ranked.
+func (s *Ranker) GetRankForScore(score float32) int64 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.sr.getRankForScore(score)
+}
+
+// GetScoreForRank gets the score for a given rank, assuming a score has that rank.
+func (s *Ranker) GetScoreForRank(rank int64) float32 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.sr.getScoreForRank(rank)
 }
 
 // Add upserts an id and its score and recomputes the rank
 func (s *Ranker) Add(id string, score float32) {
 	s.scoreSorterMutex.Lock()
 	defer s.scoreSorterMutex.Unlock()
-	val, ok := s.objMap[id]
-	if ok && val == score {
-		return
+
+	if oldScore, scored := s.idToScore[id]; scored {
+		s.sr.remove(oldScore)
 	}
-	s.objMap[id] = score
-	s.compute()
+	s.sr.add(score)
+	s.idToScore[id] = score
 }
 
 // Remove removes an object from having a ranking
 func (s *Ranker) Remove(id string) {
 	s.scoreSorterMutex.Lock()
 	defer s.scoreSorterMutex.Unlock()
-	delete(s.objMap, id)
-	s.compute()
+
+	score, ok := s.idToScore[id]
+	if ok {
+		delete(s.idToScore, id)
+		s.sr.remove(score)
+	}
 }

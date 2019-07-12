@@ -28,7 +28,8 @@ type Searcher interface {
 // New returns a new instance of Searcher for the given storage and indexer.
 func New(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImpl{
-		storage: storage,
-		indexer: indexer,
+		storage:  storage,
+		indexer:  indexer,
+		searcher: formatSearcher(indexer),
 	}
 }

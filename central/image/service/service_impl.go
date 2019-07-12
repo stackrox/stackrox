@@ -14,8 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/pagination"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -80,24 +80,22 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 
 // ListImages retrieves all images in minimal form.
 func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1.ListImagesResponse, error) {
-	var err error
-	var images []*storage.ListImage
-	if request.GetQuery() == "" {
-		images, err = s.datastore.ListImages(ctx)
-	} else {
-		var parsedQuery *v1.Query
-		parsedQuery, err = search.ParseRawQuery(request.GetQuery())
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-		images, err = s.datastore.SearchListImages(ctx, parsedQuery)
-	}
+	// Fill in Query.
+	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	first, last := pagination.CalculatePaginationIndices(len(images), maxImagesReturned, request.GetPagination())
+
+	// Fill in pagination.
+	paginated.FillPagination(parsedQuery, request.Pagination, maxImagesReturned)
+
+	images, err := s.datastore.SearchListImages(ctx, parsedQuery)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	return &v1.ListImagesResponse{
-		Images: images[first:last],
+		Images: images,
 	}, nil
 }
 

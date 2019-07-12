@@ -20,7 +20,7 @@ type storeImpl struct {
 }
 
 func (b *storeImpl) initializeRanker() error {
-	b.ranker = ranking.NewRanker()
+	b.ranker = ranking.DeploymentRanker()
 	deployments, err := b.GetDeployments()
 	if err != nil {
 		return errors.Wrap(err, "retrieving deployments")
@@ -46,7 +46,7 @@ func (b *storeImpl) ListDeployment(id string) (deployment *storage.ListDeploymen
 		if err != nil {
 			return err
 		}
-		deployment.Priority = b.ranker.Get(deployment.GetId())
+		deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 		return nil
 	})
 	return
@@ -63,7 +63,7 @@ func (b *storeImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
-			deployment.Priority = b.ranker.Get(deployment.GetId())
+			deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 			deployments = append(deployments, &deployment)
 			return nil
 		})
@@ -91,7 +91,7 @@ func (b *storeImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
-			deployment.Priority = b.ranker.Get(deployment.GetId())
+			deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 			deployments = append(deployments, &deployment)
 		}
 		return nil
@@ -139,7 +139,7 @@ func (b *storeImpl) GetDeployment(id string) (deployment *storage.Deployment, ex
 			return err
 		}
 		if exists {
-			deployment.Priority = b.ranker.Get(id)
+			deployment.Priority = b.ranker.GetRankForID(id)
 		}
 
 		return nil
@@ -158,7 +158,7 @@ func (b *storeImpl) GetDeployments() ([]*storage.Deployment, error) {
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
-			deployment.Priority = b.ranker.Get(deployment.GetId())
+			deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 
 			deployments = append(deployments, &deployment)
 			return nil
@@ -187,7 +187,7 @@ func (b *storeImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment,
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
-			deployment.Priority = b.ranker.Get(deployment.GetId())
+			deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 
 			deployments = append(deployments, &deployment)
 		}

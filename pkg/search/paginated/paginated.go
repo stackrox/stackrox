@@ -68,3 +68,14 @@ func paginate(offset, limit int, results []search.Result, err error) ([]search.R
 
 	return results[offset:end], nil
 }
+
+// FillPagination fills in the pagination information for a query.
+func FillPagination(query *v1.Query, pagination *v1.Pagination, maxLimit int32) {
+	if pagination == nil {
+		pagination = &v1.Pagination{}
+	}
+	if pagination.GetLimit() == 0 || pagination.GetLimit() > maxLimit {
+		pagination.Limit = maxLimit
+	}
+	query.Pagination = pagination
+}

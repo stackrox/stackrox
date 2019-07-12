@@ -11,16 +11,22 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 var (
+	defaultSortOption = &v1.SortOption{
+		Field: search.CreatedTime.String(),
+	}
+
 	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
 )
 
 // searcherImpl provides an intermediary implementation layer focentral/serviceaccount/search/searcher_impl.gor AlertStorage.
 type searcherImpl struct {
-	storage store.Store
-	indexer index.Indexer
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 }
 
 // SearchSecrets returns the search results from indexed secrets for the query.
@@ -47,7 +53,7 @@ func (ds *searcherImpl) SearchListSecrets(ctx context.Context, q *v1.Query) ([]*
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return secretSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+	return ds.searcher.Search(ctx, q)
 }
 
 // ToSecrets returns the secrets from the db for the given search results.
@@ -84,4 +90,12 @@ func convertOne(secret *storage.ListSecret, result *search.Result) *v1.SearchRes
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
+}
+
+// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+func formatSearcher(unsafeSearcher search.UnsafeSearcher) search.Searcher {
+	filteredSearcher := secretSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	paginatedSearcher := paginated.Paginated(filteredSearcher)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return defaultSortedSearcher
 }

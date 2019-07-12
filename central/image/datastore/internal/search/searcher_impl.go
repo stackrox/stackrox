@@ -12,16 +12,22 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 var (
+	defaultSortOption = &v1.SortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
+
 	imagesSACSearchHelper = sac.ForResource(resources.Image).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterNSScopesField)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
-	storage store.Store
-	indexer index.Indexer
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 }
 
 // SearchImages retrieves SearchResults from the indexer and storage
@@ -86,7 +92,7 @@ func (ds *searcherImpl) searchImages(ctx context.Context, q *v1.Query) ([]*stora
 }
 
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return imagesSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+	return ds.searcher.Search(ctx, q)
 }
 
 // ConvertImage returns proto search result from a image object and the internal search result
@@ -98,4 +104,12 @@ func convertImage(image *storage.ListImage, result search.Result) *v1.SearchResu
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
+}
+
+// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+func formatSearcher(unsafeSearcher search.UnsafeSearcher) search.Searcher {
+	filteredSearcher := imagesSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	paginatedSearcher := paginated.Paginated(filteredSearcher)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return defaultSortedSearcher
 }

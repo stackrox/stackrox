@@ -35,7 +35,7 @@ message Deployment {
     repeated Container containers              = 11;
     Risk risk                                  = 12 [(gogoproto.moretags) = "hash:\"ignore\""];
     map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
-    int64 priority                             = 15 [(gogoproto.moretags) = "hash:\"ignore\""];
+    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority\",hash:\"ignore\""];
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = "search:\"Image Pull Secret\""];
     string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
@@ -174,7 +174,7 @@ message SecurityContext {
 }
 
 message Risk {
-    float           score   = 1;
+    float           score   = 1 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
     message Result {
         message Factor {
             string message = 1;
