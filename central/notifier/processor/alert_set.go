@@ -12,7 +12,6 @@ const (
 	// When we fail to notify on an alert, retry every hour for 4 hours, and only retry up to 100 alerts
 	retryAlertsEvery = 5 * time.Minute
 	retryAlertsFor   = 1 * time.Hour
-	retryUpTo        = 100
 )
 
 // Layer over an expiring cache specifically for alerts.
@@ -24,7 +23,7 @@ type alertSet interface {
 
 func newAlertSet() alertSet {
 	return &alertSetImpl{
-		alerts: expiringcache.NewExpiringCache(retryUpTo, retryAlertsFor),
+		alerts: expiringcache.NewExpiringCache(retryAlertsFor),
 	}
 }
 
