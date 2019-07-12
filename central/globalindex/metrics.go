@@ -52,7 +52,7 @@ func directorySize(path string) int64 {
 		size += info.Size()
 		return err
 	})
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		log.Error(err)
 	}
 	return size
