@@ -87,6 +87,12 @@ export const K8S_ROLES = gql`
                     id
                     name
                 }
+                ... on NonExistentServiceAccount {
+                    message
+                }
+            }
+            subjects {
+                name
             }
         }
     }

@@ -76,6 +76,26 @@ const buildTableColumns = (match, location) => {
             accessor: 'roleNamespace.metadata.name'
         },
         {
+            Header: `Users & Groups`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { length } = original.subjects;
+                if (!length) {
+                    return <LabelChip text="No Matches" type="alert" />;
+                }
+                const url = URLService.getURL(match, location)
+                    .push(original.id)
+                    .push(entityTypes.SUBJECT)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+            },
+            id: 'subjects',
+            accessor: d => d.subjects,
+            sortMethod: sortValueByLength
+        },
+        {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
@@ -83,7 +103,8 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { serviceAccounts, id } = original;
                 const { length } = serviceAccounts;
-                if (!length) return <LabelChip text="No Matches" type="alert" />;
+                if (!length || (length === 1 && serviceAccounts[0].message))
+                    return <LabelChip text="No Matches" type="alert" />;
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.SERVICE_ACCOUNT)
