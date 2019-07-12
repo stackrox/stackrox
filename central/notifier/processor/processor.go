@@ -22,15 +22,13 @@ type Processor interface {
 	UpdateNotifier(notifier notifiers.Notifier)
 	RemoveNotifier(id string)
 
-	GetIntegratedPolicies(notifierID string) (output []*storage.Policy)
 	UpdatePolicy(policy *storage.Policy)
 	RemovePolicy(policy *storage.Policy)
 }
 
 // New returns a new Processor
-func New() Processor {
+func New(pns policyNotifierSet) Processor {
 	return &processorImpl{
-		notifiers:           make(map[string]notifiers.Notifier),
-		notifiersToPolicies: make(map[string]map[string]*storage.Policy),
+		pns: pns,
 	}
 }

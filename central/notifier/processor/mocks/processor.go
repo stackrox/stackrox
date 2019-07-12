@@ -35,18 +35,6 @@ func (m *MockProcessor) EXPECT() *MockProcessorMockRecorder {
 	return m.recorder
 }
 
-// GetIntegratedPolicies mocks base method
-func (m *MockProcessor) GetIntegratedPolicies(arg0 string) []*storage.Policy {
-	ret := m.ctrl.Call(m, "GetIntegratedPolicies", arg0)
-	ret0, _ := ret[0].([]*storage.Policy)
-	return ret0
-}
-
-// GetIntegratedPolicies indicates an expected call of GetIntegratedPolicies
-func (mr *MockProcessorMockRecorder) GetIntegratedPolicies(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegratedPolicies", reflect.TypeOf((*MockProcessor)(nil).GetIntegratedPolicies), arg0)
-}
-
 // HasEnabledAuditNotifiers mocks base method
 func (m *MockProcessor) HasEnabledAuditNotifiers() bool {
 	ret := m.ctrl.Call(m, "HasEnabledAuditNotifiers")

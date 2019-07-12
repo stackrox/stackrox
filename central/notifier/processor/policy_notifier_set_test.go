@@ -10,6 +10,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestProcessorNoEnabledAuditNotifiers(t *testing.T) {
+	a := assert.New(t)
+
+	pns := newPolicyNotifierSet()
+	for i := 0; i < 10; i++ {
+		pns.upsertNotifier(newFakeAuditNotifier(false))
+		pns.upsertNotifier(newFakeNonAuditNotifier())
+	}
+	a.Equal(false, pns.hasEnabledAuditNotifiers())
+}
+
+func TestProcessorEnabledAuditNotifiers(t *testing.T) {
+	a := assert.New(t)
+
+	pns := newPolicyNotifierSet()
+	nonAudit := newFakeNonAuditNotifier()
+	pns.upsertNotifier(nonAudit)
+	a.Equal(false, pns.hasEnabledAuditNotifiers())
+	audit := newFakeAuditNotifier(true)
+	pns.upsertNotifier(audit)
+	a.Equal(true, pns.hasEnabledAuditNotifiers())
+	pns.removeNotifier(nonAudit.ProtoNotifier().GetId())
+	a.Equal(true, pns.hasEnabledAuditNotifiers())
+	pns.removeNotifier(audit.ProtoNotifier().GetId())
+	a.Equal(false, pns.hasEnabledAuditNotifiers())
+}
+
+// Fake objects for testing.
+////////////////////////////
+
 type fakeNonAuditNotifier struct {
 	id string
 }
@@ -49,31 +79,4 @@ func (f fakeAuditNotifier) AuditLoggingEnabled() bool {
 
 func newFakeAuditNotifier(auditLoggingEnabled bool) notifiers.AuditNotifier {
 	return fakeAuditNotifier{auditLoggingEnabled: auditLoggingEnabled, id: uuid.NewV4().String()}
-}
-
-func TestProcessorNoEnabledAuditNotifiers(t *testing.T) {
-	a := assert.New(t)
-
-	p := New()
-	for i := 0; i < 10; i++ {
-		p.UpdateNotifier(newFakeAuditNotifier(false))
-		p.UpdateNotifier(newFakeNonAuditNotifier())
-	}
-	a.Equal(false, p.HasEnabledAuditNotifiers())
-}
-
-func TestProcessorEnabledAuditNotifiers(t *testing.T) {
-	a := assert.New(t)
-
-	p := New()
-	nonAudit := newFakeNonAuditNotifier()
-	p.UpdateNotifier(nonAudit)
-	a.Equal(false, p.HasEnabledAuditNotifiers())
-	audit := newFakeAuditNotifier(true)
-	p.UpdateNotifier(audit)
-	a.Equal(true, p.HasEnabledAuditNotifiers())
-	p.RemoveNotifier(nonAudit.ProtoNotifier().GetId())
-	a.Equal(true, p.HasEnabledAuditNotifiers())
-	p.RemoveNotifier(audit.ProtoNotifier().GetId())
-	a.Equal(false, p.HasEnabledAuditNotifiers())
 }
