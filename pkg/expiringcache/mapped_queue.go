@@ -2,7 +2,11 @@ package expiringcache
 
 import (
 	"container/list"
+
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var log = logging.LoggerForModule()
 
 // A MappedQueue provides a mix of map and queue functionality, so that you can reference objects by key, but also
 // fetch items in insertion order.
@@ -20,11 +24,10 @@ type mappedQueue interface {
 	getAllValues() []interface{}
 }
 
-func newMappedQueue(maxSize int) mappedQueue {
+func newMappedQueue() mappedQueue {
 	return &mappedQueueImpl{
-		maxSize: maxSize,
-		queue:   list.New(),
-		items:   make(map[interface{}]*list.Element),
+		queue: list.New(),
+		items: make(map[interface{}]*list.Element),
 	}
 }
 
@@ -34,9 +37,8 @@ type mappedQueueElement struct {
 }
 
 type mappedQueueImpl struct {
-	maxSize int
-	queue   *list.List
-	items   map[interface{}]*list.Element
+	queue *list.List
+	items map[interface{}]*list.Element
 }
 
 func (mq *mappedQueueImpl) size() int {
@@ -44,12 +46,9 @@ func (mq *mappedQueueImpl) size() int {
 }
 
 func (mq *mappedQueueImpl) push(key, value interface{}) {
-	// Pop the front if the size has reached max.
-	if mq.maxSize != 0 && mq.queue.Len() == mq.maxSize {
-		frontKey := mq.queue.Front().Value.(*mappedQueueElement).key
-		mq.remove(frontKey)
+	if mq.get(key) != nil {
+		mq.remove(key)
 	}
-
 	// Add element to queue and map.
 	listElement := mq.queue.PushBack(&mappedQueueElement{
 		key:   key,
@@ -86,12 +85,12 @@ func (mq *mappedQueueImpl) get(key interface{}) interface{} {
 }
 
 func (mq *mappedQueueImpl) getAllValues() []interface{} {
-	ret := make([]interface{}, 0, len(mq.items))
-	for _, listElem := range mq.items {
-		val := listElem.Value.(*mappedQueueElement).value
-		if val != nil {
-			ret = append(ret, val)
-		}
+	if mq.queue.Len() == 0 {
+		return nil
+	}
+	ret := make([]interface{}, 0, mq.queue.Len())
+	for next := mq.queue.Front(); next != nil; next = next.Next() {
+		ret = append(ret, next.Value.(*mappedQueueElement).value)
 	}
 	return ret
 }
@@ -102,7 +101,7 @@ func (mq *mappedQueueImpl) remove(key interface{}) {
 		return
 	}
 	mq.queue.Remove(listElem)
-	delete(mq.items, listElem.Value.(*mappedQueueElement).key)
+	delete(mq.items, key)
 }
 
 func (mq *mappedQueueImpl) removeAll() {

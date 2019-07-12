@@ -22,7 +22,6 @@ var (
 	metadataCacheOnce sync.Once
 	metadataCache     expiringcache.Cache
 
-	imageCachesDataSize      = 50000
 	imageCacheExpiryDuration = 4 * time.Hour
 )
 
@@ -46,7 +45,7 @@ func ImageEnricherSingleton() enricher.ImageEnricher {
 // ImageScanCacheSingleton returns the cache for image scans
 func ImageScanCacheSingleton() expiringcache.Cache {
 	scanCacheOnce.Do(func() {
-		scanCache = expiringcache.NewExpiringCache(imageCachesDataSize, imageCacheExpiryDuration)
+		scanCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration)
 	})
 	return scanCache
 }
@@ -54,7 +53,7 @@ func ImageScanCacheSingleton() expiringcache.Cache {
 // ImageMetadataCacheSingleton returns the cache for image metadata
 func ImageMetadataCacheSingleton() expiringcache.Cache {
 	metadataCacheOnce.Do(func() {
-		metadataCache = expiringcache.NewExpiringCache(imageCachesDataSize, imageCacheExpiryDuration)
+		metadataCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration)
 	})
 	return metadataCache
 }

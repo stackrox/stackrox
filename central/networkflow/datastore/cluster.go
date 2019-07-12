@@ -26,6 +26,6 @@ type ClusterDataStore interface {
 func NewClusterDataStore(storage store.ClusterStore) ClusterDataStore {
 	return &clusterDataStoreImpl{
 		storage:                 storage,
-		deletedDeploymentsCache: expiringcache.NewExpiringCache(deletedDeploymentsCacheSize, deletedDeploymentsRetentionPeriod),
+		deletedDeploymentsCache: expiringcache.NewExpiringCache(deletedDeploymentsRetentionPeriod),
 	}
 }

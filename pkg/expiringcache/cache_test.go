@@ -35,7 +35,7 @@ func TestExpiringCache(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	clock := mocks.NewMockClock(mockCtrl)
 
-	ec := NewExpiringCacheWithClock(3, clock, 10*time.Second)
+	ec := NewExpiringCacheWithClock(clock, 10*time.Second)
 
 	// Insert all values one second apart.
 	addTime := time.Time{}

@@ -42,7 +42,7 @@ func newBoltStore(db *bbolt.DB) (*boltStore, error) {
 	if err := bolthelper.RegisterBucket(db, resultsBucketName); err != nil {
 		return nil, err
 	}
-	cache := expiringcache.NewExpiringCache(10, resultCacheExpiry, expiringcache.UpdateExpirationOnGets)
+	cache := expiringcache.NewExpiringCache(resultCacheExpiry, expiringcache.UpdateExpirationOnGets)
 
 	return &boltStore{
 		resultsBucket: bolthelper.TopLevelRef(db, resultsBucketName),
@@ -177,7 +177,7 @@ func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, f
 				}
 
 				// Top level caches (cluster, standard) tuple and returns an expiring cache that is keyed off the flags
-				flagCache := s.cacheResults.GetOrSet(pair, expiringcache.NewExpiringCache(10, resultCacheExpiry)).(expiringcache.Cache)
+				flagCache := s.cacheResults.GetOrSet(pair, expiringcache.NewExpiringCache(resultCacheExpiry)).(expiringcache.Cache)
 
 				future := &resultsFuture{}
 				future = flagCache.GetOrSet(flags, future).(*resultsFuture)

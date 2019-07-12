@@ -25,14 +25,14 @@ func UpdateExpirationOnGets(e *expiringCacheImpl) {
 }
 
 // NewExpiringCache returns a new lru Cache with time based expiration on values.
-func NewExpiringCache(size int, expiry time.Duration, options ...opts) Cache {
-	return NewExpiringCacheWithClock(size, realClock{}, expiry, options...)
+func NewExpiringCache(expiry time.Duration, options ...opts) Cache {
+	return NewExpiringCacheWithClock(realClock{}, expiry, options...)
 }
 
 // NewExpiringCacheWithClock returns a new lru Cache with time based expiration on values, using the input clock.
-func NewExpiringCacheWithClock(size int, clock Clock, expiry time.Duration, options ...opts) Cache {
+func NewExpiringCacheWithClock(clock Clock, expiry time.Duration, options ...opts) Cache {
 	e := &expiringCacheImpl{
-		mq: newMappedQueue(size),
+		mq: newMappedQueue(),
 
 		clock:  clock,
 		expiry: expiry,

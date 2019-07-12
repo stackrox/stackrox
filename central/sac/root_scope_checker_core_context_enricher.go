@@ -149,5 +149,5 @@ func idToPrincipal(id authn.Identity) *payload.Principal {
 }
 
 func newConfiguredCache() expiringcache.Cache {
-	return expiringcache.NewExpiringCache(5000, env.PermissionTimeout.DurationSetting())
+	return expiringcache.NewExpiringCache(env.PermissionTimeout.DurationSetting())
 }

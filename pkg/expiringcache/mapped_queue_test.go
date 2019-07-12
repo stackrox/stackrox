@@ -16,39 +16,51 @@ func TestMappedQueue(t *testing.T) {
 	key3 := "k3"
 	value3 := "v3"
 
-	mq := newMappedQueue(2)
+	mq := newMappedQueue()
 
 	// Add k/v 1
 	mq.push(key1, value1)
 
-	// From should hold k/v 1
+	// Front should hold k/v 1
 	actualKey, actualValue := mq.front()
-	assert.Equal(t, actualKey.(string), key1)
-	assert.Equal(t, actualValue.(string), value1)
+	assert.Equal(t, key1, actualKey.(string))
+	assert.Equal(t, value1, actualValue.(string))
+
+	// overwrite key1 with value2
+	mq.push(key1, value2)
+	actualKey, actualValue = mq.front()
+	assert.Equal(t, key1, actualKey.(string))
+	assert.Equal(t, value2, actualValue.(string))
+
+	// reset back to value1
+	mq.push(key1, value1)
 
 	// Add k/v 2
 	mq.push(key2, value2)
 
-	// From should hold k/v 1
+	// Front should hold k/v 1
 	actualKey, actualValue = mq.front()
-	assert.Equal(t, actualKey.(string), key1)
-	assert.Equal(t, actualValue.(string), value1)
+	assert.Equal(t, key1, actualKey.(string))
+	assert.Equal(t, value1, actualValue.(string))
 
 	// Add k/v 3
 	mq.push(key3, value3)
 
-	// From should hold k/v 2 since 1 was pushed out by max size
-	actualKey, actualValue = mq.front()
-	assert.Equal(t, actualKey.(string), key2)
-	assert.Equal(t, actualValue.(string), value2)
-
 	// Should be able to fetch k3
 	actualValue = mq.get(key3)
-	assert.Equal(t, actualValue.(string), value3)
+	assert.Equal(t, value3, actualValue.(string))
 
-	// getAllValues should return 3 and 2.
+	// getAllValues should return 1,2,3
 	actualValues := mq.getAllValues()
-	assert.Equal(t, len(actualValues), 2)
+	assert.Equal(t, 3, len(actualValues))
+
+	// Should remove k/v 1
+	mq.pop()
+	actualValue = mq.get(key1)
+	assert.Nil(t, actualValue)
+
+	actualValues = mq.getAllValues()
+	assert.Equal(t, 2, len(actualValues))
 
 	// Remove 2
 	mq.remove(key2)
