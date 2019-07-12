@@ -20,8 +20,7 @@ const (
 )
 
 var (
-	log                   = logging.LoggerForModule()
-	errAuthzPluginContact = errors.New("unable to contact auth plugin")
+	log = logging.LoggerForModule()
 )
 
 type clientImpl struct {
@@ -33,21 +32,23 @@ func (c *clientImpl) ForUser(ctx context.Context, principal payload.Principal, s
 	request := &payload.AuthorizationRequest{Principal: principal, RequestedScopes: scopes}
 	jsonBytes, err := json.Marshal(request)
 	if err != nil {
+		// Only log the error message, as it might contain parts of the body that are sensitive (cluster names).
 		log.Warnf("serializing: %s", err)
-		return nil, nil, errAuthzPluginContact
+		return nil, nil, errors.New("could not serialize authorization plugin request")
 	}
 	httpReq, err := http.NewRequest(http.MethodPost, c.config.GetEndpoint(), bytes.NewBuffer(jsonBytes))
 	if err != nil {
-		log.Warnf("creating: %s, %s", err, string(jsonBytes))
-		return nil, nil, errAuthzPluginContact
+		// This does contain the endpoint URL at worst, which is not considered sensitive.
+		return nil, nil, errors.Wrap(err, "could not create HTTP request for contacting authorization plugin")
 	}
 	httpReq.Header.Set("content-type", contentType)
 	httpReq = httpReq.WithContext(ctx)
 	applyConfig(c.config, httpReq)
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
-		log.Warnf("sending: %s", err)
-		return nil, nil, errAuthzPluginContact
+		// err is always a transport error, not an application error (that is stored in the response). This is not
+		// sensitive.
+		return nil, nil, errors.Wrap(err, "could not contact authorization plugin")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 	if resp.StatusCode != http.StatusOK {
@@ -60,17 +61,19 @@ func (c *clientImpl) ForUser(ctx context.Context, principal payload.Principal, s
 			bodyOrErr = fmt.Sprintf(".  Response body: %s", string(respBytes))
 		}
 		log.Warnf("%s%s", statusString, bodyOrErr)
-		return nil, nil, errAuthzPluginContact
+		// Log the full error, but only return the status code, which is not sensitive.
+		return nil, nil, errors.New(statusString)
 	}
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Warnf("reading: %s", err)
-		return nil, nil, errAuthzPluginContact
+		// ioutil.ReadAll error never contains part of the read data, so it is OK to forward to the user.
+		return nil, nil, errors.Wrap(err, "error reading response from authorization plugin")
 	}
 	var response payload.AuthorizationResponse
 	if err = json.Unmarshal(respBytes, &response); err != nil {
 		log.Warnf("deserializing: %s, %s", err, string(respBytes))
-		return nil, nil, errAuthzPluginContact
+		// `err` might contain parts of the message, so do not forward it to the user.
+		return nil, nil, errors.New("could not unmarshal authorization plugin response")
 	}
 	responseSet := make(map[payload.AccessScope]struct{}, len(response.AuthorizedScopes))
 	for _, authScope := range response.AuthorizedScopes {

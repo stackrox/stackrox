@@ -17,7 +17,6 @@ var (
 	allowEndpoint = "/authRequestSuccess"
 	denyEndpoint  = "/authRequestFailure"
 	errorEndpoint = "/authRequestError"
-	errText       = "unable to contact auth plugin"
 	scopes        = []payload.AccessScope{
 		{
 			Verb: "Verb",
@@ -102,7 +101,6 @@ func (suite *clientTestSuite) TestError() {
 	client := suite.getTestClient(errorEndpoint)
 	allowed, denied, err := client.ForUser(context.Background(), payload.Principal{}, scopes...)
 	suite.Error(err)
-	suite.Equal(err.Error(), errText)
 	suite.Nil(allowed)
 	suite.Nil(denied)
 }
