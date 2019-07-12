@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -22,6 +23,8 @@ func init() {
 		schema.AddExtraResolver("Deployment", `alertsCount: Int`),
 		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
+		schema.AddExtraResolver("Deployment", `images: [Image!]!`),
+		schema.AddExtraResolver("Deployment", `imagesCount: Int!`),
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String): [Deployment!]!"),
 	)
@@ -129,4 +132,27 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 		}
 	}
 	return "", errors.Wrap(nil, fmt.Sprintf("No matching service accounts found for deployment id: %s", resolver.Id(ctx)))
+}
+
+func (resolver *deploymentResolver) Images(ctx context.Context) ([]*imageResolver, error) {
+	imageShas := resolver.getImageShas(ctx)
+	return resolver.root.wrapImages(resolver.root.ImageDataStore.GetImagesBatch(ctx, imageShas))
+}
+
+func (resolver *deploymentResolver) ImagesCount(ctx context.Context) (int32, error) {
+	imageShas := resolver.getImageShas(ctx)
+	return int32(len(imageShas)), nil
+}
+
+func (resolver *deploymentResolver) getImageShas(ctx context.Context) []string {
+	imageShas := set.NewStringSet()
+
+	deployment := resolver.data
+	containers := deployment.GetContainers()
+	for _, c := range containers {
+		if c.GetImage().GetId() != "" {
+			imageShas.Add(c.GetImage().GetId())
+		}
+	}
+	return imageShas.AsSlice()
 }
