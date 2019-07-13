@@ -72,7 +72,10 @@ class Form extends Component {
         const { location } = window;
         data.uiEndpoint = this.props.source === 'authProviders' ? location.host : location.origin;
         data.type = this.props.type;
-        data.enabled = true;
+        // Set a default value of true for everything but auth plugins (they have their own toggle for that).
+        if (this.props.source !== 'authPlugins') {
+            data.enabled = true;
+        }
         data.categories = data.categories || [];
         data.clusterIds = data.clusterIds || [];
         return data;

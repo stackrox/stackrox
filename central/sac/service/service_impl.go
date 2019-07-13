@@ -29,8 +29,9 @@ var (
 			"/v1.ScopedAccessControlService/GetAuthzPluginConfigs",
 		},
 		user.With(permissions.Modify(resources.AuthPlugin)): {
-			"/v1.ScopedAccessControlService/ConfigureAuthzPlugin",
-			"/v1.ScopedAccessControlService/DeleteAuthzPlugin",
+			"/v1.ScopedAccessControlService/AddAuthzPluginConfig",
+			"/v1.ScopedAccessControlService/UpdateAuthzPluginConfig",
+			"/v1.ScopedAccessControlService/DeleteAuthzPluginConfig",
 		},
 	})
 
@@ -74,11 +75,11 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) DryRunAuthzPluginConfig(ctx context.Context, req *storage.AuthzPluginConfig) (*v1.Empty, error) {
-	if err := validateConfig(req); err != nil {
+func (s *serviceImpl) DryRunAuthzPluginConfig(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*v1.Empty, error) {
+	if err := validateConfig(req.GetConfig()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.testConfig(ctx, req); err != nil {
+	if err := s.testConfig(ctx, req.GetConfig()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	return &v1.Empty{}, nil
@@ -94,12 +95,16 @@ func (s *serviceImpl) GetAuthzPluginConfigs(ctx context.Context, _ *v1.Empty) (*
 	}, nil
 }
 
-func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *storage.AuthzPluginConfig) (*storage.AuthzPluginConfig, error) {
-	if err := validateConfig(req); err != nil {
+func (s *serviceImpl) AddAuthzPluginConfig(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*storage.AuthzPluginConfig, error) {
+	cfg := req.GetConfig()
+
+	if err := validateConfig(cfg); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.testConfig(ctx, req); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%v\nCheck the central logs for full error.", err)
+	if cfg.GetEnabled() {
+		if err := s.testConfig(ctx, cfg); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "%v\nCheck the central logs for full error.", err)
+		}
 	}
 
 	// Allow modifying enabled plugin only for basic auth user.
@@ -107,14 +112,43 @@ func (s *serviceImpl) ConfigureAuthzPlugin(ctx context.Context, req *storage.Aut
 		ctx = datastore.WithModifyEnabledPluginCap(ctx)
 	}
 
-	upsertedConfig, err := s.ds.UpsertAuthzPluginConfig(ctx, req)
+	cfg.Id = "" // add
+	upsertedConfig, err := s.ds.UpsertAuthzPluginConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
 	return upsertedConfig, nil
 }
 
-func (s *serviceImpl) DeleteAuthzPlugin(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
+func (s *serviceImpl) UpdateAuthzPluginConfig(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*storage.AuthzPluginConfig, error) {
+	cfg := req.GetConfig()
+
+	if cfg.GetId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "update must specify an ID")
+	}
+
+	if err := validateConfig(cfg); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if cfg.GetEnabled() {
+		if err := s.testConfig(ctx, cfg); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "%v\nCheck the central logs for full error.", err)
+		}
+	}
+
+	// Allow modifying enabled plugin only for basic auth user.
+	if userpass.IsLocalAdmin(authn.IdentityFromContext(ctx)) {
+		ctx = datastore.WithModifyEnabledPluginCap(ctx)
+	}
+
+	upsertedConfig, err := s.ds.UpsertAuthzPluginConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return upsertedConfig, nil
+}
+
+func (s *serviceImpl) DeleteAuthzPluginConfig(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	// Allow modifying enabled plugin only for basic auth user.
 	if userpass.IsLocalAdmin(authn.IdentityFromContext(ctx)) {
 		ctx = datastore.WithModifyEnabledPluginCap(ctx)
