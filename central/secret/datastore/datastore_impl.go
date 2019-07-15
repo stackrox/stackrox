@@ -65,6 +65,10 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 	return d.searcher.SearchListSecrets(ctx, request)
 }
 
+func (d *datastoreImpl) SearchRawSecrets(ctx context.Context, request *v1.Query) ([]*storage.Secret, error) {
+	return d.searcher.SearchRawSecrets(ctx, request)
+}
+
 func (d *datastoreImpl) CountSecrets(ctx context.Context) (int, error) {
 	if ok, err := secretSAC.ReadAllowed(ctx); err != nil {
 		return 0, err

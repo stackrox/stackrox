@@ -52,6 +52,11 @@ func (ds *searcherImpl) SearchListSecrets(ctx context.Context, q *v1.Query) ([]*
 	return ds.resultsToListSecrets(results)
 }
 
+// SearchRawSecrets retrieves secrets from the indexer and storage
+func (ds *searcherImpl) SearchRawSecrets(ctx context.Context, q *v1.Query) ([]*storage.Secret, error) {
+	return ds.searchSecrets(ctx, q)
+}
+
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return ds.searcher.Search(ctx, q)
 }
@@ -98,4 +103,18 @@ func formatSearcher(unsafeSearcher search.UnsafeSearcher) search.Searcher {
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher
+}
+
+func (ds *searcherImpl) searchSecrets(ctx context.Context, q *v1.Query) ([]*storage.Secret, error) {
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := search.ResultsToIDs(results)
+	secrets, _, err := ds.storage.GetSecretsWithIds(ids)
+	if err != nil {
+		return nil, err
+	}
+	return secrets, nil
 }

@@ -93,7 +93,7 @@ func (s *storeImpl) GetAllSecrets() (secrets []*storage.Secret, err error) {
 }
 
 func (s *storeImpl) ListAllSecrets() (secrets []*storage.ListSecret, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.List, "Secret")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.List, "ListSecret")
 
 	err = s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(secretListBucket)
@@ -126,6 +126,33 @@ func (s *storeImpl) GetSecret(id string) (secret *storage.Secret, exists bool, e
 		return err
 	})
 	return
+}
+
+func (s *storeImpl) GetSecretsWithIds(ids []string) ([]*storage.Secret, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Secret")
+	secrets := make([]*storage.Secret, 0, len(ids))
+	var missingIndices []int
+	err := s.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(secretBucket)
+		for i, id := range ids {
+			v := bucket.Get([]byte(id))
+			if v == nil {
+				missingIndices = append(missingIndices, i)
+				continue
+			}
+			var secret storage.Secret
+			if err := proto.Unmarshal(v, &secret); err != nil {
+				return err
+			}
+			secrets = append(secrets, &secret)
+		}
+		return nil
+	})
+	return secrets, missingIndices, err
 }
 
 // ListSecrets returns a list of secrets from the given ids.

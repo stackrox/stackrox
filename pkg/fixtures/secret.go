@@ -10,5 +10,11 @@ func GetSecret() *storage.Secret {
 		Id:          "ID",
 		ClusterId:   "clusterid",
 		ClusterName: "clustername",
+		Files: []*storage.SecretDataFile{
+			{
+				Name: "foo",
+				Type: storage.SecretType_IMAGE_PULL_SECRET,
+			},
+		},
 	}
 }

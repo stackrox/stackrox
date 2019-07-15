@@ -62,6 +62,19 @@ func (mr *MockSearcherMockRecorder) SearchListSecrets(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListSecrets", reflect.TypeOf((*MockSearcher)(nil).SearchListSecrets), arg0, arg1)
 }
 
+// SearchRawSecrets mocks base method
+func (m *MockSearcher) SearchRawSecrets(arg0 context.Context, arg1 *v1.Query) ([]*storage.Secret, error) {
+	ret := m.ctrl.Call(m, "SearchRawSecrets", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.Secret)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawSecrets indicates an expected call of SearchRawSecrets
+func (mr *MockSearcherMockRecorder) SearchRawSecrets(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawSecrets", reflect.TypeOf((*MockSearcher)(nil).SearchRawSecrets), arg0, arg1)
+}
+
 // SearchSecrets mocks base method
 func (m *MockSearcher) SearchSecrets(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
 	ret := m.ctrl.Call(m, "SearchSecrets", arg0, arg1)

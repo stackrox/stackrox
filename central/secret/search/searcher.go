@@ -21,6 +21,7 @@ type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
 	SearchSecrets(context.Context, *v1.Query) ([]*v1.SearchResult, error)
 	SearchListSecrets(ctx context.Context, query *v1.Query) ([]*storage.ListSecret, error)
+	SearchRawSecrets(ctx context.Context, query *v1.Query) ([]*storage.Secret, error)
 }
 
 // New returns a new instance of Searcher for the given storage and index.
