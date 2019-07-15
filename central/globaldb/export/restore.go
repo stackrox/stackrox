@@ -63,9 +63,7 @@ func tryRestoreBadger(r io.Reader, outDir string) error {
 		return errors.Wrap(err, "could not create new badger DB in empty dir")
 	}
 
-	// The second argument is the number of maxPendingWrites that are allowed
-	// where 10 seems to be a reasonable number
-	if err := db.Load(r, 10); err != nil {
+	if err := db.Load(r); err != nil {
 		return errors.Wrap(err, "could not load badger DB backup")
 	}
 	if err := db.Close(); err != nil {
