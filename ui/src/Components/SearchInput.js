@@ -11,7 +11,8 @@ import {
     MultiValue,
     noOptionsMessage,
     createOptionPosition,
-    inputMatchesTopOption
+    inputMatchesTopOption,
+    removeValuesForKey
 } from 'Components/URLSearchInputWithAutocomplete';
 
 import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
@@ -96,8 +97,9 @@ class SearchInput extends Component {
     };
 
     setOptions = (_, searchOptions) => {
+        const actualSearchOptions = removeValuesForKey(this.props.searchOptions, searchOptions);
+
         // If there is a default option and one search value given, then potentially prepend the default search option
-        const actualSearchOptions = searchOptions;
         if (
             this.props.defaultOption &&
             actualSearchOptions.length === 1 &&

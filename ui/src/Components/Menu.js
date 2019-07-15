@@ -51,7 +51,7 @@ const Menu = ({ buttonClass, buttonContent, className, options }) => {
     });
 
     return (
-        <div className={`${className} inline-block relative z-60`}>
+        <div className={`${className} inline-block relative z-50`}>
             <button
                 className={`flex h-full w-full ${buttonClass}`}
                 type="button"
@@ -61,7 +61,7 @@ const Menu = ({ buttonClass, buttonContent, className, options }) => {
             </button>
             {isMenuOpen && (
                 <div
-                    className="absolute bg-white flex flex-col flex-no-wrap menu pin-r z-60 min-w-43 bg-base-100 shadow"
+                    className="absolute bg-white flex flex-col flex-no-wrap menu pin-r z-50 min-w-43 bg-base-100 shadow"
                     data-test-id="menu-list"
                 >
                     {renderOptions}

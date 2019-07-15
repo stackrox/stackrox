@@ -69,6 +69,28 @@ export const createOptionPosition = 'first';
 export const inputMatchesTopOption = (input, selectOptions) =>
     selectOptions.length && selectOptions[0].label === input;
 
+export const removeValuesForKey = (oldOptions, newOptions) => {
+    const actualSearchOptions = [...newOptions];
+    if (oldOptions.length > actualSearchOptions.length) {
+        const removedKeyIndex = oldOptions.findIndex(
+            x => !actualSearchOptions.some(y => x.value === y.value) && x.type === 'categoryOption'
+        );
+
+        if (removedKeyIndex !== -1) {
+            let nextKeyIndex = actualSearchOptions.findIndex(
+                (x, i) => i >= removedKeyIndex && x.type === 'categoryOption'
+            );
+            if (removedKeyIndex !== nextKeyIndex) {
+                if (nextKeyIndex === -1) {
+                    nextKeyIndex = actualSearchOptions.length;
+                }
+                actualSearchOptions.splice(removedKeyIndex, nextKeyIndex - removedKeyIndex);
+            }
+        }
+    }
+    return actualSearchOptions;
+};
+
 const URLSearchInputWithAutocomplete = props => {
     const paramName = useContext(searchContext);
 
@@ -192,8 +214,11 @@ const URLSearchInputWithAutocomplete = props => {
     }
 
     function setOptions(_, searchOptions) {
-        replaceLocationSearch(searchOptions);
-        updateAutocompleteState(searchOptions)('');
+        const oldOptions = transformQueryStringToSearchOptions(props.location.search);
+        const actualSearchOptions = removeValuesForKey(oldOptions, searchOptions);
+
+        replaceLocationSearch(actualSearchOptions);
+        updateAutocompleteState(actualSearchOptions)('');
     }
 
     function getOptions() {
