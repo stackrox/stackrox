@@ -2,6 +2,13 @@ import React from 'react';
 
 import renderKeyValues from './GenericNotifier/GenericNotifier';
 
+const skipTestIntegration = {
+    label: 'Create integration without testing',
+    jsonpath: 'skipTestIntegration',
+    type: 'toggle',
+    placeholder: ''
+};
+
 const formDescriptors = {
     authProviders: {
         oidc: [
@@ -437,7 +444,8 @@ const formDescriptors = {
                 jsonpath: 'tenable.secretKey',
                 type: 'password',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         docker: [
             {
@@ -476,7 +484,8 @@ const formDescriptors = {
                 jsonpath: 'docker.insecure',
                 type: 'toggle',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         dtr: [
             {
@@ -518,7 +527,8 @@ const formDescriptors = {
                 jsonpath: 'dtr.insecure',
                 type: 'toggle',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         artifactory: [
             {
@@ -551,7 +561,8 @@ const formDescriptors = {
                 jsonpath: 'docker.password',
                 type: 'password',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         quay: [
             {
@@ -581,7 +592,8 @@ const formDescriptors = {
                 jsonpath: 'quay.oauthToken',
                 type: 'text',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         clair: [
             {
@@ -659,7 +671,8 @@ const formDescriptors = {
                 jsonpath: 'google.serviceAccount',
                 type: 'text',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         ecr: [
             {
@@ -704,7 +717,8 @@ const formDescriptors = {
                 jsonpath: 'ecr.secretAccessKey',
                 type: 'password',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         nexus: [
             {
@@ -743,7 +757,8 @@ const formDescriptors = {
                 jsonpath: 'docker.insecure',
                 type: 'toggle',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         azure: [
             {
@@ -776,7 +791,8 @@ const formDescriptors = {
                 jsonpath: 'docker.password',
                 type: 'password',
                 placeholder: ''
-            }
+            },
+            skipTestIntegration
         ],
         anchore: [
             {

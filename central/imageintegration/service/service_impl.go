@@ -123,9 +123,13 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.
 	if err != nil {
 		return nil, err
 	}
-	if err := s.testImageIntegration(request); err != nil {
-		return nil, err
+
+	if !request.GetSkipTestIntegration() {
+		if err := s.testImageIntegration(request); err != nil {
+			return nil, err
+		}
 	}
+
 	sortCategories(request.Categories)
 
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
@@ -151,8 +155,10 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, err
 	}
 
-	if err := s.testImageIntegration(request); err != nil {
-		return nil, err
+	if !request.GetSkipTestIntegration() {
+		if err := s.testImageIntegration(request); err != nil {
+			return nil, err
+		}
 	}
 
 	sortCategories(request.Categories)
