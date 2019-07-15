@@ -4,7 +4,7 @@ import "time"
 
 // Never satisfies the Waitable interface, but will never be signaled
 // Waiting will block indefinitely
-func Never() Waitable {
+func Never() WaitableChan {
 	return WaitableChan(nil)
 }
 

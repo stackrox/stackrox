@@ -2,8 +2,10 @@ package concurrency
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -97,4 +99,62 @@ func TestErrorSignalTriggerTwiceWithReset(t *testing.T) {
 	err, ok = s.Error()
 	a.Equal(err2, err, "Error() should return err1")
 	a.True(ok, "Error() should return a true boolean value")
+}
+
+// Tests that every error that is passed to a *successful* invocation of SignalWithError() is observed by exactly one
+// invocation of ErrorAndReset.
+func TestErrorSignal_SignalAndResetAreAtomic(t *testing.T) {
+	t.Parallel()
+
+	var errSig ErrorSignal
+
+	var triggeredErrs, resetErrs []error
+	var mutex sync.Mutex
+
+	var initWG, doneWG sync.WaitGroup
+	// this is used to ensure all goroutines start at about the same time, independent of the order in which they
+	// were spawned.
+	initWG.Add(1)
+
+	const numGoroutines = 100000
+
+	for i := 0; i < numGoroutines; i++ {
+		doneWG.Add(1)
+		iCopy := i
+		go func() {
+			defer doneWG.Done()
+			initWG.Wait()
+
+			var errSlice *[]error
+			var err error
+			if iCopy%2 != 0 {
+				var ok bool
+				err, ok = errSig.ErrorAndReset()
+				if !ok {
+					return
+				}
+				errSlice = &resetErrs
+
+			} else {
+				err = fmt.Errorf("error %d", iCopy)
+				if !errSig.SignalWithError(err) {
+					return
+				}
+				errSlice = &triggeredErrs
+			}
+
+			mutex.Lock()
+			defer mutex.Unlock()
+			*errSlice = append(*errSlice, err)
+		}()
+	}
+
+	initWG.Done()
+
+	doneWG.Wait()
+	if err, ok := errSig.ErrorAndReset(); ok {
+		resetErrs = append(resetErrs, err)
+	}
+
+	assert.ElementsMatch(t, triggeredErrs, resetErrs)
 }

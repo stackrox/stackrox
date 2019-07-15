@@ -2,9 +2,9 @@ package concurrency
 
 import (
 	"fmt"
+	"sync/atomic"
 	"time"
-
-	"github.com/stackrox/rox/pkg/sync"
+	"unsafe"
 )
 
 //lint:file-ignore ST1008 We do want to return errors as the first value here.
@@ -25,32 +25,130 @@ type ReadOnlyErrorSignal interface {
 	WaitWithDeadline(deadline time.Time) (Error, bool)
 	Wait() error
 	Err() error
+	Snapshot() ReadOnlyErrorSignal
 }
+
+type errorSignalState struct {
+	errPtr  unsafe.Pointer
+	signalC chan struct{}
+}
+
+func (s *errorSignalState) Err() error {
+	errP := s.getErrPtr()
+	if errP == nil {
+		return nil
+	}
+	return *errP
+}
+
+func (s *errorSignalState) IsDone() bool {
+	return s.getErrPtr() != nil
+}
+
+func (s *errorSignalState) Done() <-chan struct{} {
+	return s.signalC
+}
+
+func (s *errorSignalState) WaitC() WaitableChan {
+	return s.Done()
+}
+
+func (s *errorSignalState) Error() (Error, bool) {
+	if errPtr := s.getErrPtr(); errPtr != nil {
+		return *errPtr, true
+	}
+	return nil, false
+}
+
+func (s *errorSignalState) ErrorWithDefault(defaultErr error) error {
+	err, ok := s.Error()
+	if ok && err == nil {
+		err = defaultErr
+	}
+	return err
+}
+
+func (s *errorSignalState) WaitUntil(cancelCond Waitable) (Error, bool) {
+	select {
+	case <-s.signalC:
+		return s.Error()
+	case <-cancelCond.Done():
+		return nil, false
+	}
+}
+
+func (s *errorSignalState) WaitWithTimeout(timeout time.Duration) (Error, bool) {
+	if timeout <= 0 {
+		return s.Error()
+	}
+
+	timer := time.NewTimer(timeout)
+	select {
+	case <-s.signalC:
+		if !timer.Stop() {
+			<-timer.C
+		}
+		return s.Error()
+	case <-timer.C:
+		return nil, false
+	}
+}
+
+func (s *errorSignalState) WaitWithDeadline(deadline time.Time) (Error, bool) {
+	return s.WaitWithTimeout(time.Until(deadline))
+}
+
+func (s *errorSignalState) Wait() error {
+	err, _ := s.WaitUntil(Never())
+	return err
+}
+
+func (s *errorSignalState) Snapshot() ReadOnlyErrorSignal {
+	return s
+}
+
+func (s *errorSignalState) getErrPtr() *error {
+	return (*error)(atomic.LoadPointer(&s.errPtr))
+}
+
+func (s *errorSignalState) trigger(err error) bool {
+	if !atomic.CompareAndSwapPointer(&s.errPtr, nil, unsafe.Pointer(&err)) {
+		return false
+	}
+	close(s.signalC)
+	return true
+}
+
+func newErrorSignalState() *errorSignalState {
+	return &errorSignalState{
+		signalC: make(chan struct{}),
+	}
+}
+
+var (
+	defaultErrorSignalState = &errorSignalState{
+		errPtr:  unsafe.Pointer(&[]error{nil}[0]),
+		signalC: closedCh,
+	}
+)
 
 // ErrorSignal is a signal that supports atomically storing an error whenever it is triggered. It is safe
 // to trigger the signal concurrently from different goroutines, but only the first successful call to
 // `SignalWithError` will result in the error being stored.
 type ErrorSignal struct {
-	mutex sync.RWMutex
-
-	err     error
-	signalC chan struct{}
+	statePtr unsafe.Pointer
 }
 
 // NewErrorSignal creates and returns a new error signal.
 func NewErrorSignal() ErrorSignal {
 	return ErrorSignal{
-		signalC: make(chan struct{}),
+		statePtr: unsafe.Pointer(newErrorSignalState()),
 	}
 }
 
 // WaitC returns a WaitableChan for this error signal.
 func (s *ErrorSignal) WaitC() WaitableChan {
-	ch := s.getC()
-	if ch == nil {
-		return closedCh
-	}
-	return ch
+	return s.getStateOrDefault().Done()
 }
 
 // Done returns a channel that is closed when this error signal was triggered.
@@ -61,14 +159,31 @@ func (s *ErrorSignal) Done() <-chan struct{} {
 // Reset resets the error signal to the untriggered state. It returns true if the signal was in the triggered
 // state and was reset, false otherwise.
 func (s *ErrorSignal) Reset() bool {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	if s.signalC != nil {
-		return false
+	_, success := s.ErrorAndReset()
+	return success
+}
+
+// ErrorAndReset resets the error signal. If it was in the triggered state, the last signalled error (which may be nil)
+// is fetched atomically before the reset happens and returned. If the signal was not triggered, `nil, false` is
+// returned.
+// It is guaranteed that for any number of concurrent callers to `ErrorAndReset` (and no triggering happening at the
+// same time), exactly one caller will see a `true` return value with a potentially non-nil error.
+func (s *ErrorSignal) ErrorAndReset() (Error, bool) {
+	state := s.getStateOrDefault()
+	if !state.IsDone() {
+		// If we get triggered after the above fetch, that's okay - we pretend the Reset() (which then is a no-op)
+		// happened strictly before the trigger.
+		return nil, false
 	}
-	s.err = nil
-	s.signalC = make(chan struct{})
-	return true
+
+	// The reset only takes place if the above, triggered state is still the current state. This ensure that if a
+	// concurrent reset happened and succeeded, this Reset invocation will not. If the signal has been reset and
+	// triggered in the meantime, we fail, too, pretending this Reset invocation happened as the first action in a
+	// Reset - Trigger - Reset sequence.
+	if !atomic.CompareAndSwapPointer(&s.statePtr, unsafe.Pointer(state), unsafe.Pointer(newErrorSignalState())) {
+		return nil, false
+	}
+	return state.Err(), true
 }
 
 // Signal triggers the signal, storing a `nil` error.
@@ -84,96 +199,49 @@ func (s *ErrorSignal) SignalWithErrorf(format string, args ...interface{}) bool 
 // SignalWithError triggers the signal and stores the given error. It returns true if the signal was in
 // the untriggered state and the error was stored, false otherwise.
 func (s *ErrorSignal) SignalWithError(err error) bool {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	if s.signalC == nil {
-		return false
-	}
-	s.err = err
-	close(s.signalC)
-	s.signalC = nil
-	return true
+	return s.getStateOrDefault().trigger(err)
 }
 
-func (s *ErrorSignal) getC() <-chan struct{} {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	return s.signalC
+func (s *ErrorSignal) getState() *errorSignalState {
+	return (*errorSignalState)(atomic.LoadPointer(&s.statePtr))
+}
+
+func (s *ErrorSignal) getStateOrDefault() *errorSignalState {
+	st := s.getState()
+	if st != nil {
+		return st
+	}
+	return defaultErrorSignalState
 }
 
 // IsDone checks if the error signal was triggered. It is a slightly more efficient alternative to calling
 // `IsDone(s)`.
 func (s *ErrorSignal) IsDone() bool {
-	return s.getC() == nil
+	return s.getStateOrDefault().IsDone()
 }
 
 // Error returns the error that was stored when triggering the signal. If the signal has not been triggered,
 // the second return value returns false.
 func (s *ErrorSignal) Error() (Error, bool) {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	if s.signalC == nil {
-		return s.err, true
-	}
-	return nil, false
+	return s.getStateOrDefault().Error()
 }
 
 // ErrorWithDefault returns the error that was stored when triggering the signal or, when the signal was triggered with
 // a nil error, the given `defaultErr`. If the signal has not been triggered, nil is returned.
 func (s *ErrorSignal) ErrorWithDefault(defaultErr error) error {
-	err, ok := s.Error()
-	if ok && err == nil {
-		err = defaultErr
-	}
-	return err
+	return s.getStateOrDefault().ErrorWithDefault(defaultErr)
 }
 
 // WaitUntil waits until the signal is triggered or another condition is met. If the signal is triggered
 // before the condition is met, the stored error is returned along with a `true` boolean value. Otherwise,
 // a `nil` error and `false` are returned.
 func (s *ErrorSignal) WaitUntil(cancelCond Waitable) (Error, bool) {
-	s.mutex.RLock()
-	if s.signalC == nil {
-		err := s.err
-		s.mutex.RUnlock()
-		return err, true
-	}
-	ch := s.signalC
-	s.mutex.RUnlock()
-
-	select {
-	case <-ch:
-		return s.Error()
-	case <-cancelCond.Done():
-		return nil, false
-	}
+	return s.getStateOrDefault().WaitUntil(cancelCond)
 }
 
 // WaitWithTimeout waits for this signal to be triggered or the timeout to expire.
 func (s *ErrorSignal) WaitWithTimeout(timeout time.Duration) (Error, bool) {
-	if timeout <= 0 {
-		return s.Error()
-	}
-
-	s.mutex.RLock()
-	if s.signalC == nil {
-		err := s.err
-		s.mutex.RUnlock()
-		return err, true
-	}
-	ch := s.signalC
-	s.mutex.RUnlock()
-
-	timer := time.NewTimer(timeout)
-	select {
-	case <-ch:
-		if !timer.Stop() {
-			<-timer.C
-		}
-		return s.Error()
-	case <-timer.C:
-		return nil, false
-	}
+	return s.getStateOrDefault().WaitWithTimeout(timeout)
 }
 
 // WaitWithDeadline waits for this signal to be triggered or the deadline to exceed.
@@ -191,7 +259,12 @@ func (s *ErrorSignal) Wait() error {
 // Note that this does not allow you to distinguish between a triggered signal with a `nil` error and an
 // untriggered error signal. Use `Error()` if this is necessary.
 func (s *ErrorSignal) Err() error {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	return s.err
+	return s.getStateOrDefault().Err()
+}
+
+// Snapshot returns a read-only error signal that will not be affected by subsequent calls to `Reset`. It can be used
+// to wait for the signal to be triggered and retrieve the error safely, without an intermittent call to `Reset`
+// hiding the error.
+func (s *ErrorSignal) Snapshot() ReadOnlyErrorSignal {
+	return s.getStateOrDefault()
 }

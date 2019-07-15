@@ -78,3 +78,25 @@ func (s *Signal) Signal() bool {
 	close(*ch)
 	return true
 }
+
+// Snapshot returns a WaitableChan that observers will only see triggering once, i.e., if this signal is triggered (or
+// has been triggered) and then `Reset()` is called, subsequent calls to `Done()` on the returned object will still see
+// a triggered channel.
+func (s *Signal) Snapshot() WaitableChan {
+	return s.Done()
+}
+
+// SignalWhen triggers this signal when the given trigger condition is satisfied. It returns as soon as either this
+// signal is triggered (either by this function or another goroutine), or cancelCond is triggered (in which case the
+// signal will not be triggered).
+// CAREFUL: This function blocks; if you do not want this, invoke it in a goroutine.
+func (s *Signal) SignalWhen(triggerCond Waitable, cancelCond Waitable) bool {
+	select {
+	case <-triggerCond.Done():
+		return s.Signal()
+	case <-cancelCond.Done():
+		return false
+	case <-s.Done():
+		return false
+	}
+}
