@@ -4,14 +4,14 @@ import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
 import { entityParamNames, listParamNames } from 'constants/url';
 import entityTypes from 'constants/entityTypes';
-
 import merge from 'deepmerge';
 import {
     nestedPaths,
     riskPath,
     secretsPath,
     urlEntityListTypes,
-    urlEntityTypes
+    urlEntityTypes,
+    policiesPath
 } from '../routePaths';
 
 export function getTypeKeyFromParamValue(value, listOnly) {
@@ -53,11 +53,18 @@ function getPath(urlParams) {
     const legacyPathMap = {
         [contextTypes.RISK]: {
             [pageTypes.ENTITY]: riskPath,
-            [pageTypes.LIST]: '/main/risk'
+            [pageTypes.LIST]: '/main/risk',
+            [pageTypes.DASHBOARD]: '/main/risk'
         },
         [contextTypes.SECRET]: {
             [pageTypes.ENTITY]: secretsPath,
-            [pageTypes.LIST]: '/main/secrets'
+            [pageTypes.LIST]: '/main/secrets',
+            [pageTypes.DASHBOARD]: '/main/secrets'
+        },
+        [contextTypes.POLICY]: {
+            [pageTypes.ENTITY]: policiesPath,
+            [pageTypes.LIST]: '/main/policies',
+            [pageTypes.DASHBOARD]: '/main/policies'
         }
     };
 

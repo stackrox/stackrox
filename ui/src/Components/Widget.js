@@ -11,7 +11,8 @@ function Widget({
     headerComponents,
     pages,
     onPageChange,
-    id
+    id,
+    titleComponents
 }) {
     const [currentPage, setCurrentPage] = useState(0);
 
@@ -68,7 +69,7 @@ function Widget({
         ) : (
             children
         );
-
+    const headerContent = titleComponents || header;
     return (
         <div
             className={`flex flex-col shadow rounded relative rounded bg-base-100 ${className}`}
@@ -77,10 +78,10 @@ function Widget({
             <div className="border-b border-base-300">
                 <div className="flex w-full h-10 word-break">
                     <div
-                        className="flex flex-1 text-sm text-base-600 pt-1 uppercase items-center tracking-wide px-3 leading-normal font-700"
+                        className="flex flex-1 text-sm text-base-600 uppercase items-center tracking-wide px-3 leading-normal font-700"
                         data-test-id="widget-header"
                     >
-                        <div className="flex-grow">{header}</div>
+                        <div className="flex-grow">{headerContent}</div>
                         {pagerControls ? pagerControls.arrows : null}
                     </div>
                     {headerComponents && (
@@ -98,6 +99,7 @@ function Widget({
 
 Widget.propTypes = {
     header: PropTypes.string,
+    titleComponents: PropTypes.node,
     bodyClassName: PropTypes.string,
     className: PropTypes.string,
     children: PropTypes.node.isRequired,
@@ -109,6 +111,7 @@ Widget.propTypes = {
 
 Widget.defaultProps = {
     header: '',
+    titleComponents: null,
     bodyClassName: '',
     className: 'w-full bg-base-100',
     headerComponents: null,

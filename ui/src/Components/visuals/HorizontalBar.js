@@ -11,6 +11,7 @@ import {
 import { withRouter, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
+import BarGradient from './BarGradient';
 
 import HoverHint from './HoverHint';
 
@@ -157,14 +158,7 @@ class HorizontalBarChart extends Component {
     };
 
     render() {
-        const {
-            data,
-            tickValues,
-            valueFormat,
-            valueGradientColorStart,
-            valueGradientColorEnd,
-            minimal
-        } = this.props;
+        const { data, tickValues, valueFormat, minimal } = this.props;
 
         const sortedData = data.sort(sortByYValue);
 
@@ -228,17 +222,7 @@ class HorizontalBarChart extends Component {
                 </svg>
                 <FlexibleWidthXYPlot {...plotProps}>
                     <GradientDefs>
-                        <linearGradient
-                            id="horizontalGradient"
-                            gradientUnits="userSpaceOnUse"
-                            x1="0"
-                            y1="50%"
-                            x2="50%"
-                            y2="50%"
-                        >
-                            <stop offset="0%" stopColor={valueGradientColorStart} />
-                            <stop offset="100%" stopColor={valueGradientColorEnd} />
-                        </linearGradient>
+                        <BarGradient />
                     </GradientDefs>
                     {/* Empty area bar background */}
 
@@ -257,7 +241,7 @@ class HorizontalBarChart extends Component {
                     <HorizontalBarSeries
                         data={sortedData.map(item => ({
                             x: 0,
-                            x0: 100,
+                            x0: Math.ceil(sortedData[0].x / 5) * 5,
                             y: item.y,
                             link: item.link
                         }))}

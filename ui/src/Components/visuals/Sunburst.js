@@ -2,8 +2,9 @@ import React from 'react';
 import { Sunburst, DiscreteColorLegend, LabelSeries } from 'react-vis';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
-
+import ReactRouterPropTypes from 'react-router-prop-types';
 import SunburstDetailSection from 'Components/visuals/SunburstDetailSection';
+import { withRouter } from 'react-router-dom';
 
 // Get array of node ancestor names
 function getKeyPath(node) {
@@ -35,7 +36,7 @@ const LABEL_STYLE = {
     fill: 'var(--primary-800)'
 };
 
-export default class BasicSunburst extends React.Component {
+class BasicSunburst extends React.Component {
     static propTypes = {
         data: PropTypes.arrayOf(
             PropTypes.shape({
@@ -65,7 +66,9 @@ export default class BasicSunburst extends React.Component {
         onValueMouseOver: PropTypes.func,
         onValueMouseOut: PropTypes.func,
         onValueSelect: PropTypes.func,
-        onValueDeselect: PropTypes.func
+        onValueDeselect: PropTypes.func,
+        staticDetails: PropTypes.bool,
+        history: ReactRouterPropTypes.history.isRequired
     };
 
     static defaultProps = {
@@ -73,7 +76,8 @@ export default class BasicSunburst extends React.Component {
         onValueMouseOver: null,
         onValueMouseOut: null,
         onValueSelect: null,
-        onValueDeselect: null
+        onValueDeselect: null,
+        staticDetails: false
     };
 
     constructor(props) {
@@ -181,7 +185,7 @@ export default class BasicSunburst extends React.Component {
     };
 
     render() {
-        const { legendData, rootData } = this.props;
+        const { legendData, rootData, staticDetails } = this.props;
         const { clicked, data, selectedDatum } = this.state;
 
         const sunburstProps = this.getSunburstProps();
@@ -209,7 +213,7 @@ export default class BasicSunburst extends React.Component {
                     />
                 </div>
                 <SunburstDetailSection
-                    selectedDatum={selectedDatum}
+                    selectedDatum={!staticDetails ? selectedDatum : null}
                     rootData={rootData}
                     clicked={clicked}
                 />
@@ -217,3 +221,5 @@ export default class BasicSunburst extends React.Component {
         );
     }
 }
+
+export default withRouter(BasicSunburst);

@@ -4,7 +4,8 @@ const networkStatuses = {
     FETCH_MORE: 3,
     REFETCH: 4,
     POLL: 6,
-    READY: 7
+    READY: 7,
+    ERROR: 8
 };
 
 export default networkStatuses;

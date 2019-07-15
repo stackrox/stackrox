@@ -14,6 +14,7 @@ import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
 import { Link, withRouter } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';
+import ReactSelect from 'Components/ReactSelect';
 
 const colors = [
     'var(--tertiary-400)',
@@ -140,7 +141,9 @@ const ComplianceByStandard = ({
     entityName,
     entityType,
     entityId,
-    className
+    className,
+    standardOptions,
+    onStandardChange
 }) => {
     const groupBy = [
         entityTypes.STANDARD,
@@ -158,11 +161,61 @@ const ComplianceByStandard = ({
         groupBy,
         where: queryService.objectToWhereClause(where)
     };
+
+    function getTitleComponent() {
+        if (!standardOptions) return null;
+
+        const options = standardOptions
+            .filter(standard => standard !== standardType)
+            .map(standard => ({
+                value: standard,
+                label: standardLabels[standard]
+            }));
+
+        return (
+            <ReactSelect
+                options={options}
+                className="inline-block"
+                placeholder={`${standardLabels[standardType]} across Clusters`}
+                onChange={onStandardChange}
+                styles={{
+                    indicatorSeparator: () => ({
+                        display: 'none'
+                    }),
+                    control: () => ({
+                        border: 'none'
+                    }),
+                    placeholder: () => ({
+                        fontWeight: 700,
+                        fontSize: '11px',
+                        letterSpacing: '.5px',
+                        textTransform: 'uppercase'
+                    }),
+                    valueContainer: provided => ({
+                        ...provided,
+                        paddingRight: 0
+                    }),
+                    dropdownIndicator: provided => ({
+                        ...provided,
+                        color: 'var(--base-500)',
+                        paddingLeft: 0
+                    })
+                }}
+            />
+        );
+    }
+    function getHeaderText() {
+        if (standardOptions) return null;
+
+        return `${standardLabels[standardType]} Compliance`;
+    }
+
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data, networkStatus }) => {
                 let contents = <Loader />;
-                const headerText = `${standardLabels[standardType]} Compliance`;
+                const titleComponent = getTitleComponent();
+                const headerText = getHeaderText();
                 let viewStandardLink = null;
 
                 if (!loading && data && networkStatus === networkStatuses.READY) {
@@ -226,10 +279,12 @@ const ComplianceByStandard = ({
                         );
                     }
                 }
+
                 return (
                     <Widget
                         className={`s-2 ${className}`}
                         header={headerText}
+                        titleComponents={titleComponent}
                         headerComponents={viewStandardLink}
                         id={`${standardBaseTypes[standardType]}-compliance`}
                     >
@@ -248,14 +303,18 @@ ComplianceByStandard.propTypes = {
     entityName: PropTypes.string,
     entityType: PropTypes.string,
     entityId: PropTypes.string,
-    className: PropTypes.string
+    className: PropTypes.string,
+    standardOptions: PropTypes.arrayOf(PropTypes.string),
+    onStandardChange: PropTypes.func
 };
 
 ComplianceByStandard.defaultProps = {
     entityId: null,
     entityType: null,
     entityName: null,
-    className: ''
+    className: '',
+    standardOptions: null,
+    onStandardChange: null
 };
 
 export default withRouter(ComplianceByStandard);

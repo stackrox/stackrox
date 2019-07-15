@@ -4,7 +4,7 @@ function objectToWhereClause(query) {
     return Object.entries(query)
         .reduce((acc, entry) => {
             const [key, value] = entry;
-            if (!value) return acc;
+            if (typeof value === 'undefined' || value === '') return acc;
             const flatValue = Array.isArray(value) ? value.join() : value;
             return `${acc}${key}:${flatValue}+`;
         }, '')

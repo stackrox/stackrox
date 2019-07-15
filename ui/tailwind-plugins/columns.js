@@ -5,7 +5,8 @@ module.exports = function({ index = {}, variants = ["responsive"] }) {
     addUtilities(
       [
         ..._.map(index, (value, name) => ({
-          [`.${e(`columns-${name}`)}`]: { columnCount: value }
+          [`.${e(`columns-${name}`)}`]: { columnCount: value },
+          [`.${e(`columns-gap-${name}`)}`]: { columnGap: value }
         }))
       ],
       variants
