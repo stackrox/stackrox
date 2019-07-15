@@ -26,6 +26,46 @@ var (
 	}()
 )
 
+func TestPopulateNonStaticFieldWithPod(t *testing.T) {
+	cases := []struct {
+		inputObj       interface{}
+		action         central.ResourceAction
+		expectedAction central.ResourceAction
+	}{
+		{
+			inputObj: &v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodPending,
+				},
+			},
+			action:         central.ResourceAction_CREATE_RESOURCE,
+			expectedAction: central.ResourceAction_CREATE_RESOURCE,
+		},
+		{
+			inputObj: &v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodFailed,
+				},
+			},
+			action:         central.ResourceAction_CREATE_RESOURCE,
+			expectedAction: central.ResourceAction_REMOVE_RESOURCE,
+		},
+		{
+			inputObj: &v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodSucceeded,
+				},
+			},
+			action:         central.ResourceAction_CREATE_RESOURCE,
+			expectedAction: central.ResourceAction_REMOVE_RESOURCE,
+		},
+	}
+	for _, c := range cases {
+		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", nil, mockNamespaceStore)
+		assert.Equal(t, c.expectedAction, c.action)
+	}
+}
+
 func TestPopulateImageIDs(t *testing.T) {
 	type wrapContainer struct {
 		image string
@@ -555,7 +595,7 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.deploymentType, c.podLister, mockNamespaceStore).GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore).GetDeployment()
 			assert.Equal(t, c.expectedDeployment, actual)
 		})
 	}

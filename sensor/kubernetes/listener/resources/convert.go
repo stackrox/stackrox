@@ -66,7 +66,7 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
-func newDeploymentEventFromResource(obj interface{}, action central.ResourceAction, deploymentType string, lister v1listers.PodLister, namespaceStore *namespaceStore) *deploymentWrap {
+func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType string, lister v1listers.PodLister, namespaceStore *namespaceStore) *deploymentWrap {
 	wrap := newWrap(obj, deploymentType)
 	if wrap == nil {
 		return nil
@@ -132,7 +132,7 @@ func checkIfNewPodSpecRequired(podSpec *v1.PodSpec, pods []*v1.Pod) bool {
 	return updated
 }
 
-func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister, namespaceStore *namespaceStore) (bool, error) {
+func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister, namespaceStore *namespaceStore) (bool, error) {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -162,9 +162,10 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 
 	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
 	case *v1.Pod:
-		if o.Status.Phase != v1.PodRunning {
-			return false, nil
+		if o.Status.Phase == v1.PodSucceeded || o.Status.Phase == v1.PodFailed {
+			*action = central.ResourceAction_REMOVE_RESOURCE
 		}
+
 		// Standalone Pods do not have a PodTemplate, like the other deployment
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
@@ -211,7 +212,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 		}
 	}
 
-	if action != central.ResourceAction_REMOVE_RESOURCE {
+	if *action != central.ResourceAction_REMOVE_RESOURCE {
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
 		// We need to special case kube-proxy because we are consolidating it into a deployment
 		if pod, ok := obj.(*v1.Pod); ok && w.Type != k8sStandalonePodType {

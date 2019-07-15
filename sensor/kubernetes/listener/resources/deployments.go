@@ -51,7 +51,7 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymen
 }
 
 func (d *deploymentHandler) processWithType(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	wrap := newDeploymentEventFromResource(obj, action, deploymentType, d.podLister, d.namespaceStore)
+	wrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.podLister, d.namespaceStore)
 	if wrap == nil {
 		return d.maybeProcessPod(obj)
 	}
