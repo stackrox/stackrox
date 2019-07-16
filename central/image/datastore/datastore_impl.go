@@ -169,6 +169,9 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
 func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) error {
+	if image.GetId() == "" {
+		return errors.New("cannot upsert an image without an id")
+	}
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -182,8 +185,9 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	if err != nil {
 		return err
 	}
-	if exists {
-		merge(image, oldImage)
+	// If the merge causes no changes, then no reason to save
+	if exists && !merge(image, oldImage) {
+		return nil
 	}
 	if err = ds.storage.UpsertImage(image); err != nil {
 		return err
@@ -224,22 +228,36 @@ func scrubClusterNSScopesFromListImages(images ...*storage.ListImage) {
 }
 
 // merge adds the most up to date data from the two inputs to the first input.
-func merge(mergeTo *storage.Image, mergeWith *storage.Image) {
+func merge(mergeTo *storage.Image, mergeWith *storage.Image) (updated bool) {
 	// If the image currently in the DB has more up to date info, swap it out.
-	if mergeWith.GetMetadata().GetV1().GetCreated().Compare(mergeTo.GetMetadata().GetV1().GetCreated()) > 0 {
+	if mergeWith.GetMetadata().GetV1().GetCreated().Compare(mergeTo.GetMetadata().GetV1().GetCreated()) >= 0 {
 		mergeTo.Metadata = mergeWith.GetMetadata()
+	} else {
+		updated = true
 	}
-	if mergeWith.GetScan().GetScanTime().Compare(mergeTo.GetScan().GetScanTime()) > 0 {
+	if mergeWith.GetScan().GetScanTime().Compare(mergeTo.GetScan().GetScanTime()) >= 0 {
 		mergeTo.Scan = mergeWith.GetScan()
+	} else {
+		updated = true
 	}
 
 	if len(mergeTo.GetClusternsScopes()) == 0 {
 		mergeTo.ClusternsScopes = mergeWith.GetClusternsScopes()
 	} else {
+		var newScopes bool
+		for k := range mergeTo.GetClusternsScopes() {
+			if _, ok := mergeWith.GetClusternsScopes()[k]; !ok {
+				newScopes = true
+			}
+		}
+		if newScopes {
+			updated = true
+		}
 		for k, v := range mergeWith.GetClusternsScopes() {
 			mergeTo.ClusternsScopes[k] = v
 		}
 	}
+	return
 }
 
 func (ds *datastoreImpl) buildIndex() error {

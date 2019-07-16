@@ -3,6 +3,7 @@ package enrichment
 import (
 	"time"
 
+	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -27,7 +28,7 @@ var (
 
 func initialize() {
 	ie = enricher.New(imageintegration.Set(), metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton())
-	en = New(ie)
+	en = New(datastore.Singleton(), ie)
 }
 
 // Singleton provides the singleton Enricher to use.

@@ -1,6 +1,7 @@
 package enrichment
 
 import (
+	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,8 +20,9 @@ type Enricher interface {
 }
 
 // New creates and returns a new Enricher.
-func New(imageEnricher enricher.ImageEnricher) Enricher {
+func New(imageDatastore datastore.DataStore, imageEnricher enricher.ImageEnricher) Enricher {
 	return &enricherImpl{
+		images:        imageDatastore,
 		imageEnricher: imageEnricher,
 	}
 }

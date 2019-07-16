@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	containeranalysis "cloud.google.com/go/containeranalysis/apiv1beta1"
+	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -240,6 +241,7 @@ func (c *googleScanner) GetLastScan(image *storage.Image) (*storage.ImageScan, e
 	}
 	// Google can't give the data via layers at this time
 	return &storage.ImageScan{
+		ScanTime:   gogoTypes.TimestampNow(),
 		Components: components,
 	}, nil
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	clairV1 "github.com/coreos/clair/api/v1"
+	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/clairify/client"
 	"github.com/stackrox/clairify/types"
@@ -106,6 +107,7 @@ func validateConfig(c *storage.ClairifyConfig) error {
 
 func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerEnvelope) *storage.ImageScan {
 	return &storage.ImageScan{
+		ScanTime:   gogoProto.TimestampNow(),
 		Components: clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
 	}
 }

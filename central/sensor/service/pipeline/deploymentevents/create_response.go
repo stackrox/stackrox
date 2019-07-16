@@ -3,9 +3,10 @@ package deploymentevents
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/enricher"
 )
 
-func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, string, storage.EnforcementAction, error),
+func newCreateResponse(onUpdate func(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (string, string, storage.EnforcementAction, error),
 	onRemove func(deployment *storage.Deployment) error) *createResponseImpl {
 	return &createResponseImpl{
 		onUpdate: onUpdate,
@@ -14,7 +15,7 @@ func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, st
 }
 
 type createResponseImpl struct {
-	onUpdate func(deployment *storage.Deployment) (string, string, storage.EnforcementAction, error)
+	onUpdate func(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (string, string, storage.EnforcementAction, error)
 	onRemove func(deployment *storage.Deployment) error
 }
 
@@ -26,9 +27,9 @@ func (s *createResponseImpl) do(deployment *storage.Deployment, action central.R
 		err = s.onRemove(deployment)
 	} else if action == central.ResourceAction_CREATE_RESOURCE {
 		// We only want enforcement if the deployment was just created.
-		alertID, policyName, enforcement, err = s.onUpdate(deployment)
+		alertID, policyName, enforcement, err = s.onUpdate(enricher.EnrichmentContext{}, deployment)
 	} else {
-		_, _, _, err = s.onUpdate(deployment)
+		_, _, _, err = s.onUpdate(enricher.EnrichmentContext{}, deployment)
 	}
 	if err != nil {
 		log.Errorf("updating from deployment failed: %s", err)

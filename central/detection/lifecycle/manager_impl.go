@@ -231,9 +231,9 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, inject
 	return nil
 }
 
-func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string, string, storage.EnforcementAction, error) {
+func (m *managerImpl) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (string, string, storage.EnforcementAction, error) {
 	// Attempt to enrich the image before detection.
-	images, updatedIndices, err := m.enricher.EnrichDeployment(enricher.EnrichmentContext{NoExternalMetadata: false}, deployment)
+	images, updatedIndices, err := m.enricher.EnrichDeployment(ctx, deployment)
 	if err != nil {
 		log.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
 	}

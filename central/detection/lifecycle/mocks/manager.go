@@ -8,6 +8,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/central/sensor/service/common"
 	storage "github.com/stackrox/rox/generated/storage"
+	enricher "github.com/stackrox/rox/pkg/images/enricher"
 	reflect "reflect"
 )
 
@@ -47,8 +48,8 @@ func (mr *MockManagerMockRecorder) DeploymentRemoved(arg0 interface{}) *gomock.C
 }
 
 // DeploymentUpdated mocks base method
-func (m *MockManager) DeploymentUpdated(arg0 *storage.Deployment) (string, string, storage.EnforcementAction, error) {
-	ret := m.ctrl.Call(m, "DeploymentUpdated", arg0)
+func (m *MockManager) DeploymentUpdated(arg0 enricher.EnrichmentContext, arg1 *storage.Deployment) (string, string, storage.EnforcementAction, error) {
+	ret := m.ctrl.Call(m, "DeploymentUpdated", arg0, arg1)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(storage.EnforcementAction)
@@ -57,8 +58,8 @@ func (m *MockManager) DeploymentUpdated(arg0 *storage.Deployment) (string, strin
 }
 
 // DeploymentUpdated indicates an expected call of DeploymentUpdated
-func (mr *MockManagerMockRecorder) DeploymentUpdated(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentUpdated", reflect.TypeOf((*MockManager)(nil).DeploymentUpdated), arg0)
+func (mr *MockManagerMockRecorder) DeploymentUpdated(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentUpdated", reflect.TypeOf((*MockManager)(nil).DeploymentUpdated), arg0, arg1)
 }
 
 // IndicatorAdded mocks base method

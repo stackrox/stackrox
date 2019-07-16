@@ -10,6 +10,7 @@ import (
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -270,7 +271,7 @@ type mockDetector struct {
 	mock.Mock
 }
 
-func (d *mockDetector) DeploymentUpdated(deployment *storage.Deployment) (alertID, policyName string, enforcement storage.EnforcementAction, err error) {
+func (d *mockDetector) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (alertID, policyName string, enforcement storage.EnforcementAction, err error) {
 	args := d.Called(deployment)
 	return args.Get(0).(string), args.Get(1).(string), args.Get(2).(storage.EnforcementAction), args.Error(3)
 }

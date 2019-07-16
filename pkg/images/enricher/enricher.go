@@ -19,6 +19,7 @@ var (
 type EnrichmentContext struct {
 	NoExternalMetadata bool
 	EnforcementOnly    bool
+	IgnoreExisting     bool
 }
 
 // ImageEnricher provides functions for enriching images with integrations.

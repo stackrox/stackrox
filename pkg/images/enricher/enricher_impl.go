@@ -54,6 +54,10 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 		return false
 	}
 
+	if !ctx.IgnoreExisting && image.GetMetadata() != nil {
+		return false
+	}
+
 	ref := getRef(image)
 	if metadataValue := e.metadataCache.Get(ref); metadataValue != nil {
 		e.metrics.IncrementMetadataCacheHit()
@@ -102,6 +106,11 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	if !scanner.Match(image) {
 		return false
 	}
+
+	if !ctx.IgnoreExisting && image.GetScan() != nil {
+		return false
+	}
+
 	ref := getRef(image)
 	if scanValue := e.scanCache.Get(ref); scanValue != nil {
 		e.metrics.IncrementScanCacheHit()
