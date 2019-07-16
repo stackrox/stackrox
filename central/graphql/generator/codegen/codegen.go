@@ -135,19 +135,23 @@ func (resolver *{{lower $td.Data.Name}}Resolver) {{ $fd.Name }}(ctx context.Cont
 {{end}}
 {{- range $ud := $td.Data.UnionData}}
 type {{lower $td.Data.Name}}{{$ud.Name}}Resolver struct {
-	resolver *{{lower $td.Data.Name}}Resolver
+	resolver interface{}
 }
 
 func (resolver *{{lower $td.Data.Name}}Resolver) {{$ud.Name}}() *{{lower $td.Data.Name}}{{$ud.Name}}Resolver {
-	return &{{lower $td.Data.Name}}{{$ud.Name}}Resolver{resolver}
+{{- range $ut := $ud.Entries }}
+	if val := resolver.data.Get{{$ut.Name}}(); val != nil {
+		return &{{lower $td.Data.Name}}{{$ud.Name}}Resolver{
+			resolver: &{{lower $ut.Type.Elem.Name}}Resolver{resolver.root, val},
+		}
+	}
+{{- end}}
+	return nil
 }
 {{range $ut := $ud.Entries}}
 func (resolver *{{lower $td.Data.Name}}{{$ud.Name}}Resolver) To{{$ut.Type.Elem.Name}}() (*{{lower $ut.Type.Elem.Name}}Resolver, bool) {
-	value := resolver.resolver.data.Get{{$ut.Name}}()
-	if value != nil {
-		return &{{lower $ut.Type.Elem.Name}}Resolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*{{lower $ut.Type.Elem.Name}}Resolver)
+	return res, ok
 }
 {{end}}{{end}}{{end}}{{end}}`,
 	"enum":         `value.String()`,

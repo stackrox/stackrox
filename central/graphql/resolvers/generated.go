@@ -2126,43 +2126,51 @@ func (resolver *Resolver) wrapComplianceResources(values []*storage.ComplianceRe
 }
 
 type complianceResourceResourceResolver struct {
-	resolver *complianceResourceResolver
+	resolver interface{}
 }
 
 func (resolver *complianceResourceResolver) Resource() *complianceResourceResourceResolver {
-	return &complianceResourceResourceResolver{resolver}
+	if val := resolver.data.GetCluster(); val != nil {
+		return &complianceResourceResourceResolver{
+			resolver: &complianceResource_ClusterNameResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetDeployment(); val != nil {
+		return &complianceResourceResourceResolver{
+			resolver: &complianceResource_DeploymentNameResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetNode(); val != nil {
+		return &complianceResourceResourceResolver{
+			resolver: &complianceResource_NodeNameResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetImage(); val != nil {
+		return &complianceResourceResourceResolver{
+			resolver: &imageNameResolver{resolver.root, val},
+		}
+	}
+	return nil
 }
 
 func (resolver *complianceResourceResourceResolver) ToComplianceResource_ClusterName() (*complianceResource_ClusterNameResolver, bool) {
-	value := resolver.resolver.data.GetCluster()
-	if value != nil {
-		return &complianceResource_ClusterNameResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*complianceResource_ClusterNameResolver)
+	return res, ok
 }
 
 func (resolver *complianceResourceResourceResolver) ToComplianceResource_DeploymentName() (*complianceResource_DeploymentNameResolver, bool) {
-	value := resolver.resolver.data.GetDeployment()
-	if value != nil {
-		return &complianceResource_DeploymentNameResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*complianceResource_DeploymentNameResolver)
+	return res, ok
 }
 
 func (resolver *complianceResourceResourceResolver) ToComplianceResource_NodeName() (*complianceResource_NodeNameResolver, bool) {
-	value := resolver.resolver.data.GetNode()
-	if value != nil {
-		return &complianceResource_NodeNameResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*complianceResource_NodeNameResolver)
+	return res, ok
 }
 
 func (resolver *complianceResourceResourceResolver) ToImageName() (*imageNameResolver, bool) {
-	value := resolver.resolver.data.GetImage()
-	if value != nil {
-		return &imageNameResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*imageNameResolver)
+	return res, ok
 }
 
 type complianceResource_ClusterNameResolver struct {
@@ -4616,19 +4624,21 @@ func (resolver *networkEntityInfoResolver) Type(ctx context.Context) string {
 }
 
 type networkEntityInfoDescResolver struct {
-	resolver *networkEntityInfoResolver
+	resolver interface{}
 }
 
 func (resolver *networkEntityInfoResolver) Desc() *networkEntityInfoDescResolver {
-	return &networkEntityInfoDescResolver{resolver}
+	if val := resolver.data.GetDeployment(); val != nil {
+		return &networkEntityInfoDescResolver{
+			resolver: &networkEntityInfo_DeploymentResolver{resolver.root, val},
+		}
+	}
+	return nil
 }
 
 func (resolver *networkEntityInfoDescResolver) ToNetworkEntityInfo_Deployment() (*networkEntityInfo_DeploymentResolver, bool) {
-	value := resolver.resolver.data.GetDeployment()
-	if value != nil {
-		return &networkEntityInfo_DeploymentResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*networkEntityInfo_DeploymentResolver)
+	return res, ok
 }
 
 type networkEntityInfo_DeploymentResolver struct {
@@ -4910,67 +4920,81 @@ func (resolver *notifierResolver) UiEndpoint(ctx context.Context) string {
 }
 
 type notifierConfigResolver struct {
-	resolver *notifierResolver
+	resolver interface{}
 }
 
 func (resolver *notifierResolver) Config() *notifierConfigResolver {
-	return &notifierConfigResolver{resolver}
+	if val := resolver.data.GetJira(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &jiraResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetEmail(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &emailResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetCscc(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &cSCCResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetSplunk(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &splunkResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetPagerduty(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &pagerDutyResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetGeneric(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &genericResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetSumologic(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &sumoLogicResolver{resolver.root, val},
+		}
+	}
+	return nil
 }
 
 func (resolver *notifierConfigResolver) ToJira() (*jiraResolver, bool) {
-	value := resolver.resolver.data.GetJira()
-	if value != nil {
-		return &jiraResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*jiraResolver)
+	return res, ok
 }
 
 func (resolver *notifierConfigResolver) ToEmail() (*emailResolver, bool) {
-	value := resolver.resolver.data.GetEmail()
-	if value != nil {
-		return &emailResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*emailResolver)
+	return res, ok
 }
 
 func (resolver *notifierConfigResolver) ToCSCC() (*cSCCResolver, bool) {
-	value := resolver.resolver.data.GetCscc()
-	if value != nil {
-		return &cSCCResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*cSCCResolver)
+	return res, ok
 }
 
 func (resolver *notifierConfigResolver) ToSplunk() (*splunkResolver, bool) {
-	value := resolver.resolver.data.GetSplunk()
-	if value != nil {
-		return &splunkResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*splunkResolver)
+	return res, ok
 }
 
 func (resolver *notifierConfigResolver) ToPagerDuty() (*pagerDutyResolver, bool) {
-	value := resolver.resolver.data.GetPagerduty()
-	if value != nil {
-		return &pagerDutyResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*pagerDutyResolver)
+	return res, ok
 }
 
 func (resolver *notifierConfigResolver) ToGeneric() (*genericResolver, bool) {
-	value := resolver.resolver.data.GetGeneric()
-	if value != nil {
-		return &genericResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*genericResolver)
+	return res, ok
 }
 
 func (resolver *notifierConfigResolver) ToSumoLogic() (*sumoLogicResolver, bool) {
-	value := resolver.resolver.data.GetSumologic()
-	if value != nil {
-		return &sumoLogicResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*sumoLogicResolver)
+	return res, ok
 }
 
 type numericalPolicyResolver struct {
@@ -5881,35 +5905,41 @@ func (resolver *providerMetadataResolver) Zone(ctx context.Context) string {
 }
 
 type providerMetadataProviderResolver struct {
-	resolver *providerMetadataResolver
+	resolver interface{}
 }
 
 func (resolver *providerMetadataResolver) Provider() *providerMetadataProviderResolver {
-	return &providerMetadataProviderResolver{resolver}
+	if val := resolver.data.GetGoogle(); val != nil {
+		return &providerMetadataProviderResolver{
+			resolver: &googleProviderMetadataResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetAws(); val != nil {
+		return &providerMetadataProviderResolver{
+			resolver: &aWSProviderMetadataResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetAzure(); val != nil {
+		return &providerMetadataProviderResolver{
+			resolver: &azureProviderMetadataResolver{resolver.root, val},
+		}
+	}
+	return nil
 }
 
 func (resolver *providerMetadataProviderResolver) ToGoogleProviderMetadata() (*googleProviderMetadataResolver, bool) {
-	value := resolver.resolver.data.GetGoogle()
-	if value != nil {
-		return &googleProviderMetadataResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*googleProviderMetadataResolver)
+	return res, ok
 }
 
 func (resolver *providerMetadataProviderResolver) ToAWSProviderMetadata() (*aWSProviderMetadataResolver, bool) {
-	value := resolver.resolver.data.GetAws()
-	if value != nil {
-		return &aWSProviderMetadataResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*aWSProviderMetadataResolver)
+	return res, ok
 }
 
 func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*azureProviderMetadataResolver, bool) {
-	value := resolver.resolver.data.GetAzure()
-	if value != nil {
-		return &azureProviderMetadataResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*azureProviderMetadataResolver)
+	return res, ok
 }
 
 type resourcePolicyResolver struct {
@@ -6456,27 +6486,31 @@ func (resolver *secretDataFileResolver) Type(ctx context.Context) string {
 }
 
 type secretDataFileMetadataResolver struct {
-	resolver *secretDataFileResolver
+	resolver interface{}
 }
 
 func (resolver *secretDataFileResolver) Metadata() *secretDataFileMetadataResolver {
-	return &secretDataFileMetadataResolver{resolver}
+	if val := resolver.data.GetCert(); val != nil {
+		return &secretDataFileMetadataResolver{
+			resolver: &certResolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetImagePullSecret(); val != nil {
+		return &secretDataFileMetadataResolver{
+			resolver: &imagePullSecretResolver{resolver.root, val},
+		}
+	}
+	return nil
 }
 
 func (resolver *secretDataFileMetadataResolver) ToCert() (*certResolver, bool) {
-	value := resolver.resolver.data.GetCert()
-	if value != nil {
-		return &certResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*certResolver)
+	return res, ok
 }
 
 func (resolver *secretDataFileMetadataResolver) ToImagePullSecret() (*imagePullSecretResolver, bool) {
-	value := resolver.resolver.data.GetImagePullSecret()
-	if value != nil {
-		return &imagePullSecretResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
+	res, ok := resolver.resolver.(*imagePullSecretResolver)
+	return res, ok
 }
 
 type secretDeploymentRelationshipResolver struct {
