@@ -408,7 +408,9 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 	}
 	// Attribute the digests to the container image
 	for i, c := range w.Deployment.Containers {
-		w.Deployment.Containers[i].Image.Id = types.NewDigest(containersToDigests[c.Name].digest).Digest()
+		if w.Deployment.Containers[i].Image.Id == "" {
+			w.Deployment.Containers[i].Image.Id = types.NewDigest(containersToDigests[c.Name].digest).Digest()
+		}
 	}
 }
 

@@ -68,6 +68,7 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 
 func TestPopulateImageIDs(t *testing.T) {
 	type wrapContainer struct {
+		id    string
 		image string
 	}
 
@@ -81,6 +82,22 @@ func TestPopulateImageIDs(t *testing.T) {
 		status      [][]status
 		expectedIDs []string
 	}{
+		{
+			wrap: []wrapContainer{
+				{
+					id:    "sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85",
+					image: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/imagedigestexporter@sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85",
+				},
+			},
+			status: [][]status{
+				{
+					{
+						image: "stackrox.io/main:latest",
+					},
+				},
+			},
+			expectedIDs: []string{"sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85"},
+		},
 		{
 			wrap: []wrapContainer{
 				{
@@ -184,6 +201,7 @@ func TestPopulateImageIDs(t *testing.T) {
 		for _, container := range c.wrap {
 			wrap.Containers = append(wrap.Containers, &storage.Container{
 				Image: &storage.ContainerImage{
+					Id: container.id,
 					Name: &storage.ImageName{
 						FullName: container.image,
 					},
