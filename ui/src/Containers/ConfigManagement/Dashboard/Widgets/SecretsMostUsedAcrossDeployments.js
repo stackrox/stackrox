@@ -81,7 +81,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                 }
                 return (
                     <Widget
-                        className="s-2 overflow-hidden"
+                        className="s-2 overflow-hidden pdf-page"
                         header="Secrets Most Used Across Deployments"
                         headerComponents={viewAllLink}
                     >

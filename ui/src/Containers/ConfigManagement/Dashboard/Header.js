@@ -14,6 +14,7 @@ import TileLink from 'Components/TileLink';
 import queryService from 'modules/queryService';
 import Menu from 'Components/Menu';
 import { ChevronDown } from 'react-feather';
+import ExportButton from 'Components/ExportButton';
 import PoliciesHeaderTile from './Widgets/PoliciesHeaderTile';
 
 const getLabel = entityType => pluralize(entityLabels[entityType]);
@@ -147,6 +148,14 @@ const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) 
                     }
                     options={RBACMenuOptions}
                 />
+                <div className="self-center">
+                    <ExportButton
+                        fileName="Config Mangement Dashboard"
+                        type={null}
+                        page="configManagement"
+                        pdfId="capture-dashboard"
+                    />
+                </div>
             </div>
         </PageHeader>
     );

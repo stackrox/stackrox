@@ -30,7 +30,9 @@ const QUERY = gql`
 const PermissionsText = ({ serviceAccount }) => {
     return (
         <div className="truncate">
-            {serviceAccount.scopedPermissions[0].permissions &&
+            {serviceAccount.scopedPermissions &&
+                serviceAccount.scopedPermissions.length &&
+                serviceAccount.scopedPermissions[0].permissions &&
                 serviceAccount.scopedPermissions[0].permissions.map(
                     (permission, permissionIndex) => (
                         <span key={`${serviceAccount.name}-${permission.key}`}>
@@ -125,7 +127,7 @@ const ServiceAccountsWithHighestPrivilages = ({ match, location }) => {
                 }
                 return (
                     <Widget
-                        className="s-2 overflow-hidden"
+                        className="s-2 overflow-hidden pdf-page"
                         header="Service Accounts with Highest privileges"
                         headerComponents={viewAllLink}
                     >

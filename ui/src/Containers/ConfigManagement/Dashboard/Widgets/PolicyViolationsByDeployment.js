@@ -52,10 +52,10 @@ const PolicyViolationsByDeployment = ({ match, location }) => {
                     return ret;
                 },
                 {
-                    LOW_SEVERITY: 0,
-                    MEDIUM_SEVERITY: 0,
+                    CRITICAL_SEVERITY: 0,
                     HIGH_SEVERITY: 0,
-                    CRITICAL_SEVERITY: 0
+                    MEDIUM_SEVERITY: 0,
+                    LOW_SEVERITY: 0
                 }
             );
             return {
@@ -122,6 +122,8 @@ const PolicyViolationsByDeployment = ({ match, location }) => {
                                                     };
                                                     const count = item.counts[type];
 
+                                                    if (count === 0) return null;
+
                                                     const tipText = `${item.counts[type]} ${
                                                         severityTexts[type]
                                                     } ${pluralize('Violation', count)}`;
@@ -163,7 +165,7 @@ const PolicyViolationsByDeployment = ({ match, location }) => {
                 }
                 return (
                     <Widget
-                        className="s-2 overflow-hidden"
+                        className="s-2 overflow-hidden pdf-page"
                         header="Deployments with most severe policy violations"
                         headerComponents={viewAllLink}
                     >

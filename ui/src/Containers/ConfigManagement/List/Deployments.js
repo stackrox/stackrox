@@ -4,7 +4,6 @@ import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
 import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 
-import { sortValueByLength } from 'sorters/sorters';
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
@@ -62,8 +61,7 @@ const buildTableColumns = (match, location) => {
                 const { alertsCount } = original;
                 if (alertsCount === 0) return 'No alerts';
                 return <LabelChip text={`${alertsCount} Alerts`} type="alert" />;
-            },
-            sortMethod: sortValueByLength
+            }
         }
     ];
     return tableColumns;
@@ -86,6 +84,12 @@ const Deployments = ({ match, location, className, selectedRowId, onRowClick, qu
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSorted={[
+                {
+                    id: 'alertsCount',
+                    desc: true
+                }
+            ]}
         />
     );
 };

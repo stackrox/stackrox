@@ -108,6 +108,12 @@ const ServiceAccounts = ({ match, location, className, selectedRowId, onRowClick
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSorted={[
+                {
+                    id: 'scopedPermissions[0].permissions',
+                    desc: true
+                }
+            ]}
         />
     );
 };

@@ -111,6 +111,12 @@ const Secrets = ({ match, location, className, selectedRowId, onRowClick, query 
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSorted={[
+                {
+                    id: 'deployments',
+                    desc: true
+                }
+            ]}
         />
     );
 };

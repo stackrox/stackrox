@@ -94,7 +94,7 @@ const Lollipop = ({ data }) => {
 };
 
 Lollipop.propTypes = {
-    data: PropTypes.shape({}).isRequired
+    data: PropTypes.arrayOf(PropTypes.shape({})).isRequired
 };
 
 export default withRouter(Lollipop);

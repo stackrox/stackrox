@@ -96,6 +96,16 @@ const Subjects = ({ match, location, selectedRowId, onRowClick, query, className
             selectedRowId={selectedRowId}
             onRowClick={onRowClick}
             idAttribute="id"
+            defaultSorted={[
+                {
+                    id: 'clusterAdmin',
+                    desc: true
+                },
+                {
+                    id: 'scopedPermissions[0].permissions',
+                    desc: true
+                }
+            ]}
         />
     );
 };

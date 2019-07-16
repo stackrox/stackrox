@@ -60,6 +60,7 @@ const ConfigManagementDashboardPage = () => {
                 >
                     <PolicyViolationsBySeverity />
                     <ComplianceByStandard
+                        className="pdf-page"
                         standardType={standard}
                         standardOptions={[
                             standardTypes.CIS_Docker_v1_1_0,

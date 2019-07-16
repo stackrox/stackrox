@@ -3,6 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import { POLICIES as QUERY } from 'queries/policy';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
+import { sortSeverity } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 
@@ -41,7 +42,8 @@ const tableColumns = [
             const { severity } = original;
             return <SeverityLabel severity={severity} />;
         },
-        accessor: 'severity'
+        accessor: 'severity',
+        sortMethod: sortSeverity
     },
     {
         Header: `Categories`,
@@ -87,6 +89,12 @@ const Policies = ({ className, onRowClick, query, selectedRowId }) => {
             selectedRowId={selectedRowId}
             onRowClick={onRowClick}
             idAttribute="id"
+            defaultSorted={[
+                {
+                    id: 'severity',
+                    desc: false
+                }
+            ]}
         />
     );
 };

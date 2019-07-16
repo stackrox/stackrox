@@ -25,7 +25,8 @@ const List = ({
     createTableRows,
     onRowClick,
     selectedRowId,
-    idAttribute
+    idAttribute,
+    defaultSorted
 }) => {
     const [page, setPage] = useState(0);
     function onRowClickHandler(row) {
@@ -89,6 +90,7 @@ const List = ({
                                 selectedRowId={selectedRowId}
                                 noDataText="No results found. Please refine your search."
                                 page={page}
+                                defaultSorted={defaultSorted}
                             />
                         </Panel>
                     </section>
@@ -108,14 +110,16 @@ List.propTypes = {
     onRowClick: PropTypes.func.isRequired,
     selectedRowId: PropTypes.string,
     idAttribute: PropTypes.string.isRequired,
-    headerText: PropTypes.string
+    headerText: PropTypes.string,
+    defaultSorted: PropTypes.arrayOf(PropTypes.shape({}))
 };
 
 List.defaultProps = {
     className: '',
     variables: {},
     headerText: '',
-    selectedRowId: null
+    selectedRowId: null,
+    defaultSorted: []
 };
 
 export default List;

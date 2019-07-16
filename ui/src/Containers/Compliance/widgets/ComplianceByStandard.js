@@ -241,7 +241,8 @@ const ComplianceByStandard = ({
                         },
                         {
                             text: `${getNumControls(sunburstData)} Controls`,
-                            link: url
+                            link: url,
+                            color: 'var(--tertiary-700)'
                         }
                     ];
 
