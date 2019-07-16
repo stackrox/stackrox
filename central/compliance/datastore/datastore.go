@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
@@ -25,12 +24,9 @@ type DataStore interface {
 }
 
 // NewDataStore returns a new instance of a DataStore.
-func NewDataStore(db *bbolt.DB) (DataStore, error) {
-	boltStore, err := store.NewBoltStore(db)
-	if err != nil {
-		return nil, err
-	}
+func NewDataStore(storage store.Store, filter SacFilter) DataStore {
 	return &datastoreImpl{
-		boltStore: boltStore,
-	}, nil
+		storage: storage,
+		filter:  filter,
+	}
 }

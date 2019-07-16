@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -19,7 +18,8 @@ var (
 )
 
 type datastoreImpl struct {
-	boltStore store.Store
+	storage store.Store
+	filter  SacFilter
 }
 
 func (ds *datastoreImpl) QueryControlResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceControlResult, error) {
@@ -33,16 +33,26 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 	} else if !ok {
 		return types.ResultsWithStatus{}, errors.New("not found")
 	}
-	res, err := ds.boltStore.GetLatestRunResults(clusterID, standardID, flags)
-	return fromInternalResultsWithStatus(res), err
+
+	res, err := ds.storage.GetLatestRunResults(clusterID, standardID, flags)
+	if err != nil {
+		return types.ResultsWithStatus{}, err
+	}
+
+	// Filter out results the user is not allowed to see.
+	res.LastSuccessfulResults, err = ds.filter.FilterRunResults(ctx, res.LastSuccessfulResults)
+	if err != nil {
+		return types.ResultsWithStatus{}, err
+	}
+	return res, err
 }
 
 func (ds *datastoreImpl) GetLatestRunResultsBatch(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
-	results, err := ds.boltStore.GetLatestRunResultsBatch(clusterIDs, standardIDs, flags)
+	results, err := ds.storage.GetLatestRunResultsBatch(clusterIDs, standardIDs, flags)
 	if err != nil {
 		return nil, err
 	}
-	filteredResults, err := ds.filterResults(ctx, sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance), results)
+	filteredResults, err := ds.filter.FilterBatchResults(ctx, results)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +60,11 @@ func (ds *datastoreImpl) GetLatestRunResultsBatch(ctx context.Context, clusterID
 }
 
 func (ds *datastoreImpl) GetLatestRunResultsFiltered(ctx context.Context, clusterIDFilter, standardIDFilter func(string) bool, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
-	results, err := ds.boltStore.GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter, flags)
+	results, err := ds.storage.GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter, flags)
 	if err != nil {
 		return nil, err
 	}
-	filteredResults, err := ds.filterResults(ctx, sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance), results)
+	filteredResults, err := ds.filter.FilterBatchResults(ctx, results)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +77,7 @@ func (ds *datastoreImpl) StoreRunResults(ctx context.Context, results *storage.C
 	} else if !ok {
 		return errors.New("permission denied")
 	}
-	return ds.boltStore.StoreRunResults(results)
+	return ds.storage.StoreRunResults(results)
 }
 
 func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error {
@@ -76,66 +86,5 @@ func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.Com
 	} else if !ok {
 		return errors.New("permission denied")
 	}
-	return ds.boltStore.StoreFailure(metadata)
-}
-
-func (ds *datastoreImpl) filterResults(
-	ctx context.Context,
-	resourceScopeChecker sac.ScopeChecker,
-	results map[compliance.ClusterStandardPair]types.ResultsWithStatus) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
-
-	allowed, maybe := ds.filterResultsFirst(resourceScopeChecker, results)
-	if len(maybe) > 0 {
-		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {
-			return nil, err
-		}
-		extraAllowed, maybe := ds.filterResultsSecond(resourceScopeChecker, maybe)
-		if len(maybe) > 0 {
-			errorhelpers.PanicOnDevelopmentf("still %d maybe results after PerformChecks", len(maybe))
-		}
-		allowed = append(allowed, extraAllowed...)
-	}
-
-	allowedMap := make(map[compliance.ClusterStandardPair]types.ResultsWithStatus, len(allowed))
-	for _, pair := range allowed {
-		allowedMap[pair] = fromInternalResultsWithStatus(results[pair])
-	}
-	return allowedMap, nil
-}
-
-func (ds *datastoreImpl) filterResultsFirst(
-	resourceScopeChecker sac.ScopeChecker,
-	results map[compliance.ClusterStandardPair]types.ResultsWithStatus) (allowed []compliance.ClusterStandardPair, maybe []compliance.ClusterStandardPair) {
-
-	for pair := range results {
-		if res := resourceScopeChecker.TryAllowed(sac.ClusterScopeKey(pair.ClusterID)); res == sac.Allow {
-			allowed = append(allowed, pair)
-		} else if res == sac.Unknown {
-			maybe = append(maybe, pair)
-		}
-	}
-	return
-}
-
-func (ds *datastoreImpl) filterResultsSecond(
-	resourceScopeChecker sac.ScopeChecker,
-	pairs []compliance.ClusterStandardPair) (allowed []compliance.ClusterStandardPair, maybe []compliance.ClusterStandardPair) {
-
-	for _, pair := range pairs {
-		if res := resourceScopeChecker.TryAllowed(sac.ClusterScopeKey(pair.ClusterID)); res == sac.Allow {
-			allowed = append(allowed, pair)
-		} else if res == sac.Unknown {
-			maybe = append(maybe, pair)
-		}
-	}
-	return
-}
-
-// Static helper functions.
-///////////////////////////
-func fromInternalResultsWithStatus(internal types.ResultsWithStatus) types.ResultsWithStatus {
-	return types.ResultsWithStatus{
-		LastSuccessfulResults: internal.LastSuccessfulResults,
-		FailedRuns:            internal.FailedRuns,
-	}
+	return ds.storage.StoreFailure(metadata)
 }
