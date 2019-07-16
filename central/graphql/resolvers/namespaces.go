@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -23,7 +24,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `serviceAccountCount: Int!`),
 		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
 		schema.AddExtraResolver("Namespace", `policyCount: Int!`),
-		schema.AddExtraResolver("Namespace", `policyStatus: Boolean!`),
+		schema.AddExtraResolver("Namespace", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Namespace", `images: [Image!]!`),
 		schema.AddExtraResolver("Namespace", `imageCount: Int!`),
 	)
@@ -201,19 +202,43 @@ func (resolver *namespaceResolver) policyAppliesToNamespace(ctx context.Context,
 }
 
 // PolicyStatus returns true if there is no policy violation for this cluster
-func (resolver *namespaceResolver) PolicyStatus(ctx context.Context) (bool, error) {
-	if err := readAlerts(ctx); err != nil {
-		return false, err
-	}
-	q1 := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
-		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	q2 := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
-	cq := search.NewConjunctionQuery(q1, q2)
-	cq.Pagination = &v1.Pagination{Limit: 1}
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, cq)
+func (resolver *namespaceResolver) PolicyStatus(ctx context.Context) (*policyStatusResolver, error) {
+
+	alerts, err := resolver.getActiveDeployAlerts(ctx)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	return len(results) == 0, nil
+
+	if len(alerts) == 0 {
+		return &policyStatusResolver{"pass", nil}, nil
+	}
+
+	policyIDs := set.NewStringSet()
+	for _, alert := range alerts {
+		policyIDs.Add(alert.GetPolicy().GetId())
+	}
+
+	policies, err := resolver.root.wrapPolicies(
+		resolver.root.PolicyDataStore.SearchRawPolicies(ctx, search.NewQueryBuilder().AddDocIDs(policyIDs.AsSlice()...).ProtoQuery()))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &policyStatusResolver{"fail", policies}, nil
+}
+
+func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {
+	if err := readAlerts(ctx); err != nil {
+		return nil, err
+	}
+
+	namespace := resolver.data
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
+		AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
+
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
 }

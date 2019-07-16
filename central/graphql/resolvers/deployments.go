@@ -20,14 +20,15 @@ func init() {
 	utils.Must(
 		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
 		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
-		schema.AddExtraResolver("Deployment", `alerts: [Alert!]!`),
-		schema.AddExtraResolver("Deployment", `alertsCount: Int!`),
+		schema.AddExtraResolver("Deployment", `deployAlerts: [Alert!]!`),
+		schema.AddExtraResolver("Deployment", `deployAlertsCount: Int!`),
 		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
 		schema.AddExtraResolver("Deployment", `images: [Image!]!`),
 		schema.AddExtraResolver("Deployment", `imagesCount: Int!`),
 		schema.AddExtraResolver("Deployment", "secrets: [Secret!]!"),
 		schema.AddExtraResolver("Deployment", "secretCount: Int!"),
+		schema.AddExtraResolver("Deployment", "policyStatus: PolicyStatus!"),
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String): [Deployment!]!"),
 	)
@@ -73,7 +74,7 @@ func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*pr
 	return resolver.root.wrapProcessNameGroups(service.IndicatorsToGroupedResponses(indicators), err)
 }
 
-func (resolver *deploymentResolver) Alerts(ctx context.Context) ([]*alertResolver, error) {
+func (resolver *deploymentResolver) DeployAlerts(ctx context.Context) ([]*alertResolver, error) {
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func (resolver *deploymentResolver) Alerts(ctx context.Context) ([]*alertResolve
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
 
-func (resolver *deploymentResolver) AlertsCount(ctx context.Context) (int32, error) {
+func (resolver *deploymentResolver) DeployAlertsCount(ctx context.Context) (int32, error) {
 	if err := readAlerts(ctx); err != nil {
 		return 0, err // could return nil, nil to prevent errors from propagating.
 	}
@@ -198,7 +199,37 @@ func (resolver *deploymentResolver) ImagesCount(ctx context.Context) (int32, err
 	return int32(len(imageShas)), nil
 }
 
+func (resolver *deploymentResolver) PolicyStatus(ctx context.Context) (*policyStatusResolver, error) {
+	alerts, err := resolver.getActiveDeployAlerts(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(alerts) == 0 {
+		return &policyStatusResolver{"pass", nil}, nil
+	}
+
+	policyIDs := set.NewStringSet()
+	for _, alert := range alerts {
+		policyIDs.Add(alert.GetPolicy().GetId())
+	}
+
+	policies, err := resolver.root.wrapPolicies(
+		resolver.root.PolicyDataStore.SearchRawPolicies(ctx, search.NewQueryBuilder().AddDocIDs(policyIDs.AsSlice()...).ProtoQuery()))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &policyStatusResolver{"fail", policies}, nil
+}
+
 func (resolver *deploymentResolver) getImageShas(ctx context.Context) []string {
+	if err := readImages(ctx); err != nil {
+		return nil
+	}
+
 	imageShas := set.NewStringSet()
 
 	deployment := resolver.data
@@ -209,4 +240,18 @@ func (resolver *deploymentResolver) getImageShas(ctx context.Context) []string {
 		}
 	}
 	return imageShas.AsSlice()
+}
+
+func (resolver *deploymentResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {
+	if err := readAlerts(ctx); err != nil {
+		return nil, err
+	}
+
+	deployment := resolver.data
+
+	q := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
+
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
 }

@@ -5,10 +5,10 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/namespace"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -16,6 +16,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("SubjectWithClusterID", []string{"clusterID: String!", "subject: Subject!"}),
+		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),
 		schema.AddQuery("clusters(query: String): [Cluster!]!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
@@ -40,7 +41,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `imageCount: Int!`),
 		schema.AddExtraResolver("Cluster", `policies: [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount: Int!`),
-		schema.AddExtraResolver("Cluster", `policyStatus: Boolean!`),
+		schema.AddExtraResolver("Cluster", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Cluster", `secrets: [Secret!]!`),
 		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
 	)
@@ -375,20 +376,30 @@ func (resolver *clusterResolver) PolicyCount(ctx context.Context) (int32, error)
 }
 
 // PolicyStatus returns true if there is no policy violation for this cluster
-func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (bool, error) {
-	if err := readAlerts(ctx); err != nil {
-		return false, err // could return nil, nil to prevent errors from propagating.
-	}
-	q1 := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
-		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	q2 := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
-	cq := search.NewConjunctionQuery(q1, q2)
-	cq.Pagination = &v1.Pagination{Limit: 1}
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, cq)
+func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatusResolver, error) {
+
+	alerts, err := resolver.getActiveDeployAlerts(ctx)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	return len(results) == 0, nil
+
+	if len(alerts) == 0 {
+		return &policyStatusResolver{"pass", nil}, nil
+	}
+
+	policyIDs := set.NewStringSet()
+	for _, alert := range alerts {
+		policyIDs.Add(alert.GetPolicy().GetId())
+	}
+
+	policies, err := resolver.root.wrapPolicies(
+		resolver.root.PolicyDataStore.SearchRawPolicies(ctx, search.NewQueryBuilder().AddDocIDs(policyIDs.AsSlice()...).ProtoQuery()))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &policyStatusResolver{"fail", policies}, nil
 }
 
 func (resolver *clusterResolver) Secrets(ctx context.Context) ([]*secretResolver, error) {
@@ -403,4 +414,14 @@ func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error)
 		return 0, err
 	}
 	return int32(len(result)), nil
+}
+
+func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {
+	cluster := resolver.data
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
+
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
 }

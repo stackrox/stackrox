@@ -9,7 +9,7 @@ import (
 // ScopeToQuery generates a proto query for objects in the specified scopes.
 func ScopeToQuery(scopes []*storage.Scope) *v1.Query {
 	if len(scopes) == 0 {
-		return nil
+		return search.EmptyQuery()
 	}
 
 	queries := make([]*v1.Query, 0, len(scopes))
