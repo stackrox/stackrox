@@ -104,7 +104,7 @@ func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, scrubSecrets bool) http.H
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
-		if err := export.Backup(boltDB, badgerDB, w, scrubSecrets); err != nil {
+		if err := export.Backup(req.Context(), boltDB, badgerDB, w, scrubSecrets); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)
 			return
 		}

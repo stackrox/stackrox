@@ -84,6 +84,14 @@
   version = "v0.4.17"
 
 [[projects]]
+  digest = "1:dde06cba636162cd41df016518e771b1f1e156edadde221e04bd0c35f0564488"
+  name = "github.com/VividCortex/ewma"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "b24eb346a94c3ba12c1da1e564dbac1b498a77ce"
+  version = "v1.1.1"
+
+[[projects]]
   digest = "1:6b933ddaf9c30844438b732960021771842cd3a4a57d521e62de6e844bd55370"
   name = "github.com/andygrunwald/go-jira"
   packages = ["."]
@@ -900,6 +908,14 @@
   revision = "1ea4449da9834f4d333f1cc461c374aea217d249"
 
 [[projects]]
+  digest = "1:666428435471609937bd13f56e2e31501b5660ffc44a786cf2217dc53291a604"
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "1311e847b0cb909da63b5fecfb5370aa66236465"
+  version = "v0.0.8"
+
+[[projects]]
   digest = "1:0ccf6c8a242d305921b153ded748c30a98f92b2da5c57f8f0d3d775a81dc607a"
   name = "github.com/mattn/go-shellwords"
   packages = ["."]
@@ -1306,6 +1322,20 @@
   pruneopts = "NUT"
   revision = "620714a4c508c880ac1bdda9c8370a2b19af1a55"
   version = "v0.11.1"
+
+[[projects]]
+  digest = "1:30c92212885543dc7751d972580b70851bf93545c8994f7396529f5a75fada65"
+  name = "github.com/vbauerster/mpb"
+  packages = [
+    ".",
+    "cwriter",
+    "decor",
+    "internal",
+  ]
+  pruneopts = "NUT"
+  revision = "b1fa246876b8398a7e3aad2000ef5c0b1a0b58fe"
+  source = "https://github.com/vbauerster/mpb.git"
+  version = "v3.4.0"
 
 [[projects]]
   digest = "1:0f4299df39f2e222cdd1b802126a7ae9cadcb4f11f65d657adb48a4e07c9bfb7"
@@ -2087,6 +2117,8 @@
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
     "github.com/tkuchiki/go-timezone",
+    "github.com/vbauerster/mpb",
+    "github.com/vbauerster/mpb/decor",
     "golang.org/x/crypto/bcrypt",
     "golang.org/x/crypto/ed25519",
     "golang.org/x/crypto/ssh/terminal",

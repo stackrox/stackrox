@@ -2,6 +2,7 @@ package export
 
 import (
 	"archive/zip"
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -63,7 +64,7 @@ func scrubSecretsAndCompact(dbDumpFile string) (string, error) {
 	return compactedDBFileName, nil
 }
 
-func backupBolt(db *bolt.DB, out io.Writer, scrubSecrets bool) error {
+func backupBolt(ctx context.Context, db *bolt.DB, out io.Writer, scrubSecrets bool) error {
 	tempFile, err := ioutil.TempFile("", "bolt-backup-")
 	if err != nil {
 		return errors.Wrap(err, "could not create temporary file for bolt backup")
@@ -115,46 +116,30 @@ func backupBolt(db *bolt.DB, out io.Writer, scrubSecrets bool) error {
 	return err
 }
 
-func backupBadger(db *badger.DB, out io.Writer) error {
-	tempFile, err := ioutil.TempFile("", "badger-backup-")
-	if err != nil {
-		return errors.Wrap(err, "could not create temporary file for badger backup")
-	}
-	defer func() {
-		_ = os.Remove(tempFile.Name())
-	}()
-	defer utils.IgnoreError(tempFile.Close)
-
-	_, err = db.Backup(tempFile, 0)
+func backupBadger(ctx context.Context, db *badger.DB, out io.Writer) error {
+	_, err := db.Backup(out, 0)
 	if err != nil {
 		return errors.Wrap(err, "could not create badger backup")
 	}
-
-	_, err = tempFile.Seek(0, 0)
-	if err != nil {
-		return errors.Wrap(err, "could not rewind to beginning of file")
-	}
-
-	_, err = io.Copy(out, tempFile)
-	return err
+	return nil
 }
 
 // Backup backs up the given databases (optionally removing secrets) and writes a ZIP archive to the given writer.
-func Backup(boltDB *bolt.DB, badgerDB *badger.DB, out io.Writer, scrubSecrets bool) error {
+func Backup(ctx context.Context, boltDB *bolt.DB, badgerDB *badger.DB, out io.Writer, scrubSecrets bool) error {
 	zipWriter := zip.NewWriter(out)
 	defer utils.IgnoreError(zipWriter.Close)
 	boltWriter, err := zipWriter.Create(boltFileName)
 	if err != nil {
 		return err
 	}
-	if err := backupBolt(boltDB, boltWriter, scrubSecrets); err != nil {
+	if err := backupBolt(ctx, boltDB, boltWriter, scrubSecrets); err != nil {
 		return errors.Wrap(err, "backing up bolt")
 	}
 	badgerWriter, err := zipWriter.Create(badgerFileName)
 	if err != nil {
 		return err
 	}
-	if err := backupBadger(badgerDB, badgerWriter); err != nil {
+	if err := backupBadger(ctx, badgerDB, badgerWriter); err != nil {
 		return errors.Wrap(err, "backing up badger")
 	}
 	return zipWriter.Close()

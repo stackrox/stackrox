@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"context"
 	"io"
 
 	"github.com/pkg/errors"
@@ -42,7 +43,7 @@ func New() Scheduler {
 }
 
 func (s *scheduler) backup(w *io.PipeWriter) {
-	err := export.Backup(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), w, false)
+	err := export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), w, false)
 	if err != nil {
 		log.Errorf("Failed to write backup to io.writer: %v", err)
 		if err := w.CloseWithError(err); err != nil {

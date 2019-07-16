@@ -9,8 +9,13 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/central/db/transfer"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+)
+
+const (
+	idleTimeout = 5 * time.Minute
 )
 
 // Command defines the db backup command
@@ -33,6 +38,8 @@ func Command() *cobra.Command {
 }
 
 func restore(filename string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -44,8 +51,10 @@ func restore(filename string, timeout time.Duration) error {
 		return err
 	}
 	common.AddAuthToRequest(req)
-	client := common.GetHTTPClient(timeout)
-	resp, err := client.Do(req)
+
+	client := common.GetHTTPClient(0)
+
+	resp, err := transfer.ViaHTTP(req, client, deadline, idleTimeout)
 	if err != nil {
 		return err
 	}

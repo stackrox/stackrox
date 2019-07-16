@@ -237,3 +237,8 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 [[constraint]]
   name = "github.com/mitchellh/hashstructure"
   revision = "a38c50148365edc8df43c1580c48fb2b3a1e9cd7"
+
+[[constraint]]
+  name = "github.com/vbauerster/mpb"
+  source = "https://github.com/vbauerster/mpb.git"
+  version = "v3.4.0"
