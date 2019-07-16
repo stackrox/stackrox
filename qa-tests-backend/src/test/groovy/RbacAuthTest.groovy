@@ -45,6 +45,8 @@ class RbacAuthTest extends BaseSpecification {
     private String basicAuthServiceId
 
     def setupSpec() {
+        BaseService.useBasicAuth()
+        disableAuthzPlugin()
         AuthproviderService.GetAuthProvidersResponse providers = AuthProviderService.getAuthProviders()
         basicAuthServiceId = providers.authProvidersList.find { it.type == "basic" }?.id
     }

@@ -29,6 +29,9 @@ class ClientCertAuthTest extends BaseSpecification {
             FeatureFlagService.isFeatureFlagEnabled(Constants.CLIENT_CA_AUTH_FEATURE_FLAG)
         )
 
+        BaseService.useBasicAuth()
+        disableAuthzPlugin()
+
         String caPath = Env.mustGetClientCAPath()
         byte[] encoded = Files.readAllBytes(Paths.get(caPath))
         def cert = new String(encoded)
@@ -39,6 +42,7 @@ class ClientCertAuthTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        BaseService.useBasicAuth()
         if (providerID) {
             AuthProviderService.deleteAuthProvider(providerID)
         }
