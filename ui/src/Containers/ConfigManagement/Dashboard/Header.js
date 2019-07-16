@@ -5,12 +5,18 @@ import URLService from 'modules/URLService';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import entityTypes from 'constants/entityTypes';
+import entityLabels from 'messages/entity';
+import { AGGREGATED_RESULTS_WITH_CONTROLS as CISControlsQuery } from 'queries/controls';
+import pluralize from 'pluralize';
+
 import Query from 'Components/ThrowingQuery';
 import TileLink from 'Components/TileLink';
-import { AGGREGATED_RESULTS_WITH_CONTROLS as CISControlsQuery } from 'queries/controls';
 import queryService from 'modules/queryService';
-import ReactSelect from 'Components/ReactSelect';
+import Menu from 'Components/Menu';
+import { ChevronDown } from 'react-feather';
 import PoliciesHeaderTile from './Widgets/PoliciesHeaderTile';
+
+const getLabel = entityType => pluralize(entityLabels[entityType]);
 
 function processControlsData(data) {
     let totalControls = 0;
@@ -35,22 +41,8 @@ function processControlsData(data) {
 
 const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) => {
     const controlsLink = URLService.getURL(match, location)
-        .base(entityTypes.control)
+        .base(entityTypes.CONTROL)
         .url();
-
-    const AppMenuOptions = [
-        { value: entityTypes.SECRET, label: 'Secrets' },
-        { value: entityTypes.NAMESPACE, label: 'Namespaces' },
-        { value: entityTypes.DEPLOYMENT, label: 'Deployments' },
-        { value: entityTypes.IMAGE, label: 'Images' },
-        { value: entityTypes.NODE, label: 'Nodes' }
-    ];
-
-    const RBACMenuOptions = [
-        { value: entityTypes.SUBJECT, label: 'Users & Groups' },
-        { value: entityTypes.SERVICE_ACCOUNT, label: 'Service Accounts' },
-        { value: entityTypes.ROLE, label: 'Roles' }
-    ];
 
     function handleNavDropdownChange(entityType) {
         const url = URLService.getURL(match, location)
@@ -58,6 +50,49 @@ const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) 
             .url();
         history.push(url);
     }
+
+    const AppMenuOptions = [
+        {
+            label: getLabel(entityTypes.CLUSTER),
+            onClick: () => handleNavDropdownChange(entityTypes.CLUSTER)
+        },
+        {
+            label: getLabel(entityTypes.NAMESPACE),
+            onClick: () => handleNavDropdownChange(entityTypes.NAMESPACE)
+        },
+        {
+            label: getLabel(entityTypes.NODE),
+            onClick: () => handleNavDropdownChange(entityTypes.NODE)
+        },
+        {
+            label: getLabel(entityTypes.DEPLOYMENT),
+            onClick: () => handleNavDropdownChange(entityTypes.DEPLOYMENT)
+        },
+        {
+            label: getLabel(entityTypes.IMAGE),
+            onClick: () => handleNavDropdownChange(entityTypes.IMAGE)
+        },
+        {
+            label: getLabel(entityTypes.SECRET),
+            onClick: () => handleNavDropdownChange(entityTypes.SECRET)
+        }
+    ];
+
+    const RBACMenuOptions = [
+        {
+            label: getLabel(entityTypes.SUBJECT),
+            onClick: () => handleNavDropdownChange(entityTypes.SUBJECT)
+        },
+        {
+            label: getLabel(entityTypes.SERVICE_ACCOUNT),
+            onClick: () => handleNavDropdownChange(entityTypes.SERVICE_ACCOUNT)
+        },
+        {
+            label: getLabel(entityTypes.ROLE),
+            onClick: () => handleNavDropdownChange(entityTypes.ROLE)
+        }
+    ];
+
     return (
         <PageHeader
             classes={classes}
@@ -90,31 +125,27 @@ const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) 
                         );
                     }}
                 </Query>
-                <ReactSelect
+                <Menu
+                    className="w-32"
+                    buttonClass="bg-base-100 hover:bg-base-200 border border-base-400 btn flex font-condensed h-full text-primary-500 w-full"
+                    buttonContent={
+                        <div className="flex items-center">
+                            Application & Infrastructure
+                            <ChevronDown className="pointer-events-none" />
+                        </div>
+                    }
                     options={AppMenuOptions}
-                    className="w-32 text-base-600 bg-base-200"
-                    placeholder="Application & Infrastructure"
-                    onChange={handleNavDropdownChange}
-                    styles={{
-                        indicatorSeparator: () => ({
-                            display: 'none'
-                        }),
-                        control: () => ({
-                            borderLeft: 'none',
-                            borderRight: 'none'
-                        })
-                    }}
                 />
-                <ReactSelect
+                <Menu
+                    className="w-32"
+                    buttonClass="bg-base-100 hover:bg-base-200 border border-base-400 btn flex font-condensed h-full text-primary-500 w-full"
+                    buttonContent={
+                        <div className="flex items-center">
+                            RBAC Visibility & Controls
+                            <ChevronDown className="pointer-events-none" />
+                        </div>
+                    }
                     options={RBACMenuOptions}
-                    className="text-base-600 bg-base-200 w-36"
-                    placeholder="RBAC Visibility & Configuration"
-                    onChange={handleNavDropdownChange}
-                    styles={{
-                        indicatorSeparator: () => ({
-                            display: 'none'
-                        })
-                    }}
                 />
             </div>
         </PageHeader>

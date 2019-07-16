@@ -107,7 +107,7 @@ class SunburstDetailSection extends Component {
 
     render() {
         return (
-            <div className="border-base-300 border-l flex flex-col justify-between w-3/5">
+            <div className="border-base-300 border-l flex flex-col justify-between w-3/5 text-sm">
                 {this.getContent()}
                 {this.getLockHint()}
             </div>

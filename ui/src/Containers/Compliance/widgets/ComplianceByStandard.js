@@ -175,9 +175,10 @@ const ComplianceByStandard = ({
         return (
             <ReactSelect
                 options={options}
-                className="inline-block"
+                className="inline-block cursor-pointer"
                 placeholder={`${standardLabels[standardType]} across Clusters`}
                 onChange={onStandardChange}
+                isSearchable={false}
                 styles={{
                     indicatorSeparator: () => ({
                         display: 'none'
@@ -193,7 +194,8 @@ const ComplianceByStandard = ({
                     }),
                     valueContainer: provided => ({
                         ...provided,
-                        paddingRight: 0
+                        paddingRight: 0,
+                        cursor: 'pointer'
                     }),
                     dropdownIndicator: provided => ({
                         ...provided,

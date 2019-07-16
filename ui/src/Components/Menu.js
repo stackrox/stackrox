@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 const optionsClass =
-    'flex items-center relative text-left px-2 py-3 border-b border-base-300 hover:bg-base-200';
+    'flex items-center relative text-left px-2 py-3 border-b border-base-300 hover:bg-base-200 capitalize';
 
 const Menu = ({ buttonClass, buttonContent, className, options }) => {
     const [isMenuOpen, setMenuState] = useState(false);

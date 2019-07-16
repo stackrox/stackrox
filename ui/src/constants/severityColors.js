@@ -1,9 +1,9 @@
 //  @TODO: Have one source of truth for severity colors
 const severityColorMap = {
-    CRITICAL_SEVERITY: 'var(--alert-400)',
-    HIGH_SEVERITY: 'var(--caution-400)',
-    MEDIUM_SEVERITY: 'var(--warning-400)',
-    LOW_SEVERITY: 'var(--base-400)'
+    CRITICAL_SEVERITY: 'var(--alert-300)',
+    HIGH_SEVERITY: 'var(--caution-300)',
+    MEDIUM_SEVERITY: 'var(--warning-300)',
+    LOW_SEVERITY: 'var(--base-300)'
 };
 
 export default severityColorMap;

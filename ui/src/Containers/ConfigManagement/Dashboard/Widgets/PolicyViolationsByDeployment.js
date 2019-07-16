@@ -101,15 +101,15 @@ const PolicyViolationsByDeployment = ({ match, location }) => {
                     );
 
                     contents = (
-                        <ul className="list-reset w-full columns-2 columns-gap-0">
+                        <ul className="list-reset w-full columns-2 columns-gap-0 text-sm">
                             {slicedData.map((item, index) => (
                                 <li key={`${item.name}-${index}`}>
                                     <div
-                                        className={`flex flex-row border-base-400 ${
+                                        className={`flex flex-row border-base-300 ${
                                             index !== 4 && index !== 9 ? 'border-b' : ''
                                         } ${index < 5 ? 'border-r' : ''}`}
                                     >
-                                        <div className="flex flex-col truncate p-4">
+                                        <div className="flex flex-col flex-1 truncate py-2 px-4">
                                             <span className="pb-2">
                                                 {index + 1}. {item.name}
                                             </span>

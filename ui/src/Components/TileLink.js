@@ -26,7 +26,7 @@ const TileLink = ({ value, caption, to, loading, isError, className }) => {
     } min-h-14 uppercase`;
     const colors = 'text-base-100 hover:bg-primary-800 border-primary-400';
     const darkModeColors = 'text-base-600 hover:bg-primary-200 border-primary-400';
-    const errorColors = 'text-alert-700 bg-alert-300 hover:bg-alert-500 border-alert-500';
+    const errorColors = 'text-alert-700 bg-alert-200 hover:bg-alert-300 border-alert-500';
     const errorDarkModeColors = 'text-base-100 bg-alert-400 hover:bg-alert-500 border-alert-600';
 
     if (isError) {
