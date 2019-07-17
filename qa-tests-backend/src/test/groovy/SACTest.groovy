@@ -11,7 +11,6 @@ import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
 import objects.Deployment
 import services.AlertService
-import services.ClusterService
 import services.DeploymentService
 import services.ImageService
 import services.NamespaceService
@@ -87,19 +86,12 @@ class SACTest extends BaseSpecification {
         BaseService.useApiToken(token.token)
     }
 
-    static getAllQuery() {
-        def queryString = "Cluster: " + ClusterService.getCluster().name
-        return SSOC.RawSearchRequest.newBuilder()
+    static getSpecificQuery(String category) {
+        def queryString = category + ":*"
+        def query = SSOC.RawSearchRequest.newBuilder()
                 .setQuery(queryString)
                 .build()
-    }
-
-    static getSpecificQuery(SSOC.SearchCategory category) {
-        def queryString = "Namespace: " + [DEPLOYMENT_QA1.namespace, DEPLOYMENT_QA2.namespace].join(", ")
-        return SSOC.RawSearchRequest.newBuilder()
-                .addCategories(category)
-                .setQuery(queryString)
-                .build()
+        return query
     }
 
     def createSecret(String namespace) {
@@ -233,7 +225,7 @@ class SACTest extends BaseSpecification {
     def "Verify Search on #category resources using the #tokenName token returns #numResults results"() {
         when:
         "A search is performed using the given token"
-        def query = getAllQuery()
+        def query = getSpecificQuery(category)
         useToken(tokenName)
         def result = SearchService.search(query)
 
@@ -248,7 +240,7 @@ class SACTest extends BaseSpecification {
         where:
         "Data inputs are: "
         tokenName                | category      | numResults
-        NOACCESSTOKEN            | "All"         | 0
+        NOACCESSTOKEN            | "Cluster"     | 0
         "searchDeploymentsToken" | "Deployments" | 1
         "searchImagesToken"      | "Images"      | 1
     }
@@ -257,7 +249,7 @@ class SACTest extends BaseSpecification {
     def "Verify Search on #category resources using the #tokenName token returns >= #minReturned results"() {
         when:
         "A search is performed using the given token"
-        def query = getAllQuery()
+        def query = getSpecificQuery(category)
         useToken(tokenName)
         def result = SearchService.search(query)
 
@@ -270,15 +262,15 @@ class SACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         where:
         "Data inputs are: "
-        tokenName           | category                   | minReturned
-        "searchAlertsToken" | SSOC.SearchCategory.ALERTS | 1
+        tokenName           | category     | minReturned
+        "searchAlertsToken" | "Deployment" | 1
     }
 
     def "Verify Search using the allAccessToken returns results for all search categories"() {
         when:
         "A search is performed using the allAccessToken"
         createSecret(DEPLOYMENT_QA1.namespace)
-        def query = getAllQuery()
+        def query = getSpecificQuery("Cluster")
         useToken(ALLACCESSTOKEN)
         def result = SearchService.search(query)
         then:
@@ -311,12 +303,12 @@ class SACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         where:
         "Data inputs are: "
-        tokenName                | category                        | numResults
-        NOACCESSTOKEN            | SSOC.SearchCategory.DEPLOYMENTS | 0
-        NOACCESSTOKEN            | SSOC.SearchCategory.ALERTS      | 0
-        NOACCESSTOKEN            | SSOC.SearchCategory.IMAGES      | 0
-        "searchDeploymentsToken" | SSOC.SearchCategory.DEPLOYMENTS | 1
-        "searchImagesToken"      | SSOC.SearchCategory.IMAGES      | 1
+        tokenName                | category     | numResults
+        NOACCESSTOKEN            | "Deployment" | 0
+        NOACCESSTOKEN            | "Image"      | 0
+        "searchDeploymentsToken" | "Deployment" | 1
+        "searchImagesToken"      | "Image"      | 1
+        "searchNamespacesToken"  | "Namespace"  | 1
     }
 
     @Unroll
@@ -334,11 +326,9 @@ class SACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         where:
         "Data inputs are: "
-        tokenName           | category                        | minReturned
-        ALLACCESSTOKEN      | SSOC.SearchCategory.DEPLOYMENTS | 2
-        ALLACCESSTOKEN      | SSOC.SearchCategory.ALERTS      | 1
-        ALLACCESSTOKEN      | SSOC.SearchCategory.IMAGES      | 1
-        "searchAlertsToken" | SSOC.SearchCategory.ALERTS      | 1
+        tokenName      | category     | minReturned
+        ALLACCESSTOKEN | "Deployment" | 2
+        ALLACCESSTOKEN | "Image"      | 1
     }
 
     @Unroll
