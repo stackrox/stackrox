@@ -27,6 +27,7 @@ export const selectors = {
         services: '.link.service'
     },
     buttons: {
+        viewActiveYamlButton: '[data-test-id="view-active-yaml-button"]',
         simulatorButtonOn: '[data-test-id="simulator-button-on"]',
         simulatorButtonOff: '[data-test-id="simulator-button-off"]'
     }

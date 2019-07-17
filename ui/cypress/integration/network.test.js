@@ -75,6 +75,7 @@ describe('Network page', () => {
 
     it('should handle toggle click on simulator network policy button', () => {
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
+        cy.get(networkPageSelectors.buttons.viewActiveYamlButton).should('be.visible');
         cy.get(networkPageSelectors.panels.creatorPanel).should('be.visible');
         cy.get(networkPageSelectors.buttons.simulatorButtonOn).click();
         cy.get(networkPageSelectors.panels.creatorPanel).should('not.be.visible');

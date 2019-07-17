@@ -14,11 +14,12 @@ const GenerateButton = ({ setWizardStage, loadActivePolicies }) => {
     return (
         <div className="flex items-center ml-2 -mr-2">
             <button
+                data-test-id="view-active-yaml-button"
                 type="button"
-                className="px-3 py-2 text-xs border-2 border-base-400 bg-base-100 hover:border-primary-400 hover:text-primary-700 font-700 rounded-sm text-center text-base-500 uppercase"
+                className="mr-4 px-3 py-2 text-xs border-2 border-base-400 bg-base-100 hover:border-primary-400 hover:text-primary-700 font-700 rounded-sm text-center text-base-500 uppercase"
                 onClick={onClick}
             >
-                View Active YAML
+                View Active YAMLs
             </button>
         </div>
     );
