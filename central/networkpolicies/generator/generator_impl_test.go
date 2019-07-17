@@ -17,7 +17,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
+	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -184,7 +187,13 @@ func (s *generatorTestSuite) TestGenerate() {
 		NetworkDataSince: ts,
 	}
 
-	s.mockDeployments.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return(
+	ctxHasDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
+		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKey(resources.Deployment.Resource),
+		sac.ClusterScopeKey("mycluster"),
+	})
+
+	s.mockDeployments.EXPECT().SearchRawDeployments(ctxHasDeploymentsAccessMatcher, gomock.Any()).Return(
 		[]*storage.Deployment{
 			{
 				Id:        "depA",
@@ -271,12 +280,14 @@ func (s *generatorTestSuite) TestGenerate() {
 
 	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
 
-	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph)))
+	ctxHasNetworkFlowAccessMatcher := sacTestutils.ContextWithAccess(
+		sac.ScopeSuffix{
+			sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKey(resources.NetworkGraph.Resource),
+			sac.ClusterScopeKey("mycluster"),
+		})
 
-	mockFlowStore.EXPECT().GetAllFlows(networkGraphElevatedCtx, gomock.Eq(ts)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).Return(
 		[]*storage.NetworkFlow{
 			{
 				Props: &storage.NetworkFlowProperties{
@@ -339,7 +350,7 @@ func (s *generatorTestSuite) TestGenerate() {
 			},
 		}, *types.TimestampNow(), nil)
 
-	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(s.hasReadCtx, gomock.Eq("mycluster")).Return(mockFlowStore)
+	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore)
 
 	generatedPolicies, toDelete, err := s.generator.Generate(s.hasReadCtx, req)
 	s.NoError(err)
@@ -418,5 +429,402 @@ func (s *generatorTestSuite) TestGenerate() {
 
 	sortPolicies(expectedPolicies)
 
+	s.Equal(expectedPolicies, generatedPolicies)
+}
+
+func depFlow(fromID, toID string) *storage.NetworkFlow {
+	return &storage.NetworkFlow{
+		Props: &storage.NetworkFlowProperties{
+			SrcEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				Id:   toID,
+			},
+			DstEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				Id:   fromID,
+			},
+		},
+	}
+}
+
+func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
+	// Test setup:
+	// Query selects namespace foo and bar (visible), and qux (visible only for deployments, not ns metadata)
+	// Third namespace baz is visible but not selected
+	// User has no network flow access in namespace bar
+	// Namespace foo has deployments:
+	// - depA has incoming flows from depB, depD, depE, and deployment depY that was recently deleted
+	// - depB has incoming flows from depA and a deployment without access, depX
+	// - depC has incoming flows from depA and depF in namespace qux
+	// Namespace bar:
+	// - depD has incoming flows from depA
+	// Namespace baz:
+	// - depE has incoming flows from depB
+	// Namespace qux:
+	// - depF has incoming flows from depC, depD and depG
+	// - depG has no flows
+	// EXPECT:
+	// - netpol for depA allowing depB, depD, depE
+	// - netpol for depB allowing all cluster traffic
+	// - netpol for depC allowing depA and depF only in pod labels
+	// - NO netpol for depD (no netflow access)
+	// - NO netpol for depE (not selected)
+	// - netpol for qux (don't need NS metadata for netpol generation, only for peers in other namespaces)
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.OneStepSCC{
+		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
+			sac.ResourceScopeKey(resources.Deployment.Resource): sac.AllowFixedScopes(
+				sac.ClusterScopeKeys("mycluster"),
+				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux"),
+			),
+			sac.ResourceScopeKey(resources.NetworkGraph.Resource): sac.AllowFixedScopes(
+				sac.ClusterScopeKeys("mycluster"),
+				sac.NamespaceScopeKeys("foo", "baz", "qux"),
+			),
+			sac.ResourceScopeKey(resources.Namespace.Resource): sac.AllowFixedScopes(
+				sac.ClusterScopeKeys("mycluster"),
+				sac.NamespaceScopeKeys("foo", "bar", "baz"),
+			),
+		},
+	})
+
+	ts := types.TimestampNow()
+	req := &v1.GenerateNetworkPoliciesRequest{
+		ClusterId:        "mycluster",
+		Query:            "Namespace: foo,bar,qux",
+		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
+		NetworkDataSince: ts,
+	}
+
+	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
+		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKey(resources.Deployment.Resource),
+		sac.ClusterScopeKey("mycluster"),
+	})
+
+	s.mockDeployments.EXPECT().SearchRawDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
+		[]*storage.Deployment{
+			{
+				Id:        "depA",
+				Name:      "depA",
+				Namespace: "foo",
+				PodLabels: map[string]string{"depID": "A"},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "A"},
+				},
+			},
+			{
+				Id:        "depB",
+				Name:      "depB",
+				Namespace: "foo",
+				PodLabels: map[string]string{"depID": "B"},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "B"},
+				},
+			},
+			{
+				Id:        "depC",
+				Name:      "depC",
+				Namespace: "foo",
+				PodLabels: map[string]string{"depID": "C"},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "C"},
+				},
+			},
+			{
+				Id:        "depD",
+				Name:      "depD",
+				Namespace: "bar",
+				PodLabels: map[string]string{"depID": "D"},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "D"},
+				},
+			},
+			{
+				Id:        "depF",
+				Name:      "depF",
+				Namespace: "qux",
+				PodLabels: map[string]string{"depID": "F"},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "F"},
+				},
+			},
+			{
+				Id:        "depG",
+				Name:      "depG",
+				Namespace: "qux",
+				PodLabels: map[string]string{"depID": "G"},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "G"},
+				},
+			},
+		}, nil)
+
+	ctxHasAllNamespaceAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
+		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKey(resources.Namespace.Resource),
+		sac.ClusterScopeKey("mycluster"),
+	})
+
+	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Not(ctxHasAllNamespaceAccessMatcher), gomock.Any()).Return(
+		[]*storage.NamespaceMetadata{
+			{
+				Id:   "1",
+				Name: "foo",
+				Labels: map[string]string{
+					namespaces.NamespaceNameLabel: "foo",
+				},
+			},
+			{
+				Id:   "2",
+				Name: "bar",
+				Labels: map[string]string{
+					namespaces.NamespaceNameLabel: "bar",
+				},
+			},
+			{
+				Id:   "3",
+				Name: "baz",
+				Labels: map[string]string{
+					namespaces.NamespaceNameLabel: "baz",
+				},
+			},
+		}, nil,
+	)
+
+	// Assume no existing network policies.
+	s.mocksNetworkPolicies.EXPECT().GetNetworkPolicies(gomock.Any(), "mycluster", "").Return(nil, nil)
+
+	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
+
+	ctxHasClusterWideNetworkFlowAccessMatcher := sacTestutils.ContextWithAccess(
+		sac.ScopeSuffix{
+			sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKey(resources.NetworkGraph.Resource),
+			sac.ClusterScopeKey("mycluster"),
+		})
+
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).Return(
+		[]*storage.NetworkFlow{
+			depFlow("depA", "depB"),
+			depFlow("depA", "depD"),
+			depFlow("depA", "depE"),
+			depFlow("depA", "depY"),
+			depFlow("depB", "depA"),
+			depFlow("depB", "depX"),
+			depFlow("depC", "depA"),
+			depFlow("depC", "depF"),
+			depFlow("depD", "depA"),
+			// depE flows not relevant
+			depFlow("depF", "depC"),
+			depFlow("depF", "depD"),
+			depFlow("depF", "depG"),
+		}, *types.TimestampNow(), nil)
+
+	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore)
+
+	// Expect a query for looking up deployments that were not selected as part of the initial query
+	// (visible or invisible).
+	s.mockDeployments.EXPECT().GetDeployments(
+		gomock.Not(ctxHasAllDeploymentsAccessMatcher),
+		// depD is part of the query since it was eliminated as irrelevant before.
+		testutils.AssertionMatcher(assert.ElementsMatch, []string{"depD", "depE", "depX", "depY"})).Return(
+		[]*storage.Deployment{
+			{
+				Id:        "depD",
+				Name:      "depD",
+				Namespace: "bar",
+				PodLabels: map[string]string{"depID": "D"},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "D"},
+				},
+			},
+			{
+				Id:        "depE",
+				Name:      "depE",
+				Namespace: "baz",
+				PodLabels: map[string]string{"depID": "E"},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "E"},
+				},
+			},
+		}, nil,
+	)
+
+	// Expect a query with elevated privileges for looking up deployments that we are still missing info about
+	// (either deleted or invisible to the user).
+	s.mockDeployments.EXPECT().Search(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
+		[]search.Result{
+			{
+				ID: "depX",
+			},
+			// depY was deleted!
+		}, nil)
+
+	generatedPolicies, toDelete, err := s.generator.Generate(ctx, req)
+	s.NoError(err)
+	s.Empty(toDelete)
+
+	// canonicalize policies, strip out uninteresting fields
+	for _, policy := range generatedPolicies {
+		s.Equal("true", policy.GetLabels()[generatedNetworkPolicyLabel])
+		policy.Labels = nil
+		s.Equal(networkPolicyAPIVersion, policy.GetApiVersion())
+		policy.ApiVersion = ""
+	}
+
+	sortPolicies(generatedPolicies)
+
+	// EXPECT:
+	// - netpol for depA allowing depB, depD, depE
+	// - netpol for depB allowing all cluster traffic
+	// - netpol for depC allowing depA and depF only in pod labels
+	// - NO netpol for depD (no netflow access)
+	// - NO netpol for depE (not selected)
+	// - netpol for qux (don't need NS metadata for netpol generation, only for peers in other namespaces)
+	expectedPolicies := []*storage.NetworkPolicy{
+		// No policy for depA as there already is an existing policy
+		{
+			Name:      "stackrox-generated-depA",
+			Namespace: "foo",
+			Spec: &storage.NetworkPolicySpec{
+				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
+				PodSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "A"},
+				},
+				Ingress: []*storage.NetworkPolicyIngressRule{
+					{
+						From: []*storage.NetworkPolicyPeer{
+							{
+								PodSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{"depID": "B"},
+								},
+							},
+							{
+								NamespaceSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{namespaces.NamespaceNameLabel: "bar"},
+								},
+								PodSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{"depID": "D"},
+								},
+							},
+							{
+								NamespaceSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{namespaces.NamespaceNameLabel: "baz"},
+								},
+								PodSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{"depID": "E"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:      "stackrox-generated-depB",
+			Namespace: "foo",
+			Spec: &storage.NetworkPolicySpec{
+				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
+				PodSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "B"},
+				},
+				Ingress: []*storage.NetworkPolicyIngressRule{
+					allowAllPodsAllNS,
+				},
+			},
+		},
+		{
+			Name:      "stackrox-generated-depC",
+			Namespace: "foo",
+			Spec: &storage.NetworkPolicySpec{
+				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
+				PodSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "C"},
+				},
+				Ingress: []*storage.NetworkPolicyIngressRule{
+					{
+						From: []*storage.NetworkPolicyPeer{
+							{
+								PodSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{
+										"depID": "A",
+									},
+								},
+							},
+							{
+								NamespaceSelector: &storage.LabelSelector{},
+								PodSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{
+										"depID": "F",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:      "stackrox-generated-depF",
+			Namespace: "qux",
+			Spec: &storage.NetworkPolicySpec{
+				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
+				PodSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "F"},
+				},
+				Ingress: []*storage.NetworkPolicyIngressRule{
+					{
+						From: []*storage.NetworkPolicyPeer{
+							{
+								NamespaceSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{
+										namespaces.NamespaceNameLabel: "foo",
+									},
+								},
+								PodSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{
+										"depID": "C",
+									},
+								},
+							},
+							{
+								NamespaceSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{
+										namespaces.NamespaceNameLabel: "bar",
+									},
+								},
+								PodSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{
+										"depID": "D",
+									},
+								},
+							},
+							{
+								PodSelector: &storage.LabelSelector{
+									MatchLabels: map[string]string{
+										"depID": "G",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:      "stackrox-generated-depG",
+			Namespace: "qux",
+			Spec: &storage.NetworkPolicySpec{
+				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
+				PodSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{"depID": "G"},
+				},
+				Ingress: nil,
+			},
+		},
+	}
+
+	sortPolicies(expectedPolicies)
 	s.Equal(expectedPolicies, generatedPolicies)
 }

@@ -20,7 +20,7 @@ message NetworkFlowProperties {
     NetworkEntityInfo dst_entity = 2;
     // may be 0 if not applicable (e.g., icmp).
     uint32 dst_port              = 3;
-    L4Protocol l4protocol     = 4;
+    L4Protocol l4protocol        = 4;
 }
 
 message NetworkEntityInfo {
@@ -31,9 +31,9 @@ message NetworkEntityInfo {
     }
 
     message Deployment {
-        string name = 1;
+        string name      = 1;
         string namespace = 2;
-        string cluster = 3;
+        string cluster   = 3 [deprecated = true];
     }
 
     Type type = 1;

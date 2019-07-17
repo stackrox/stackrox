@@ -1,5 +1,8 @@
 import static Services.waitForViolation
 
+import services.NetworkGraphService
+import util.NetworkGraphUtil
+
 import groups.BAT
 import org.junit.experimental.categories.Category
 
@@ -467,5 +470,51 @@ class SACTest extends BaseSpecification {
         "searchNamespacesToken"  | "test-qa1"     | [SSOC.SearchCategory.NAMESPACES]
         "searchDeploymentsToken" | "test-qa1"     | [SSOC.SearchCategory.DEPLOYMENTS]
         "searchImagesToken"      | "test-qa1"     | [SSOC.SearchCategory.IMAGES]
+    }
+
+    def "Verify that SAC has the same effect as query restriction for network flows"() {
+        when:
+        "Obtaining the network graph for the StackRox namespace with all access"
+        BaseService.useBasicAuth()
+        def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
+        def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
+        println allAccessFlows
+
+        and:
+        "Obtaining the network graph for the StackRox namespace with a SAC restricted token"
+        useToken("stackroxNetFlowsToken")
+        def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
+        def sacFlows = NetworkGraphUtil.flowStrings(networkGraphWithSAC)
+        println sacFlows
+
+        and:
+        "Obtaining the network graph for the StackRox namespace with a SAC restricted token and no query"
+        def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph()
+        def sacFlowsNoQuery = NetworkGraphUtil.flowStrings(networkGraphWithSACNoQuery)
+        println sacFlowsNoQuery
+
+        then:
+        "Query-restricted and non-restricted flows should be equal under SAC"
+        assert sacFlows == sacFlowsNoQuery
+
+        and:
+        "The flows should be equal to the flows obtained with all access after removing masked endpoints"
+        def sacFlowsFiltered = new HashSet<String>(sacFlows)
+        sacFlowsFiltered.removeAll { it.contains("masked deployment") }
+
+        def sacFlowsNoQueryFiltered = new HashSet<String>(sacFlowsNoQuery)
+        sacFlowsNoQueryFiltered.removeAll { it.contains("masked deployment") }
+
+        assert allAccessFlows == sacFlowsFiltered
+        assert allAccessFlows == sacFlowsNoQueryFiltered
+
+        and:
+        "The flows obtained with SAC should contain some masked deployments"
+        assert sacFlowsFiltered.size() < sacFlows.size()
+        assert sacFlowsNoQueryFiltered.size() < sacFlowsNoQuery.size()
+
+        cleanup:
+        "Cleanup"
+        BaseService.useBasicAuth()
     }
 }

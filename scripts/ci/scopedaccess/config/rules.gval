@@ -68,3 +68,15 @@ principal.authProvider.type == "api-token" && \
 	scope.verb == "view" && \
 	scope.noun == "Image" && \
 	scope.attributes.namespace == "kube-system"
+
+principal.authProvider.type == "api-token" && \
+	principal.attributes["name"][0] == "stackroxNetFlowsToken" && \
+	( \
+		(scope.verb == "view" && scope.noun == "Cluster") || \
+		( \
+			scope.verb == "view" && \
+			scope.attributes.cluster.name == "remote" && \
+			scope.attributes.namespace == "stackrox" && \
+			(scope.noun == "Deployment" || scope.noun == "NetworkGraph") \
+		) \
+	)

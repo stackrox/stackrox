@@ -23,20 +23,10 @@ type flowDataStoreImpl struct {
 }
 
 func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	// Here check for global read permission. Therefore, if flow filtering is expected,
-	// caller with lower access privileges need to elevate privileges and then apply filtering.
-	if ok, err := networkGraphSAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, types.Timestamp{}, err
-	}
-
 	return fds.storage.GetAllFlows(since)
 }
 
 func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	if ok, err := networkGraphSAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, types.Timestamp{}, err
-	}
-
 	return fds.storage.GetMatchingFlows(pred, since)
 }
 

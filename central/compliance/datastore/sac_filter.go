@@ -138,48 +138,40 @@ func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.Compl
 	ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(domain.Cluster.Id))
 	if err != nil {
 		return nil, false, err
-	} else if !ok {
-		filtered = true
-	} else {
+	} else if ok {
 		newDomain.Cluster = domain.Cluster
+	} else {
+		filtered = true
 	}
 
 	ok, err = nodeSAC.ReadAllowed(ctx, sac.ClusterScopeKey(domain.Cluster.Id))
 	if err != nil {
 		return nil, false, err
-	} else if !ok {
-		filtered = true
-	} else {
+	} else if ok {
 		newDomain.Nodes = domain.Nodes
+	} else {
+		filtered = true
 	}
 
-	ok, err = deploymentsSAC.ReadAllowed(ctx, sac.ClusterScopeKey(domain.Cluster.Id))
+	deploymentsInClusterChecker := deploymentsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(domain.Cluster.Id))
+	ok, err = deploymentsInClusterChecker.Allowed(ctx)
 	if err != nil {
 		return nil, false, err
-	} else if !ok {
-		filtered = true
-		newDomain.Deployments, err = ds.filterDeploymentsFromDomain(ctx, domain.Deployments)
+	} else if ok {
+		newDomain.Deployments = domain.Deployments
+	} else {
+		filteredMap, err := sac.FilterMapReflect(ctx, deploymentsInClusterChecker, domain.Deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
+			return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
+		})
 		if err != nil {
 			return nil, false, err
 		}
-	} else {
-		newDomain.Deployments = domain.Deployments
+
+		newDomain.Deployments = filteredMap.(map[string]*storage.Deployment)
+		if len(newDomain.Deployments) < len(domain.Deployments) {
+			filtered = true
+		}
 	}
 
 	return newDomain, filtered, nil
-}
-
-func (ds *sacFilterImpl) filterDeploymentsFromDomain(ctx context.Context, deps map[string]*storage.Deployment) (map[string]*storage.Deployment, error) {
-	newDeps := make(map[string]*storage.Deployment)
-	for depID, dep := range deps {
-		if ok, err := deploymentsSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(dep)...); err != nil {
-			return nil, err
-		} else if ok {
-			newDeps[depID] = dep
-		}
-	}
-	if len(newDeps) == 0 {
-		return nil, nil
-	}
-	return newDeps, nil
 }

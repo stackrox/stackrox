@@ -254,6 +254,7 @@ func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
 					Id: "node3",
 				},
 			},
+			Deployments: map[string]*storage.Deployment{},
 		},
 		ClusterResults: &storage.ComplianceRunResults_EntityResults{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),

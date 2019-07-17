@@ -15,44 +15,41 @@ const (
 )
 
 type flowGraphMasker struct {
-	realToMaskedDeploymentID map[string]string
-	realToMaskedNamespaceID  map[string]string
+	maskedDeployments      []*storage.ListDeployment
+	realToMaskedDeployment map[string]*storage.ListDeployment
+	realToMaskedNamespace  map[string]string
 }
 
 func newFlowGraphMasker() *flowGraphMasker {
 	return &flowGraphMasker{
-		realToMaskedDeploymentID: make(map[string]string),
-		realToMaskedNamespaceID:  make(map[string]string),
+		realToMaskedDeployment: make(map[string]*storage.ListDeployment),
+		realToMaskedNamespace:  make(map[string]string),
 	}
 }
 
-func (m *flowGraphMasker) GetMaskedDeploymentForCluster(clusterName string, namespace string, deploymentID string) *storage.Deployment {
-	if _, ok := m.realToMaskedNamespaceID[namespace]; !ok {
-		m.realToMaskedNamespaceID[namespace] = uuid.NewV4().String()
-	}
-	if _, ok := m.realToMaskedDeploymentID[deploymentID]; !ok {
-		m.realToMaskedDeploymentID[deploymentID] = uuid.NewV4().String()
+func (m *flowGraphMasker) GetMaskedDeployment(origDeployment *storage.ListDeployment) *storage.ListDeployment {
+	if masked := m.realToMaskedDeployment[origDeployment.GetId()]; masked != nil {
+		return masked
 	}
 
-	return &storage.Deployment{
-		Id:          m.realToMaskedDeploymentID[deploymentID],
-		Name:        MaskedDeploymentName,
-		ClusterName: clusterName,
-		Namespace:   fmt.Sprintf("%s:%s", MaskedNamespaceName, m.realToMaskedNamespaceID[namespace]),
-		NamespaceId: m.realToMaskedNamespaceID[namespace],
+	var maskedNS string
+	if maskedNS = m.realToMaskedNamespace[origDeployment.GetNamespace()]; maskedNS == "" {
+		maskedNS = fmt.Sprintf("%s #%d", MaskedNamespaceName, len(m.realToMaskedNamespace)+1)
+		m.realToMaskedNamespace[origDeployment.GetNamespace()] = maskedNS
 	}
+
+	masked := &storage.ListDeployment{
+		Id:        uuid.NewV4().String(),
+		Name:      fmt.Sprintf("%s #%d", MaskedDeploymentName, len(m.realToMaskedDeployment)+1),
+		Namespace: maskedNS,
+		Cluster:   origDeployment.GetCluster(),
+		ClusterId: origDeployment.GetClusterId(),
+	}
+	m.realToMaskedDeployment[origDeployment.GetId()] = masked
+	m.maskedDeployments = append(m.maskedDeployments, masked)
+	return masked
 }
 
-func (m *flowGraphMasker) GetFlowEntityForDeployment(deployment *storage.Deployment) *storage.NetworkEntityInfo {
-	return &storage.NetworkEntityInfo{
-		Id:   deployment.GetId(),
-		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Desc: &storage.NetworkEntityInfo_Deployment_{
-			Deployment: &storage.NetworkEntityInfo_Deployment{
-				Name:      deployment.GetName(),
-				Namespace: deployment.GetNamespace(),
-				Cluster:   deployment.GetClusterName(),
-			},
-		},
-	}
+func (m *flowGraphMasker) GetMaskedDeployments() []*storage.ListDeployment {
+	return m.maskedDeployments
 }

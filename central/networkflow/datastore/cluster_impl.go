@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 type clusterDataStoreImpl struct {
@@ -14,7 +15,7 @@ type clusterDataStoreImpl struct {
 }
 
 func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID string) FlowDataStore {
-	if ok, err := networkGraphSAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := networkGraphSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil || !ok {
 		return nil
 	}
 

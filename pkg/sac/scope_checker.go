@@ -152,3 +152,15 @@ func (c ScopeChecker) ClusterID(clusterID string) ScopeChecker {
 func (c ScopeChecker) Namespace(namespace string) ScopeChecker {
 	return c.SubScopeChecker(NamespaceScopeKey(namespace))
 }
+
+// Check checks the given predicate in this scope.
+func (c ScopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, error) {
+	res := pred.TryAllowed(c)
+	if res == Unknown {
+		if err := c.PerformChecks(ctx); err != nil {
+			return false, err
+		}
+		res = pred.TryAllowed(c)
+	}
+	return res == Allow, nil
+}

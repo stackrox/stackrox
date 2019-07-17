@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
+	"github.com/stackrox/rox/central/networkflow"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -15,9 +16,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -28,6 +29,8 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	networkFlowsSAC = sac.ForResource(resources.NetworkGraph)
 )
 
 func isGeneratedPolicy(policy *storage.NetworkPolicy) bool {
@@ -90,40 +93,54 @@ func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v
 	}
 }
 
-func (g *generator) generateGraph(ctx context.Context, clusterID string, since *types.Timestamp) (map[networkgraph.Entity]*node, error) {
-	clusterFlowStore := g.globalFlowDataStore.GetFlowStore(ctx, clusterID)
+func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *types.Timestamp) (map[networkgraph.Entity]*node, error) {
+	// Temporarily elevate permissions to obtain all network flows in cluster.
+	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph),
+			sac.ClusterScopeKeys(clusterID)))
+
+	clusterFlowStore := g.globalFlowDataStore.GetFlowStore(networkGraphGenElevatedCtx, clusterID)
 	if clusterFlowStore == nil {
 		return nil, fmt.Errorf("could not obtain flow store for cluster %q", clusterID)
 	}
 
-	// Temporarily elevate permissions to obtain all network flows in cluster.
-	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph)))
-
-	allFlows, _, err := clusterFlowStore.GetAllFlows(networkGraphGenElevatedCtx, since)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
+	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	deploymentsQuery := clusterIDQuery
+	if query.GetQuery() != nil {
+		deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, query)
 	}
-
-	deployments, err := g.deploymentStore.SearchRawDeployments(ctx, &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{
-						Field: "Cluster Id",
-						Value: clusterID,
-					},
-				},
-			},
-		},
-	})
+	deployments, err := g.deploymentStore.SearchRawDeployments(ctx, deploymentsQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain deployments for cluster %q", clusterID)
 	}
 
-	return buildGraph(ctx, clusterID, deployments, allFlows)
+	// Filter out only those deployments for which we can see network flows. We cannot reliably generate network
+	// policies for other deployments.
+	networkFlowsChecker := networkFlowsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(clusterID)
+	filteredSlice, err := sac.FilterSliceReflect(ctx, networkFlowsChecker, deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
+		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not determine network flow access for deployments")
+	}
+	relevantDeployments := filteredSlice.([]*storage.Deployment)
+	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)
+
+	// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
+	// TODO(ROX-???): this needs to be changed should we ever generate egress policies!
+	flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
+		dstEnt := flowProps.GetDstEntity()
+		return dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && relevantDeploymentsMap[dstEnt.GetId()] != nil
+	}, since)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
+	}
+
+	okFlows, missingInfoFlows := networkflow.UpdateFlowsWithDeployments(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments))
+
+	return g.buildGraph(ctx, clusterID, relevantDeployments, okFlows, missingInfoFlows)
 }
 
 func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
@@ -154,15 +171,15 @@ func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMe
 	return policy
 }
 
-func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, deploymentIDs set.StringSet, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	ingressPolicies, egressPolicies := groupNetworkPolicies(existingPolicies)
 
 	var generatedPolicies []*storage.NetworkPolicy
 	for _, node := range graph {
-		if node.deployment == nil {
+		if !node.selected || node.deployment == nil {
 			continue
 		}
-		if node.masked || isSystemDeployment(node.deployment) || (deploymentIDs.IsInitialized() && !deploymentIDs.Contains(node.deployment.GetId())) {
+		if isSystemDeployment(node.deployment) {
 			continue
 		}
 
@@ -176,7 +193,12 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, deploy
 }
 
 func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
-	graph, err := g.generateGraph(ctx, req.GetClusterId(), req.GetNetworkDataSince())
+	parsedQuery, err := search.ParseRawQueryOrEmpty(req.GetQuery())
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "could not parse query")
+	}
+
+	graph, err := g.generateGraph(ctx, req.GetClusterId(), parsedQuery, req.GetNetworkDataSince())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "generating network graph")
 	}
@@ -186,32 +208,14 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 		return nil, nil, errors.Wrap(err, "obtaining existing network policies")
 	}
 
-	query := search.NewQueryBuilder().AddStrings(search.ClusterID, req.GetClusterId()).ProtoQuery()
-
-	deploymentsQuery, err := search.ParseRawQueryOrEmpty(req.GetQuery())
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "parsing query")
-	}
-
-	var relevantDeploymentIDs set.StringSet
-	if deploymentsQuery.Query != nil {
-		query = search.ConjunctionQuery(query, deploymentsQuery)
-
-		relevantDeploymentsResult, err := g.deploymentStore.Search(ctx, query)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "determining relevant deployments")
-		}
-
-		relevantDeploymentIDs = set.NewStringSet(search.ResultsToIDs(relevantDeploymentsResult)...)
-	}
-
-	namespaces, err := g.namespacesStore.SearchNamespaces(ctx, query)
+	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, req.GetClusterId()).ProtoQuery()
+	namespaces, err := g.namespacesStore.SearchNamespaces(ctx, clusterIDQuery)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not obtain namespaces metadata")
 	}
 
 	namespacesByName := createNamespacesByNameMap(namespaces)
 
-	generatedPolicies := g.generatePolicies(graph, relevantDeploymentIDs, namespacesByName, existingPolicies)
+	generatedPolicies := g.generatePolicies(graph, namespacesByName, existingPolicies)
 	return generatedPolicies, toDelete, nil
 }

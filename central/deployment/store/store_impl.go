@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/objects"
 )
 
 type storeImpl struct {
@@ -103,19 +104,6 @@ func (b *storeImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 func (b *storeImpl) removeListDeployment(tx *bolt.Tx, id string) error {
 	bucket := tx.Bucket(deploymentListBucket)
 	return bucket.Delete([]byte(id))
-}
-
-func convertDeploymentToDeploymentList(d *storage.Deployment) *storage.ListDeployment {
-	return &storage.ListDeployment{
-		Id:        d.GetId(),
-		Hash:      d.GetHash(),
-		Name:      d.GetName(),
-		Cluster:   d.GetClusterName(),
-		ClusterId: d.GetClusterId(),
-		Namespace: d.GetNamespace(),
-		UpdatedAt: d.GetUpdatedAt(),
-		Priority:  d.GetPriority(),
-	}
 }
 
 func (b *storeImpl) getDeployment(id string, bucket *bolt.Bucket) (deployment *storage.Deployment, exists bool, err error) {
@@ -213,7 +201,7 @@ func (b *storeImpl) putDeployment(deployment *storage.Deployment, errorIfNotExis
 		return err
 	}
 
-	listBytes, err := proto.Marshal(convertDeploymentToDeploymentList(deployment))
+	listBytes, err := proto.Marshal(objects.ToListDeployment(deployment))
 	if err != nil {
 		return err
 	}

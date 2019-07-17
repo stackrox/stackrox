@@ -140,3 +140,48 @@ func NamespaceScopeKeys(namespaces ...string) []ScopeKey {
 	}
 	return keys
 }
+
+// ScopePredicate is a common interface for all objects that can be interpreted as an expression over scopes.
+type ScopePredicate interface {
+	TryAllowed(sc ScopeChecker) TryAllowedResult
+}
+
+// ScopeSuffix is a predicate that checks if the given scope suffix (relative to the checker) is allowed.
+type ScopeSuffix []ScopeKey
+
+// TryAllowed implements the ScopePredicate interface.
+func (i ScopeSuffix) TryAllowed(sc ScopeChecker) TryAllowedResult {
+	return sc.TryAllowed(i...)
+}
+
+// AnyScope is a scope predicate that evaluates to Allowed if any of the given scopes is allowed.
+type AnyScope []ScopePredicate
+
+// TryAllowed implements the ScopePredicate interface.
+func (p AnyScope) TryAllowed(sc ScopeChecker) TryAllowedResult {
+	res := Deny
+	for _, pred := range p {
+		if predRes := pred.TryAllowed(sc); predRes == Allow {
+			return Allow
+		} else if predRes == Unknown {
+			res = Unknown
+		}
+	}
+	return res
+}
+
+// AllScopes is a scope predicate that evaluates to Allowed if all of the given scopes are allowed.
+type AllScopes []ScopePredicate
+
+// TryAllowed implements the ScopePredicate interface.
+func (p AllScopes) TryAllowed(sc ScopeChecker) TryAllowedResult {
+	res := Allow
+	for _, pred := range p {
+		if predRes := pred.TryAllowed(sc); predRes == Deny {
+			return Deny
+		} else if predRes == Unknown {
+			res = Unknown
+		}
+	}
+	return res
+}

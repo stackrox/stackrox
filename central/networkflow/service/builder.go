@@ -50,7 +50,7 @@ func (b *flowGraphBuilder) getNode(entity networkgraph.Entity, addIfMissing bool
 	return idx, node, true
 }
 
-func (b *flowGraphBuilder) AddDeployments(deployments []*storage.Deployment) {
+func (b *flowGraphBuilder) AddDeployments(deployments []*storage.ListDeployment) {
 	for _, deployment := range deployments {
 		key := networkgraph.Entity{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -64,7 +64,7 @@ func (b *flowGraphBuilder) AddDeployments(deployments []*storage.Deployment) {
 			Deployment: &storage.NetworkEntityInfo_Deployment{
 				Name:      deployment.GetName(),
 				Namespace: deployment.GetNamespace(),
-				Cluster:   deployment.GetClusterName(),
+				Cluster:   deployment.GetCluster(),
 			},
 		}
 	}
