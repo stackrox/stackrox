@@ -7,7 +7,31 @@ export const SECRET = gql`
             name
             createdAt
             files {
+                name
                 type
+                metadata {
+                    __typename
+                    ... on Cert {
+                        endDate
+                        startDate
+                        algorithm
+                        issuer {
+                            commonName
+                            names
+                        }
+                        subject {
+                            commonName
+                            names
+                        }
+                        sans
+                    }
+                    ... on ImagePullSecret {
+                        registries {
+                            name
+                            username
+                        }
+                    }
+                }
             }
             namespace
             deployments {
