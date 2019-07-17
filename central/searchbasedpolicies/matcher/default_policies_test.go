@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -87,10 +88,10 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	suite.deploymentIndexer = deploymentIndex.New(suite.bleveIndex)
-	suite.deploymentSearcher = search.WrapContextLessSearcher(suite.deploymentIndexer)
+	suite.deploymentSearcher = blevesearch.WrapUnsafeSearcherAsSearcher(suite.deploymentIndexer)
 
 	suite.imageIndexer = imageIndex.New(suite.bleveIndex)
-	suite.imageSearcher = search.WrapContextLessSearcher(suite.imageIndexer)
+	suite.imageSearcher = blevesearch.WrapUnsafeSearcherAsSearcher(suite.imageIndexer)
 
 	processStore := processIndicatorStore.New(suite.db)
 	processIndexer := processIndicatorIndex.New(suite.bleveIndex)

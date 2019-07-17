@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	. "github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +48,7 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 		},
 	})
 
-	mockSearchFunc := func(q *v1.Query) ([]search.Result, error) {
+	mockSearchFunc := func(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 		return []search.Result{
 			fakeResult("1", "cluster1", "nsA"),
 			fakeResult("2", "cluster1", "nsB"),
@@ -95,7 +96,7 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 		},
 	})
 
-	mockSearchFunc := func(q *v1.Query) ([]search.Result, error) {
+	mockSearchFunc := func(q *v1.Query, options ...blevesearch.SearchOption) ([]search.Result, error) {
 		return []search.Result{
 			fakeResult("1", "cluster1", "nsA"),
 			fakeResult("2", "cluster1", "nsB"),

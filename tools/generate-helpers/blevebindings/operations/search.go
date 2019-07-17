@@ -10,7 +10,10 @@ import (
 
 func renderSearchFunctionSignature(statement *jen.Statement) *jen.Statement {
 	functionName := "Search"
-	return statement.Id(functionName).Params(jen.Id("q").Op("*").Qual(packagenames.V1, "Query")).Parens(jen.List(jen.Index().Qual(packagenames.RoxSearch, "Result"), jen.Error()))
+	return statement.Id(functionName).Params(
+		jen.Id("q").Op("*").Qual(packagenames.V1, "Query"),
+		jen.Id("opts").Op("...").Qual(packagenames.RoxBleve, "SearchOption"),
+	).Parens(jen.List(jen.Index().Qual(packagenames.RoxSearch, "Result"), jen.Error()))
 }
 
 func generateSearch(props GeneratorProperties) (jen.Code, jen.Code) {
@@ -23,7 +26,7 @@ func generateSearch(props GeneratorProperties) (jen.Code, jen.Code) {
 	mappingPath := path.Join(packagenames.RoxCentral, strings.ToLower(objectName), props.OptionsPath)
 	implementation := renderSearchFunctionSignature(renderFuncBStarIndexer()).Block(
 		metricLine("Search", props.Object),
-		jen.Return(jen.Qual(packagenames.RoxBleve, "RunSearchRequest").Call(jen.Qual(packagenames.V1, props.SearchCategory), jen.Id("q"), jen.Id("b").Dot("index").Dot("Index"), jen.Qual(mappingPath, "OptionsMap"))),
+		jen.Return(jen.Qual(packagenames.RoxBleve, "RunSearchRequest").Call(jen.Qual(packagenames.V1, props.SearchCategory), jen.Id("q"), jen.Id("b").Dot("index").Dot("Index"), jen.Qual(mappingPath, "OptionsMap"), jen.Id("opts").Op("..."))),
 	)
 
 	return interfaceMethod, implementation

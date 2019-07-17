@@ -21,7 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stretchr/testify/require"
 )
 
@@ -114,7 +114,7 @@ func BenchmarkPolicies(b *testing.B) {
 				),
 				mappings.OptionsMap,
 			)
-			searcher := search.WrapContextLessSearcher(indexer)
+			searcher := blevesearch.WrapUnsafeSearcherAsSearcher(indexer)
 			for _, p := range policies {
 				b.Run(fmt.Sprintf("%s %dd %dp", p.GetName(), dNum, pNum), func(b *testing.B) {
 					mr, err := matcherBuilder.ForPolicy(p)

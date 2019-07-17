@@ -10,7 +10,7 @@ import (
 
 // WithDefaultSortOption is a higher order function that makes sure results are sorted.
 func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.SortOption) search.Searcher {
-	return search.WrapSearchFunc(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 		// Add pagination sort order if needed.
 		local := proto.Clone(q).(*v1.Query)
 		if local.Pagination == nil {
@@ -25,7 +25,7 @@ func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.SortO
 
 // Paginated is a higher order function for applying pagination.
 func Paginated(searcher search.Searcher) search.Searcher {
-	return search.WrapSearchFunc(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 		// If pagination not set, just skip.
 		if q.GetPagination() == nil {
 			return searcher.Search(ctx, q)

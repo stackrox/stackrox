@@ -1,10 +1,14 @@
-package search
+package tests
 
 import (
 	"context"
 	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex"
+	. "github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/role/resources"
@@ -14,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,6 +28,9 @@ type searcherSuite struct {
 	noAccessCtx       context.Context
 	ns1ReadAccessCtx  context.Context
 	fullReadAccessCtx context.Context
+
+	boltDB     *bbolt.DB
+	bleveIndex bleve.Index
 
 	store    store.Store
 	indexer  index.Indexer
@@ -50,15 +58,16 @@ func (s *searcherSuite) SetupSuite() {
 }
 
 func (s *searcherSuite) SetupTest() {
-	bleveIndex, err := globalindex.MemOnlyIndex()
+	var err error
+	s.bleveIndex, err = globalindex.MemOnlyIndex()
 	s.Require().NoError(err)
 
-	s.indexer = index.New(bleveIndex)
+	s.indexer = index.New(s.bleveIndex)
 
-	db, err := bolthelper.NewTemp(testutils.DBFileName(s))
+	s.boltDB, err = bolthelper.NewTemp(testutils.DBFileName(s))
 	s.Require().NoError(err)
 
-	s.store = store.New(db, false)
+	s.store = store.New(s.boltDB, false)
 
 	s.searcher = New(s.store, s.indexer)
 }
@@ -158,6 +167,113 @@ func (s *searcherSuite) TestNoClusterNSScopes() {
 	}
 
 	results, err = s.searcher.Search(s.fullReadAccessCtx, search.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 1)
+}
+
+func (s *searcherSuite) TestNoSharedImageLeak() {
+	// This tests that if an image is visible to a user (i.e., is used by a deployment in a namespace where the user
+	// has image view access), but also used by deployments in namespaces where a user does not have image view access,
+	// the image can not be found through queries that refer to fields of the latter deployments.
+	deployments := []*storage.Deployment{
+		{
+			Id:        uuid.NewV4().String(),
+			ClusterId: "clusterA",
+			Namespace: "ns1",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+			},
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			ClusterId: "clusterA",
+			Namespace: "ns2",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+			},
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			ClusterId: "clusterB",
+			Namespace: "ns1",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+			},
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			ClusterId: "clusterB",
+			Namespace: "ns3",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+			},
+		},
+	}
+
+	deploymentDS, err := datastore.New(s.boltDB, s.bleveIndex, nil, nil, nil, nil)
+	s.Require().NoError(err)
+
+	clusterNSScopes := make(map[string]string)
+	for _, deployment := range deployments {
+		clusterNSScopes[deployment.GetId()] = sac.ClusterNSScopeStringFromObject(deployment)
+		s.Require().NoError(deploymentDS.UpsertDeployment(sac.WithAllAccess(context.Background()), deployment))
+	}
+
+	img := &storage.Image{
+		Id:              "img1",
+		ClusternsScopes: clusterNSScopes,
+	}
+
+	s.Require().NoError(s.store.UpsertImage(img))
+	s.Require().NoError(s.indexer.AddImage(img))
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, "clusterA").ProtoQuery()
+	results, err := s.searcher.Search(s.ns1ReadAccessCtx, q)
+	s.NoError(err)
+	s.Len(results, 1)
+
+	q = search.NewQueryBuilder().AddExactMatches(search.Namespace, "ns1").ProtoQuery()
+	results, err = s.searcher.Search(s.ns1ReadAccessCtx, q)
+	s.NoError(err)
+	s.Len(results, 1)
+
+	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, "clusterB").ProtoQuery()
+	results, err = s.searcher.Search(s.ns1ReadAccessCtx, q)
+	s.NoError(err)
+	s.Empty(results)
+
+	q = search.NewQueryBuilder().AddExactMatches(search.Namespace, "ns2").ProtoQuery()
+	results, err = s.searcher.Search(s.ns1ReadAccessCtx, q)
+	s.NoError(err)
+	s.Empty(results)
+
+	q = search.NewQueryBuilder().AddExactMatches(search.Namespace, "ns3").ProtoQuery()
+	results, err = s.searcher.Search(s.ns1ReadAccessCtx, q)
+	s.NoError(err)
+	s.Empty(results)
+
+	clusterBAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Image),
+		sac.ClusterScopeKeys("clusterB"),
+	))
+	results, err = s.searcher.Search(clusterBAccessCtx, q)
 	s.NoError(err)
 	s.Len(results, 1)
 }

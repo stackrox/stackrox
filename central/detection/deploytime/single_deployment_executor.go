@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -134,5 +135,5 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 	if err := deploymentIndex.AddDeployment(clonedDeployment); err != nil {
 		return nil, nil, nil, err
 	}
-	return tempIndex, search.WrapContextLessSearcher(deploymentIndex), clonedDeployment, nil
+	return tempIndex, blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndex), clonedDeployment, nil
 }

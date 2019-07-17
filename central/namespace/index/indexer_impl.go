@@ -96,9 +96,9 @@ func (b *indexerImpl) ResetIndex() error {
 	return blevesearch.ResetIndex(v1.SearchCategory_NAMESPACES, b.index.Index)
 }
 
-func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
+func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "NamespaceMetadata")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_NAMESPACES, q, b.index.Index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_NAMESPACES, q, b.index.Index, mappings.OptionsMap, opts...)
 }
 
 func (b *indexerImpl) SetTxnCount(seq uint64) error {

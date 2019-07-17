@@ -3,6 +3,7 @@ package sac
 import (
 	"context"
 
+	bleveSearchLib "github.com/blevesearch/bleve/search"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,15 +31,16 @@ const (
 
 // SearchHelper facilitates applying scoped access control to search operations.
 type SearchHelper interface {
-	Apply(searchFunc func(*v1.Query) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error)
-	FilteredSearcher(searcher search.UnsafeSearcher) search.Searcher
+	Apply(searchFunc func(*v1.Query, ...blevesearch.SearchOption) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error)
+	FilteredSearcher(searcher blevesearch.UnsafeSearcher) search.Searcher
 }
 
 // searchResultsChecker is responsible for checking whether a single search result is allowed to be seen.
 type searchResultsChecker interface {
-	TryAllowed(resourceSC ScopeChecker, result search.Result) TryAllowedResult
+	TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) TryAllowedResult
 	SearchFieldLabels() []search.FieldLabel
-	PostProcess(result *search.Result)
+	PostProcess(resultFields map[string]interface{})
+	BleveHook(ctx context.Context, resourceChecker ScopeChecker) blevesearch.HookForCategory
 }
 
 type searchHelper struct {
@@ -91,20 +93,20 @@ func NewSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.
 
 // Apply takes in a context-less search function, and returns a search function taking in a context and applying
 // scoped access control checks for result filtering.
-func (h *searchHelper) Apply(rawSearchFunc func(*v1.Query) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error) {
+func (h *searchHelper) Apply(rawSearchFunc func(*v1.Query, ...blevesearch.SearchOption) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error) {
 	return func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		return h.execute(ctx, q, search.WrapUnsafeSearchFunc(rawSearchFunc))
+		return h.execute(ctx, q, blevesearch.UnsafeSearchFunc(rawSearchFunc))
 	}
 }
 
 // FilteredSearcher takes in an unsafe searcher and makes it safe.
-func (h *searchHelper) FilteredSearcher(searcher search.UnsafeSearcher) search.Searcher {
-	return search.WrapSearchFunc(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+func (h *searchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) search.Searcher {
+	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 		return h.execute(ctx, q, searcher)
 	})
 }
 
-func (h *searchHelper) execute(ctx context.Context, q *v1.Query, searcher search.UnsafeSearcher) ([]search.Result, error) {
+func (h *searchHelper) execute(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
 	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
@@ -119,7 +121,11 @@ func (h *searchHelper) execute(ctx context.Context, q *v1.Query, searcher search
 	}
 	queryWithFields := search.NewConjunctionQuery(q, fieldQB.ProtoQuery())
 
-	results, err := searcher.Search(queryWithFields)
+	var opts []blevesearch.SearchOption
+	if hook := h.resultsChecker.BleveHook(ctx, scopeChecker); hook != nil {
+		opts = append(opts, blevesearch.WithHook(hook))
+	}
+	results, err := searcher.Search(queryWithFields, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,9 +133,39 @@ func (h *searchHelper) execute(ctx context.Context, q *v1.Query, searcher search
 	return h.filterResults(ctx, scopeChecker, results)
 }
 
+func filterDocsOnce(resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) (allowed []*bleveSearchLib.DocumentMatch, maybe []*bleveSearchLib.DocumentMatch) {
+	for _, result := range results {
+		if res := resultsChecker.TryAllowed(resourceScopeChecker, result.Fields); res == Allow {
+			allowed = append(allowed, result)
+		} else if res == Unknown {
+			maybe = append(maybe, result)
+		}
+	}
+	return
+}
+
+func filterDocs(ctx context.Context, resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) ([]*bleveSearchLib.DocumentMatch, error) {
+	allowed, maybe := filterDocsOnce(resultsChecker, resourceScopeChecker, results)
+	if len(maybe) > 0 {
+		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {
+			return nil, err
+		}
+		extraAllowed, maybe := filterDocsOnce(resultsChecker, resourceScopeChecker, maybe)
+		if len(maybe) > 0 {
+			errorhelpers.PanicOnDevelopmentf("still %d maybe results after PerformChecks", len(maybe))
+		}
+		allowed = append(allowed, extraAllowed...)
+	}
+	for i := range allowed {
+		resultsChecker.PostProcess(allowed[i].Fields)
+	}
+
+	return allowed, nil
+}
+
 func (h *searchHelper) filterResultsOnce(resourceScopeChecker ScopeChecker, results []search.Result) (allowed []search.Result, maybe []search.Result) {
 	for _, result := range results {
-		if res := h.resultsChecker.TryAllowed(resourceScopeChecker, result); res == Allow {
+		if res := h.resultsChecker.TryAllowed(resourceScopeChecker, result.Fields); res == Allow {
 			allowed = append(allowed, result)
 		} else if res == Unknown {
 			maybe = append(maybe, result)
@@ -151,7 +187,7 @@ func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker S
 		allowed = append(allowed, extraAllowed...)
 	}
 	for i := range allowed {
-		h.resultsChecker.PostProcess(&allowed[i])
+		h.resultsChecker.PostProcess(allowed[i].Fields)
 	}
 
 	return allowed, nil
@@ -164,6 +200,9 @@ func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker S
 // to see.
 type clusterNSScopesBasedResultsChecker struct {
 	clusterNSScopesValuePath string
+
+	secondaryCategory       v1.SearchCategory
+	secondaryResultsChecker *clusterNSFieldBasedResultsChecker
 }
 
 func newClusterNSScopesBasedResultsChecker(opts map[search.FieldLabel]*v1.SearchField) (searchResultsChecker, error) {
@@ -175,13 +214,73 @@ func newClusterNSScopesBasedResultsChecker(opts map[search.FieldLabel]*v1.Search
 		return nil, errors.Errorf("field %s is not stored, which is a requirement for access scope enforcement", clusterNSScopesField.GetFieldPath())
 	}
 
+	mainCategory := clusterNSScopesField.GetCategory()
+
+	clusterIDField, nsField := opts[search.ClusterID], opts[search.Namespace]
+
+	var secondaryResultsChecker *clusterNSFieldBasedResultsChecker
+	var secondaryCategory v1.SearchCategory
+
+	if clusterIDField != nil {
+		secondaryCategory = clusterIDField.GetCategory()
+
+		if nsField != nil && nsField.GetCategory() != secondaryCategory {
+			return nil, errors.Errorf("cluster ID and namespace fields exist, but are in different categories (%v and %v)", secondaryCategory, nsField.GetCategory())
+		}
+
+		if mainCategory != secondaryCategory {
+			secondaryResultsChecker = &clusterNSFieldBasedResultsChecker{
+				clusterIDFieldPath: clusterIDField.GetFieldPath(),
+				namespaceFieldPath: nsField.GetFieldPath(),
+			}
+		}
+	} else if nsField != nil {
+		return nil, errors.New("cluster/ns-scoped resource has a namespace field, but no cluster ID field")
+	}
+
 	return &clusterNSScopesBasedResultsChecker{
 		clusterNSScopesValuePath: blevesearch.ToMapValuePath(clusterNSScopesField.GetFieldPath()),
+
+		secondaryCategory:       secondaryCategory,
+		secondaryResultsChecker: secondaryResultsChecker,
 	}, nil
 }
 
-func (c *clusterNSScopesBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, result search.Result) TryAllowedResult {
-	clusterNSScopeStrs := blevesearch.GetValuesFromFields(c.clusterNSScopesValuePath, result.Fields)
+func (c *clusterNSScopesBasedResultsChecker) BleveHook(ctx context.Context, resourceChecker ScopeChecker) blevesearch.HookForCategory {
+	if c.secondaryResultsChecker == nil {
+		return nil
+	}
+
+	internalHighlightFields := make([]string, 0, 2)
+	internalHighlightFields = append(internalHighlightFields, c.secondaryResultsChecker.clusterIDFieldPath)
+	if c.secondaryResultsChecker.namespaceFieldPath != "" {
+		internalHighlightFields = append(internalHighlightFields, c.secondaryResultsChecker.namespaceFieldPath)
+	}
+
+	secondaryCategoryHook := &blevesearch.Hook{
+		InternalHighlightFields: internalHighlightFields,
+		ResultsFilter: func(unfilteredResults []*bleveSearchLib.DocumentMatch) ([]*bleveSearchLib.DocumentMatch, error) {
+			filtered, err := filterDocs(ctx, c.secondaryResultsChecker, resourceChecker, []*bleveSearchLib.DocumentMatch(unfilteredResults))
+			if err != nil {
+				return nil, err
+			}
+			return filtered, nil
+		},
+	}
+
+	mainHook := &blevesearch.Hook{}
+	mainHook.SubQueryHooks = func(category v1.SearchCategory) *blevesearch.Hook {
+		if category == c.secondaryCategory {
+			return secondaryCategoryHook
+		}
+		return mainHook
+	}
+
+	return mainHook.SubQueryHooks
+}
+
+func (c *clusterNSScopesBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) TryAllowedResult {
+	clusterNSScopeStrs := blevesearch.GetValuesFromFields(c.clusterNSScopesValuePath, resultFields)
 
 	tryAllowedRes := Deny
 	for _, clusterNSScopeStr := range clusterNSScopeStrs {
@@ -204,9 +303,9 @@ func (c *clusterNSScopesBasedResultsChecker) SearchFieldLabels() []search.FieldL
 	return []search.FieldLabel{search.ClusterNSScopes}
 }
 
-func (c *clusterNSScopesBasedResultsChecker) PostProcess(result *search.Result) {
+func (c *clusterNSScopesBasedResultsChecker) PostProcess(resultFields map[string]interface{}) {
 	// Make sure this doesn't get leaked via search results.
-	delete(result.Fields, c.clusterNSScopesValuePath)
+	delete(resultFields, c.clusterNSScopesValuePath)
 }
 
 // clusterNSFieldBasedResultsChecker inspects the `Cluster ID` and optionally the `Namespace`
@@ -243,12 +342,12 @@ func newClusterNSFieldBaseResultsChecker(opts map[search.FieldLabel]*v1.SearchFi
 	}, nil
 }
 
-func (c *clusterNSFieldBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, result search.Result) TryAllowedResult {
+func (c *clusterNSFieldBasedResultsChecker) TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) TryAllowedResult {
 	key := make([]ScopeKey, 0, 2)
-	clusterID, _ := result.Fields[c.clusterIDFieldPath].(string)
+	clusterID, _ := resultFields[c.clusterIDFieldPath].(string)
 	key = append(key, ClusterScopeKey(clusterID))
 	if c.namespaceFieldPath != "" {
-		namespace, _ := result.Fields[c.namespaceFieldPath].(string)
+		namespace, _ := resultFields[c.namespaceFieldPath].(string)
 		key = append(key, NamespaceScopeKey(namespace))
 	}
 	return resourceSC.TryAllowed(key...)
@@ -263,6 +362,10 @@ func (c *clusterNSFieldBasedResultsChecker) SearchFieldLabels() []search.FieldLa
 	return fieldLabels
 }
 
-func (c *clusterNSFieldBasedResultsChecker) PostProcess(result *search.Result) {
+func (c *clusterNSFieldBasedResultsChecker) PostProcess(resultFields map[string]interface{}) {
 
+}
+
+func (c *clusterNSFieldBasedResultsChecker) BleveHook(context.Context, ScopeChecker) blevesearch.HookForCategory {
+	return nil
 }

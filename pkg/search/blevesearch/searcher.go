@@ -16,6 +16,6 @@ type Searcher struct {
 }
 
 // Search builds a query and runs it against the index.
-func (s *Searcher) Search(_ context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return RunSearchRequest(s.Category, q, s.Index, s.OptionsMap)
+func (s *Searcher) Search(_ context.Context, q *v1.Query, searchOpts ...SearchOption) ([]searchPkg.Result, error) {
+	return RunSearchRequest(s.Category, q, s.Index, s.OptionsMap, searchOpts...)
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -41,7 +41,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "inserting into temp index")
 	}
-	tempSearcher := search.WrapContextLessSearcher(tempIndexer)
+	tempSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(tempIndexer)
 
 	var alerts []*storage.Alert
 	err = d.policySet.ForEach(detection.FunctionAsExecutor(func(compiled detection.CompiledPolicy) error {

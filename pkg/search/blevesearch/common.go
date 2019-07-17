@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	subQueryContext = bleveContext{
+	defaultSubQueryContext = bleveContext{
 		pagination: &v1.Pagination{
 			Limit: maxSearchResponses,
 		},
@@ -40,6 +40,8 @@ type relationship struct {
 type bleveContext struct {
 	pagination        *v1.Pagination
 	renderedSortOrder search.SortOrder
+
+	hook *Hook
 }
 
 func newRelationship(src v1.SearchCategory, dst v1.SearchCategory) relationship {
@@ -210,6 +212,10 @@ func resolveMatchFieldQuery(ctx bleveContext, index bleve.Index, category v1.Sea
 	}
 
 	// Go get the query that needs to be run
+	subQueryContext := defaultSubQueryContext
+	if ctx.hook != nil && ctx.hook.SubQueryHooks != nil {
+		subQueryContext.hook = ctx.hook.SubQueryHooks(nextHopCategory)
+	}
 	subQuery, err := resolveMatchFieldQuery(subQueryContext, index, nextHopCategory, searchFieldsAndValues, highlightCtx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "resolving query with next hop: '%s'", nextHopCategory)
@@ -253,7 +259,7 @@ func resolveMatchFieldQuery(ctx bleveContext, index bleve.Index, category v1.Sea
 }
 
 // RunSearchRequest builds a query and runs it against the index.
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap, searchOpts ...SearchOption) ([]searchPkg.Result, error) {
 	sortOrder, err := getSortOrder(q.GetPagination(), optionsMap)
 	if err != nil {
 		return nil, err
@@ -261,6 +267,17 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 	ctx := bleveContext{
 		pagination:        q.GetPagination(),
 		renderedSortOrder: sortOrder,
+	}
+
+	opts := opts{}
+	for _, opt := range searchOpts {
+		if err := opt(&opts); err != nil {
+			return nil, errors.Wrap(err, "could not apply search option")
+		}
+	}
+
+	if opts.hook != nil {
+		ctx.hook = opts.hook(category)
 	}
 
 	bleveQuery, highlightContext, err := buildQuery(ctx, index, category, q, optionsMap)
@@ -323,9 +340,25 @@ func runBleveQuery(ctx bleveContext, query query.Query, index bleve.Index, highl
 	if len(fields) > 0 {
 		searchRequest.Fields = fields
 	}
+
+	var hookPP *hookPostProcessor
+	if ctx.hook != nil {
+		if highlightCtx == nil {
+			highlightCtx = make(highlightContext)
+		}
+		hookPP = ctx.hook.apply(highlightCtx)
+	}
+
 	highlightCtx.ApplyToBleveReq(searchRequest)
 
-	return index.Search(searchRequest)
+	result, err := index.Search(searchRequest)
+	if err != nil {
+		return nil, err
+	}
+	if hookPP != nil {
+		result, err = hookPP.apply(result)
+	}
+	return result, err
 }
 
 // runQuery runs the actual query and then collapses the results into a simpler format

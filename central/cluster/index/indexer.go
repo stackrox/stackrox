@@ -8,6 +8,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	search "github.com/stackrox/rox/pkg/search"
+	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 type Indexer interface {
@@ -17,7 +18,7 @@ type Indexer interface {
 	DeleteClusters(ids []string) error
 	GetTxnCount() uint64
 	ResetIndex() error
-	Search(q *v1.Query) ([]search.Result, error)
+	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 	SetTxnCount(seq uint64) error
 }
 
