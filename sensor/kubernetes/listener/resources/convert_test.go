@@ -72,14 +72,14 @@ func TestPopulateImageIDs(t *testing.T) {
 		image string
 	}
 
-	type status struct {
-		image   string
-		imageID string
+	type pod struct {
+		images           []string
+		imageIDsInStatus []string
 	}
 
 	cases := []struct {
 		wrap        []wrapContainer
-		status      [][]status
+		pods        []pod
 		expectedIDs []string
 	}{
 		{
@@ -89,11 +89,9 @@ func TestPopulateImageIDs(t *testing.T) {
 					image: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/imagedigestexporter@sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85",
 				},
 			},
-			status: [][]status{
+			pods: []pod{
 				{
-					{
-						image: "stackrox.io/main:latest",
-					},
+					images: []string{"stackrox.io/main:latest"},
 				},
 			},
 			expectedIDs: []string{"sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85"},
@@ -104,11 +102,9 @@ func TestPopulateImageIDs(t *testing.T) {
 					image: "stackrox.io/main:latest",
 				},
 			},
-			status: [][]status{
+			pods: []pod{
 				{
-					{
-						image: "stackrox.io/main:latest",
-					},
+					images: []string{"stackrox.io/main:latest"},
 				},
 			},
 			expectedIDs: []string{""},
@@ -119,11 +115,11 @@ func TestPopulateImageIDs(t *testing.T) {
 					image: "stackrox.io/main:latest",
 				},
 			},
-			status: [][]status{
+			pods: []pod{
 				{
-					{
-						image:   "stackrox.io/main:latest",
-						imageID: "docker-pullable://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"docker-pullable://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
 					},
 				},
 			},
@@ -135,16 +131,14 @@ func TestPopulateImageIDs(t *testing.T) {
 					image: "stackrox.io/main:latest",
 				},
 			},
-			status: [][]status{
+			pods: []pod{
 				{
-					{
-						image: "stackrox.io/main:latest",
-					},
+					images: []string{"stackrox.io/main:latest"},
 				},
 				{
-					{
-						image:   "stackrox.io/main:latest",
-						imageID: "docker-pullable://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"docker-pullable://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
 					},
 				},
 			},
@@ -156,16 +150,14 @@ func TestPopulateImageIDs(t *testing.T) {
 					image: "stackrox.io/main:latest",
 				},
 			},
-			status: [][]status{
+			pods: []pod{
 				{
-					{
-						image: "stackrox.io/main:latest",
-					},
+					images: []string{"stackrox.io/main:notamatch"},
 				},
 				{
-					{
-						image:   "stackrox.io/main:yolo",
-						imageID: "docker-pullable://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+					images: []string{"stackrox.io/main:notamatch"},
+					imageIDsInStatus: []string{
+						"docker-pullable://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
 					},
 				},
 			},
@@ -176,21 +168,32 @@ func TestPopulateImageIDs(t *testing.T) {
 				{
 					image: "stackrox.io/main:latest",
 				},
-			},
-			status: [][]status{
 				{
-					{
-						image: "stackrox.io/main:yolo",
+					image: "stackrox.io/monitoring:latest",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{
+						"stackrox.io/main:notamatch",
+						"stackrox.io/monitoring:latest",
 					},
 				},
 				{
-					{
-						image:   "stackrox.io/main:yolo",
-						imageID: "docker-pullable://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+					images: []string{
+						"stackrox.io/main:notamatch",
+						"stackrox.io/monitoring:latest",
+					},
+					imageIDsInStatus: []string{
+						"docker-pullable://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+						"docker-pullable://stackrox.io/monitoring@sha256:latestformonitoring",
 					},
 				},
 			},
-			expectedIDs: []string{"sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3"},
+			expectedIDs: []string{
+				"",
+				"sha256:latestformonitoring",
+			},
 		},
 	}
 
@@ -208,18 +211,19 @@ func TestPopulateImageIDs(t *testing.T) {
 				},
 			})
 		}
-		pods := make([]*v1.Pod, 0, len(c.status))
-		for _, containerStatuses := range c.status {
-			pod := &v1.Pod{}
-			for _, containerStatus := range containerStatuses {
-				pod.Status.ContainerStatuses = append(pod.Status.ContainerStatuses, v1.ContainerStatus{
-					Image:   containerStatus.image,
-					ImageID: containerStatus.imageID,
+		pods := make([]*v1.Pod, 0, len(c.pods))
+		for _, pod := range c.pods {
+			k8sPod := &v1.Pod{}
+			for _, img := range pod.images {
+				k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Image: img})
+			}
+			for _, imageID := range pod.imageIDsInStatus {
+				k8sPod.Status.ContainerStatuses = append(k8sPod.Status.ContainerStatuses, v1.ContainerStatus{
+					ImageID: imageID,
 				})
 			}
-			pods = append(pods, pod)
+			pods = append(pods, k8sPod)
 		}
-
 		wrap.populateImageIDs(pods...)
 		for i, id := range c.expectedIDs {
 			assert.Equal(t, id, wrap.Deployment.Containers[i].Image.Id)
@@ -437,6 +441,16 @@ func TestConvert(t *testing.T) {
 						Spec: v1.PodSpec{
 							NodeName:                     "mynode",
 							AutomountServiceAccountToken: &[]bool{true}[0],
+							Containers: []v1.Container{
+								{
+									Name:  "container1",
+									Image: "docker.io/stackrox/kafka:latest",
+								},
+								{
+									Name:  "container2",
+									Image: "docker.io/stackrox/policy-engine:1.3",
+								},
+							},
 						},
 					},
 				},
