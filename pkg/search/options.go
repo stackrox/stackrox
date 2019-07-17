@@ -30,8 +30,10 @@ var (
 
 	CVE                          = newFieldLabel("CVE")
 	CVELink                      = newFieldLabel("CVE Link")
+	CVECount                     = newFieldLabel("CVE Count")
 	CVSS                         = newFieldLabel("CVSS")
 	Component                    = newFieldLabel("Component")
+	ComponentCount               = newFieldLabel("Component Count")
 	ComponentVersion             = newFieldLabel("Component Version")
 	DockerfileInstructionKeyword = newFieldLabel("Dockerfile Instruction Keyword")
 	DockerfileInstructionValue   = newFieldLabel("Dockerfile Instruction Value")
@@ -47,6 +49,7 @@ var (
 	ImageEntrypoint              = newFieldLabel("Image Entrypoint")
 	ImageVolumes                 = newFieldLabel("Image Volumes")
 	FixedBy                      = newFieldLabel("Fixed By")
+	FixableCVECount              = newFieldLabel("Fixable CVE Count")
 	LastUpdatedTime              = newFieldLabel("Last Updated")
 
 	AddCapabilities        = newFieldLabel("Add Capabilities")

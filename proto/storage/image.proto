@@ -8,12 +8,24 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
+// Next Tag: 10
 message Image {
     string    id            = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName name          = 1;
 
-    ImageMetadata metadata  = 2;
-    ImageScan     scan      = 3;
+    ImageMetadata  metadata    = 2;
+    ImageScan      scan        = 3;
+
+    oneof set_components {
+        int32 components              = 7 [(gogoproto.moretags) = "search:\"Component Count,store\""];
+    }
+    oneof set_cves {
+        int32 cves                    = 8 [(gogoproto.moretags) = "search:\"CVE Count,store\""];
+    }
+    oneof set_fixable {
+        int32 fixable_cves            = 9 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store\""];
+    }
+
     google.protobuf.Timestamp last_updated = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
 
     map<string,string> clusterns_scopes = 6 [(gogoproto.moretags) = "search:\"ClusterNS Scopes,store,hidden\""];

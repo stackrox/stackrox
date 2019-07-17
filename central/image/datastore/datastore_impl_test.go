@@ -90,3 +90,62 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithMetadata() {
 	err := suite.datastore.UpsertImage(suite.hasWriteCtx, newImage)
 	suite.NoError(err)
 }
+
+func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithScanStats() {
+	newImage := &storage.Image{
+		Id: "sha1",
+		Scan: &storage.ImageScan{
+			Components: []*storage.ImageScanComponent{
+				{
+					Vulns: []*storage.Vulnerability{
+						{
+							Cve: "derp",
+							SetFixedBy: &storage.Vulnerability_FixedBy{
+								FixedBy: "v1.2",
+							},
+						},
+						{
+							Cve: "derp2",
+						},
+					},
+				},
+			},
+		},
+	}
+	upsertedImage := &storage.Image{
+		Id: "sha1",
+		Scan: &storage.ImageScan{
+			Components: []*storage.ImageScanComponent{
+				{
+					Vulns: []*storage.Vulnerability{
+						{
+							Cve: "derp",
+							SetFixedBy: &storage.Vulnerability_FixedBy{
+								FixedBy: "v1.2",
+							},
+						},
+						{
+							Cve: "derp2",
+						},
+					},
+				},
+			},
+		},
+		SetComponents: &storage.Image_Components{
+			Components: 1,
+		},
+		SetCves: &storage.Image_Cves{
+			Cves: 2,
+		},
+		SetFixable: &storage.Image_FixableCves{
+			FixableCves: 1,
+		},
+	}
+
+	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
+	suite.mockStore.EXPECT().UpsertImage(upsertedImage).Return(nil)
+	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
+
+	err := suite.datastore.UpsertImage(suite.hasWriteCtx, newImage)
+	suite.NoError(err)
+}

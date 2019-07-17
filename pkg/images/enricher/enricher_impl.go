@@ -115,6 +115,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	if scanValue := e.scanCache.Get(ref); scanValue != nil {
 		e.metrics.IncrementScanCacheHit()
 		image.Scan = scanValue.(*storage.ImageScan)
+		FillScanStats(image)
 		return true
 	}
 	e.metrics.IncrementScanCacheMiss()
@@ -134,6 +135,8 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		return false
 	}
 	image.Scan = scan
+	FillScanStats(image)
+
 	e.scanCache.Add(ref, scan)
 	if image.GetId() == "" {
 		if digest := image.GetMetadata().GetV2().GetDigest(); digest != "" {
@@ -144,4 +147,35 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		}
 	}
 	return true
+}
+
+// FillScanStats fills in the higher level stats from the scan data.
+func FillScanStats(i *storage.Image) {
+	if i.GetScan() != nil {
+		i.SetComponents = &storage.Image_Components{
+			Components: int32(len(i.GetScan().GetComponents())),
+		}
+		var numVulns int32
+		var numFixableVulns int32
+		var fixedByProvided bool
+		for _, c := range i.GetScan().GetComponents() {
+			numVulns += int32(len(c.GetVulns()))
+			for _, v := range c.GetVulns() {
+				if v.GetSetFixedBy() != nil {
+					fixedByProvided = true
+					if v.GetFixedBy() != "" {
+						numFixableVulns++
+					}
+				}
+			}
+		}
+		i.SetCves = &storage.Image_Cves{
+			Cves: numVulns,
+		}
+		if numVulns == 0 || fixedByProvided {
+			i.SetFixable = &storage.Image_FixableCves{
+				FixableCves: numFixableVulns,
+			}
+		}
+	}
 }
