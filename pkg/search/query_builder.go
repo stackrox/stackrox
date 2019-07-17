@@ -300,6 +300,19 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	return ConjunctionQuery(queries...)
 }
 
+// RawQuery returns raw query in string form
+func (qb *QueryBuilder) RawQuery() (string, error) {
+	var query string
+	for field, values := range qb.fieldsToValues {
+		if query != "" {
+			query += "+"
+		}
+		q := strings.Join(values, ",")
+		query += fmt.Sprintf("%s:%s", field, q)
+	}
+	return query, nil
+}
+
 // EmptyQuery is a shortcut function to receive an empty query, to avoid requiring having to create an empty query builder.
 func EmptyQuery() *v1.Query {
 	return &v1.Query{}

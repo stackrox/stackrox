@@ -94,19 +94,13 @@ func loadMessageStrings(resultsBucket *bbolt.Bucket, resultsProto *storage.Compl
 }
 
 func readResults(resultsBucket *bbolt.Bucket, flags dsTypes.GetFlags) (*storage.ComplianceRunMetadata, *storage.ComplianceRunResults, error) {
-	metadataBytes := resultsBucket.Get(metadataKey)
-	if metadataBytes == nil {
-		return nil, nil, errors.New("bucket does not have a metadata entry")
+	metadata, err := readMetadata(resultsBucket)
+	if err != nil {
+		return nil, nil, err
 	}
-	var metadata storage.ComplianceRunMetadata
-	if err := metadata.Unmarshal(metadataBytes); err != nil {
-		return nil, nil, errors.Wrap(err, "unmarshalling metadata")
-	}
-
 	if !metadata.GetSuccess() {
-		return &metadata, nil, nil
+		return metadata, nil, nil
 	}
-
 	resultsBytes := resultsBucket.Get(resultsKey)
 	if resultsBytes == nil {
 		return nil, nil, errors.New("metadata indicated success, but no results data was found")
@@ -117,7 +111,7 @@ func readResults(resultsBucket *bbolt.Bucket, flags dsTypes.GetFlags) (*storage.
 		return nil, nil, errors.Wrap(err, "unmarshalling results")
 	}
 
-	results.RunMetadata = &metadata
+	results.RunMetadata = metadata
 
 	if flags&(dsTypes.WithMessageStrings|dsTypes.RequireMessageStrings) != 0 {
 		if err := loadMessageStrings(resultsBucket, &results); err != nil {
@@ -127,7 +121,19 @@ func readResults(resultsBucket *bbolt.Bucket, flags dsTypes.GetFlags) (*storage.
 			log.Errorf("Could not load message strings for compliance run results: %v", err)
 		}
 	}
-	return &metadata, &results, nil
+	return metadata, &results, nil
+}
+
+func readMetadata(resultsBucket *bbolt.Bucket) (*storage.ComplianceRunMetadata, error) {
+	metadataBytes := resultsBucket.Get(metadataKey)
+	if metadataBytes == nil {
+		return nil, errors.New("bucket does not have a metadata entry")
+	}
+	var metadata storage.ComplianceRunMetadata
+	if err := metadata.Unmarshal(metadataBytes); err != nil {
+		return nil, errors.Wrap(err, "unmarshalling metadata")
+	}
+	return &metadata, nil
 }
 
 func getLatestRunResults(standardBucket *bbolt.Bucket, flags dsTypes.GetFlags) dsTypes.ResultsWithStatus {
@@ -182,6 +188,58 @@ func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, f
 				future := &resultsFuture{}
 				future = flagCache.GetOrSet(flags, future).(*resultsFuture)
 				results[pair] = future.Get(standardBucket, flags)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func getLatestRunMetadata(standardBucket *bbolt.Bucket) dsTypes.ComplianceRunsMetadata {
+	cursor := standardBucket.Cursor()
+	var results dsTypes.ComplianceRunsMetadata
+	for latestRunBucketKey, _ := cursor.Last(); latestRunBucketKey != nil; latestRunBucketKey, _ = cursor.Prev() {
+		runBucket := standardBucket.Bucket(latestRunBucketKey)
+		if runBucket == nil {
+			continue
+		}
+		metadata, err := readMetadata(runBucket)
+		if err != nil {
+			log.Errorf("Could not read results from bucket %s: %v", string(latestRunBucketKey), err)
+			continue
+		}
+		if metadata == nil {
+			continue
+		}
+		if !metadata.GetSuccess() && len(results.FailedRunsMetadata) < maxFailedRuns {
+			results.FailedRunsMetadata = append(results.FailedRunsMetadata, metadata)
+		} else if metadata.GetSuccess() {
+			results.LastSuccessfulRunMetadata = metadata
+			break
+		}
+	}
+	return results
+}
+
+func (s *boltStore) GetLatestRunMetadataBatch(clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]dsTypes.ComplianceRunsMetadata, error) {
+	results := make(map[compliance.ClusterStandardPair]dsTypes.ComplianceRunsMetadata)
+	clusterIDs := []string{clusterID}
+	err := s.resultsBucket.View(func(b *bbolt.Bucket) error {
+		for _, clusterID := range clusterIDs {
+			clusterBucket := b.Bucket([]byte(clusterID))
+			if clusterBucket == nil {
+				continue
+			}
+			for _, standardID := range standardIDs {
+				standardBucket := clusterBucket.Bucket([]byte(standardID))
+				if standardBucket == nil {
+					continue
+				}
+				metadata := getLatestRunMetadata(standardBucket)
+				results[compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}] = metadata
 			}
 		}
 		return nil

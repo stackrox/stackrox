@@ -21,3 +21,10 @@ type ResultsWithStatus struct {
 	LastSuccessfulResults *storage.ComplianceRunResults
 	FailedRuns            []*storage.ComplianceRunMetadata
 }
+
+// ComplianceRunsMetadata returns the metadata for the last successful compliance run, as well as metadata for the
+// recent (i.e., since the last successful results) failed results.
+type ComplianceRunsMetadata struct {
+	LastSuccessfulRunMetadata *storage.ComplianceRunMetadata
+	FailedRunsMetadata        []*storage.ComplianceRunMetadata
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
@@ -98,6 +99,21 @@ func wrapSubjects(clusterID string, subjects []*subjectResolver) []*subjectWithC
 
 func wrapSubject(clusterID string, subject *subjectResolver) *subjectWithClusterIDResolver {
 	return &subjectWithClusterIDResolver{clusterID, subject}
+}
+
+func getStandardIDs(ctx context.Context, cs complianceStandards.Repository) ([]string, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	standards, err := cs.Standards()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, 0, len(standards))
+	for _, s := range standards {
+		result = append(result, s.GetId())
+	}
+	return result, nil
 }
 
 func (resolver *clusterResolver) getRoleBindings(ctx context.Context) ([]*storage.K8SRoleBinding, error) {

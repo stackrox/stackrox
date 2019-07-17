@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
@@ -69,6 +69,37 @@ func (ds *datastoreImpl) GetLatestRunResultsFiltered(ctx context.Context, cluste
 		return nil, err
 	}
 	return filteredResults, err
+}
+
+func (ds *datastoreImpl) GetLatestRunMetadataBatch(ctx context.Context, clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error) {
+	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, errors.Wrapf(errors.New("operation not allowed"), "read permission denied for ClusterID: %s ", clusterID)
+	}
+	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func (ds *datastoreImpl) HasComplianceRunSuccessfullyOnCluster(ctx context.Context, clusterID string, standardIDs []string) (bool, error) {
+	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
+		return false, err
+	} else if !ok {
+		return false, errors.Wrapf(errors.New("operation not allowed"), "read permission denied for ClusterID: %s ", clusterID)
+	}
+	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
+	if err != nil || len(results) == 0 {
+		return false, err
+	}
+	for _, v := range results {
+		if v.LastSuccessfulRunMetadata == nil {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func (ds *datastoreImpl) StoreRunResults(ctx context.Context, results *storage.ComplianceRunResults) error {

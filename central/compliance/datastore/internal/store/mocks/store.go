@@ -35,6 +35,19 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// GetLatestRunMetadataBatch mocks base method
+func (m *MockStore) GetLatestRunMetadataBatch(arg0 string, arg1 []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error) {
+	ret := m.ctrl.Call(m, "GetLatestRunMetadataBatch", arg0, arg1)
+	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestRunMetadataBatch indicates an expected call of GetLatestRunMetadataBatch
+func (mr *MockStoreMockRecorder) GetLatestRunMetadataBatch(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunMetadataBatch", reflect.TypeOf((*MockStore)(nil).GetLatestRunMetadataBatch), arg0, arg1)
+}
+
 // GetLatestRunResults mocks base method
 func (m *MockStore) GetLatestRunResults(arg0, arg1 string, arg2 types.GetFlags) (types.ResultsWithStatus, error) {
 	ret := m.ctrl.Call(m, "GetLatestRunResults", arg0, arg1, arg2)

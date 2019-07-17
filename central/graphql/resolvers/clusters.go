@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/namespace"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
@@ -44,6 +45,8 @@ func init() {
 		schema.AddExtraResolver("Cluster", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Cluster", `secrets: [Secret!]!`),
 		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
+		schema.AddExtraResolver("Cluster", `controlStatus: Boolean!`),
+		schema.AddExtraResolver("Cluster", `controlCount: Int!`),
 	)
 }
 
@@ -414,6 +417,51 @@ func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error)
 		return 0, err
 	}
 	return int32(len(result)), nil
+}
+
+func (resolver *clusterResolver) ControlStatus(ctx context.Context) (bool, error) {
+	if err := readCompliance(ctx); err != nil {
+		return false, err
+	}
+	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx)
+	if err != nil || r == nil {
+		return false, err
+	}
+	return r.GetNumFailing() == 0, nil
+}
+
+func (resolver *clusterResolver) ControlCount(ctx context.Context) (int32, error) {
+	if err := readCompliance(ctx); err != nil {
+		return 0, err
+	}
+	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx)
+	if err != nil || r == nil {
+		return 0, err
+	}
+	return r.GetNumFailing() + r.GetNumPassing(), nil
+}
+
+func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx context.Context) (*v1.ComplianceAggregation_Result, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	standardIDs, err := getStandardIDs(ctx, resolver.root.ComplianceStandardStore)
+	if err != nil {
+		return nil, err
+	}
+	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.HasComplianceRunSuccessfullyOnCluster(ctx, resolver.data.GetId(), standardIDs)
+	if err != nil || !hasComplianceSuccessfullyRun {
+		return nil, err
+	}
+	query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).RawQuery()
+	if err != nil {
+		return nil, err
+	}
+	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}, v1.ComplianceAggregation_CONTROL)
+	if err != nil {
+		return nil, err
+	}
+	return r[0], nil
 }
 
 func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {
