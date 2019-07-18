@@ -28,8 +28,6 @@ type updaterImpl struct {
 
 	updates chan *central.ClusterStatusUpdate
 	stopSig concurrency.Signal
-
-	deploymentEnvs *deploymentEnvSet
 }
 
 func (u *updaterImpl) Start() {
@@ -65,24 +63,19 @@ func (u *updaterImpl) run() {
 
 	deploymentEnvFromMD := deploymentenvs.GetDeploymentEnvFromProviderMetadata(cloudProviderMetadata)
 
-	// If we get the deployment environment from the cloud provider metadata, be happy with that - send the message
-	// and just return.
-	if deploymentEnvFromMD != "" {
-		updateMessage := &central.ClusterStatusUpdate{
-			Msg: &central.ClusterStatusUpdate_DeploymentEnvUpdate{
-				DeploymentEnvUpdate: &central.DeploymentEnvironmentUpdate{
-					Environments: []string{deploymentEnvFromMD},
-				},
-			},
-		}
-
-		u.sendMessage(updateMessage)
+	// If we don't get any deployment environment info from the cloud provider metadata, just return - there's nothing left for us to do.
+	if deploymentEnvFromMD == "" {
 		return
 	}
+	updateMessage = &central.ClusterStatusUpdate{
+		Msg: &central.ClusterStatusUpdate_DeploymentEnvUpdate{
+			DeploymentEnvUpdate: &central.DeploymentEnvironmentUpdate{
+				Environments: []string{deploymentEnvFromMD},
+			},
+		},
+	}
 
-	// Otherwise, infer it from watching nodes.
-	nw := newNodeWatcher(u.updates, u.stopSig.Done())
-	nw.Run(u.client)
+	u.sendMessage(updateMessage)
 }
 
 func (u *updaterImpl) Stop() {
@@ -136,9 +129,8 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 // NewUpdater returns a new ready-to-use updater.
 func NewUpdater() clusterstatus.Updater {
 	return &updaterImpl{
-		client:         client.MustCreateClientSet(),
-		updates:        make(chan *central.ClusterStatusUpdate),
-		stopSig:        concurrency.NewSignal(),
-		deploymentEnvs: newDeploymentEnvSet(),
+		client:  client.MustCreateClientSet(),
+		updates: make(chan *central.ClusterStatusUpdate),
+		stopSig: concurrency.NewSignal(),
 	}
 }
