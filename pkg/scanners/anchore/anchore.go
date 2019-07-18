@@ -117,8 +117,8 @@ func (a *anchore) getPackages(imageID string) ([]anchoreClient.ContentPackageRes
 
 	var allContents []anchoreClient.ContentPackageResponseContent
 	for _, cType := range cTypes {
-		// We currently don't have a use for a list of all the files
-		if cType == "files" {
+		// Only report OS components that don't have vulns
+		if cType != "os" {
 			continue
 		}
 		contents, err := a.getComponentsForType(imageID, cType)
