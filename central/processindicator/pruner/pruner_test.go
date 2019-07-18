@@ -76,3 +76,16 @@ func TestRabbitMQPruning(t *testing.T) {
 	assert.Len(t, prunedIDs, len(processes)-2)
 	assert.NotContains(t, prunedIDs, deterministicRabbitMQProcess.GetId())
 }
+
+func BenchmarkRabbitMQPruning(b *testing.B) {
+	var processes []processindicator.IDAndArgs
+	processes = append(processes, processToIDAndArgs(deterministicRabbitMQProcess))
+	for i := 0; i < 1000000; i++ {
+		processes = append(processes, processToIDAndArgs(rabbitMQBeamSMPProcess()))
+	}
+	for i := 0; i < b.N; i++ {
+		pruner := NewFactory(1, time.Second).StartPruning()
+		pruner.Prune(processes)
+		pruner.Finish()
+	}
+}

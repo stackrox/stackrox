@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -22,10 +22,10 @@ func normalizeWord(word string) string {
 }
 
 // knownStrings maps each string we see to a unique integer.
-func normalizeArgs(args string, knownStrings map[string]int) set.IntSet {
+func normalizeArgs(args string, knownStrings map[string]int) *roaring.Bitmap {
 	words := strings.Fields(args)
 
-	intSet := set.NewIntSet()
+	bitmap := roaring.New()
 	for _, word := range words {
 		normalized := normalizeWord(word)
 		var val int
@@ -37,16 +37,16 @@ func normalizeArgs(args string, knownStrings map[string]int) set.IntSet {
 			val = len(knownStrings)
 			knownStrings[normalized] = val
 		}
-		intSet.Add(val)
+		bitmap.AddInt(val)
 	}
-	return intSet
+	return bitmap
 }
 
-func jaccardSimilarity(first, second set.IntSet) float64 {
-	return float64(first.Intersect(second).Cardinality()) / float64(first.Union(second).Cardinality())
+func jaccardSimilarity(first, second *roaring.Bitmap) float64 {
+	return float64(first.AndCardinality(second)) / float64(first.OrCardinality(second))
 }
 
-func isCloseToAnExistingSet(existingSets []set.IntSet, candidate set.IntSet) bool {
+func isCloseToAnExistingSet(existingSets []*roaring.Bitmap, candidate *roaring.Bitmap) bool {
 	for _, existingSet := range existingSets {
 		if jaccardSimilarity(existingSet, candidate) >= jaccardThreshold {
 			return true
@@ -62,7 +62,7 @@ func (p *prunerFactoryImpl) Prune(processes []processindicator.IDAndArgs) (idsTo
 		return nil
 	}
 
-	prunedNormalized := make([]set.IntSet, 0, p.minProcesses)
+	prunedNormalized := make([]*roaring.Bitmap, 0, p.minProcesses)
 
 	for _, process := range processes {
 		if len(processes)-len(idsToRemove) <= p.minProcesses {

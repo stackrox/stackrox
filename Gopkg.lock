@@ -2002,6 +2002,7 @@
     "cloud.google.com/go/containeranalysis/apiv1beta1",
     "github.com/NYTimes/gziphandler",
     "github.com/PagerDuty/go-pagerduty",
+    "github.com/RoaringBitmap/roaring",
     "github.com/andygrunwald/go-jira",
     "github.com/antihax/optional",
     "github.com/aws/aws-sdk-go/aws",
