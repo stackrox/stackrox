@@ -12,14 +12,14 @@ type Loop interface {
 }
 
 // NewLoop returns a new instance of a Loop.
-func NewLoop(pns policyNotifierSet) Loop {
+func NewLoop(ns NotifierSet) Loop {
 	return &loopImpl{
-		pns: pns,
+		ns: ns,
 	}
 }
 
 type loopImpl struct {
-	pns policyNotifierSet
+	ns NotifierSet
 }
 
 func (l *loopImpl) Start() {
@@ -35,9 +35,12 @@ func (l *loopImpl) run() {
 
 func (l *loopImpl) retryFailures() {
 	// For every notifier that is tracking it's failure, tell it to retry them all.
-	l.pns.forEach(func(notifier notifiers.Notifier) {
-		if fr, ok := notifier.(failureRecorder); ok {
-			fr.retryFailed()
+	l.ns.ForEach(func(notifier notifiers.Notifier, failures AlertSet) {
+		for _, alert := range failures.GetAll() {
+			err := tryToAlert(notifier, alert)
+			if err == nil {
+				failures.Remove(alert.GetId())
+			}
 		}
 	})
 }

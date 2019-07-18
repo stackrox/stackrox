@@ -5,30 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/notifiers"
 	notifierMocks "github.com/stackrox/rox/central/notifiers/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stretchr/testify/assert"
 )
-
-func TestProcessor_RecordersAreCastable(t *testing.T) {
-	// Create mocks.
-	mockCtrl := gomock.NewController(t)
-	mockAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
-	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
-
-	recordingAlertNotifier := recordFailures(mockAlertNotifier)
-	_, ok := recordingAlertNotifier.(notifiers.ResolvableAlertNotifier)
-	assert.False(t, ok)
-	_, ok = recordingAlertNotifier.(notifiers.AlertNotifier)
-	assert.True(t, ok)
-
-	recordingResolvableNotifier := recordFailures(mockResolvableNotifier)
-	_, ok = recordingResolvableNotifier.(notifiers.ResolvableAlertNotifier)
-	assert.True(t, ok)
-	_, ok = recordingResolvableNotifier.(notifiers.AlertNotifier)
-	assert.True(t, ok)
-}
 
 func TestProcessor_LoopDoesNothing(t *testing.T) {
 	// Create mocks.
@@ -40,21 +19,15 @@ func TestProcessor_LoopDoesNothing(t *testing.T) {
 	resolvableAlertNotfierProto := &storage.Notifier{Id: "n2"}
 	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
 
-	policy := &storage.Policy{
-		Id:        "p1",
-		Notifiers: []string{"n1", "n2"},
-	}
-
 	// Create our tested objects.
-	pns := newPolicyNotifierSet()
-	processor := &processorImpl{pns: pns}
-	loop := &loopImpl{pns: pns}
+	ns := NewNotifierSet()
+	processor := &processorImpl{ns: ns}
+	loop := &loopImpl{ns: ns}
 
 	// Add the notifiers to the processor.
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
 
-	processor.UpdatePolicy(policy)
 	processor.UpdateNotifier(mockAlertNotifier)
 	processor.UpdateNotifier(mockResolvableNotifier)
 
@@ -79,17 +52,16 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	}
 
 	// Create our tested objects.
-	pns := newPolicyNotifierSet()
-	processor := &processorImpl{pns: pns}
-	loop := &loopImpl{pns: pns}
+	ns := NewNotifierSet()
+	processor := &processorImpl{ns: ns}
+	loop := &loopImpl{ns: ns}
 
-	// Add the notifiers to the processor.
-	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
-	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
+	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
+	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(3)
+	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(3)
 
 	processor.UpdateNotifier(mockAlertNotifier)
 	processor.UpdateNotifier(mockResolvableNotifier)
-	processor.UpdatePolicy(policy)
 
 	// Running the loop should do anything if all of the alerts succeed.
 	activeAlert := &storage.Alert{
@@ -131,15 +103,14 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	}
 
 	// Create our tested objects.
-	pns := newPolicyNotifierSet()
-	processor := &processorImpl{pns: pns}
-	loop := &loopImpl{pns: pns}
+	ns := NewNotifierSet()
+	processor := &processorImpl{ns: ns}
+	loop := &loopImpl{ns: ns}
 
-	// Add the notifiers to the processor.
-	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
-	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
+	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
+	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(3)
+	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(3)
 
-	processor.UpdatePolicy(policy)
 	processor.UpdateNotifier(mockAlertNotifier)
 	processor.UpdateNotifier(mockResolvableNotifier)
 

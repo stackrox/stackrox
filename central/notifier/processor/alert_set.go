@@ -14,14 +14,15 @@ const (
 	retryAlertsFor   = 1 * time.Hour
 )
 
-// Layer over an expiring cache specifically for alerts.
-type alertSet interface {
-	add(alert *storage.Alert)
-	remove(id string)
-	getAll() []*storage.Alert
+// AlertSet is a layer over an expiring cache specifically for alerts.
+type AlertSet interface {
+	Add(alert *storage.Alert)
+	Remove(id string)
+	GetAll() []*storage.Alert
 }
 
-func newAlertSet() alertSet {
+// NewAlertSet returns a new AlertSet instance
+func NewAlertSet() AlertSet {
 	return &alertSetImpl{
 		alerts: expiringcache.NewExpiringCache(retryAlertsFor),
 	}
@@ -31,15 +32,15 @@ type alertSetImpl struct {
 	alerts expiringcache.Cache
 }
 
-func (as *alertSetImpl) add(alert *storage.Alert) {
+func (as *alertSetImpl) Add(alert *storage.Alert) {
 	as.alerts.Add(alert.GetId(), proto.Clone(alert))
 }
 
-func (as *alertSetImpl) remove(id string) {
+func (as *alertSetImpl) Remove(id string) {
 	as.alerts.Remove(id)
 }
 
-func (as *alertSetImpl) getAll() []*storage.Alert {
+func (as *alertSetImpl) GetAll() []*storage.Alert {
 	alertInterfaces := as.alerts.GetAll()
 
 	ret := make([]*storage.Alert, 0, len(alertInterfaces))

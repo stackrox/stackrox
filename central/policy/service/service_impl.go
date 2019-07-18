@@ -353,8 +353,6 @@ func (s *serviceImpl) getPolicyCategorySet(ctx context.Context) (categorySet set
 }
 
 func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
-	s.processor.UpdatePolicy(policy)
-
 	errorList := errorhelpers.NewErrorList("error adding policy to detection caches: ")
 
 	if policies.AppliesAtBuildTime(policy) {
@@ -368,8 +366,6 @@ func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
 }
 
 func (s *serviceImpl) removeActivePolicy(policy *storage.Policy) error {
-	s.processor.RemovePolicy(policy)
-
 	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
 	errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
 	errorList.AddError(s.lifecycleManager.RemovePolicy(policy.GetId()))

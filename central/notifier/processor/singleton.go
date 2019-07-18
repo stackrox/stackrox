@@ -15,7 +15,7 @@ import (
 var (
 	once sync.Once
 
-	pns  policyNotifierSet
+	ns   NotifierSet
 	loop Loop
 	pr   Processor
 )
@@ -28,10 +28,10 @@ func initialize() {
 			sac.ResourceScopeKeys(resources.Notifier)))
 
 	// Keep track of the notifiers in use.
-	pns = newPolicyNotifierSet()
+	ns = NewNotifierSet()
 
 	// When alerts are generated, we will want to notify.
-	pr = New(pns)
+	pr = New(ns)
 	protoNotifiers, err := datastore.Singleton().GetNotifiers(ctx, &v1.GetNotifiersRequest{})
 	if err != nil {
 		log.Panicf("unable to fetch notifiers: %v", err)
@@ -47,7 +47,7 @@ func initialize() {
 	}
 
 	// When alerts have failed, we will want to retry the notifications.
-	loop = NewLoop(pns)
+	loop = NewLoop(ns)
 	loop.Start() // No need to stop, just run as long as central is up.
 }
 

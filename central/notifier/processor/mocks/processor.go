@@ -89,16 +89,6 @@ func (mr *MockProcessorMockRecorder) RemoveNotifier(arg0 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNotifier", reflect.TypeOf((*MockProcessor)(nil).RemoveNotifier), arg0)
 }
 
-// RemovePolicy mocks base method
-func (m *MockProcessor) RemovePolicy(arg0 *storage.Policy) {
-	m.ctrl.Call(m, "RemovePolicy", arg0)
-}
-
-// RemovePolicy indicates an expected call of RemovePolicy
-func (mr *MockProcessorMockRecorder) RemovePolicy(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockProcessor)(nil).RemovePolicy), arg0)
-}
-
 // UpdateNotifier mocks base method
 func (m *MockProcessor) UpdateNotifier(arg0 notifiers.Notifier) {
 	m.ctrl.Call(m, "UpdateNotifier", arg0)
@@ -107,14 +97,4 @@ func (m *MockProcessor) UpdateNotifier(arg0 notifiers.Notifier) {
 // UpdateNotifier indicates an expected call of UpdateNotifier
 func (mr *MockProcessorMockRecorder) UpdateNotifier(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifier", reflect.TypeOf((*MockProcessor)(nil).UpdateNotifier), arg0)
-}
-
-// UpdatePolicy mocks base method
-func (m *MockProcessor) UpdatePolicy(arg0 *storage.Policy) {
-	m.ctrl.Call(m, "UpdatePolicy", arg0)
-}
-
-// UpdatePolicy indicates an expected call of UpdatePolicy
-func (mr *MockProcessorMockRecorder) UpdatePolicy(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePolicy", reflect.TypeOf((*MockProcessor)(nil).UpdatePolicy), arg0)
 }

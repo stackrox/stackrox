@@ -19,16 +19,14 @@ type Processor interface {
 
 	HasNotifiers() bool
 	HasEnabledAuditNotifiers() bool
+
 	UpdateNotifier(notifier notifiers.Notifier)
 	RemoveNotifier(id string)
-
-	UpdatePolicy(policy *storage.Policy)
-	RemovePolicy(policy *storage.Policy)
 }
 
 // New returns a new Processor
-func New(pns policyNotifierSet) Processor {
+func New(ns NotifierSet) Processor {
 	return &processorImpl{
-		pns: pns,
+		ns: ns,
 	}
 }

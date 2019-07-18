@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance"
 	. "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
@@ -26,19 +25,11 @@ func TestSacFilter(t *testing.T) {
 type sacFilterTestSuite struct {
 	suite.Suite
 
-	mockCtrl *gomock.Controller
-
 	filter SacFilter
 }
 
 func (s *sacFilterTestSuite) SetupTest() {
-	s.mockCtrl = gomock.NewController(s.T())
-
 	s.filter = NewSacFilter()
-}
-
-func (s *sacFilterTestSuite) TearDownTest() {
-	s.mockCtrl.Finish()
 }
 
 func (s *sacFilterTestSuite) TestRunNotFiltered() {
