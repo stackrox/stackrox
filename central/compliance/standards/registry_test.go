@@ -18,8 +18,8 @@ func TestIndexer(t *testing.T) {
 	defer utils.IgnoreError(globalIdx.Close)
 
 	standardIdx := index.New(globalIdx)
-	registry := NewRegistry(standardIdx, nil)
-	require.NoError(t, registry.RegisterStandards(metadata.AllStandards...))
+	registry, err := NewRegistry(standardIdx, nil, metadata.AllStandards...)
+	require.NoError(t, err)
 	results, err := registry.SearchStandards(search.NewQueryBuilder().AddStrings(search.StandardID, "pci").ProtoQuery())
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)

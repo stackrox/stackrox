@@ -113,6 +113,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
@@ -147,6 +148,8 @@ const (
 )
 
 func main() {
+	premain.StartMain()
+
 	if devbuild.IsEnabled() {
 		debughandler.MustStartServerAsync("")
 	}

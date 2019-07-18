@@ -17,9 +17,11 @@ var (
 // RegistrySingleton returns the singleton instance of the compliance standards Registry.
 func RegistrySingleton() *Registry {
 	registryInstanceInit.Do(func() {
-		indexer := index.New(globalindex.GetGlobalIndex())
-		registryInstance = NewRegistry(indexer, framework.RegistrySingleton())
-		utils.Must(registryInstance.RegisterStandards(metadata.AllStandards...))
+		memIndex, err := globalindex.MemOnlyIndex()
+		utils.Must(err)
+		indexer := index.New(memIndex)
+		registryInstance, err = NewRegistry(indexer, framework.RegistrySingleton(), metadata.AllStandards...)
+		utils.Must(err)
 	})
 	return registryInstance
 }

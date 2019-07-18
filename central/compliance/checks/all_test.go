@@ -13,8 +13,8 @@ func TestAllCheckIDsAreValid(t *testing.T) {
 	allChecks := framework.RegistrySingleton().GetAll()
 	var allControls []string
 
-	registryInstance := standards.NewRegistry(nil, framework.RegistrySingleton())
-	assert.NoError(t, registryInstance.RegisterStandards(metadata.AllStandards...))
+	registryInstance, err := standards.NewRegistry(nil, framework.RegistrySingleton(), metadata.AllStandards...)
+	assert.NoError(t, err)
 	for _, standard := range registryInstance.AllStandards() {
 		for _, ctrl := range standard.AllControls() {
 			allControls = append(allControls, ctrl.QualifiedID())
