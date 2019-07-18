@@ -65,7 +65,7 @@ func (g *garbageCollectorImpl) Start() {
 	go g.runGC()
 }
 
-func (g *garbageCollectorImpl) runGC() {
+func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	config, err := g.config.GetConfig(pruningCtx)
 	if err != nil {
 		log.Error(err)
@@ -75,13 +75,16 @@ func (g *garbageCollectorImpl) runGC() {
 	// Run collection initially then run on a ticker
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
+}
+
+func (g *garbageCollectorImpl) runGC() {
+	g.pruneBasedOnConfig()
 
 	t := time.NewTicker(pruneInterval)
 	for {
 		select {
 		case <-t.C:
-			g.collectImages(pvtConfig)
-			g.collectAlerts(pvtConfig)
+			g.pruneBasedOnConfig()
 		case <-g.stopSig.Done():
 			g.stoppedSig.Signal()
 			return
