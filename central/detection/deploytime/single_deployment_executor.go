@@ -115,6 +115,12 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 	if err != nil {
 		return tempIndex, nil, nil, errors.Wrap(err, "initializing temp index")
 	}
+	indexToClose := tempIndex
+	defer func() {
+		if indexToClose != nil {
+			utils.IgnoreError(indexToClose.Close)
+		}
+	}()
 
 	imageIndex := imageIndexer.New(tempIndex)
 	deploymentIndex := deploymentIndexer.New(tempIndex)
@@ -124,6 +130,7 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 			clonedImg.Id = fmt.Sprintf("image-id-%d", i)
 		}
 		if err := imageIndex.AddImage(clonedImg); err != nil {
+			utils.IgnoreError(tempIndex.Close)
 			return nil, nil, nil, err
 		}
 		if i >= len(clonedDeployment.GetContainers()) {
@@ -133,7 +140,9 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 		}
 	}
 	if err := deploymentIndex.AddDeployment(clonedDeployment); err != nil {
+		utils.IgnoreError(tempIndex.Close)
 		return nil, nil, nil, err
 	}
+	indexToClose = nil
 	return tempIndex, blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndex), clonedDeployment, nil
 }
