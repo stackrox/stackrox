@@ -449,7 +449,7 @@ func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx contex
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.HasComplianceRunSuccessfullyOnCluster(ctx, resolver.data.GetId(), standardIDs)
+	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, resolver.data.GetId(), standardIDs)
 	if err != nil || !hasComplianceSuccessfullyRun {
 		return nil, err
 	}

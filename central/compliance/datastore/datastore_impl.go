@@ -84,7 +84,7 @@ func (ds *datastoreImpl) GetLatestRunMetadataBatch(ctx context.Context, clusterI
 	return results, nil
 }
 
-func (ds *datastoreImpl) HasComplianceRunSuccessfullyOnCluster(ctx context.Context, clusterID string, standardIDs []string) (bool, error) {
+func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context, clusterID string, standardIDs []string) (bool, error) {
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return false, err
 	} else if !ok {

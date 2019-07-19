@@ -411,7 +411,7 @@ func (resolver *complianceControlResolver) ComplianceControlEntities(ctx context
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.HasComplianceRunSuccessfullyOnCluster(ctx, clusterID, standardIDs)
+	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
 	if err != nil || !hasComplianceSuccessfullyRun {
 		return nil, err
 	}
@@ -431,7 +431,7 @@ func (resolver *complianceControlResolver) NumComplianceControlNodes(ctx context
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.HasComplianceRunSuccessfullyOnCluster(ctx, clusterID, standardIDs)
+	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
 	if err != nil || !hasComplianceSuccessfullyRun {
 		return nil, err
 	}
@@ -445,7 +445,7 @@ func (resolver *complianceControlResolver) NumComplianceControlNodes(ctx context
 		return nil, err
 	}
 	if len(r) != 1 {
-		return nil, errors.Wrapf(errors.New(""), "length of aggregated results expected: 1, actual : %d", len(r))
+		return nil, errors.Wrapf(errors.New("unexpected control-node aggregation results length"), "length of aggregated results expected: 1, actual : %d", len(r))
 	}
 	nr := numComplianceControlNodesResolver{r[0].GetNumFailing(), r[0].GetNumPassing()}
 	return &nr, nil
@@ -460,7 +460,7 @@ func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx con
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.HasComplianceRunSuccessfullyOnCluster(ctx, clusterID, standardIDs)
+	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
 	if err != nil || !hasComplianceSuccessfullyRun {
 		return nil, err
 	}
@@ -477,7 +477,7 @@ func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx con
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, failingNodes, ds))
+	resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, failing, ds))
 	if err != nil {
 		return nil, err
 	}
@@ -493,7 +493,7 @@ func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx con
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.HasComplianceRunSuccessfullyOnCluster(ctx, clusterID, standardIDs)
+	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
 	if err != nil || !hasComplianceSuccessfullyRun {
 		return nil, err
 	}
@@ -510,23 +510,23 @@ func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx con
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, passingNodes, ds))
+	resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, passing, ds))
 	if err != nil {
 		return nil, err
 	}
 	return resolvers, nil
 }
 
-func getResultNodesFromAggregationResults(results []*v1.ComplianceAggregation_Result, nodeType controlResultNodeType, ds datastore.DataStore) ([]*storage.Node, error) {
+func getResultNodesFromAggregationResults(results []*v1.ComplianceAggregation_Result, nodeType resultType, ds datastore.DataStore) ([]*storage.Node, error) {
 	if ds == nil {
 		return nil, errors.Wrapf(errors.New("empty node datastore encountered"), "argument ds is nil")
 	}
 	var nodes []*storage.Node
 	for _, r := range results {
-		if (nodeType == passingNodes && r.GetNumPassing() == 0) || (nodeType == failingNodes && r.GetNumFailing() == 0) {
+		if (nodeType == passing && r.GetNumPassing() == 0) || (nodeType == failing && r.GetNumFailing() == 0) {
 			continue
 		}
-		nodeID, err := getNodeIDFromAggregationResult(r)
+		nodeID, err := getScopeIDFromAggregationResult(r, v1.ComplianceAggregation_NODE)
 		if err != nil {
 			continue
 		}
@@ -539,23 +539,23 @@ func getResultNodesFromAggregationResults(results []*v1.ComplianceAggregation_Re
 	return nodes, nil
 }
 
-type controlResultNodeType int
+type resultType int
 
 const (
-	failingNodes controlResultNodeType = iota
-	passingNodes
+	failing resultType = iota
+	passing
 )
 
-func getNodeIDFromAggregationResult(result *v1.ComplianceAggregation_Result) (string, error) {
+func getScopeIDFromAggregationResult(result *v1.ComplianceAggregation_Result, scope v1.ComplianceAggregation_Scope) (string, error) {
 	if result == nil {
-		return "", errors.Wrapf(errors.New("empty aggregation result encountered"), "compliance aggregation result is nil")
+		return "", errors.Errorf("empty aggregation result encountered: compliance aggregation result is nil")
 	}
 	for _, k := range result.GetAggregationKeys() {
-		if k.Scope == v1.ComplianceAggregation_NODE {
+		if k.Scope == scope {
 			return k.GetId(), nil
 		}
 	}
-	return "", errors.Wrapf(errors.New("bad arguments"), "node was not one of the aggregation keys")
+	return "", errors.Errorf("bad arguments: node was not one of the aggregation keys")
 }
 
 type numComplianceControlNodesResolver struct {

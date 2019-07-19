@@ -19,7 +19,7 @@ type DataStore interface {
 	GetLatestRunResultsBatch(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
 	GetLatestRunResultsFiltered(ctx context.Context, clusterIDFilter, standardIDFilter func(string) bool, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
 	GetLatestRunMetadataBatch(ctx context.Context, clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error)
-	HasComplianceRunSuccessfullyOnCluster(ctx context.Context, clusterID string, standardIDs []string) (bool, error)
+	IsComplianceRunSuccessfulOnCluster(ctx context.Context, clusterID string, standardIDs []string) (bool, error)
 
 	StoreRunResults(ctx context.Context, results *storage.ComplianceRunResults) error
 	StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error

@@ -89,17 +89,17 @@ func (mr *MockDataStoreMockRecorder) GetLatestRunResultsFiltered(arg0, arg1, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsFiltered", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResultsFiltered), arg0, arg1, arg2, arg3)
 }
 
-// HasComplianceRunSuccessfullyOnCluster mocks base method
-func (m *MockDataStore) HasComplianceRunSuccessfullyOnCluster(arg0 context.Context, arg1 string, arg2 []string) (bool, error) {
-	ret := m.ctrl.Call(m, "HasComplianceRunSuccessfullyOnCluster", arg0, arg1, arg2)
+// IsComplianceRunSuccessfulOnCluster mocks base method
+func (m *MockDataStore) IsComplianceRunSuccessfulOnCluster(arg0 context.Context, arg1 string, arg2 []string) (bool, error) {
+	ret := m.ctrl.Call(m, "IsComplianceRunSuccessfulOnCluster", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// HasComplianceRunSuccessfullyOnCluster indicates an expected call of HasComplianceRunSuccessfullyOnCluster
-func (mr *MockDataStoreMockRecorder) HasComplianceRunSuccessfullyOnCluster(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasComplianceRunSuccessfullyOnCluster", reflect.TypeOf((*MockDataStore)(nil).HasComplianceRunSuccessfullyOnCluster), arg0, arg1, arg2)
+// IsComplianceRunSuccessfulOnCluster indicates an expected call of IsComplianceRunSuccessfulOnCluster
+func (mr *MockDataStoreMockRecorder) IsComplianceRunSuccessfulOnCluster(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsComplianceRunSuccessfulOnCluster", reflect.TypeOf((*MockDataStore)(nil).IsComplianceRunSuccessfulOnCluster), arg0, arg1, arg2)
 }
 
 // QueryControlResults mocks base method
