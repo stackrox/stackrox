@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
+import { entityQueryKeys } from 'constants/entityTypes';
 
 import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
 
@@ -66,7 +67,7 @@ const EntityPage = ({ match, location, history }) => {
         );
     } else {
         const listQuery = {
-            [`${entityListType1} Id`]: entityId1,
+            [`${entityQueryKeys[pageEntityType]}`]: pageEntityId,
             ...query[searchParam]
         };
 

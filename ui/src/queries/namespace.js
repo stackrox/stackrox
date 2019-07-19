@@ -19,7 +19,13 @@ export const NAMESPACES_QUERY = gql`
             k8sroleCount
             serviceAccountCount
             subjectCount
-            policyStatus
+            policyStatus {
+                status
+                failingPolicies {
+                    id
+                    name
+                }
+            }
         }
     }
 `;

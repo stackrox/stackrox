@@ -3,6 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
 import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { sortValueByLength } from 'sorters/sorters';
 
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
@@ -55,13 +56,34 @@ const buildTableColumns = (match, location) => {
             Header: `Policies Violated`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'alertsCount',
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { policyStatus, id } = original;
+                const { failingPolicies } = policyStatus;
+                if (failingPolicies.length)
+                    return <LabelChip text={`${failingPolicies.length} Policies`} type="alert" />;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.POLICY)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text="View Policies" />;
+            },
+            id: 'failingPolicies',
+            accessor: d => d.policyStatus.failingPolicies,
+            sortMethod: sortValueByLength
+        },
+        {
+            Header: `Policy Status`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const { alertsCount } = original;
-                if (alertsCount === 0) return 'No alerts';
-                return <LabelChip text={`${alertsCount} Alerts`} type="alert" />;
-            }
+                const { policyStatus } = original;
+                const { length } = policyStatus.failingPolicies;
+                return !length ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+            },
+            id: 'status',
+            accessor: d => d.policyStatus.status
         }
     ];
     return tableColumns;
@@ -86,7 +108,7 @@ const Deployments = ({ match, location, className, selectedRowId, onRowClick, qu
             idAttribute="id"
             defaultSorted={[
                 {
-                    id: 'alertsCount',
+                    id: 'deployAlertsCount',
                     desc: true
                 }
             ]}

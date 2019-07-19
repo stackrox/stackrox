@@ -29,6 +29,7 @@ const List = ({
     defaultSorted
 }) => {
     const [page, setPage] = useState(0);
+
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
         onRowClick(id);

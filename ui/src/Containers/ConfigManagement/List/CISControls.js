@@ -87,8 +87,9 @@ const createTableRows = data => {
 };
 
 const CISControls = ({ className, selectedRowId, onRowClick, query }) => {
+    const queryText = queryService.objectToWhereClause({ Standard: 'CIS', ...query });
     const variables = {
-        where: queryService.objectToWhereClause({ Standard: 'CIS', ...query }),
+        where: queryText,
         groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE]
     };
 

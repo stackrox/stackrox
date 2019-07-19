@@ -30,25 +30,28 @@ export const SUBJECTS_QUERY = gql`
 
 export const SUBJECT_QUERY = gql`
     query subject($id: String!) {
-        subject(name: $id) {
-            id: name
-            subject {
-                name
-                kind
-                namespace
-            }
-            type
-            scopedPermissions {
-                scope
-                permissions {
-                    key
-                    values
+        clusters {
+            id
+            subject(name: $id) {
+                id: name
+                subject {
+                    name
+                    kind
+                    namespace
                 }
-            }
-            clusterAdmin
-            roles {
-                id
-                name
+                type
+                scopedPermissions {
+                    scope
+                    permissions {
+                        key
+                        values
+                    }
+                }
+                clusterAdmin
+                roles {
+                    id
+                    name
+                }
             }
         }
     }

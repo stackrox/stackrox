@@ -92,6 +92,11 @@ const entityTabsMap = {
             group: TAB_GROUPS.APPLICATION_RESOURCES,
             value: entityTypes.SECRET,
             text: pluralize(entityLabels[entityTypes.SECRET])
+        },
+        {
+            group: TAB_GROUPS.APPLICATION_RESOURCES,
+            value: entityTypes.IMAGE,
+            text: pluralize(entityLabels[entityTypes.IMAGE])
         }
     ],
     [entityTypes.NODE]: [

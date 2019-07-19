@@ -30,6 +30,13 @@ export const CLUSTERS_QUERY = gql`
                     id
                 }
             }
+            policyStatus {
+                status
+                failingPolicies {
+                    id
+                    name
+                }
+            }
         }
     }
 `;

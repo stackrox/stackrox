@@ -53,6 +53,20 @@ export const searchCategories = {
     SUBJECT: 'SUBJECTS'
 };
 
+export const entityQueryKeys = {
+    CLUSTER: 'Cluster ID',
+    NAMESPACE: 'Namespace ID',
+    NODE: 'Node ID',
+    DEPLOYMENT: 'Deployment ID',
+    IMAGE: 'Image Sha',
+    SECRET: 'Secret ID',
+    POLICY: 'Policy ID',
+    CONTROL: 'Control ID',
+    SUBJECT: 'Subject',
+    SERVICE_ACCOUNT: 'Service Account ID',
+    ROLE: 'Role ID'
+};
+
 export default {
     ...resourceTypes,
     ...standardTypes,

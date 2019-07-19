@@ -44,21 +44,25 @@ const buildTableColumns = (match, location) => {
             }
         },
         {
-            Header: `Policies`,
+            Header: `Policies Violated`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { policyCount, metadata } = original;
-                if (!policyCount || policyCount === 0) return 'No matches';
+                const { policyStatus, metadata } = original;
+                const { failingPolicies } = policyStatus;
+                if (failingPolicies.length)
+                    return <LabelChip text={`${failingPolicies.length} Policies`} type="alert" />;
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.POLICY)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${policyCount} matches`} />;
+                return <TableCellLink pdf={pdf} url={url} text="View Policies" />;
             },
-            accessor: 'policyCount'
+            id: 'failingPolicies',
+            accessor: d => d.policyStatus.failingPolicies,
+            sortMethod: sortValueByLength
         },
         {
             Header: `Policy Status`,
@@ -67,9 +71,11 @@ const buildTableColumns = (match, location) => {
             // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { policyStatus } = original;
-                return policyStatus ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+                const { length } = policyStatus.failingPolicies;
+                return !length ? 'Pass' : <LabelChip text="Fail" type="alert" />;
             },
-            accessor: 'policyStatus'
+            id: 'status',
+            accessor: d => d.policyStatus.status
         },
         {
             Header: `Secrets`,

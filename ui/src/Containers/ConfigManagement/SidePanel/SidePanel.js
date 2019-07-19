@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
+import { entityQueryKeys } from 'constants/entityTypes';
 
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Button from 'Components/Button';
@@ -87,10 +88,14 @@ const SidePanel = ({
 
         // Add entityId query parameter if there is another entity in the stack
         const panelQuery = {};
-        if (entityId1 && entityType2) panelQuery[`${entityType1} ID`] = entityId1;
+        if (entityId1) panelQuery[`${entityQueryKeys[entityType1]}`] = entityId1;
 
         return (
-            <List entityListType={entityType} onRowClick={onRowClick} query={getSearchParams()} />
+            <List
+                entityListType={entityType}
+                onRowClick={onRowClick}
+                query={{ ...panelQuery, ...getSearchParams() }}
+            />
         );
     }
 

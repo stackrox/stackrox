@@ -68,8 +68,15 @@ export const DEPLOYMENTS_QUERY = gql`
             name
             clusterName
             namespace
-            alertsCount
+            deployAlertsCount
             serviceAccount
+            policyStatus {
+                status
+                failingPolicies {
+                    id
+                    name
+                }
+            }
         }
     }
 `;

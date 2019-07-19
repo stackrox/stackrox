@@ -34,13 +34,34 @@ const buildTableColumns = (match, location) => {
             Header: `Policies Violated`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'alerts',
             // eslint-disable-next-line
-            Cell: ({ original, pdf  }) => {
-                const { alertsCount } = original;
-                if (!alertsCount) return 'No alerts';
-                return <LabelChip text={`${alertsCount} Alerts`} type="alert" />;
-            }
+            Cell: ({ original, pdf }) => {
+                const { policyStatus, id } = original;
+                const { failingPolicies } = policyStatus;
+                if (failingPolicies.length)
+                    return <LabelChip text={`${failingPolicies.length} Policies`} type="alert" />;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.POLICY)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text="View Policies" />;
+            },
+            id: 'failingPolicies',
+            accessor: d => d.policyStatus.failingPolicies,
+            sortMethod: sortValueByLength
+        },
+        {
+            Header: `Policy Status`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original }) => {
+                const { policyStatus } = original;
+                const { length } = policyStatus.failingPolicies;
+                return !length ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+            },
+            id: 'status',
+            accessor: d => d.policyStatus.status
         },
         {
             Header: `CIS Controls`,
