@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	backupMaxTimeout = 5 * time.Minute
+	backupMaxTimeout = 60 * time.Minute
 	testMaxTimeout   = 5 * time.Second
 )
 
@@ -136,7 +136,8 @@ func (s *s3) prefixKey(key string) string {
 	return filepath.Join(s.integration.GetS3().GetObjectPrefix(), key)
 }
 
-func (s *s3) Backup(reader io.Reader) error {
+func (s *s3) Backup(reader io.ReadCloser) error {
+	log.Infof("Starting S3 Backup")
 	formattedTime := time.Now().Format("2006-01-02T15:04:05")
 	key := fmt.Sprintf("backup_%s.zip", formattedTime)
 	formattedKey := s.prefixKey(key)
@@ -146,8 +147,12 @@ func (s *s3) Backup(reader io.Reader) error {
 		Body:   reader,
 	}
 	if err := s.send(backupMaxTimeout, ui); err != nil {
+		if err := reader.Close(); err != nil {
+			log.Errorf("Error closing reader: %v", err)
+		}
 		return errors.Wrapf(err, "error creating backup in bucket %q with key %q", s.integration.GetS3().GetBucket(), formattedKey)
 	}
+	log.Infof("Successfully backed up to S3")
 	return s.pruneBackupsIfNecessary()
 }
 

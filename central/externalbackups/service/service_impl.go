@@ -123,6 +123,7 @@ func (s *serviceImpl) TriggerExternalBackup(ctx context.Context, request *v1.Res
 		return nil, status.Errorf(codes.InvalidArgument, "id must be specified when triggering a backup")
 	}
 	if err := s.manager.Backup(ctx, request.GetId()); err != nil {
+		log.Errorf("error trigger backup: %v", err)
 		return nil, err
 	}
 	return &v1.Empty{}, nil

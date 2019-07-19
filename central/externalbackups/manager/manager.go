@@ -10,9 +10,15 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/scheduler"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Manager implements the interface for external backups
@@ -39,7 +45,9 @@ var (
 type managerImpl struct {
 	scheduler scheduler.Scheduler
 
-	lock                 sync.Mutex
+	lock       sync.Mutex
+	inProgress concurrency.Flag
+
 	idsToExternalBackups map[string]types.ExternalBackup
 }
 
@@ -98,6 +106,17 @@ func (m *managerImpl) Test(ctx context.Context, backup *storage.ExternalBackup) 
 	return backupInterface.Test()
 }
 
+func (m *managerImpl) getBackup(id string) (types.ExternalBackup, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	backup, ok := m.idsToExternalBackups[id]
+	if !ok {
+		return nil, fmt.Errorf("backup with id %q does not exist", id)
+	}
+	return backup, nil
+}
+
 func (m *managerImpl) Backup(ctx context.Context, id string) error {
 	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -105,13 +124,21 @@ func (m *managerImpl) Backup(ctx context.Context, id string) error {
 		return errors.New("permission denied")
 	}
 
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	backup, ok := m.idsToExternalBackups[id]
-	if !ok {
-		return fmt.Errorf("backup with id %q does not exist", id)
+	backup, err := m.getBackup(id)
+	if err != nil {
+		return err
 	}
-	return m.scheduler.RunBackup(backup)
+
+	if m.inProgress.TestAndSet(true) {
+		return fmt.Errorf("backup already in progress")
+	}
+
+	defer m.inProgress.Set(false)
+
+	if err := m.scheduler.RunBackup(backup); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *managerImpl) Remove(ctx context.Context, id string) {

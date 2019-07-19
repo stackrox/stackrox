@@ -56,7 +56,7 @@ func (s *scheduler) backup(w *io.PipeWriter) {
 	}
 }
 
-func (s *scheduler) send(r io.Reader, backup types.ExternalBackup) error {
+func (s *scheduler) send(r io.ReadCloser, backup types.ExternalBackup) error {
 	if err := backup.Backup(r); err != nil {
 		return errors.Wrapf(err, "failed to send backup to %T", backup)
 	}
