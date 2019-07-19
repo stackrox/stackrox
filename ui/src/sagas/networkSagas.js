@@ -35,8 +35,8 @@ function* getNetworkGraphs(clusterId, query) {
             call(service.fetchNetworkFlowGraph, clusterId, query, timeWindowToDate(timeWindow)),
             call(service.fetchNetworkPolicyGraph, clusterId, query, modification)
         ]);
-        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
         yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
         yield put(graphNetworkActions.setNetworkEdgeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.setNetworkNodeMap(policyGraph));
