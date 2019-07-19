@@ -54,6 +54,7 @@ const QUERY = gql`
             alerts {
                 id
             }
+            alertsCount
         }
     }
 `;
@@ -121,9 +122,8 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
     }
 
     function getCenterValue(data) {
-        const policiesInViolation = data.filter(policy => policy.alerts.length).length;
-        const totalPolicies = data.length;
-        return getPercentage(totalPolicies - policiesInViolation, totalPolicies);
+        const policiesInViolation = data.filter(policy => policy.alertsCount).length;
+        return policiesInViolation;
     }
 
     function getSummaryData(data) {
@@ -224,6 +224,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                                 rootData={sidePanelData}
                                 legendData={sunburstLegendData}
                                 totalValue={centerValue}
+                                units="value"
                             />
                         );
                     }

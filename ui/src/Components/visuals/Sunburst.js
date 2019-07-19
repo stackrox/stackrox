@@ -68,7 +68,8 @@ class BasicSunburst extends React.Component {
         onValueSelect: PropTypes.func,
         onValueDeselect: PropTypes.func,
         staticDetails: PropTypes.bool,
-        history: ReactRouterPropTypes.history.isRequired
+        history: ReactRouterPropTypes.history.isRequired,
+        units: PropTypes.string
     };
 
     static defaultProps = {
@@ -77,7 +78,8 @@ class BasicSunburst extends React.Component {
         onValueMouseOut: null,
         onValueSelect: null,
         onValueDeselect: null,
-        staticDetails: false
+        staticDetails: false,
+        units: 'percentage'
     };
 
     constructor(props) {
@@ -92,7 +94,7 @@ class BasicSunburst extends React.Component {
     }
 
     getCenterLabel = () => {
-        const label = `${this.props.totalValue}%`;
+        const label = `${this.props.totalValue}${this.props.units === 'percentage' ? '%' : ''}`;
         return <LabelSeries data={[{ x: 1, y: 9, label, style: LABEL_STYLE }]} />;
     };
 
