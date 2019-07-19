@@ -55,26 +55,32 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                     contents = (
                         <ul className="list-reset w-full columns-2 columns-gap-0">
                             {results.map((item, index) => (
-                                <li key={`${item.name}-${index}`}>
-                                    <div
-                                        className={`flex flex-row border-base-400 ${
-                                            index !== 4 && index !== 9 ? 'border-b' : ''
-                                        } ${index < 5 ? 'border-r' : ''}`}
-                                    >
-                                        <div className="self-center text-3xl tracking-widest pl-4 pr-4">
-                                            {index + 1}
-                                        </div>
-                                        <div className="flex flex-col truncate pr-4 pb-4 pt-4">
-                                            <span className="pb-2">{item.name}</span>
-                                            <div className="truncate">
-                                                {`${item.deployments.length} ${pluralize(
-                                                    'Deployment',
-                                                    item.deployments.length
-                                                )}`}
+                                <Link
+                                    key={`${item.id}-${index}`}
+                                    to={`${linkTo}/${item.id}`}
+                                    className="no-underline text-base-600 hover:bg-base-400"
+                                >
+                                    <li key={`${item.name}-${index}`} className="hover:bg-base-200">
+                                        <div
+                                            className={`flex flex-row border-base-400 ${
+                                                index !== 4 && index !== 9 ? 'border-b' : ''
+                                            } ${index < 5 ? 'border-r' : ''}`}
+                                        >
+                                            <div className="self-center text-3xl tracking-widest pl-4 pr-4">
+                                                {index + 1}
+                                            </div>
+                                            <div className="flex flex-col truncate pr-4 pb-4 pt-4">
+                                                <span className="pb-2">{item.name}</span>
+                                                <div className="truncate">
+                                                    {`${item.deployments.length} ${pluralize(
+                                                        'Deployment',
+                                                        item.deployments.length
+                                                    )}`}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </li>
+                                    </li>
+                                </Link>
                             ))}
                         </ul>
                     );

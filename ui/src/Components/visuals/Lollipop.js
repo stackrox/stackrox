@@ -10,10 +10,11 @@ import {
 } from 'react-vis';
 import { max } from 'lodash';
 import { withRouter } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import BarGradient from './BarGradient';
 
-const Lollipop = ({ data }) => {
+const Lollipop = ({ data, history }) => {
     function getGridLineValues() {
         const interval = data.length < 5 ? 1 : 5;
         const values = data.map(datum => datum.x);
@@ -41,8 +42,12 @@ const Lollipop = ({ data }) => {
             return val;
         });
     }
-    const labelData = getLabelData();
 
+    function onValueClickHandler(datum) {
+        if (datum.link) history.push(datum.link);
+    }
+
+    const labelData = getLabelData();
     return (
         <div className="relative chart-container w-full horizontal-bar-responsive">
             <FlexibleWidthXYPlot
@@ -73,6 +78,7 @@ const Lollipop = ({ data }) => {
                         cursor: 'pointer'
                     }}
                     color="url(#horizontalGradient)"
+                    onValueClick={onValueClickHandler}
                 />
                 <LabelSeries
                     data={labelData}
@@ -94,7 +100,8 @@ const Lollipop = ({ data }) => {
 };
 
 Lollipop.propTypes = {
-    data: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    history: ReactRouterPropTypes.history.isRequired
 };
 
 export default withRouter(Lollipop);

@@ -26,6 +26,9 @@ const QUERY = gql`
 `;
 
 const UsersWithMostClusterAdminRoles = ({ match, location }) => {
+    const linkTo = URLService.getURL(match, location)
+        .base(entityTypes.SUBJECT)
+        .url();
     function processData(data) {
         if (!data || !data.clusters) return [];
 
@@ -51,7 +54,8 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
                 hint: {
                     title: entry[0],
                     body: entry[1]
-                }
+                },
+                link: `${linkTo}/${entry[0]}`
             };
         });
     }
@@ -64,9 +68,6 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
 
                 if (!loading && data && networkStatus === networkStatuses.READY) {
                     const results = processData(data);
-                    const linkTo = URLService.getURL(match, location)
-                        .base(entityTypes.SUBJECT)
-                        .url();
 
                     viewAllLink = (
                         <Link to={linkTo} className="no-underline">

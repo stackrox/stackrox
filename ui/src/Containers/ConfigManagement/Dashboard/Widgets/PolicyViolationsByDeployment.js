@@ -31,7 +31,7 @@ const QUERY = gql`
         deployments {
             id
             name
-            alerts {
+            deployAlerts {
                 policy {
                     severity
                 }
@@ -45,7 +45,7 @@ const PolicyViolationsByDeployment = ({ match, location }) => {
         if (!data || !data.deployments) return [];
 
         const results = data.deployments.map(deployment => {
-            const counts = deployment.alerts.reduce(
+            const counts = deployment.deployAlerts.reduce(
                 (total, alert) => {
                     const ret = { ...total };
                     ret[alert.policy.severity] += 1;
@@ -59,6 +59,7 @@ const PolicyViolationsByDeployment = ({ match, location }) => {
                 }
             );
             return {
+                id: deployment.id,
                 name: deployment.name,
                 counts
             };
@@ -103,62 +104,68 @@ const PolicyViolationsByDeployment = ({ match, location }) => {
                     contents = (
                         <ul className="list-reset w-full columns-2 columns-gap-0 text-sm">
                             {slicedData.map((item, index) => (
-                                <li key={`${item.name}-${index}`}>
-                                    <div
-                                        className={`flex flex-row border-base-300 ${
-                                            index !== 4 && index !== 9 ? 'border-b' : ''
-                                        } ${index < 5 ? 'border-r' : ''}`}
-                                    >
-                                        <div className="flex flex-col flex-1 truncate py-2 px-4">
-                                            <span className="pb-2">
-                                                {index + 1}. {item.name}
-                                            </span>
-                                            <ul className="list-reset flex">
-                                                {Object.keys(item.counts).map(type => {
-                                                    const style = {
-                                                        backgroundColor: severityColorMap[type],
-                                                        color: severityFontMap[type],
-                                                        borderColor: severityColorMap[type]
-                                                    };
-                                                    const count = item.counts[type];
+                                <Link
+                                    key={`${item.id}-${index}`}
+                                    to={`${linkTo}/${item.id}`}
+                                    className="no-underline text-base-600"
+                                >
+                                    <li className="hover:bg-base-200">
+                                        <div
+                                            className={`flex flex-row border-base-300 ${
+                                                index !== 4 && index !== 9 ? 'border-b' : ''
+                                            } ${index < 5 ? 'border-r' : ''}`}
+                                        >
+                                            <div className="flex flex-col flex-1 truncate py-2 px-4">
+                                                <span className="pb-2">
+                                                    {index + 1}. {item.name}
+                                                </span>
+                                                <ul className="list-reset flex">
+                                                    {Object.keys(item.counts).map(type => {
+                                                        const style = {
+                                                            backgroundColor: severityColorMap[type],
+                                                            color: severityFontMap[type],
+                                                            borderColor: severityColorMap[type]
+                                                        };
+                                                        const count = item.counts[type];
 
-                                                    if (count === 0) return null;
+                                                        if (count === 0) return null;
 
-                                                    const tipText = `${item.counts[type]} ${
-                                                        severityTexts[type]
-                                                    } ${pluralize('Violation', count)}`;
-                                                    return (
-                                                        <Tooltip
-                                                            position="top"
-                                                            trigger="mouseenter"
-                                                            animation="none"
-                                                            duration={0}
-                                                            arrow
-                                                            distance={20}
-                                                            html={
-                                                                <span className="text-sm">
-                                                                    {tipText}
-                                                                </span>
-                                                            }
-                                                            key={`${type}`}
-                                                            unmountHTMLWhenHide
-                                                        >
-                                                            <li
-                                                                className="p-1 border rounded mr-2"
-                                                                style={style}
+                                                        const tipText = `${item.counts[type]} ${
+                                                            severityTexts[type]
+                                                        } ${pluralize('Violation', count)}`;
+                                                        return (
+                                                            <Tooltip
+                                                                position="top"
+                                                                trigger="mouseenter"
+                                                                animation="none"
+                                                                duration={0}
+                                                                arrow
+                                                                distance={20}
+                                                                html={
+                                                                    <span className="text-sm">
+                                                                        {tipText}
+                                                                    </span>
+                                                                }
+                                                                key={`${type}`}
+                                                                unmountHTMLWhenHide
                                                             >
-                                                                <span>{count} </span>
-                                                                <span className="uppercase">
-                                                                    {type.charAt(0)}
-                                                                </span>
-                                                            </li>
-                                                        </Tooltip>
-                                                    );
-                                                })}
-                                            </ul>
+                                                                <li
+                                                                    className="p-1 border rounded mr-2"
+                                                                    style={style}
+                                                                >
+                                                                    <span>{count} </span>
+                                                                    <span className="uppercase">
+                                                                        {type.charAt(0)}
+                                                                    </span>
+                                                                </li>
+                                                            </Tooltip>
+                                                        );
+                                                    })}
+                                                </ul>
+                                            </div>
                                         </div>
-                                    </div>
-                                </li>
+                                    </li>
+                                </Link>
                             ))}
                         </ul>
                     );

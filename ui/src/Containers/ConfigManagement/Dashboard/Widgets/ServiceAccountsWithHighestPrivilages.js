@@ -85,42 +85,52 @@ const ServiceAccountsWithHighestPrivilages = ({ match, location }) => {
                     contents = (
                         <ul className="list-reset w-full columns-2 columns-gap-0">
                             {slicedData.map((item, index) => (
-                                <li key={`${item.name}-${index}`}>
-                                    <div
-                                        className={`flex flex-row border-base-400 ${
-                                            index !== 4 && index !== 9 ? 'border-b' : ''
-                                        } ${index < 5 ? 'border-r' : ''}`}
-                                    >
-                                        <div className="self-center text-3xl tracking-widest pl-4 pr-4">
-                                            {index + 1}
+                                <Link
+                                    key={`${item.id}-${index}`}
+                                    to={`${linkTo}/${item.id}`}
+                                    className="no-underline text-base-600"
+                                >
+                                    <li key={`${item.name}-${index}`} className="hover:bg-base-200">
+                                        <div
+                                            className={`flex flex-row border-base-400 ${
+                                                index !== 4 && index !== 9 ? 'border-b' : ''
+                                            } ${index < 5 ? 'border-r' : ''}`}
+                                        >
+                                            <div className="self-center text-3xl tracking-widest pl-4 pr-4">
+                                                {index + 1}
+                                            </div>
+                                            <div className="flex flex-col truncate pr-4 pb-4 pt-4">
+                                                <span className="pb-2">{item.name}</span>
+                                                <Tooltip
+                                                    position="top"
+                                                    trigger="mouseenter"
+                                                    animation="none"
+                                                    duration={0}
+                                                    arrow
+                                                    distance={20}
+                                                    html={
+                                                        <span className="text-sm">
+                                                            <PermissionsText
+                                                                serviceAccount={item}
+                                                            />
+                                                        </span>
+                                                    }
+                                                    unmountHTMLWhenHide
+                                                >
+                                                    {item.scopedPermissions &&
+                                                        item.scopedPermissions.length === 0 &&
+                                                        'No Permissions'}
+                                                    {item.scopedPermissions &&
+                                                        item.scopedPermissions.length >= 1 && (
+                                                            <PermissionsText
+                                                                serviceAccount={item}
+                                                            />
+                                                        )}
+                                                </Tooltip>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col truncate pr-4 pb-4 pt-4">
-                                            <span className="pb-2">{item.name}</span>
-                                            <Tooltip
-                                                position="top"
-                                                trigger="mouseenter"
-                                                animation="none"
-                                                duration={0}
-                                                arrow
-                                                distance={20}
-                                                html={
-                                                    <span className="text-sm">
-                                                        <PermissionsText serviceAccount={item} />
-                                                    </span>
-                                                }
-                                                unmountHTMLWhenHide
-                                            >
-                                                {item.scopedPermissions &&
-                                                    item.scopedPermissions.length === 0 &&
-                                                    'No Permissions'}
-                                                {item.scopedPermissions &&
-                                                    item.scopedPermissions.length >= 1 && (
-                                                        <PermissionsText serviceAccount={item} />
-                                                    )}
-                                            </Tooltip>
-                                        </div>
-                                    </div>
-                                </li>
+                                    </li>
+                                </Link>
                             ))}
                         </ul>
                     );
