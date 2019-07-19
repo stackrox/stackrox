@@ -1,4 +1,4 @@
-package m15tom16
+package m16tom17
 
 import (
 	"github.com/dgraph-io/badger"
@@ -12,8 +12,8 @@ import (
 )
 
 var migration = types.Migration{
-	StartingSeqNum: 15,
-	VersionAfter:   storage.Version{SeqNum: 16},
+	StartingSeqNum: 16,
+	VersionAfter:   storage.Version{SeqNum: 17},
 	Run:            updateAllImages,
 }
 

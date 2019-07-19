@@ -207,14 +207,24 @@ func (b *storeImpl) IncTxnCount() error {
 	})
 }
 
+func (b *storeImpl) deleteAlert(id string, tx *bolt.Tx) error {
+	alertBucket := tx.Bucket(alertBucket)
+	if err := alertBucket.Delete([]byte(id)); err != nil {
+		return err
+	}
+	listAlertBucket := tx.Bucket(alertListBucket)
+	if err := listAlertBucket.Delete([]byte(id)); err != nil {
+		return err
+	}
+	return nil
+}
+
 // DeleteAlert removes an alert
 func (b *storeImpl) DeleteAlert(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Alert")
 
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(alertBucket)
-
-		return bucket.Delete([]byte(id))
+		return b.deleteAlert(id, tx)
 	})
 }
 
@@ -223,9 +233,8 @@ func (b *storeImpl) DeleteAlerts(ids ...string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
 
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(alertBucket)
 		for _, id := range ids {
-			if err := bucket.Delete([]byte(id)); err != nil {
+			if err := b.deleteAlert(id, tx); err != nil {
 				return err
 			}
 		}

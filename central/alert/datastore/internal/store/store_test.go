@@ -93,4 +93,11 @@ func (s *alertStoreTestSuite) TestAlerts() {
 		s.Equal(a.GetState(), list.GetState())
 	}
 
+	for _, a := range alerts {
+		s.NoError(s.store.DeleteAlert(a.GetId()))
+	}
+
+	listAlerts, err := s.store.ListAlerts()
+	s.NoError(err)
+	s.Len(listAlerts, 0)
 }
