@@ -143,3 +143,26 @@ func (resolver *clusterResolver) getClusterSubjects(ctx context.Context) ([]*sto
 func (resolver *clusterResolver) getClusterQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
 }
+
+// SubjectCount returns the count of Subjects which have any permission on this namespace or the cluster it belongs to
+func (resolver *namespaceResolver) getSubjects(ctx context.Context, baseQuery *v1.Query) ([]*storage.Subject, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+	if err := readK8sRoleBindings(ctx); err != nil {
+		return nil, err
+	}
+	q := search.NewConjunctionQuery(
+		search.NewDisjunctionQuery(
+			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
+				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery(),
+			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
+				AddBools(search.ClusterRole, true).ProtoQuery()),
+		baseQuery)
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
+	return subjects, nil
+}

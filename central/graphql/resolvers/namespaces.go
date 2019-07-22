@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -20,6 +19,8 @@ func init() {
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
 		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
+		schema.AddExtraResolver("Namespace", `subjects: [Subject!]!`),
+		schema.AddExtraResolver("Namespace", `filteredSubjects(query: String): [Subject!]!`),
 		schema.AddExtraResolver("Namespace", `subjectCount: Int!`),
 		schema.AddExtraResolver("Namespace", `serviceAccountCount: Int!`),
 		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
@@ -84,7 +85,7 @@ func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args r
 	return *output, nil
 }
 
-// SubjectCount returns the count of Subjects which have any permission on this cluster namespace
+// SubjectCount returns the count of Subjects which have any permission on this namespace or the cluster it belongs to
 func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, error) {
 	if err := readK8sSubjects(ctx); err != nil {
 		return 0, err
@@ -92,14 +93,53 @@ func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, err
 	if err := readK8sRoleBindings(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+	subjects, err := resolver.getSubjects(ctx, search.EmptyQuery())
 	if err != nil {
 		return 0, err
 	}
-	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 	return int32(len(subjects)), nil
+}
+
+// Subjects returns the Subjects which have any permission on this cluster namespace or the cluster it belongs to
+func (resolver *namespaceResolver) Subjects(ctx context.Context) ([]*subjectResolver, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+	if err := readK8sRoleBindings(ctx); err != nil {
+		return nil, err
+	}
+	var resolvers []*subjectResolver
+	subjects, err := resolver.getSubjects(ctx, search.EmptyQuery())
+	if err != nil {
+		return nil, err
+	}
+	for _, subject := range subjects {
+		resolvers = append(resolvers, &subjectResolver{resolver.root, subject})
+	}
+	return resolvers, nil
+}
+
+// Subjects returns the Subjects which have any permission in namespace or cluster wide
+func (resolver *namespaceResolver) FilteredSubjects(ctx context.Context, args rawQuery) ([]*subjectResolver, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+	if err := readK8sRoleBindings(ctx); err != nil {
+		return nil, err
+	}
+	var resolvers []*subjectResolver
+	baseQuery, err := args.AsV1Query()
+	if err != nil {
+		return nil, err
+	}
+	subjects, err := resolver.getSubjects(ctx, baseQuery)
+	if err != nil {
+		return nil, err
+	}
+	for _, subject := range subjects {
+		resolvers = append(resolvers, &subjectResolver{resolver.root, subject})
+	}
+	return resolvers, nil
 }
 
 // ServiceAccountCount returns the count of ServiceAccounts which have any permission on this cluster namespace
