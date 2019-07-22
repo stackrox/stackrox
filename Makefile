@@ -264,7 +264,7 @@ clean-deps:
 PURE := --features=pure
 RACE := --features=race
 LINUX_AMD64 := --cpu=k8
-VARIABLE_STAMPS := --workspace_status_command=$(BASE_DIR)/status.sh
+VARIABLE_STAMPS := --workspace_status_command=$(BASE_DIR)/status.sh --stamp
 BAZEL_OS=linux
 ifeq ($(UNAME_S),Darwin)
     BAZEL_OS=darwin
@@ -378,7 +378,7 @@ upload-coverage:
 	@#     https://docs.coveralls.io/parallel-build-webhook
 
 	@echo 'mode: set' > combined_coverage.dat
-	@find ./bazel-testlogs/ -name 'coverage.dat' | xargs -I {} cat "{}" | grep -v 'mode: set' | grep -v vendor >> combined_coverage.dat
+	@find ./bazel-testlogs/ -name 'coverage.dat' | xargs grep -h '^github.com/stackrox/rox/' | grep -v vendor >> combined_coverage.dat
 	goveralls -coverprofile="combined_coverage.dat" -ignore 'central/graphql/resolvers/generated.go,generated/storage/*,generated/*/*/*' -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
 
 .PHONY: coverage
