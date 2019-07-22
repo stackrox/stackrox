@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -29,14 +28,8 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 
 // Detect runs detection on an deployment, returning any generated alerts.
 func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert, error) {
-	closeableIndex, deploymentIndex, deployment, err := singleDeploymentSearcher(deployment, images)
-	if err != nil {
-		return nil, err
-	}
-	defer utils.IgnoreError(closeableIndex.Close)
-
-	exe := newSingleDeploymentExecutor(executorCtx, ctx, deploymentIndex, deployment, images)
-	err = d.policySet.ForEach(exe)
+	exe := newSingleDeploymentExecutor(executorCtx, ctx, deployment, images)
+	err := d.policySet.ForEach(exe)
 	if err != nil {
 		return nil, err
 	}

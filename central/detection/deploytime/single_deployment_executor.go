@@ -18,11 +18,10 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func newSingleDeploymentExecutor(executorCtx context.Context, ctx DetectionContext, searcher search.Searcher, deployment *storage.Deployment, images []*storage.Image) alertCollectingExecutor {
+func newSingleDeploymentExecutor(executorCtx context.Context, ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image) alertCollectingExecutor {
 	return &policyExecutor{
 		executorCtx: executorCtx,
 		ctx:         ctx,
-		searcher:    searcher,
 		deployment:  deployment,
 		images:      images,
 	}
@@ -35,7 +34,6 @@ type closeableIndex interface {
 type policyExecutor struct {
 	executorCtx context.Context
 	ctx         DetectionContext
-	searcher    search.Searcher
 	deployment  *storage.Deployment
 	images      []*storage.Image
 	alerts      []*storage.Alert
@@ -76,26 +74,16 @@ func (d *policyExecutor) Execute(compiled detection.CompiledPolicy) error {
 }
 
 func (d *policyExecutor) getViolations(ctx context.Context, enforcement storage.EnforcementAction, matcher searchbasedpolicies.Matcher) ([]*storage.Alert_Violation, error) {
-	var err error
-	var violations []*storage.Alert_Violation
-	if enforcement != storage.EnforcementAction_UNSET_ENFORCEMENT {
-		violations, err = matchWithEmptyImageIDs(ctx, matcher, d.deployment, d.images)
-	} else {
-		var violationsWrapper searchbasedpolicies.Violations
-		// Purposefully, use searcher for deployment check
-		violationsWrapper, err = matcher.MatchOne(ctx, d.searcher, d.deployment.GetId())
-		violations = violationsWrapper.AlertViolations
-	}
-	return violations, err
+	return matchWithEmptyImageIDs(ctx, matcher, d.deployment, d.images)
 }
 
 func matchWithEmptyImageIDs(ctx context.Context, matcher searchbasedpolicies.Matcher, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert_Violation, error) {
-	closeableIndex, deploymentIndex, deployment, err := singleDeploymentSearcher(deployment, images)
+	closeableIndex, deploymentIndex, deploymentID, err := singleDeploymentSearcher(deployment, images)
 	if err != nil {
 		return nil, err
 	}
 	defer utils.IgnoreError(closeableIndex.Close)
-	violations, err := matcher.MatchOne(ctx, deploymentIndex, deployment.GetId())
+	violations, err := matcher.MatchOne(ctx, deploymentIndex, deploymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +93,7 @@ func matchWithEmptyImageIDs(ctx context.Context, matcher searchbasedpolicies.Mat
 
 const deploymentID = "deployment-id"
 
-func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.Image) (closeableIndex, search.Searcher, *storage.Deployment, error) {
+func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.Image) (closeableIndex, search.Searcher, string, error) {
 	clonedDeployment := proto.Clone(deployment).(*storage.Deployment)
 	if clonedDeployment.GetId() == "" {
 		clonedDeployment.Id = deploymentID
@@ -113,7 +101,7 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 
 	tempIndex, err := globalindex.MemOnlyIndex()
 	if err != nil {
-		return tempIndex, nil, nil, errors.Wrap(err, "initializing temp index")
+		return tempIndex, nil, "", errors.Wrap(err, "initializing temp index")
 	}
 	indexToClose := tempIndex
 	defer func() {
@@ -130,8 +118,7 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 			clonedImg.Id = fmt.Sprintf("image-id-%d", i)
 		}
 		if err := imageIndex.AddImage(clonedImg); err != nil {
-			utils.IgnoreError(tempIndex.Close)
-			return nil, nil, nil, err
+			return nil, nil, "", err
 		}
 		if i >= len(clonedDeployment.GetContainers()) {
 			log.Error("Found more images than containers")
@@ -140,9 +127,8 @@ func singleDeploymentSearcher(deployment *storage.Deployment, images []*storage.
 		}
 	}
 	if err := deploymentIndex.AddDeployment(clonedDeployment); err != nil {
-		utils.IgnoreError(tempIndex.Close)
-		return nil, nil, nil, err
+		return nil, nil, "", err
 	}
 	indexToClose = nil
-	return tempIndex, blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndex), clonedDeployment, nil
+	return tempIndex, blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndex), clonedDeployment.GetId(), nil
 }
