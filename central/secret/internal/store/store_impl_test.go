@@ -63,8 +63,16 @@ func (suite *SecretStoreTestSuite) TestSecrets() {
 		suite.Equal(s, secret)
 	}
 
-	// Get batch secrets
+	// Get batch list secrets
 	retrievedListSecrets, err := suite.store.ListSecrets([]string{"secret1", "secret2"})
 	suite.Nil(err)
 	suite.Len(retrievedListSecrets, 2)
+
+	// Get batch secrets
+	var missing []int
+	retrievedSecrets, missing, err = suite.store.GetSecretsWithIds([]string{"secret1", "secret2", "non-existant"})
+	suite.Nil(err)
+	suite.Len(retrievedSecrets, 2)
+	suite.Len(missing, 1)
+	suite.Equal(2, missing[0])
 }

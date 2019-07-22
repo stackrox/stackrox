@@ -28,6 +28,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Secret)): {
 			"/v1.SecretService/GetSecret",
+			"/v1.SecretService/CountSecrets",
 			"/v1.SecretService/ListSecrets",
 		},
 	})
@@ -35,7 +36,7 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	storage     datastore.DataStore
+	secrets     datastore.DataStore
 	deployments deploymentDatastore.DataStore
 }
 
@@ -56,7 +57,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetSecret returns the secret for the id.
 func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (*storage.Secret, error) {
-	secret, exists, err := s.storage.GetSecret(ctx, request.GetId())
+	secret, exists, err := s.secrets.GetSecret(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -88,6 +89,21 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 	return secret, nil
 }
 
+// CountSecrets counts the number of secrets that match the input query.
+func (s *serviceImpl) CountSecrets(ctx context.Context, request *v1.RawQuery) (*v1.CountSecretsResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	alerts, err := s.secrets.Search(ctx, parsedQuery)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.CountSecretsResponse{Count: int32(len(alerts))}, nil
+}
+
 // ListSecrets returns all secrets that match the query.
 func (s *serviceImpl) ListSecrets(ctx context.Context, request *v1.RawQuery) (*v1.ListSecretsResponse, error) {
 	// Fill in query.
@@ -99,7 +115,7 @@ func (s *serviceImpl) ListSecrets(ctx context.Context, request *v1.RawQuery) (*v
 	// Fill in pagination.
 	paginated.FillPagination(parsedQuery, request.Pagination, maxSecretsReturned)
 
-	secrets, err := s.storage.SearchListSecrets(ctx, parsedQuery)
+	secrets, err := s.secrets.SearchListSecrets(ctx, parsedQuery)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

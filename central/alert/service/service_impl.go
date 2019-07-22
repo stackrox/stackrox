@@ -36,6 +36,7 @@ var (
 		user.With(permissions.View(resources.Alert)): {
 			"/v1.AlertService/GetAlert",
 			"/v1.AlertService/ListAlerts",
+			"/v1.AlertService/CountAlerts",
 			"/v1.AlertService/GetAlertsGroup",
 			"/v1.AlertService/GetAlertsCounts",
 			"/v1.AlertService/GetAlertTimeseries",
@@ -107,6 +108,21 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &v1.ListAlertsResponse{Alerts: alerts}, nil
+}
+
+// CountAlerts counts the number of alerts that match the input query.
+func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v1.CountAlertsResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	alerts, err := s.dataStore.Search(ctx, parsedQuery)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.CountAlertsResponse{Count: int32(len(alerts))}, nil
 }
 
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.

@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/secret/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	secretDS "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -19,9 +19,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DB and index.
-func New(secrets datastore.DataStore, deployments deploymentDataStore.DataStore) Service {
+func New(secrets secretDS.DataStore, deployments deploymentDS.DataStore) Service {
 	return &serviceImpl{
-		storage:     secrets,
+		secrets:     secrets,
 		deployments: deployments,
 	}
 }

@@ -15,6 +15,10 @@ message ListImagesResponse {
     repeated storage.ListImage images = 1;
 }
 
+message CountImagesResponse {
+    int32 count = 1;
+}
+
 // ImageService APIs manages image metadata.
 service ImageService {
 
@@ -22,6 +26,13 @@ service ImageService {
     rpc GetImage (ResourceByID) returns (storage.Image) {
         option (google.api.http) = {
             get: "/v1/images/{id}"
+        };
+    }
+
+    // ListImages returns all the images.
+    rpc CountImages (RawQuery) returns (CountImagesResponse) {
+        option (google.api.http) = {
+            get: "/v1/imagescount"
         };
     }
 

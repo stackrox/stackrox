@@ -29,6 +29,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Image)): {
 			"/v1.ImageService/GetImage",
+			"/v1.ImageService/CountImages",
 			"/v1.ImageService/ListImages",
 		},
 		user.With(permissions.View(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
@@ -76,6 +77,21 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 	}
 
 	return image, nil
+}
+
+// CountImages counts the number of images that match the input query.
+func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v1.CountImagesResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	images, err := s.datastore.Search(ctx, parsedQuery)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.CountImagesResponse{Count: int32(len(images))}, nil
 }
 
 // ListImages retrieves all images in minimal form.

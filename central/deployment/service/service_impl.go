@@ -33,6 +33,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
 			"/v1.DeploymentService/GetDeployment",
+			"/v1.DeploymentService/CountDeployments",
 			"/v1.DeploymentService/ListDeployments",
 			"/v1.DeploymentService/GetLabels",
 		},
@@ -42,7 +43,7 @@ var (
 	})
 )
 
-// serviceImpl provides APIs for alerts.
+// serviceImpl provides APIs for deployments.
 type serviceImpl struct {
 	datastore               datastore.DataStore
 	processWhitelists       processWhitelistStore.DataStore
@@ -109,6 +110,21 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
 	return deployment, nil
+}
+
+// CountDeployments counts the number of deployments that match the input query.
+func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery) (*v1.CountDeploymentsResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	deployments, err := s.datastore.Search(ctx, parsedQuery)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.CountDeploymentsResponse{Count: int32(len(deployments))}, nil
 }
 
 // ListDeployments returns ListDeployments according to the request.

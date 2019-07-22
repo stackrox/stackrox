@@ -15,6 +15,10 @@ import "api/v1/search_service.proto";
 
 package v1;
 
+message CountAlertsResponse {
+    int32 count = 1;
+}
+
 message ListAlertsRequest {
     reserved 1 to 9; // Removed individual filtered fields and moved towards querying
     string     query      = 10;
@@ -113,7 +117,14 @@ service AlertService {
         };
     }
 
-    // ListAlerts returns the minimally sized alert list.
+    // CountAlerts counts how many alerts match the get request.
+    rpc CountAlerts (RawQuery) returns (CountAlertsResponse) {
+        option (google.api.http) = {
+            get: "/v1/alertscount"
+        };
+    }
+
+    // List returns the slim list version of the alerts.
     rpc ListAlerts (ListAlertsRequest) returns (ListAlertsResponse) {
         option (google.api.http) = {
             get: "/v1/alerts"

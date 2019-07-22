@@ -21,13 +21,12 @@ message DeploymentLabelsResponse {
     repeated string values              = 2;
 }
 
-
 message ListDeploymentsResponse {
     repeated storage.ListDeployment deployments = 1;
 }
 
-message GetDeploymentsResponse {
-    repeated storage.Deployment deployments = 1;
+message CountDeploymentsResponse {
+    int32 count = 1;
 }
 
 message ListDeploymentsWithProcessInfoResponse {
@@ -45,6 +44,13 @@ service DeploymentService {
     rpc GetDeployment (ResourceByID) returns (storage.Deployment) {
         option (google.api.http) = {
             get: "/v1/deployments/{id}"
+        };
+    }
+
+    // CountDeployments returns the list of deployments.
+    rpc CountDeployments (RawQuery) returns (CountDeploymentsResponse) {
+        option (google.api.http) = {
+            get: "/v1/deploymentscount"
         };
     }
 
