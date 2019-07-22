@@ -30,6 +30,13 @@ func (r rawQuery) AsV1Query() (*v1.Query, error) {
 	return search.ParseRawQuery(*r.Query)
 }
 
+func (r rawQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
+	if r.Query == nil {
+		return search.EmptyQuery(), nil
+	}
+	return search.ParseRawQueryOrEmpty(*r.Query)
+}
+
 func (r rawQuery) String() string {
 	if r.Query == nil {
 		return ""

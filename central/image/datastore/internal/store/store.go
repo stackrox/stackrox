@@ -15,7 +15,6 @@ var (
 //go:generate mockgen-wrapper Store
 type Store interface {
 	ListImage(sha string) (*storage.ListImage, bool, error)
-	ListImages() ([]*storage.ListImage, error)
 
 	GetImages() ([]*storage.Image, error)
 	CountImages() (int, error)

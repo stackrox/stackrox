@@ -25,16 +25,6 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) ListRoleBindings(ctx context.Context) ([]*storage.K8SRoleBinding, error) {
-	if ok, err := k8sRoleBindingsSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
-		return d.storage.ListRoleBindings()
-	}
-
-	return d.SearchRawRoleBindings(ctx, searchPkg.EmptyQuery())
-}
-
 func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
 	bindings, err := d.storage.ListRoleBindings()

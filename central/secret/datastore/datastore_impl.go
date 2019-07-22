@@ -25,16 +25,6 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) ListSecrets(ctx context.Context) ([]*storage.ListSecret, error) {
-	if ok, err := secretSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
-		return d.storage.ListAllSecrets()
-	}
-
-	return d.SearchListSecrets(ctx, searchPkg.EmptyQuery())
-}
-
 func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
 	secrets, err := d.storage.GetAllSecrets()

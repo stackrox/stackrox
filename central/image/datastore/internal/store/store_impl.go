@@ -37,24 +37,6 @@ func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool,
 	return
 }
 
-// ListImages returns all ListImages
-func (b *storeImpl) ListImages() (images []*storage.ListImage, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListImage")
-
-	err = b.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(listImageBucket)
-		return b.ForEach(func(k, v []byte) error {
-			var image storage.ListImage
-			if err := proto.Unmarshal(v, &image); err != nil {
-				return err
-			}
-			images = append(images, &image)
-			return nil
-		})
-	})
-	return
-}
-
 // GetImages returns all images regardless of request
 func (b *storeImpl) GetImages() (images []*storage.Image, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Image")

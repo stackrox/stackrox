@@ -89,37 +89,6 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 	return img, true, nil
 }
 
-func (ds *datastoreImpl) ListImages(ctx context.Context) ([]*storage.ListImage, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
-		imgs, err := ds.storage.ListImages()
-		if err != nil {
-			return nil, err
-		}
-		scrubClusterNSScopesFromListImages(imgs...)
-		return imgs, nil
-	}
-
-	return ds.SearchListImages(ctx, searchPkg.EmptyQuery())
-}
-
-// GetImages delegates to the underlying store.
-func (ds *datastoreImpl) GetImages(ctx context.Context) ([]*storage.Image, error) {
-	if ok, sacErr := imagesSAC.ReadAllowed(ctx); sacErr != nil {
-		return nil, sacErr
-	} else if ok {
-		images, err := ds.storage.GetImages()
-		if err != nil {
-			return nil, err
-		}
-		scrubClusterNSScopes(images...)
-		return images, nil
-	}
-
-	return ds.SearchRawImages(ctx, searchPkg.EmptyQuery())
-}
-
 // CountImages delegates to the underlying store.
 func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {

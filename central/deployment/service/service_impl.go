@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"math"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/deployment/mappings"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processWhitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
@@ -14,10 +16,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -148,14 +152,23 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	}, nil
 }
 
+func queryForLabels() *v1.Query {
+	q := search.NewQueryBuilder().AddStringsHighlighted(search.Label, search.WildcardString).ProtoQuery()
+	q.Pagination = &v1.Pagination{
+		Limit: math.MaxInt32,
+	}
+	return q
+}
+
 // GetLabels returns label keys and values for current deployments.
 func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.DeploymentLabelsResponse, error) {
-	deployments, err := s.datastore.GetAllDeployments(ctx)
+	q := queryForLabels()
+	searchRes, err := s.datastore.Search(ctx, q)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	labelsMap, values := labelsMapFromDeployments(deployments)
+	labelsMap, values := labelsMapFromSearchResults(searchRes)
 
 	return &v1.DeploymentLabelsResponse{
 		Labels: labelsMap,
@@ -163,19 +176,29 @@ func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.Deploymen
 	}, nil
 }
 
-func labelsMapFromDeployments(deployments []*storage.Deployment) (keyValuesMap map[string]*v1.DeploymentLabelsResponse_LabelValues, values []string) {
+func labelsMapFromSearchResults(results []search.Result) (keyValuesMap map[string]*v1.DeploymentLabelsResponse_LabelValues, values []string) {
+	labelFieldPath := mappings.OptionsMap.MustGet(search.Label.String()).GetFieldPath()
+	keyFieldPath := blevesearch.ToMapKeyPath(labelFieldPath)
+	valueFieldPath := blevesearch.ToMapValuePath(labelFieldPath)
+
 	tempSet := make(map[string]set.StringSet)
 	globalValueSet := set.NewStringSet()
 
-	for _, d := range deployments {
-		for k, v := range d.GetLabels() {
-			valSet, ok := tempSet[k]
+	for _, r := range results {
+		keyMatches, valueMatches := r.Matches[keyFieldPath], r.Matches[valueFieldPath]
+		if len(keyMatches) != len(valueMatches) {
+			errorhelpers.PanicOnDevelopmentf("Mismatch between key and value matches: %d != %d", len(keyMatches), len(valueMatches))
+			continue
+		}
+		for i, keyMatch := range keyMatches {
+			valueMatch := valueMatches[i]
+			valSet, ok := tempSet[keyMatch]
 			if !ok {
 				valSet = set.NewStringSet()
-				tempSet[k] = valSet
+				tempSet[keyMatch] = valSet
 			}
-			valSet.Add(v)
-			globalValueSet.Add(v)
+			valSet.Add(valueMatch)
+			globalValueSet.Add(valueMatch)
 		}
 	}
 

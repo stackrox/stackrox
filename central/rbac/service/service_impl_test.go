@@ -81,7 +81,7 @@ func (suite *RbacServiceTestSuite) TestSearchRole() {
 		{Id: "id1"},
 	}
 
-	suite.mockRoleStore.EXPECT().ListRoles(gomock.Any()).Return(expectedReturns, nil)
+	suite.mockRoleStore.EXPECT().SearchRawRoles(gomock.Any(), gomock.Any()).Return(expectedReturns, nil)
 
 	_, err := suite.service.ListRoles((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
@@ -91,7 +91,7 @@ func (suite *RbacServiceTestSuite) TestSearchRole() {
 func (suite *RbacServiceTestSuite) TestSearchRoleFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockRoleStore.EXPECT().ListRoles(gomock.Any()).Return(([]*storage.K8SRole)(nil), expectedError)
+	suite.mockRoleStore.EXPECT().SearchRawRoles(gomock.Any(), gomock.Any()).Return(([]*storage.K8SRole)(nil), expectedError)
 
 	_, actualErr := suite.service.ListRoles((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))
@@ -141,7 +141,7 @@ func (suite *RbacServiceTestSuite) TestSearchRoleBinding() {
 		{Id: "id1"},
 	}
 
-	suite.mockBindingsStore.EXPECT().ListRoleBindings(gomock.Any()).Return(expectedReturns, nil)
+	suite.mockBindingsStore.EXPECT().SearchRawRoleBindings(gomock.Any(), gomock.Any()).Return(expectedReturns, nil)
 
 	_, err := suite.service.ListRoleBindings((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
@@ -151,7 +151,7 @@ func (suite *RbacServiceTestSuite) TestSearchRoleBinding() {
 func (suite *RbacServiceTestSuite) TestSearchRoleBindingFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockBindingsStore.EXPECT().ListRoleBindings(gomock.Any()).Return(([]*storage.K8SRoleBinding)(nil), expectedError)
+	suite.mockBindingsStore.EXPECT().SearchRawRoleBindings(gomock.Any(), gomock.Any()).Return(([]*storage.K8SRoleBinding)(nil), expectedError)
 
 	_, actualErr := suite.service.ListRoleBindings((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))

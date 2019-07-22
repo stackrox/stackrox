@@ -92,28 +92,6 @@ func (s *storeImpl) GetAllSecrets() (secrets []*storage.Secret, err error) {
 	return secrets, err
 }
 
-func (s *storeImpl) ListAllSecrets() (secrets []*storage.ListSecret, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.List, "ListSecret")
-
-	err = s.db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(secretListBucket)
-		return bucket.ForEach(func(k, v []byte) error {
-			secret := new(storage.ListSecret)
-			err := proto.Unmarshal(v, secret)
-			if err != nil {
-				return err
-			}
-			secrets = append(secrets, secret)
-			return nil
-
-		})
-	})
-	if err != nil {
-		return nil, err
-	}
-	return secrets, nil
-}
-
 // GetSecret returns the secret for the given id.
 func (s *storeImpl) GetSecret(id string) (secret *storage.Secret, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Secret")

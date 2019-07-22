@@ -25,7 +25,6 @@ type DataStore interface {
 
 	ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) ([]*storage.ListAlert, error)
 
-	GetAlertStore(ctx context.Context) ([]*storage.ListAlert, error)
 	GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error)
 	CountAlerts(ctx context.Context) (int, error)
 	AddAlert(ctx context.Context, alert *storage.Alert) error

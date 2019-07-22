@@ -63,19 +63,6 @@ func (mr *MockDataStoreMockRecorder) GetSecret(arg0, arg1 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecret", reflect.TypeOf((*MockDataStore)(nil).GetSecret), arg0, arg1)
 }
 
-// ListSecrets mocks base method
-func (m *MockDataStore) ListSecrets(arg0 context.Context) ([]*storage.ListSecret, error) {
-	ret := m.ctrl.Call(m, "ListSecrets", arg0)
-	ret0, _ := ret[0].([]*storage.ListSecret)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListSecrets indicates an expected call of ListSecrets
-func (mr *MockDataStoreMockRecorder) ListSecrets(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSecrets", reflect.TypeOf((*MockDataStore)(nil).ListSecrets), arg0)
-}
-
 // RemoveSecret mocks base method
 func (m *MockDataStore) RemoveSecret(arg0 context.Context, arg1 string) error {
 	ret := m.ctrl.Call(m, "RemoveSecret", arg0, arg1)

@@ -50,19 +50,6 @@ func (mr *MockDataStoreMockRecorder) GetRole(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockDataStore)(nil).GetRole), arg0, arg1)
 }
 
-// ListRoles mocks base method
-func (m *MockDataStore) ListRoles(arg0 context.Context) ([]*storage.K8SRole, error) {
-	ret := m.ctrl.Call(m, "ListRoles", arg0)
-	ret0, _ := ret[0].([]*storage.K8SRole)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListRoles indicates an expected call of ListRoles
-func (mr *MockDataStoreMockRecorder) ListRoles(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoles", reflect.TypeOf((*MockDataStore)(nil).ListRoles), arg0)
-}
-
 // RemoveRole mocks base method
 func (m *MockDataStore) RemoveRole(arg0 context.Context, arg1 string) error {
 	ret := m.ctrl.Call(m, "RemoveRole", arg0, arg1)

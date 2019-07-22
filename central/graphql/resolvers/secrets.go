@@ -32,14 +32,11 @@ func (resolver *Resolver) Secrets(ctx context.Context, args rawQuery) ([]*secret
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
-	q, err := args.AsV1Query()
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	if q != nil {
-		return resolver.wrapListSecrets(resolver.SecretsDataStore.SearchListSecrets(ctx, q))
-	}
-	return resolver.wrapListSecrets(resolver.SecretsDataStore.ListSecrets(ctx))
+	return resolver.wrapListSecrets(resolver.SecretsDataStore.SearchListSecrets(ctx, q))
 }
 
 func (resolver *Resolver) getSecret(ctx context.Context, id string) *storage.Secret {

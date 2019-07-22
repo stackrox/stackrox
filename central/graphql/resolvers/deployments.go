@@ -47,13 +47,9 @@ func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*de
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	q, err := args.AsV1Query()
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
-	}
-	if q == nil {
-		return resolver.wrapListDeployments(
-			resolver.DeploymentDataStore.ListDeployments(ctx))
 	}
 	return resolver.wrapListDeployments(
 		resolver.DeploymentDataStore.SearchListDeployments(ctx, q))
@@ -177,16 +173,23 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 	if err := readServiceAccounts(ctx); err != nil {
 		return "", err
 	}
-	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.ListServiceAccounts(ctx)
+
+	clusterID := resolver.ClusterId(ctx)
+	serviceAccountName := resolver.ServiceAccount(ctx)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusterID).
+		AddExactMatches(search.ServiceAccountName, serviceAccountName).
+		ProtoQuery()
+
+	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
 	if err != nil {
 		return "", err
 	}
-	for _, serviceAccount := range serviceAccounts {
-		if serviceAccount.ClusterId == resolver.ClusterId(ctx) && serviceAccount.Name == resolver.ServiceAccount(ctx) {
-			return serviceAccount.Id, nil
-		}
+	if len(results) == 0 {
+		return "", errors.Wrap(nil, fmt.Sprintf("No matching service accounts found for deployment id: %s", resolver.Id(ctx)))
 	}
-	return "", errors.Wrap(nil, fmt.Sprintf("No matching service accounts found for deployment id: %s", resolver.Id(ctx)))
+	return results[0].ID, nil
 }
 
 func (resolver *deploymentResolver) Images(ctx context.Context) ([]*imageResolver, error) {

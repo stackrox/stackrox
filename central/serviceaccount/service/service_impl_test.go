@@ -153,7 +153,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSAFailure() {
 func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccount() {
 	suite.setupMocks()
 
-	suite.mockServiceAccountStore.EXPECT().ListServiceAccounts(gomock.Any()).Return([]*storage.ServiceAccount{expectedSA}, nil)
+	suite.mockServiceAccountStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return([]*storage.ServiceAccount{expectedSA}, nil)
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, expectedSA.ClusterId).
 		AddExactMatches(search.Namespace, expectedSA.GetNamespace()).
@@ -169,7 +169,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccount() {
 func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccountFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockServiceAccountStore.EXPECT().ListServiceAccounts(gomock.Any()).Return(nil, expectedError)
+	suite.mockServiceAccountStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, expectedError)
 
 	_, actualErr := suite.service.ListServiceAccounts((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))

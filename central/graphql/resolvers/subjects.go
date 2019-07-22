@@ -83,7 +83,7 @@ func (resolver *Resolver) Subjects(ctx context.Context, args rawQuery) ([]*subje
 		return nil, err
 	}
 
-	bindings, err := resolver.K8sRoleBindingStore.ListRoleBindings(ctx)
+	bindings, err := resolver.K8sRoleBindingStore.SearchRawRoleBindings(ctx, query)
 	if err != nil {
 		return nil, err
 	}

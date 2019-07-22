@@ -56,15 +56,6 @@ func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*s
 	return indicator, true, nil
 }
 
-func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context) ([]*storage.ProcessIndicator, error) {
-	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
-		return ds.storage.GetProcessIndicators()
-	}
-	return ds.SearchRawProcessIndicators(ctx, pkgSearch.EmptyQuery())
-}
-
 func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ...*storage.ProcessIndicator) error {
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err

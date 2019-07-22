@@ -50,19 +50,6 @@ func (mr *MockDataStoreMockRecorder) GetServiceAccount(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceAccount", reflect.TypeOf((*MockDataStore)(nil).GetServiceAccount), arg0, arg1)
 }
 
-// ListServiceAccounts mocks base method
-func (m *MockDataStore) ListServiceAccounts(arg0 context.Context) ([]*storage.ServiceAccount, error) {
-	ret := m.ctrl.Call(m, "ListServiceAccounts", arg0)
-	ret0, _ := ret[0].([]*storage.ServiceAccount)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListServiceAccounts indicates an expected call of ListServiceAccounts
-func (mr *MockDataStoreMockRecorder) ListServiceAccounts(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServiceAccounts", reflect.TypeOf((*MockDataStore)(nil).ListServiceAccounts), arg0)
-}
-
 // RemoveServiceAccount mocks base method
 func (m *MockDataStore) RemoveServiceAccount(arg0 context.Context, arg1 string) error {
 	ret := m.ctrl.Call(m, "RemoveServiceAccount", arg0, arg1)

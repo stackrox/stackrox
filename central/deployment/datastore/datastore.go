@@ -26,11 +26,9 @@ type DataStore interface {
 	SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error)
 
 	ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error)
-	ListDeployments(ctx context.Context) ([]*storage.ListDeployment, error)
 
 	GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error)
 	GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error)
-	GetAllDeployments(ctx context.Context) ([]*storage.Deployment, error)
 	CountDeployments(ctx context.Context) (int, error)
 	// UpsertDeployment adds or updates a deployment. It should only be called the caller
 	// is okay with inserting the passed deployment if it doesn't already exist in the store.

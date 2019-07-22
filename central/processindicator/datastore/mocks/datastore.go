@@ -80,19 +80,6 @@ func (mr *MockDataStoreMockRecorder) GetProcessIndicator(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicator", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicator), arg0, arg1)
 }
 
-// GetProcessIndicators mocks base method
-func (m *MockDataStore) GetProcessIndicators(arg0 context.Context) ([]*storage.ProcessIndicator, error) {
-	ret := m.ctrl.Call(m, "GetProcessIndicators", arg0)
-	ret0, _ := ret[0].([]*storage.ProcessIndicator)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProcessIndicators indicates an expected call of GetProcessIndicators
-func (mr *MockDataStoreMockRecorder) GetProcessIndicators(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicators), arg0)
-}
-
 // RemoveProcessIndicatorsByDeployment mocks base method
 func (m *MockDataStore) RemoveProcessIndicatorsByDeployment(arg0 context.Context, arg1 string) error {
 	ret := m.ctrl.Call(m, "RemoveProcessIndicatorsByDeployment", arg0, arg1)

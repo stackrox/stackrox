@@ -195,6 +195,13 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	r.deployments = deploymentsByID(deployments)
 
 	clusterID := r.cluster.GetId()
+
+	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	infPagination := &v1.Pagination{
+		Limit: math.MaxInt32,
+	}
+	clusterQuery.Pagination = infPagination
+
 	networkPolicies, err := f.networkPoliciesStore.GetNetworkPolicies(ctx, clusterID, "")
 	if err != nil {
 		return err
@@ -211,7 +218,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	r.policies = policiesByName(policies)
 	r.categoryToPolicies = policyCategories(policies)
 
-	r.images, err = f.imageStore.ListImages(ctx)
+	r.images, err = f.imageStore.SearchListImages(ctx, clusterQuery)
 	if err != nil {
 		return err
 	}
@@ -222,12 +229,6 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	if err != nil {
 		return err
 	}
-
-	clusterQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	infPagination := &v1.Pagination{
-		Limit: math.MaxInt32,
-	}
-	clusterQuery.Pagination = infPagination
 
 	r.processIndicators, err = f.processIndicatorStore.SearchRawProcessIndicators(ctx, clusterQuery)
 	if err != nil {

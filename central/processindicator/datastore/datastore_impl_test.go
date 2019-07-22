@@ -341,32 +341,6 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	suite.Equal(testIndicator, indicator)
 }
 
-func (suite *IndicatorDataStoreTestSuite) TestEnforcesGetAll() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
-	storeMock, _, searchMock := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().GetProcessIndicators().Times(0)
-	searchMock.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return(nil, nil)
-
-	indicators, err := suite.datastore.GetProcessIndicators(suite.hasNoneCtx)
-	suite.NoError(err, "expected no error, should return nil without access")
-	suite.Nil(indicators, "expected return value to be nil")
-}
-
-func (suite *IndicatorDataStoreTestSuite) TestAllowsGetAll() {
-	storeMock, _, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().GetProcessIndicators().Return(nil, nil)
-
-	_, err := suite.datastore.GetProcessIndicators(suite.hasReadCtx)
-	suite.NoError(err, "expected no error trying to read with permissions")
-
-	storeMock.EXPECT().GetProcessIndicators().Return(nil, nil)
-
-	_, err = suite.datastore.GetProcessIndicators(suite.hasWriteCtx)
-	suite.NoError(err, "expected no error trying to read with permissions")
-}
-
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
 	if !features.ScopedAccessControl.Enabled() {
 		suite.T().Skip()

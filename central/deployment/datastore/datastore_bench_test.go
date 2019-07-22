@@ -73,25 +73,9 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 		}
 	})
 
-	b.Run("GetAllRetrievalList", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			deployments, err := deploymentsDatastore.ListDeployments(ctx)
-			assert.NoError(b, err)
-			assert.Len(b, deployments, numDeployments)
-		}
-	})
-
 	b.Run("SearchRetrievalFull", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			deployments, err := deploymentsDatastore.SearchRawDeployments(ctx, search2.EmptyQuery())
-			assert.NoError(b, err)
-			assert.Len(b, deployments, numDeployments)
-		}
-	})
-
-	b.Run("GetAllRetrievalFull", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			deployments, err := deploymentsDatastore.GetAllDeployments(ctx)
 			assert.NoError(b, err)
 			assert.Len(b, deployments, numDeployments)
 		}

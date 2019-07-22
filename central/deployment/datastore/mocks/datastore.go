@@ -49,19 +49,6 @@ func (mr *MockDataStoreMockRecorder) CountDeployments(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeployments", reflect.TypeOf((*MockDataStore)(nil).CountDeployments), arg0)
 }
 
-// GetAllDeployments mocks base method
-func (m *MockDataStore) GetAllDeployments(arg0 context.Context) ([]*storage.Deployment, error) {
-	ret := m.ctrl.Call(m, "GetAllDeployments", arg0)
-	ret0, _ := ret[0].([]*storage.Deployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllDeployments indicates an expected call of GetAllDeployments
-func (mr *MockDataStoreMockRecorder) GetAllDeployments(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllDeployments", reflect.TypeOf((*MockDataStore)(nil).GetAllDeployments), arg0)
-}
-
 // GetDeployment mocks base method
 func (m *MockDataStore) GetDeployment(arg0 context.Context, arg1 string) (*storage.Deployment, bool, error) {
 	ret := m.ctrl.Call(m, "GetDeployment", arg0, arg1)
@@ -114,19 +101,6 @@ func (m *MockDataStore) ListDeployment(arg0 context.Context, arg1 string) (*stor
 // ListDeployment indicates an expected call of ListDeployment
 func (mr *MockDataStoreMockRecorder) ListDeployment(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeployment", reflect.TypeOf((*MockDataStore)(nil).ListDeployment), arg0, arg1)
-}
-
-// ListDeployments mocks base method
-func (m *MockDataStore) ListDeployments(arg0 context.Context) ([]*storage.ListDeployment, error) {
-	ret := m.ctrl.Call(m, "ListDeployments", arg0)
-	ret0, _ := ret[0].([]*storage.ListDeployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListDeployments indicates an expected call of ListDeployments
-func (mr *MockDataStoreMockRecorder) ListDeployments(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeployments", reflect.TypeOf((*MockDataStore)(nil).ListDeployments), arg0)
 }
 
 // RemoveDeployment mocks base method

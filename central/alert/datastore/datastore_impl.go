@@ -81,11 +81,6 @@ func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsR
 	return alerts, nil
 }
 
-// GetAlertStore returns all the alerts. Mainly used for compliance checks.
-func (ds *datastoreImpl) GetAlertStore(ctx context.Context) ([]*storage.ListAlert, error) {
-	return ds.ListAlerts(ctx, nil)
-}
-
 // GetAlert returns an alert by id.
 func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error) {
 	alert, exists, err := ds.storage.GetAlert(id)

@@ -18,13 +18,11 @@ import (
 type DataStore interface {
 	SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error)
 	ListImage(ctx context.Context, sha string) (*storage.ListImage, bool, error)
-	ListImages(ctx context.Context) ([]*storage.ListImage, error)
 
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.Image, error)
 
-	GetImages(ctx context.Context) ([]*storage.Image, error)
 	CountImages(ctx context.Context) (int, error)
 	GetImage(ctx context.Context, sha string) (*storage.Image, bool, error)
 	GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error)

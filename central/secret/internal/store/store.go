@@ -16,7 +16,6 @@ var (
 //go:generate mockgen-wrapper Store
 type Store interface {
 	ListSecrets(ids []string) ([]*storage.ListSecret, error)
-	ListAllSecrets() ([]*storage.ListSecret, error)
 
 	CountSecrets() (int, error)
 	GetSecretsWithIds(ids []string) ([]*storage.Secret, []int, error)

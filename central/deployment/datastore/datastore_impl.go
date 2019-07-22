@@ -78,17 +78,6 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 	return ds.deploymentSearcher.SearchListDeployments(ctx, q)
 }
 
-// ListDeployments returns all deploymentStore in their minimal form
-func (ds *datastoreImpl) ListDeployments(ctx context.Context) ([]*storage.ListDeployment, error) {
-	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
-		return ds.deploymentStore.ListDeployments()
-	}
-
-	return ds.SearchListDeployments(ctx, pkgSearch.EmptyQuery())
-}
-
 // SearchDeployments
 func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return ds.deploymentSearcher.SearchDeployments(ctx, q)
@@ -125,17 +114,6 @@ func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*s
 
 	deployments, _, err = ds.deploymentStore.GetDeploymentsWithIDs(ids...)
 	return deployments, err
-}
-
-// GetAllDeployments
-func (ds *datastoreImpl) GetAllDeployments(ctx context.Context) ([]*storage.Deployment, error) {
-	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
-		return ds.deploymentStore.GetDeployments()
-	}
-
-	return ds.SearchRawDeployments(ctx, pkgSearch.EmptyQuery())
 }
 
 // CountDeployments

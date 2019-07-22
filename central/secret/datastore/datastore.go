@@ -21,7 +21,6 @@ type DataStore interface {
 	SearchListSecrets(ctx context.Context, q *v1.Query) ([]*storage.ListSecret, error)
 
 	CountSecrets(ctx context.Context) (int, error)
-	ListSecrets(ctx context.Context) ([]*storage.ListSecret, error)
 	GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error)
 	UpsertSecret(ctx context.Context, request *storage.Secret) error
 	RemoveSecret(ctx context.Context, id string) error

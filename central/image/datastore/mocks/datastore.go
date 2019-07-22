@@ -80,19 +80,6 @@ func (mr *MockDataStoreMockRecorder) GetImage(arg0, arg1 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockDataStore)(nil).GetImage), arg0, arg1)
 }
 
-// GetImages mocks base method
-func (m *MockDataStore) GetImages(arg0 context.Context) ([]*storage.Image, error) {
-	ret := m.ctrl.Call(m, "GetImages", arg0)
-	ret0, _ := ret[0].([]*storage.Image)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetImages indicates an expected call of GetImages
-func (mr *MockDataStoreMockRecorder) GetImages(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImages", reflect.TypeOf((*MockDataStore)(nil).GetImages), arg0)
-}
-
 // GetImagesBatch mocks base method
 func (m *MockDataStore) GetImagesBatch(arg0 context.Context, arg1 []string) ([]*storage.Image, error) {
 	ret := m.ctrl.Call(m, "GetImagesBatch", arg0, arg1)
@@ -118,19 +105,6 @@ func (m *MockDataStore) ListImage(arg0 context.Context, arg1 string) (*storage.L
 // ListImage indicates an expected call of ListImage
 func (mr *MockDataStoreMockRecorder) ListImage(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListImage", reflect.TypeOf((*MockDataStore)(nil).ListImage), arg0, arg1)
-}
-
-// ListImages mocks base method
-func (m *MockDataStore) ListImages(arg0 context.Context) ([]*storage.ListImage, error) {
-	ret := m.ctrl.Call(m, "ListImages", arg0)
-	ret0, _ := ret[0].([]*storage.ListImage)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListImages indicates an expected call of ListImages
-func (mr *MockDataStoreMockRecorder) ListImages(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListImages", reflect.TypeOf((*MockDataStore)(nil).ListImages), arg0)
 }
 
 // Search mocks base method

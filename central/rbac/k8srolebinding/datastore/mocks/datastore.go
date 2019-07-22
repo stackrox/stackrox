@@ -50,19 +50,6 @@ func (mr *MockDataStoreMockRecorder) GetRoleBinding(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleBinding", reflect.TypeOf((*MockDataStore)(nil).GetRoleBinding), arg0, arg1)
 }
 
-// ListRoleBindings mocks base method
-func (m *MockDataStore) ListRoleBindings(arg0 context.Context) ([]*storage.K8SRoleBinding, error) {
-	ret := m.ctrl.Call(m, "ListRoleBindings", arg0)
-	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListRoleBindings indicates an expected call of ListRoleBindings
-func (mr *MockDataStoreMockRecorder) ListRoleBindings(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoleBindings", reflect.TypeOf((*MockDataStore)(nil).ListRoleBindings), arg0)
-}
-
 // RemoveRoleBinding mocks base method
 func (m *MockDataStore) RemoveRoleBinding(arg0 context.Context, arg1 string) error {
 	ret := m.ctrl.Call(m, "RemoveRoleBinding", arg0, arg1)

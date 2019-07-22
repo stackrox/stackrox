@@ -22,12 +22,9 @@ func (resolver *Resolver) Images(ctx context.Context, args rawQuery) ([]*imageRe
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	q, err := args.AsV1Query()
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
-	}
-	if q == nil {
-		return resolver.wrapImages(resolver.ImageDataStore.GetImages(ctx))
 	}
 	return resolver.wrapListImages(
 		resolver.ImageDataStore.SearchListImages(ctx, q))

@@ -280,18 +280,13 @@ func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluste
 
 // RemoveCluster removes an cluster from the storage and the indexer
 func (ds *datastoreImpl) getDeployments(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListDeployment, error) {
-	deployments, err := ds.dds.ListDeployments(ctx)
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()
+	deployments, err := ds.dds.SearchListDeployments(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	wantedDeployments := make([]*storage.ListDeployment, 0)
-	for _, d := range deployments {
-		if d.GetClusterId() == cluster.GetId() {
-			wantedDeployments = append(wantedDeployments, d)
-		}
-	}
-	return wantedDeployments, nil
+	return deployments, nil
 }
 
 // TODO(cgorman) Make this a search once the document mapping goes in

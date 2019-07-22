@@ -24,16 +24,6 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) ListServiceAccounts(ctx context.Context) ([]*storage.ServiceAccount, error) {
-	if ok, err := serviceAccountsSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
-		return d.storage.ListServiceAccounts()
-	}
-
-	return d.SearchRawServiceAccounts(ctx, searchPkg.EmptyQuery())
-}
-
 func (d *datastoreImpl) buildIndex() error {
 	serviceAccounts, err := d.storage.ListServiceAccounts()
 	if err != nil {

@@ -205,7 +205,7 @@ func TestImagePruning(t *testing.T) {
 			gc.collectImages(conf.GetPrivateConfig())
 
 			// Grab the  actual remaining images and make sure they match the images expected to be remaining
-			remainingImages, err := imageDatastore.ListImages(ctx)
+			remainingImages, err := imageDatastore.SearchListImages(ctx, search.EmptyQuery())
 			require.NoError(t, err)
 
 			var ids []string
