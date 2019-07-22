@@ -91,6 +91,10 @@ func (p *policyRuleSet) GetPermissionMap() map[string]set.StringSet {
 	permissionSet := make(map[string]set.StringSet)
 	for _, rule := range p.granted {
 		for _, verb := range rule.GetVerbs() {
+			if rule.GetResources() == nil {
+				continue
+			}
+
 			if !permissionSet[verb].IsInitialized() {
 				permissionSet[verb] = set.NewStringSet()
 			}

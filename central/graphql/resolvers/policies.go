@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -19,6 +21,7 @@ func init() {
 		schema.AddExtraResolver("Policy", `alertsCount: Int!`),
 		schema.AddExtraResolver("Policy", `deployments: [Deployment!]!`),
 		schema.AddExtraResolver("Policy", `deploymentsCount: Int!`),
+		schema.AddExtraResolver("Policy", `policyStatus: String!`),
 	)
 }
 
@@ -94,6 +97,21 @@ func (resolver *policyResolver) DeploymentsCount(ctx context.Context) (int32, er
 	return int32(len(deploymentIDs)), nil
 }
 
+// PolicyStatus returns the policy statusof this policy
+func (resolver *policyResolver) PolicyStatus(ctx context.Context) (string, error) {
+	alertsActive, err := resolver.anyActiveDeployAlerts(ctx)
+
+	if err != nil {
+		return "", err
+	}
+
+	if alertsActive {
+		return "fail", nil
+	}
+
+	return "pass", nil
+}
+
 func (resolver *policyResolver) getDeploymentsForPolicy(ctx context.Context) ([]string, error) {
 	scopeQuery := policyutils.ScopeToQuery(resolver.data.GetScope())
 	scopeQueryResults, err := resolver.root.DeploymentDataStore.Search(ctx, scopeQuery)
@@ -109,4 +127,23 @@ func (resolver *policyResolver) getDeploymentsForPolicy(ctx context.Context) ([]
 
 	return search.ResultsToIDSet(scopeQueryResults).
 		Difference(search.ResultsToIDSet(whitelistResults)).AsSlice(), nil
+}
+
+func (resolver *policyResolver) anyActiveDeployAlerts(ctx context.Context) (bool, error) {
+	if err := readAlerts(ctx); err != nil {
+		return false, err
+	}
+
+	policy := resolver.data
+
+	q := search.NewQueryBuilder().AddExactMatches(search.PolicyID, policy.GetId()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+		ProtoQuery()
+	q.Pagination = &v1.Pagination{
+		Limit: 1,
+	}
+
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
+	return len(results) != 0, err
 }
