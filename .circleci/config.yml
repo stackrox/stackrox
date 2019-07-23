@@ -1946,8 +1946,6 @@ jobs:
               gsutil cp windows_amd64_pure_stripped/roxctl.exe "gs://sr-roxc/${release}/bin/Windows/roxctl.exe"
             done
 
-
-
       - run:
           name: Push image into gcr.io for GCP Marketplace
           command: |
@@ -1956,15 +1954,20 @@ jobs:
             MAIN_TAG=$(make tag)
             SCANNER_TAG=$(make scanner-tag)
 
+            # Deployer was pushed up in build-deployer, so must be pulled back down here.
+            docker pull docker.io/stackrox/deployer:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/deployer:$MAIN_TAG gcr.io/stackrox-launcher-project-1/stackrox/deployer:$MAIN_TAG
             docker push gcr.io/stackrox-launcher-project-1/stackrox/deployer:$MAIN_TAG | cat
 
+            # Main was pushed up in the previous step, so just needs to be tagged.
             docker tag  stackrox.io/main:$MAIN_TAG gcr.io/stackrox-launcher-project-1/stackrox:$MAIN_TAG
             docker push gcr.io/stackrox-launcher-project-1/stackrox:$MAIN_TAG | cat
 
+            # Monitoring was pushed up in the previous step, so just needs to be tagged.
             docker tag  stackrox.io/monitoring:$MAIN_TAG gcr.io/stackrox-launcher-project-1/stackrox/monitoring:$MAIN_TAG
             docker push gcr.io/stackrox-launcher-project-1/stackrox/monitoring:$MAIN_TAG | cat
 
+            # Scanner was pushed up in its own repo, so must be pulled back down here.
             docker pull stackrox.io/scanner:$SCANNER_TAG | cat
             docker tag  stackrox.io/scanner:$SCANNER_TAG gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG
             docker push gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG | cat
