@@ -1,9 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { CLUSTERS_QUERY } from 'queries/cluster';
-import { NODES_QUERY } from 'queries/node';
-import { ALL_NAMESPACES } from 'queries/namespace';
-import { DEPLOYMENTS_QUERY } from 'queries/deployment';
 import { resourceLabels } from 'messages/common';
 import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
@@ -11,17 +7,52 @@ import { withRouter } from 'react-router-dom';
 import Query from 'Components/ThrowingQuery';
 import TileLink from 'Components/TileLink';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import gql from 'graphql-tag';
+
+const CLUSTERS_COUNT = gql`
+    query clustersCount {
+        results: clusters {
+            id
+        }
+    }
+`;
+
+const NODES_COUNT = gql`
+    query nodesCount {
+        results: nodes {
+            id
+        }
+    }
+`;
+
+const NAMESPACE_COUNT = gql`
+    query namespacesCount {
+        results: namespaces {
+            metadata {
+                id
+            }
+        }
+    }
+`;
+
+const DEPLOYMENTS_COUNT = gql`
+    query deploymentsCount {
+        results: deployments {
+            id
+        }
+    }
+`;
 
 function getQuery(entityType) {
     switch (entityType) {
         case entityTypes.CLUSTER:
-            return CLUSTERS_QUERY;
+            return CLUSTERS_COUNT;
         case entityTypes.NODE:
-            return NODES_QUERY;
+            return NODES_COUNT;
         case entityTypes.NAMESPACE:
-            return ALL_NAMESPACES;
+            return NAMESPACE_COUNT;
         case entityTypes.DEPLOYMENT:
-            return DEPLOYMENTS_QUERY;
+            return DEPLOYMENTS_COUNT;
         default:
             throw new Error(`Search for ${entityType} not yet implemented`);
     }
