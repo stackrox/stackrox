@@ -1,6 +1,7 @@
 import React from 'react';
 import Loader from 'Components/Loader';
 import { Link, withRouter } from 'react-router-dom';
+import { Tooltip } from 'react-tippy';
 import URLService from 'modules/URLService';
 import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
@@ -9,6 +10,7 @@ import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
 import pluralize from 'pluralize';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import dateFns from 'date-fns';
 
 const QUERY = gql`
     query secrets {
@@ -16,7 +18,15 @@ const QUERY = gql`
             id
             name
             files {
+                name
                 type
+                metadata {
+                    __typename
+                    ... on Cert {
+                        endDate
+                        startDate
+                    }
+                }
             }
             deployments {
                 id
@@ -24,6 +34,29 @@ const QUERY = gql`
         }
     }
 `;
+
+const getCertificateStatus = files => {
+    let status = 'no';
+    files.forEach(file => {
+        if (file.metadata) {
+            const { startDate, endDate } = file.metadata;
+            if (!startDate && !endDate) return;
+
+            const isUpcoming = dateFns.isAfter(new Date(startDate), new Date());
+            const hasExpired = dateFns.isAfter(new Date(endDate), new Date());
+
+            if (isUpcoming) {
+                status = 'upcoming';
+            }
+
+            if (hasExpired) {
+                status = 'expired';
+            }
+        }
+    });
+
+    return `has ${status} certs`;
+};
 
 const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
     function processData(data) {
@@ -66,17 +99,39 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                 index !== 4 && index !== 9 ? 'border-b' : ''
                                             } ${index < 5 ? 'border-r' : ''}`}
                                         >
-                                            <div className="self-center text-3xl tracking-widest pl-4 pr-4">
+                                            <div className="self-center text-2xl tracking-widest pl-4 pr-4">
                                                 {index + 1}
                                             </div>
-                                            <div className="flex flex-col truncate pr-4 pb-4 pt-4">
+                                            <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
                                                 <span className="pb-2">{item.name}</span>
-                                                <div className="truncate">
-                                                    {`${item.deployments.length} ${pluralize(
-                                                        'Deployment',
-                                                        item.deployments.length
-                                                    )}`}
-                                                </div>
+                                                <Tooltip
+                                                    position="top"
+                                                    trigger="mouseenter"
+                                                    animation="none"
+                                                    duration={0}
+                                                    arrow
+                                                    distance={20}
+                                                    html={
+                                                        <div className="text-sm italic">
+                                                            {`${
+                                                                item.deployments.length
+                                                            } ${pluralize(
+                                                                'Deployment',
+                                                                item.deployments.length
+                                                            )}, `}
+                                                            {getCertificateStatus(item.files)}
+                                                        </div>
+                                                    }
+                                                    unmountHTMLWhenHide
+                                                >
+                                                    <div className="truncate italic">
+                                                        {`${item.deployments.length} ${pluralize(
+                                                            'Deployment',
+                                                            item.deployments.length
+                                                        )}, `}
+                                                        {getCertificateStatus(item.files)}
+                                                    </div>
+                                                </Tooltip>
                                             </div>
                                         </div>
                                     </li>

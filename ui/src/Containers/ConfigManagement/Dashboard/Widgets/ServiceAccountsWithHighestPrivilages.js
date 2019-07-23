@@ -28,8 +28,10 @@ const QUERY = gql`
 `;
 
 const PermissionsText = ({ serviceAccount }) => {
+    if (serviceAccount.scopedPermissions && serviceAccount.scopedPermissions.length === 0)
+        return 'No permissions';
     return (
-        <div className="truncate">
+        <div className="truncate italic">
             {serviceAccount.scopedPermissions &&
                 serviceAccount.scopedPermissions.length &&
                 serviceAccount.scopedPermissions[0].permissions &&
@@ -96,10 +98,10 @@ const ServiceAccountsWithHighestPrivilages = ({ match, location }) => {
                                                 index !== 4 && index !== 9 ? 'border-b' : ''
                                             } ${index < 5 ? 'border-r' : ''}`}
                                         >
-                                            <div className="self-center text-3xl tracking-widest pl-4 pr-4">
+                                            <div className="self-center text-2xl tracking-widest pl-4 pr-4">
                                                 {index + 1}
                                             </div>
-                                            <div className="flex flex-col truncate pr-4 pb-4 pt-4">
+                                            <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
                                                 <span className="pb-2">{item.name}</span>
                                                 <Tooltip
                                                     position="top"
@@ -109,7 +111,7 @@ const ServiceAccountsWithHighestPrivilages = ({ match, location }) => {
                                                     arrow
                                                     distance={20}
                                                     html={
-                                                        <span className="text-sm">
+                                                        <span className="text-sm italic">
                                                             <PermissionsText
                                                                 serviceAccount={item}
                                                             />
@@ -118,8 +120,11 @@ const ServiceAccountsWithHighestPrivilages = ({ match, location }) => {
                                                     unmountHTMLWhenHide
                                                 >
                                                     {item.scopedPermissions &&
-                                                        item.scopedPermissions.length === 0 &&
-                                                        'No Permissions'}
+                                                        item.scopedPermissions.length === 0 && (
+                                                            <span className="italic">
+                                                                No Permissions
+                                                            </span>
+                                                        )}
                                                     {item.scopedPermissions &&
                                                         item.scopedPermissions.length >= 1 && (
                                                             <PermissionsText
