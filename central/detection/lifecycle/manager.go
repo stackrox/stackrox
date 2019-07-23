@@ -15,6 +15,7 @@ import (
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/time/rate"
@@ -47,18 +48,19 @@ type Manager interface {
 func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
 	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, whitelists whitelistDataStore.DataStore,
 	imageDataStore imageDataStore.DataStore, alertManager alertmanager.AlertManager, riskManager riskManager.Manager,
-	reprocessor reprocessor.Loop) Manager {
+	reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache) Manager {
 	m := &managerImpl{
-		enricher:            enricher,
-		riskManager:         riskManager,
-		deploytimeDetector:  deploytimeDetector,
-		runtimeDetector:     runtimeDetector,
-		alertManager:        alertManager,
-		deploymentDataStore: deploymentDatastore,
-		processesDataStore:  processesDataStore,
-		whitelists:          whitelists,
-		imageDataStore:      imageDataStore,
-		reprocessor:         reprocessor,
+		enricher:                enricher,
+		riskManager:             riskManager,
+		deploytimeDetector:      deploytimeDetector,
+		runtimeDetector:         runtimeDetector,
+		alertManager:            alertManager,
+		deploymentDataStore:     deploymentDatastore,
+		processesDataStore:      processesDataStore,
+		whitelists:              whitelists,
+		imageDataStore:          imageDataStore,
+		reprocessor:             reprocessor,
+		deletedDeploymentsCache: deletedDeploymentsCache,
 
 		queuedIndicators: make(map[string]indicatorWithInjector),
 

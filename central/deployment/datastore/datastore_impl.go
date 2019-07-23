@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -38,19 +39,22 @@ type datastoreImpl struct {
 	indicators   piDS.DataStore
 	whitelists   pwDS.DataStore
 
+	deletedDeploymentCache expiringcache.Cache
+
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) (*datastoreImpl, error) {
+func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, deletedDeploymentCache expiringcache.Cache) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
-		deploymentStore:    storage,
-		deploymentIndexer:  indexer,
-		deploymentSearcher: searcher,
-		images:             images,
-		indicators:         indicators,
-		whitelists:         whitelists,
-		networkFlows:       networkFlows,
-		keyedMutex:         concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		deploymentStore:        storage,
+		deploymentIndexer:      indexer,
+		deploymentSearcher:     searcher,
+		images:                 images,
+		indicators:             indicators,
+		whitelists:             whitelists,
+		networkFlows:           networkFlows,
+		keyedMutex:             concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		deletedDeploymentCache: deletedDeploymentCache,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -199,6 +203,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	} else if !ok {
 		return errors.New("permission denied")
 	}
+	ds.deletedDeploymentCache.Add(id, struct{}{})
 
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)

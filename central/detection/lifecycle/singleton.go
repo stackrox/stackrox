@@ -1,6 +1,7 @@
 package lifecycle
 
 import (
+	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -31,6 +32,7 @@ func initialize() {
 		alertmanager.Singleton(),
 		riskManager.Singleton(),
 		reprocessor.Singleton(),
+		cache.DeletedDeploymentCacheSingleton(),
 	)
 }
 

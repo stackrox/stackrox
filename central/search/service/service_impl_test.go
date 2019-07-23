@@ -96,7 +96,7 @@ func TestAutocomplete(t *testing.T) {
 	// This gets called as a side effect of `UpsertDeployment`.
 	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	deploymentDS, err := deploymentDatastore.New(testDB, idx, nil, mockIndicators, nil, nil)
+	deploymentDS, err := deploymentDatastore.New(testDB, idx, nil, mockIndicators, nil, nil, nil)
 	require.NoError(t, err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())

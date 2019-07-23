@@ -14,6 +14,7 @@ import (
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -42,7 +43,7 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input DB and index.
-func New(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore) (DataStore, error) {
+func New(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, deletedDeploymentCache expiringcache.Cache) (DataStore, error) {
 	storage, err := store.New(db)
 	if err != nil {
 		return nil, err
@@ -57,5 +58,6 @@ func New(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicat
 		images,
 		indicators,
 		whitelists,
-		networkFlows)
+		networkFlows,
+		deletedDeploymentCache)
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
@@ -51,10 +52,11 @@ type managerImpl struct {
 	deploytimeDetector deploytime.Detector
 	alertManager       alertmanager.AlertManager
 
-	deploymentDataStore deploymentDatastore.DataStore
-	processesDataStore  processIndicatorDatastore.DataStore
-	whitelists          whitelistDataStore.DataStore
-	imageDataStore      imageDatastore.DataStore
+	deploymentDataStore     deploymentDatastore.DataStore
+	processesDataStore      processIndicatorDatastore.DataStore
+	whitelists              whitelistDataStore.DataStore
+	imageDataStore          imageDatastore.DataStore
+	deletedDeploymentsCache expiringcache.Cache
 
 	queuedIndicators map[string]indicatorWithInjector
 
@@ -100,7 +102,9 @@ func (m *managerImpl) flushIndicatorQueue() {
 	// Map copiedQueue to slice
 	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
 	for _, i := range copiedQueue {
-		indicatorSlice = append(indicatorSlice, i.indicator)
+		if m.deletedDeploymentsCache.Get(i.indicator.GetDeploymentId()) == nil {
+			indicatorSlice = append(indicatorSlice, i.indicator)
+		}
 	}
 
 	// Index the process indicators in batch

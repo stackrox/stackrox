@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store/singleton"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -13,7 +14,7 @@ var (
 // Singleton provides the instance of ClusterDataStore to use.
 func Singleton() ClusterDataStore {
 	once.Do(func() {
-		instance = NewClusterDataStore(singleton.Singleton())
+		instance = NewClusterDataStore(singleton.Singleton(), cache.DeletedDeploymentCacheSingleton())
 	})
 	return instance
 }

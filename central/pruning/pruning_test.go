@@ -84,7 +84,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	}, nil)
 
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
-	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil)
+	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, nil)
 	require.NoError(t, err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments
@@ -116,7 +116,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 		},
 	}, nil)
 
-	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil)
+	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, nil)
 	require.NoError(t, err)
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments

@@ -106,7 +106,7 @@ func TestLabelsMap(t *testing.T) {
 			bleveIndex, err := globalindex.MemOnlyIndex()
 			require.NoError(t, err)
 
-			deploymentsDS, err := datastore.New(boltDB, bleveIndex, nil, nil, nil, nil)
+			deploymentsDS, err := datastore.New(boltDB, bleveIndex, nil, nil, nil, nil, nil)
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {

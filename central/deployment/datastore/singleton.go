@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -23,7 +24,7 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = New(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton())
+	ad, err = New(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton(), cache.DeletedDeploymentCacheSingleton())
 	utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
 }
 

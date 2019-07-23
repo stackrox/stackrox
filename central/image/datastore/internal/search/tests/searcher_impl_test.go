@@ -226,7 +226,7 @@ func (s *searcherSuite) TestNoSharedImageLeak() {
 		},
 	}
 
-	deploymentDS, err := datastore.New(s.boltDB, s.bleveIndex, nil, nil, nil, nil)
+	deploymentDS, err := datastore.New(s.boltDB, s.bleveIndex, nil, nil, nil, nil, nil)
 	s.Require().NoError(err)
 
 	clusterNSScopes := make(map[string]string)
