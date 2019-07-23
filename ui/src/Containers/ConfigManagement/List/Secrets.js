@@ -9,6 +9,7 @@ import { sortValueByLength, sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
+import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -86,7 +87,16 @@ const buildTableColumns = (match, location) => {
                     .push(id)
                     .push(entityTypes.DEPLOYMENT)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${deployments.length} matches`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${deployments.length} ${pluralize(
+                            'Deployments',
+                            deployments.length
+                        )}`}
+                    />
+                );
             },
             sortMethod: sortValueByLength
         }

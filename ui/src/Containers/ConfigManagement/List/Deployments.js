@@ -8,6 +8,7 @@ import { sortValueByLength } from 'sorters/sorters';
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
+import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -61,7 +62,15 @@ const buildTableColumns = (match, location) => {
                 const { policyStatus, id } = original;
                 const { failingPolicies } = policyStatus;
                 if (failingPolicies.length)
-                    return <LabelChip text={`${failingPolicies.length} Policies`} type="alert" />;
+                    return (
+                        <LabelChip
+                            text={`${failingPolicies.length} ${pluralize(
+                                'Policies',
+                                failingPolicies.length
+                            )}`}
+                            type="alert"
+                        />
+                    );
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.POLICY)

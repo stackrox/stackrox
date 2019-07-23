@@ -7,6 +7,7 @@ import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPag
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import queryService from 'modules/queryService';
+import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -39,7 +40,15 @@ const buildTableColumns = (match, location) => {
                 const { policyStatus, id } = original;
                 const { failingPolicies } = policyStatus;
                 if (failingPolicies.length)
-                    return <LabelChip text={`${failingPolicies.length} Policies`} type="alert" />;
+                    return (
+                        <LabelChip
+                            text={`${failingPolicies.length} ${pluralize(
+                                'Policies',
+                                failingPolicies.length
+                            )}`}
+                            type="alert"
+                        />
+                    );
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.POLICY)
@@ -77,13 +86,19 @@ const buildTableColumns = (match, location) => {
                 );
                 const { length } = filteredComplianceResults;
                 if (!length) {
-                    return <LabelChip text="No Matches" type="alert" />;
+                    return <LabelChip text="No Controls" type="alert" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.CONTROL)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${length} ${pluralize('Controls', length)}`}
+                    />
+                );
             }
         },
         {
@@ -94,13 +109,19 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { length } = original.subjects;
                 if (!length) {
-                    return <LabelChip text="No Matches" type="alert" />;
+                    return <LabelChip text="No Users & Groups" type="alert" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.SUBJECT)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${length} ${pluralize('Users & Groups', length)}`}
+                    />
+                );
             },
             id: 'subjects',
             accessor: d => d.subjects,
@@ -113,14 +134,20 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { length } = original.serviceAccounts;
                 if (!length) {
-                    return <LabelChip text="No Matches" type="alert" />;
+                    return <LabelChip text="No Service Accounts" type="alert" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
                 if (length > 1)
-                    return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+                    return (
+                        <TableCellLink
+                            pdf={pdf}
+                            url={url}
+                            text={`${length} ${pluralize('Subjects', length)}`}
+                        />
+                    );
                 return original.serviceAccounts[0].name;
             },
             id: 'serviceAccounts',
@@ -139,7 +166,13 @@ const buildTableColumns = (match, location) => {
                     .push(entityTypes.ROLE)
                     .url();
                 if (length > 1)
-                    return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+                    return (
+                        <TableCellLink
+                            pdf={pdf}
+                            url={url}
+                            text={`${length} ${pluralize('Roles', length)}`}
+                        />
+                    );
                 return original.k8sroles[0].name;
             },
             id: 'k8sroles',

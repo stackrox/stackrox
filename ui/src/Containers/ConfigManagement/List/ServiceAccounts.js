@@ -6,6 +6,7 @@ import { sortValueByLength } from 'sorters/sorters';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import queryService from 'modules/queryService';
+import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -81,7 +82,13 @@ const buildTableColumns = (match, location) => {
                     .push(entityTypes.ROLE)
                     .url();
                 if (length > 1)
-                    return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+                    return (
+                        <TableCellLink
+                            pdf={pdf}
+                            url={url}
+                            text={`${length} ${pluralize('Roles', length)}`}
+                        />
+                    );
                 return original.roles[0].name;
             },
             accessor: 'roles',

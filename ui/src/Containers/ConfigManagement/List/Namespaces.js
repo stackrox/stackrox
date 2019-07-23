@@ -1,6 +1,7 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
+import pluralize from 'pluralize';
 
 import { sortValueByLength } from 'sorters/sorters';
 import { NAMESPACES_QUERY as QUERY } from 'queries/namespace';
@@ -52,7 +53,15 @@ const buildTableColumns = (match, location) => {
                 const { policyStatus, metadata } = original;
                 const { failingPolicies } = policyStatus;
                 if (failingPolicies.length)
-                    return <LabelChip text={`${failingPolicies.length} Policies`} type="alert" />;
+                    return (
+                        <LabelChip
+                            text={`${failingPolicies.length} ${pluralize(
+                                'Policies',
+                                failingPolicies.length
+                            )}`}
+                            type="alert"
+                        />
+                    );
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
@@ -84,13 +93,19 @@ const buildTableColumns = (match, location) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { numSecrets, metadata } = original;
-                if (!metadata || numSecrets === 0) return 'No matches';
+                if (!metadata || numSecrets === 0) return 'No Secrets';
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.SECRET)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${numSecrets} matches`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${numSecrets} ${pluralize('Secrets', numSecrets)}`}
+                    />
+                );
             },
             id: 'numSecrets',
             accessor: d => d.numSecrets,
@@ -103,13 +118,19 @@ const buildTableColumns = (match, location) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { subjectsCount, metadata } = original;
-                if (!subjectsCount || subjectsCount === 0) return 'No matches';
+                if (!subjectsCount || subjectsCount === 0) return 'No Users & Groups';
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.SUBJECT)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${subjectsCount} matches`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${subjectsCount} ${pluralize('Users & Groups', subjectsCount)}`}
+                    />
+                );
             },
             accessor: 'subjectCount'
         },
@@ -120,14 +141,21 @@ const buildTableColumns = (match, location) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { serviceAccountCount, metadata } = original;
-                if (!serviceAccountCount || serviceAccountCount === 0) return 'No matches';
+                if (!serviceAccountCount || serviceAccountCount === 0) return 'No Service Accounts';
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
                 return (
-                    <TableCellLink pdf={pdf} url={url} text={`${serviceAccountCount} matches`} />
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${serviceAccountCount} ${pluralize(
+                            'Service Accounts',
+                            serviceAccountCount
+                        )}`}
+                    />
                 );
             },
             accessor: 'serviceAccountCount'
@@ -139,13 +167,19 @@ const buildTableColumns = (match, location) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { k8sroleCount, metadata } = original;
-                if (!k8sroleCount || k8sroleCount === 0) return 'No matches';
+                if (!k8sroleCount || k8sroleCount === 0) return 'No Roles';
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.ROLE)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${k8sroleCount} matches`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${k8sroleCount} ${pluralize('Roles', k8sroleCount)}`}
+                    />
+                );
             },
             accessor: 'k8sroleCount'
         }

@@ -9,6 +9,7 @@ import { sortValueByLength, sortDate } from 'sorters/sorters';
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
+import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -83,13 +84,19 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { length } = original.subjects;
                 if (!length) {
-                    return <LabelChip text="No Matches" type="alert" />;
+                    return <LabelChip text="No Users & Groups" type="alert" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.SUBJECT)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${length} ${pluralize('Users & Groups', length)}`}
+                    />
+                );
             },
             id: 'subjects',
             accessor: d => d.subjects,
@@ -104,13 +111,19 @@ const buildTableColumns = (match, location) => {
                 const { serviceAccounts, id } = original;
                 const { length } = serviceAccounts;
                 if (!length || (length === 1 && serviceAccounts[0].message))
-                    return <LabelChip text="No Matches" type="alert" />;
+                    return <LabelChip text="No Service Accounts" type="alert" />;
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
                 if (length > 1)
-                    return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+                    return (
+                        <TableCellLink
+                            pdf={pdf}
+                            url={url}
+                            text={`${length} ${pluralize('Service Accounts', length)}`}
+                        />
+                    );
                 const serviceAccount = serviceAccounts[0];
                 if (serviceAccount.name) return serviceAccount.name;
                 return <LabelChip text={serviceAccount.message} type="alert" />;

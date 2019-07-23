@@ -10,6 +10,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import { sortDate } from 'sorters/sorters';
 
 import LabelChip from 'Components/LabelChip';
+import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -80,13 +81,19 @@ const buildTableColumns = (match, location) => {
                 );
                 const { length } = filteredComplianceResults;
                 if (!length) {
-                    return <LabelChip text="No Matches" type="alert" />;
+                    return <LabelChip text="No Controls" type="alert" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.CONTROL)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${length} Matches`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${length} ${pluralize('Controls', length)}`}
+                    />
+                );
             }
         }
     ];
