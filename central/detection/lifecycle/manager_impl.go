@@ -123,7 +123,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	for _, ind := range indicatorSlice {
 		userWhitelist, _, err := m.checkWhitelist(ind)
 		if err != nil {
-			log.Errorf("error checking whitelist for indicator: %v - %+v", err, ind)
+			log.Debugf("error checking whitelist for indicator: %v - %+v", err, ind)
 			continue
 		}
 		if userWhitelist {
