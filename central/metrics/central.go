@@ -42,7 +42,7 @@ var (
 		Help:      "Time taken to perform an process a sensor event operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
-	}, []string{"Type"})
+	}, []string{"Type", "Action"})
 
 	sensorEventQueueCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -97,8 +97,8 @@ func SetBadgerOperationDurationTime(start time.Time, op metrics.Op, t string) {
 }
 
 // SetSensorEventRunDuration times how long a particular sensor event operation took on a particular resource
-func SetSensorEventRunDuration(start time.Time, t string) {
-	sensorEventDurationHistogramVec.With(prometheus.Labels{"Type": t}).Observe(startTimeToMS(start))
+func SetSensorEventRunDuration(start time.Time, t, action string) {
+	sensorEventDurationHistogramVec.With(prometheus.Labels{"Type": t, "Action": action}).Observe(startTimeToMS(start))
 }
 
 // SetIndexOperationDurationTime times how long a particular index operation took on a particular resource
