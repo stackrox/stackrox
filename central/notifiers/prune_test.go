@@ -12,6 +12,55 @@ func getProcessIndicatorWithID(id string) *storage.ProcessIndicator {
 	p := fixtures.GetProcessIndicator()
 	p.Id = id
 	return p
+}
+
+func TestFilterMap(t *testing.T) {
+	cases := []struct {
+		name              string
+		inputMap          map[string]string
+		currSize, maxSize int
+		expectedMap       map[string]string
+	}{
+		{
+			name: "no pruning",
+			inputMap: map[string]string{
+				"hello": "hi",
+			},
+			currSize: 100,
+			maxSize:  120,
+			expectedMap: map[string]string{
+				"hello": "hi",
+			},
+		},
+		{
+			name: "prune only one",
+			inputMap: map[string]string{
+				"hello":     "hi",
+				"greetings": "salutations",
+			},
+			currSize: 100,
+			maxSize:  99,
+			expectedMap: map[string]string{
+				"hello": "hi",
+			},
+		},
+		{
+			name: "prune all",
+			inputMap: map[string]string{
+				"hello":     "hi",
+				"greetings": "salutations",
+			},
+			currSize:    100,
+			maxSize:     20,
+			expectedMap: map[string]string{},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			filterMap(c.inputMap, c.maxSize, &c.currSize)
+			assert.Equal(t, c.expectedMap, c.inputMap)
+		})
+	}
 
 }
 
