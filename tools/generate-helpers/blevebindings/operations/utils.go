@@ -1,6 +1,7 @@
 package operations
 
 import (
+	"path"
 	"strings"
 
 	"github.com/dave/jennifer/jen"
@@ -31,4 +32,13 @@ func ifErrReturnError(statement *jen.Statement) *jen.Statement {
 	return jen.If(jen.Err().Op(":=").Add(statement), jen.Err().Op("!=").Nil()).Block(
 		jen.Return(jen.Err()),
 	)
+}
+
+// GenerateMappingGoPackage generates the go package corresponding to the mapping directory.
+func GenerateMappingGoPackage(props GeneratorProperties) string {
+	objectName := props.Object
+	if props.ObjectPathName != "" {
+		objectName = props.ObjectPathName
+	}
+	return path.Join(packagenames.RoxCentral, strings.ToLower(objectName), props.OptionsPath)
 }

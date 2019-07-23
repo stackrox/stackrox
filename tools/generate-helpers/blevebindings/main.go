@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"unicode"
 
@@ -50,7 +52,13 @@ func generateOptionsFile(props operations.GeneratorProperties) error {
 		jen.Lit(tagString),
 		jen.Parens(jen.Op("*").Qual(props.Pkg, props.Object)).Parens(jen.Nil()),
 	)
-	return f.Save("mappings/options.go")
+	goPackage := operations.GenerateMappingGoPackage(props)
+
+	goPath := os.Getenv("GOPATH")
+	if goPath == "" {
+		return errors.New("no GOPATH found")
+	}
+	return f.Save(path.Join(os.Getenv("GOPATH"), "src", goPackage, "options.go"))
 }
 
 func generateIndexImplementationFile(props operations.GeneratorProperties, implementations []jen.Code) error {
