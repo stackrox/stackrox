@@ -214,7 +214,7 @@ class ViolationsPage extends Component {
                             placement="top"
                             mouseLeaveDelay={0}
                             overlay={
-                                <div>Resolve violation and add all processes to whitelist</div>
+                                <div>Resolve violation and add affected processes to whitelist</div>
                             }
                             overlayClassName="pointer-events-none"
                         >
