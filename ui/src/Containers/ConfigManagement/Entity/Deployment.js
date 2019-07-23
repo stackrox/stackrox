@@ -10,9 +10,11 @@ import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
+import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
+import FailedPoliciesAcrossDeployment from 'Containers/ConfigManagement/Entity/widgets/FailedPoliciesAcrossDeployment';
 
-const Deployment = ({ id, onRelatedEntityClick }) => (
+const Deployment = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => (
     <Query query={QUERY} variables={{ id }}>
         {({ loading, data }) => {
             if (loading) return <Loader />;
@@ -21,6 +23,10 @@ const Deployment = ({ id, onRelatedEntityClick }) => (
 
             const onRelatedEntityClickHandler = (entityType, entityId) => () => {
                 onRelatedEntityClick(entityType, entityId);
+            };
+
+            const onRelatedEntityListClickHandler = entityListType => () => {
+                onRelatedEntityListClick(entityListType);
             };
 
             const {
@@ -32,7 +38,9 @@ const Deployment = ({ id, onRelatedEntityClick }) => (
                 namespace,
                 namespaceId,
                 serviceAccount,
-                serviceAccountId
+                serviceAccountID,
+                secretCount,
+                imagesCount
             } = entity;
 
             const metadataKeyValuePairs = [
@@ -80,9 +88,26 @@ const Deployment = ({ id, onRelatedEntityClick }) => (
                                 value={serviceAccount}
                                 onClick={onRelatedEntityClickHandler(
                                     entityTypes.SERVICE_ACCOUNT,
-                                    serviceAccountId
+                                    serviceAccountID
                                 )}
                             />
+                            <RelatedEntityListCount
+                                className="mx-4 min-w-48 h-48 mb-4"
+                                name="Secrets"
+                                value={secretCount}
+                                onClick={onRelatedEntityListClickHandler(entityTypes.SECRET)}
+                            />
+                            <RelatedEntityListCount
+                                className="mx-4 min-w-48 h-48 mb-4"
+                                name="Images"
+                                value={imagesCount}
+                                onClick={onRelatedEntityListClickHandler(entityTypes.IMAGE)}
+                            />
+                        </div>
+                    </CollapsibleSection>
+                    <CollapsibleSection title="Deployment Findings">
+                        <div className="flex pdf-page pdf-stretch rounded relative rounded mb-4 ml-4 mr-4">
+                            <FailedPoliciesAcrossDeployment deploymentID={id} />
                         </div>
                     </CollapsibleSection>
                 </div>
@@ -93,7 +118,8 @@ const Deployment = ({ id, onRelatedEntityClick }) => (
 
 Deployment.propTypes = {
     id: PropTypes.string.isRequired,
-    onRelatedEntityClick: PropTypes.func.isRequired
+    onRelatedEntityClick: PropTypes.func.isRequired,
+    onRelatedEntityListClick: PropTypes.func.isRequired
 };
 
 export default Deployment;

@@ -40,6 +40,7 @@ export const DEPLOYMENT_QUERY = gql`
             priority
             replicas
             serviceAccount
+            serviceAccountID
             tolerations {
                 key
                 operator
@@ -48,6 +49,8 @@ export const DEPLOYMENT_QUERY = gql`
             }
             type
             updatedAt
+            secretCount
+            imagesCount
         }
     }
 `;
@@ -77,6 +80,8 @@ export const DEPLOYMENTS_QUERY = gql`
                     name
                 }
             }
+            secretCount
+            imagesCount
         }
     }
 `;

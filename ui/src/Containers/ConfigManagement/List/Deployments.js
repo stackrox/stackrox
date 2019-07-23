@@ -30,27 +30,30 @@ const buildTableColumns = (match, location) => {
             Header: `Cluster`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'clusterName'
+            accessor: 'clusterName',
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { clusterName, clusterId, id } = original;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.CLUSTER, clusterId)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+            }
         },
         {
             Header: `Namespace`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'namespace'
-        },
-        {
-            Header: `Service Account`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'serviceAccount',
+            accessor: 'namespace',
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { serviceAccount, id } = original;
+                const { namespace, namespaceId, id } = original;
                 const url = URLService.getURL(match, location)
                     .push(id)
-                    .push(entityTypes.SERVICE_ACCOUNT)
+                    .push(entityTypes.NAMESPACE, namespaceId)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={serviceAccount} />;
+                return <TableCellLink pdf={pdf} url={url} text={namespace} />;
             }
         },
         {
@@ -93,6 +96,53 @@ const buildTableColumns = (match, location) => {
             },
             id: 'status',
             accessor: d => d.policyStatus.status
+        },
+        {
+            Header: `Images`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { imagesCount, id } = original;
+                if (imagesCount === 0) return 'No images';
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.IMAGE)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={`${imagesCount} image(s)`} />;
+            },
+            accessor: 'imagesCount'
+        },
+        {
+            Header: `Secrets`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { secretCount, id } = original;
+                if (secretCount === 0) return 'No secrets';
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.SECRET)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={`${secretCount} secret(s)`} />;
+            },
+            accessor: 'secretCount'
+        },
+        {
+            Header: `Service Account`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'serviceAccount',
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { serviceAccount, id } = original;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.SERVICE_ACCOUNT)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={serviceAccount} />;
+            }
         }
     ];
     return tableColumns;

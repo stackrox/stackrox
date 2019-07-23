@@ -8,10 +8,12 @@ import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import uniq from 'lodash/uniq';
+import { sortSeverity } from 'sorters/sorters';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import SeverityLabel from 'Components/SeverityLabel';
 import TableWidget from './TableWidget';
 
 const getDeploymentsGroupedByPolicies = data => {
@@ -122,7 +124,13 @@ const DeploymentsWithFailedPolicies = ({ query }) => {
                         Header: `Severity`,
                         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                         className: `w-1/8 ${defaultColumnClassName}`,
-                        accessor: 'severity'
+                        // eslint-disable-next-line
+                        Cell: ({ original }) => {
+                            const { severity } = original;
+                            return <SeverityLabel severity={severity} />;
+                        },
+                        accessor: 'severity',
+                        sortMethod: sortSeverity
                     },
                     {
                         Header: `Categories`,

@@ -39,6 +39,7 @@ export const POLICY = gql`
                     message
                 }
                 policy {
+                    id
                     severity
                 }
                 time
