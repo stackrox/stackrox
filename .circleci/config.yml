@@ -82,7 +82,13 @@ setupLicense: &setupLicense
   run:
     name: Creating License Key
     command: |
-      ROX_LICENSE_KEY="$(licenses/ci.sh)"
+      if [[ -n "$CIRCLE_TAG" ]]; then
+        echo "Issuing a CI license for testing the release build"
+        ROX_LICENSE_KEY="$(licenses/ci.sh)"
+      else
+        echo "Using the development license for CI"
+        ROX_LICENSE_KEY="$(cat deploy/common/dev-license.lic)"
+      fi
       cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
 # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
