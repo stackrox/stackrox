@@ -22,9 +22,9 @@ ENV PATH="/stackrox:$PATH"
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 
 COPY ./central-entrypoint.sh /stackrox/
-COPY ./bin/migrator /stackrox/
+COPY ./bin/migrator /stackrox/bin/
 COPY ./bin/central /stackrox/
-COPY ./bin/compliance /stackrox/
+COPY ./bin/compliance /stackrox/bin/
 COPY ./bin/roxctl* /assets/downloads/cli/
 COPY ./bin/kubernetes-sensor /stackrox/bin/
 COPY ./static-bin/* /stackrox/
@@ -38,10 +38,18 @@ EXPOSE 8443
 ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
 
 # The following paths are written to in Central.
+
+# CAVEAT: The below can be left for informational purposes/the off chance of StackRox being run via `docker run`.
+# However, on production environments it seems that VOLUME statements alone do not guarantee a writable path in every
+# case. Hence, when adding a VOLUME here, always add it to the respective deployment YAML as well.
+# Additionally, mounting those directories as `emptyDir`s in Kubernetes means that they will be, well, empty on startup.
+# Any directory whose contents at image creation time are relevant need to be saved using `save-dir-contents`, and then
+# copied back by `restore-all-dir-contents` in the respective entrypoint scripts.
+
 # Including these VOLUME instructions means that we can enable a
 # read-only root file system without preventing writes to these paths.
 # Trusted CA certificates are written to this path by `update-ca-certificates`.
-RUN chown -R 4000 /etc/ssl
+RUN chown -R 4000 /etc/ssl && save-dir-contents /etc/ssl
 VOLUME /etc/ssl
 # The BoltDB is stored at this path.
 RUN mkdir -p /var/lib/stackrox && chown -R 4000 /var/lib/stackrox

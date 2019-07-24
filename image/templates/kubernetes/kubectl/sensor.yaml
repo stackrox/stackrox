@@ -95,6 +95,10 @@ spec:
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
+        - name: sensor-etc-ssl-volume
+          mountPath: /etc/ssl/
+        - name: sensor-etc-pki-volume
+          mountPath: /etc/pki/ca-trust/
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
@@ -146,6 +150,10 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      - name: sensor-etc-ssl-volume
+        emptyDir: {}
+      - name: sensor-etc-pki-volume
+        emptyDir: {}
       - name: additional-ca-volume
         secret:
           secretName: additional-ca-sensor

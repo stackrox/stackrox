@@ -9,15 +9,18 @@ set -e
 if [ "$(id -u)" == 0 ]; then
      [ ! -d /var/lib/stackrox ] || chown -R 4000 /var/lib/stackrox
      [ ! -d /var/log/stackrox ] || chown -R 4000 /var/log/stackrox
+     [ ! -d /etc/ssl ] || chown -R 4000 /etc/ssl
+     [ ! -d /etc/pki/ca-trust ] || chown -R 4000 /etc/pki/ca-trust
      chown -R 4000 /tmp
-     chown -R 4000 /etc/ssl
+     chown -R 4000 /stackrox/data
      exec su-exec 4000 "$0" "$@"
 fi
 
+restore-all-dir-contents
 import-additional-cas
 
 [ ! -d /var/lib/stackrox/badgerdb ] || chmod u+x /var/lib/stackrox/badgerdb
 
 restore-central-db
-migrator
-exec central "$@"
+/stackrox/bin/migrator
+exec /stackrox/central "$@"

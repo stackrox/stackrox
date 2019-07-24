@@ -23,7 +23,7 @@ COPY ./ui/build /stackrox-data/ui/
 COPY ./keys /tmp/keys
 
 RUN set -eo pipefail; \
-	tar -C /stackrox-data -czf - . | \
+	( cd /stackrox-data ; tar -czf - * ; ) | \
     openssl enc -aes-256-cbc \
         -K "$(hexdump -e '32/1 "%02x"' </tmp/keys/data-key)" \
         -iv "$(hexdump -e '16/1 "%02x"' </tmp/keys/data-iv)" \

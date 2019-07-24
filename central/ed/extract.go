@@ -4,6 +4,8 @@
 package ed
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
@@ -96,7 +98,7 @@ func eE(ctx context.Context, inputPath string, outputDir string) error {
 		return err
 	}
 
-	tarCmd := exec.Command("tar", "-C", outputDir, "-xzf", "-")
+	tarCmd := exec.Command("tar", "-C", outputDir, "-xmozf", "-")
 	tarCmd.Stdout = nil
 	tarCmd.Stderr = nil
 
@@ -118,6 +120,11 @@ func eE(ctx context.Context, inputPath string, outputDir string) error {
 	}
 
 	err = processErr
+	if exitErr, _ := processErr.(*exec.ExitError); exitErr != nil && len(exitErr.Stderr) > 0 {
+		if sc := bufio.NewScanner(bytes.NewReader(exitErr.Stderr)); sc.Scan() && sc.Err() == nil {
+			err = errors.Errorf("%s (first line of stderr output: %s)", exitErr.Error(), sc.Text())
+		}
+	}
 	if writeErr != nil {
 		if err == nil {
 			err = errors.Wrap(writeErr, "writing to stdin pipe")

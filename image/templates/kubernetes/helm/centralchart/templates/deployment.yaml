@@ -74,6 +74,14 @@ spec:
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
+        - name: stackrox-data-volume
+          mountPath: /stackrox/data
+        - name: central-tmp-volume
+          mountPath: /tmp
+        - name: central-etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: central-etc-pki-volume
+          mountPath: /etc/pki/ca-trust
         - name: central-certs-volume
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
@@ -137,6 +145,14 @@ spec:
       {{- end}}
       volumes:
       - name: varlog
+        emptyDir: {}
+      - name: stackrox-data-volume
+        emptyDir: {}
+      - name: central-tmp-volume
+        emptyDir: {}
+      - name: central-etc-ssl-volume
+        emptyDir: {}
+      - name: central-etc-pki-volume
         emptyDir: {}
       - name: central-certs-volume
         secret:
