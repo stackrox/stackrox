@@ -216,15 +216,7 @@ const formDescriptors = {
                 '-----BEGIN CERTIFICATE-----\nAuthority certificate data\n-----END CERTIFICATE-----',
             immutable: true
         }
-    ],
-    attrToRole: {
-        keyOptions: [
-            { value: 'name', label: 'name' },
-            { value: 'email', label: 'email' },
-            { value: 'uid', label: 'uid' },
-            { value: 'groups', label: 'groups' }
-        ]
-    }
+    ]
 };
 
 export default formDescriptors;

@@ -4,13 +4,15 @@ import { connect } from 'react-redux';
 import { createStructuredSelector, createSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { formValues } from 'redux-form';
+import uniq from 'lodash/uniq';
 import uniqBy from 'lodash/uniqBy';
 
 import { components } from 'react-select';
 import * as Icon from 'react-feather';
 import { selectMenuOnTopStyles } from 'Components/ReactSelect';
 import Field from './Field';
-import formDescriptor from './formDescriptor';
+
+const defaultKeyOptions = ['userid', 'name', 'email', 'groups'];
 
 const MenuList = ({ toggleModal, ...props }) => (
     <components.MenuList {...props}>
@@ -60,7 +62,13 @@ class RuleGroups extends Component {
 
     render() {
         const { fields, initialValues, usersAttributes, roles } = this.props;
-        const { keyOptions } = formDescriptor.attrToRole;
+        const keyOptions = uniq([
+            ...defaultKeyOptions,
+            ...usersAttributes
+                .filter(({ authProviderId }) => authProviderId === initialValues.id)
+                .map(({ key }) => key)
+        ]).map(v => ({ value: v, label: v }));
+
         let valueOptions = initialValues.groups.map(({ props: { key, value } }) => ({
             key,
             label: value,
@@ -87,7 +95,7 @@ class RuleGroups extends Component {
                         <div className="w-full">
                             <Field
                                 jsonPath={`${group}.props.key`}
-                                type="select"
+                                type="selectcreatable"
                                 label="Key"
                                 options={keyOptions}
                                 styles={selectMenuOnTopStyles}
