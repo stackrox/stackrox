@@ -13,8 +13,8 @@ class SecretService extends BaseService {
         return SecretServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static List<ListSecret> getSecrets() {
-        return getSecretClient().listSecrets(RawQuery.newBuilder().build()).secretsList
+    static List<ListSecret> getSecrets(RawQuery query = RawQuery.newBuilder().build()) {
+        return getSecretClient().listSecrets(query).secretsList
     }
 
     static waitForSecret(String id, int timeoutSeconds = 10) {

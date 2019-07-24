@@ -2,7 +2,6 @@ import static Services.getPolicies
 import static Services.waitForViolation
 
 import spock.lang.Shared
-import io.stackrox.proto.api.v1.PaginationOuterClass
 import services.AlertService
 import services.FeatureFlagService
 import common.Constants
@@ -76,15 +75,6 @@ class DefaultPoliciesTest extends BaseSpecification {
     private String gcrId
 
     def setupSpec() {
-        for (int i = 1; i <= 6; i++) {
-            DEPLOYMENTS.add(
-                    new Deployment()
-                            .setName("pagination${i}")
-                            .setImage("busybox:latest")
-                            .addLabel("app", "pagination${i}")
-                            .setCommand(["sleep", "600"])
-            )
-        }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         orchestrator.createService(new Service(STRUTS_DEPLOYMENT))
         for (Deployment deployment : DEPLOYMENTS) {
@@ -145,72 +135,6 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Curl in Image"                                 | STRUTS         | "C948"
 
         "DockerHub NGINX 1.10"                          | NGINX_1_10     | "C823"
-    }
-
-    @Category(BAT)
-    def "Verify violation pagination"() {
-        given:
-        "6 violations exist for pagination"
-        for (int i = 1; i <= 6; i++) {
-            assert Services.waitForViolation("pagination${i}", "Latest tag", 30)
-        }
-
-        when:
-        "Set pagination limit to 3"
-        ListAlertsRequest request = ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:Latest tag")
-                .setPagination(
-                PaginationOuterClass.Pagination.newBuilder()
-                        .setLimit(3)
-                        .setOffset(0)
-        ).build()
-        def alerts = AlertService.getViolations(request)
-
-        then:
-        "verify result set is 3"
-        assert alerts.size() == 3
-
-        and:
-        "Set limit to 10 with offset to 5 on a total count of 10"
-        ListAlertsRequest request2 = ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:Latest tag")
-                .setPagination(
-                PaginationOuterClass.Pagination.newBuilder()
-                        .setLimit(6)
-                        .setOffset(3)
-        ).build()
-        def alerts2 = AlertService.getViolations(request2)
-
-        then:
-        "Verify result set is 3"
-        assert alerts2.size() == 3
-
-        and:
-        "Get the same violation set in reversed and non-reversed order"
-        ListAlertsRequest request3 = ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:Latest tag,No resource requests or limits specified")
-                .setPagination(
-                        PaginationOuterClass.Pagination.newBuilder()
-                                .setSortOption(
-                                        PaginationOuterClass.SortOption.newBuilder()
-                                                .setField("Policy")
-                                                .setReversed(false))
-                ).build()
-        def alerts3 = AlertService.getViolations(request3).collect { it.policy.name }
-        ListAlertsRequest request4 = ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:Latest tag,No resource requests or limits specified")
-                .setPagination(
-                PaginationOuterClass.Pagination.newBuilder()
-                        .setSortOption(
-                        PaginationOuterClass.SortOption.newBuilder()
-                                .setField("Policy")
-                                .setReversed(true))
-        ).build()
-        def alerts4 = AlertService.getViolations(request4).collect { it.policy.name }
-
-        then:
-        "make sure the results are the same, just reversed"
-        assert alerts3 == alerts4.reverse()
     }
 
     @Category(BAT)
