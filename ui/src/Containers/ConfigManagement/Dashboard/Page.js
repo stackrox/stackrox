@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTheme } from 'Containers/ThemeProvider';
 
 import WaveBackground from 'images/wave-bg.svg';
 import WaveBackground2 from 'images/wave-bg-2.svg';
 import { standardTypes } from 'constants/entityTypes';
-import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
+import ComplianceByControls from 'Containers/Compliance/widgets/ComplianceByControls';
 import DashboardHeader from './Header';
 import PolicyViolationsBySeverity from './Widgets/PolicyViolationsBySeverity';
 import PolicyViolationsByDeployment from './Widgets/PolicyViolationsByDeployment';
@@ -13,7 +13,6 @@ import ServiceAccountsWithHighestPrivilages from './Widgets/ServiceAccountsWithH
 import SecretsMostUsedAcrossDeployments from './Widgets/SecretsMostUsedAcrossDeployments';
 
 const ConfigManagementDashboardPage = () => {
-    const [standard, setStandard] = useState(standardTypes.CIS_Docker_v1_1_0);
     const { isDarkMode } = useTheme();
     const bgStyle = isDarkMode
         ? {}
@@ -22,10 +21,6 @@ const ConfigManagementDashboardPage = () => {
               '--start': 'hsl(226, 70%, 60%)',
               '--end': 'hsl(226, 64%, 56%)'
           };
-
-    function handleStandardChange(val) {
-        setStandard(val);
-    }
 
     return (
         <section className="flex flex-col relative min-h-full">
@@ -59,14 +54,12 @@ const ConfigManagementDashboardPage = () => {
                     style={{ '--min-tile-height': '160px' }}
                 >
                     <PolicyViolationsBySeverity />
-                    <ComplianceByStandard
+                    <ComplianceByControls
                         className="pdf-page"
-                        standardType={standard}
                         standardOptions={[
                             standardTypes.CIS_Docker_v1_1_0,
                             standardTypes.CIS_Kubernetes_v1_2_0
                         ]}
-                        onStandardChange={handleStandardChange}
                     />
                     <PolicyViolationsByDeployment />
                     <UsersWithMostClusterAdminRoles />

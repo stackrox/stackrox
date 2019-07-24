@@ -14,7 +14,8 @@ class SunburstDetailSection extends Component {
         rootData: PropTypes.arrayOf(
             PropTypes.shape({
                 text: PropTypes.string.isRequired,
-                link: PropTypes.string
+                link: PropTypes.string,
+                className: PropTypes.string
             })
         ).isRequired,
         selectedDatum: PropTypes.shape({}),
@@ -53,42 +54,46 @@ class SunburstDetailSection extends Component {
         }
         return (
             <div className="py-2 px-3 fc:border-b fc:border-base-300 fc:pb-3 fc:mb-1">
-                {bullets.map(({ text, link, value, color: graphColor, textColor }, idx) => {
-                    const color = textColor || graphColor;
-                    return (
-                        <div
-                            key={text}
-                            className={`widget-detail-bullet font-600 ${
-                                parentDatum && parentDatum.name && idx === 0 ? 'text-base-500' : ''
-                            }`}
-                        >
-                            {link && (
-                                <Link
-                                    title={text}
-                                    className="underline leading-normal flex w-full word-break"
-                                    style={color ? { color } : null}
-                                    to={link}
-                                >
-                                    <Truncate lines={6} ellipsis={<>...</>}>
-                                        {text}
+                {bullets.map(
+                    ({ text, link, className, value, color: graphColor, textColor }, idx) => {
+                        const color = textColor || graphColor;
+                        return (
+                            <div
+                                key={text}
+                                className={`widget-detail-bullet font-600 ${
+                                    parentDatum && parentDatum.name && idx === 0
+                                        ? 'text-base-500'
+                                        : ''
+                                }`}
+                            >
+                                {link && (
+                                    <Link
+                                        title={text}
+                                        className={`underline leading-normal flex w-full word-break ${className}`}
+                                        style={color ? { color } : null}
+                                        to={link}
+                                    >
+                                        <Truncate lines={6} ellipsis={<>...</>}>
+                                            {text}
+                                        </Truncate>
+                                    </Link>
+                                )}
+                                <span className="flex w-full word-break leading-tight">
+                                    <Truncate lines={4} ellipsis={<>...</>}>
+                                        {!link && text}
                                     </Truncate>
-                                </Link>
-                            )}
-                            <span className="flex w-full word-break leading-tight">
-                                <Truncate lines={4} ellipsis={<>...</>}>
-                                    {!link && text}
-                                </Truncate>
-                            </span>
-                            {selectedDatum && (
-                                <HorizontalBarChart
-                                    data={[{ y: '', x: value }]}
-                                    valueFormat={formatAsPercent}
-                                    minimal
-                                />
-                            )}
-                        </div>
-                    );
-                })}
+                                </span>
+                                {selectedDatum && (
+                                    <HorizontalBarChart
+                                        data={[{ y: '', x: value }]}
+                                        valueFormat={formatAsPercent}
+                                        minimal
+                                    />
+                                )}
+                            </div>
+                        );
+                    }
+                )}
             </div>
         );
     };

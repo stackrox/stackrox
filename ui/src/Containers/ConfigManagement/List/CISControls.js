@@ -5,9 +5,16 @@ import { LIST_STANDARD as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
 import { sortVersion, sortValueByLength } from 'sorters/sorters';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import List from './List';
+
+const COMPLIANCE_STATES = {
+    Pass: 'Pass',
+    Fail: 'Fail'
+};
 
 const tableColumns = [
     {
@@ -53,6 +60,11 @@ const tableColumns = [
     }
 ];
 
+const filterByComplianceState = (rows, state) => {
+    if (!state) return rows;
+    return rows.filter(row => (state === COMPLIANCE_STATES.Pass ? row.passing : !row.passing));
+};
+
 const createTableRows = data => {
     if (!data || !data.results || !data.results.results.length) return [];
 
@@ -93,6 +105,14 @@ const CISControls = ({ className, selectedRowId, onRowClick, query }) => {
         groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE]
     };
 
+    const complianceState = query ? query[SEARCH_OPTIONS.COMPLIANCE.STATE] : null;
+
+    function createTableRowsFilteredByComplianceState(data) {
+        const tableRows = createTableRows(data);
+        const filteredTableRows = filterByComplianceState(tableRows, complianceState);
+        return filteredTableRows;
+    }
+
     return (
         <List
             className={className}
@@ -101,10 +121,11 @@ const CISControls = ({ className, selectedRowId, onRowClick, query }) => {
             headerText="CIS Controls"
             entityType={entityTypes.CONTROL}
             tableColumns={tableColumns}
-            createTableRows={createTableRows}
+            createTableRows={createTableRowsFilteredByComplianceState}
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSearchOptions={[SEARCH_OPTIONS.COMPLIANCE.STATE]}
         />
     );
 };

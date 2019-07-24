@@ -34,11 +34,13 @@ class Select extends Component {
                     onChange={this.onClick}
                     value={value}
                 >
-                    <option value="" disabled>
-                        {placeholder}
-                    </option>
+                    {placeholder && (
+                        <option value="" disabled>
+                            {placeholder}
+                        </option>
+                    )}
                     {options.map(option => (
-                        <option key={option.label} value={option.jsonpath}>
+                        <option key={option.label} value={option.value}>
                             {option.label}
                         </option>
                     ))}

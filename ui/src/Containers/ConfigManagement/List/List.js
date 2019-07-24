@@ -26,7 +26,8 @@ const List = ({
     onRowClick,
     selectedRowId,
     idAttribute,
-    defaultSorted
+    defaultSorted,
+    defaultSearchOptions
 }) => {
     const [page, setPage] = useState(0);
 
@@ -54,7 +55,10 @@ const List = ({
                                 variables={{ categories }}
                             >
                                 {({ data: results }) => {
-                                    const searchOptions = results ? results.searchOptions : [];
+                                    const searchOptions =
+                                        results && results.searchOptions
+                                            ? [...results.searchOptions, ...defaultSearchOptions]
+                                            : [];
                                     return (
                                         <URLSearchInput
                                             className="w-full"
@@ -112,7 +116,8 @@ List.propTypes = {
     selectedRowId: PropTypes.string,
     idAttribute: PropTypes.string.isRequired,
     headerText: PropTypes.string,
-    defaultSorted: PropTypes.arrayOf(PropTypes.shape({}))
+    defaultSorted: PropTypes.arrayOf(PropTypes.shape({})),
+    defaultSearchOptions: PropTypes.arrayOf(PropTypes.string)
 };
 
 List.defaultProps = {
@@ -120,7 +125,8 @@ List.defaultProps = {
     variables: {},
     headerText: '',
     selectedRowId: null,
-    defaultSorted: []
+    defaultSorted: [],
+    defaultSearchOptions: []
 };
 
 export default List;
