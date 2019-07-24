@@ -4,12 +4,16 @@ import URLService from 'modules/URLService';
 import { sortValueByLength } from 'sorters/sorters';
 import { CLUSTERS_QUERY as QUERY } from 'queries/cluster';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import queryService from 'modules/queryService';
 import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
+
+import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 const buildTableColumns = (match, location) => {
     const tableColumns = [
@@ -187,8 +191,16 @@ const createTableRows = data => data.results;
 
 const Clusters = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
-    const queryText = queryService.objectToWhereClause(query);
+    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;
+
+    function createTableRowsFilteredByPolicyStatus(data) {
+        const tableRows = createTableRows(data);
+        const filteredTableRows = filterByPolicyStatus(tableRows, policyStatus);
+        return filteredTableRows;
+    }
+
     return (
         <List
             className={className}
@@ -196,10 +208,11 @@ const Clusters = ({ match, location, className, selectedRowId, onRowClick, query
             variables={variables}
             entityType={entityTypes.CLUSTER}
             tableColumns={tableColumns}
-            createTableRows={createTableRows}
+            createTableRows={createTableRowsFilteredByPolicyStatus}
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
         />
     );
 };

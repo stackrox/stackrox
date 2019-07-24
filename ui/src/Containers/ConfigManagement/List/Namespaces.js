@@ -8,10 +8,13 @@ import { NAMESPACES_QUERY as QUERY } from 'queries/namespace';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
 import LabelChip from 'Components/LabelChip';
 import List from './List';
 import TableCellLink from './Link';
+
+import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 const buildTableColumns = (match, location) => {
     const tableColumns = [
@@ -191,8 +194,16 @@ const createTableRows = data => data.results;
 
 const Namespaces = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
-    const queryText = queryService.objectToWhereClause(query);
+    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;
+
+    function createTableRowsFilteredByPolicyStatus(data) {
+        const tableRows = createTableRows(data);
+        const filteredTableRows = filterByPolicyStatus(tableRows, policyStatus);
+        return filteredTableRows;
+    }
+
     return (
         <List
             className={className}
@@ -200,10 +211,11 @@ const Namespaces = ({ match, location, className, selectedRowId, onRowClick, que
             variables={variables}
             entityType={entityTypes.NAMESPACE}
             tableColumns={tableColumns}
-            createTableRows={createTableRows}
+            createTableRows={createTableRowsFilteredByPolicyStatus}
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="metadata.id"
+            defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
         />
     );
 };

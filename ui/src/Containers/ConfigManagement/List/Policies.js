@@ -5,10 +5,14 @@ import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPag
 import queryService from 'modules/queryService';
 import { sortSeverity } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import LifecycleStageLabel from 'Components/LifecycleStageLabel';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
+import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 import SeverityLabel from 'Components/SeverityLabel';
+import LabelChip from 'Components/LabelChip';
 import List from './List';
+
+import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 const tableColumns = [
     {
@@ -32,6 +36,17 @@ const tableColumns = [
             return enforcementActions ? 'Yes' : 'No';
         },
         accessor: 'enforcementActions'
+    },
+    {
+        Header: `Policy Status`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        // eslint-disable-next-line
+        Cell: ({ original }) => {
+            const { policyStatus } = original;
+            return policyStatus === 'pass' ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+        },
+        accessor: 'policyStatus'
     },
     {
         Header: `Severity`,
@@ -76,8 +91,16 @@ const tableColumns = [
 const createTableRows = data => data.policies;
 
 const Policies = ({ className, onRowClick, query, selectedRowId }) => {
-    const queryText = queryService.objectToWhereClause(query);
+    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;
+
+    function createTableRowsFilteredByPolicyStatus(data) {
+        const tableRows = createTableRows(data);
+        const filteredTableRows = filterByPolicyStatus(tableRows, policyStatus);
+        return filteredTableRows;
+    }
+
     return (
         <List
             className={className}
@@ -85,7 +108,7 @@ const Policies = ({ className, onRowClick, query, selectedRowId }) => {
             variables={variables}
             entityType={entityTypes.POLICY}
             tableColumns={tableColumns}
-            createTableRows={createTableRows}
+            createTableRows={createTableRowsFilteredByPolicyStatus}
             selectedRowId={selectedRowId}
             onRowClick={onRowClick}
             idAttribute="id"
@@ -95,6 +118,7 @@ const Policies = ({ className, onRowClick, query, selectedRowId }) => {
                     desc: false
                 }
             ]}
+            defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
         />
     );
 };

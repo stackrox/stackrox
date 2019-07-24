@@ -4,6 +4,7 @@ import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
 import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { sortValueByLength } from 'sorters/sorters';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
@@ -11,6 +12,8 @@ import LabelChip from 'Components/LabelChip';
 import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
+
+import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 const buildTableColumns = (match, location) => {
     const tableColumns = [
@@ -152,8 +155,16 @@ const createTableRows = data => data.results;
 
 const Deployments = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);
-    const queryText = queryService.objectToWhereClause(query);
+    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;
+
+    function createTableRowsFilteredByPolicyStatus(data) {
+        const tableRows = createTableRows(data);
+        const filteredTableRows = filterByPolicyStatus(tableRows, policyStatus);
+        return filteredTableRows;
+    }
+
     return (
         <List
             className={className}
@@ -161,7 +172,7 @@ const Deployments = ({ match, location, className, selectedRowId, onRowClick, qu
             variables={variables}
             entityType={entityTypes.DEPLOYMENT}
             tableColumns={tableColumns}
-            createTableRows={createTableRows}
+            createTableRows={createTableRowsFilteredByPolicyStatus}
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
@@ -171,6 +182,7 @@ const Deployments = ({ match, location, className, selectedRowId, onRowClick, qu
                     desc: true
                 }
             ]}
+            defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
         />
     );
 };

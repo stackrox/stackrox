@@ -53,6 +53,7 @@ export const POLICIES = gql`
             id
             name
             enforcementActions
+            policyStatus
             severity
             categories
             lifecycleStages
