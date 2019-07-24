@@ -71,7 +71,7 @@ func (s *controllerImpl) RunScrape(expectedHosts set.StringSet, kill concurrency
 	}
 
 	defer func() {
-		if err := s.sendKillScrapeMsg(kill, scrape); err != nil {
+		if err := s.sendKillScrapeMsg(scrape.Stopped(), scrape); err != nil {
 			log.Errorf("tried to kill scrape %s but failed: %v", scrape.scrapeID, err)
 		}
 	}()

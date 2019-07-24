@@ -60,6 +60,15 @@ func (p *scrapePromise) finish(ctx context.Context, scrapeResult map[string]*com
 	if err != nil {
 		log.Errorf("Scrape failed: %v. Using partial data from %d/%d nodes", err, len(scrapeResult), len(p.domain.Nodes()))
 	}
+	if len(scrapeResult) != len(p.domain.Nodes()) {
+		var missingNodes []string
+		for _, n := range p.domain.Nodes() {
+			if _, ok := scrapeResult[n.Node().GetName()]; !ok {
+				missingNodes = append(missingNodes, n.Node().GetName())
+			}
+		}
+		log.Warnf("Did not collect scrape data for %+v", missingNodes)
+	}
 
 	p.result, err = p.dataRepoFactory.CreateDataRepository(ctx, p.domain, scrapeResult)
 	p.finishedSig.SignalWithError(err)

@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
@@ -10,7 +12,12 @@ import (
 func PerNodeCheck(f func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn)) framework.CheckFunc {
 	return func(ctx framework.ComplianceContext) {
 		framework.ForEachNode(ctx, func(ctx framework.ComplianceContext, node *storage.Node) {
-			f(ctx, ctx.Data().HostScraped(node))
+			scrape := ctx.Data().HostScraped(node)
+			if scrape == nil {
+				ctx.Finalize(fmt.Errorf("no host scrape data available for node %q", node.GetName()))
+				return
+			}
+			f(ctx, scrape)
 		})
 	}
 }
