@@ -1,0 +1,183 @@
+# Default values for anchore_engine chart.
+
+## BEGIN STACKROX
+
+appName: scanner-v2
+namespace: stackrox
+image: docker.io/anchore/anchore-engine:v0.4.1
+imagePullPolicy: IfNotPresent
+scratchVolumeMountPath: /analysis_scratch
+
+dbAppName: scanner-v2-db
+dbImage: postgres:9.6
+
+## END STACKROX
+
+# Anchore engine has a dependency on Postgresql, configure here
+postgresql:
+  # To use an external DB or Google CloudSQL in GKE, uncomment & set 'enabled: false'
+  # externalEndpoint, postgresUser, postgresPassword & postgresDatabase are required values for external postgres
+  # enabled: false
+  postgresUser: anchoreengine
+  postgresPassword: anchore-postgres,123
+  postgresDatabase: anchore
+
+  # Specify an external (already existing) postgres deployment for use.
+  # Set to the host and port. eg. mypostgres.myserver.io:5432
+  externalEndpoint: Null
+
+  # Configure size of the persistent volume used with helm managed chart.
+  # This should be commented out if using an external endpoint.
+  persistence:
+    enabled: true
+    resourcePolicy: nil
+    size: 20Gi
+    accessMode: ReadWriteOnce
+    subPath: "postgresql-db"
+    mountPath: /var/lib/postgresql/data/pgdata
+
+  service:
+    type: ClusterIP
+    port: 5432
+
+
+# Global configuration shared by all anchore-engine services.
+anchoreGlobal:
+
+  ###
+  # Start of General Anchore Engine Configurations (populates /config/config.yaml)
+  ###
+  # Set where default configs are placed at startup. This must be a writable location for the pod.
+  serviceDir: /anchore_service
+  logLevel: INFO
+
+  # If true, when a user adds an ECR registry with username = awsauto then the system will look for an instance profile to use for auth against the registry
+  allowECRUseIAMRole: false
+
+  # Enable prometheus metrics
+  enableMetrics: false
+
+  # Sets the password & email address for the default anchore-engine admin user.
+  defaultAdminPassword: foobar
+  defaultAdminEmail: example@email.com
+
+  # Configure the database connection within anchore-engine & enterprise-ui. This may get split into 2 different configurations based on service utilized.
+  dbConfig:
+    timeout: 120
+    # Use ssl, but the default postgresql config in helm's stable repo does not support ssl on server side, so this should be set for external dbs only for the time being
+    ssl: false
+    connectionPoolSize: 30
+    connectionPoolMaxOverflow: 100
+
+  internalServicesSslEnabled: false
+  internalServicesSsl:
+    # specify whether cert is verfied against the local certifacte bundle (allow self-signed certs if set to false)
+    verifyCerts: false
+    certDir: /home/anchore/certs
+    certSecret: Null
+    certSecretKeyName: tls.key
+    certSecretCertName: tls.crt
+
+
+# Configuration for the analyzer pods that perform image analysis
+# There may be many of these analyzers but best practice is to not have more than one per node since analysis
+# is very IO intensive. Use of affinity/anti-affinity rules for scheduling the analyzers is future work.
+anchoreAnalyzer:
+  replicaCount: 1
+  containerPort: 8084
+
+  # The cycle timer is the interval between checks to the work queue for new jobs
+  cycleTimers:
+    image_analyzer: 5
+
+  # Controls the concurrency of the analyzer itself. Can be configured to process more than one task at a time, but it IO bound, so may not
+  # necessarily be faster depending on hardware. Should test and balance this value vs. number of analyzers for your deployment cluster performance.
+  concurrentTasksPerWorker: 1
+
+  # Image layer caching can be enabled to speed up image downloads before analysis.
+  # This chart sets up a scratch directory for all analyzer pods using the values found at anchoreGlobal.scratchVolume.
+  # When setting anchoreAnalyzer.layerCacheMaxGigabytes, ensure the scratch volume has suffient storage space.
+  # For more info see - https://docs.anchore.com/current/docs/engine/engine_installation/storage/layer_caching/
+  # Enable image layer caching by setting a cache size > 0GB.
+  layerCacheMaxGigabytes: 0
+
+# Pod configuration for the anchore engine api service.
+anchoreApi:
+  replicaCount: 1
+
+  # kubernetes service configuration for anchore external API
+  service:
+    type: ClusterIP
+    port: 8228
+
+anchoreCatalog:
+  replicaCount: 1
+
+  # Intervals to run specific events on (seconds)
+  cycleTimers:
+    # Interval to check for an update to a tag
+    image_watcher: 3600
+    # Interval to run a policy evaluation on images with the policy_eval subscription activated.
+    policy_eval: 3600
+    # Interval to run a vulnerability scan on images with the vuln_update subscription activated.
+    vulnerability_scan: 14400
+    # Interval at which the catalog looks for new work to put on the image analysis queue.
+    analyzer_queue: 1
+    # Interval notifications will be processed for state changes
+    notifications: 30
+    # Intervals service state updates are polled for the system status
+    service_watcher: 15
+    # Interval between checks to repo for new tags
+    repo_watcher: 60
+
+  # Event log configuration for webhooks
+  events:
+    notification:
+      enabled: false
+      # Send notifications for events with severity level that matches items in this list
+      level:
+      - error
+      # - info
+
+  archive:
+    compression:
+      enabled: true
+      min_size_kbytes: 100
+    storage_driver:
+      # Valid storage driver names: 'db', 's3', 'swift'
+      name: db
+      config: {}
+
+  service:
+    type: ClusterIP
+    port: 8082
+
+# Pod configuration for the anchore engine policy service.
+anchorePolicyEngine:
+  replicaCount: 1
+
+  # Intervals to run specific events on (seconds)
+  cycleTimers:
+    # Interval to run a feed sync to get latest cve data
+    feed_sync: 14400
+    # Interval between checks to see if there needs to be a task queued
+    feed_sync_checker: 3600
+
+  # kubernetes service configuration for anchore policy engine api
+  service:
+    type: ClusterIP
+    port: 8087
+
+# Pod configuration for the anchore engine simplequeue service.
+anchoreSimpleQueue:
+  replicaCount: 1
+
+  # Set extra environment variables. These will be set on all simplequeue containers.
+  extraEnv: []
+    # - name: foo
+    #   value: bar
+
+  # kubernetes service configuration for anchore simplequeue api
+  service:
+    type: ClusterIP
+    port: 8083

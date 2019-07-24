@@ -1,0 +1,71 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.dbAppName }}
+  labels:
+    app: {{ .Values.dbAppName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.dbAppName }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.dbAppName }}
+    spec:
+      containers:
+      - name: {{ .Values.dbAppName }}
+        image: {{ .Values.dbImage | quote }}
+        imagePullPolicy: {{ .Values.imagePullPolicy | quote }}
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.postgresql.postgresUser | quote }}
+          # Required for pg_isready in the health probes.
+        - name: PGUSER
+          value: {{ .Values.postgresql.postgresUser | quote }}
+        - name: POSTGRES_DB
+          value: {{ .Values.postgresql.postgresDatabase | quote }}
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.dbAppName }}
+              key: postgres-password
+        - name: POD_IP
+          valueFrom: { fieldRef: { fieldPath: status.podIP } }
+        ports:
+        - name: postgresql
+          containerPort: 5432
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP
+          initialDelaySeconds: 5
+          timeoutSeconds: 3
+          periodSeconds: 5
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.postgresql.persistence.mountPath }}
+          subPath: {{ .Values.postgresql.persistence.subPath }}
+      volumes:
+      - name: data
+      {{- if .Values.postgresql.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.dbAppName }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}

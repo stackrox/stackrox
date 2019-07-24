@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.appName }}
+  labels:
+    app: {{ .Values.appName }}
+spec:
+  type: {{ .Values.anchoreApi.service.type }}
+  ports:
+    - name: anchore-external-api
+      port: {{ .Values.anchoreApi.service.port }}
+      targetPort: {{ .Values.anchoreApi.service.port }}
+      protocol: TCP
+  selector:
+    app: {{ .Values.appName }}

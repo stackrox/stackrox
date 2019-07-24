@@ -1,0 +1,136 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.appName }}
+  labels:
+    app: {{ .Values.appName }}
+data:
+  ANCHORE_DB_HOST: "{{ .Values.dbAppName }}:5432"
+  ANCHORE_DB_NAME: {{ .Values.postgresql.postgresDatabase }}
+  ANCHORE_DB_USER: {{ .Values.postgresql.postgresUser }}
+
+  config.yaml: |
+    # Anchore Service Configuration File from ConfigMap
+
+    service_dir: {{ .Values.anchoreGlobal.serviceDir }}
+    tmp_dir: {{ .Values.scratchVolumeMountPath }}
+    log_level: {{ .Values.anchoreGlobal.logLevel }}
+    cleanup_images: {{ .Values.anchoreGlobal.cleanupImages }}
+
+    allow_awsecr_iam_auto: {{ .Values.anchoreGlobal.allowECRUseIAMRole }}
+    host_id: "${ANCHORE_POD_NAME}"
+    internal_ssl_verify: false
+    auto_restart_services: false
+
+    metrics:
+      enabled: {{ .Values.anchoreGlobal.enableMetrics }}
+
+    # Uncomment if you have a local endpoint that can accept
+    # notifications from the anchore-engine, as configured below
+    #
+    {{ if .Values.anchoreGlobal.webhooksEnabled }}
+    webhooks:
+      {{ toYaml .Values.anchoreGlobal.webhooks | nindent 6 | trim }}
+    {{ end }}
+
+    # Configure what feeds to sync.
+    # The sync will hit http://ancho.re/feeds, if any outbound firewall config needs to be set in your environment.
+    feeds:
+      sync_enabled: true
+      selective_sync:
+        # If enabled only sync specific feeds instead of all that are found.
+        enabled: true
+        feeds:
+          # Vulnerabilities feed is the feed for distro cve sources (redhat, debian, ubuntu, oracle, alpine....)
+          vulnerabilities: {{ default "true" .Values.anchoreGlobal.syncVulnerabilites }}
+          # NVD Data is used for non-distro CVEs (jars, npm, etc) that are not packaged and released by distros as rpms, debs, etc
+          nvd: {{ default "true" .Values.anchoreGlobal.syncNvd }}
+          # Warning: enabling the package sync causes the service to require much
+          #   more memory to do process the significant data volume. We recommend at least 4GB available for the container
+          packages: false
+      client_url: "https://ancho.re/v1/account/users"
+      token_url: "https://ancho.re/oauth/token"
+      anonymous_user_username: anon@ancho.re
+      anonymous_user_password: pbiU2RYZ2XrmYQ
+      connection_timeout_seconds: {{ default 3 .Values.anchoreGlobal.feedsConnectionTimeout }}
+      read_timeout_seconds: {{ default 60 .Values.anchoreGlobal.feedsReadTimeout }}
+
+    default_admin_password: ${ANCHORE_ADMIN_PASSWORD}
+    default_admin_email: {{ .Values.anchoreGlobal.defaultAdminEmail }}
+
+    credentials:
+      database:
+        db_connect: "postgresql://${ANCHORE_DB_USER}:${ANCHORE_DB_PASSWORD}@${ANCHORE_DB_HOST}/${ANCHORE_DB_NAME}"
+        db_connect_args:
+          timeout: {{ .Values.anchoreGlobal.dbConfig.timeout }}
+          ssl: {{ .Values.anchoreGlobal.dbConfig.ssl }}
+        db_pool_size: {{ .Values.anchoreGlobal.dbConfig.connectionPoolSize }}
+        db_pool_max_overflow: {{ .Values.anchoreGlobal.dbConfig.connectionPoolSize }}
+
+    services:
+      apiext:
+        enabled: true
+        require_auth: true
+        endpoint_hostname: {{ .Values.appName }}
+        listen: 0.0.0.0
+        port: {{ .Values.anchoreApi.service.port }}
+        ssl_enable: false
+        ssl_cert: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretCertName }}"
+        ssl_key: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretKeyName }}"
+      analyzer:
+        enabled: true
+        require_auth: true
+        endpoint_hostname: localhost
+        listen: 0.0.0.0
+        port: {{ .Values.anchoreAnalyzer.containerPort }}
+        cycle_timer_seconds: 1
+        cycle_timers:
+          {{ toYaml .Values.anchoreAnalyzer.cycleTimers | nindent 10 | trim }}
+        max_threads: {{ .Values.anchoreAnalyzer.concurrentTasksPerWorker }}
+        analyzer_driver: 'nodocker'
+        {{- if gt .Values.anchoreAnalyzer.layerCacheMaxGigabytes 0.0 }}
+        layer_cache_enable: true
+        {{- else }}
+        layer_cache_enable: false
+        {{- end }}
+        layer_cache_max_gigabytes: {{ .Values.anchoreAnalyzer.layerCacheMaxGigabytes }}
+        ssl_cert: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretCertName }}"
+        ssl_key: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{ .Values.anchoreGlobal.internalServicesSsl.certSecretKeyName }}"
+        ssl_enable: {{ .Values.anchoreGlobal.internalServicesSslEnabled }}
+      catalog:
+        enabled: true
+        require_auth: true
+        endpoint_hostname: localhost
+        listen: 0.0.0.0
+        port: {{ .Values.anchoreCatalog.service.port }}
+        cycle_timer_seconds: 1
+        cycle_timers:
+          {{ toYaml .Values.anchoreCatalog.cycleTimers | nindent 10 | trim }}
+        ssl_enable: {{ .Values.anchoreGlobal.internalServicesSslEnabled }}
+        ssl_cert: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretCertName }}"
+        ssl_key: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretKeyName }}"
+        event_log:
+          {{ toYaml .Values.anchoreCatalog.events | nindent 10 | trim }}
+        archive:
+          {{ toYaml .Values.anchoreCatalog.archive | nindent 10 | trim }}
+      simplequeue:
+        enabled: true
+        require_auth: true
+        endpoint_hostname: localhost
+        listen: 0.0.0.0
+        port: {{ .Values.anchoreSimpleQueue.service.port }}
+        ssl_enable: {{ .Values.anchoreGlobal.internalServicesSslEnabled }}
+        ssl_cert: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretCertName }}"
+        ssl_key: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretKeyName }}"
+      policy_engine:
+        enabled: true
+        require_auth: true
+        endpoint_hostname: localhost
+        listen: 0.0.0.0
+        port: {{ .Values.anchorePolicyEngine.service.port }}
+        cycle_timer_seconds: 1
+        cycle_timers:
+          {{ toYaml .Values.anchorePolicyEngine.cycleTimers | nindent 10 | trim }}
+        ssl_cert: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretCertName }}"
+        ssl_key: "{{ .Values.anchoreGlobal.internalServicesSsl.certDir -}}/{{- .Values.anchoreGlobal.internalServicesSsl.certSecretKeyName }}"
+        ssl_enable: {{ .Values.anchoreGlobal.internalServicesSslEnabled }}
