@@ -6,6 +6,7 @@ oc project "stackrox"
 
 oc apply -f "$DIR/sensor-rbac.yaml"
 oc apply -f "$DIR/sensor-netpol.yaml"
+oc apply -f  "$DIR/sensor-pod-security.yaml"
 
 # OpenShift roles can be delayed to be added
 sleep 5

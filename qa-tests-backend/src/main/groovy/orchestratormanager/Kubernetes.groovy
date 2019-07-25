@@ -38,6 +38,9 @@ import io.fabric8.kubernetes.api.model.apps.DoneableDeployment
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
+import io.fabric8.kubernetes.api.model.extensions.HostPortRange
+import io.fabric8.kubernetes.api.model.extensions.PodSecurityPolicy
+import io.fabric8.kubernetes.api.model.extensions.PodSecurityPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder
@@ -112,6 +115,7 @@ class Kubernetes implements OrchestratorMain {
         Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
         try {
             client.namespaces().create(namespace)
+            defaultPspForNamespace(ns)
             println "Created namespace ${ns}"
         } catch (KubernetesClientException kce) {
             // 409 is already exists
@@ -789,7 +793,7 @@ class Kubernetes implements OrchestratorMain {
                     new PolicyRule(
                             verbs: it.verbs,
                             apiGroups: it.apiGroups,
-                            resources: it.resoures,
+                            resources: it.resources,
                             nonResourceURLs: it.nonResourceUrls,
                             resourceNames: it.resourceNames
                     )
@@ -954,6 +958,63 @@ class Kubernetes implements OrchestratorMain {
 
     def deleteClusterRoleBinding(K8sRoleBinding roleBinding) {
         client.rbac().clusterRoleBindings().withName(roleBinding.name).delete()
+    }
+
+    /*
+        PodSecurityPolicies
+    */
+
+    private generatePspRole() {
+        def rules = [new K8sPolicyRule(
+                apiGroups: ["extensions"],
+                resources: ["podsecuritypolicies"],
+                resourceNames: ["allow-all-for-test"],
+                verbs: ["use"]
+        ),]
+        return new K8sRole(
+                name: "allow-all-for-test",
+//                namespace: namespace,
+                clusterRole: true,
+                rules: rules
+        )
+    }
+
+    private generatePspRoleBinding(String namespace) {
+        def roleBinding =  new K8sRoleBinding(
+                name: "allow-all-for-test-" + namespace,
+                namespace: namespace,
+                roleRef: generatePspRole(),
+                subjects: [new K8sSubject(
+                        name: "default",
+                        namespace: namespace,
+                        kind: "ServiceAccount"
+                )]
+        )
+        return roleBinding
+    }
+
+    private defaultPspForNamespace(String namespace) {
+        PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
+                .withName("allow-all-for-test")
+                .endMetadata()
+                .withNewSpec()
+                .withPrivileged(true)
+                .withAllowPrivilegeEscalation(true)
+                .withAllowedCapabilities("*")
+                .withVolumes("*")
+                .withHostNetwork(true)
+                .withHostPorts(new HostPortRange(65535, 0))
+                .withHostIPC(true)
+                .withHostPID(true)
+                .withNewRunAsUser().withRule("RunAsAny").endRunAsUser()
+                .withNewSeLinux().withRule("RunAsAny").endSeLinux()
+                .withNewSupplementalGroups().withRule("RunAsAny").endSupplementalGroups()
+                .withNewFsGroup().withRule("RunAsAny").endFsGroup()
+                .endSpec()
+                .build()
+        client.extensions().podSecurityPolicies().createOrReplace(psp)
+        createClusterRole(generatePspRole())
+        createClusterRoleBinding(generatePspRoleBinding(namespace))
     }
 
     /*
@@ -1383,7 +1444,9 @@ class Kubernetes implements OrchestratorMain {
 
     String createNamespace(String ns) {
         Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
-        return client.namespaces().createOrReplace(namespace).metadata.getUid()
+        def namespaceId =  client.namespaces().createOrReplace(namespace).metadata.getUid()
+        defaultPspForNamespace(ns)
+        return namespaceId
     }
 
     def deleteNamespace(String ns) {

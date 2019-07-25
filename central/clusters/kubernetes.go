@@ -42,6 +42,7 @@ func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
 		"kubernetes/kubectl/sensor-rbac.yaml",
 		"kubernetes/kubectl/sensor-netpol.yaml",
 		"kubernetes/kubectl/delete-sensor.sh",
+		"kubernetes/kubectl/sensor-pod-security.yaml",
 	)
 
 	if c.MonitoringEndpoint != "" {

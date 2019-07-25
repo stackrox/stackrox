@@ -568,6 +568,13 @@ commands:
           command: |
             ./scripts/ci/create-webhookserver.sh
 
+  deploy-default-psp:
+    steps:
+      - run:
+          name: Deploy Default PSP for stackrox namespace
+          command: |
+            ./scripts/ci/create-default-psp.sh
+
   deploy-authz-plugin:
     steps:
       - run:
@@ -1077,6 +1084,7 @@ jobs:
     <<: *defaults
     environment:
       - GCP_IMAGE_TYPE: "COS"
+      - POD_SECURITY_POLICIES: "true"
     steps:
       - checkout
       - check-label-to-skip-tests:
@@ -1130,6 +1138,7 @@ jobs:
       - *waitForAPI
       - *waitForSensorK8s
 
+      - deploy-default-psp
       - deploy-webhook-server
       - deploy-authz-plugin
 

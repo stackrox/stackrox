@@ -12,19 +12,24 @@ create-cluster() {
   REGION=us-central1
   NUM_NODES="${NUM_NODES:-4}"
   GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU}"
+  POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
 
   # this function does not work in strict -e mode
   set +euo pipefail
 
   echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
 
+  PSP_ARG=
+  if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
+    PSP_ARG="--enable-pod-security-policy"
+  fi
   zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
   success=0
   for zone in $zones; do
       "$(dirname "${BASH_SOURCE[0]}")/check-workflow-live.sh" || return 1
       echo "Trying zone $zone"
       gcloud config set compute/zone "${zone}"
-      timeout 420 gcloud container clusters create \
+      timeout 420 gcloud beta container clusters create \
           --machine-type n1-standard-2 \
           --num-nodes "${NUM_NODES}" \
           --create-subnetwork range=/28 \
@@ -35,6 +40,7 @@ create-cluster() {
           --image-type ${GCP_IMAGE_TYPE} \
           --tags="stackrox-ci,stackrox-ci-${CIRCLE_JOB}" \
           --labels="stackrox-ci=true,stackrox-ci-job=${CIRCLE_JOB},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}" \
+          ${PSP_ARG} \
           "${CLUSTER_NAME}"
       status="$?"
       if [[ "${status}" == 0 ]];

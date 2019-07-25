@@ -32,6 +32,7 @@ func (o *openshift) Render(c Wrap, _ []byte) ([]*zip.File, error) {
 	filenames.Add(
 		"kubernetes/kubectl/sensor.yaml",
 		"kubernetes/kubectl/sensor-netpol.yaml",
+		"kubernetes/kubectl/sensor-pod-security.yaml",
 		"openshift/kubectl/delete-sensor.sh",
 		"openshift/kubectl/sensor.sh",
 		"openshift/kubectl/sensor-image-setup.sh",

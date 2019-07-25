@@ -87,6 +87,8 @@ echo "Creating RBAC roles..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-rbac.yaml" || print_rbac_instructions
 echo "Creating network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml" || exit 1
+echo "Creating Pod Security Policies..."
+${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
 
 {{if .AdmissionController}}
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
