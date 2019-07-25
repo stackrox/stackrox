@@ -3,8 +3,10 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: {{ .Values.dbAppName }}
+  namespace: {{ .Values.namespace }}
   labels:
     app: {{ .Values.dbAppName }}
+    app.kubernetes.io/name: stackrox
 spec:
   accessModes:
     - {{ .Values.postgresql.persistence.accessMode | quote }}

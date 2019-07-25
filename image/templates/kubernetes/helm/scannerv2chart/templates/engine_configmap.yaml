@@ -2,8 +2,10 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: {{ .Values.appName }}
+  namespace: {{ .Values.namespace }}
   labels:
     app: {{ .Values.appName }}
+    app.kubernetes.io/name: stackrox
 data:
   ANCHORE_DB_HOST: "{{ .Values.dbAppName }}:5432"
   ANCHORE_DB_NAME: {{ .Values.postgresql.postgresDatabase }}
