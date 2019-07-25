@@ -8,7 +8,6 @@ import (
 	"github.com/golang/mock/gomock"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
-	"github.com/stackrox/rox/central/config/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -77,9 +76,9 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(&storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
 			AlertRetention: &storage.PrivateConfig_AlertRetentionDurationDays{
-				AlertRetentionDurationDays: datastore.DefaultAlertRetention,
+				AlertRetentionDurationDays: configDatastore.DefaultAlertRetention,
 			},
-			ImageRetentionDurationDays: datastore.DefaultImageRetention,
+			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
 		},
 	}, nil)
 
@@ -110,9 +109,9 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(&storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
 			AlertRetention: &storage.PrivateConfig_AlertRetentionDurationDays{
-				AlertRetentionDurationDays: datastore.DefaultAlertRetention,
+				AlertRetentionDurationDays: configDatastore.DefaultAlertRetention,
 			},
-			ImageRetentionDurationDays: datastore.DefaultImageRetention,
+			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
 		},
 	}, nil)
 
@@ -141,7 +140,7 @@ func TestImagePruning(t *testing.T) {
 			name: "one old and one new - no deployments",
 			images: []*storage.Image{
 				newImageInstance("id1", 1),
-				newImageInstance("id2", datastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
 			expectedIDs: []string{"id1"},
 		},
@@ -149,7 +148,7 @@ func TestImagePruning(t *testing.T) {
 			name: "one old and one new - 1 deployment with new",
 			images: []*storage.Image{
 				newImageInstance("id1", 1),
-				newImageInstance("id2", datastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
 			deployment:  newDeployment("id1"),
 			expectedIDs: []string{"id1"},
@@ -158,7 +157,7 @@ func TestImagePruning(t *testing.T) {
 			name: "one old and one new - 1 deployment with old",
 			images: []*storage.Image{
 				newImageInstance("id1", 1),
-				newImageInstance("id2", datastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
 			deployment:  newDeployment("id2"),
 			expectedIDs: []string{"id1", "id2"},
@@ -166,8 +165,8 @@ func TestImagePruning(t *testing.T) {
 		{
 			name: "two old - 1 deployment with old",
 			images: []*storage.Image{
-				newImageInstance("id1", datastore.DefaultImageRetention+1),
-				newImageInstance("id2", datastore.DefaultImageRetention+1),
+				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
 			deployment:  newDeployment("id2"),
 			expectedIDs: []string{"id2"},
@@ -235,22 +234,22 @@ func TestAlertPruning(t *testing.T) {
 			name: "One old alert, and one new alert",
 			alerts: []*storage.Alert{
 				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
-				newAlertInstance("id2", datastore.DefaultAlertRetention+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
+				newAlertInstance("id2", configDatastore.DefaultAlertRetention+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
 			expectedIDs: []string{"id1"},
 		},
 		{
 			name: "One old runtime alert, and one old deploy time unresolved alert",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", datastore.DefaultAlertRetention+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newAlertInstance("id2", datastore.DefaultAlertRetention+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
+				newAlertInstance("id1", configDatastore.DefaultAlertRetention+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newAlertInstance("id2", configDatastore.DefaultAlertRetention+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
 			expectedIDs: []string{"id1"},
 		},
 		{
 			name: "one old deploy time alert resolved",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", datastore.DefaultAlertRetention+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
+				newAlertInstance("id1", configDatastore.DefaultAlertRetention+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
 			},
 			expectedIDs: []string{},
 		},

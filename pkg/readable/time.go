@@ -5,7 +5,6 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -14,7 +13,7 @@ var (
 )
 
 // ProtoTime takes a proto time type and converts it to a human readable string down to seconds
-func ProtoTime(ts *timestamp.Timestamp) string {
+func ProtoTime(ts *ptypes.Timestamp) string {
 	t, err := ptypes.TimestampFromProto(ts)
 	if err != nil {
 		log.Error(err)

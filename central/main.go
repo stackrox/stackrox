@@ -108,7 +108,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	authzUser "github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -472,42 +471,42 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		uiRoute(ui.Mux()),
 		{
 			Route:         "/api/extensions/clusters/zip",
-			Authorizer:    authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
+			Authorizer:    user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{
 			Route:         "/api/extensions/scanner/zip",
-			Authorizer:    authzUser.With(),
+			Authorizer:    user.With(),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
 		},
 		{
 			Route:         "/api/cli/download/",
-			Authorizer:    authzUser.With(),
+			Authorizer:    user.With(),
 			ServerHandler: cli.Handler(),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/backup",
-			Authorizer:    authzUser.With(resources.AllResourcesViewPermissions()...),
+			Authorizer:    user.With(resources.AllResourcesViewPermissions()...),
 			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/export",
-			Authorizer:    authzUser.With(resources.AllResourcesViewPermissions()...),
+			Authorizer:    user.With(resources.AllResourcesViewPermissions()...),
 			ServerHandler: globaldbHandlers.ExportDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/restore",
-			Authorizer:    authzUser.With(resources.AllResourcesModifyPermissions()...),
+			Authorizer:    user.With(resources.AllResourcesModifyPermissions()...),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 		},
 		{
 			Route:         "/api/docs/swagger",
-			Authorizer:    authzUser.With(permissions.View(resources.APIToken)),
+			Authorizer:    user.With(permissions.View(resources.APIToken)),
 			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},
@@ -519,7 +518,7 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/compliance/export/csv",
-			Authorizer:    authzUser.With(permissions.View(resources.Compliance)),
+			Authorizer:    user.With(permissions.View(resources.Compliance)),
 			ServerHandler: complianceHandlers.CSVHandler(),
 			Compression:   true,
 		},
@@ -530,10 +529,10 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		routes.CustomRoute{
 			Route: logImbueRoute,
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
-				authzUser.With(permissions.View(resources.ImbuedLogs)): {
+				user.With(permissions.View(resources.ImbuedLogs)): {
 					routes.RPCNameForHTTP(logImbueRoute, http.MethodGet),
 				},
-				authzUser.With(permissions.Modify(resources.ImbuedLogs)): {
+				user.With(permissions.Modify(resources.ImbuedLogs)): {
 					routes.RPCNameForHTTP(logImbueRoute, http.MethodPost),
 				},
 			}),
@@ -547,10 +546,10 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		routes.CustomRoute{
 			Route: scannerDefinitionsRoute,
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
-				or.ScannerOr(authzUser.With(permissions.View(resources.ScannerDefinitions))): {
+				or.ScannerOr(user.With(permissions.View(resources.ScannerDefinitions))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
-				authzUser.With(permissions.Modify(resources.ScannerDefinitions)): {
+				user.With(permissions.Modify(resources.ScannerDefinitions)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},
 			}),
@@ -568,7 +567,7 @@ func debugRoutes() []routes.CustomRoute {
 	for r, h := range routes.DebugRoutes {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         r,
-			Authorizer:    authzUser.WithRole(role.Admin),
+			Authorizer:    user.WithRole(role.Admin),
 			ServerHandler: h,
 			Compression:   true,
 		})

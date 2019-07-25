@@ -7,7 +7,6 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -213,13 +212,13 @@ func (b *storeImpl) populateClusterStatus(tx *bolt.Tx, cluster *storage.Cluster)
 	cluster.Status = status
 }
 
-func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*timestamp.Timestamp, error) {
+func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*ptypes.Timestamp, error) {
 	bucket := tx.Bucket(clusterLastContactTimeBucket)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return nil, nil
 	}
-	t := new(timestamp.Timestamp)
+	t := new(ptypes.Timestamp)
 	err := proto.Unmarshal(val, t)
 	if err != nil {
 		return nil, err

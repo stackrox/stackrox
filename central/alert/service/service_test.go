@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/alerttest"
@@ -214,7 +213,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 300},
+			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
 			Id: "id2",
@@ -224,7 +223,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 				Name:       "policy2",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 200},
+			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
 			Id: "id3",
@@ -234,7 +233,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 100},
+			Time: &types.Timestamp{Seconds: 100},
 		},
 	}
 
@@ -274,7 +273,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 300},
+			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
 			Id: "id2",
@@ -284,7 +283,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				Name:       "policy2",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 200},
+			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
 			Id: "id3",
@@ -294,7 +293,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				Name:       "policy30",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 150},
+			Time: &types.Timestamp{Seconds: 150},
 		},
 		{
 			Id: "id4",
@@ -304,7 +303,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 100},
+			Time: &types.Timestamp{Seconds: 100},
 		},
 	}
 
@@ -384,7 +383,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 300},
+			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
 			Id: "id2",
@@ -393,7 +392,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 				Name:       "policy2",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 200},
+			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
 			Id: "id3",
@@ -402,7 +401,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 130},
+			Time: &types.Timestamp{Seconds: 130},
 		},
 		{
 			Id: "id4",
@@ -411,7 +410,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 				Name:       "policy3",
 				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 120},
+			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id5",
@@ -420,7 +419,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 120},
+			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id6",
@@ -429,7 +428,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 110},
+			Time: &types.Timestamp{Seconds: 110},
 		},
 	}
 
@@ -471,7 +470,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 300},
+			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
 			Id: "id2",
@@ -480,7 +479,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Name:       "policy2",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 200},
+			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
 			Id: "id3",
@@ -489,7 +488,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 130},
+			Time: &types.Timestamp{Seconds: 130},
 		},
 		{
 			Id: "id4",
@@ -498,7 +497,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Name:       "policy3",
 				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 120},
+			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id5",
@@ -507,7 +506,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 120},
+			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id6",
@@ -516,7 +515,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Time: &timestamp.Timestamp{Seconds: 110},
+			Time: &types.Timestamp{Seconds: 110},
 		},
 	}
 
@@ -575,7 +574,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
-			Time: &timestamp.Timestamp{Seconds: 300},
+			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
 			Id: "id2",
@@ -587,7 +586,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
-			Time: &timestamp.Timestamp{Seconds: 200},
+			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
 			Id: "id3",
@@ -599,7 +598,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
-			Time: &timestamp.Timestamp{Seconds: 130},
+			Time: &types.Timestamp{Seconds: 130},
 		},
 		{
 			Id: "id4",
@@ -611,7 +610,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
-			Time: &timestamp.Timestamp{Seconds: 120},
+			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id5",
@@ -623,7 +622,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
-			Time: &timestamp.Timestamp{Seconds: 120},
+			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id6",
@@ -635,7 +634,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
-			Time: &timestamp.Timestamp{Seconds: 110},
+			Time: &types.Timestamp{Seconds: 110},
 		},
 	}
 
@@ -709,7 +708,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
-			Time: &timestamp.Timestamp{Seconds: 300},
+			Time: &types.Timestamp{Seconds: 300},
 		},
 		{
 			Id: "id2",
@@ -721,7 +720,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
-			Time: &timestamp.Timestamp{Seconds: 200},
+			Time: &types.Timestamp{Seconds: 200},
 		},
 		{
 			Id: "id3",
@@ -733,7 +732,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
-			Time: &timestamp.Timestamp{Seconds: 130},
+			Time: &types.Timestamp{Seconds: 130},
 		},
 		{
 			Id: "id4",
@@ -745,7 +744,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
-			Time: &timestamp.Timestamp{Seconds: 120},
+			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id5",
@@ -757,7 +756,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
-			Time: &timestamp.Timestamp{Seconds: 120},
+			Time: &types.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id6",
@@ -769,7 +768,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
-			Time: &timestamp.Timestamp{Seconds: 110},
+			Time: &types.Timestamp{Seconds: 110},
 		},
 	}
 
@@ -808,7 +807,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	alerts := []*storage.ListAlert{
 		{
 			Id: "id1",
-			Time: &timestamp.Timestamp{
+			Time: &types.Timestamp{
 				Seconds: 1,
 			},
 			State:      storage.ViolationState_RESOLVED,
@@ -817,7 +816,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 		},
 		{
 			Id: "id2",
-			Time: &timestamp.Timestamp{
+			Time: &types.Timestamp{
 				Seconds: 6,
 			},
 			Deployment: &storage.ListAlertDeployment{ClusterName: "dev"},
@@ -825,7 +824,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 		},
 		{
 			Id: "id3",
-			Time: &timestamp.Timestamp{
+			Time: &types.Timestamp{
 				Seconds: 1,
 			},
 			State:      storage.ViolationState_RESOLVED,
@@ -834,7 +833,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 		},
 		{
 			Id: "id4",
-			Time: &timestamp.Timestamp{
+			Time: &types.Timestamp{
 				Seconds: 6,
 			},
 			Deployment: &storage.ListAlertDeployment{ClusterName: "prod"},
@@ -960,7 +959,7 @@ func (s *patchAlertTests) TearDownTest() {
 func (s *patchAlertTests) TestSnoozeAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(1 * time.Hour))
+	snoozeTill, err := types.TimestampProto(time.Now().Add(1 * time.Hour))
 	s.NoError(err)
 	fakeAlert.SnoozeTill = snoozeTill
 	s.storage.EXPECT().UpdateAlert(gomock.Any(), fakeAlert).Return(nil)
@@ -977,7 +976,7 @@ func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).AnyTimes().Return(fakeAlert, true, nil)
 
-	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(-1 * time.Hour))
+	snoozeTill, err := types.TimestampProto(time.Now().Add(-1 * time.Hour))
 	s.NoError(err)
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
 	s.Equal(status.Error(codes.InvalidArgument, badSnoozeErrorMsg), err)

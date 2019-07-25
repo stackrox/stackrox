@@ -7,7 +7,6 @@ import (
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
-	pkgRbacUtils "github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -147,7 +146,7 @@ func (resolver *serviceAccountResolver) SaNamespace(ctx context.Context) (*names
 
 // ClusterAdmin returns if the service account is a cluster admin or not
 func (resolver *serviceAccountResolver) ClusterAdmin(ctx context.Context) (bool, error) {
-	sa := pkgRbacUtils.GetSubjectForServiceAccount(resolver.data)
+	sa := k8srbac.GetSubjectForServiceAccount(resolver.data)
 	evaluator := resolver.getClusterEvaluator(ctx)
 
 	return evaluator.IsClusterAdmin(ctx, sa), nil

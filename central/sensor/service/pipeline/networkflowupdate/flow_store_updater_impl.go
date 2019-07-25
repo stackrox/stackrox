@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	protobuf "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/networkflow/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -17,7 +16,7 @@ type flowStoreUpdaterImpl struct {
 }
 
 // update updates the FlowStore with the given network flow updates.
-func (s *flowStoreUpdaterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) error {
+func (s *flowStoreUpdaterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *types.Timestamp) error {
 	updatedFlows := make(map[networkFlowProperties]timestamp.MicroTS, len(newFlows))
 
 	// Add existing untermintated flows from the store if this is the first run.
@@ -53,7 +52,7 @@ func (s *flowStoreUpdaterImpl) addExistingNonTerminatedFlows(ctx context.Context
 	return nil
 }
 
-func addNewFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS, newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) {
+func addNewFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS, newFlows []*storage.NetworkFlow, updateTS *types.Timestamp) {
 	tsOffset := timestamp.Now() - timestamp.FromProtobuf(updateTS)
 	for _, newFlow := range newFlows {
 		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)

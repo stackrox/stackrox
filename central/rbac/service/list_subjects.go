@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/k8srbac"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
-	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -127,7 +126,7 @@ func (i *indexerImpl) Add(subject *storage.Subject) error {
 	return i.index.Index(subject.GetName(), wrap(subject))
 }
 
-func (i *indexerImpl) Search(subjectQuery *v1.Query) ([]searchPkg.Result, error) {
+func (i *indexerImpl) Search(subjectQuery *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Subject")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_SUBJECTS, subjectQuery, i.index, mapping.OptionsMap)
 }
