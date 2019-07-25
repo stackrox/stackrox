@@ -51,6 +51,8 @@ class ComplianceTest extends BaseSpecification {
     private String clusterId
     @Shared
     private gcrId = ""
+    @Shared
+    private Map<String, String> standardsByName = [:]
 
     def setupSpec() {
         // Get cluster ID
@@ -61,6 +63,11 @@ class ComplianceTest extends BaseSpecification {
         ImageService.clearImageCaches()
         dtrId = Services.addDockerTrustedRegistry(false)
         gcrId = Services.addGcrRegistryAndScanner()
+
+        // Get compliance metadata
+        standardsByName = ComplianceService.getComplianceStandards().collectEntries {
+            [(it.getName()): it.getId()]
+        }
 
         // Generate baseline compliance runs
         def complianceRuns = ComplianceManagementService.triggerComplianceRunsAndWait()
@@ -371,9 +378,7 @@ class ComplianceTest extends BaseSpecification {
                 def controlId = row.standard ?
                         convertStandardToId(row.control.replaceAll("\"*=*\\(*\\)*", "")) :
                         null
-                def standardId = row.standard ?
-                        convertStandardToId(row.standard) :
-                        null
+                def standardId = standardsByName.get(row.standard)
                 rowNumber++
                 ComplianceRunResults result = BASE_RESULTS.get(standardId)
                 assert result
