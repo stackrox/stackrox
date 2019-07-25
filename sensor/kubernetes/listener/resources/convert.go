@@ -354,6 +354,9 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 		sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
 			return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
 		})
+		sort.SliceStable(p.Spec.Containers, func(i, j int) bool {
+			return p.Spec.Containers[i].Name < p.Spec.Containers[j].Name
+		})
 		for i, c := range p.Status.ContainerStatuses {
 			if i >= len(w.Deployment.Containers) || i >= len(p.Spec.Containers) {
 				// This should not happened, but could happen if w.Deployment.Containers and container status are out of sync
