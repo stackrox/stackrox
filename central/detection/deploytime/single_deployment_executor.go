@@ -18,10 +18,11 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func newSingleDeploymentExecutor(executorCtx context.Context, ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image) alertCollectingExecutor {
+func newSingleDeploymentExecutor(executorCtx context.Context, ctx DetectionContext, searcher search.Searcher, deployment *storage.Deployment, images []*storage.Image) alertCollectingExecutor {
 	return &policyExecutor{
 		executorCtx: executorCtx,
 		ctx:         ctx,
+		searcher:    searcher,
 		deployment:  deployment,
 		images:      images,
 	}
@@ -34,6 +35,7 @@ type closeableIndex interface {
 type policyExecutor struct {
 	executorCtx context.Context
 	ctx         DetectionContext
+	searcher    search.Searcher
 	deployment  *storage.Deployment
 	images      []*storage.Image
 	alerts      []*storage.Alert
@@ -73,8 +75,24 @@ func (d *policyExecutor) Execute(compiled detection.CompiledPolicy) error {
 	return nil
 }
 
+func (d *policyExecutor) hasImagesWithNoIDs() bool {
+	for _, c := range d.deployment.GetContainers() {
+		if c.GetImage().GetId() == "" {
+			return true
+		}
+	}
+	return false
+}
+
 func (d *policyExecutor) getViolations(ctx context.Context, enforcement storage.EnforcementAction, matcher searchbasedpolicies.Matcher) ([]*storage.Alert_Violation, error) {
-	return matchWithEmptyImageIDs(ctx, matcher, d.deployment, d.images)
+	if d.hasImagesWithNoIDs() {
+		return matchWithEmptyImageIDs(ctx, matcher, d.deployment, d.images)
+	}
+	violations, err := matcher.MatchOne(ctx, d.searcher, d.deployment.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return violations.AlertViolations, nil
 }
 
 func matchWithEmptyImageIDs(ctx context.Context, matcher searchbasedpolicies.Matcher, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert_Violation, error) {

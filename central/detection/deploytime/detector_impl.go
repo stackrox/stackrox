@@ -28,7 +28,7 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 
 // Detect runs detection on an deployment, returning any generated alerts.
 func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert, error) {
-	exe := newSingleDeploymentExecutor(executorCtx, ctx, deployment, images)
+	exe := newSingleDeploymentExecutor(executorCtx, ctx, d.deployments, deployment, images)
 	err := d.policySet.ForEach(exe)
 	if err != nil {
 		return nil, err
