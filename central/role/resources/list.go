@@ -86,7 +86,9 @@ func AllResourcesViewPermissions() []permissions.ResourceWithAccess {
 	result := make([]permissions.ResourceWithAccess, len(metadatas))
 	for i, metadata := range metadatas {
 		result[i] = permissions.ResourceWithAccess{
-			Resource: metadata,
+			// We want to ensure access to *all* resources, so when using SAC, always perform legacy auth (= enforcement
+			// at the global scope) even for cluster- or namespace-scoped resources.
+			Resource: permissions.WithLegacyAuthForSAC(metadata, true),
 			Access:   storage.Access_READ_ACCESS,
 		}
 	}
@@ -99,7 +101,9 @@ func AllResourcesModifyPermissions() []permissions.ResourceWithAccess {
 	result := make([]permissions.ResourceWithAccess, len(metadatas))
 	for i, metadata := range metadatas {
 		result[i] = permissions.ResourceWithAccess{
-			Resource: metadata,
+			// We want to ensure access to *all* resources, so when using SAC, always perform legacy auth (= enforcement
+			// at the global scope) even for cluster- or namespace-scoped resources.
+			Resource: permissions.WithLegacyAuthForSAC(metadata, true),
 			Access:   storage.Access_READ_WRITE_ACCESS,
 		}
 	}
