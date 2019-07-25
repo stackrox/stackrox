@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	// TODO(ROX-2163) - tracks the move to 5 seconds from 1 second
 	defaultLockTimeout = 5 * time.Second
 
 	// We omit the `ROX_` prefix as this is fairly general (potential open-sourcing). Also, this is not a setting in the

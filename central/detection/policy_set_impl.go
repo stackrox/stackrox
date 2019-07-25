@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -20,10 +19,9 @@ var (
 )
 
 type setImpl struct {
-	lock               sync.RWMutex
 	policyStore        policyDatastore.DataStore
 	compiler           PolicyCompiler
-	policyIDToCompiled map[string]CompiledPolicy
+	policyIDToCompiled StringCompiledPolicyFastRMap
 }
 
 func (p *setImpl) Compiler() PolicyCompiler {
@@ -31,10 +29,9 @@ func (p *setImpl) Compiler() PolicyCompiler {
 }
 
 func (p *setImpl) ForEach(pt PolicyExecutor) error {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+	m := p.policyIDToCompiled.GetMap()
 
-	for _, compiled := range p.policyIDToCompiled {
+	for _, compiled := range m {
 		t := time.Now()
 		if err := pt.Execute(compiled); err != nil {
 			return err
@@ -45,10 +42,8 @@ func (p *setImpl) ForEach(pt PolicyExecutor) error {
 }
 
 func (p *setImpl) ForOne(pID string, pt PolicyExecutor) error {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-
-	if compiled, exists := p.policyIDToCompiled[pID]; exists {
+	compiled, exists := p.policyIDToCompiled.Get(pID)
+	if exists {
 		return pt.Execute(compiled)
 	}
 	return fmt.Errorf("policy with ID not found in set: %s", pID)
@@ -56,24 +51,18 @@ func (p *setImpl) ForOne(pID string, pt PolicyExecutor) error {
 
 // UpsertPolicy adds or updates a policy in the set.
 func (p *setImpl) UpsertPolicy(policy *storage.Policy) error {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
 	compiled, err := p.compiler.CompilePolicy(policy)
 	if err != nil {
 		log.Errorf("unable to compile policy: %s", err)
 		return err
 	}
 
-	p.policyIDToCompiled[compiled.Policy().GetId()] = compiled
+	p.policyIDToCompiled.Set(compiled.Policy().GetId(), compiled)
 	return nil
 }
 
 func (p *setImpl) Recompile(policyID string) error {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	olcCompiled, exists := p.policyIDToCompiled[policyID]
+	olcCompiled, exists := p.policyIDToCompiled.Get(policyID)
 	if !exists {
 		return fmt.Errorf("policy %s does not exist to recompile", policyID)
 	}
@@ -84,25 +73,21 @@ func (p *setImpl) Recompile(policyID string) error {
 		return err
 	}
 
-	p.policyIDToCompiled[newCompiled.Policy().GetId()] = newCompiled
+	p.policyIDToCompiled.Set(newCompiled.Policy().GetId(), newCompiled)
 	return nil
 }
 
 // RemovePolicy removes a policy from the set.
 func (p *setImpl) RemovePolicy(policyID string) error {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	delete(p.policyIDToCompiled, policyID)
+	p.policyIDToCompiled.Delete(policyID)
 	return nil
 }
 
 // RemoveNotifier removes a given notifier from any policies in the set that use it.
 func (p *setImpl) RemoveNotifier(notifierID string) error {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	m := p.policyIDToCompiled.GetMap()
 
-	for _, compiled := range p.policyIDToCompiled {
+	for _, compiled := range m {
 		policy := compiled.Policy()
 
 		filtered := policy.GetNotifiers()[:0]

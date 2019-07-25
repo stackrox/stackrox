@@ -10,7 +10,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// PolicySet is a set of policies.'
+// PolicySet is a set of policies.
 //go:generate mockgen-wrapper PolicySet
 type PolicySet interface {
 	Compiler() PolicyCompiler
@@ -27,7 +27,7 @@ type PolicySet interface {
 // NewPolicySet returns a new instance of a PolicySet.
 func NewPolicySet(store policyDatastore.DataStore, compiler PolicyCompiler) PolicySet {
 	return &setImpl{
-		policyIDToCompiled: make(map[string]CompiledPolicy),
+		policyIDToCompiled: NewStringCompiledPolicyFastRMap(),
 		policyStore:        store,
 		compiler:           compiler,
 	}
