@@ -368,8 +368,7 @@
   version = "v1.7.1"
 
 [[projects]]
-  branch = "v1.6.1"
-  digest = "1:27a1bee3bd2a097a4862420d5ace2625de356a91ee3df7181a18a7eb37d8a958"
+  digest = "1:489d1165704f65ea260ff407954cf4cae01787c35a63c8dc4c2586d36e791b6f"
   name = "github.com/dgraph-io/badger"
   packages = [
     ".",
@@ -380,8 +379,7 @@
     "y",
   ]
   pruneopts = "NUT"
-  revision = "7cc8d54ce02c060620ff931069e60b8db2eb55f7"
-  source = "github.com/stackrox/badger.git"
+  revision = "28ef9bfd243809d6f4abc7dfa1ad92984eac9b66"
 
 [[projects]]
   branch = "master"

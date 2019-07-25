@@ -30,7 +30,12 @@ func New(path string) (*badger.DB, error) {
 		return nil, fmt.Errorf("badger path %s is not a directory", path)
 	}
 
-	options := badger.DefaultOptions(path).WithDir(path).WithLogger(nullLogger{}).WithTruncate(true)
+	options := badger.DefaultOptions
+	options.ValueDir = path
+	options.Dir = path
+	options.Logger = nullLogger{}
+	options.Truncate = true
+
 	return badger.Open(options)
 }
 
