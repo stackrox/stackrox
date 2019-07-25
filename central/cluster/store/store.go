@@ -23,7 +23,7 @@ type Store interface {
 	AddCluster(cluster *storage.Cluster) (string, error)
 	UpdateCluster(cluster *storage.Cluster) error
 	RemoveCluster(id string) error
-	UpdateClusterContactTime(id string, t time.Time) error
+	UpdateClusterContactTimes(t time.Time, ids ...string) error
 	UpdateClusterStatus(id string, status *storage.ClusterStatus) error
 }
 

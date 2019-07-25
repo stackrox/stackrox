@@ -71,5 +71,5 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if !exists {
 		return status.Errorf(codes.NotFound, "cluster %q not found in DB; it was possibly deleted", clusterID)
 	}
-	return s.manager.HandleConnection(server.Context(), clusterID, s.pf, server, s.clusters)
+	return s.manager.HandleConnection(server.Context(), clusterID, s.pf, server)
 }

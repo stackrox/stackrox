@@ -281,17 +281,17 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterContactTime() {
 	}
 	suite.clusters.EXPECT().UpdateCluster(gomock.Any()).Times(0)
 
-	err := suite.clusterDataStore.UpdateClusterContactTime(suite.hasNoneCtx, "F", time.Now())
+	err := suite.clusterDataStore.UpdateClusterContactTimes(suite.hasNoneCtx, time.Now(), "F")
 	suite.Error(err, "expected an error trying to write without permissions")
 
-	err = suite.clusterDataStore.UpdateClusterContactTime(suite.hasReadCtx, "IDK", time.Now())
+	err = suite.clusterDataStore.UpdateClusterContactTimes(suite.hasReadCtx, time.Now(), "IDK")
 	suite.Error(err, "expected an error trying to write without permissions")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsUpdateClusterContactTime() {
-	suite.clusters.EXPECT().UpdateClusterContactTime(gomock.Any(), gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().UpdateClusterContactTimes(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := suite.clusterDataStore.UpdateClusterContactTime(suite.hasWriteCtx, "qwerty", time.Now())
+	err := suite.clusterDataStore.UpdateClusterContactTimes(suite.hasWriteCtx, time.Now(), "qwerty")
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 

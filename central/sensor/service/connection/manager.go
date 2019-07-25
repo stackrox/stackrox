@@ -11,14 +11,16 @@ import (
 
 // ClusterManager envelopes functions that interact with clusters
 type ClusterManager interface {
-	UpdateClusterContactTime(ctx context.Context, clusterID string, time time.Time) error
+	UpdateClusterContactTimes(ctx context.Context, time time.Time, clusterID ...string) error
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
 }
 
 // Manager is responsible for managing all active connections from sensors.
 //go:generate mockgen-wrapper Manager
 type Manager interface {
-	HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, clusterMgr ClusterManager) error
+	Start()
+	RegisterClusterManager(mgr ClusterManager)
+	HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer) error
 	GetConnection(clusterID string) SensorConnection
 
 	GetActiveConnections() []SensorConnection

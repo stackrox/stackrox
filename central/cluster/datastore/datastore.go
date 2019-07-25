@@ -39,7 +39,7 @@ type DataStore interface {
 	AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error)
 	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error
 	RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error
-	UpdateClusterContactTime(ctx context.Context, id string, t time.Time) error
+	UpdateClusterContactTimes(ctx context.Context, t time.Time, ids ...string) error
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)

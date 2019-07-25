@@ -111,16 +111,21 @@ func (mr *MockStoreMockRecorder) UpdateCluster(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCluster", reflect.TypeOf((*MockStore)(nil).UpdateCluster), arg0)
 }
 
-// UpdateClusterContactTime mocks base method
-func (m *MockStore) UpdateClusterContactTime(arg0 string, arg1 time.Time) error {
-	ret := m.ctrl.Call(m, "UpdateClusterContactTime", arg0, arg1)
+// UpdateClusterContactTimes mocks base method
+func (m *MockStore) UpdateClusterContactTimes(arg0 time.Time, arg1 ...string) error {
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateClusterContactTimes", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateClusterContactTime indicates an expected call of UpdateClusterContactTime
-func (mr *MockStoreMockRecorder) UpdateClusterContactTime(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterContactTime", reflect.TypeOf((*MockStore)(nil).UpdateClusterContactTime), arg0, arg1)
+// UpdateClusterContactTimes indicates an expected call of UpdateClusterContactTimes
+func (mr *MockStoreMockRecorder) UpdateClusterContactTimes(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterContactTimes", reflect.TypeOf((*MockStore)(nil).UpdateClusterContactTimes), varargs...)
 }
 
 // UpdateClusterStatus mocks base method

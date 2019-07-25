@@ -93,7 +93,7 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		suite.NoError(suite.store.UpdateClusterStatus(b.GetId(), statuses[i]))
 		t, err := ptypes.TimestampFromProto(statuses[i].GetLastContact())
 		suite.NoError(err)
-		err = suite.store.UpdateClusterContactTime(b.GetId(), t)
+		err = suite.store.UpdateClusterContactTimes(t, b.GetId())
 		suite.NoError(err)
 	}
 

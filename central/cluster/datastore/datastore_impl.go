@@ -180,14 +180,14 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 }
 
 // GetCluster is a pass through function to the underlying storage.
-func (ds *datastoreImpl) UpdateClusterContactTime(ctx context.Context, id string, t time.Time) error {
-	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(id)); err != nil {
+func (ds *datastoreImpl) UpdateClusterContactTimes(ctx context.Context, t time.Time, ids ...string) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
 	}
 
-	return ds.storage.UpdateClusterContactTime(id, t)
+	return ds.storage.UpdateClusterContactTimes(t, ids...)
 }
 
 // RemoveCluster removes a cluster from the storage and the indexer

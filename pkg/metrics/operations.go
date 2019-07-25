@@ -32,6 +32,7 @@ const (
 	Search
 
 	Update
+	UpdateMany
 	Upsert
 	UpsertAll
 )

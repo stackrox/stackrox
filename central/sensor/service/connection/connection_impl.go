@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/scrape"
@@ -13,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
-	"golang.org/x/time/rate"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -36,8 +34,7 @@ type sensorConnection struct {
 
 	eventPipeline pipeline.ClusterPipeline
 
-	clusterMgr               ClusterManager
-	checkInRecordRateLimiter *rate.Limiter
+	clusterMgr ClusterManager
 }
 
 func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, clusterMgr ClusterManager) (*sensorConnection, error) {
@@ -55,8 +52,6 @@ func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, c
 
 		clusterID:  clusterID,
 		clusterMgr: clusterMgr,
-
-		checkInRecordRateLimiter: rate.NewLimiter(rate.Every(10*time.Second), 1),
 	}
 
 	// Need a reference to conn for injector
@@ -73,16 +68,6 @@ func (c *sensorConnection) Terminate(err error) bool {
 
 func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &c.stoppedSig
-}
-
-// Record the check-in if the rate limiter allows it.
-func (c *sensorConnection) recordCheckInRateLimited(ctx context.Context) {
-	if c.checkInRecordRateLimiter.Allow() {
-		err := c.clusterMgr.UpdateClusterContactTime(ctx, c.clusterID, time.Now())
-		if err != nil {
-			log.Warnf("Could not record cluster contact: %v", err)
-		}
-	}
 }
 
 func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.MsgFromSensor) {
@@ -103,7 +88,6 @@ func (c *sensorConnection) runRecv(ctx context.Context, server central.SensorSer
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
-		c.recordCheckInRateLimited(ctx)
 
 		c.multiplexedPush(ctx, msg)
 	}

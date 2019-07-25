@@ -290,6 +290,9 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 	}
 
+	connection.ManagerSingleton().RegisterClusterManager(clusterDataStore.Singleton())
+	go connection.ManagerSingleton().Start()
+
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}

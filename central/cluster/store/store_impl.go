@@ -155,11 +155,11 @@ func (b *storeImpl) RemoveCluster(id string) error {
 	})
 }
 
-// UpdateClusterContactTime stores the time at which the cluster has last
+// UpdateClusterContactTimes stores the time at which the cluster has last
 // talked with Central. This is maintained separately to avoid being clobbered
 // by updates to the main Cluster config object.
-func (b *storeImpl) UpdateClusterContactTime(id string, t time.Time) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ClusterContactTime")
+func (b *storeImpl) UpdateClusterContactTimes(t time.Time, ids ...string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.UpdateMany, "ClusterContactTime")
 
 	tsProto, err := ptypes.TimestampProto(t)
 	if err != nil {
@@ -170,10 +170,14 @@ func (b *storeImpl) UpdateClusterContactTime(id string, t time.Time) error {
 		return err
 	}
 
-	key := []byte(id)
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(clusterLastContactTimeBucket)
-		return bucket.Put(key, bytes)
+		for _, id := range ids {
+			if err := bucket.Put([]byte(id), bytes); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
