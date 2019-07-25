@@ -2,7 +2,7 @@ package metadata
 
 var pciDss3_2 = Standard{
 	ID:   "PCI_DSS_3_2",
-	Name: "PCI DSS 3.2",
+	Name: "PCI DSS 3.2.1",
 	Categories: []Category{
 		{
 			ID:          "1",
@@ -251,7 +251,7 @@ var pciDss3_2 = Standard{
 				{
 					ID:          "3_5_1",
 					Name:        "3.5.1",
-					Description: " Additional requirement for service providers only: Maintain a documented description of the cryptographic architecture that includes: • Details of all algorithms, protocols, and keys used for the protection of cardholder data, including key strength and expiry date • Description of the key usage for each key. • Inventory of any HSMs and other SCDs used for key management Note: This requirement is a best practice until January 31, 2018, after which it becomes a requirement.",
+					Description: " Additional requirement for service providers only: Maintain a documented description of the cryptographic architecture that includes: • Details of all algorithms, protocols, and keys used for the protection of cardholder data, including key strength and expiry date • Description of the key usage for each key. • Inventory of any HSMs and other SCDs used for key management.",
 				},
 				{
 					ID:          "3_5_2",
@@ -467,7 +467,7 @@ var pciDss3_2 = Standard{
 				{
 					ID:          "6_4_6",
 					Name:        "6.4.6",
-					Description: "Upon completion of a significant change, all relevant PCI DSS requirements must be implemented on all new or changed systems and networks, and documentation updated as applicable. Note: This requirement is a best practice until January 31, 2018, after which it becomes a requirement.",
+					Description: "Upon completion of a significant change, all relevant PCI DSS requirements must be implemented on all new or changed systems and networks, and documentation updated as applicable.",
 				},
 				{
 					ID:          "6_5",
@@ -686,7 +686,7 @@ var pciDss3_2 = Standard{
 				{
 					ID:          "8_3_1",
 					Name:        "8.3.1",
-					Description: "Incorporate multi-factor authentication for all non-console access into the CDE for personnel with administrative access.   Note: This requirement is a best practice until January 31, 2018, after which it becomes a requirement.",
+					Description: "Incorporate multi-factor authentication for all non-console access into the CDE for personnel with administrative access.",
 				},
 				{
 					ID:          "8_3_2",
@@ -1030,12 +1030,12 @@ var pciDss3_2 = Standard{
 				{
 					ID:          "10_8",
 					Name:        "10.8",
-					Description: "Additional requirement for service providers only: Implement a process for the timely detection and reporting of failures of critical security control systems, including but not limited to failure of: • Firewalls • IDS/IPS • FIM • Anti-virus • Physical access controls • Logical access controls • Audit logging mechanisms • Segmentation controls (if used)  Note: This requirement is a best practice until January 31, 2018, after which it becomes a requirement.",
+					Description: "Additional requirement for service providers only: Implement a process for the timely detection and reporting of failures of critical security control systems, including but not limited to failure of: • Firewalls • IDS/IPS • FIM • Anti-virus • Physical access controls • Logical access controls • Audit logging mechanisms • Segmentation controls (if used)",
 				},
 				{
 					ID:          "10_8_1",
 					Name:        "10.8.1",
-					Description: "Additional requirement for service providers only: Respond to failures of any critical security controls in a timely manner. Processes for responding to failures in security controls must include: • Restoring security functions • Identifying and documenting the duration (date and time start to end) of the security failure • Identifying and documenting cause(s) of failure, including root cause, and documenting remediation required to address root cause • Identifying and addressing any security issues that arose during the failure • Performing a risk assessment to determine whether further actions are required as a result of the security failure • Implementing controls to prevent cause of failure from reoccurring • Resuming monitoring of security controls  Note: This requirement is a best practice until January 31, 2018, after which it becomes a requirement.",
+					Description: "Additional requirement for service providers only: Respond to failures of any critical security controls in a timely manner. Processes for responding to failures in security controls must include: • Restoring security functions • Identifying and documenting the duration (date and time start to end) of the security failure • Identifying and documenting cause(s) of failure, including root cause, and documenting remediation required to address root cause • Identifying and addressing any security issues that arose during the failure • Performing a risk assessment to determine whether further actions are required as a result of the security failure • Implementing controls to prevent cause of failure from reoccurring • Resuming monitoring of security controls.",
 				},
 				{
 					ID:          "10_9",
@@ -1219,7 +1219,7 @@ var pciDss3_2 = Standard{
 				{
 					ID:          "12_4_1",
 					Name:        "12.4.1",
-					Description: "Additional requirement for service providers only: Executive management shall establish responsibility for the protection of cardholder data and a PCI DSS compliance program to include: • Overall accountability for maintaining PCI DSS compliance • Defining a charter for a PCI DSS compliance program and communication to executive management  Note: This requirement is a best practice until January 31, 2018, after which it becomes a requirement.",
+					Description: "Additional requirement for service providers only: Executive management shall establish responsibility for the protection of cardholder data and a PCI DSS compliance program to include: • Overall accountability for maintaining PCI DSS compliance • Defining a charter for a PCI DSS compliance program and communication to executive management",
 				},
 				{
 					ID:          "12_5",
@@ -1344,12 +1344,12 @@ var pciDss3_2 = Standard{
 				{
 					ID:          "12_11",
 					Name:        "12.11",
-					Description: "Additional requirement for service providers only: Perform reviews at least quarterly to confirm personnel are following security policies and operational procedures. Reviews must cover the following processes: • Daily log reviews • Firewall rule-set reviews • Applying configuration standards to new systems • Responding to security alerts • Change management processes Note: This requirement is a best practice until January 31, 2018, after which it becomes a requirement.",
+					Description: "Additional requirement for service providers only: Perform reviews at least quarterly to confirm personnel are following security policies and operational procedures. Reviews must cover the following processes: • Daily log reviews • Firewall rule-set reviews • Applying configuration standards to new systems • Responding to security alerts • Change management processes",
 				},
 				{
 					ID:          "12_11_1",
 					Name:        "12.11.1",
-					Description: "Additional requirement for service providers only:  Maintain documentation of quarterly review process to include: • Documenting results of the reviews • Review and sign off of results by personnel assigned responsibility for the PCI DSS compliance program Note: This requirement is a best practice until January 31, 2018, after which it becomes a requirement.",
+					Description: "Additional requirement for service providers only:  Maintain documentation of quarterly review process to include: • Documenting results of the reviews • Review and sign off of results by personnel assigned responsibility for the PCI DSS compliance program",
 				},
 			},
 		},
