@@ -19,15 +19,17 @@ func init() {
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
 		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddExtraResolver("Namespace", `subjects: [Subject!]!`),
-		schema.AddExtraResolver("Namespace", `filteredSubjects(query: String): [Subject!]!`),
+		schema.AddExtraResolver("Namespace", `subjects(query: String): [Subject!]!`),
 		schema.AddExtraResolver("Namespace", `subjectCount: Int!`),
 		schema.AddExtraResolver("Namespace", `serviceAccountCount: Int!`),
 		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
 		schema.AddExtraResolver("Namespace", `policyCount: Int!`),
 		schema.AddExtraResolver("Namespace", `policyStatus: PolicyStatus!`),
-		schema.AddExtraResolver("Namespace", `images: [Image!]!`),
+		schema.AddExtraResolver("Namespace", `policies(query: String): [Policy!]!`),
+		schema.AddExtraResolver("Namespace", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Namespace", `imageCount: Int!`),
+		schema.AddExtraResolver("Namespace", `secrets(query: String): [Secret!]!`),
+		schema.AddExtraResolver("Namespace", `deployments(query: String): [Deployment!]!`),
 	)
 }
 
@@ -100,27 +102,8 @@ func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, err
 	return int32(len(subjects)), nil
 }
 
-// Subjects returns the Subjects which have any permission on this cluster namespace or the cluster it belongs to
-func (resolver *namespaceResolver) Subjects(ctx context.Context) ([]*subjectResolver, error) {
-	if err := readK8sSubjects(ctx); err != nil {
-		return nil, err
-	}
-	if err := readK8sRoleBindings(ctx); err != nil {
-		return nil, err
-	}
-	var resolvers []*subjectResolver
-	subjects, err := resolver.getSubjects(ctx, search.EmptyQuery())
-	if err != nil {
-		return nil, err
-	}
-	for _, subject := range subjects {
-		resolvers = append(resolvers, &subjectResolver{resolver.root, subject})
-	}
-	return resolvers, nil
-}
-
 // Subjects returns the Subjects which have any permission in namespace or cluster wide
-func (resolver *namespaceResolver) FilteredSubjects(ctx context.Context, args rawQuery) ([]*subjectResolver, error) {
+func (resolver *namespaceResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectResolver, error) {
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
@@ -128,7 +111,7 @@ func (resolver *namespaceResolver) FilteredSubjects(ctx context.Context, args ra
 		return nil, err
 	}
 	var resolvers []*subjectResolver
-	baseQuery, err := args.AsV1Query()
+	baseQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
@@ -170,15 +153,6 @@ func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context) (int32, err
 	return int32(len(results)), nil
 }
 
-func (resolver *namespaceResolver) Images(ctx context.Context) ([]*imageResolver, error) {
-	if err := readNamespaces(ctx); err != nil {
-		return nil, err
-	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
-	return resolver.root.wrapListImages(resolver.root.ImageDataStore.SearchListImages(ctx, q))
-}
-
 func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error) {
 	if err := readNamespaces(ctx); err != nil {
 		return 0, err
@@ -192,7 +166,18 @@ func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error
 	return int32(len(results)), nil
 }
 
-func (resolver *namespaceResolver) Policies(ctx context.Context, clusterID string) ([]*storage.Policy, error) {
+func (resolver *namespaceResolver) filterPoliciesApplicableToNamespace(policies []*storage.Policy) []*storage.Policy {
+	var filteredPolicies []*storage.Policy
+	clusterID := resolver.data.GetMetadata().GetClusterId()
+	for _, policy := range policies {
+		if resolver.policyAppliesToNamespace(policy, clusterID) {
+			filteredPolicies = append(filteredPolicies, policy)
+		}
+	}
+	return filteredPolicies
+}
+
+func (resolver *namespaceResolver) getNamespacePolicies(ctx context.Context) ([]*storage.Policy, error) {
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
@@ -200,25 +185,35 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, clusterID strin
 	if err != nil {
 		return nil, err
 	}
-	var filteredPolicies []*storage.Policy
-	for _, policy := range policies {
-		if resolver.policyAppliesToNamespace(ctx, policy, clusterID) {
-			filteredPolicies = append(filteredPolicies, policy)
-		}
-	}
-	return filteredPolicies, nil
+	return resolver.filterPoliciesApplicableToNamespace(policies), nil
 }
 
-// K8sRoleCount returns count of K8s roles in this cluster
+// PolicyCount returns count of policies applicable to this namespace
 func (resolver *namespaceResolver) PolicyCount(ctx context.Context) (int32, error) {
-	policies, err := resolver.Policies(ctx, resolver.data.GetMetadata().GetClusterId())
+	policies, err := resolver.getNamespacePolicies(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(policies)), nil
 }
 
-func (resolver *namespaceResolver) policyAppliesToNamespace(ctx context.Context, policy *storage.Policy, clusterID string) bool {
+// Policies returns all the policies applicable to this namespace
+func (resolver *namespaceResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	policies, err := resolver.root.PolicyDataStore.SearchRawPolicies(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapPolicies(resolver.filterPoliciesApplicableToNamespace(policies), nil)
+}
+
+func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Policy, clusterID string) bool {
 	// Global Policy
 	if len(policy.Scope) == 0 {
 		return true
@@ -281,4 +276,47 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context) ([
 		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
 
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+}
+
+func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+	q, err := resolver.getClusterNamespaceQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapListImages(resolver.root.ImageDataStore.SearchListImages(ctx, q))
+}
+
+func (resolver *namespaceResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	if err := readSecrets(ctx); err != nil {
+		return nil, err
+	}
+	q, err := resolver.getClusterNamespaceQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapListSecrets(resolver.root.SecretsDataStore.SearchListSecrets(ctx, q))
+}
+
+func (resolver *namespaceResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	if err := readDeployments(ctx); err != nil {
+		return nil, err
+	}
+	q, err := resolver.getClusterNamespaceQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapListDeployments(resolver.root.DeploymentDataStore.SearchListDeployments(ctx, q))
+}
+
+func (resolver *namespaceResolver) getClusterNamespaceQuery(args rawQuery) (*v1.Query, error) {
+	q1, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	q2 := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
+		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
+	return search.NewConjunctionQuery(q1, q2), nil
 }
