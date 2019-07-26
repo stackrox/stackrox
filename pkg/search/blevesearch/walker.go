@@ -187,6 +187,19 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		// The last returned value is a slice of interfaces that are nil type pointers
 		if field.Tag.Get("protobuf_oneof") != "" {
 			ptrToOriginal := reflect.PtrTo(original)
+
+			methodName := fmt.Sprintf("Get%s", field.Name)
+			oneofGetter, ok := ptrToOriginal.MethodByName(methodName)
+			if !ok {
+				panic("didn't find oneof function, did the naming change?")
+			}
+			oneofInterfaces := oneofGetter.Func.Call([]reflect.Value{reflect.New(original)})
+			if len(oneofInterfaces) != 1 {
+				panic(fmt.Sprintf("found %d interfaces returned from oneof getter", len(oneofInterfaces)))
+			}
+
+			oneofInterface := oneofInterfaces[0].Type()
+
 			method, ok := ptrToOriginal.MethodByName("XXX_OneofFuncs")
 			if !ok {
 				panic("XXX_OneofFuncs should exist for all protobuf oneofs")
@@ -194,7 +207,10 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 			out := method.Func.Call([]reflect.Value{reflect.New(original)})
 			actualOneOfFields := out[3].Interface().([]interface{})
 			for _, f := range actualOneOfFields {
-				s.walkRecursive(fullPath, reflect.TypeOf(f))
+				typ := reflect.TypeOf(f)
+				if typ.Implements(oneofInterface) {
+					s.walkRecursive(fullPath, typ)
+				}
 			}
 			continue
 		}
