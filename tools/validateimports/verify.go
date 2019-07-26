@@ -20,20 +20,20 @@ const roxPrefix = "github.com/stackrox/rox/"
 var (
 	validRoots = []string{
 		"central",
-		"migrator",
-		"roxctl",
-		"pkg",
-		"sensor/kubernetes",
-		"sensor/common",
-		"tools",
-		"integration-tests",
-		"scale",
 		"compliance",
+		"image",
+		"integration-tests",
+		"migrator",
+		"pkg",
+		"roxctl",
+		"scale",
+		"sensor/common",
+		"sensor/kubernetes",
+		"tools",
 		"webhookserver",
 	}
 
 	ignoredRoots = []string{
-		"image",
 		"generated",
 		"tests",
 	}
