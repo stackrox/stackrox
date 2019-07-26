@@ -10,6 +10,7 @@ import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import PermissionCounts from 'Containers/ConfigManagement/Entity/widgets/PermissionCounts';
 
 const QUERY = gql`
     query serviceAccounts {
@@ -32,23 +33,7 @@ const PermissionsText = ({ serviceAccount }) => {
         return 'No permissions';
     return (
         <div className="truncate italic">
-            {serviceAccount.scopedPermissions &&
-                serviceAccount.scopedPermissions.length &&
-                serviceAccount.scopedPermissions[0].permissions &&
-                serviceAccount.scopedPermissions[0].permissions.map(
-                    (permission, permissionIndex) => (
-                        <span key={`${serviceAccount.name}-${permission.key}`}>
-                            {permission.key}
-                            {permission.values.length === 1 && permission.values[0] === '*'
-                                ? '(all)'
-                                : `(${permission.values.length})`}
-                            {permissionIndex ===
-                            serviceAccount.scopedPermissions[0].permissions.length - 1
-                                ? ''
-                                : ', '}
-                        </span>
-                    )
-                )}
+            <PermissionCounts scopedPermissions={serviceAccount.scopedPermissions} />
         </div>
     );
 };

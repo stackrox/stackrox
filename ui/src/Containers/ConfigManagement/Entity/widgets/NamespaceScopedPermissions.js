@@ -31,7 +31,6 @@ PermissionsCounts.propTypes = {
 
 const NamespaceScopedPermissions = ({ scopedPermissions, ...rest }) => {
     const namespaceScopePermissions = scopedPermissions.filter(datum => datum.scope !== 'Cluster');
-    if (!namespaceScopePermissions.length) return null;
     const namespaceGroups = namespaceScopePermissions.map(({ scope, permissions }) => {
         const groupHeader = (
             <div className="flex flex-1">
@@ -48,10 +47,16 @@ const NamespaceScopedPermissions = ({ scopedPermissions, ...rest }) => {
         );
         return group;
     });
+    let content;
+    if (!namespaceGroups.length)
+        content = (
+            <div className="flex h-full items-center justify-center">No permissions available</div>
+        );
+    else content = namespaceGroups;
     const header = `Permissions across ${namespaceGroups.length} namespaces`;
     return (
         <Widget header={header} {...rest}>
-            <div className="w-full mx-4">{namespaceGroups}</div>
+            <div className="w-full mx-4">{content}</div>
         </Widget>
     );
 };

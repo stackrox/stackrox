@@ -82,21 +82,36 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { length } = original.subjects;
-                if (!length) {
+                const { serviceAccounts, subjects } = original;
+                const { length: serviceAccountsLength } = serviceAccounts;
+                const { length: subjectsLength } = subjects;
+                if (
+                    (!serviceAccountsLength ||
+                        (serviceAccountsLength === 1 && serviceAccounts[0].message)) &&
+                    !subjectsLength
+                ) {
                     return <LabelChip text="No Users & Groups" type="alert" />;
+                }
+                if (!subjectsLength) {
+                    return 'No Matches';
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.SUBJECT)
                     .url();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${length} ${pluralize('Users & Groups', length)}`}
-                    />
-                );
+                if (subjectsLength > 1)
+                    return (
+                        <TableCellLink
+                            pdf={pdf}
+                            url={url}
+                            text={`${subjectsLength} ${pluralize(
+                                'Users & Groups',
+                                subjectsLength
+                            )}`}
+                        />
+                    );
+                const subject = subjects[0];
+                return <TableCellLink pdf={pdf} url={url} text={subject.name} />;
             },
             id: 'subjects',
             accessor: d => d.subjects,
@@ -108,25 +123,36 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { serviceAccounts, id } = original;
-                const { length } = serviceAccounts;
-                if (!length || (length === 1 && serviceAccounts[0].message))
+                const { serviceAccounts, subjects, id } = original;
+                const { length: serviceAccountsLength } = serviceAccounts;
+                const { length: subjectsLength } = subjects;
+                if (
+                    (!serviceAccountsLength ||
+                        (serviceAccountsLength === 1 && serviceAccounts[0].message)) &&
+                    !subjectsLength
+                ) {
                     return <LabelChip text="No Service Accounts" type="alert" />;
+                }
+                if (!serviceAccountsLength) {
+                    return 'No Service Accounts';
+                }
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
-                if (length > 1)
+                if (serviceAccountsLength > 1)
                     return (
                         <TableCellLink
                             pdf={pdf}
                             url={url}
-                            text={`${length} ${pluralize('Service Accounts', length)}`}
+                            text={`${serviceAccountsLength} ${pluralize(
+                                'Service Accounts',
+                                serviceAccountsLength
+                            )}`}
                         />
                     );
                 const serviceAccount = serviceAccounts[0];
-                if (serviceAccount.name) return serviceAccount.name;
-                return <LabelChip text={serviceAccount.message} type="alert" />;
+                return <TableCellLink pdf={pdf} url={url} text={serviceAccount.name} />;
             },
             accessor: 'serviceAccounts',
             sortMethod: sortValueByLength

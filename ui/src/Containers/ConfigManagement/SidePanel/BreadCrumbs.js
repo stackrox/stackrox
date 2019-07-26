@@ -5,8 +5,8 @@ import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 import URLService from 'modules/URLService';
 import { Link, withRouter } from 'react-router-dom';
-import getEntityName from 'Containers/ConfigManagement/getEntityName';
-import { entityQueryMap } from 'Containers/ConfigManagement/queryMap';
+import getEntityName from 'Containers/ConfigManagement/modules/getEntityName';
+import { entityQueryMap } from 'Containers/ConfigManagement/modules/queryMap';
 
 import { ChevronRight } from 'react-feather';
 import Query from 'Components/ThrowingQuery';

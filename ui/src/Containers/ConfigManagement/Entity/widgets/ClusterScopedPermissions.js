@@ -6,7 +6,6 @@ import ScopedPermissions from './ScopedPermissions';
 const ClusterScopedPermissionsWidget = ({ scopedPermissions, ...rest }) => {
     const clusterScopePermissions = scopedPermissions.filter(datum => datum.scope === 'Cluster');
     let content = null;
-    if (!clusterScopePermissions.length) return null;
     const permissions = clusterScopePermissions.reduce((acc, curr) => {
         return [...acc, ...curr.permissions];
     }, []);

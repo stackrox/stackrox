@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import getEntityName from 'Containers/ConfigManagement/getEntityName';
-import { entityQueryMap } from 'Containers/ConfigManagement/queryMap';
+import getEntityName from 'Containers/ConfigManagement/modules/getEntityName';
+import { entityQueryMap } from 'Containers/ConfigManagement/modules/queryMap';
 
 import Query from 'Components/ThrowingQuery';
 import PageHeader from 'Components/PageHeader';

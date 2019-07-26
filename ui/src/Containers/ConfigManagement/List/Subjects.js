@@ -3,6 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import { SUBJECTS_QUERY } from 'queries/subject';
 import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import PermissionCounts from 'Containers/ConfigManagement/Entity/widgets/PermissionCounts';
 
 import { sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
@@ -21,35 +22,33 @@ const buildTableColumns = (match, location) => {
         },
         {
             Header: 'Users & Groups',
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'subject.name'
         },
         {
             Header: 'Type',
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'type'
         },
         {
             Header: `Permissions`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/3 ${defaultHeaderClassName}`,
+            className: `w-1/3 text-sm ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { scopedPermissions } = original;
-                if (!scopedPermissions.length) return 'No Scoped Permissions';
-                const result = scopedPermissions
-                    .map(({ scope, permissions }) => `${scope} (${permissions.length})`)
-                    .join(', ');
-                return result;
+                return <PermissionCounts scopedPermissions={scopedPermissions} />;
             },
+            id: 'permissions',
             accessor: 'scopedPermissions[0].permissions',
             sortMethod: sortValueByLength
         },
         {
             Header: `Cluster Admin Role`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { clusterAdmin } = original;
                 return clusterAdmin ? 'Enabled' : 'Disabled';
@@ -57,9 +56,25 @@ const buildTableColumns = (match, location) => {
             accessor: 'clusterAdmin'
         },
         {
+            Header: `Permissions Scope`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { scopedPermissions } = original;
+                if (!scopedPermissions.length) return 'No Permissions';
+                const result = scopedPermissions
+                    .map(({ scope, permissions }) => `${scope} (${permissions.length})`)
+                    .join(', ');
+                return result;
+            },
+            id: 'permissionsScope',
+            accessor: 'scopedPermissions[0].permissions',
+            sortMethod: sortValueByLength
+        },
+        {
             Header: `Roles`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { id, roles } = original;
                 const { length } = roles;
