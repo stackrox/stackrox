@@ -8,7 +8,8 @@ import Loader from 'Components/Loader';
 import networkStatuses from 'constants/networkStatuses';
 import { Link, withRouter } from 'react-router-dom';
 import gql from 'graphql-tag';
-import { max, sum } from 'lodash';
+import { max, sum, uniqBy } from 'lodash';
+import pluralize from 'pluralize';
 import { severityValues, severities } from 'constants/severities';
 import entityTypes from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
@@ -52,7 +53,11 @@ const QUERY = gql`
             description
             lifecycleStages
             alerts {
-                id
+                state
+                deployment {
+                    id
+                    name
+                }
             }
             alertsCount
         }
@@ -92,12 +97,25 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                 const link = URLService.getURL(match, location)
                     .base(entityTypes.POLICY, policy.id)
                     .url();
+                let deploymentsWithAlerts = 0;
+                if (policy.alerts.length) {
+                    deploymentsWithAlerts = uniqBy(policy.alerts, 'deployment.id').length;
+                }
+
                 newItems[category].push({
                     severity,
                     passing: !policy.alerts.length,
                     color,
                     textColor: passingLinkColor,
                     value: 0,
+                    labelValue:
+                        deploymentsWithAlerts > 0
+                            ? `violated on ${deploymentsWithAlerts} ${pluralize(
+                                  'deployments',
+                                  deploymentsWithAlerts
+                              )}`
+                            : null,
+                    labelColor: color,
                     name: idx > 0 ? `${idx}. ${policyName}` : policyName,
                     link
                 });
@@ -109,12 +127,16 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
             const category = entry[0];
             const children = entry[1];
             const numPassing = children.filter(child => child.passing).length;
+            const labelValue = `${children.length - numPassing}/${
+                children.length
+            } policies violated`;
             const value = getPercentage(numPassing, children.length);
             const color = getCategorySeverity(category, violationsByCategory);
             return {
                 name: category,
                 children,
                 value,
+                labelValue,
                 color,
                 textColor: passingLinkColor
             };

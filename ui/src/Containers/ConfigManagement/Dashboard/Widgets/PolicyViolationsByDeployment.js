@@ -43,9 +43,9 @@ const QUERY = gql`
 
 const PolicyViolationsByDeployment = ({ match, location }) => {
     function processData(data) {
-        if (!data || !data.deployments) return [];
+        if (!data) return [];
 
-        const results = data.deployments.map(deployment => {
+        const results = data.map(deployment => {
             const counts = deployment.deployAlerts.reduce(
                 (total, alert) => {
                     const ret = { ...total };
@@ -117,16 +117,28 @@ const PolicyViolationsByDeployment = ({ match, location }) => {
                                         to={`${linkTo}/${item.id}`}
                                         className="no-underline text-base-600"
                                     >
-                                        <li className="hover:bg-base-200">
+                                        <li className="hover:bg-base-200 cursor-pointer">
                                             <div
                                                 className={`flex flex-row border-base-300 ${
                                                     index !== 4 && index !== 9 ? 'border-b' : ''
                                                 } ${index < 5 ? 'border-r' : ''}`}
                                             >
                                                 <div className="flex flex-col flex-1 truncate py-2 px-4">
-                                                    <span className="pb-2">
-                                                        {index + 1}. {item.name}
-                                                    </span>
+                                                    <Tooltip
+                                                        position="top"
+                                                        trigger="mouseenter"
+                                                        animation="none"
+                                                        duration={0}
+                                                        arrow
+                                                        distance={20}
+                                                        html={`${index + 1}. ${item.name}`}
+                                                        unmountHTMLWhenHide
+                                                    >
+                                                        <div className="pb-2 truncate">
+                                                            {index + 1}. {item.name}
+                                                        </div>
+                                                    </Tooltip>
+
                                                     <ul className="list-reset flex">
                                                         {Object.keys(item.counts).map(type => {
                                                             const style = {

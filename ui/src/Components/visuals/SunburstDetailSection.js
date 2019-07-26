@@ -19,11 +19,13 @@ class SunburstDetailSection extends Component {
             })
         ).isRequired,
         selectedDatum: PropTypes.shape({}),
-        clicked: PropTypes.bool.isRequired
+        clicked: PropTypes.bool.isRequired,
+        units: PropTypes.string
     };
 
     static defaultProps = {
-        selectedDatum: null
+        selectedDatum: null,
+        units: 'percentage'
     };
 
     getParentData = () => {
@@ -38,7 +40,7 @@ class SunburstDetailSection extends Component {
     };
 
     getContent = () => {
-        const { rootData, selectedDatum } = this.props;
+        const { rootData, selectedDatum, units } = this.props;
         const parentDatum = this.getParentData();
 
         let bullets = [];
@@ -55,7 +57,19 @@ class SunburstDetailSection extends Component {
         return (
             <div className="py-2 px-3 fc:border-b fc:border-base-300 fc:pb-3 fc:mb-1">
                 {bullets.map(
-                    ({ text, link, className, value, color: graphColor, textColor }, idx) => {
+                    (
+                        {
+                            text,
+                            link,
+                            className,
+                            value,
+                            color: graphColor,
+                            textColor,
+                            labelValue,
+                            labelColor
+                        },
+                        idx
+                    ) => {
                         const color = textColor || graphColor;
                         return (
                             <div
@@ -83,7 +97,10 @@ class SunburstDetailSection extends Component {
                                         {!link && text}
                                     </Truncate>
                                 </span>
-                                {selectedDatum && (
+                                {selectedDatum && units !== 'percentage' && (
+                                    <span style={{ color: labelColor }}>{labelValue}</span>
+                                )}
+                                {selectedDatum && units === 'percentage' && !labelValue && (
                                     <HorizontalBarChart
                                         data={[{ y: '', x: value }]}
                                         valueFormat={formatAsPercent}

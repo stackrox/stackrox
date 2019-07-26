@@ -218,6 +218,7 @@ class BasicSunburst extends React.Component {
                     selectedDatum={!staticDetails ? selectedDatum : null}
                     rootData={rootData}
                     clicked={clicked}
+                    units="value"
                 />
             </>
         );

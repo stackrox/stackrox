@@ -86,7 +86,7 @@ class HorizontalBarChart extends Component {
             let label = '';
             // This prevents overlap between the value label and the axis label
             if (this.showLabel(item.x)) {
-                label = this.props.valueFormat(item.x).toString() || '';
+                label = (this.props.valueFormat && this.props.valueFormat(item.x).toString()) || '';
             }
             const { minimal } = this.props;
             const val = {
