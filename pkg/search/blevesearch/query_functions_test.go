@@ -43,7 +43,7 @@ func TestNewStringQuery(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.query, func(t *testing.T) {
-			q, err := newStringQuery(v1.SearchCategory_DEPLOYMENTS, "field", c.query)
+			q, err := matchFieldQuery(v1.SearchCategory_DEPLOYMENTS, "field", v1.SearchDataType_SEARCH_STRING, c.query)
 			require.Equal(t, c.hasError, err != nil)
 			if q != nil {
 				switch typedQ := q.(type) {

@@ -2,6 +2,7 @@ package blevesearch
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -9,11 +10,14 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
 
-var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, string) (query.Query, error){
+type queryFunction func(category v1.SearchCategory, field, value string, queryModifiers ...queryModifier) (query.Query, error)
+
+var datatypeToQueryFunc = map[v1.SearchDataType]queryFunction{
 	v1.SearchDataType_SEARCH_STRING:   newStringQuery,
 	v1.SearchDataType_SEARCH_BOOL:     newBoolQuery,
 	v1.SearchDataType_SEARCH_NUMERIC:  newNumericQuery,
@@ -29,6 +33,16 @@ func nullQuery(category v1.SearchCategory, path string) query.Query {
 	return bq
 }
 
+//go:generate stringer -type=queryModifier
+type queryModifier int
+
+const (
+	atLeastOne queryModifier = iota
+	negation
+	regex
+	equality
+)
+
 func matchFieldQuery(category v1.SearchCategory, searchFieldPath string, searchFieldType v1.SearchDataType, value string) (query.Query, error) {
 	// Special case: wildcard
 	if value == pkgSearch.WildcardString {
@@ -39,7 +53,38 @@ func matchFieldQuery(category v1.SearchCategory, searchFieldPath string, searchF
 		return nullQuery(category, searchFieldPath), nil
 	}
 
-	return datatypeToQueryFunc[searchFieldType](category, searchFieldPath, value)
+	// Parse out query modifiers
+	trimmedValue := value
+	var queryModifiers []queryModifier
+	// We only allow at most one modifier from the set {atleastone, negation}.
+	// Anything more, we treat as part of the string to query for.
+	var negationOrAtLeastOneFound bool
+forloop:
+	for {
+		switch {
+		// AtLeastOnePrefix is !! so it must come before negation prefix
+		case !negationOrAtLeastOneFound && strings.HasPrefix(trimmedValue, pkgSearch.AtLeastOnePrefix) && len(trimmedValue) > len(pkgSearch.AtLeastOnePrefix):
+			trimmedValue = trimmedValue[len(pkgSearch.AtLeastOnePrefix):]
+			queryModifiers = append(queryModifiers, atLeastOne)
+			negationOrAtLeastOneFound = true
+		case !negationOrAtLeastOneFound && strings.HasPrefix(trimmedValue, pkgSearch.NegationPrefix) && len(trimmedValue) > len(pkgSearch.NegationPrefix):
+			trimmedValue = trimmedValue[len(pkgSearch.NegationPrefix):]
+			queryModifiers = append(queryModifiers, negation)
+			negationOrAtLeastOneFound = true
+		case strings.HasPrefix(trimmedValue, pkgSearch.RegexPrefix) && len(trimmedValue) > len(pkgSearch.RegexPrefix):
+			trimmedValue = trimmedValue[len(pkgSearch.RegexPrefix):]
+			queryModifiers = append(queryModifiers, regex)
+			break forloop // Once we see that it's a regex, we don't check for special-characters in the rest of the string.
+		case strings.HasPrefix(trimmedValue, pkgSearch.EqualityPrefixSuffix) && strings.HasSuffix(trimmedValue, pkgSearch.EqualityPrefixSuffix) && len(trimmedValue) > 2*len(pkgSearch.EqualityPrefixSuffix):
+			trimmedValue = trimmedValue[len(pkgSearch.EqualityPrefixSuffix) : len(trimmedValue)-len(pkgSearch.EqualityPrefixSuffix)]
+			queryModifiers = append(queryModifiers, equality)
+			break forloop // Once it's within quotes, we take the value inside as is, and don't try to extract modifiers.
+		default:
+			break forloop
+		}
+	}
+
+	return datatypeToQueryFunc[searchFieldType](category, searchFieldPath, trimmedValue, queryModifiers...)
 }
 
 func getWildcardQuery(field string) *query.WildcardQuery {
@@ -56,37 +101,40 @@ func newBooleanQuery(category v1.SearchCategory) *query.BooleanQuery {
 	return bq
 }
 
-func newStringQuery(category v1.SearchCategory, field string, value string) (query.Query, error) {
+func newStringQuery(category v1.SearchCategory, field string, value string, queryModifiers ...queryModifier) (query.Query, error) {
 	if len(value) == 0 {
 		return nil, fmt.Errorf("value in search query cannot be empty")
 	}
-	switch {
-	// AtLeastOnePrefix is !! so it must come before negation prefix
-	case strings.HasPrefix(value, pkgSearch.AtLeastOnePrefix) && len(value) > len(pkgSearch.AtLeastOnePrefix):
-		subQuery, err := newStringQuery(category, field, value[len(pkgSearch.AtLeastOnePrefix):])
+	if len(queryModifiers) == 0 {
+		return NewMatchPhrasePrefixQuery(field, value), nil
+	}
+	switch queryModifiers[0] {
+	case atLeastOne:
+		subQuery, err := newStringQuery(category, field, value, queryModifiers[1:]...)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error computing sub query under negation: %s %s", field, value)
 		}
 		nq := NewNegationQuery(typeQuery(category), subQuery, false)
 		return nq, nil
-	case strings.HasPrefix(value, pkgSearch.NegationPrefix) && len(value) > len(pkgSearch.NegationPrefix):
-		subQuery, err := newStringQuery(category, field, value[len(pkgSearch.NegationPrefix):])
+	case negation:
+		subQuery, err := newStringQuery(category, field, value, queryModifiers[1:]...)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error computing sub query under negation: %s %s", field, value)
 		}
 		nq := NewNegationQuery(typeQuery(category), subQuery, true)
 		return nq, nil
-	case strings.HasPrefix(value, pkgSearch.RegexPrefix) && len(value) > len(pkgSearch.RegexPrefix):
-		q := bleve.NewRegexpQuery(value[len(pkgSearch.RegexPrefix):])
+	case regex:
+		q := bleve.NewRegexpQuery(value)
 		q.SetField(field)
 		return q, nil
-	case strings.HasPrefix(value, pkgSearch.EqualityPrefixSuffix) && strings.HasSuffix(value, pkgSearch.EqualityPrefixSuffix) && len(value) > 2*len(pkgSearch.EqualityPrefixSuffix):
-		q := bleve.NewMatchQuery(value[len(pkgSearch.EqualityPrefixSuffix) : len(value)-len(pkgSearch.EqualityPrefixSuffix)])
+	case equality:
+		q := bleve.NewMatchQuery(value)
 		q.SetField(field)
 		return q, nil
-	default:
-		return NewMatchPhrasePrefixQuery(field, value), nil
 	}
+	err := errors.Errorf("unknown query modifier: %s", queryModifiers[0])
+	errorhelpers.PanicOnDevelopment(err)
+	return nil, err
 }
 
 func parseLabel(label string) (string, string) {
@@ -97,7 +145,10 @@ func parseLabel(label string) (string, string) {
 	return spl[0], spl[1]
 }
 
-func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
+func newBoolQuery(_ v1.SearchCategory, field string, value string, modifiers ...queryModifier) (query.Query, error) {
+	if len(modifiers) > 0 {
+		return nil, errors.Errorf("modifiers for bool query not allowed: %+v", modifiers)
+	}
 	b, err := strconv.ParseBool(value)
 	if err != nil {
 		return nil, err
@@ -107,15 +158,47 @@ func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query,
 	return q, nil
 }
 
-func newEnumQuery(_ v1.SearchCategory, field, value string) (query.Query, error) {
+func newEnumQuery(_ v1.SearchCategory, field, value string, queryModifiers ...queryModifier) (query.Query, error) {
 	var enumValues []int32
-	if strings.HasPrefix(value, pkgSearch.NegationPrefix) {
-		enumValues = enumregistry.GetComplement(field, strings.TrimPrefix(value, pkgSearch.NegationPrefix))
-	} else {
+	if len(queryModifiers) > 2 {
+		return nil, errors.Errorf("unsupported: more than 2 query modifiers for enum query: %+v", queryModifiers)
+	}
+	switch len(queryModifiers) {
+	case 2:
+		if queryModifiers[0] == negation && queryModifiers[1] == regex {
+			re, err := regexp.Compile(value)
+			if err != nil {
+				return nil, errors.Wrap(err, "invalid regex")
+			}
+			enumValues = enumregistry.GetComplementOfValuesMatchingRegex(field, re)
+			break
+		}
+		if queryModifiers[0] == negation && queryModifiers[1] == equality {
+			enumValues = enumregistry.GetComplementByExactMatches(field, value)
+			break
+		}
+		return nil, errors.Errorf("unsupported: invalid combination of query modifiers for enum query: %+v", queryModifiers)
+	case 1:
+		switch queryModifiers[0] {
+		case negation:
+			enumValues = enumregistry.GetComplement(field, value)
+		case regex:
+			re, err := regexp.Compile(value)
+			if err != nil {
+				return nil, errors.Wrap(err, "invalid regex")
+			}
+			enumValues = enumregistry.GetValuesMatchingRegex(field, re)
+		case equality:
+			enumValues = enumregistry.GetExactMatches(field, value)
+		default:
+			return nil, errors.Errorf("unsupported query modifier for enum query: %v", queryModifiers[0])
+		}
+	case 0:
 		enumValues = enumregistry.Get(field, value)
 	}
+
 	if len(enumValues) == 0 {
-		return nil, fmt.Errorf("could not find corresponding enum at field %q with value %q", field, value)
+		return nil, fmt.Errorf("could not find corresponding enum at field %q with value %q and modifiers %+v", field, value, queryModifiers)
 	}
 	dq := bleve.NewDisjunctionQuery()
 	for _, s := range enumValues {

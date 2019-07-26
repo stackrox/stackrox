@@ -1,6 +1,7 @@
 package enumregistry
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
@@ -12,7 +13,7 @@ var (
 	reverseEnumMap map[string]map[int32]string
 )
 
-// Add takes in a path and an enum descriptor and creates a path -> map[string enum]int32 value
+// Add takes in a path and an enum descriptor and creates a path -> map[string enum]int32 value.
 func Add(path string, enumDescriptor *descriptor.EnumDescriptorProto) {
 	if _, ok := enumMap[path]; !ok {
 		enumMap[path] = make(map[string]int32)
@@ -26,7 +27,7 @@ func Add(path string, enumDescriptor *descriptor.EnumDescriptorProto) {
 	}
 }
 
-// GetComplement takes in a field path and a string to evaluate against, and returns the int32 form
+// GetComplement takes in a field path and a string to evaluate against, and returns the int32 form.
 // of the complement of matching enums.
 func GetComplement(fieldPath string, s string) []int32 {
 	lowerS := strings.ToLower(s)
@@ -35,11 +36,41 @@ func GetComplement(fieldPath string, s string) []int32 {
 	})
 }
 
-// Get takes in a field path and a string to evaluate against and returns the int32 form of any matching enums
+// Get takes in a field path and a string to evaluate against and returns the int32 form of any matching enums.
 func Get(fieldPath string, s string) []int32 {
 	lowerS := strings.ToLower(s)
 	return get(fieldPath, func(k string) bool {
 		return strings.HasPrefix(k, lowerS)
+	})
+}
+
+// GetExactMatches takes in a field path and a string and returns the int32 forms of any exact matches.
+func GetExactMatches(fieldPath, s string) []int32 {
+	lowerS := strings.ToLower(s)
+	return get(fieldPath, func(k string) bool {
+		return lowerS == k
+	})
+}
+
+// GetComplementByExactMatches takes in a field path and a string and returns the int32 forms
+// of all values that are not an exact match.
+func GetComplementByExactMatches(fieldPath, s string) []int32 {
+	lowerS := strings.ToLower(s)
+	return get(fieldPath, func(k string) bool {
+		return lowerS != k
+	})
+}
+
+// GetValuesMatchingRegex takes in a field path, and a regex, and returns the int32 form of any matching enums.
+func GetValuesMatchingRegex(fieldPath string, re *regexp.Regexp) []int32 {
+	return get(fieldPath, re.MatchString)
+}
+
+// GetComplementOfValuesMatchingRegex takes in a field path, and a regex, and returns the int32 form of any enums
+// that don't match.
+func GetComplementOfValuesMatchingRegex(fieldPath string, re *regexp.Regexp) []int32 {
+	return get(fieldPath, func(k string) bool {
+		return !re.MatchString(k)
 	})
 }
 

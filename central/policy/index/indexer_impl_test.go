@@ -53,6 +53,7 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 		name        string
 		q           *v1.Query
 		expectedIDs []string
+		expectedErr bool
 	}{
 		{
 			name:        "Empty",
@@ -75,13 +76,68 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 			expectedIDs: []string{},
 		},
 		{
-			name:        "Lifecycle stage",
+			name:        "Lifecycle stage prefix",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "deplo").ProtoQuery(),
+			expectedIDs: []string{fakeID},
+		},
+		{
+			name:        "Lifecycle stage exact match doesn't match",
+			q:           search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, "deplo").ProtoQuery(),
+			expectedErr: true,
+		},
+		{
+			name:        "Lifecycle stage prefix with full string",
 			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "deploy").ProtoQuery(),
 			expectedIDs: []string{fakeID},
 		},
 		{
+			name:        "Lifecycle stage exact match matches",
+			q:           search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, "deploy").ProtoQuery(),
+			expectedIDs: []string{fakeID},
+		},
+		{
+			name:        "Lifecycle stage regex no match",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "r/asab").ProtoQuery(),
+			expectedErr: true,
+		},
+		{
+			name:        "Lifecycle stage regex matches one",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "r/dep.*").ProtoQuery(),
+			expectedIDs: []string{fakeID},
+		},
+		{
+			name:        "Lifecycle stage regex matches all",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "r/.*").ProtoQuery(),
+			expectedIDs: []string{fakeID, fixtures.GetPolicy().GetId()},
+		},
+		{
 			name:        "Lifecycle stage with negation",
 			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "!deploy").ProtoQuery(),
+			expectedIDs: []string{fixtures.GetPolicy().GetId()},
+		},
+		{
+			name:        "Lifecycle stage with negated regex (matches one)",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "!r/depl").ProtoQuery(),
+			expectedIDs: []string{fixtures.GetPolicy().GetId()},
+		},
+		{
+			name:        "Lifecycle stage with negated regex (but doesn't match)",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "!r/blah").ProtoQuery(),
+			expectedIDs: []string{fixtures.GetPolicy().GetId(), fakeID},
+		},
+		{
+			name:        "Lifecycle stage with negated regex (matches both)",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "!r/.*").ProtoQuery(),
+			expectedErr: true,
+		},
+		{
+			name:        "Lifecycle stage with negated exact match",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "!\"depl\"").ProtoQuery(),
+			expectedIDs: []string{fixtures.GetPolicy().GetId(), fakeID},
+		},
+		{
+			name:        "Lifecycle stage with negated exact match (but matches)",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "!\"deploy\"").ProtoQuery(),
 			expectedIDs: []string{fixtures.GetPolicy().GetId()},
 		},
 	}
@@ -89,6 +145,10 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
 			results, err := suite.indexer.Search(c.q)
+			if c.expectedErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 			resultIDs := make([]string, 0, len(results))
 			for _, r := range results {

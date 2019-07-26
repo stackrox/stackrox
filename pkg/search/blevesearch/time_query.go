@@ -16,7 +16,7 @@ const (
 	dayDuration = 24 * time.Hour
 )
 
-func newTimeQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
+func newTimeQuery(_ v1.SearchCategory, field string, value string, modifiers ...queryModifier) (query.Query, error) {
 	prefix, trimmedValue := parseNumericPrefix(value)
 	var seconds int64
 	if t, ok := parseTimeString(trimmedValue); ok {

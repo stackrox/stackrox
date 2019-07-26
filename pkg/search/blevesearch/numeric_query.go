@@ -8,6 +8,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -155,7 +156,10 @@ func createNumericQuery(field string, prefix string, value *float64) query.Query
 	return q
 }
 
-func newNumericQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
+func newNumericQuery(_ v1.SearchCategory, field string, value string, modifiers ...queryModifier) (query.Query, error) {
+	if len(modifiers) > 0 {
+		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", modifiers)
+	}
 	prefix, trimmedValue := parseNumericPrefix(value)
 	valuePtr, err := parseNumericStringToPtr(trimmedValue)
 	if err != nil {
