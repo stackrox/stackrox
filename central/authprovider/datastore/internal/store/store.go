@@ -11,7 +11,7 @@ var (
 )
 
 // Store stores and retrieves providers from the KV storage mechanism.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetAllAuthProviders() ([]*storage.AuthProvider, error)
 

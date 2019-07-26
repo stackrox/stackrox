@@ -16,4 +16,4 @@ type LicenseEventListener interface {
 	OnActiveLicenseChanged(newLicense, oldLicense *v1.LicenseInfo)
 }
 
-//go:generate mockgen-wrapper LicenseEventListener
+//go:generate mockgen-wrapper

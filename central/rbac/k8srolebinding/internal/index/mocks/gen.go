@@ -38,6 +38,7 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 
 // AddK8sRoleBinding mocks base method
 func (m *MockIndexer) AddK8sRoleBinding(arg0 *storage.K8SRoleBinding) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddK8sRoleBinding", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -45,11 +46,13 @@ func (m *MockIndexer) AddK8sRoleBinding(arg0 *storage.K8SRoleBinding) error {
 
 // AddK8sRoleBinding indicates an expected call of AddK8sRoleBinding
 func (mr *MockIndexerMockRecorder) AddK8sRoleBinding(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddK8sRoleBinding", reflect.TypeOf((*MockIndexer)(nil).AddK8sRoleBinding), arg0)
 }
 
 // AddK8sRoleBindings mocks base method
 func (m *MockIndexer) AddK8sRoleBindings(arg0 []*storage.K8SRoleBinding) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddK8sRoleBindings", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -57,11 +60,13 @@ func (m *MockIndexer) AddK8sRoleBindings(arg0 []*storage.K8SRoleBinding) error {
 
 // AddK8sRoleBindings indicates an expected call of AddK8sRoleBindings
 func (mr *MockIndexerMockRecorder) AddK8sRoleBindings(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddK8sRoleBindings", reflect.TypeOf((*MockIndexer)(nil).AddK8sRoleBindings), arg0)
 }
 
 // DeleteK8sRoleBinding mocks base method
 func (m *MockIndexer) DeleteK8sRoleBinding(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteK8sRoleBinding", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -69,11 +74,13 @@ func (m *MockIndexer) DeleteK8sRoleBinding(arg0 string) error {
 
 // DeleteK8sRoleBinding indicates an expected call of DeleteK8sRoleBinding
 func (mr *MockIndexerMockRecorder) DeleteK8sRoleBinding(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8sRoleBinding", reflect.TypeOf((*MockIndexer)(nil).DeleteK8sRoleBinding), arg0)
 }
 
 // DeleteK8sRoleBindings mocks base method
 func (m *MockIndexer) DeleteK8sRoleBindings(arg0 []string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteK8sRoleBindings", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -81,11 +88,13 @@ func (m *MockIndexer) DeleteK8sRoleBindings(arg0 []string) error {
 
 // DeleteK8sRoleBindings indicates an expected call of DeleteK8sRoleBindings
 func (mr *MockIndexerMockRecorder) DeleteK8sRoleBindings(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8sRoleBindings", reflect.TypeOf((*MockIndexer)(nil).DeleteK8sRoleBindings), arg0)
 }
 
 // GetTxnCount mocks base method
 func (m *MockIndexer) GetTxnCount() uint64 {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxnCount")
 	ret0, _ := ret[0].(uint64)
 	return ret0
@@ -93,11 +102,13 @@ func (m *MockIndexer) GetTxnCount() uint64 {
 
 // GetTxnCount indicates an expected call of GetTxnCount
 func (mr *MockIndexerMockRecorder) GetTxnCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxnCount", reflect.TypeOf((*MockIndexer)(nil).GetTxnCount))
 }
 
 // ResetIndex mocks base method
 func (m *MockIndexer) ResetIndex() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResetIndex")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -105,11 +116,13 @@ func (m *MockIndexer) ResetIndex() error {
 
 // ResetIndex indicates an expected call of ResetIndex
 func (mr *MockIndexerMockRecorder) ResetIndex() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetIndex", reflect.TypeOf((*MockIndexer)(nil).ResetIndex))
 }
 
 // Search mocks base method
 func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) ([]search.Result, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
@@ -122,12 +135,14 @@ func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (
 
 // Search indicates an expected call of Search
 func (mr *MockIndexerMockRecorder) Search(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), varargs...)
 }
 
 // SetTxnCount mocks base method
 func (m *MockIndexer) SetTxnCount(arg0 uint64) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetTxnCount", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -135,5 +150,6 @@ func (m *MockIndexer) SetTxnCount(arg0 uint64) error {
 
 // SetTxnCount indicates an expected call of SetTxnCount
 func (mr *MockIndexerMockRecorder) SetTxnCount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTxnCount", reflect.TypeOf((*MockIndexer)(nil).SetTxnCount), arg0)
 }

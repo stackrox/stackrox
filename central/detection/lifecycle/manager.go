@@ -31,7 +31,7 @@ var (
 )
 
 // A Manager manages deployment/policy lifecycle updates.
-//go:generate mockgen-wrapper Manager
+//go:generate mockgen-wrapper
 type Manager interface {
 	IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error
 	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning

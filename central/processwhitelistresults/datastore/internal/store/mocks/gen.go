@@ -35,6 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 
 // DeleteWhitelistResults mocks base method
 func (m *MockStore) DeleteWhitelistResults(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteWhitelistResults", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockStore) DeleteWhitelistResults(arg0 string) error {
 
 // DeleteWhitelistResults indicates an expected call of DeleteWhitelistResults
 func (mr *MockStoreMockRecorder) DeleteWhitelistResults(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWhitelistResults", reflect.TypeOf((*MockStore)(nil).DeleteWhitelistResults), arg0)
 }
 
 // GetWhitelistResults mocks base method
 func (m *MockStore) GetWhitelistResults(arg0 string) (*storage.ProcessWhitelistResults, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWhitelistResults", arg0)
 	ret0, _ := ret[0].(*storage.ProcessWhitelistResults)
 	ret1, _ := ret[1].(error)
@@ -55,11 +58,13 @@ func (m *MockStore) GetWhitelistResults(arg0 string) (*storage.ProcessWhitelistR
 
 // GetWhitelistResults indicates an expected call of GetWhitelistResults
 func (mr *MockStoreMockRecorder) GetWhitelistResults(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWhitelistResults", reflect.TypeOf((*MockStore)(nil).GetWhitelistResults), arg0)
 }
 
 // UpsertWhitelistResults mocks base method
 func (m *MockStore) UpsertWhitelistResults(arg0 *storage.ProcessWhitelistResults) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertWhitelistResults", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -67,5 +72,6 @@ func (m *MockStore) UpsertWhitelistResults(arg0 *storage.ProcessWhitelistResults
 
 // UpsertWhitelistResults indicates an expected call of UpsertWhitelistResults
 func (mr *MockStoreMockRecorder) UpsertWhitelistResults(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertWhitelistResults", reflect.TypeOf((*MockStore)(nil).UpsertWhitelistResults), arg0)
 }

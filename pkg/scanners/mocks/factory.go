@@ -36,6 +36,7 @@ func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 
 // CreateScanner mocks base method
 func (m *MockFactory) CreateScanner(arg0 *storage.ImageIntegration) (types.ImageScanner, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateScanner", arg0)
 	ret0, _ := ret[0].(types.ImageScanner)
 	ret1, _ := ret[1].(error)
@@ -44,5 +45,6 @@ func (m *MockFactory) CreateScanner(arg0 *storage.ImageIntegration) (types.Image
 
 // CreateScanner indicates an expected call of CreateScanner
 func (mr *MockFactoryMockRecorder) CreateScanner(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateScanner", reflect.TypeOf((*MockFactory)(nil).CreateScanner), arg0)
 }

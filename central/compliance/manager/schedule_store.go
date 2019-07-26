@@ -68,4 +68,4 @@ func (s *scheduleStoreImpl) DeleteSchedule(id string) error {
 	return s.crud.Delete(id)
 }
 
-//go:generate mockgen-wrapper ScheduleStore
+//go:generate mockgen-wrapper

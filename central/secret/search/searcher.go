@@ -16,7 +16,7 @@ var (
 )
 
 // Searcher provides search functionality on existing secrets.
-//go:generate mockgen-wrapper Searcher
+//go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
 	SearchSecrets(context.Context, *v1.Query) ([]*v1.SearchResult, error)

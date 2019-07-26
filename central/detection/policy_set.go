@@ -11,7 +11,7 @@ var (
 )
 
 // PolicySet is a set of policies.
-//go:generate mockgen-wrapper PolicySet
+//go:generate mockgen-wrapper
 type PolicySet interface {
 	Compiler() PolicyCompiler
 

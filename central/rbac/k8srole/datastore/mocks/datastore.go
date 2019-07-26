@@ -38,6 +38,7 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 
 // GetRole mocks base method
 func (m *MockDataStore) GetRole(arg0 context.Context, arg1 string) (*storage.K8SRole, bool, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRole", arg0, arg1)
 	ret0, _ := ret[0].(*storage.K8SRole)
 	ret1, _ := ret[1].(bool)
@@ -47,11 +48,13 @@ func (m *MockDataStore) GetRole(arg0 context.Context, arg1 string) (*storage.K8S
 
 // GetRole indicates an expected call of GetRole
 func (mr *MockDataStoreMockRecorder) GetRole(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockDataStore)(nil).GetRole), arg0, arg1)
 }
 
 // RemoveRole mocks base method
 func (m *MockDataStore) RemoveRole(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveRole", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -59,11 +62,13 @@ func (m *MockDataStore) RemoveRole(arg0 context.Context, arg1 string) error {
 
 // RemoveRole indicates an expected call of RemoveRole
 func (mr *MockDataStoreMockRecorder) RemoveRole(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRole", reflect.TypeOf((*MockDataStore)(nil).RemoveRole), arg0, arg1)
 }
 
 // Search mocks base method
 func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
@@ -72,11 +77,13 @@ func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.R
 
 // Search indicates an expected call of Search
 func (mr *MockDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0, arg1)
 }
 
 // SearchRawRoles mocks base method
 func (m *MockDataStore) SearchRawRoles(arg0 context.Context, arg1 *v1.Query) ([]*storage.K8SRole, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRawRoles", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.K8SRole)
 	ret1, _ := ret[1].(error)
@@ -85,11 +92,13 @@ func (m *MockDataStore) SearchRawRoles(arg0 context.Context, arg1 *v1.Query) ([]
 
 // SearchRawRoles indicates an expected call of SearchRawRoles
 func (mr *MockDataStoreMockRecorder) SearchRawRoles(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawRoles", reflect.TypeOf((*MockDataStore)(nil).SearchRawRoles), arg0, arg1)
 }
 
 // SearchRoles mocks base method
 func (m *MockDataStore) SearchRoles(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRoles", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
@@ -98,11 +107,13 @@ func (m *MockDataStore) SearchRoles(arg0 context.Context, arg1 *v1.Query) ([]*v1
 
 // SearchRoles indicates an expected call of SearchRoles
 func (mr *MockDataStoreMockRecorder) SearchRoles(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRoles", reflect.TypeOf((*MockDataStore)(nil).SearchRoles), arg0, arg1)
 }
 
 // UpsertRole mocks base method
 func (m *MockDataStore) UpsertRole(arg0 context.Context, arg1 *storage.K8SRole) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertRole", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -110,5 +121,6 @@ func (m *MockDataStore) UpsertRole(arg0 context.Context, arg1 *storage.K8SRole) 
 
 // UpsertRole indicates an expected call of UpsertRole
 func (mr *MockDataStoreMockRecorder) UpsertRole(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRole", reflect.TypeOf((*MockDataStore)(nil).UpsertRole), arg0, arg1)
 }

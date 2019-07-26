@@ -12,7 +12,7 @@ import (
 )
 
 // Builder builds matchers.
-//go:generate mockgen-wrapper Builder
+//go:generate mockgen-wrapper
 type Builder interface {
 	ForPolicy(policy *storage.Policy) (searchbasedpolicies.Matcher, error)
 }

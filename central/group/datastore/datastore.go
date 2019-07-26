@@ -8,7 +8,7 @@ import (
 )
 
 // DataStore is the datastore for groups.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error)
 	GetAll(ctx context.Context) ([]*storage.Group, error)

@@ -38,6 +38,7 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 
 // AddCluster mocks base method
 func (m *MockIndexer) AddCluster(arg0 *storage.Cluster) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddCluster", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -45,11 +46,13 @@ func (m *MockIndexer) AddCluster(arg0 *storage.Cluster) error {
 
 // AddCluster indicates an expected call of AddCluster
 func (mr *MockIndexerMockRecorder) AddCluster(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCluster", reflect.TypeOf((*MockIndexer)(nil).AddCluster), arg0)
 }
 
 // AddClusters mocks base method
 func (m *MockIndexer) AddClusters(arg0 []*storage.Cluster) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddClusters", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -57,11 +60,13 @@ func (m *MockIndexer) AddClusters(arg0 []*storage.Cluster) error {
 
 // AddClusters indicates an expected call of AddClusters
 func (mr *MockIndexerMockRecorder) AddClusters(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddClusters", reflect.TypeOf((*MockIndexer)(nil).AddClusters), arg0)
 }
 
 // DeleteCluster mocks base method
 func (m *MockIndexer) DeleteCluster(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteCluster", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -69,11 +74,13 @@ func (m *MockIndexer) DeleteCluster(arg0 string) error {
 
 // DeleteCluster indicates an expected call of DeleteCluster
 func (mr *MockIndexerMockRecorder) DeleteCluster(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCluster", reflect.TypeOf((*MockIndexer)(nil).DeleteCluster), arg0)
 }
 
 // DeleteClusters mocks base method
 func (m *MockIndexer) DeleteClusters(arg0 []string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteClusters", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -81,11 +88,13 @@ func (m *MockIndexer) DeleteClusters(arg0 []string) error {
 
 // DeleteClusters indicates an expected call of DeleteClusters
 func (mr *MockIndexerMockRecorder) DeleteClusters(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClusters", reflect.TypeOf((*MockIndexer)(nil).DeleteClusters), arg0)
 }
 
 // GetTxnCount mocks base method
 func (m *MockIndexer) GetTxnCount() uint64 {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxnCount")
 	ret0, _ := ret[0].(uint64)
 	return ret0
@@ -93,11 +102,13 @@ func (m *MockIndexer) GetTxnCount() uint64 {
 
 // GetTxnCount indicates an expected call of GetTxnCount
 func (mr *MockIndexerMockRecorder) GetTxnCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxnCount", reflect.TypeOf((*MockIndexer)(nil).GetTxnCount))
 }
 
 // ResetIndex mocks base method
 func (m *MockIndexer) ResetIndex() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResetIndex")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -105,11 +116,13 @@ func (m *MockIndexer) ResetIndex() error {
 
 // ResetIndex indicates an expected call of ResetIndex
 func (mr *MockIndexerMockRecorder) ResetIndex() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetIndex", reflect.TypeOf((*MockIndexer)(nil).ResetIndex))
 }
 
 // Search mocks base method
 func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) ([]search.Result, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
@@ -122,12 +135,14 @@ func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (
 
 // Search indicates an expected call of Search
 func (mr *MockIndexerMockRecorder) Search(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), varargs...)
 }
 
 // SetTxnCount mocks base method
 func (m *MockIndexer) SetTxnCount(arg0 uint64) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetTxnCount", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -135,5 +150,6 @@ func (m *MockIndexer) SetTxnCount(arg0 uint64) error {
 
 // SetTxnCount indicates an expected call of SetTxnCount
 func (mr *MockIndexerMockRecorder) SetTxnCount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTxnCount", reflect.TypeOf((*MockIndexer)(nil).SetTxnCount), arg0)
 }

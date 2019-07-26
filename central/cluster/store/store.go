@@ -15,7 +15,7 @@ var (
 )
 
 // Store provides storage functionality for alerts.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetCluster(id string) (*storage.Cluster, bool, error)
 	GetClusters() ([]*storage.Cluster, error)

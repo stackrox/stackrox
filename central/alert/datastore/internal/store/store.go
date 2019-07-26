@@ -12,7 +12,7 @@ var (
 )
 
 // Store provides storage functionality for alerts.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	ListAlert(id string) (*storage.ListAlert, bool, error)
 	ListAlerts() ([]*storage.ListAlert, error)

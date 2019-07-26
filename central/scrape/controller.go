@@ -23,4 +23,4 @@ func NewController(msgInjector common.MessageInjector, stoppedSig concurrency.Re
 	}
 }
 
-//go:generate mockgen-wrapper Controller
+//go:generate mockgen-wrapper

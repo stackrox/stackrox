@@ -35,6 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 
 // DeleteLicenseKey mocks base method
 func (m *MockStore) DeleteLicenseKey(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteLicenseKey", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockStore) DeleteLicenseKey(arg0 string) error {
 
 // DeleteLicenseKey indicates an expected call of DeleteLicenseKey
 func (mr *MockStoreMockRecorder) DeleteLicenseKey(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLicenseKey", reflect.TypeOf((*MockStore)(nil).DeleteLicenseKey), arg0)
 }
 
 // ListLicenseKeys mocks base method
 func (m *MockStore) ListLicenseKeys() ([]*storage.StoredLicenseKey, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListLicenseKeys")
 	ret0, _ := ret[0].([]*storage.StoredLicenseKey)
 	ret1, _ := ret[1].(error)
@@ -55,11 +58,13 @@ func (m *MockStore) ListLicenseKeys() ([]*storage.StoredLicenseKey, error) {
 
 // ListLicenseKeys indicates an expected call of ListLicenseKeys
 func (mr *MockStoreMockRecorder) ListLicenseKeys() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLicenseKeys", reflect.TypeOf((*MockStore)(nil).ListLicenseKeys))
 }
 
 // UpsertLicenseKeys mocks base method
 func (m *MockStore) UpsertLicenseKeys(arg0 []*storage.StoredLicenseKey) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertLicenseKeys", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -67,5 +72,6 @@ func (m *MockStore) UpsertLicenseKeys(arg0 []*storage.StoredLicenseKey) error {
 
 // UpsertLicenseKeys indicates an expected call of UpsertLicenseKeys
 func (mr *MockStoreMockRecorder) UpsertLicenseKeys(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertLicenseKeys", reflect.TypeOf((*MockStore)(nil).UpsertLicenseKeys), arg0)
 }

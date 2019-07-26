@@ -26,4 +26,4 @@ type Factory interface {
 	Period() time.Duration
 }
 
-//go:generate mockgen-wrapper Pruner,Factory
+//go:generate mockgen-wrapper

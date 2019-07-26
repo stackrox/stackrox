@@ -35,6 +35,7 @@ func (m *MockDispatcher) EXPECT() *MockDispatcherMockRecorder {
 
 // ProcessEvent mocks base method
 func (m *MockDispatcher) ProcessEvent(arg0 interface{}, arg1 central.ResourceAction) []*central.SensorEvent {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessEvent", arg0, arg1)
 	ret0, _ := ret[0].([]*central.SensorEvent)
 	return ret0
@@ -42,5 +43,6 @@ func (m *MockDispatcher) ProcessEvent(arg0 interface{}, arg1 central.ResourceAct
 
 // ProcessEvent indicates an expected call of ProcessEvent
 func (mr *MockDispatcherMockRecorder) ProcessEvent(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEvent", reflect.TypeOf((*MockDispatcher)(nil).ProcessEvent), arg0, arg1)
 }

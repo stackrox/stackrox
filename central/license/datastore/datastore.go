@@ -8,7 +8,7 @@ import (
 )
 
 // DataStore is the datastore for license keys.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	ListLicenseKeys(ctx context.Context) ([]*storage.StoredLicenseKey, error)
 	UpsertLicenseKeys(ctx context.Context, keys []*storage.StoredLicenseKey) error

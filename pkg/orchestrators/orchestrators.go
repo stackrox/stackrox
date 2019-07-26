@@ -35,7 +35,7 @@ type SystemService struct {
 }
 
 // Orchestrator is the interface that allows for actions against an orchestrator
-//go:generate mockgen-wrapper Orchestrator
+//go:generate mockgen-wrapper
 type Orchestrator interface {
 	LaunchDaemonSet(service SystemService) (name string, desired int, err error)
 	Kill(id string) error

@@ -35,6 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 
 // DeleteRole mocks base method
 func (m *MockStore) DeleteRole(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteRole", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockStore) DeleteRole(arg0 string) error {
 
 // DeleteRole indicates an expected call of DeleteRole
 func (mr *MockStoreMockRecorder) DeleteRole(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRole", reflect.TypeOf((*MockStore)(nil).DeleteRole), arg0)
 }
 
 // GetRole mocks base method
 func (m *MockStore) GetRole(arg0 string) (*storage.K8SRole, bool, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRole", arg0)
 	ret0, _ := ret[0].(*storage.K8SRole)
 	ret1, _ := ret[1].(bool)
@@ -56,11 +59,13 @@ func (m *MockStore) GetRole(arg0 string) (*storage.K8SRole, bool, error) {
 
 // GetRole indicates an expected call of GetRole
 func (mr *MockStoreMockRecorder) GetRole(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockStore)(nil).GetRole), arg0)
 }
 
 // GetRoles mocks base method
 func (m *MockStore) GetRoles(arg0 []string) ([]*storage.K8SRole, []int, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRoles", arg0)
 	ret0, _ := ret[0].([]*storage.K8SRole)
 	ret1, _ := ret[1].([]int)
@@ -70,11 +75,13 @@ func (m *MockStore) GetRoles(arg0 []string) ([]*storage.K8SRole, []int, error) {
 
 // GetRoles indicates an expected call of GetRoles
 func (mr *MockStoreMockRecorder) GetRoles(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoles", reflect.TypeOf((*MockStore)(nil).GetRoles), arg0)
 }
 
 // ListRoles mocks base method
 func (m *MockStore) ListRoles() ([]*storage.K8SRole, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListRoles")
 	ret0, _ := ret[0].([]*storage.K8SRole)
 	ret1, _ := ret[1].(error)
@@ -83,11 +90,13 @@ func (m *MockStore) ListRoles() ([]*storage.K8SRole, error) {
 
 // ListRoles indicates an expected call of ListRoles
 func (mr *MockStoreMockRecorder) ListRoles() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoles", reflect.TypeOf((*MockStore)(nil).ListRoles))
 }
 
 // UpsertRole mocks base method
 func (m *MockStore) UpsertRole(arg0 *storage.K8SRole) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertRole", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -95,5 +104,6 @@ func (m *MockStore) UpsertRole(arg0 *storage.K8SRole) error {
 
 // UpsertRole indicates an expected call of UpsertRole
 func (mr *MockStoreMockRecorder) UpsertRole(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRole", reflect.TypeOf((*MockStore)(nil).UpsertRole), arg0)
 }

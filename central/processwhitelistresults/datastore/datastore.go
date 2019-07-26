@@ -8,7 +8,7 @@ import (
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessWhitelistResults.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	UpsertWhitelistResults(ctx context.Context, results *storage.ProcessWhitelistResults) error
 	GetWhitelistResults(ctx context.Context, deploymentID string) (*storage.ProcessWhitelistResults, error)

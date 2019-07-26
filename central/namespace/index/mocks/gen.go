@@ -38,6 +38,7 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 
 // AddNamespaceMetadata mocks base method
 func (m *MockIndexer) AddNamespaceMetadata(arg0 *storage.NamespaceMetadata) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddNamespaceMetadata", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -45,11 +46,13 @@ func (m *MockIndexer) AddNamespaceMetadata(arg0 *storage.NamespaceMetadata) erro
 
 // AddNamespaceMetadata indicates an expected call of AddNamespaceMetadata
 func (mr *MockIndexerMockRecorder) AddNamespaceMetadata(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNamespaceMetadata", reflect.TypeOf((*MockIndexer)(nil).AddNamespaceMetadata), arg0)
 }
 
 // AddNamespaceMetadatas mocks base method
 func (m *MockIndexer) AddNamespaceMetadatas(arg0 []*storage.NamespaceMetadata) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddNamespaceMetadatas", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -57,11 +60,13 @@ func (m *MockIndexer) AddNamespaceMetadatas(arg0 []*storage.NamespaceMetadata) e
 
 // AddNamespaceMetadatas indicates an expected call of AddNamespaceMetadatas
 func (mr *MockIndexerMockRecorder) AddNamespaceMetadatas(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNamespaceMetadatas", reflect.TypeOf((*MockIndexer)(nil).AddNamespaceMetadatas), arg0)
 }
 
 // DeleteNamespaceMetadata mocks base method
 func (m *MockIndexer) DeleteNamespaceMetadata(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteNamespaceMetadata", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -69,11 +74,13 @@ func (m *MockIndexer) DeleteNamespaceMetadata(arg0 string) error {
 
 // DeleteNamespaceMetadata indicates an expected call of DeleteNamespaceMetadata
 func (mr *MockIndexerMockRecorder) DeleteNamespaceMetadata(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNamespaceMetadata", reflect.TypeOf((*MockIndexer)(nil).DeleteNamespaceMetadata), arg0)
 }
 
 // DeleteNamespaceMetadatas mocks base method
 func (m *MockIndexer) DeleteNamespaceMetadatas(arg0 []string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteNamespaceMetadatas", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -81,11 +88,13 @@ func (m *MockIndexer) DeleteNamespaceMetadatas(arg0 []string) error {
 
 // DeleteNamespaceMetadatas indicates an expected call of DeleteNamespaceMetadatas
 func (mr *MockIndexerMockRecorder) DeleteNamespaceMetadatas(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNamespaceMetadatas", reflect.TypeOf((*MockIndexer)(nil).DeleteNamespaceMetadatas), arg0)
 }
 
 // GetTxnCount mocks base method
 func (m *MockIndexer) GetTxnCount() uint64 {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxnCount")
 	ret0, _ := ret[0].(uint64)
 	return ret0
@@ -93,11 +102,13 @@ func (m *MockIndexer) GetTxnCount() uint64 {
 
 // GetTxnCount indicates an expected call of GetTxnCount
 func (mr *MockIndexerMockRecorder) GetTxnCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxnCount", reflect.TypeOf((*MockIndexer)(nil).GetTxnCount))
 }
 
 // ResetIndex mocks base method
 func (m *MockIndexer) ResetIndex() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResetIndex")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -105,11 +116,13 @@ func (m *MockIndexer) ResetIndex() error {
 
 // ResetIndex indicates an expected call of ResetIndex
 func (mr *MockIndexerMockRecorder) ResetIndex() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetIndex", reflect.TypeOf((*MockIndexer)(nil).ResetIndex))
 }
 
 // Search mocks base method
 func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) ([]search.Result, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
@@ -122,12 +135,14 @@ func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (
 
 // Search indicates an expected call of Search
 func (mr *MockIndexerMockRecorder) Search(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), varargs...)
 }
 
 // SetTxnCount mocks base method
 func (m *MockIndexer) SetTxnCount(arg0 uint64) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetTxnCount", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -135,5 +150,6 @@ func (m *MockIndexer) SetTxnCount(arg0 uint64) error {
 
 // SetTxnCount indicates an expected call of SetTxnCount
 func (mr *MockIndexerMockRecorder) SetTxnCount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTxnCount", reflect.TypeOf((*MockIndexer)(nil).SetTxnCount), arg0)
 }

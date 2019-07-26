@@ -15,7 +15,7 @@ var (
 )
 
 // Evaluator implements the interface for the network graph generator
-//go:generate mockgen-wrapper Evaluator
+//go:generate mockgen-wrapper
 type Evaluator interface {
 	GetGraph(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) *v1.NetworkGraph
 	GetAppliedPolicies(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy

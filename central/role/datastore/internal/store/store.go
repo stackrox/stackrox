@@ -11,7 +11,7 @@ import (
 var rolesBucket = []byte("roles")
 
 // Store is the store for roles.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetRole(name string) (*storage.Role, error)
 	GetAllRoles() ([]*storage.Role, error)

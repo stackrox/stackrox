@@ -36,6 +36,7 @@ func (m *MockScopeCheckerCore) EXPECT() *MockScopeCheckerCoreMockRecorder {
 
 // PerformChecks mocks base method
 func (m *MockScopeCheckerCore) PerformChecks(arg0 context.Context) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PerformChecks", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -43,11 +44,13 @@ func (m *MockScopeCheckerCore) PerformChecks(arg0 context.Context) error {
 
 // PerformChecks indicates an expected call of PerformChecks
 func (mr *MockScopeCheckerCoreMockRecorder) PerformChecks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformChecks", reflect.TypeOf((*MockScopeCheckerCore)(nil).PerformChecks), arg0)
 }
 
 // SubScopeChecker mocks base method
 func (m *MockScopeCheckerCore) SubScopeChecker(arg0 sac.ScopeKey) sac.ScopeCheckerCore {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubScopeChecker", arg0)
 	ret0, _ := ret[0].(sac.ScopeCheckerCore)
 	return ret0
@@ -55,11 +58,13 @@ func (m *MockScopeCheckerCore) SubScopeChecker(arg0 sac.ScopeKey) sac.ScopeCheck
 
 // SubScopeChecker indicates an expected call of SubScopeChecker
 func (mr *MockScopeCheckerCoreMockRecorder) SubScopeChecker(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubScopeChecker", reflect.TypeOf((*MockScopeCheckerCore)(nil).SubScopeChecker), arg0)
 }
 
 // TryAllowed mocks base method
 func (m *MockScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TryAllowed")
 	ret0, _ := ret[0].(sac.TryAllowedResult)
 	return ret0
@@ -67,5 +72,6 @@ func (m *MockScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 
 // TryAllowed indicates an expected call of TryAllowed
 func (mr *MockScopeCheckerCoreMockRecorder) TryAllowed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryAllowed", reflect.TypeOf((*MockScopeCheckerCore)(nil).TryAllowed))
 }

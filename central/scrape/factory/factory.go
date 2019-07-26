@@ -11,4 +11,4 @@ type ScrapeFactory interface {
 	RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error)
 }
 
-//go:generate mockgen-wrapper ScrapeFactory
+//go:generate mockgen-wrapper

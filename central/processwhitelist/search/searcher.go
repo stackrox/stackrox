@@ -15,7 +15,7 @@ var (
 )
 
 // Searcher provides search functionality on existing alerts
-//go:generate mockgen-wrapper Searcher
+//go:generate mockgen-wrapper
 type Searcher interface {
 	SearchRawProcessWhitelists(ctx context.Context, q *v1.Query) ([]*storage.ProcessWhitelist, error)
 }

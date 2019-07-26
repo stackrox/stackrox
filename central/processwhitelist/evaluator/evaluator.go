@@ -8,7 +8,7 @@ import (
 )
 
 // An Evaluator evaluates process whitelists, and stores their cached results.
-//go:generate mockgen-wrapper Evaluator
+//go:generate mockgen-wrapper
 type Evaluator interface {
 	EvaluateWhitelistsAndPersistResult(deployment *storage.Deployment) (violatingProcesses []*storage.ProcessIndicator, err error)
 }

@@ -8,4 +8,4 @@ type ClusterStore interface {
 	RemoveFlowStore(clusterID string) error
 }
 
-//go:generate mockgen-wrapper ClusterStore
+//go:generate mockgen-wrapper

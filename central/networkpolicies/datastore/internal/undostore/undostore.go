@@ -14,7 +14,7 @@ var (
 )
 
 // UndoStore provides storage functionality for undo records.
-//go:generate mockgen-wrapper UndoStore
+//go:generate mockgen-wrapper
 type UndoStore interface {
 	GetUndoRecord(clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error)
 	UpsertUndoRecord(clusterID string, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error

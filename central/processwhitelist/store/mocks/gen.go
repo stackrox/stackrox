@@ -35,6 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 
 // AddWhitelist mocks base method
 func (m *MockStore) AddWhitelist(arg0 *storage.ProcessWhitelist) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddWhitelist", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockStore) AddWhitelist(arg0 *storage.ProcessWhitelist) error {
 
 // AddWhitelist indicates an expected call of AddWhitelist
 func (mr *MockStoreMockRecorder) AddWhitelist(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddWhitelist", reflect.TypeOf((*MockStore)(nil).AddWhitelist), arg0)
 }
 
 // DeleteWhitelist mocks base method
 func (m *MockStore) DeleteWhitelist(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteWhitelist", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -54,11 +57,13 @@ func (m *MockStore) DeleteWhitelist(arg0 string) error {
 
 // DeleteWhitelist indicates an expected call of DeleteWhitelist
 func (mr *MockStoreMockRecorder) DeleteWhitelist(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWhitelist", reflect.TypeOf((*MockStore)(nil).DeleteWhitelist), arg0)
 }
 
 // GetWhitelist mocks base method
 func (m *MockStore) GetWhitelist(arg0 string) (*storage.ProcessWhitelist, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWhitelist", arg0)
 	ret0, _ := ret[0].(*storage.ProcessWhitelist)
 	ret1, _ := ret[1].(error)
@@ -67,11 +72,13 @@ func (m *MockStore) GetWhitelist(arg0 string) (*storage.ProcessWhitelist, error)
 
 // GetWhitelist indicates an expected call of GetWhitelist
 func (mr *MockStoreMockRecorder) GetWhitelist(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWhitelist", reflect.TypeOf((*MockStore)(nil).GetWhitelist), arg0)
 }
 
 // GetWhitelists mocks base method
 func (m *MockStore) GetWhitelists(arg0 []string) ([]*storage.ProcessWhitelist, []int, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWhitelists", arg0)
 	ret0, _ := ret[0].([]*storage.ProcessWhitelist)
 	ret1, _ := ret[1].([]int)
@@ -81,11 +88,13 @@ func (m *MockStore) GetWhitelists(arg0 []string) ([]*storage.ProcessWhitelist, [
 
 // GetWhitelists indicates an expected call of GetWhitelists
 func (mr *MockStoreMockRecorder) GetWhitelists(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWhitelists", reflect.TypeOf((*MockStore)(nil).GetWhitelists), arg0)
 }
 
 // ListWhitelists mocks base method
 func (m *MockStore) ListWhitelists() ([]*storage.ProcessWhitelist, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListWhitelists")
 	ret0, _ := ret[0].([]*storage.ProcessWhitelist)
 	ret1, _ := ret[1].(error)
@@ -94,11 +103,13 @@ func (m *MockStore) ListWhitelists() ([]*storage.ProcessWhitelist, error) {
 
 // ListWhitelists indicates an expected call of ListWhitelists
 func (mr *MockStoreMockRecorder) ListWhitelists() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWhitelists", reflect.TypeOf((*MockStore)(nil).ListWhitelists))
 }
 
 // UpdateWhitelist mocks base method
 func (m *MockStore) UpdateWhitelist(arg0 *storage.ProcessWhitelist) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateWhitelist", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -106,5 +117,6 @@ func (m *MockStore) UpdateWhitelist(arg0 *storage.ProcessWhitelist) error {
 
 // UpdateWhitelist indicates an expected call of UpdateWhitelist
 func (mr *MockStoreMockRecorder) UpdateWhitelist(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWhitelist", reflect.TypeOf((*MockStore)(nil).UpdateWhitelist), arg0)
 }

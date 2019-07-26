@@ -35,6 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 
 // DeleteAuthzPluginConfig mocks base method
 func (m *MockStore) DeleteAuthzPluginConfig(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteAuthzPluginConfig", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockStore) DeleteAuthzPluginConfig(arg0 string) error {
 
 // DeleteAuthzPluginConfig indicates an expected call of DeleteAuthzPluginConfig
 func (mr *MockStoreMockRecorder) DeleteAuthzPluginConfig(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAuthzPluginConfig", reflect.TypeOf((*MockStore)(nil).DeleteAuthzPluginConfig), arg0)
 }
 
 // GetAuthzPluginConfig mocks base method
 func (m *MockStore) GetAuthzPluginConfig(arg0 string) (*storage.AuthzPluginConfig, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAuthzPluginConfig", arg0)
 	ret0, _ := ret[0].(*storage.AuthzPluginConfig)
 	ret1, _ := ret[1].(error)
@@ -55,11 +58,13 @@ func (m *MockStore) GetAuthzPluginConfig(arg0 string) (*storage.AuthzPluginConfi
 
 // GetAuthzPluginConfig indicates an expected call of GetAuthzPluginConfig
 func (mr *MockStoreMockRecorder) GetAuthzPluginConfig(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthzPluginConfig", reflect.TypeOf((*MockStore)(nil).GetAuthzPluginConfig), arg0)
 }
 
 // ListAuthzPluginConfigs mocks base method
 func (m *MockStore) ListAuthzPluginConfigs() ([]*storage.AuthzPluginConfig, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAuthzPluginConfigs")
 	ret0, _ := ret[0].([]*storage.AuthzPluginConfig)
 	ret1, _ := ret[1].(error)
@@ -68,11 +73,13 @@ func (m *MockStore) ListAuthzPluginConfigs() ([]*storage.AuthzPluginConfig, erro
 
 // ListAuthzPluginConfigs indicates an expected call of ListAuthzPluginConfigs
 func (mr *MockStoreMockRecorder) ListAuthzPluginConfigs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAuthzPluginConfigs", reflect.TypeOf((*MockStore)(nil).ListAuthzPluginConfigs))
 }
 
 // UpsertAuthzPluginConfig mocks base method
 func (m *MockStore) UpsertAuthzPluginConfig(arg0 *storage.AuthzPluginConfig) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertAuthzPluginConfig", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -80,11 +87,13 @@ func (m *MockStore) UpsertAuthzPluginConfig(arg0 *storage.AuthzPluginConfig) err
 
 // UpsertAuthzPluginConfig indicates an expected call of UpsertAuthzPluginConfig
 func (mr *MockStoreMockRecorder) UpsertAuthzPluginConfig(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAuthzPluginConfig", reflect.TypeOf((*MockStore)(nil).UpsertAuthzPluginConfig), arg0)
 }
 
 // UpsertAuthzPluginConfigs mocks base method
 func (m *MockStore) UpsertAuthzPluginConfigs(arg0 []*storage.AuthzPluginConfig) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertAuthzPluginConfigs", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -92,5 +101,6 @@ func (m *MockStore) UpsertAuthzPluginConfigs(arg0 []*storage.AuthzPluginConfig) 
 
 // UpsertAuthzPluginConfigs indicates an expected call of UpsertAuthzPluginConfigs
 func (mr *MockStoreMockRecorder) UpsertAuthzPluginConfigs(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAuthzPluginConfigs", reflect.TypeOf((*MockStore)(nil).UpsertAuthzPluginConfigs), arg0)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 // Store is the interface for accessing stored compliance data
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetLatestRunResults(clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error)
 	GetLatestRunResultsBatch(clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)

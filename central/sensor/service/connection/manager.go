@@ -16,7 +16,7 @@ type ClusterManager interface {
 }
 
 // Manager is responsible for managing all active connections from sensors.
-//go:generate mockgen-wrapper Manager
+//go:generate mockgen-wrapper
 type Manager interface {
 	Start()
 	RegisterClusterManager(mgr ClusterManager)

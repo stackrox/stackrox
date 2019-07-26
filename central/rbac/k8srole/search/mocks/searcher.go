@@ -38,6 +38,7 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 
 // Search mocks base method
 func (m *MockSearcher) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
@@ -46,11 +47,13 @@ func (m *MockSearcher) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Re
 
 // Search indicates an expected call of Search
 func (mr *MockSearcherMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), arg0, arg1)
 }
 
 // SearchRawRoles mocks base method
 func (m *MockSearcher) SearchRawRoles(arg0 context.Context, arg1 *v1.Query) ([]*storage.K8SRole, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRawRoles", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.K8SRole)
 	ret1, _ := ret[1].(error)
@@ -59,11 +62,13 @@ func (m *MockSearcher) SearchRawRoles(arg0 context.Context, arg1 *v1.Query) ([]*
 
 // SearchRawRoles indicates an expected call of SearchRawRoles
 func (mr *MockSearcherMockRecorder) SearchRawRoles(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawRoles", reflect.TypeOf((*MockSearcher)(nil).SearchRawRoles), arg0, arg1)
 }
 
 // SearchRoles mocks base method
 func (m *MockSearcher) SearchRoles(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRoles", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
@@ -72,5 +77,6 @@ func (m *MockSearcher) SearchRoles(arg0 context.Context, arg1 *v1.Query) ([]*v1.
 
 // SearchRoles indicates an expected call of SearchRoles
 func (mr *MockSearcherMockRecorder) SearchRoles(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRoles", reflect.TypeOf((*MockSearcher)(nil).SearchRoles), arg0, arg1)
 }

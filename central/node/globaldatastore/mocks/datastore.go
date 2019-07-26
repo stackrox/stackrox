@@ -39,6 +39,7 @@ func (m *MockGlobalDataStore) EXPECT() *MockGlobalDataStoreMockRecorder {
 
 // CountAllNodes mocks base method
 func (m *MockGlobalDataStore) CountAllNodes(arg0 context.Context) (int, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountAllNodes", arg0)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
@@ -47,11 +48,13 @@ func (m *MockGlobalDataStore) CountAllNodes(arg0 context.Context) (int, error) {
 
 // CountAllNodes indicates an expected call of CountAllNodes
 func (mr *MockGlobalDataStoreMockRecorder) CountAllNodes(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAllNodes", reflect.TypeOf((*MockGlobalDataStore)(nil).CountAllNodes), arg0)
 }
 
 // GetAllClusterNodeStores mocks base method
 func (m *MockGlobalDataStore) GetAllClusterNodeStores(arg0 context.Context, arg1 bool) (map[string]datastore.DataStore, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllClusterNodeStores", arg0, arg1)
 	ret0, _ := ret[0].(map[string]datastore.DataStore)
 	ret1, _ := ret[1].(error)
@@ -60,11 +63,13 @@ func (m *MockGlobalDataStore) GetAllClusterNodeStores(arg0 context.Context, arg1
 
 // GetAllClusterNodeStores indicates an expected call of GetAllClusterNodeStores
 func (mr *MockGlobalDataStoreMockRecorder) GetAllClusterNodeStores(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllClusterNodeStores", reflect.TypeOf((*MockGlobalDataStore)(nil).GetAllClusterNodeStores), arg0, arg1)
 }
 
 // GetClusterNodeStore mocks base method
 func (m *MockGlobalDataStore) GetClusterNodeStore(arg0 context.Context, arg1 string, arg2 bool) (datastore.DataStore, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClusterNodeStore", arg0, arg1, arg2)
 	ret0, _ := ret[0].(datastore.DataStore)
 	ret1, _ := ret[1].(error)
@@ -73,11 +78,13 @@ func (m *MockGlobalDataStore) GetClusterNodeStore(arg0 context.Context, arg1 str
 
 // GetClusterNodeStore indicates an expected call of GetClusterNodeStore
 func (mr *MockGlobalDataStoreMockRecorder) GetClusterNodeStore(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterNodeStore", reflect.TypeOf((*MockGlobalDataStore)(nil).GetClusterNodeStore), arg0, arg1, arg2)
 }
 
 // RemoveClusterNodeStores mocks base method
 func (m *MockGlobalDataStore) RemoveClusterNodeStores(arg0 context.Context, arg1 ...string) error {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
@@ -89,12 +96,14 @@ func (m *MockGlobalDataStore) RemoveClusterNodeStores(arg0 context.Context, arg1
 
 // RemoveClusterNodeStores indicates an expected call of RemoveClusterNodeStores
 func (mr *MockGlobalDataStoreMockRecorder) RemoveClusterNodeStores(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClusterNodeStores", reflect.TypeOf((*MockGlobalDataStore)(nil).RemoveClusterNodeStores), varargs...)
 }
 
 // Search mocks base method
 func (m *MockGlobalDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
@@ -103,11 +112,13 @@ func (m *MockGlobalDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]se
 
 // Search indicates an expected call of Search
 func (mr *MockGlobalDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockGlobalDataStore)(nil).Search), arg0, arg1)
 }
 
 // SearchRawNodes mocks base method
 func (m *MockGlobalDataStore) SearchRawNodes(arg0 context.Context, arg1 *v1.Query) ([]*storage.Node, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRawNodes", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.Node)
 	ret1, _ := ret[1].(error)
@@ -116,11 +127,13 @@ func (m *MockGlobalDataStore) SearchRawNodes(arg0 context.Context, arg1 *v1.Quer
 
 // SearchRawNodes indicates an expected call of SearchRawNodes
 func (mr *MockGlobalDataStoreMockRecorder) SearchRawNodes(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawNodes", reflect.TypeOf((*MockGlobalDataStore)(nil).SearchRawNodes), arg0, arg1)
 }
 
 // SearchResults mocks base method
 func (m *MockGlobalDataStore) SearchResults(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchResults", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
@@ -129,5 +142,6 @@ func (m *MockGlobalDataStore) SearchResults(arg0 context.Context, arg1 *v1.Query
 
 // SearchResults indicates an expected call of SearchResults
 func (mr *MockGlobalDataStoreMockRecorder) SearchResults(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockGlobalDataStore)(nil).SearchResults), arg0, arg1)
 }

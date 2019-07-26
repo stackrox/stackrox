@@ -36,6 +36,7 @@ func (m *MockAuditNotifier) EXPECT() *MockAuditNotifierMockRecorder {
 
 // AuditLoggingEnabled mocks base method
 func (m *MockAuditNotifier) AuditLoggingEnabled() bool {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AuditLoggingEnabled")
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -43,11 +44,13 @@ func (m *MockAuditNotifier) AuditLoggingEnabled() bool {
 
 // AuditLoggingEnabled indicates an expected call of AuditLoggingEnabled
 func (mr *MockAuditNotifierMockRecorder) AuditLoggingEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuditLoggingEnabled", reflect.TypeOf((*MockAuditNotifier)(nil).AuditLoggingEnabled))
 }
 
 // ProtoNotifier mocks base method
 func (m *MockAuditNotifier) ProtoNotifier() *storage.Notifier {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProtoNotifier")
 	ret0, _ := ret[0].(*storage.Notifier)
 	return ret0
@@ -55,11 +58,13 @@ func (m *MockAuditNotifier) ProtoNotifier() *storage.Notifier {
 
 // ProtoNotifier indicates an expected call of ProtoNotifier
 func (mr *MockAuditNotifierMockRecorder) ProtoNotifier() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProtoNotifier", reflect.TypeOf((*MockAuditNotifier)(nil).ProtoNotifier))
 }
 
 // SendAuditMessage mocks base method
 func (m *MockAuditNotifier) SendAuditMessage(arg0 *v1.Audit_Message) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendAuditMessage", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -67,11 +72,13 @@ func (m *MockAuditNotifier) SendAuditMessage(arg0 *v1.Audit_Message) error {
 
 // SendAuditMessage indicates an expected call of SendAuditMessage
 func (mr *MockAuditNotifierMockRecorder) SendAuditMessage(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendAuditMessage", reflect.TypeOf((*MockAuditNotifier)(nil).SendAuditMessage), arg0)
 }
 
 // Test mocks base method
 func (m *MockAuditNotifier) Test() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Test")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -79,5 +86,6 @@ func (m *MockAuditNotifier) Test() error {
 
 // Test indicates an expected call of Test
 func (mr *MockAuditNotifierMockRecorder) Test() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockAuditNotifier)(nil).Test))
 }

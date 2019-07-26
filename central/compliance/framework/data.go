@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-//go:generate mockgen-wrapper ComplianceDataRepository
+//go:generate mockgen-wrapper
 
 // ComplianceDataRepository is the unified interface for accessing all the data that might be relevant for a compliance
 // run. This provides check implementors with a unified view of all data objects regardless of their source (stored by

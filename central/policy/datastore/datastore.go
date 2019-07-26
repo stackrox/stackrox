@@ -14,7 +14,7 @@ import (
 )
 
 // DataStore is an intermediary to PolicyStorage.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)

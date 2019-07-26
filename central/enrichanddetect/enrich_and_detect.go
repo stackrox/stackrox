@@ -6,7 +6,7 @@ import (
 )
 
 // EnricherAndDetector combines enrichment and detection into a single function call.
-//go:generate mockgen-wrapper EnricherAndDetector
+//go:generate mockgen-wrapper
 type EnricherAndDetector interface {
 	EnrichAndDetect(deployment *storage.Deployment) error
 }

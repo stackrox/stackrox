@@ -13,7 +13,7 @@ var (
 )
 
 // Store provides access and update functions for secrets.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	ListSecrets(ids []string) ([]*storage.ListSecret, error)
 

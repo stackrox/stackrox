@@ -13,7 +13,7 @@ import (
 )
 
 // DataStore is an intermediary to RoleBindingStorage.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)

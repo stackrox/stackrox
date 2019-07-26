@@ -10,7 +10,7 @@ import (
 var notifierBucket = []byte("notifiers")
 
 // Store provides storage functionality for alerts.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetNotifier(id string) (*storage.Notifier, bool, error)
 	GetNotifiers(request *v1.GetNotifiersRequest) ([]*storage.Notifier, error)

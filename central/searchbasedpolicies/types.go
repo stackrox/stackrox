@@ -33,7 +33,7 @@ type ProcessIndicatorGetter interface {
 }
 
 // Matcher matches objects against a policy.
-//go:generate mockgen-wrapper Matcher
+//go:generate mockgen-wrapper
 type Matcher interface {
 	// Match matches the policy against all objects, returning a map from object ID to violations.
 	Match(ctx context.Context, searcher search.Searcher) (map[string]Violations, error)

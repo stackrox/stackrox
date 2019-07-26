@@ -8,7 +8,7 @@ import (
 var logsBucket = []byte("logs")
 
 // Store provides storage functionality for alerts.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetLogs() ([]string, error)
 	GetLogsRange() (start int64, end int64, err error)

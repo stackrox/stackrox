@@ -14,7 +14,7 @@ var (
 // Store is the (bolt-backed) store for API tokens.
 // We don't store the tokens themselves, but do store metadata.
 // Importantly, the Store persists token revocations.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetTokenOrNil(id string) (token *storage.TokenMetadata, err error)
 	GetTokens(*v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)

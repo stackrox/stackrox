@@ -13,7 +13,7 @@ import (
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessWhitelists.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	SearchRawProcessWhitelists(ctx context.Context, q *v1.Query) ([]*storage.ProcessWhitelist, error)
 

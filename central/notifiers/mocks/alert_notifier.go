@@ -35,6 +35,7 @@ func (m *MockAlertNotifier) EXPECT() *MockAlertNotifierMockRecorder {
 
 // AlertNotify mocks base method
 func (m *MockAlertNotifier) AlertNotify(arg0 *storage.Alert) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AlertNotify", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockAlertNotifier) AlertNotify(arg0 *storage.Alert) error {
 
 // AlertNotify indicates an expected call of AlertNotify
 func (mr *MockAlertNotifierMockRecorder) AlertNotify(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertNotify", reflect.TypeOf((*MockAlertNotifier)(nil).AlertNotify), arg0)
 }
 
 // ProtoNotifier mocks base method
 func (m *MockAlertNotifier) ProtoNotifier() *storage.Notifier {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProtoNotifier")
 	ret0, _ := ret[0].(*storage.Notifier)
 	return ret0
@@ -54,11 +57,13 @@ func (m *MockAlertNotifier) ProtoNotifier() *storage.Notifier {
 
 // ProtoNotifier indicates an expected call of ProtoNotifier
 func (mr *MockAlertNotifierMockRecorder) ProtoNotifier() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProtoNotifier", reflect.TypeOf((*MockAlertNotifier)(nil).ProtoNotifier))
 }
 
 // Test mocks base method
 func (m *MockAlertNotifier) Test() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Test")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -66,5 +71,6 @@ func (m *MockAlertNotifier) Test() error {
 
 // Test indicates an expected call of Test
 func (mr *MockAlertNotifierMockRecorder) Test() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockAlertNotifier)(nil).Test))
 }

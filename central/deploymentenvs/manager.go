@@ -22,4 +22,4 @@ type Manager interface {
 	GetDeploymentEnvironmentsByClusterID(block bool) map[string][]string
 }
 
-//go:generate mockgen-wrapper Listener,Manager
+//go:generate mockgen-wrapper

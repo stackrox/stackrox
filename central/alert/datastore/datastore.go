@@ -16,7 +16,7 @@ import (
 )
 
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)

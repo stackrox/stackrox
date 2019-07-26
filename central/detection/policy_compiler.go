@@ -7,7 +7,7 @@ import (
 )
 
 // PolicyCompiler compiles policies to CompiledPolicy objects.
-//go:generate mockgen-wrapper PolicyCompiler
+//go:generate mockgen-wrapper
 type PolicyCompiler interface {
 	CompilePolicy(policy *storage.Policy) (CompiledPolicy, error)
 }

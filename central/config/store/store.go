@@ -17,7 +17,7 @@ var (
 )
 
 // Store provides storage functionality for the Central config.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetConfig() (*storage.Config, error)
 	UpdateConfig(*storage.Config) error

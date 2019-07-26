@@ -35,6 +35,7 @@ func (m *MockAuthPluginClientManger) EXPECT() *MockAuthPluginClientMangerMockRec
 
 // GetClient mocks base method
 func (m *MockAuthPluginClientManger) GetClient() client.Client {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClient")
 	ret0, _ := ret[0].(client.Client)
 	return ret0
@@ -42,15 +43,18 @@ func (m *MockAuthPluginClientManger) GetClient() client.Client {
 
 // GetClient indicates an expected call of GetClient
 func (mr *MockAuthPluginClientMangerMockRecorder) GetClient() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClient", reflect.TypeOf((*MockAuthPluginClientManger)(nil).GetClient))
 }
 
 // SetClient mocks base method
 func (m *MockAuthPluginClientManger) SetClient(arg0 client.Client) {
+	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetClient", arg0)
 }
 
 // SetClient indicates an expected call of SetClient
 func (mr *MockAuthPluginClientMangerMockRecorder) SetClient(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetClient", reflect.TypeOf((*MockAuthPluginClientManger)(nil).SetClient), arg0)
 }

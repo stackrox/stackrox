@@ -14,7 +14,7 @@ var (
 )
 
 // Store provides storage functionality for alerts.
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	GetNetworkPolicy(id string) (*storage.NetworkPolicy, bool, error)
 	GetNetworkPolicies(clusterID, namespace string) ([]*storage.NetworkPolicy, error)

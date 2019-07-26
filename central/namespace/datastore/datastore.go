@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 
 // DataStore provides storage and indexing functionality for namespaces.
 type DataStore interface {

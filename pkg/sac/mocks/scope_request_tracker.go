@@ -36,6 +36,7 @@ func (m *MockScopeRequestTracker) EXPECT() *MockScopeRequestTrackerMockRecorder 
 
 // AddRequested mocks base method
 func (m *MockScopeRequestTracker) AddRequested(arg0 ...sac.ScopeRequest) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
@@ -45,11 +46,13 @@ func (m *MockScopeRequestTracker) AddRequested(arg0 ...sac.ScopeRequest) {
 
 // AddRequested indicates an expected call of AddRequested
 func (mr *MockScopeRequestTrackerMockRecorder) AddRequested(arg0 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRequested", reflect.TypeOf((*MockScopeRequestTracker)(nil).AddRequested), arg0...)
 }
 
 // PerformChecks mocks base method
 func (m *MockScopeRequestTracker) PerformChecks(arg0 context.Context) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PerformChecks", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -57,5 +60,6 @@ func (m *MockScopeRequestTracker) PerformChecks(arg0 context.Context) error {
 
 // PerformChecks indicates an expected call of PerformChecks
 func (mr *MockScopeRequestTrackerMockRecorder) PerformChecks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformChecks", reflect.TypeOf((*MockScopeRequestTracker)(nil).PerformChecks), arg0)
 }
