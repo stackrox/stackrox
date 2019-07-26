@@ -4,6 +4,10 @@ import axios from './instance';
 const networkPoliciesBaseUrl = '/v1/networkpolicies';
 const networkFlowBaseUrl = '/v1/networkgraph';
 
+// for large clusters network graph requests may take time to process, so
+// removing any global default timeout
+const NETWORK_GRAPH_REQUESTS_TIMEOUT = 0;
+
 /**
  * Fetches nodes and links for the network graph.
  * Returns response with nodes and links
@@ -27,6 +31,10 @@ export function fetchNetworkPolicyGraph(clusterId, query, modification) {
             url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`
         };
     }
+    options = {
+        ...options,
+        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT
+    };
     return axios(options).then(response => ({
         response: getGraph(response.data)
     }));
@@ -48,7 +56,8 @@ export function fetchNetworkFlowGraph(clusterId, query, date) {
     }
     const options = {
         method: 'GET',
-        url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`
+        url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`,
+        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT
     };
     return axios(options).then(response => ({
         response: response.data
@@ -167,8 +176,7 @@ export function notifyNetworkPolicyModification(clusterId, notifierIds, modifica
 }
 
 /**
- * Sends a yaml to the backed for application to a cluster. We use a longer timeout since application may take time
- * in larger clusters or with larger modifications.
+ * Sends a yaml to the backed for application to a cluster.
  *
  * @param {!String} clusterId
  * @param {!Object} modification
@@ -179,7 +187,7 @@ export function applyNetworkPolicyModification(clusterId, modification) {
         method: 'POST',
         data: modification,
         url: `${networkPoliciesBaseUrl}/apply/${clusterId}`,
-        timeout: 30000
+        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT
     };
     return axios(options).then(response => ({
         response: response.data
