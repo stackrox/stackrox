@@ -53,6 +53,7 @@ const QUERY = gql`
             description
             lifecycleStages
             alerts {
+                id
                 state
                 deployment {
                     id

@@ -17,6 +17,8 @@ const QUERY = gql`
         secrets {
             id
             name
+            clusterName
+            namespace
             files {
                 name
                 type
@@ -103,6 +105,9 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                 {index + 1}
                                             </div>
                                             <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
+                                                <span className="text-xs pb-1 italic text-base-500">
+                                                    {item.clusterName}/{item.namespace}
+                                                </span>
                                                 <span className="pb-2">{item.name}</span>
                                                 <Tooltip
                                                     position="top"
