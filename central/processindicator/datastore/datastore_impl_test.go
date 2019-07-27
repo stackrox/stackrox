@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator"
@@ -25,7 +26,9 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -266,45 +269,91 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		return mockPruner
 	})
 
-	m := testutils.PredMatcher("id with args matcher", func(passed []processindicator.IDAndArgs) bool {
-		ourIDsAndArgs := make([]processindicator.IDAndArgs, 0, len(indicators))
-		for _, indicator := range indicators {
-			ourIDsAndArgs = append(ourIDsAndArgs, processindicator.IDAndArgs{ID: indicator.GetId(), Args: indicator.GetSignal().GetArgs()})
-		}
-		sort.Slice(ourIDsAndArgs, func(i, j int) bool {
-			return ourIDsAndArgs[i].ID < ourIDsAndArgs[j].ID
-		})
-		sort.Slice(passed, func(i, j int) bool {
-			return passed[i].ID < passed[j].ID
-		})
-		if len(ourIDsAndArgs) != len(passed) {
-			return false
-		}
-		for i, idAndArg := range ourIDsAndArgs {
-			if idAndArg.ID != passed[i].ID || idAndArg.Args != passed[i].Args {
+	matcher := func(expectedIndicators ...*storage.ProcessIndicator) gomock.Matcher {
+		return testutils.PredMatcher(fmt.Sprintf("id with args matcher for %+v", expectedIndicators), func(passed []processindicator.IDAndArgs) bool {
+			ourIDsAndArgs := make([]processindicator.IDAndArgs, 0, len(expectedIndicators))
+			for _, indicator := range expectedIndicators {
+				ourIDsAndArgs = append(ourIDsAndArgs, processindicator.IDAndArgs{ID: indicator.GetId(), Args: indicator.GetSignal().GetArgs()})
+			}
+			sort.Slice(ourIDsAndArgs, func(i, j int) bool {
+				return ourIDsAndArgs[i].ID < ourIDsAndArgs[j].ID
+			})
+			sort.Slice(passed, func(i, j int) bool {
+				return passed[i].ID < passed[j].ID
+			})
+			if len(ourIDsAndArgs) != len(passed) {
 				return false
 			}
-		}
-		return true
-	})
+			for i, idAndArg := range ourIDsAndArgs {
+				if idAndArg.ID != passed[i].ID || idAndArg.Args != passed[i].Args {
+					return false
+				}
+			}
+			return true
+		})
+	}
 	var err error
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher, mockPrunerFactory)
 	suite.Require().NoError(err)
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	mockPruner.EXPECT().Prune(m).Return(nil)
+	mockPruner.EXPECT().Prune(matcher(indicators...)).Return(nil)
 	pruneTurnstile.AllowOne()
-	suite.Assert().True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
+	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
 	suite.verifyIndicatorsAre(indicators...)
 
-	mockPruner.EXPECT().Prune(m).Return([]string{indicators[0].GetId()})
+	// Allow the next prune to go through. However, the prune function should not be
+	// called because we should have a cache hit.
 	prunedSignal.Reset()
 	pruneTurnstile.AllowOne()
-	suite.Assert().True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
-	suite.verifyIndicatorsAre(indicators[1:]...)
+	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
+	suite.verifyIndicatorsAre(indicators...)
 
-	mockPruner.EXPECT().Prune(gomock.Any()).AnyTimes().Return(nil)
+	// Now add an extra indicator; this should cause a cache miss and we should hit the pruning.
+	extraIndicator := proto.Clone(indicators[0]).(*storage.ProcessIndicator)
+	extraIndicator.Id = uuid.NewV4().String()
+	extraIndicator.Signal.Args = uuid.NewV4().String()
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, extraIndicator))
+
+	// Allow the next prune to go through; this time, prune something.
+	expectedIndicators := []*storage.ProcessIndicator{extraIndicator}
+	expectedIndicators = append(expectedIndicators, indicators...)
+	mockPruner.EXPECT().Prune(matcher(expectedIndicators...)).Return([]string{indicators[0].GetId()})
+	prunedSignal.Reset()
+	pruneTurnstile.AllowOne()
+	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
+	expectedIndicators = []*storage.ProcessIndicator{extraIndicator}
+	expectedIndicators = append(expectedIndicators, indicators[1:]...)
+	suite.verifyIndicatorsAre(expectedIndicators...)
+
+	// Allow the next prune to go through; we should have a cache hit, so no need to mock a call.
+	prunedSignal.Reset()
+	pruneTurnstile.AllowOne()
+	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
+
+	suite.Len(suite.datastore.(*datastoreImpl).prunedArgsLengthCache, 1)
+
+	// Delete all the indicators.
+	uniqueDeploymentIDs := set.NewStringSet()
+	for _, indicator := range expectedIndicators {
+		uniqueDeploymentIDs.Add(indicator.GetDeploymentId())
+	}
+	for _, depID := range uniqueDeploymentIDs.AsSlice() {
+		suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasWriteCtx, depID))
+	}
+
+	// Allow one more prune through.
+	// All the indicators have been deleted, so no call to Prune is expected.
+	prunedSignal.Reset()
+	pruneTurnstile.AllowOne()
+	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
+
+	// This is not great because we're testing an implementation detail, but whatever.
+	// The goal is to make sure that there's no memory leak here.
+	suite.Len(suite.datastore.(*datastoreImpl).prunedArgsLengthCache, 0)
+
+	// Close the prune turnstile to allow all the prunes to go through, else the Stop will be blocked on the turnstile.
 	pruneTurnstile.Close()
 
 	suite.datastore.Stop()

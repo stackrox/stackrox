@@ -109,7 +109,7 @@ func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *storage.ProcessI
 	if err != nil {
 		return "", err
 	}
-	oldID := uniqueBucket.Get([]byte(secondaryKey))
+	oldID := uniqueBucket.Get(secondaryKey)
 	var oldIDString string
 	if oldID != nil {
 		oldIDString = string(oldID)

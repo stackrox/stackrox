@@ -15,6 +15,8 @@ var (
 type Pruner interface {
 	// Prune takes the given args and returns the ids that can be pruned.
 	Prune([]processindicator.IDAndArgs) (idsToRemove []string)
+	// Finish indicates that the current pruner is done being used.
+	// (The current prunerImpl is stateless, but this is helpful in unit tests.)
 	Finish()
 }
 

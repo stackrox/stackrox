@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
@@ -35,12 +36,13 @@ type DataStore interface {
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
 func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
 	d := &datastoreImpl{
-		storage:       storage,
-		indexer:       indexer,
-		searcher:      searcher,
-		prunerFactory: prunerFactory,
-		stopSig:       concurrency.NewSignal(),
-		stoppedSig:    concurrency.NewSignal(),
+		storage:               storage,
+		indexer:               indexer,
+		searcher:              searcher,
+		prunerFactory:         prunerFactory,
+		prunedArgsLengthCache: make(map[processindicator.ProcessWithContainerInfo]int),
+		stopSig:               concurrency.NewSignal(),
+		stoppedSig:            concurrency.NewSignal(),
 	}
 	if err := d.buildIndex(); err != nil {
 		return nil, err

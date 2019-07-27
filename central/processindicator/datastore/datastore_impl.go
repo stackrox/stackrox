@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
@@ -27,10 +28,12 @@ var (
 )
 
 type datastoreImpl struct {
-	storage       store.Store
-	indexer       index.Indexer
-	searcher      search.Searcher
-	prunerFactory pruner.Factory
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
+
+	prunerFactory         pruner.Factory
+	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
 
 	stopSig, stoppedSig concurrency.Signal
 }
@@ -197,15 +200,24 @@ func (ds *datastoreImpl) prunePeriodically() {
 
 func (ds *datastoreImpl) prune() {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Prune, "ProcessIndicator")
+	pruner := ds.prunerFactory.StartPruning()
+	defer pruner.Finish()
+
 	processInfoToArgs, err := ds.storage.GetProcessInfoToArgs()
 	if err != nil {
 		log.Errorf("Error while pruning processes: couldn't retrieve process info to args: %s", err)
 		return
 	}
 
-	pruner := ds.prunerFactory.StartPruning()
-	defer pruner.Finish()
-	for _, args := range processInfoToArgs {
+	for processInfo, args := range processInfoToArgs {
+		numArgsReceived := len(args)
+		if previouslyPrunedArgsLength, found := ds.prunedArgsLengthCache[processInfo]; found {
+			if previouslyPrunedArgsLength == numArgsReceived {
+				incrementProcessPruningCacheHitsMetrics()
+				continue
+			}
+		}
+		incrementProcessPruningCacheMissesMetric()
 		idsToRemove := pruner.Prune(args)
 		if len(idsToRemove) > 0 {
 			if err := ds.removeIndicators(idsToRemove); err != nil {
@@ -213,6 +225,14 @@ func (ds *datastoreImpl) prune() {
 			} else {
 				incrementPrunedProcessesMetric(len(idsToRemove))
 			}
+		}
+		ds.prunedArgsLengthCache[processInfo] = numArgsReceived - len(idsToRemove)
+	}
+
+	// Clean up the prunedArgsLengthCache by processes that are no longer in the DB.
+	for processInfo := range ds.prunedArgsLengthCache {
+		if _, exists := processInfoToArgs[processInfo]; !exists {
+			delete(ds.prunedArgsLengthCache, processInfo)
 		}
 	}
 }
