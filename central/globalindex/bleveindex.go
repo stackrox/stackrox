@@ -1,6 +1,8 @@
 package globalindex
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -146,6 +148,19 @@ func initializeIndices(scorchPath string) (bleve.Index, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// This implies that the index mapping has changed and therefore we should reindex everything
+		// This can only happen on upgrades
+		if !compareMappings(globalIndex.Mapping(), indexMapping) {
+			log.Infof("[STARTUP] Found new index mapping. Removing index and rebuilding")
+			if err := globalIndex.Close(); err != nil {
+				log.Errorf("error closing global index: %v", err)
+			}
+			if err := os.RemoveAll(scorchPath); err != nil {
+				log.Errorf("error removing scorch path: %v", err)
+			}
+			return initializeIndices(scorchPath)
+		}
 	}
 	globalIndex.SetName(blevehelper.GlobalIndexName)
 
@@ -157,6 +172,20 @@ func getDefaultDocMapping() *mapping.DocumentMapping {
 		Enabled: false,
 		Dynamic: false,
 	}
+}
+
+// compareMappings marshals the index mappings into JSON (which is sorted and deterministic) and then compares the bytes
+// this will determine if the index mapping has changed and the index needs to be rebuilt
+func compareMappings(im1, im2 mapping.IndexMapping) bool {
+	bytes1, err := json.Marshal(im1)
+	if err != nil {
+		return false
+	}
+	bytes2, err := json.Marshal(im2)
+	if err != nil {
+		return false
+	}
+	return bytes.Equal(bytes1, bytes2)
 }
 
 func getIndexMapping() mapping.IndexMapping {
