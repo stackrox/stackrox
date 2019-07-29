@@ -8,12 +8,17 @@ describe('Risk page', () => {
 
     beforeEach(() => {
         cy.server();
-        cy.fixture('risks/riskyDeployments.json').as('risksJson');
-        cy.route('GET', api.risks.riskyDeployments, '@risksJson').as('risks');
+        cy.fixture('risks/riskyDeployments.json').as('deploymentJson');
+        cy.route('GET', api.risks.riskyDeployments, '@deploymentJson').as('deployments');
 
         cy.visit(url);
-        cy.wait('@risks');
+        cy.wait('@deployments');
     });
+
+    const mockGetRisk = () => {
+        cy.fixture('risks/firstDeploymentRisk.json').as('firstDeploymentRiskJson');
+        cy.route('GET', api.risks.getRisk, '@firstDeploymentRiskJson').as('firstDeploymentRisk');
+    };
 
     it('should have selected item in nav bar', () => {
         cy.get(RiskPageSelectors.risk).should('have.class', 'bg-primary-700');
@@ -26,19 +31,25 @@ describe('Risk page', () => {
     });
 
     it('should open the panel to view risk indicators', () => {
+        mockGetRisk();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
+        cy.wait('@firstDeploymentRisk');
         cy.get(RiskPageSelectors.panelTabs.riskIndicators);
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 
     it('should open the panel to view deployment details', () => {
+        mockGetRisk();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
+        cy.wait('@firstDeploymentRisk');
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails);
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 
     it('should navigate from Risk Page to Images Page', () => {
+        mockGetRisk();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
+        cy.wait('@firstDeploymentRisk');
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click({ force: true });
         cy.get(RiskPageSelectors.imageLink)
             .first()
@@ -55,7 +66,9 @@ describe('Risk page', () => {
     });
 
     it('should navigate to network page with selected deployment', () => {
+        mockGetRisk();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
+        cy.wait('@firstDeploymentRisk');
         cy.get(RiskPageSelectors.networkNodeLink).click({ force: true });
         cy.url().should('contain', '/main/network');
     });

@@ -67,25 +67,6 @@
         "secrets": []
       }
     ],
-    "risk": {
-      "score": 1.18125,
-      "results": [
-        {
-          "name": "Service Configuration",
-          "factors": [
-            "No capabilities were dropped"
-          ],
-          "score": 1.125
-        },
-        {
-          "name": "Policy Violations",
-          "factors": [
-            "Latest tag (severity: Low)"
-          ],
-          "score": 1.05
-        }
-      ]
-    },
     "tombstone": null,
     "annotations": [
       {
