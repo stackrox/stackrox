@@ -32,7 +32,7 @@ func TestGetDeployment(t *testing.T) {
 
 func TestGetDeployments(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.deployment.EXPECT().SearchListDeployments(gomock.Any(), gomock.Any()).Return([]*storage.ListDeployment{
+	mocks.deployment.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return([]*storage.Deployment{
 		{
 			Id: "one", Name: "one name",
 		},

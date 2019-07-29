@@ -24,9 +24,9 @@ func init() {
 		schema.AddExtraResolver("Deployment", `deployAlertsCount: Int!`),
 		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
-		schema.AddExtraResolver("Deployment", `images: [Image!]!`),
+		schema.AddExtraResolver("Deployment", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Deployment", `imagesCount: Int!`),
-		schema.AddExtraResolver("Deployment", "secrets: [Secret!]!"),
+		schema.AddExtraResolver("Deployment", "secrets(query: String): [Secret!]!"),
 		schema.AddExtraResolver("Deployment", "secretCount: Int!"),
 		schema.AddExtraResolver("Deployment", "policyStatus: PolicyStatus!"),
 		schema.AddQuery("deployment(id: ID): Deployment"),
@@ -51,8 +51,8 @@ func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*de
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapListDeployments(
-		resolver.DeploymentDataStore.SearchListDeployments(ctx, q))
+	return resolver.wrapDeployments(
+		resolver.DeploymentDataStore.SearchRawDeployments(ctx, q))
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
@@ -92,8 +92,12 @@ func (resolver *deploymentResolver) DeployAlertsCount(ctx context.Context) (int3
 }
 
 // Secrets returns the total number of secrets for this deployment
-func (resolver *deploymentResolver) Secrets(ctx context.Context) ([]*secretResolver, error) {
-	secrets, err := resolver.getDeploymentSecrets(ctx)
+func (resolver *deploymentResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	secrets, err := resolver.getDeploymentSecrets(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +106,7 @@ func (resolver *deploymentResolver) Secrets(ctx context.Context) ([]*secretResol
 
 // SecretCount returns the total number of secrets for this deployment
 func (resolver *deploymentResolver) SecretCount(ctx context.Context) (int32, error) {
-	secrets, err := resolver.getDeploymentSecrets(ctx)
+	secrets, err := resolver.getDeploymentSecrets(ctx, search.EmptyQuery())
 	if err != nil {
 		return 0, err
 	}
@@ -110,22 +114,27 @@ func (resolver *deploymentResolver) SecretCount(ctx context.Context) (int32, err
 	return int32(len(secrets)), nil
 }
 
-func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context) ([]*secretResolver, error) {
+func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, q *v1.Query) ([]*secretResolver, error) {
+	if err := readSecrets(ctx); err != nil {
+		return nil, err
+	}
+	field, exists := mappings.OptionsMap.Get(search.SecretName.String())
+	if !exists {
+		return nil, errors.Errorf("secret name not searchable")
+	}
+
 	deployment := resolver.data
 
 	// Find all the secret names referenced by the deployment
 	secretsForDeploymentQuery := search.NewQueryBuilder().MarkHighlighted(search.SecretName).
 		AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
 
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, secretsForDeploymentQuery)
+	results, err := resolver.root.DeploymentDataStore.Search(ctx, search.NewConjunctionQuery(
+		secretsForDeploymentQuery, q))
 	if len(results) == 0 || err != nil {
 		return nil, err
 	}
 
-	field, exists := mappings.OptionsMap.Get(search.SecretName.String())
-	if !exists {
-		return nil, err
-	}
 	secrets := results[0].Matches[field.FieldPath]
 	// For each secret name referenced by the deployment
 	psr := search.NewQueryBuilder().
@@ -192,9 +201,17 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 	return results[0].ID, nil
 }
 
-func (resolver *deploymentResolver) Images(ctx context.Context) ([]*imageResolver, error) {
+func (resolver *deploymentResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
 	imageShas := resolver.getImageShas(ctx)
-	return resolver.root.wrapImages(resolver.root.ImageDataStore.GetImagesBatch(ctx, imageShas))
+	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
+
+	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx,
+		search.NewConjunctionQuery(imageShaQuery, q)))
 }
 
 func (resolver *deploymentResolver) ImagesCount(ctx context.Context) (int32, error) {
