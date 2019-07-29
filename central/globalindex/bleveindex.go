@@ -39,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -55,6 +56,9 @@ var (
 		}
 		return searchMap
 	}
+
+	indexMappingOnce sync.Once
+	indexMapping     *mapping.IndexMappingImpl
 
 	log = logging.LoggerForModule()
 )
@@ -129,8 +133,6 @@ func InitializeIndices(scorchPath string) (bleve.Index, error) {
 }
 
 func initializeIndices(scorchPath string) (bleve.Index, error) {
-	indexMapping := getIndexMapping()
-
 	kvconfig := map[string]interface{}{
 		// Persist the index
 		"unsafe_batch": false,
@@ -141,7 +143,7 @@ func initializeIndices(scorchPath string) (bleve.Index, error) {
 		if !os.IsNotExist(err) {
 			return nil, err
 		}
-		globalIndex, err = bleve.NewUsing(scorchPath, indexMapping, scorch.Name, scorch.Name, kvconfig)
+		globalIndex, err = bleve.NewUsing(scorchPath, getIndexMapping(), scorch.Name, scorch.Name, kvconfig)
 		if err != nil {
 			return nil, err
 		}
@@ -191,22 +193,24 @@ func compareMappings(im1, im2 mapping.IndexMapping) bool {
 }
 
 func getIndexMapping() mapping.IndexMapping {
-	indexMapping := bleve.NewIndexMapping()
-	utils.Must(indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer()))
-	indexMapping.DefaultAnalyzer = "single_term" // Default to our analyzer
+	indexMappingOnce.Do(func() {
+		indexMapping = bleve.NewIndexMapping()
 
-	indexMapping.IndexDynamic = false
-	indexMapping.StoreDynamic = false
-	indexMapping.TypeField = "Type"
-	indexMapping.DefaultMapping = getDefaultDocMapping()
+		utils.Must(indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer()))
+		indexMapping.DefaultAnalyzer = "single_term" // Default to our analyzer
 
-	for category, optMap := range GetEntityOptionsMap() {
-		indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap.Original()))
-	}
+		indexMapping.IndexDynamic = false
+		indexMapping.StoreDynamic = false
+		indexMapping.TypeField = "Type"
+		indexMapping.DefaultMapping = getDefaultDocMapping()
 
-	disabledSection := bleve.NewDocumentDisabledMapping()
-	indexMapping.AddDocumentMapping("_all", disabledSection)
+		for category, optMap := range GetEntityOptionsMap() {
+			indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap.Original()))
+		}
 
+		disabledSection := bleve.NewDocumentDisabledMapping()
+		indexMapping.AddDocumentMapping("_all", disabledSection)
+	})
 	return indexMapping
 }
 
