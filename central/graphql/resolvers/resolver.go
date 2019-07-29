@@ -28,6 +28,7 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sroleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
@@ -61,6 +62,7 @@ type Resolver struct {
 	K8sRoleStore                k8sroleStore.DataStore
 	K8sRoleBindingStore         k8srolebindingStore.DataStore
 	RoleDataStore               roleDataStore.DataStore
+	RiskDataStore               riskDataStore.DataStore
 	SecretsDataStore            secretDataStore.DataStore
 	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
@@ -89,6 +91,7 @@ func New() *Resolver {
 		ProcessIndicatorStore:       processIndicatorStore.Singleton(),
 		K8sRoleStore:                k8sroleStore.Singleton(),
 		K8sRoleBindingStore:         k8srolebindingStore.Singleton(),
+		RiskDataStore:               riskDataStore.Singleton(),
 		RoleDataStore:               roleDataStore.Singleton(),
 		SecretsDataStore:            secretDataStore.Singleton(),
 		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
@@ -116,6 +119,7 @@ var (
 	readK8sRoles               = readAuth(resources.K8sRole)
 	readK8sRoleBindings        = readAuth(resources.K8sRoleBinding)
 	readK8sSubjects            = readAuth(resources.K8sSubject)
+	readRisks                  = readAuth(resources.Risk)
 	readRoles                  = readAuth(resources.Role)
 	readSecrets                = readAuth(resources.Secret)
 	readServiceAccounts        = readAuth(resources.ServiceAccount)

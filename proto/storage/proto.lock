@@ -175,6 +175,17 @@
                     "name": "containers",
                     "type": "Container",
                     "is_repeated": true
+                  },
+                  {
+                    "id": 15,
+                    "name": "inactive",
+                    "type": "bool",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Inactive Deployment,store\\\""
+                      }
+                    ]
                   }
                 ],
                 "maps": [
@@ -480,6 +491,17 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "search:\\\"Cluster ID,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 7,
+                "name": "inactive",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Inactive Deployment,store\\\""
                   }
                 ]
               }
@@ -1578,7 +1600,13 @@
               {
                 "id": 26,
                 "name": "hash",
-                "type": "uint64"
+                "type": "uint64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "hash:\\\"ignore\\\""
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -1626,7 +1654,13 @@
               {
                 "id": 8,
                 "name": "updated_at",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "hash:\\\"ignore\\\""
+                  }
+                ]
               },
               {
                 "id": 9,
@@ -1657,14 +1691,15 @@
                 "is_repeated": true
               },
               {
-                "id": 12,
-                "name": "risk",
-                "type": "Risk"
-              },
-              {
                 "id": 15,
                 "name": "priority",
-                "type": "int64"
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Priority\\\",hash:\\\"ignore\\\""
+                  }
+                ]
               },
               {
                 "id": 16,
@@ -1762,7 +1797,8 @@
               }
             ],
             "reserved_ids": [
-              3
+              3,
+              12
             ]
           },
           {
@@ -1848,7 +1884,13 @@
                 "id": 9,
                 "name": "instances",
                 "type": "ContainerInstance",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "hash:\\\"ignore\\\""
+                  }
+                ]
               },
               {
                 "id": 10,
@@ -2330,62 +2372,6 @@
             ]
           },
           {
-            "name": "Risk",
-            "fields": [
-              {
-                "id": 1,
-                "name": "score",
-                "type": "float"
-              },
-              {
-                "id": 2,
-                "name": "results",
-                "type": "Result",
-                "is_repeated": true
-              }
-            ],
-            "messages": [
-              {
-                "name": "Result",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "name",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "factors",
-                    "type": "Factor",
-                    "is_repeated": true
-                  },
-                  {
-                    "id": 3,
-                    "name": "score",
-                    "type": "float"
-                  }
-                ],
-                "messages": [
-                  {
-                    "name": "Factor",
-                    "fields": [
-                      {
-                        "id": 1,
-                        "name": "message",
-                        "type": "string"
-                      },
-                      {
-                        "id": 2,
-                        "name": "url",
-                        "type": "string"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "name": "ListDeployment",
             "fields": [
               {
@@ -2635,6 +2621,22 @@
                 "name": "headers",
                 "type": "KeyValuePair",
                 "is_repeated": true
+              },
+              {
+                "id": 7,
+                "name": "client_cert_pem",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "client_key_pem",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"always\\\""
+                  }
+                ]
               }
             ]
           }
@@ -2750,6 +2752,39 @@
                 "id": 3,
                 "name": "scan",
                 "type": "ImageScan"
+              },
+              {
+                "id": 7,
+                "name": "components",
+                "type": "int32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component Count,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 8,
+                "name": "cves",
+                "type": "int32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Count,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 9,
+                "name": "fixable_cves",
+                "type": "int32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Fixable CVE Count,store\\\""
+                  }
+                ]
               },
               {
                 "id": 5,
@@ -3337,6 +3372,11 @@
                 "id": 16,
                 "name": "cluster_id",
                 "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "skip_test_integration",
+                "type": "bool"
               }
             ]
           },
@@ -3888,7 +3928,13 @@
                   {
                     "id": 3,
                     "name": "cluster",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "deprecated",
+                        "value": "true"
+                      }
+                    ]
                   }
                 ]
               }
@@ -4818,7 +4864,13 @@
               {
                 "id": 6,
                 "name": "disabled",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Disabled\\\""
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -6016,7 +6068,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace\\\""
+                    "value": "search:\\\"Namespace,store\\\""
                   }
                 ]
               },
@@ -6027,7 +6079,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,hidden\\\""
+                    "value": "search:\\\"Cluster ID,store,hidden\\\""
                   }
                 ]
               },
@@ -6144,6 +6196,172 @@
           {
             "path": "google/protobuf/timestamp.proto"
           },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "risk.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "RiskSubjectType",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "DEPLOYMENT",
+                "integer": 1
+              },
+              {
+                "name": "NAMESPACE",
+                "integer": 2
+              },
+              {
+                "name": "CLUSTER",
+                "integer": 3
+              },
+              {
+                "name": "IMAGE",
+                "integer": 4
+              },
+              {
+                "name": "SERVICEACCOUNT",
+                "integer": 5
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Risk",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "subject",
+                "type": "RiskSubject"
+              },
+              {
+                "id": 3,
+                "name": "score",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Risk Score,store,hidden\\\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "results",
+                "type": "Result",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Result",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Risk Indicator,store,hidden\\\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 2,
+                    "name": "factors",
+                    "type": "Factor",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 3,
+                    "name": "score",
+                    "type": "float"
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Factor",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "message",
+                        "type": "string"
+                      },
+                      {
+                        "id": 2,
+                        "name": "url",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "RiskSubject",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "namespace",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster ID,store,hidden\\\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "type",
+                "type": "RiskSubjectType",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Risk Subject Type,store,hidden\\\""
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
           {
             "path": "protobuf/gogoproto/gogo.proto"
           }
@@ -6921,7 +7139,18 @@
               {
                 "id": 1,
                 "name": "serial",
-                "type": "int64"
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "serial_str",
+                "type": "string"
               },
               {
                 "id": 2,

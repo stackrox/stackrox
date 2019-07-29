@@ -11,8 +11,8 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.Re
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
-import io.stackrox.proto.storage.DeploymentOuterClass
-import io.stackrox.proto.storage.DeploymentOuterClass.Risk.Result
+import io.stackrox.proto.storage.RiskOuterClass
+import io.stackrox.proto.storage.RiskOuterClass.Risk.Result
 
 import org.junit.Assume
 
@@ -178,16 +178,15 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "The struts deployment details"
         Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
-        DeploymentOuterClass.Deployment deployment = Services.getDeployment(dep.deploymentUid)
+        RiskOuterClass.Risk risk = Services.getRisk(dep.deploymentUid, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
 
         expect:
         "Risk factors are present"
-        Result riskResult = deployment.risk.resultsList.find { it.name == riskFactor }
+        Result riskResult = risk.resultsList.find { it.name == riskFactor }
         def waitTime = 30000
         def start = System.currentTimeMillis()
         while (riskResult == null && (System.currentTimeMillis() - start) < waitTime) {
-            deployment = Services.getDeployment(dep.deploymentUid)
-            riskResult = deployment.risk.resultsList.find { it.name == riskFactor }
+            riskResult = risk.resultsList.find { it.name == riskFactor }
             sleep 2000
         }
         riskResult != null

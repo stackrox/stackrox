@@ -78,7 +78,6 @@ var (
 	Priority               = newFieldLabel("Priority")
 	Privileged             = newFieldLabel("Privileged")
 	ReadOnlyRootFilesystem = newFieldLabel("Read Only Root Filesystem")
-	RiskScore              = newFieldLabel("Risk Score")
 	SecretID               = newFieldLabel("Secret ID")
 	SecretName             = newFieldLabel("Secret")
 	SecretPath             = newFieldLabel("Secret Path")
@@ -150,6 +149,11 @@ var (
 
 	// Inactive Deployment
 	Inactive = newFieldLabel("Inactive Deployment")
+
+	// Risk Search Fields
+	RiskScore       = newFieldLabel("Risk Score")
+	RiskSubjectType = newFieldLabel("Risk Subject Type")
+	RiskIndicator   = newFieldLabel("Risk Indicator")
 )
 
 func newFieldLabel(s string) FieldLabel {

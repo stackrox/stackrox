@@ -2,7 +2,6 @@ package store
 
 import (
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
@@ -48,9 +47,6 @@ func New(db *bolt.DB) (Store, error) {
 
 	s := &storeImpl{
 		BoltWrapper: wrapper,
-	}
-	if err := s.initializeRanker(); err != nil {
-		return nil, errors.Wrap(err, "failed to initialize ranker")
 	}
 	return s, nil
 }

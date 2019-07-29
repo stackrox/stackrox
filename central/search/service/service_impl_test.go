@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -66,6 +67,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
 		WithNodeStore(nodeMocks.NewMockGlobalDataStore(mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+		WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
@@ -96,7 +98,10 @@ func TestAutocomplete(t *testing.T) {
 	// This gets called as a side effect of `UpsertDeployment`.
 	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	deploymentDS, err := deploymentDatastore.New(testDB, idx, nil, mockIndicators, nil, nil, nil)
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	deploymentDS, err := deploymentDatastore.New(testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil)
 	require.NoError(t, err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -129,6 +134,7 @@ func TestAutocomplete(t *testing.T) {
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
 		WithNodeStore(nodeMocks.NewMockGlobalDataStore(mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+		WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).

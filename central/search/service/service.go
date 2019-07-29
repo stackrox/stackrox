@@ -10,6 +10,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -41,6 +42,7 @@ type Builder interface {
 	WithServiceAccountStore(store serviceAccountDataStore.DataStore) Builder
 	WithNodeStore(store nodeDataStore.GlobalDataStore) Builder
 	WithNamespaceStore(store namespaceDataStore.DataStore) Builder
+	WithRiskStore(store riskDataStore.DataStore) Builder
 	WithRoleStore(store roleDataStore.DataStore) Builder
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
 
@@ -58,6 +60,7 @@ type serviceBuilder struct {
 	serviceAccounts serviceAccountDataStore.DataStore
 	nodes           nodeDataStore.GlobalDataStore
 	namespaces      namespaceDataStore.DataStore
+	risks           riskDataStore.DataStore
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
 
@@ -108,6 +111,12 @@ func (b *serviceBuilder) WithNamespaceStore(store namespaceDataStore.DataStore) 
 	b.namespaces = store
 	return b
 }
+
+func (b *serviceBuilder) WithRiskStore(store riskDataStore.DataStore) Builder {
+	b.risks = store
+	return b
+}
+
 func (b *serviceBuilder) WithRoleStore(store roleDataStore.DataStore) Builder {
 	b.roles = store
 	return b
@@ -133,6 +142,7 @@ func (b *serviceBuilder) Build() Service {
 		serviceaccounts: b.serviceAccounts,
 		nodes:           b.nodes,
 		namespaces:      b.namespaces,
+		risks:           b.risks,
 		roles:           b.roles,
 		bindings:        b.bindings,
 		aggregator:      b.aggregator,
@@ -155,6 +165,7 @@ func NewService() Service {
 		WithServiceAccountStore(serviceAccountDataStore.Singleton()).
 		WithNodeStore(nodeDataStore.Singleton()).
 		WithNamespaceStore(namespaceDataStore.Singleton()).
+		WithRiskStore(riskDataStore.Singleton()).
 		WithRoleStore(roleDataStore.Singleton()).
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
 		WithAggregator(aggregation.Singleton()).

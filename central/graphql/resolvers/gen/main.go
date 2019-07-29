@@ -32,6 +32,7 @@ var (
 			reflect.TypeOf((*storage.Node)(nil)),
 			reflect.TypeOf((*storage.Notifier)(nil)),
 			reflect.TypeOf((*v1.ProcessNameGroup)(nil)),
+			reflect.TypeOf((*storage.Risk)(nil)),
 			reflect.TypeOf((*storage.Role)(nil)),
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 			reflect.TypeOf((*storage.Secret)(nil)),

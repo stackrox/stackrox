@@ -27,6 +27,7 @@ const RiskPage = ({
     deployments,
     selectedDeployment,
     searchOptions,
+    deploymentRisk,
     processGroup,
     isViewFiltered,
     searchModifiers,
@@ -82,9 +83,8 @@ const RiskPage = ({
         if (processGroup.groups !== undefined && processGroup.groups.length !== 0) {
             riskPanelTabs.push({ text: 'Process Discovery' });
         }
-
         const content =
-            selectedDeployment && selectedDeployment.deployment.risk === undefined ? (
+            selectedDeployment && Object.entries(deploymentRisk).length === 0 ? (
                 <Loader />
             ) : (
                 <Tabs headers={riskPanelTabs}>
@@ -97,7 +97,7 @@ const RiskPage = ({
                             >
                                 View Deployment in Network Graph
                             </Link>
-                            <RiskDetails risk={selectedDeployment.deployment.risk} />
+                            <RiskDetails risk={deploymentRisk} />
                         </div>
                     </TabContent>
                     <TabContent>
@@ -162,6 +162,7 @@ const RiskPage = ({
 RiskPage.propTypes = {
     deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
     selectedDeployment: PropTypes.shape({}),
+    deploymentRisk: PropTypes.shape({}),
     processGroup: PropTypes.shape({}),
     searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
     searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -176,6 +177,7 @@ RiskPage.propTypes = {
 
 RiskPage.defaultProps = {
     selectedDeployment: null,
+    deploymentRisk: {},
     processGroup: {}
 };
 
@@ -194,10 +196,16 @@ const getProcessesForDeployment = (state, props) => {
     return deploymentId ? selectors.getProcessesByDeployment(state, deploymentId) : {};
 };
 
+const getRiskForDeployment = (state, props) => {
+    const { deploymentId } = props.match.params;
+    return deploymentId ? selectors.getRiskByDeployment(state, deploymentId) : {};
+};
+
 const mapStateToProps = createStructuredSelector({
     deployments: selectors.getFilteredDeployments,
     selectedDeployment: getSelectedDeployment,
     processGroup: getProcessesForDeployment,
+    deploymentRisk: getRiskForDeployment,
     searchOptions: selectors.getDeploymentsSearchOptions,
     searchModifiers: selectors.getDeploymentsSearchModifiers,
     searchSuggestions: selectors.getDeploymentsSearchSuggestions,

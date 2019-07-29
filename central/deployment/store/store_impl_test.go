@@ -72,14 +72,12 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 			Name:      "foo",
 			Type:      "Replicated",
 			UpdatedAt: ptypes.TimestampNow(),
-			Risk:      &storage.Risk{Score: 10},
 		},
 		{
 			Id:        "barID",
 			Name:      "bar",
 			Type:      "Global",
 			UpdatedAt: ptypes.TimestampNow(),
-			Risk:      &storage.Risk{Score: 9},
 		},
 	}
 
@@ -91,12 +89,6 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		suite.NoError(suite.store.UpsertDeployment(d))
 		// Update should be idempotent
 		suite.NoError(suite.store.UpdateDeployment(d))
-	}
-
-	// We want to make sure the priorities are set by the ranker.
-	// We explicitly add them here for the comparisons later.
-	for i, d := range deployments {
-		d.Priority = int64(i + 1)
 	}
 
 	suite.verifyDeploymentsAre(suite.store, deployments...)

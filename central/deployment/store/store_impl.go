@@ -5,9 +5,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
@@ -17,19 +15,6 @@ import (
 
 type storeImpl struct {
 	*bolthelper.BoltWrapper
-	ranker *ranking.Ranker
-}
-
-func (b *storeImpl) initializeRanker() error {
-	b.ranker = ranking.DeploymentRanker()
-	deployments, err := b.GetDeployments()
-	if err != nil {
-		return errors.Wrap(err, "retrieving deployments")
-	}
-	for _, deployment := range deployments {
-		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
-	}
-	return nil
 }
 
 // GetListDeployment returns a list deployment with given id.
@@ -47,7 +32,6 @@ func (b *storeImpl) ListDeployment(id string) (deployment *storage.ListDeploymen
 		if err != nil {
 			return err
 		}
-		deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 		return nil
 	})
 	return
@@ -64,7 +48,6 @@ func (b *storeImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
-			deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 			deployments = append(deployments, &deployment)
 			return nil
 		})
@@ -92,7 +75,6 @@ func (b *storeImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
-			deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 			deployments = append(deployments, &deployment)
 		}
 		return nil
@@ -126,9 +108,6 @@ func (b *storeImpl) GetDeployment(id string) (deployment *storage.Deployment, ex
 		if err != nil {
 			return err
 		}
-		if exists {
-			deployment.Priority = b.ranker.GetRankForID(id)
-		}
 
 		return nil
 	})
@@ -146,7 +125,6 @@ func (b *storeImpl) GetDeployments() ([]*storage.Deployment, error) {
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
-			deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 
 			deployments = append(deployments, &deployment)
 			return nil
@@ -175,7 +153,6 @@ func (b *storeImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment,
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
-			deployment.Priority = b.ranker.GetRankForID(deployment.GetId())
 
 			deployments = append(deployments, &deployment)
 		}
@@ -212,7 +189,6 @@ func (b *storeImpl) putDeployment(deployment *storage.Deployment, errorIfNotExis
 		if errorIfNotExists && !bolthelper.Exists(bucket, deployment.GetId()) {
 			return dberrors.ErrNotFound{Type: "Deployment", ID: deployment.GetId()}
 		}
-		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
 
 		if err := bucket.Put(id, bytes); err != nil {
 			return err
@@ -242,7 +218,6 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(deploymentBucket)
 
-		b.ranker.Remove(id)
 		if err := bucket.Delete([]byte(id)); err != nil {
 			return err
 		}

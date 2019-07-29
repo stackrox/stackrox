@@ -310,7 +310,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"ports: [PortConfig]!",
 		"priority: Int!",
 		"replicas: Int!",
-		"risk: Risk",
 		"serviceAccount: String!",
 		"tolerations: [Toleration]!",
 		"type: String!",
@@ -704,9 +703,18 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"memoryMbRequest: Float!",
 	}))
 	utils.Must(builder.AddType("Risk", []string{
+		"id: ID!",
 		"results: [Risk_Result]!",
 		"score: Float!",
+		"subject: RiskSubject",
 	}))
+	utils.Must(builder.AddType("RiskSubject", []string{
+		"clusterId: String!",
+		"id: ID!",
+		"namespace: String!",
+		"type: RiskSubjectType!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.RiskSubjectType(0)))
 	utils.Must(builder.AddType("Risk_Result", []string{
 		"factors: [Risk_Result_Factor]!",
 		"name: String!",
@@ -3163,12 +3171,6 @@ func (resolver *deploymentResolver) Replicas(ctx context.Context) int32 {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetReplicas()
 	return int32(value)
-}
-
-func (resolver *deploymentResolver) Risk(ctx context.Context) (*riskResolver, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetRisk()
-	return resolver.root.wrapRisk(value, true, nil)
 }
 
 func (resolver *deploymentResolver) ServiceAccount(ctx context.Context) string {
@@ -6051,6 +6053,11 @@ func (resolver *Resolver) wrapRisks(values []*storage.Risk, err error) ([]*riskR
 	return output, nil
 }
 
+func (resolver *riskResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
 func (resolver *riskResolver) Results(ctx context.Context) ([]*risk_ResultResolver, error) {
 	value := resolver.data.GetResults()
 	return resolver.root.wrapRisk_Results(value, nil)
@@ -6059,6 +6066,72 @@ func (resolver *riskResolver) Results(ctx context.Context) ([]*risk_ResultResolv
 func (resolver *riskResolver) Score(ctx context.Context) float64 {
 	value := resolver.data.GetScore()
 	return float64(value)
+}
+
+func (resolver *riskResolver) Subject(ctx context.Context) (*riskSubjectResolver, error) {
+	value := resolver.data.GetSubject()
+	return resolver.root.wrapRiskSubject(value, true, nil)
+}
+
+type riskSubjectResolver struct {
+	root *Resolver
+	data *storage.RiskSubject
+}
+
+func (resolver *Resolver) wrapRiskSubject(value *storage.RiskSubject, ok bool, err error) (*riskSubjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &riskSubjectResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapRiskSubjects(values []*storage.RiskSubject, err error) ([]*riskSubjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*riskSubjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &riskSubjectResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *riskSubjectResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *riskSubjectResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *riskSubjectResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *riskSubjectResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+func toRiskSubjectType(value *string) storage.RiskSubjectType {
+	if value != nil {
+		return storage.RiskSubjectType(storage.RiskSubjectType_value[*value])
+	}
+	return storage.RiskSubjectType(0)
+}
+
+func toRiskSubjectTypes(values *[]string) []storage.RiskSubjectType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.RiskSubjectType, len(*values))
+	for i, v := range *values {
+		output[i] = toRiskSubjectType(&v)
+	}
+	return output
 }
 
 type risk_ResultResolver struct {

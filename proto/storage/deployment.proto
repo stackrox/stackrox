@@ -33,7 +33,7 @@ message Deployment {
     string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
     string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     repeated Container containers              = 11;
-    Risk risk                                  = 12 [(gogoproto.moretags) = "hash:\"ignore\""];
+    reserved 12;
     map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
     int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority\",hash:\"ignore\""];
     bool inactive                              = 16;
@@ -171,21 +171,6 @@ message SecurityContext {
     repeated string drop_capabilities   = 3 [(gogoproto.moretags) = "search:\"Drop Capabilities,store\""];
     repeated string add_capabilities    = 4 [(gogoproto.moretags) = "search:\"Add Capabilities,store\""];
     bool read_only_root_filesystem      = 5 [(gogoproto.moretags) = "search:\"Read Only Root Filesystem,store\""];
-}
-
-message Risk {
-    float           score   = 1 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
-    message Result {
-        message Factor {
-            string message = 1;
-            string url     = 2;
-        }
-
-        string name             = 1;
-        repeated Factor factors = 2;
-        float score             = 3;
-    }
-    repeated Result results = 2;
 }
 
 // Next available tag: 9

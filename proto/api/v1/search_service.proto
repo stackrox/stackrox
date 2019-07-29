@@ -29,6 +29,7 @@ enum SearchCategory {
     ROLEBINDINGS             = 16;
     PROCESS_WHITELISTS       = 17;
     SUBJECTS                 = 18;
+    RISKS                    = 19;
 }
 
 enum SearchDataType {

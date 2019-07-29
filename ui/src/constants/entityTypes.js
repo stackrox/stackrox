@@ -48,6 +48,7 @@ export const searchCategories = {
     SECRET: 'SECRETS',
     POLICY: 'POLICIES',
     IMAGE: 'IMAGES',
+    RISK: 'RISKS',
     ROLE: 'ROLES',
     SERVICE_ACCOUNT: 'SERVICE_ACCOUNTS',
     SUBJECT: 'SUBJECTS'

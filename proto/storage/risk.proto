@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "protobuf/gogoproto/gogo.proto";
+
+package storage;
+
+message Risk {
+    string id                       = 1;
+    RiskSubject subject             = 2;
+    float score                     = 3 [(gogoproto.moretags) = "search:\"Risk Score,store,hidden\""];
+
+    message Result {
+        message Factor {
+            string message          = 1;
+            string url              = 2;
+        }
+        string name                 = 1 [(gogoproto.moretags) = "search:\"Risk Indicator,store,hidden\""];
+        repeated Factor factors     = 2;
+        float score                 = 3;
+    }
+    repeated Result results         = 4;
+}
+
+message RiskSubject {
+    string id                   = 1;
+    string namespace            = 2 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+    string cluster_id           = 3 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
+    RiskSubjectType type        = 4 [(gogoproto.moretags) = "search:\"Risk Subject Type,store,hidden\""];
+}
+
+enum RiskSubjectType {
+    UNKNOWN                 = 0;
+    DEPLOYMENT              = 1;
+    NAMESPACE               = 2;
+    CLUSTER                 = 3;
+    IMAGE                   = 4;
+    SERVICEACCOUNT          = 5;
+}

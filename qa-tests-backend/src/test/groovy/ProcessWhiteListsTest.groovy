@@ -1,7 +1,7 @@
 import static Services.waitForViolation
 import static Services.waitForSuspiciousProcessInRiskIndicators
 
-import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.storage.RiskOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import services.AlertService
@@ -221,11 +221,12 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert whitelist.getElements(0).element.processName.contains(processName)
         Thread.sleep(60000)
         orchestrator.execInContainer(deployment, "pwd")
+
         then:
         "verify for suspicious process in risk indicator"
-        DeploymentOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 60)
+        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 60)
         assert (result != null)
-        DeploymentOuterClass.Risk.Result.Factor factor =  result.factorsList.find { it.message.contains("pwd") }
+        RiskOuterClass.Risk.Result.Factor factor =  result.factorsList.find { it.message.contains("pwd") }
         assert factor != null
         where:
         "Data inputs are :"

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "storage/risk.proto";
+
+package v1;
+
+message GetRiskRequest {
+    string subjectID    = 1;
+    string subjectType  = 2;
+}
+
+service RiskService {
+    rpc GetRisk (GetRiskRequest) returns (storage.Risk) {
+        option (google.api.http) = {
+            get: "/v1/risks/{subjectType}/{subjectID}"
+        };
+    }
+}

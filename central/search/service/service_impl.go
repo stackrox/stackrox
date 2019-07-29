@@ -20,6 +20,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/search/options"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
@@ -91,6 +92,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_NAMESPACES:  s.namespaces,
 		v1.SearchCategory_NODES:       s.nodes,
 		v1.SearchCategory_COMPLIANCE:  s.aggregator,
+		v1.SearchCategory_RISKS:       s.risks,
 	}
 
 	if features.K8sRBAC.Enabled() {
@@ -131,6 +133,7 @@ func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.Res
 		v1.SearchCategory_COMPLIANCE: resources.Compliance,
 		v1.SearchCategory_NODES:      resources.Node,
 		v1.SearchCategory_NAMESPACES: resources.Namespace,
+		v1.SearchCategory_RISKS:      resources.Risk,
 	}
 
 	if features.K8sRBAC.Enabled() {
@@ -176,6 +179,7 @@ type serviceImpl struct {
 	serviceaccounts serviceAccountDataStore.DataStore
 	nodes           nodeDataStore.GlobalDataStore
 	namespaces      namespaceDataStore.DataStore
+	risks           riskDataStore.DataStore
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
 

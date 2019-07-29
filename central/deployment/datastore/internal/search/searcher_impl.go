@@ -110,9 +110,7 @@ func convertDeployment(deployment *storage.ListDeployment, result search.Result)
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	filteredSearcher := deploymentsSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	prioritySortCorrected := swapPrioritySort(filteredSearcher)
-	priorityQueryCorrected := swapPriorityQuery(prioritySortCorrected)
-	paginatedSearcher := paginated.Paginated(priorityQueryCorrected)
+	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher
 }

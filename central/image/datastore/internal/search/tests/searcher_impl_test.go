@@ -6,11 +6,13 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/etcd-io/bbolt"
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	. "github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
+	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -225,8 +227,11 @@ func (s *searcherSuite) TestNoSharedImageLeak() {
 			},
 		},
 	}
-
-	deploymentDS, err := datastore.New(s.boltDB, s.bleveIndex, nil, nil, nil, nil, nil)
+	ctrl := gomock.NewController(s.T())
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	deploymentDS, err := datastore.New(s.boltDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil)
 	s.Require().NoError(err)
 
 	clusterNSScopes := make(map[string]string)

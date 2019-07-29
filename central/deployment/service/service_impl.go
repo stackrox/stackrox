@@ -5,12 +5,15 @@ import (
 	"math"
 	"sort"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/mappings"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processWhitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
+	"github.com/stackrox/rox/central/ranking"
+	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -53,6 +56,7 @@ type serviceImpl struct {
 	processWhitelists       processWhitelistStore.DataStore
 	processIndicators       processIndicatorStore.DataStore
 	processWhitelistResults processWhitelistResultsStore.DataStore
+	risks                   riskDataStore.DataStore
 	manager                 manager.Manager
 }
 
@@ -124,7 +128,7 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	deployments, err := s.datastore.Search(ctx, parsedQuery)
+	deployments, err := s.datastore.Search(ctx, s.getQuery(ctx, parsedQuery))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -142,7 +146,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	// Fill in pagination.
 	paginated.FillPagination(parsedQuery, request.Pagination, maxDeploymentsReturned)
 
-	deployments, err := s.datastore.SearchListDeployments(ctx, parsedQuery)
+	deployments, err := s.datastore.SearchListDeployments(ctx, s.getQuery(ctx, parsedQuery))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -215,4 +219,142 @@ func labelsMapFromSearchResults(results []search.Result) (keyValuesMap map[strin
 	sort.Strings(values)
 
 	return
+}
+
+func (s *serviceImpl) getQuery(ctx context.Context, q *v1.Query) *v1.Query {
+	deploymentQuery := s.createDeploymentQuery(s.createDeploymentSortQuery(q))
+	riskQuery := s.createRiskQuery(s.createRiskSortQuery(q))
+	convertedDeploymentQuery := s.convertToDeploymentQuery(ctx, deploymentQuery, riskQuery)
+
+	if convertedDeploymentQuery == nil {
+		return search.EmptyQuery()
+	}
+	return convertedDeploymentQuery
+}
+
+func (s *serviceImpl) convertToDeploymentQuery(ctx context.Context, deploymentQuery *v1.Query, riskQuery *v1.Query) *v1.Query {
+	if riskQuery == nil && deploymentQuery == nil {
+		return nil
+	}
+	if riskQuery == nil {
+		return deploymentQuery
+	}
+
+	var docIDs []string
+	deploymentTypeQuery := search.NewQueryBuilder().AddStrings(
+		search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).ProtoQuery()
+	risks, err := s.risks.SearchRawRisks(ctx, search.NewConjunctionQuery(riskQuery, deploymentTypeQuery))
+	if err != nil {
+		return nil
+	}
+	for _, risk := range risks {
+		docIDs = append(docIDs, risk.GetSubject().GetId())
+	}
+
+	var docIDQuery *v1.Query
+	if len(docIDs) != 0 {
+		docIDQuery = search.NewQueryBuilder().AddDocIDs(docIDs...).ProtoQuery()
+	}
+
+	if docIDQuery == nil && deploymentQuery == nil {
+		return nil
+	}
+	if deploymentQuery == nil {
+		return docIDQuery
+	}
+	if docIDQuery == nil {
+		return deploymentQuery
+	}
+	return search.NewConjunctionQuery(deploymentQuery, docIDQuery)
+}
+
+func (s *serviceImpl) createDeploymentSortQuery(q *v1.Query) *v1.Query {
+	cloneQuery := proto.Clone(q).(*v1.Query)
+
+	if q.GetPagination().GetSortOption().GetField() == search.Priority.String() {
+		cloneQuery.Pagination.SortOption.Field = ""
+	}
+	return cloneQuery
+}
+
+func (s *serviceImpl) createDeploymentQuery(q *v1.Query) *v1.Query {
+	newQuery, _ := search.FilterQuery(q, func(bq *v1.BaseQuery) bool {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return false
+		}
+		return matchFieldQuery.MatchFieldQuery.GetField() != search.Priority.String()
+	})
+
+	return newQuery
+}
+
+func (s *serviceImpl) createRiskSortQuery(q *v1.Query) *v1.Query {
+	cloneQuery := proto.Clone(q).(*v1.Query)
+	if q.GetPagination().GetSortOption().GetField() == search.Priority.String() {
+		paginated.FillPagination(cloneQuery, q.GetPagination(), q.GetPagination().GetLimit())
+		cloneQuery.Pagination.SortOption.Field = search.RiskScore.String()
+		cloneQuery.Pagination.SortOption.Reversed = !q.GetPagination().GetSortOption().GetReversed()
+	}
+	return cloneQuery
+}
+
+func (s *serviceImpl) createRiskQuery(q *v1.Query) *v1.Query {
+	var err error
+	ranker := ranking.DeploymentRanker()
+
+	newQuery, _ := search.FilterQuery(q, func(bq *v1.BaseQuery) bool {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return false
+		}
+		return matchFieldQuery.MatchFieldQuery.GetField() == search.Priority.String()
+	})
+	if newQuery == nil {
+		return nil
+	}
+
+	search.ApplyFnToAllBaseQueries(newQuery, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+
+		// Any Priority query, we want to change to be a risk query.
+		// Parse the numeric query so we can swap it to a risk score query.
+		var numericValue blevesearch.NumericQueryValue
+		numericValue, err = blevesearch.ParseNumericQueryValue(matchFieldQuery.MatchFieldQuery.GetValue())
+		if err == nil {
+			return
+		}
+
+		// Go from priority space to risk score space by inverting comparison.
+		numericValue.Comparator = priorityComparatorToRiskScoreComparator(numericValue.Comparator)
+		numericValue.Value = float64(ranker.GetScoreForRank(int64(numericValue.Value)))
+
+		// Set the query to the new value.
+		matchFieldQuery.MatchFieldQuery.Field = search.RiskScore.String()
+		matchFieldQuery.MatchFieldQuery.Value = blevesearch.PrintNumericQueryValue(numericValue)
+
+	})
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	return newQuery
+}
+
+func priorityComparatorToRiskScoreComparator(comparator storage.Comparator) storage.Comparator {
+	switch comparator {
+	case storage.Comparator_LESS_THAN_OR_EQUALS:
+		return storage.Comparator_GREATER_THAN
+	case storage.Comparator_LESS_THAN:
+		return storage.Comparator_GREATER_THAN_OR_EQUALS
+	case storage.Comparator_GREATER_THAN_OR_EQUALS:
+		return storage.Comparator_LESS_THAN
+	case storage.Comparator_GREATER_THAN:
+		return storage.Comparator_LESS_THAN_OR_EQUALS
+	default: // storage.Comparator_EQUALS:
+		return storage.Comparator_EQUALS
+	}
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
@@ -12,6 +13,7 @@ import (
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -43,7 +45,7 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input DB and index.
-func New(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, deletedDeploymentCache expiringcache.Cache) (DataStore, error) {
+func New(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache) (DataStore, error) {
 	storage, err := store.New(db)
 	if err != nil {
 		return nil, err
@@ -51,7 +53,7 @@ func New(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicat
 	indexer := index.New(bleveIndex)
 	searcher := search.New(storage, indexer)
 
-	return newDatastoreImpl(
+	ds, err := newDatastoreImpl(
 		storage,
 		indexer,
 		searcher,
@@ -59,5 +61,16 @@ func New(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicat
 		indicators,
 		whitelists,
 		networkFlows,
+		risks,
 		deletedDeploymentCache)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ds.initializeRanker(); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize ranker")
+	}
+
+	return ds, nil
 }

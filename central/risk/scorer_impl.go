@@ -18,6 +18,12 @@ func (s *scoreImpl) Score(ctx context.Context, deployment *storage.Deployment, i
 	return &storage.Risk{
 		Score:   score,
 		Results: riskResults,
+		Subject: &storage.RiskSubject{
+			Id:        deployment.GetId(),
+			Namespace: deployment.GetNamespace(),
+			ClusterId: deployment.GetClusterId(),
+			Type:      storage.RiskSubjectType_DEPLOYMENT,
+		},
 	}
 }
 

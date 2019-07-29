@@ -4,8 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex"
+	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
@@ -97,6 +99,10 @@ func TestLabelsMap(t *testing.T) {
 	}
 
 	ctx := sac.WithAllAccess(context.Background())
+	mockCtrl := gomock.NewController(t)
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).AnyTimes()
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -106,7 +112,7 @@ func TestLabelsMap(t *testing.T) {
 			bleveIndex, err := globalindex.MemOnlyIndex()
 			require.NoError(t, err)
 
-			deploymentsDS, err := datastore.New(boltDB, bleveIndex, nil, nil, nil, nil, nil)
+			deploymentsDS, err := datastore.New(boltDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil)
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {

@@ -30,6 +30,7 @@ import (
 	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
+	riskMappings "github.com/stackrox/rox/central/risk/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/mappings"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -76,6 +77,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_NAMESPACES:          namespaceMapping.OptionsMap,
 		v1.SearchCategory_NODES:               nodeMapping.OptionsMap,
 		v1.SearchCategory_PROCESS_WHITELISTS:  processWhitelistMapping.OptionsMap,
+		v1.SearchCategory_RISKS:               riskMappings.OptionsMap,
 	}
 
 	if features.K8sRBAC.Enabled() {

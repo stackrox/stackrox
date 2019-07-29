@@ -12,6 +12,7 @@ import integrations, { selectors as integrationSelectors } from './integrations'
 import notifications, { selectors as notificationSelectors } from './notifications';
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies/reducer';
+import risks, { selectors as riskSelectors } from './risks';
 import roles, { selectors as roleSelectors } from './roles';
 import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
 import serverError, { selectors as serverErrorSelectors } from './serverError';
@@ -44,6 +45,7 @@ const appReducer = combineReducers({
     globalSearch,
     cli,
     policies,
+    risks,
     roles,
     searchAutoComplete,
     serverError,
@@ -83,6 +85,7 @@ const getIntegrations = state => getApp(state).integrations;
 const getNotifications = state => getApp(state).notifications;
 const getGlobalSearches = state => getApp(state).globalSearch;
 const getPolicies = state => getApp(state).policies;
+const getRisks = state => getApp(state).risks;
 const getRoles = state => getApp(state).roles;
 const getSearchAutocomplete = state => getApp(state).searchAutoComplete;
 const getServerError = state => getApp(state).serverError;
@@ -111,6 +114,7 @@ const boundSelectors = {
     ...bindSelectors(getNotifications, notificationSelectors),
     ...bindSelectors(getGlobalSearches, globalSearchSelectors),
     ...bindSelectors(getPolicies, policySelectors),
+    ...bindSelectors(getRisks, riskSelectors),
     ...bindSelectors(getRoles, roleSelectors),
     ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),

@@ -63,6 +63,7 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	"github.com/stackrox/rox/central/reprocessor"
+	riskService "github.com/stackrox/rox/central/risk/service"
 	"github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
@@ -277,6 +278,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		policyService.Singleton(),
 		processIndicatorService.Singleton(),
 		processWhitelistService.Singleton(),
+		riskService.Singleton(),
 		roleService.Singleton(),
 		rbacService.Singleton(),
 		sacService.Singleton(),

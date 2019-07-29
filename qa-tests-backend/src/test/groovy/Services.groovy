@@ -1,11 +1,13 @@
 import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
-import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.api.v1.RiskServiceGrpc
+import io.stackrox.proto.api.v1.RiskServiceOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegration
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
 import io.stackrox.proto.storage.DeploymentOuterClass.ContainerImage
+import io.stackrox.proto.storage.RiskOuterClass
 import objects.NetworkPolicy
 import orchestratormanager.OrchestratorType
 import services.AlertService
@@ -57,6 +59,10 @@ class Services extends BaseService {
         return DeploymentServiceGrpc.newBlockingStub(getChannel())
       }
 
+    static getRiskClient() {
+        return RiskServiceGrpc.newBlockingStub(getChannel())
+    }
+
     static getSearchServiceClient() {
         return SearchServiceGrpc.newBlockingStub(getChannel())
       }
@@ -101,6 +107,14 @@ class Services extends BaseService {
         return getDeploymentClient().getDeployment(getResourceByID(id))
       }
 
+    static RiskOuterClass.Risk getRisk(String subjectID, RiskOuterClass.RiskSubjectType subjectType) {
+        RiskServiceOuterClass.GetRiskRequest request =
+                RiskServiceOuterClass.GetRiskRequest.newBuilder()
+                        .setSubjectID(subjectID)
+                        .setSubjectType(subjectType.toString()).build()
+        return getRiskClient().getRisk(request)
+    }
+
     static SearchServiceOuterClass.SearchResponse getSearchResponse(
                   String query, List<SearchServiceOuterClass.SearchCategory> categories) {
         def rawSearchRequest = SearchServiceOuterClass.RawSearchRequest.newBuilder()
@@ -115,8 +129,8 @@ class Services extends BaseService {
         int iterations = timeoutSeconds / intervalSeconds
         Timer t = new Timer(iterations, intervalSeconds)
         while (t.IsValid()) {
-            DeploymentOuterClass.Risk risk = Services.getDeployment(deploymentId).risk
-            DeploymentOuterClass.Risk.Result result = risk.resultsList
+            RiskOuterClass.Risk risk = Services.getRisk(deploymentId, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
+            RiskOuterClass.Risk.Result result = risk.resultsList
                     .find { it.name == "Suspicious Process Executions" }
             if (result != null) {
                 return result

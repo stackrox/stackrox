@@ -16,6 +16,7 @@ import (
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	processWhitelistDatastoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
+	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -83,7 +84,10 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	}, nil)
 
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
-	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, nil)
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
+	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil)
 	require.NoError(t, err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments
@@ -114,8 +118,10 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
 		},
 	}, nil)
-
-	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, nil)
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
+	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil)
 	require.NoError(t, err)
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
@@ -175,9 +181,9 @@ func TestImagePruning(t *testing.T) {
 
 	scc := sac.OneStepSCC{
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Alert, resources.Config, resources.Deployment, resources.Image)),
+			sac.ResourceScopeKeys(resources.Alert, resources.Config, resources.Deployment, resources.Image, resources.Risk)),
 		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Alert, resources.Image, resources.Deployment)),
+			sac.ResourceScopeKeys(resources.Alert, resources.Image, resources.Deployment, resources.Risk)),
 	}
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)

@@ -38,6 +38,7 @@ var (
 	Policy                = newResourceMetadata("Policy", permissions.GlobalScope)
 	ProcessWhitelist      = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
 	Role                  = newResourceMetadata("Role", permissions.GlobalScope)
+	Risk                  = newResourceMetadata("Risk", permissions.NamespaceScope)
 	ScannerDefinitions    = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
 	Secret                = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount        = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
