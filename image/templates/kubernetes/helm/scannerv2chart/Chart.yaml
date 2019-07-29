@@ -1,7 +1,6 @@
 name: scanner-v2
 description: StackRox Scanner V2
-# TODO(viswa): Pipe this in
-version: 1
+version: {{ .Version }}
 maintainers:
  - name: stackrox
    email: support@stackrox.com

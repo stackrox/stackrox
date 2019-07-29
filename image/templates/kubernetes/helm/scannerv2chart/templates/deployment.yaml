@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: {{ .Values.appName }}
-  namespace: {{ .Values.namespace }}
+  namespace: stackrox
   labels:
     app: {{ .Values.appName }}
     app.kubernetes.io/name: stackrox
@@ -16,7 +16,7 @@ spec:
   replicas: 1
   template:
     metadata:
-      namespace: {{ .Values.namespace }}
+      namespace: stackrox
       labels:
         app: {{ .Values.appName }}
     spec:
@@ -218,6 +218,7 @@ spec:
           periodSeconds: 10
           failureThreshold: 3
           successThreshold: 1
+      serviceAccount: {{ .Values.appName }}
       volumes:
         - name: config-volume
           configMap:

@@ -47,9 +47,10 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	MainImage       string
-	ScannerImage    string
-	MonitoringImage string
+	MainImage        string
+	ScannerImage     string
+	ScannerV2DBImage string
+	MonitoringImage  string
 }
 
 // MonitoringType is the enum for the place monitoring is hosted
@@ -142,6 +143,7 @@ type K8sConfig struct {
 	ScannerRegistry string
 	// If the scanner registry is different from the central registry get a separate secret
 	ScannerSecretName string
+	EnableScannerV2   bool
 
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.

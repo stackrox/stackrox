@@ -1,15 +1,13 @@
-# Default values for anchore_engine chart.
-
 ## BEGIN STACKROX
 
+scannerSecretName: {{.K8sConfig.ScannerSecretName}}
 appName: scanner-v2
-namespace: stackrox
-image: docker.io/anchore/anchore-engine:v0.4.1
+image: {{.K8sConfig.ScannerImage}}
 imagePullPolicy: IfNotPresent
 scratchVolumeMountPath: /analysis_scratch
 
 dbAppName: scanner-v2-db
-dbImage: postgres:9.6
+dbImage: {{.K8sConfig.ScannerV2DBImage}}
 
 ## END STACKROX
 
@@ -18,7 +16,7 @@ postgresql:
   # To use an external DB or Google CloudSQL in GKE, uncomment & set 'enabled: false'
   # externalEndpoint, postgresUser, postgresPassword & postgresDatabase are required values for external postgres
   # enabled: false
-  postgresUser: anchoreengine
+  postgresUser: postgres
   postgresPassword: anchore-postgres,123
   postgresDatabase: anchore
 

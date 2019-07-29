@@ -63,6 +63,10 @@ function launch_central {
         add_args "--monitoring-lb-type=$MONITORING_LOAD_BALANCER"
     fi
 
+    if [[ "$SCANNER_V2_SUPPORT" == "true" ]]; then
+        add_args "--enable-scanner-v2"
+    fi
+
     if [ -n "${OUTPUT_FORMAT}" ]; then
         add_args "--output-format=${OUTPUT_FORMAT}"
     fi
@@ -140,7 +144,11 @@ function launch_central {
         kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"2Gi"}}}]}}}}'
     fi
 
-    if [[ "$SCANNER_SUPPORT" == "true" ]]; then
+    if [[ "$SCANNER_V2_SUPPORT" == "true" ]]; then
+        echo "Deploying Scanner V2"
+        launch_service $unzip_dir scannerv2
+        echo
+    elif [[ "$SCANNER_SUPPORT" == "true" ]]; then
         echo "Deploying Scanning..."
         launch_service $unzip_dir scanner
         echo

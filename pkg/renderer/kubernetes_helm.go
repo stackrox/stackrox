@@ -6,7 +6,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
-	"github.com/stackrox/rox/image"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/zip"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/renderutil"
@@ -17,7 +17,7 @@ func executeChartFiles(prefix string, c Config, files ...*google_protobuf.Any) (
 	for _, f := range files {
 		file, ok, err := executeChartFile(prefix, f.GetTypeUrl(), string(f.GetValue()), c)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "executing template for file %s", f.GetTypeUrl())
 		}
 		if !ok {
 			continue
@@ -59,7 +59,7 @@ func renderHelmFiles(c Config, ch *chart.Chart, prefix string) ([]*zip.File, err
 	}
 	valuesData, err := executeRawTemplate(ch.Values.Raw, &c)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "executing values.yaml template")
 	}
 	ch.Values.Raw = string(valuesData)
 	m, err := renderutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderutil.Options{})
@@ -77,7 +77,7 @@ func renderHelmFiles(c Config, ch *chart.Chart, prefix string) ([]*zip.File, err
 	// execute the extra files (scripts, README, etc)
 	files, err := executeChartFiles(prefix, c, ch.Files...)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "executing chart files")
 	}
 	return append(renderedFiles, files...), nil
 }
@@ -120,21 +120,13 @@ func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*zip.File, error)
 }
 
 func renderHelm(c Config) ([]*zip.File, error) {
-	renderedFiles, err := chartToFiles("central", image.GetCentralChart(), c)
-	if err != nil {
-		return nil, err
-	}
-	scannerFiles, err := chartToFiles("scanner", image.GetScannerChart(), c)
-	if err != nil {
-		return nil, err
-	}
-	renderedFiles = append(renderedFiles, scannerFiles...)
-	if c.K8sConfig.Monitoring.Type.OnPrem() {
-		monitoringFiles, err := chartToFiles("monitoring", image.GetMonitoringChart(), c)
+	var renderedFiles []*zip.File
+	for _, chartPrefixPair := range getChartsToProcess(c, renderAll) {
+		currentRenderedFiles, err := chartToFiles(chartPrefixPair.prefix, chartPrefixPair.chart, c)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to render %s chart", chartPrefixPair.prefix)
 		}
-		renderedFiles = append(renderedFiles, monitoringFiles...)
+		renderedFiles = append(renderedFiles, currentRenderedFiles...)
 	}
 	return renderedFiles, nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/roximages/defaults"
 	"github.com/stackrox/rox/pkg/zip"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
@@ -39,33 +40,37 @@ const (
 	scannerOnly
 )
 
-func renderKubectl(c Config, mode mode) ([]*zip.File, error) {
-	type chartPrefixPair struct {
-		chart  *chart.Chart
-		prefix string
-	}
+type chartPrefixPair struct {
+	chart  *chart.Chart
+	prefix string
+}
 
-	var chartsToProcess []chartPrefixPair
+func getChartsToProcess(c Config, mode mode) (chartsToProcess []chartPrefixPair) {
 	scannerChart := chartPrefixPair{image.GetScannerChart(), "scanner"}
 	if mode == scannerOnly {
 		chartsToProcess = []chartPrefixPair{scannerChart}
-	} else {
-		chartsToProcess = []chartPrefixPair{
-			{image.GetCentralChart(), "central"},
-			scannerChart,
-		}
-		if c.K8sConfig.Monitoring.Type.OnPrem() {
-			chartsToProcess = append(chartsToProcess,
-				chartPrefixPair{image.GetMonitoringChart(), "monitoring"},
-			)
-		}
+		return
 	}
+	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(), "central"}}
+	if c.K8sConfig.EnableScannerV2 {
+		chartsToProcess = append(chartsToProcess, chartPrefixPair{image.GetScannerV2Chart(), "scannerv2"})
+	} else {
+		chartsToProcess = append(chartsToProcess, scannerChart)
+	}
+	if c.K8sConfig.Monitoring.Type.OnPrem() {
+		chartsToProcess = append(chartsToProcess,
+			chartPrefixPair{image.GetMonitoringChart(), "monitoring"},
+		)
+	}
+	return
+}
 
+func renderKubectl(c Config, mode mode) ([]*zip.File, error) {
 	var renderedFiles []*zip.File
-	for _, chart := range chartsToProcess {
-		chartRenderedFiles, err := renderHelmFiles(c, chart.chart, chart.prefix)
+	for _, chartPrefixPair := range getChartsToProcess(c, mode) {
+		chartRenderedFiles, err := renderHelmFiles(c, chartPrefixPair.chart, chartPrefixPair.prefix)
 		if err != nil {
-			return nil, errors.Wrapf(err, "error rendering %s files", chart.prefix)
+			return nil, errors.Wrapf(err, "error rendering %s files", chartPrefixPair.prefix)
 		}
 		renderedFiles = append(renderedFiles, chartRenderedFiles...)
 	}
@@ -83,6 +88,12 @@ func postProcessConfig(c *Config, mode mode) error {
 		c.K8sConfig.Command = "kubectl"
 	} else {
 		c.K8sConfig.Command = "oc"
+	}
+
+	if c.K8sConfig.EnableScannerV2 {
+		if c.K8sConfig.ScannerImage == defaults.ScannerImage() {
+			c.K8sConfig.ScannerImage = defaults.ScannerV2Image()
+		}
 	}
 
 	var err error

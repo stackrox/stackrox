@@ -22,14 +22,14 @@ func instructionPrefix() string {
 	return prefix
 }
 
-const instructionSuffix = `
+const (
+	instructionSuffix = `
 
 For administrator login, select the "Login with username/password" option on
 the login page, and log in with username "admin" and the password found in the
 "password" file located in the same directory as this README.
 `
-
-const helmInstructionTemplate = `
+	helmInstructionTemplate = `
   {{if not .K8sConfig.Monitoring.Type.None}}
   - Deploy Monitoring
     - Run monitoring/scripts/setup.sh
@@ -39,10 +39,17 @@ const helmInstructionTemplate = `
     - Run central/scripts/setup.sh
     - Run helm install --name central central
   - Deploy Scanner
-    - If you want to run the StackRox scanner, run helm install --name scanner scanner
+    {{ $scannerName := "" -}}
+    {{ if .K8sConfig.EnableScannerV2 -}}
+    {{ $scannerName = "scannerv2" }}
+    {{ else }}
+    {{ $scannerName = "scanner" }}
+    {{ end -}}
+    - Run {{ $scannerName }}/scripts/setup.sh
+    - If you want to run the StackRox scanner, run helm install --name {{ $scannerName }} {{ $scannerName }}
 `
 
-const kubectlInstructionTemplate = `{{if not .K8sConfig.Monitoring.Type.None}}
+	kubectlInstructionTemplate = `{{if not .K8sConfig.Monitoring.Type.None}}
   - Deploy Monitoring
     - Run monitoring/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f monitoring
@@ -51,12 +58,20 @@ const kubectlInstructionTemplate = `{{if not .K8sConfig.Monitoring.Type.None}}
     - Run central/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f central
 `
-const kubectlScannerTemplate = `
-  - Deploy Scanner
+
+	kubectlScannerTemplate = `
+  {{ $scannerName := "" -}}
+  {{ if .K8sConfig.EnableScannerV2 -}}
+  {{ $scannerName = "scannerv2" }}
+  {{ else }}
+  {{ $scannerName = "scanner" }}
+  {{ end -}}
+  - Deploy Scanner {{ if .K8sConfig.EnableScannerV2 -}}V2{{ end }}
      If you want to run the StackRox scanner:
-     - Run scanner/scripts/setup.sh
-     - Run {{.K8sConfig.Command}} create -R -f scanner
-`
+     - Run {{$scannerName}}/scripts/setup.sh
+     - Run {{.K8sConfig.Command}} create -R -f {{$scannerName}}
+	`
+)
 
 // instructions returns instructions based on the config, which get echoed to standard error,
 // as well as go into the README.

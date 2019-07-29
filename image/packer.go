@@ -9,6 +9,7 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/templates"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -56,31 +57,30 @@ func ReadFileAndTemplate(path string, funcs template.FuncMap) (*template.Templat
 	return tpl.Parse(contents)
 }
 
+func mustGetChart(box packr.Box, prefix string) *chart.Chart {
+	ch, err := getChart(box, prefix)
+	utils.Must(err)
+	return ch
+}
+
 // GetCentralChart returns the Helm chart for Central
 func GetCentralChart() *chart.Chart {
-	ch, err := getChart(K8sBox, "helm/centralchart/")
-	if err != nil {
-		panic(err)
-	}
-	return ch
+	return mustGetChart(K8sBox, "helm/centralchart/")
 }
 
 // GetScannerChart returns the Helm chart for the scanner
 func GetScannerChart() *chart.Chart {
-	ch, err := getChart(K8sBox, "helm/scannerchart/")
-	if err != nil {
-		panic(err)
-	}
-	return ch
+	return mustGetChart(K8sBox, "helm/scannerchart/")
+}
+
+// GetScannerV2Chart returns the Helm chart for ScannerV2
+func GetScannerV2Chart() *chart.Chart {
+	return mustGetChart(K8sBox, "helm/scannerv2chart/")
 }
 
 // GetMonitoringChart returns the Helm chart for Monitoring
 func GetMonitoringChart() *chart.Chart {
-	chart, err := getChart(K8sBox, "helm/monitoringchart/")
-	if err != nil {
-		panic(err)
-	}
-	return chart
+	return mustGetChart(K8sBox, "helm/monitoringchart/")
 }
 
 // We need to stamp in the version to the Chart.yaml files prior to loading the chart
