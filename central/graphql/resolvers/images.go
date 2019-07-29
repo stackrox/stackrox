@@ -14,7 +14,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("images(query:String): [Image!]!"),
 		schema.AddQuery("image(sha:ID!): Image"),
-		schema.AddExtraResolver("Image", "deploymentIDs(query:String): [String!]!"),
+		schema.AddExtraResolver("Image", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("ImageScanComponent", "layerIndex: Int"),
 	)
 }
@@ -41,8 +41,8 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID
 		resolver.ImageDataStore.GetImage(ctx, string(args.Sha)))
 }
 
-// DeploymentIDs returns the deployments which use this image for the identified image, if it exists
-func (resolver *imageResolver) DeploymentIDs(ctx context.Context, args rawQuery) ([]string, error) {
+// Deployments returns the deployments which use this image for the identified image, if it exists
+func (resolver *imageResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -53,12 +53,8 @@ func (resolver *imageResolver) DeploymentIDs(ctx context.Context, args rawQuery)
 
 	imageIDQuery := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).ProtoQuery()
 
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, search.NewConjunctionQuery(imageIDQuery, q))
-	if err != nil {
-		return nil, err
-	}
-
-	return search.ResultsToIDSet(results).AsSlice(), nil
+	return resolver.root.wrapDeployments(
+		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, search.NewConjunctionQuery(imageIDQuery, q)))
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {

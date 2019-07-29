@@ -16,7 +16,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("secret(id:ID!): Secret"),
 		schema.AddQuery("secrets(query: String): [Secret!]!"),
-		schema.AddExtraResolver("Secret", "deployments(): [Deployment!]!"),
+		schema.AddExtraResolver("Secret", "Deployments(query: String): [Deployment!]!"),
 	)
 }
 
@@ -53,6 +53,28 @@ func (resolver *Resolver) Secrets(ctx context.Context, args rawQuery) ([]*secret
 	return resolver.wrapSecrets(secrets, nil)
 }
 
+func (resolver *secretResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	if err := readDeployments(ctx); err != nil {
+		return nil, err
+	}
+
+	deploymentFilterQuery, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	secret := resolver.data
+	deploymentIDs := set.NewStringSet()
+
+	for _, dr := range secret.Relationship.GetDeploymentRelationships() {
+		deploymentIDs.Add(dr.GetId())
+	}
+	deploymentIDQuery := search.NewQueryBuilder().AddDocIDs(deploymentIDs.AsSlice()...).ProtoQuery()
+
+	return resolver.root.wrapDeployments(
+		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, search.NewConjunctionQuery(deploymentIDQuery, deploymentFilterQuery)))
+}
+
 func (resolver *Resolver) getSecret(ctx context.Context, id string) *storage.Secret {
 	secret, ok, err := resolver.SecretsDataStore.GetSecret(ctx, id)
 	if err != nil || !ok {
@@ -85,19 +107,4 @@ func (resolver *Resolver) getDeploymentRelationships(ctx context.Context, secret
 	secret.Relationship = &storage.SecretRelationship{
 		DeploymentRelationships: deployments,
 	}
-}
-
-func (resolver *secretResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
-	if err := readDeployments(ctx); err != nil {
-		return nil, err
-	}
-	secret := resolver.data
-	deploymentIDs := set.NewStringSet()
-
-	for _, dr := range secret.Relationship.GetDeploymentRelationships() {
-		deploymentIDs.Add(dr.GetId())
-	}
-
-	return resolver.root.wrapDeployments(
-		resolver.root.DeploymentDataStore.GetDeployments(ctx, deploymentIDs.AsSlice()))
 }
