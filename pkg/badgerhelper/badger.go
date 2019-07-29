@@ -56,7 +56,11 @@ func NewTemp(name string) (*badger.DB, string, error) {
 
 // DeletePrefixRange deletes all keys with a matching prefix from the DB.
 func DeletePrefixRange(txn *badger.Txn, keyPrefix []byte) error {
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	itOpts := badger.DefaultIteratorOptions
+	itOpts.PrefetchValues = false
+	itOpts.Prefix = keyPrefix
+
+	it := txn.NewIterator(itOpts)
 	defer it.Close()
 	for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
 		if err := txn.Delete(it.Item().Key()); err != nil {
@@ -70,6 +74,7 @@ func DeletePrefixRange(txn *badger.Txn, keyPrefix []byte) error {
 func Count(txn *badger.Txn, keyPrefix []byte) int {
 	itOpts := badger.DefaultIteratorOptions
 	itOpts.PrefetchValues = false
+	itOpts.Prefix = keyPrefix
 
 	var count int
 	it := txn.NewIterator(itOpts)
