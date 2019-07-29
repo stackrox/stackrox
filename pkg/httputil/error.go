@@ -73,3 +73,13 @@ func WriteGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {
 func WriteGRPCStyleErrorf(w http.ResponseWriter, c codes.Code, format string, args ...interface{}) {
 	WriteGRPCStyleError(w, c, fmt.Errorf(format, args...))
 }
+
+// WriteError writes the given error to the stream. If the error is a grpc status, the respective status proto will
+// be generated with the adequate response code. Otherwise, if the error is an HTTPStatus, the HTTP status code will
+// be used with a gRPC code of `Unknown`. If neither applies, a 200 OK with an empty message will be sent for `nil`,
+// and 500 Internal Server Error with the appropriate message for other, non-nil errors.
+func WriteError(w http.ResponseWriter, err error) {
+	st, _ := status.FromError(err)
+	w.WriteHeader(StatusFromError(err))
+	_ = new(jsonpb.Marshaler).Marshal(w, st.Proto())
+}

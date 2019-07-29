@@ -29,6 +29,12 @@ func ErrorWithDefault(ew ErrorWaitable, defaultErr error) error {
 	return err
 }
 
+// WaitForError unconditionally waits until the given error waitable is triggered, and returns its error, if any.
+func WaitForError(ew ErrorWaitable) Error {
+	<-ew.Done()
+	return ew.Err()
+}
+
 // WaitForErrorUntil waits until the given error waitable is triggered, in which case the return value is the same as
 // for `CheckError(ew)`. If cancelCond is triggered before ew is triggered, `nil, false` is returned.
 func WaitForErrorUntil(ew ErrorWaitable, cancelCond Waitable) (Error, bool) {

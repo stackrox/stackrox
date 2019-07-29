@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
+	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/ast/inspector"
+	"golang.org/x/tools/go/types/typeutil"
 )
 
 const doc = `check for unchecked errors returned from funcs`
@@ -34,19 +36,12 @@ var (
 			"Fprintf",
 			"Fprintln",
 		),
+		"github.com/stackrox/rox/pkg/errorhelpers": set.NewFrozenStringSet(
+			"PanicOnDevelopment",
+			"PanicOnDevelopmentf",
+		),
 	}
 )
-
-// unparen returns e with any enclosing parentheses stripped.
-func unparen(e ast.Expr) ast.Expr {
-	for {
-		p, ok := e.(*ast.ParenExpr)
-		if !ok {
-			return e
-		}
-		e = p.X
-	}
-}
 
 func getReturnTypesFromFuncType(typ types.Type) (typs []types.Type) {
 	for typ.Underlying() != typ {
@@ -136,14 +131,10 @@ func doesFuncReturnError(pass *analysis.Pass, fun ast.Expr) (name string, return
 	return
 }
 
-func isWhitelisted(fun ast.Expr) bool {
-	if fun, ok := fun.(*ast.SelectorExpr); ok {
-		if pkg, ok := fun.X.(*ast.Ident); ok {
-			if whitelistSet, ok := whitelist[pkg.Name]; ok {
-				if whitelistSet.Contains(fun.Sel.Name) {
-					return true
-				}
-			}
+func isWhitelisted(fun *types.Func) bool {
+	if whitelistSet, ok := whitelist[fun.Pkg().Path()]; ok {
+		if whitelistSet.Contains(fun.Name()) {
+			return true
 		}
 	}
 	return false
@@ -157,6 +148,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.DeferStmt)(nil),
 		(*ast.GoStmt)(nil),
 	}
+
 	inspectResult.Preorder(nodeFilter, func(n ast.Node) {
 		var potentialCallExpr ast.Expr
 		switch n := n.(type) {
@@ -169,17 +161,18 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		default:
 			panic(fmt.Sprintf("Unexpected type: %T", n))
 		}
-		call, ok := unparen(potentialCallExpr).(*ast.CallExpr)
+		call, ok := astutil.Unparen(potentialCallExpr).(*ast.CallExpr)
 		if !ok {
 			return // not a call statement
 		}
-		fun := unparen(call.Fun)
+		fun := astutil.Unparen(call.Fun)
 
 		if pass.TypesInfo.Types[fun].IsType() || pass.TypesInfo.Types[fun].IsBuiltin() {
 			return // a type conversion, or a builtin (like panic)
 		}
 
-		if isWhitelisted(fun) {
+		namedFun, _ := typeutil.Callee(pass.TypesInfo, call).(*types.Func)
+		if namedFun != nil && isWhitelisted(namedFun) {
 			return
 		}
 		objName, returnsError := doesFuncReturnError(pass, fun)

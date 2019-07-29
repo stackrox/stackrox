@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message DBRestoreRequestHeader {
+
+    // LocalFileInfo provides information about the file on the local machine of the user initiating the restore
+    // process, in order to provide information to other users about ongoing restore processes.
+    message LocalFileInfo {
+        // The full path of the file.
+        string path = 1;
+
+        // The size of the file, in bytes. 0 if unknown.
+        int64 bytes_size = 2;
+    }
+
+    // The name of the database export format. Mandatory.
+    string format_name = 1;
+
+    // A manifest of all the files in the restore data. The remainder of a restore request body (without the header),
+    // independent of the export format, is always a concatenation of all encoded file data, with no separators in
+    // between (determined purely by the order and sizes listed in the manifest).
+    DBExportManifest manifest = 2;
+
+    // Information about the local file with which the restore was initiated. Optional.
+    LocalFileInfo local_file = 3;
+}
+
+// The metadata of an ongoing or completed restore process. This is the *static* metadata, which will not change
+// (i.e., it is not a status).
+message DBRestoreProcessMetadata {
+    // An ID identifying the restore process. Auto-assigned.
+    string id = 1;
+    // The header with which the restore was initiated.
+    DBRestoreRequestHeader header = 2;
+
+    // The time at which the restore process was started.
+    google.protobuf.Timestamp start_time = 3;
+    // The user who initiated the database restore process.
+    string initiating_user_name          = 4;
+}
+
+// A DB export manifest describes the file contents of a restore request. To prevent data loss, a manifest is always
+// interpreted as binding, i.e., the server must ensure that it will read and make use of every file listed in the
+// manifest, otherwise it must reject the request.
+message DBExportManifest {
+    // The encoding of the file data in the restore body, usually for compression purposes.
+    enum EncodingType {
+        UNKNOWN       = 0;
+        UNCOMPREESSED = 1;
+        DEFLATED      = 2;
+    }
+
+    // A single file in the restore body.
+    message File {
+        // The name of the file. This may or may not be a (relative) file path and up to the server to interpret.
+        // For databases exported as ZIP files, this is the path relative to the root of the archive.
+        string name = 1;
+
+        EncodingType encoding = 2;
+
+        int64 encoded_size      = 3;
+        int64 decoded_size      = 4;
+
+        // The CRC32 (IEEE) checksum of the decoded(!) data.
+        fixed32 decoded_crc32 = 5;
+    }
+
+    repeated File files = 1;
+}
+
+// DBExportFormat describes a format (= a collection of files) for the database export.
+message DBExportFormat {
+    message File {
+        string name    = 1;
+        bool optional  = 2;
+    }
+
+    string format_name  = 1;
+    repeated File files = 2;
+}
+
+message GetDBExportCapabilitiesResponse {
+    repeated DBExportFormat formats                            = 1;
+    repeated DBExportManifest.EncodingType supported_encodings = 2;
+}
+
+service DBService {
+
+    rpc GetExportCapabilities(Empty) returns (GetDBExportCapabilitiesResponse) {
+        option (google.api.http) = {
+            get: "/v1/db/exportcaps"
+        };
+    }
+
+}

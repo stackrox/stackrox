@@ -14,4 +14,7 @@ var (
 
 	// PlaintextExposure enables specifying a port under which to expose the UI and API without TLS.
 	PlaintextExposure = registerFeature("Plaintext UI & API exposure", "ROX_PLAINTEXT_EXPOSURE", true)
+
+	// DBBackupRestoreV2 enables an improved database backup/restore experience.
+	DBBackupRestoreV2 = registerFeature("Improved DB backup/restore experience", "ROX_DB_BACKUP_RESTORE_V2", false)
 )

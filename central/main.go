@@ -36,6 +36,8 @@ import (
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
+	backupRestoreManager "github.com/stackrox/rox/central/globaldb/v2backuprestore/manager"
+	backupRestoreService "github.com/stackrox/rox/central/globaldb/v2backuprestore/service"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupService "github.com/stackrox/rox/central/group/service"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -299,6 +301,10 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
+	if features.DBBackupRestoreV2.Enabled() {
+		servicesToRegister = append(servicesToRegister, backupRestoreService.New(backupRestoreManager.Singleton()))
+	}
+
 	return servicesToRegister
 }
 
@@ -527,6 +533,14 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: complianceHandlers.CSVHandler(),
 			Compression:   true,
 		},
+	}
+
+	if features.DBBackupRestoreV2.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/db/v2/restore",
+			Authorizer:    user.With(resources.AllResourcesModifyPermissions()...),
+			ServerHandler: backupRestoreManager.Singleton().RestoreHandler(),
+		})
 	}
 
 	logImbueRoute := "/api/logimbue"

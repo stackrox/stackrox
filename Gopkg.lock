@@ -2079,6 +2079,7 @@
     "github.com/golang/protobuf/ptypes/timestamp",
     "github.com/google/certificate-transparency-go/tls",
     "github.com/graph-gophers/graphql-go",
+    "github.com/graph-gophers/graphql-go/errors",
     "github.com/graph-gophers/graphql-go/relay",
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/auth",

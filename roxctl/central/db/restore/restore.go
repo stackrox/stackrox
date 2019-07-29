@@ -2,15 +2,13 @@ package restore
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/central/db/transfer"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -40,35 +38,34 @@ func Command() *cobra.Command {
 func restore(filename string, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 
-	file, err := os.Open(filename)
+	// Try to make the file path absolute, for better local file info, but don't insist on it.
+	filePath, err := filepath.Abs(filename)
+	if err != nil {
+		filePath = filename
+	}
+
+	file, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
 	defer utils.IgnoreError(file.Close)
 
-	req, err := http.NewRequest("POST", common.GetURL("/db/restore"), file)
+	err = ErrV2RestoreNotSupported
+	if features.DBBackupRestoreV2.Enabled() {
+		err = tryRestoreV2(file, deadline)
+		if err == ErrV2RestoreNotSupported {
+			fmt.Println("Your central instance does not support V2 database restore. Consider upgrading Central")
+			fmt.Println("for a significantly improved backup/restore experience.")
+		}
+	}
+	if err == ErrV2RestoreNotSupported {
+		err = restoreV1(file, deadline)
+	}
+
 	if err != nil {
 		return err
 	}
-	common.AddAuthToRequest(req)
 
-	client := common.GetHTTPClient(0)
-
-	resp, err := transfer.ViaHTTP(req, client, deadline, idleTimeout)
-	if err != nil {
-		return err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		fmt.Println("Successfully restored DB")
-		return nil
-	case http.StatusUnauthorized, http.StatusForbidden:
-		return fmt.Errorf("Token is not authorized to restore DB")
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	return fmt.Errorf("Received response code %d, but expected 200. Response body: %s", resp.StatusCode, string(body))
+	fmt.Println("Successfully restored DB")
+	return nil
 }
