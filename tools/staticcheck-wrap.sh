@@ -8,9 +8,18 @@ total=0
 
 [[ -x "$(command -v staticcheck)" ]] || { echo >&2 "staticcheck binary not found in path!"; exit 1; }
 
+whitelisted_regexes=(.*var\ log\ is\ unused generated/.*\.pb\.go)
+
 while read -r line; do
     total=$((total + 1))
-    if [[ "$line" =~ ^.*var\ log\ is\ unused ]]; then
+    matched=0
+    for regex in "${whitelisted_regexes[@]}"; do
+        if [[ "${line}" =~ ^${regex} ]]; then
+            matched=1
+            break
+        fi
+    done
+    if (( matched )); then
         ignored=$((ignored + 1))
     else
         echo >&2 "${line}"

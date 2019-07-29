@@ -34,7 +34,7 @@ func (u UUID) Bytes() []byte {
 	return u.uuid.Bytes()
 }
 
-// Returns canonical string representation of UUID:
+// String returns the canonical string representation of UUID:
 // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
 func (u UUID) String() string {
 	return u.uuid.String()
