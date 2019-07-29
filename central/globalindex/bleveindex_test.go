@@ -1,6 +1,7 @@
 package globalindex
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"testing"
 
@@ -28,8 +29,13 @@ func TestCompareMapping(t *testing.T) {
 	assert.True(t, compareMappings(indexMapping, index.Mapping()))
 
 	// Now change the indexMapping that is being compared against
-	mappingImpl := indexMapping.(*mapping.IndexMappingImpl)
-	mappingImpl.TypeMapping[v1.SearchCategory_ALERTS.String()].Properties["list_alert"].Properties["state"].Fields[0].Store = false
+	// We need to marshal and unmarshal it as getIndexMapping() uses the same underlying pointer
+	bytes, err := json.Marshal(indexMapping)
+	require.NoError(t, err)
+	var newIndexMapping mapping.IndexMappingImpl
+	require.NoError(t, json.Unmarshal(bytes, &newIndexMapping))
 
-	assert.False(t, compareMappings(indexMapping, index.Mapping()))
+	newIndexMapping.TypeMapping[v1.SearchCategory_ALERTS.String()].Properties["list_alert"].Properties["state"].Fields[0].Store = false
+
+	assert.False(t, compareMappings(&newIndexMapping, index.Mapping()))
 }
