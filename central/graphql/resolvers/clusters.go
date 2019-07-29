@@ -22,20 +22,20 @@ func init() {
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Cluster", `alertsCount: Int!`),
-		schema.AddExtraResolver("Cluster", `deployments: [Deployment!]!`),
-		schema.AddExtraResolver("Cluster", `nodes: [Node!]!`),
+		schema.AddExtraResolver("Cluster", `deployments(query: String): [Deployment!]!`),
+		schema.AddExtraResolver("Cluster", `nodes(query: String): [Node!]!`),
 		schema.AddExtraResolver("Cluster", `nodeCount: Int!`),
 		schema.AddExtraResolver("Cluster", `node(node: ID!): Node`),
-		schema.AddExtraResolver("Cluster", `namespaces: [Namespace!]!`),
+		schema.AddExtraResolver("Cluster", `namespaces(query: String): [Namespace!]!`),
 		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
 		schema.AddExtraResolver("Cluster", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddExtraResolver("Cluster", `k8sroles: [K8SRole!]!`),
+		schema.AddExtraResolver("Cluster", `k8sroles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("Cluster", `k8srole(role: ID!): K8SRole`),
 		schema.AddExtraResolver("Cluster", `k8sroleCount: Int!`),
-		schema.AddExtraResolver("Cluster", `serviceAccounts: [ServiceAccount!]!`),
+		schema.AddExtraResolver("Cluster", `serviceAccounts(query: String): [ServiceAccount!]!`),
 		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
 		schema.AddExtraResolver("Cluster", `serviceAccountCount: Int!`),
-		schema.AddExtraResolver("Cluster", `subjects: [SubjectWithClusterID!]!`),
+		schema.AddExtraResolver("Cluster", `subjects(query: String): [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID!`),
 		schema.AddExtraResolver("Cluster", `subjectCount: Int!`),
 		schema.AddExtraResolver("Cluster", `images: [Image!]!`),
@@ -78,7 +78,7 @@ func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, 
 	if err := readAlerts(ctx); err != nil {
 		return nil, err // could return nil, nil to prevent errors from propagating.
 	}
-	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	query := resolver.getQuery()
 	return resolver.root.wrapAlerts(
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
@@ -87,7 +87,7 @@ func (resolver *clusterResolver) AlertsCount(ctx context.Context) (int32, error)
 	if err := readAlerts(ctx); err != nil {
 		return 0, err
 	}
-	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	query := resolver.getQuery()
 	results, err := resolver.root.ViolationsDataStore.Search(ctx, query)
 	if err != nil {
 		return 0, err
@@ -97,25 +97,27 @@ func (resolver *clusterResolver) AlertsCount(ctx context.Context) (int32, error)
 }
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster
-func (resolver *clusterResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
+func (resolver *clusterResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	return resolver.root.wrapDeployments(
-		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, query))
-}
-
-// Nodes returns all nodes on the cluster
-func (resolver *clusterResolver) Nodes(ctx context.Context) ([]*nodeResolver, error) {
-	if err := readNodes(ctx); err != nil {
-		return nil, err
-	}
-	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, resolver.data.GetId(), false)
+	query, err := resolver.getConjunctionQuery(args)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapNodes(store.ListNodes())
+	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, query))
+}
+
+// Nodes returns all nodes on the cluster
+func (resolver *clusterResolver) Nodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapNodes(resolver.root.NodeGlobalDataStore.SearchRawNodes(ctx, q))
 }
 
 // NodeCount returns count of all nodes on the cluster
@@ -150,13 +152,17 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 }
 
 // Namespace returns a given namespace on a cluster.
-func (resolver *clusterResolver) Namespaces(ctx context.Context) ([]*namespaceResolver, error) {
+func (resolver *clusterResolver) Namespaces(ctx context.Context, args rawQuery) ([]*namespaceResolver, error) {
 	if err := readNamespaces(ctx); err != nil {
+		return nil, err
+	}
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
 		return nil, err
 	}
 	return resolver.root.wrapNamespaces(namespace.ResolveByClusterID(ctx, resolver.data.GetId(),
 		resolver.root.NamespaceDataStore, resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore,
-		resolver.root.NetworkPoliciesStore))
+		resolver.root.NetworkPoliciesStore, q))
 }
 
 // Namespace returns a given namespace on a cluster.
@@ -184,12 +190,14 @@ func (resolver *clusterResolver) ComplianceResults(ctx context.Context, args raw
 }
 
 // K8sRoles returns GraphQL resolvers for all k8s roles
-func (resolver *clusterResolver) K8sRoles(ctx context.Context) ([]*k8SRoleResolver, error) {
+func (resolver *clusterResolver) K8sRoles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
-
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
 	return resolver.root.wrapK8SRoles(resolver.root.K8sRoleStore.SearchRawRoles(ctx, q))
 }
 
@@ -198,7 +206,7 @@ func (resolver *clusterResolver) K8sRoleCount(ctx context.Context) (int32, error
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
 	}
-	q := resolver.getClusterQuery()
+	q := resolver.getQuery()
 	results, err := resolver.root.K8sRoleStore.Search(ctx, q)
 	if err != nil {
 		return 0, err
@@ -229,12 +237,14 @@ func (resolver *clusterResolver) K8sRole(ctx context.Context, args struct{ Role 
 }
 
 // ServiceAccounts returns GraphQL resolvers for all service accounts in this cluster
-func (resolver *clusterResolver) ServiceAccounts(ctx context.Context) ([]*serviceAccountResolver, error) {
+func (resolver *clusterResolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
-
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
 	return resolver.root.wrapServiceAccounts(resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, q))
 }
 
@@ -243,7 +253,7 @@ func (resolver *clusterResolver) ServiceAccountCount(ctx context.Context) (int32
 	if err := readServiceAccounts(ctx); err != nil {
 		return 0, err
 	}
-	q := resolver.getClusterQuery()
+	q := resolver.getQuery()
 	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
 	if err != nil {
 		return 0, err
@@ -274,8 +284,8 @@ func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct
 }
 
 // Subjects returns GraphQL resolvers for all subjects in this cluster
-func (resolver *clusterResolver) Subjects(ctx context.Context) ([]*subjectWithClusterIDResolver, error) {
-	subjectResolvers, err := resolver.root.wrapSubjects(resolver.getClusterSubjects(ctx))
+func (resolver *clusterResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectWithClusterIDResolver, error) {
+	subjectResolvers, err := resolver.root.wrapSubjects(resolver.getSubjects(ctx, args))
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +294,7 @@ func (resolver *clusterResolver) Subjects(ctx context.Context) ([]*subjectWithCl
 
 // SubjectCount returns count of Users and Groups in this cluster
 func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error) {
-	subjects, err := resolver.getClusterSubjects(ctx)
+	subjects, err := resolver.getSubjects(ctx, rawQuery{})
 	if err != nil {
 		return 0, err
 	}
@@ -293,7 +303,7 @@ func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error
 
 // ServiceAccount returns clusterResolver GraphQL resolver for a given service account
 func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectWithClusterIDResolver, error) {
-	bindings, err := resolver.getRoleBindings(ctx)
+	bindings, err := resolver.getRoleBindings(ctx, rawQuery{})
 	if err != nil {
 		return nil, err
 	}
@@ -308,15 +318,15 @@ func (resolver *clusterResolver) Images(ctx context.Context) ([]*imageResolver, 
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	return resolver.root.wrapListImages(resolver.root.ImageDataStore.SearchListImages(ctx, q))
+	q := resolver.getQuery()
+	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx, q))
 }
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) {
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	q := resolver.getQuery()
 	results, err := resolver.root.ImageDataStore.Search(ctx, q)
 	if err != nil {
 		return 0, err
@@ -406,12 +416,12 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatu
 }
 
 func (resolver *clusterResolver) Secrets(ctx context.Context) ([]*secretResolver, error) {
-	query := resolver.getClusterQuery()
-	return resolver.root.wrapListSecrets(resolver.root.SecretsDataStore.SearchListSecrets(ctx, query))
+	query := resolver.getQuery()
+	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, query))
 }
 
 func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error) {
-	query := resolver.getClusterQuery()
+	query := resolver.getQuery()
 	result, err := resolver.root.SecretsDataStore.Search(ctx, query)
 	if err != nil {
 		return 0, err

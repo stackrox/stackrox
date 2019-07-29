@@ -116,14 +116,14 @@ func getStandardIDs(ctx context.Context, cs complianceStandards.Repository) ([]s
 	return result, nil
 }
 
-func (resolver *clusterResolver) getRoleBindings(ctx context.Context) ([]*storage.K8SRoleBinding, error) {
-	if err := readK8sSubjects(ctx); err != nil {
-		return nil, err
-	}
+func (resolver *clusterResolver) getRoleBindings(ctx context.Context, args rawQuery) ([]*storage.K8SRoleBinding, error) {
 	if err := readK8sRoleBindings(ctx); err != nil {
 		return nil, err
 	}
-	q := resolver.getClusterQuery()
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
 	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
@@ -131,8 +131,11 @@ func (resolver *clusterResolver) getRoleBindings(ctx context.Context) ([]*storag
 	return bindings, nil
 }
 
-func (resolver *clusterResolver) getClusterSubjects(ctx context.Context) ([]*storage.Subject, error) {
-	bindings, err := resolver.getRoleBindings(ctx)
+func (resolver *clusterResolver) getSubjects(ctx context.Context, args rawQuery) ([]*storage.Subject, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+	bindings, err := resolver.getRoleBindings(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -140,8 +143,20 @@ func (resolver *clusterResolver) getClusterSubjects(ctx context.Context) ([]*sto
 	return subjects, nil
 }
 
-func (resolver *clusterResolver) getClusterQuery() *v1.Query {
+func (resolver *clusterResolver) getQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+}
+
+func (resolver *clusterResolver) getConjunctionQuery(args rawQuery) (*v1.Query, error) {
+	q1 := resolver.getQuery()
+	if args.String() == "" {
+		return q1, nil
+	}
+	q2, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	return search.NewConjunctionQuery(q2, q1), nil
 }
 
 // SubjectCount returns the count of Subjects which have any permission on this namespace or the cluster it belongs to

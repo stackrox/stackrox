@@ -37,10 +37,8 @@ func ResolveByQuery(ctx context.Context, q *v1.Query, dataStore datastore.DataSt
 
 // ResolveByClusterID resolves all namespaces for the given cluster.
 func ResolveByClusterID(ctx context.Context, clusterID string, datastore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
-	metadataSlice, err := datastore.SearchNamespaces(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, clusterID).
-		ProtoQuery())
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore, q *v1.Query) ([]*v1.Namespace, error) {
+	metadataSlice, err := datastore.SearchNamespaces(ctx, q)
 	if err != nil {
 		return nil, errors.Wrapf(err, "searching namespace for cluster id %q", clusterID)
 	}
