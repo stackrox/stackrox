@@ -14,7 +14,7 @@ type factoryImpl struct {
 func (e *factoryImpl) CreateScanner(source *storage.ImageIntegration) (types.ImageScanner, error) {
 	creator, exists := e.creators[source.GetType()]
 	if !exists {
-		return nil, fmt.Errorf("Scanner with type '%s' does not exist", source.GetType())
+		return nil, fmt.Errorf("Scanner with type %q does not exist", source.GetType())
 	}
 	return creator(source)
 }

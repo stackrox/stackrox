@@ -38,6 +38,15 @@ const integrationsList = {
             disabled: false
         },
         {
+            label: 'StackRox Scanner V2 (Preview)',
+            type: 'scanner',
+            categories: 'Scanner',
+            source: 'imageIntegrations',
+            image: logo,
+            disabled: false,
+            dependsOnFeatureFlag: 'ROX_SCANNER_V2'
+        },
+        {
             label: 'Generic Docker Registry',
             type: 'docker',
             categories: 'Registry',

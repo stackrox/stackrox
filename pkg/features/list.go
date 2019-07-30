@@ -17,4 +17,7 @@ var (
 
 	// DBBackupRestoreV2 enables an improved database backup/restore experience.
 	DBBackupRestoreV2 = registerFeature("Improved DB backup/restore experience", "ROX_DB_BACKUP_RESTORE_V2", false)
+
+	// ScannerV2 enables scanner v2.
+	ScannerV2 = registerFeature("Enable Scanner V2", "ROX_SCANNER_V2", false)
 )

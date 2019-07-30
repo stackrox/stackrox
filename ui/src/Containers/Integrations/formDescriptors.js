@@ -616,6 +616,27 @@ const formDescriptors = {
                 placeholder: 'https://clair.example.com'
             }
         ],
+        scanner: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'StackRox Scanner V2'
+            },
+            {
+                label: 'Types',
+                jsonpath: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'SCANNER', label: 'Scanner', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                jsonpath: 'scannerv2.endpoint',
+                type: 'text',
+                placeholder: 'http://scanner-v2.stackrox:8228'
+            }
+        ],
         clairify: [
             {
                 label: 'Integration Name',

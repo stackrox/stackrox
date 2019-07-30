@@ -9,6 +9,7 @@ import images from './imageSagas';
 import policies from './policiesSagas';
 import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
+import featureFlags from './featureFlagSagas';
 import risks from './riskSagas';
 import roles from './roleSagas';
 import searches from './searchSagas';
@@ -36,6 +37,7 @@ export default function* root() {
         fork(images),
         fork(policies),
         fork(integrations),
+        fork(featureFlags),
         fork(globalSearch),
         fork(risks),
         fork(roles),

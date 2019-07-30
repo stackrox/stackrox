@@ -10,6 +10,7 @@ import deployments, { selectors as deploymentSelectors } from './deployments';
 import images, { selectors as imageSelectors } from './images';
 import integrations, { selectors as integrationSelectors } from './integrations';
 import notifications, { selectors as notificationSelectors } from './notifications';
+import featureFlags, { selectors as featureFlagSelectors } from './featureFlags';
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies/reducer';
 import risks, { selectors as riskSelectors } from './risks';
@@ -42,6 +43,7 @@ const appReducer = combineReducers({
     images,
     integrations,
     notifications,
+    featureFlags,
     globalSearch,
     cli,
     policies,
@@ -83,6 +85,7 @@ const getDeployments = state => getApp(state).deployments;
 const getImages = state => getApp(state).images;
 const getIntegrations = state => getApp(state).integrations;
 const getNotifications = state => getApp(state).notifications;
+const getFeatureFlags = state => getApp(state).featureFlags;
 const getGlobalSearches = state => getApp(state).globalSearch;
 const getPolicies = state => getApp(state).policies;
 const getRisks = state => getApp(state).risks;
@@ -112,6 +115,7 @@ const boundSelectors = {
     ...bindSelectors(getImages, imageSelectors),
     ...bindSelectors(getIntegrations, integrationSelectors),
     ...bindSelectors(getNotifications, notificationSelectors),
+    ...bindSelectors(getFeatureFlags, featureFlagSelectors),
     ...bindSelectors(getGlobalSearches, globalSearchSelectors),
     ...bindSelectors(getPolicies, policySelectors),
     ...bindSelectors(getRisks, riskSelectors),

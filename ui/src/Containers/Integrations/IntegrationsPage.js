@@ -47,7 +47,13 @@ class IntegrationsPage extends Component {
         fetchBackups: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
         fetchImageIntegrations: PropTypes.func.isRequired,
-        fetchClusters: PropTypes.func.isRequired
+        fetchClusters: PropTypes.func.isRequired,
+        featureFlags: PropTypes.arrayOf(
+            PropTypes.shape({
+                envVar: PropTypes.string.isRequired,
+                enabled: PropTypes.bool.isRequired
+            })
+        ).isRequired
     };
 
     state = {
@@ -178,18 +184,28 @@ class IntegrationsPage extends Component {
     }
 
     renderIntegrationTiles = source =>
-        integrationsList[source].map(tile => (
-            <IntegrationTile
-                key={tile.label}
-                integration={tile}
-                onClick={this.openIntegrationModal}
-                numIntegrations={
-                    source !== 'orchestrators'
-                        ? this.findIntegrations(tile.source, tile.type).length
-                        : this.getClustersForOrchestrator(tile).length
+        integrationsList[source].map(tile => {
+            if (tile.dependsOnFeatureFlag) {
+                const featureFlag = this.props.featureFlags.find(
+                    flag => flag.envVar === tile.dependsOnFeatureFlag
+                );
+                if (!featureFlag || !featureFlag.enabled) {
+                    return null;
                 }
-            />
-        ));
+            }
+            return (
+                <IntegrationTile
+                    key={tile.label}
+                    integration={tile}
+                    onClick={this.openIntegrationModal}
+                    numIntegrations={
+                        source !== 'orchestrators'
+                            ? this.findIntegrations(tile.source, tile.type).length
+                            : this.getClustersForOrchestrator(tile).length
+                    }
+                />
+            );
+        });
 
     render() {
         const imageIntegrations = this.renderIntegrationTiles('imageIntegrations');
@@ -273,7 +289,8 @@ const mapStateToProps = createStructuredSelector({
     clusters: selectors.getClusters,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
-    backups: selectors.getBackups
+    backups: selectors.getBackups,
+    featureFlags: selectors.getFeatureFlags
 });
 
 const mapDispatchToProps = dispatch => ({

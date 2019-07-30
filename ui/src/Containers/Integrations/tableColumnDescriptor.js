@@ -103,6 +103,10 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             { accessor: 'clair.endpoint', Header: 'Endpoint' }
         ],
+        scanner: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'scannerv2.endpoint', Header: 'Endpoint' }
+        ],
         clairify: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'clairify.endpoint', Header: 'Endpoint' }

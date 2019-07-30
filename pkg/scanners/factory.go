@@ -2,6 +2,7 @@ package scanners
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries"
 	anchoreScanner "github.com/stackrox/rox/pkg/scanners/anchore"
 	clairScanner "github.com/stackrox/rox/pkg/scanners/clair"
@@ -9,6 +10,7 @@ import (
 	dtrScanner "github.com/stackrox/rox/pkg/scanners/dtr"
 	googleScanner "github.com/stackrox/rox/pkg/scanners/google"
 	quayScanner "github.com/stackrox/rox/pkg/scanners/quay"
+	"github.com/stackrox/rox/pkg/scanners/scannerv2"
 	tenableScanner "github.com/stackrox/rox/pkg/scanners/tenable"
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
@@ -17,7 +19,7 @@ import (
 type Creator func(scanner *storage.ImageIntegration) (types.ImageScanner, error)
 
 // Factory provides a centralized location for creating ImageScanner from v1.ImageIntegrations.
-//go:generate mockgen-wrapper Factory
+//go:generate mockgen-wrapper
 type Factory interface {
 	CreateScanner(source *storage.ImageIntegration) (types.ImageScanner, error)
 }
@@ -35,6 +37,11 @@ func NewFactory(set registries.Set) Factory {
 
 	anchoreScannerType, anchoreScannerCreator := anchoreScanner.Creator(set)
 	reg.creators[anchoreScannerType] = anchoreScannerCreator
+
+	if features.ScannerV2.Enabled() {
+		scannerV2Type, scannerV2Creator := scannerv2.Creator(set)
+		reg.creators[scannerV2Type] = scannerV2Creator
+	}
 
 	clairifyScannerType, clairifyScannerCreator := clairifyScanner.Creator(set)
 	reg.creators[clairifyScannerType] = clairifyScannerCreator

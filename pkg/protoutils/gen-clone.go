@@ -42,3 +42,10 @@ func CloneV1Query(val *v1.Query) *v1.Query {
 func CloneStorageCluster(val *storage.Cluster) *storage.Cluster {
 	return protoCloneWrapper(val).(*storage.Cluster)
 }
+
+// *storage.ImageIntegration represents a generic proto type that we clone.
+
+// CloneStorageImageIntegration is a (generic) wrapper around proto.Clone that is strongly typed.
+func CloneStorageImageIntegration(val *storage.ImageIntegration) *storage.ImageIntegration {
+	return protoCloneWrapper(val).(*storage.ImageIntegration)
+}
