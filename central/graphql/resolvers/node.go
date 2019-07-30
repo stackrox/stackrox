@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -23,8 +24,9 @@ func init() {
 		schema.AddType("NumNodeComplianceControls", []string{"numFailing: Int!", "numPassing: Int!"}),
 		schema.AddExtraResolver("Node", "numNodeComplianceControls: NumNodeComplianceControls!"),
 		schema.AddExtraResolver("Node", "controlStatus: Boolean!"),
-		schema.AddExtraResolver("Node", "failingControls: [ComplianceControl!]!"),
-		schema.AddExtraResolver("Node", "passingControls: [ComplianceControl!]!"),
+		schema.AddExtraResolver("Node", "failingControls(query: String): [ComplianceControl!]!"),
+		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
+		schema.AddExtraResolver("Node", "controls(query: String): [ComplianceControl!]!"),
 	)
 }
 
@@ -102,7 +104,7 @@ func (resolver *nodeResolver) NumNodeComplianceControls(ctx context.Context) (*n
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	r, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE})
+	r, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE}, rawQuery{})
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +121,7 @@ func (resolver *nodeResolver) ControlStatus(ctx context.Context) (bool, error) {
 	if err := readCompliance(ctx); err != nil {
 		return false, err
 	}
-	r, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE})
+	r, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE}, rawQuery{})
 	if err != nil || r == nil {
 		return false, err
 	}
@@ -129,7 +131,7 @@ func (resolver *nodeResolver) ControlStatus(ctx context.Context) (bool, error) {
 	return r[0].GetNumFailing() == 0, nil
 }
 
-func (resolver *nodeResolver) getNodeLastSuccessfulComplianceRunAggregatedResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, error) {
+func (resolver *nodeResolver) getNodeLastSuccessfulComplianceRunAggregatedResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope, args rawQuery) ([]*v1.ComplianceAggregation_Result, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -146,6 +148,9 @@ func (resolver *nodeResolver) getNodeLastSuccessfulComplianceRunAggregatedResult
 	if err != nil {
 		return nil, err
 	}
+	if args.Query != nil {
+		query = strings.Join([]string{query, args.String()}, "+")
+	}
 	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, scope, v1.ComplianceAggregation_CONTROL)
 	if err != nil {
 		return nil, err
@@ -153,12 +158,12 @@ func (resolver *nodeResolver) getNodeLastSuccessfulComplianceRunAggregatedResult
 	return r, nil
 }
 
-func (resolver *nodeResolver) FailingControls(ctx context.Context) ([]*complianceControlResolver, error) {
+func (resolver *nodeResolver) FailingControls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE, v1.ComplianceAggregation_CONTROL}
-	results, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, scope)
+	results, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, scope, args)
 	if err != nil {
 		return nil, err
 	}
@@ -169,16 +174,32 @@ func (resolver *nodeResolver) FailingControls(ctx context.Context) ([]*complianc
 	return resolvers, nil
 }
 
-func (resolver *nodeResolver) PassingControls(ctx context.Context) ([]*complianceControlResolver, error) {
+func (resolver *nodeResolver) PassingControls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE, v1.ComplianceAggregation_CONTROL}
-	results, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, scope)
+	results, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, scope, args)
 	if err != nil {
 		return nil, err
 	}
 	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(results, passing, resolver.root.ComplianceStandardStore))
+	if err != nil {
+		return nil, err
+	}
+	return resolvers, nil
+}
+
+func (resolver *nodeResolver) Controls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE, v1.ComplianceAggregation_CONTROL}
+	results, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, scope, args)
+	if err != nil {
+		return nil, err
+	}
+	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(results, any, resolver.root.ComplianceStandardStore))
 	if err != nil {
 		return nil, err
 	}

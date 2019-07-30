@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -46,9 +47,10 @@ func InitCompliance() {
 			schema.AddExtraResolver("ComplianceControl", "complianceResults(query: String): [ControlResult!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlEntities(clusterID: ID!): [Node!]!"),
 			schema.AddType("NumComplianceControlNodes", []string{"numFailing: Int!", "numPassing: Int!"}),
-			schema.AddExtraResolver("ComplianceControl", "numComplianceControlNodes(clusterID: ID!): NumComplianceControlNodes"),
-			schema.AddExtraResolver("ComplianceControl", "complianceControlFailingNodes(clusterID: ID!): [Node!]!"),
-			schema.AddExtraResolver("ComplianceControl", "complianceControlPassingNodes(clusterID: ID!): [Node!]!"),
+			schema.AddExtraResolver("ComplianceControl", "numComplianceControlNodes(clusterID: ID!, query: String): NumComplianceControlNodes"),
+			schema.AddExtraResolver("ComplianceControl", "complianceControlNodes(clusterID: ID!, query: String): [Node!]!"),
+			schema.AddExtraResolver("ComplianceControl", "complianceControlFailingNodes(clusterID: ID!, query: String): [Node!]!"),
+			schema.AddExtraResolver("ComplianceControl", "complianceControlPassingNodes(clusterID: ID!, query: String): [Node!]!"),
 		)
 	})
 }
@@ -422,7 +424,12 @@ func (resolver *complianceControlResolver) ComplianceControlEntities(ctx context
 	return resolver.root.wrapNodes(store.ListNodes())
 }
 
-func (resolver *complianceControlResolver) NumComplianceControlNodes(ctx context.Context, args struct{ ClusterID graphql.ID }) (*numComplianceControlNodesResolver, error) {
+func (resolver *complianceControlResolver) NumComplianceControlNodes(
+	ctx context.Context,
+	args struct {
+		ClusterID graphql.ID
+		Query     *string
+	}) (*numComplianceControlNodesResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -439,6 +446,9 @@ func (resolver *complianceControlResolver) NumComplianceControlNodes(ctx context
 		AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
 	if err != nil {
 		return nil, err
+	}
+	if args.Query != nil {
+		query = strings.Join([]string{query, *(args.Query)}, "+")
 	}
 	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL}, v1.ComplianceAggregation_NODE)
 	if err != nil {
@@ -451,7 +461,12 @@ func (resolver *complianceControlResolver) NumComplianceControlNodes(ctx context
 	return &nr, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx context.Context, args struct{ ClusterID graphql.ID }) ([]*nodeResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlNodes(
+	ctx context.Context,
+	args struct {
+		ClusterID graphql.ID
+		Query     *string
+	}) ([]*nodeResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -472,6 +487,50 @@ func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx con
 		AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
 	if err != nil {
 		return nil, err
+	}
+	if args.Query != nil {
+		query = strings.Join([]string{query, *(args.Query)}, "+")
+	}
+	rs, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE}, v1.ComplianceAggregation_NODE)
+	if err != nil {
+		return nil, err
+	}
+	resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, any, ds))
+	if err != nil {
+		return nil, err
+	}
+	return resolvers, nil
+}
+
+func (resolver *complianceControlResolver) ComplianceControlFailingNodes(
+	ctx context.Context,
+	args struct {
+		ClusterID graphql.ID
+		Query     *string
+	}) ([]*nodeResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	clusterID := string(args.ClusterID)
+	standardIDs, err := getStandardIDs(ctx, resolver.root.ComplianceStandardStore)
+	if err != nil {
+		return nil, err
+	}
+	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
+	if err != nil || !hasComplianceSuccessfullyRun {
+		return nil, err
+	}
+	ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
+	if err != nil {
+		return nil, err
+	}
+	query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
+		AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
+	if err != nil {
+		return nil, err
+	}
+	if args.Query != nil {
+		query = strings.Join([]string{query, *(args.Query)}, "+")
 	}
 	rs, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE}, v1.ComplianceAggregation_NODE)
 	if err != nil {
@@ -484,7 +543,12 @@ func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx con
 	return resolvers, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx context.Context, args struct{ ClusterID graphql.ID }) ([]*nodeResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlPassingNodes(
+	ctx context.Context,
+	args struct {
+		ClusterID graphql.ID
+		Query     *string
+	}) ([]*nodeResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -505,6 +569,9 @@ func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx con
 		AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
 	if err != nil {
 		return nil, err
+	}
+	if args.Query != nil {
+		query = strings.Join([]string{query, *(args.Query)}, "+")
 	}
 	rs, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE}, v1.ComplianceAggregation_NODE)
 	if err != nil {
@@ -544,6 +611,7 @@ type resultType int
 const (
 	failing resultType = iota
 	passing
+	any
 )
 
 func getScopeIDFromAggregationResult(result *v1.ComplianceAggregation_Result, scope v1.ComplianceAggregation_Scope) (string, error) {
