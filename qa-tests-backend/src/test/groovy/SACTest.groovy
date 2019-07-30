@@ -152,7 +152,7 @@ class SACTest extends BaseSpecification {
         then:
         "Verify correct counts are returned by GetSummaryCounts"
         assert result.getNumDeployments() == 1
-        assert result.getNumSecrets() == 1
+        assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
         assert result.getNumNodes() == 0
         assert result.getNumClusters() == 0
         assert result.getNumImages() == 1
