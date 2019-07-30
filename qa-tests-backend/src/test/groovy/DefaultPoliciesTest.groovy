@@ -39,6 +39,9 @@ class DefaultPoliciesTest extends BaseSpecification {
             "Fixable CVSS >= 6 and Privileged",
             "Fixable CVSS >= 7",
             "Ubuntu Package Manager in Image",
+            "Red Hat Package Manager in Image",
+            "Curl in Image",
+            "Wget in Image",
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
