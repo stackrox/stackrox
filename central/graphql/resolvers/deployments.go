@@ -19,6 +19,8 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
+		schema.AddExtraResolver("Deployment", `namespaceObject: Namespace`),
+		schema.AddExtraResolver("Deployment", `serviceAccountObject: ServiceAccount`),
 		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
 		schema.AddExtraResolver("Deployment", `deployAlerts: [Alert!]!`),
 		schema.AddExtraResolver("Deployment", `deployAlertsCount: Int!`),
@@ -59,6 +61,27 @@ func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*de
 func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	clusterID := graphql.ID(resolver.data.GetClusterId())
 	return resolver.root.Cluster(ctx, struct{ graphql.ID }{clusterID})
+}
+
+// NamespaceObject returns a GraphQL resolver for the namespace where this deployment runs
+func (resolver *deploymentResolver) NamespaceObject(ctx context.Context) (*namespaceResolver, error) {
+	namespaceID := graphql.ID(resolver.data.GetNamespaceId())
+	return resolver.root.Namespace(ctx, struct{ graphql.ID }{namespaceID})
+}
+
+// ServiceAccountObject returns a GraphQL resolver for the service account associated with this deployment
+func (resolver *deploymentResolver) ServiceAccountObject(ctx context.Context) (*serviceAccountResolver, error) {
+	serviceAccountName := resolver.data.GetServiceAccount()
+	results, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, search.NewQueryBuilder().AddExactMatches(
+		search.ClusterID, resolver.data.GetClusterId()).
+		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
+		AddExactMatches(search.ServiceAccountName, serviceAccountName).ProtoQuery())
+
+	if err != nil || results == nil {
+		return nil, err
+	}
+
+	return resolver.root.wrapServiceAccount(results[0], true, err)
 }
 
 func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*processNameGroupResolver, error) {

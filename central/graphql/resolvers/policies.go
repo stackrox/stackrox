@@ -19,7 +19,7 @@ func init() {
 		schema.AddQuery("policy(id: ID): Policy"),
 		schema.AddExtraResolver("Policy", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Policy", `alertsCount: Int!`),
-		schema.AddExtraResolver("Policy", `deployments: [Deployment!]!`),
+		schema.AddExtraResolver("Policy", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Policy", `deploymentsCount: Int!`),
 		schema.AddExtraResolver("Policy", `policyStatus: String!`),
 	)
@@ -71,8 +71,13 @@ func (resolver *policyResolver) AlertsCount(ctx context.Context) (int32, error) 
 }
 
 // Deployments returns GraphQL resolvers for all deployments that this policy applies to
-func (resolver *policyResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
+func (resolver *policyResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
 	if err := readDeployments(ctx); err != nil {
+		return nil, err
+	}
+
+	deploymentFilterQuery, err := args.AsV1QueryOrEmpty()
+	if err != nil {
 		return nil, err
 	}
 
@@ -80,7 +85,10 @@ func (resolver *policyResolver) Deployments(ctx context.Context) ([]*deploymentR
 	if err != nil {
 		return nil, err
 	}
-	deployments, err := resolver.root.DeploymentDataStore.GetDeployments(ctx, deploymentIDs)
+	deploymentIDQuery := search.NewQueryBuilder().AddDocIDs(deploymentIDs...).ProtoQuery()
+
+	deployments, err := resolver.root.DeploymentDataStore.SearchRawDeployments(ctx,
+		search.NewConjunctionQuery(deploymentIDQuery, deploymentFilterQuery))
 	return resolver.root.wrapDeployments(deployments, err)
 }
 
