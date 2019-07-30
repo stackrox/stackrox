@@ -50,6 +50,7 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
                 trClassName={trClassName}
                 showThead={showThead}
                 SubComponent={SubComponent}
+                page={page}
             />
         </Widget>
     );

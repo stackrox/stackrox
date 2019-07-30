@@ -93,7 +93,7 @@ SecretDataMetadata.defaultProps = {
 const SecretValues = ({ files, deployments }) => {
     const filesWithoutImagePullSecrets = files.filter(
         // eslint-disable-next-line
-        file => file.metadata && file.metadata.__typename !== 'ImagePullSecret'
+        file => !file.metadata || (file.metadata && file.metadata.__typename !== 'ImagePullSecret')
     );
     const widgetHeader = `${filesWithoutImagePullSecrets.length} files across ${
         deployments.length

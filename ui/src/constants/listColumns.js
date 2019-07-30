@@ -1,6 +1,7 @@
 import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName, wrapClassName } from 'Components/Table';
 import { resourceTypes } from 'constants/entityTypes';
+import { standardLabels } from 'messages/standards';
 import { sortVersion } from 'sorters/sorters';
 import LabelChip from 'Components/LabelChip';
 import { format } from 'date-fns';
@@ -16,42 +17,31 @@ const controlColumns = [
         className: 'hidden'
     },
     {
-        accessor: 'control.standardId',
         sortMethod: sortVersion,
         Header: 'Standard',
-        headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`
+        headerClassName: `w-1/5 ${defaultHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
+        accessor: 'control.standardId',
+        Cell: ({ original }) => standardLabels[original.control.standardId]
     },
     {
         accessor: 'control',
         sortMethod: sortVersion,
         Header: 'Control',
-        headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
+        headerClassName: `w-1/2 ${defaultHeaderClassName}`,
+        className: `w-1/2 ${defaultColumnClassName}`,
         Cell: ({ original }) =>
             getNameCell(`${original.control.name} - ${original.control.description}`)
     },
     {
         accessor: 'value.overallState',
         Header: 'State',
-        headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
+        headerClassName: `w-1/5 ${defaultHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
         // eslint-disable-next-line react/prop-types
         Cell: ({ original }) => {
             const text = original.value.overallState === 'COMPLIANCE_STATE_FAILURE' && 'Fail';
             return <LabelChip text={text} type="alert" />;
-        }
-    },
-    {
-        accessor: 'value.evidence',
-        Header: 'Evidence',
-        headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
-        Cell: ({ original }) => {
-            const { evidence } = original.value;
-            return `${evidence[0].message}  ${
-                evidence.length > 1 ? `+${evidence.length - 1} more...` : ''
-            }`;
         }
     }
 ];

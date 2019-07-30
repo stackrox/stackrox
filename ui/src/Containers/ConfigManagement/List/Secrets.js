@@ -104,7 +104,11 @@ const buildTableColumns = (match, location) => {
     return tableColumns;
 };
 
-const createTableRows = data => data.secrets;
+const createTableRows = data => {
+    return data.secrets.filter(secret =>
+        secret.files.find(file => file.type !== 'IMAGE_PULL_SECRET')
+    );
+};
 
 const Secrets = ({ match, location, className, selectedRowId, onRowClick, query }) => {
     const tableColumns = buildTableColumns(match, location);

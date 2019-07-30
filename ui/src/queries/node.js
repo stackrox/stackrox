@@ -55,9 +55,6 @@ export const NODE_QUERY = gql`
                 }
                 value {
                     overallState
-                    evidence {
-                        message
-                    }
                 }
             }
         }
