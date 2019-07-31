@@ -90,7 +90,7 @@ anchoreAnalyzer:
 
   # Controls the concurrency of the analyzer itself. Can be configured to process more than one task at a time, but it IO bound, so may not
   # necessarily be faster depending on hardware. Should test and balance this value vs. number of analyzers for your deployment cluster performance.
-  concurrentTasksPerWorker: 1
+  concurrentTasksPerWorker: 4
 
   # Image layer caching can be enabled to speed up image downloads before analysis.
   # This chart sets up a scratch directory for all analyzer pods using the values found at anchoreGlobal.scratchVolume.
