@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version/internal"
 )
 
@@ -27,6 +28,11 @@ func GetScannerVersion() string {
 	return internal.ScannerVersion
 }
 
+// GetScannerV2Version returns the current ScannerV2 tag.
+func GetScannerV2Version() string {
+	return internal.ScannerV2Version
+}
+
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
 	BuildDate        time.Time `json:"BuildDate"`
@@ -36,11 +42,12 @@ type Versions struct {
 	MainVersion      string    `json:"MainVersion"`
 	Platform         string    `json:"Platform"`
 	ScannerVersion   string    `json:"ScannerVersion"`
+	ScannerV2Version string    `json:"ScannerV2Version,omitempty"`
 }
 
 // GetAllVersions returns all of the various pieces of version information.
 func GetAllVersions() Versions {
-	return Versions{
+	v := Versions{
 		BuildDate:        buildinfo.BuildTimestamp(),
 		CollectorVersion: GetCollectorVersion(),
 		GitCommit:        internal.GitShortSha,
@@ -49,4 +56,8 @@ func GetAllVersions() Versions {
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
 		ScannerVersion:   GetScannerVersion(),
 	}
+	if features.ScannerV2.Enabled() {
+		v.ScannerV2Version = GetScannerV2Version()
+	}
+	return v
 }

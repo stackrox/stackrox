@@ -8,9 +8,8 @@ import (
 )
 
 // ScannerV2DBImage is the Docker image name for the DB we use with scanner v2.
-// TODO: we need to stamp the version in and get rid of latest.
 func ScannerV2DBImage() string {
-	return fmt.Sprintf("%s/scanner-v2-db:latest", getRegistry())
+	return fmt.Sprintf("%s/scanner-v2-db:%s", getRegistry(), version.GetScannerV2Version())
 }
 
 // ScannerImage is the Docker image name for the scanner image. Image
@@ -21,9 +20,8 @@ func ScannerImage() string {
 
 // ScannerV2Image is the Docker image name for the scanner v2 image. Image
 // repo changes depending on whether or not this is a release build.
-// TODO: we need to stamp the version in and get rid of latest.
 func ScannerV2Image() string {
-	return fmt.Sprintf("%s/scanner-v2:latest", getRegistry())
+	return fmt.Sprintf("%s/scanner-v2:%s", getRegistry(), version.GetScannerV2Version())
 }
 
 // MainImage is the Docker image name for the "main" image. Image repo

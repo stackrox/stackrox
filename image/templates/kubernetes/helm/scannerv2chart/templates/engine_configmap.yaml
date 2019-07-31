@@ -38,7 +38,7 @@ data:
     # Configure what feeds to sync.
     # The sync will hit http://ancho.re/feeds, if any outbound firewall config needs to be set in your environment.
     feeds:
-      sync_enabled: true
+      sync_enabled: false
       selective_sync:
         # If enabled only sync specific feeds instead of all that are found.
         enabled: true

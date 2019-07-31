@@ -9,6 +9,7 @@ go_library(
         "MainVersion": "{STABLE_MAIN_VERSION}",
         "CollectorVersion": "{STABLE_COLLECTOR_VERSION}",
         "ScannerVersion": "{STABLE_SCANNER_VERSION}",
+        "ScannerV2Version": "{STABLE_SCANNER_V2_VERSION}",
         "GitShortSha": "{STABLE_GIT_SHORT_SHA}",
     },
 )
