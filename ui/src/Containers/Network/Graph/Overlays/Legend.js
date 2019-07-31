@@ -28,7 +28,7 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                         tooltip="Non-isolated deployment (all connections allowed)"
                         type="font"
                     />
-                    {featureFlags.showDisallowedConnections && (
+                    {featureFlags.SHOW_DISALLOWED_CONNECTIONS && (
                         <LegendTile
                             name="disallowed-deployment"
                             tooltip="Disallowed deployment (no connections allowed)"
@@ -48,7 +48,7 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                         tooltip="Namespace connection"
                         type="svg"
                     />
-                    {featureFlags.showDisallowedConnections && (
+                    {featureFlags.SHOW_DISALLOWED_CONNECTIONS && (
                         <LegendTile
                             name="namespace-disallowed-connection"
                             tooltip="Active but disallowed namespace connection"
@@ -59,7 +59,7 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                 <div className="flex border-b border-base-400" data-test-id="connection-legend">
                     <LegendTile name="active-connection" tooltip="Active connection" type="svg" />
                     <LegendTile name="allowed-connection" tooltip="Allowed connection" type="svg" />
-                    {featureFlags.showDisallowedConnections && (
+                    {featureFlags.SHOW_DISALLOWED_CONNECTIONS && (
                         <LegendTile
                             name="disallowed-connection"
                             tooltip="Active but disallowed connection"

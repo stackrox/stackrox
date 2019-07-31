@@ -16,12 +16,14 @@ class ProtectedRoute extends Component {
             .isRequired,
         location: ReactRouterPropTypes.location.isRequired,
         devOnly: PropTypes.bool,
-        requiredPermission: PropTypes.string
+        requiredPermission: PropTypes.string,
+        featureFlagEnabled: PropTypes.bool
     };
 
     static defaultProps = {
         devOnly: false,
-        requiredPermission: null
+        requiredPermission: null,
+        featureFlagEnabled: true
     };
 
     renderRoute = props => {
@@ -55,12 +57,15 @@ class ProtectedRoute extends Component {
             devOnly,
             requiredPermission,
             shouldHaveReadPermission,
+            featureFlagEnabled,
             ...rest
         } = this.props;
 
-        if (devOnly && process.env.NODE_ENV !== 'development') return null;
-
-        if (requiredPermission && !shouldHaveReadPermission(requiredPermission))
+        if (
+            !featureFlagEnabled ||
+            (devOnly && process.env.NODE_ENV !== 'development') ||
+            (requiredPermission && !shouldHaveReadPermission(requiredPermission))
+        )
             return <Redirect to="/" />;
 
         return <Route {...rest} render={this.renderRoute} />;

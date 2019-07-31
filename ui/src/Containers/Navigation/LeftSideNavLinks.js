@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import featureFlags, { types as featureFlagTypes } from 'utils/featureFlags';
 
 import * as Icon from 'react-feather';
 
@@ -30,7 +31,7 @@ export const navLinks = [
         text: 'Config Management',
         to: '/main/configmanagement',
         renderIcon: () => <Icon.CheckSquare className={iconClassName} />,
-        devOnly: true
+        featureFlag: featureFlagTypes.SHOW_CONFIG_MANAGEMENT
     },
     {
         text: 'Risk',
@@ -55,9 +56,10 @@ export const navLinks = [
     }
 ];
 
-const filteredNavLinks = navLinks.filter(navLink =>
-    process.env.NODE_ENV === 'development' ? true : !navLink.devOnly
-);
+const filteredNavLinks = navLinks.filter(navLink => {
+    if (!navLink.featureFlag) return true;
+    return featureFlags[navLink.featureFlag];
+});
 
 const LeftSideNavLinks = ({ renderLink }) => (
     <ul className="flex flex-col list-reset uppercase text-sm tracking-wide">

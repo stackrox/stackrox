@@ -26,6 +26,7 @@ import {
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { actions as cliSearchActions } from 'reducers/cli';
+import featureFlags from 'utils/featureFlags';
 
 import asyncComponent from 'Components/AsyncComponent';
 import Button from 'Components/Button';
@@ -130,7 +131,7 @@ class MainPage extends Component {
                     <ProtectedRoute
                         path={configManagementPath}
                         component={AsyncConfigManagementPage}
-                        devOnly
+                        featureFlagEnabled={featureFlags.SHOW_CONFIG_MANAGEMENT}
                     />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>

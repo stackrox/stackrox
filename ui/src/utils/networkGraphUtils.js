@@ -27,7 +27,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
             isBetweenNonIsolated(source, target) ||
             !!(networkEdgeMap[key] && networkEdgeMap[key].allowed);
         const isDisallowed = (key, link) =>
-            featureFlags.showDisallowedConnections && isActive(key) && !isAllowed(key, link);
+            featureFlags.SHOW_DISALLOWED_CONNECTIONS && isActive(key) && !isAllowed(key, link);
 
         // For nodes that are egress non-isolated, add outgoing edges to ingress non-isolated nodes, as long as the pair
         // of nodes is not fully non-isolated. This is a compromise to make the non-isolation highlight only apply in
