@@ -30,6 +30,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `imageCount: Int!`),
 		schema.AddExtraResolver("Namespace", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Namespace", `deployments(query: String): [Deployment!]!`),
+		schema.AddExtraResolver("Namespace", "cluster: Cluster!"),
 	)
 }
 
@@ -309,6 +310,13 @@ func (resolver *namespaceResolver) Deployments(ctx context.Context, args rawQuer
 		return nil, err
 	}
 	return resolver.root.wrapListDeployments(resolver.root.DeploymentDataStore.SearchListDeployments(ctx, q))
+}
+
+func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetMetadata().GetClusterId()))
 }
 
 func (resolver *namespaceResolver) getClusterNamespaceQuery(args rawQuery) (*v1.Query, error) {

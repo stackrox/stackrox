@@ -623,7 +623,7 @@ func getScopeIDFromAggregationResult(result *v1.ComplianceAggregation_Result, sc
 			return k.GetId(), nil
 		}
 	}
-	return "", errors.Errorf("bad arguments: node was not one of the aggregation keys")
+	return "", errors.Errorf("bad arguments: scope was not one of the aggregation keys")
 }
 
 type numComplianceControlNodesResolver struct {

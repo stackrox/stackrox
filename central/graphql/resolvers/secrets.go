@@ -16,7 +16,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("secret(id:ID!): Secret"),
 		schema.AddQuery("secrets(query: String): [Secret!]!"),
-		schema.AddExtraResolver("Secret", "Deployments(query: String): [Deployment!]!"),
+		schema.AddExtraResolver("Secret", "deployments(query: String): [Deployment!]!"),
 	)
 }
 

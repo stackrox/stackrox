@@ -21,12 +21,13 @@ func init() {
 		schema.AddQuery("node(id:ID!): Node"),
 		schema.AddQuery("nodes(query: String): [Node!]!"),
 		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddType("NumNodeComplianceControls", []string{"numFailing: Int!", "numPassing: Int!"}),
-		schema.AddExtraResolver("Node", "numNodeComplianceControls: NumNodeComplianceControls!"),
+		schema.AddType("NumComplianceControls", []string{"numFailing: Int!", "numPassing: Int!"}),
+		schema.AddExtraResolver("Node", "numNodeComplianceControls: NumComplianceControls!"),
 		schema.AddExtraResolver("Node", "controlStatus: Boolean!"),
 		schema.AddExtraResolver("Node", "failingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "controls(query: String): [ComplianceControl!]!"),
+		schema.AddExtraResolver("Node", "cluster: Cluster!"),
 	)
 }
 
@@ -83,6 +84,13 @@ func (resolver *Resolver) Nodes(ctx context.Context, args rawQuery) ([]*nodeReso
 	return nodeResolvers, nil
 }
 
+func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetClusterId()))
+}
+
 func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
@@ -100,7 +108,7 @@ func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args rawQue
 	return *output, nil
 }
 
-func (resolver *nodeResolver) NumNodeComplianceControls(ctx context.Context) (*numNodeComplianceControlsResolver, error) {
+func (resolver *nodeResolver) NumNodeComplianceControls(ctx context.Context) (*numComplianceControlsResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -109,12 +117,12 @@ func (resolver *nodeResolver) NumNodeComplianceControls(ctx context.Context) (*n
 		return nil, err
 	}
 	if r == nil {
-		return &numNodeComplianceControlsResolver{}, nil
+		return &numComplianceControlsResolver{}, nil
 	}
 	if len(r) != 1 {
-		return &numNodeComplianceControlsResolver{}, errors.Errorf("unexpected node aggregation results length: expected: 1, actual: %d", len(r))
+		return &numComplianceControlsResolver{}, errors.Errorf("unexpected node aggregation results length: expected: 1, actual: %d", len(r))
 	}
-	return &numNodeComplianceControlsResolver{numFailing: r[0].GetNumFailing(), numPassing: r[0].GetNumPassing()}, nil
+	return &numComplianceControlsResolver{numFailing: r[0].GetNumFailing(), numPassing: r[0].GetNumPassing()}, nil
 }
 
 func (resolver *nodeResolver) ControlStatus(ctx context.Context) (bool, error) {
@@ -228,15 +236,15 @@ func getComplianceControlsFromAggregationResults(results []*v1.ComplianceAggrega
 	return controls, nil
 }
 
-type numNodeComplianceControlsResolver struct {
+type numComplianceControlsResolver struct {
 	numFailing int32
 	numPassing int32
 }
 
-func (resolver *numNodeComplianceControlsResolver) NumFailing() int32 {
+func (resolver *numComplianceControlsResolver) NumFailing() int32 {
 	return resolver.numFailing
 }
 
-func (resolver *numNodeComplianceControlsResolver) NumPassing() int32 {
+func (resolver *numComplianceControlsResolver) NumPassing() int32 {
 	return resolver.numPassing
 }

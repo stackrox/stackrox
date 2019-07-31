@@ -2,8 +2,10 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,15 +40,18 @@ func init() {
 		schema.AddExtraResolver("Cluster", `subjects(query: String): [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID!`),
 		schema.AddExtraResolver("Cluster", `subjectCount: Int!`),
-		schema.AddExtraResolver("Cluster", `images: [Image!]!`),
+		schema.AddExtraResolver("Cluster", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Cluster", `imageCount: Int!`),
-		schema.AddExtraResolver("Cluster", `policies: [Policy!]!`),
+		schema.AddExtraResolver("Cluster", `policies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount: Int!`),
 		schema.AddExtraResolver("Cluster", `policyStatus: PolicyStatus!`),
-		schema.AddExtraResolver("Cluster", `secrets: [Secret!]!`),
+		schema.AddExtraResolver("Cluster", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
 		schema.AddExtraResolver("Cluster", `controlStatus: Boolean!`),
-		schema.AddExtraResolver("Cluster", `controlCount: Int!`),
+		schema.AddExtraResolver("Cluster", "controls(query: String): [ComplianceControl!]!"),
+		schema.AddExtraResolver("Cluster", "failingControls(query: String): [ComplianceControl!]!"),
+		schema.AddExtraResolver("Cluster", "passingControls(query: String): [ComplianceControl!]!"),
+		schema.AddExtraResolver("Cluster", "numComplianceControls: NumComplianceControls!"),
 	)
 }
 
@@ -314,11 +319,14 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 	return wrapSubject(resolver.data.GetId(), subject), nil
 }
 
-func (resolver *clusterResolver) Images(ctx context.Context) ([]*imageResolver, error) {
+func (resolver *clusterResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	q := resolver.getQuery()
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
 	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx, q))
 }
 
@@ -334,12 +342,15 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) 
 	return int32(len(results)), nil
 }
 
-func (resolver *clusterResolver) Policies(ctx context.Context) ([]*policyResolver, error) {
+func (resolver *clusterResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
-
-	policies, err := resolver.root.PolicyDataStore.GetPolicies(ctx)
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	policies, err := resolver.root.PolicyDataStore.SearchRawPolicies(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +392,7 @@ func (resolver *clusterResolver) policyAppliesToCluster(ctx context.Context, pol
 }
 
 func (resolver *clusterResolver) PolicyCount(ctx context.Context) (int32, error) {
-	resolvers, err := resolver.Policies(ctx)
+	resolvers, err := resolver.Policies(ctx, rawQuery{})
 	if err != nil {
 		return 0, err
 	}
@@ -415,8 +426,11 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatu
 	return &policyStatusResolver{"fail", policies}, nil
 }
 
-func (resolver *clusterResolver) Secrets(ctx context.Context) ([]*secretResolver, error) {
-	query := resolver.getQuery()
+func (resolver *clusterResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	query, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
 	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, query))
 }
 
@@ -433,25 +447,79 @@ func (resolver *clusterResolver) ControlStatus(ctx context.Context) (bool, error
 	if err := readCompliance(ctx); err != nil {
 		return false, err
 	}
-	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx)
+	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}, rawQuery{})
 	if err != nil || r == nil {
 		return false, err
 	}
-	return r.GetNumFailing() == 0, nil
+	if len(r) != 1 {
+		return false, errors.Errorf("unexpected number of results: expected: 1, actual: %d", len(r))
+	}
+	return r[0].GetNumFailing() == 0, nil
 }
 
-func (resolver *clusterResolver) ControlCount(ctx context.Context) (int32, error) {
+func (resolver *clusterResolver) Controls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
 	if err := readCompliance(ctx); err != nil {
-		return 0, err
+		return nil, err
 	}
-	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx)
-	if err != nil || r == nil {
-		return 0, err
+	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}, args)
+	if err != nil || rs == nil {
+		return nil, err
 	}
-	return r.GetNumFailing() + r.GetNumPassing(), nil
+	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(rs, any, resolver.root.ComplianceStandardStore))
+	if err != nil {
+		return nil, err
+	}
+	return resolvers, nil
 }
 
-func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx context.Context) (*v1.ComplianceAggregation_Result, error) {
+func (resolver *clusterResolver) PassingControls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}, args)
+	if err != nil || rs == nil {
+		return nil, err
+	}
+	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(rs, passing, resolver.root.ComplianceStandardStore))
+	if err != nil {
+		return nil, err
+	}
+	return resolvers, nil
+}
+
+func (resolver *clusterResolver) FailingControls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}, args)
+	if err != nil || rs == nil {
+		return nil, err
+	}
+	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(rs, failing, resolver.root.ComplianceStandardStore))
+	if err != nil {
+		return nil, err
+	}
+	return resolvers, nil
+}
+
+func (resolver *clusterResolver) NumComplianceControls(ctx context.Context) (*numComplianceControlsResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}, rawQuery{})
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
+		return &numComplianceControlsResolver{}, nil
+	}
+	if len(r) != 1 {
+		return &numComplianceControlsResolver{}, errors.Errorf("unexpected number of results: expected: 1, actual: %d", len(r))
+	}
+	return &numComplianceControlsResolver{numFailing: r[0].GetNumFailing(), numPassing: r[0].GetNumPassing()}, nil
+}
+
+func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope, args rawQuery) ([]*v1.ComplianceAggregation_Result, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -467,11 +535,14 @@ func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx contex
 	if err != nil {
 		return nil, err
 	}
-	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}, v1.ComplianceAggregation_CONTROL)
+	if args.Query != nil {
+		query = strings.Join([]string{query, *(args.Query)}, "+")
+	}
+	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, scope, v1.ComplianceAggregation_CONTROL)
 	if err != nil {
 		return nil, err
 	}
-	return r[0], nil
+	return r, nil
 }
 
 func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {
