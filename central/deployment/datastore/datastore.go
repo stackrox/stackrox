@@ -37,8 +37,10 @@ type DataStore interface {
 	// is okay with inserting the passed deployment if it doesn't already exist in the store.
 	// If you only want to update a deployment if it exists, call UpdateDeployment below.
 	UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error
-	// UpdateDeployment updates a deployment, erroring out if it doesn't exist.
-	UpdateDeployment(ctx context.Context, deployment *storage.Deployment) error
+
+	// UpsertDeploymentIntoStoreOnly does not index the data on insertion
+	UpsertDeploymentIntoStoreOnly(ctx context.Context, deployment *storage.Deployment) error
+
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
 
 	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)

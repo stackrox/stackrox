@@ -132,7 +132,7 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.Res
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
-	if err := s.persistDeployment.do(ctx, action, deployment); err != nil {
+	if err := s.persistDeployment.do(ctx, action, deployment, false); err != nil {
 		return nil, err
 	}
 
@@ -161,7 +161,7 @@ func (s *pipelineImpl) dedupeBasedOnHash(ctx context.Context, action central.Res
 		for i, c := range newDeployment.GetContainers() {
 			oldDeployment.Containers[i].Instances = c.Instances
 		}
-		return true, s.persistDeployment.do(ctx, action, oldDeployment)
+		return true, s.persistDeployment.do(ctx, action, oldDeployment, false)
 	}
 	return false, nil
 }
@@ -189,7 +189,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
-	if err := s.persistDeployment.do(ctx, action, deployment); err != nil {
+	if err := s.persistDeployment.do(ctx, action, deployment, true); err != nil {
 		return nil, err
 	}
 

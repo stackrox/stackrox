@@ -172,18 +172,18 @@ func (mr *MockDataStoreMockRecorder) UpsertDeployment(ctx, deployment interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeployment", reflect.TypeOf((*MockDataStore)(nil).UpsertDeployment), ctx, deployment)
 }
 
-// UpdateDeployment mocks base method
-func (m *MockDataStore) UpdateDeployment(ctx context.Context, deployment *storage.Deployment) error {
+// UpsertDeploymentIntoStoreOnly mocks base method
+func (m *MockDataStore) UpsertDeploymentIntoStoreOnly(ctx context.Context, deployment *storage.Deployment) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateDeployment", ctx, deployment)
+	ret := m.ctrl.Call(m, "UpsertDeploymentIntoStoreOnly", ctx, deployment)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateDeployment indicates an expected call of UpdateDeployment
-func (mr *MockDataStoreMockRecorder) UpdateDeployment(ctx, deployment interface{}) *gomock.Call {
+// UpsertDeploymentIntoStoreOnly indicates an expected call of UpsertDeploymentIntoStoreOnly
+func (mr *MockDataStoreMockRecorder) UpsertDeploymentIntoStoreOnly(ctx, deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeployment", reflect.TypeOf((*MockDataStore)(nil).UpdateDeployment), ctx, deployment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeploymentIntoStoreOnly", reflect.TypeOf((*MockDataStore)(nil).UpsertDeploymentIntoStoreOnly), ctx, deployment)
 }
 
 // RemoveDeployment mocks base method

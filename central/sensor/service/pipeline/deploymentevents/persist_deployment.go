@@ -18,7 +18,7 @@ type persistDeploymentImpl struct {
 	deployments datastore.DataStore
 }
 
-func (s *persistDeploymentImpl) do(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment) error {
+func (s *persistDeploymentImpl) do(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment, indexingRequired bool) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
 		if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
@@ -26,7 +26,13 @@ func (s *persistDeploymentImpl) do(ctx context.Context, action central.ResourceA
 			return err
 		}
 	case central.ResourceAction_UPDATE_RESOURCE:
-		if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
+		var err error
+		if indexingRequired {
+			err = s.deployments.UpsertDeployment(ctx, deployment)
+		} else {
+			err = s.deployments.UpsertDeploymentIntoStoreOnly(ctx, deployment)
+		}
+		if err != nil {
 			log.Errorf("unable to update deployment %s: %s", deployment.GetId(), err)
 			return err
 		}

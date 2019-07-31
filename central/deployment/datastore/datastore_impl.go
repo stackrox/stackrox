@@ -190,6 +190,16 @@ func containerIds(deployment *storage.Deployment) (ids []string) {
 
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
+	return ds.upsertDeployment(ctx, deployment, true)
+}
+
+// UpsertDeployment inserts a deployment into deploymentStore
+func (ds *datastoreImpl) UpsertDeploymentIntoStoreOnly(ctx context.Context, deployment *storage.Deployment) error {
+	return ds.upsertDeployment(ctx, deployment, false)
+}
+
+// UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
+func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment, indexingRequired bool) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -201,8 +211,10 @@ func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *stora
 	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
 		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}
-	if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
-		return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
+	if indexingRequired {
+		if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
+			return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
+		}
 	}
 
 	if ds.indicators == nil {
@@ -219,23 +231,6 @@ func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *stora
 			deployment.GetNamespace(), deployment.GetName(), err)
 	}
 	return nil
-}
-
-// UpdateDeployment updates a deployment in deploymentStore and in the deploymentIndexer
-func (ds *datastoreImpl) UpdateDeployment(ctx context.Context, deployment *storage.Deployment) error {
-	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return errors.New("permission denied")
-	}
-
-	ds.keyedMutex.Lock(deployment.GetId())
-	defer ds.keyedMutex.Unlock(deployment.GetId())
-	if err := ds.deploymentStore.UpdateDeployment(deployment); err != nil {
-		return err
-	}
-
-	return ds.deploymentIndexer.AddDeployment(deployment)
 }
 
 // RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer

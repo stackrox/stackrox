@@ -94,7 +94,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 	tested := &persistDeploymentImpl{
 		deployments: suite.deployments,
 	}
-	err := tested.do(ctx, events[0].Action, events[0].GetDeployment())
+	err := tested.do(ctx, events[0].Action, events[0].GetDeployment(), true)
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
@@ -112,7 +112,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 	tested := &persistDeploymentImpl{
 		deployments: suite.deployments,
 	}
-	err := tested.do(ctx, events[0].Action, events[0].GetDeployment())
+	err := tested.do(ctx, events[0].Action, events[0].GetDeployment(), true)
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
@@ -130,7 +130,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 	tested := &persistDeploymentImpl{
 		deployments: suite.deployments,
 	}
-	err := tested.do(ctx, events[0].GetAction(), events[0].GetDeployment())
+	err := tested.do(ctx, events[0].GetAction(), events[0].GetDeployment(), true)
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
