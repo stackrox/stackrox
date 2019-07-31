@@ -117,20 +117,26 @@ func sortCategories(categories []storage.ImageIntegrationCategory) {
 	})
 }
 
-// PutImageIntegration updates an image integration in the system
-func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
-	err := s.validateIntegration(ctx, request)
-	if err != nil {
-		return nil, err
+func (s *serviceImpl) validateTestAndNormalize(ctx context.Context, request *storage.ImageIntegration) error {
+	if err := s.validateIntegration(ctx, request); err != nil {
+		return err
 	}
 
 	if !request.GetSkipTestIntegration() {
 		if err := s.testImageIntegration(request); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	sortCategories(request.Categories)
+	return nil
+}
+
+// PutImageIntegration updates an image integration in the system
+func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
+	if err := s.validateTestAndNormalize(ctx, request); err != nil {
+		return nil, err
+	}
 
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -150,18 +156,9 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new image integration")
 	}
 
-	err := s.validateIntegration(ctx, request)
-	if err != nil {
+	if err := s.validateTestAndNormalize(ctx, request); err != nil {
 		return nil, err
 	}
-
-	if !request.GetSkipTestIntegration() {
-		if err := s.testImageIntegration(request); err != nil {
-			return nil, err
-		}
-	}
-
-	sortCategories(request.Categories)
 
 	id, err := s.datastore.AddImageIntegration(ctx, request)
 	if err != nil {
