@@ -4,30 +4,30 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 	"github.com/stackrox/rox/tools/generate-helpers/blevebindings/packagenames"
 )
 
-func renderAddFunctionSignature(statement *jen.Statement, props GeneratorProperties) *jen.Statement {
+func renderAddFunctionSignature(statement *Statement, props GeneratorProperties) *Statement {
 	functionName := fmt.Sprintf("Add%s", props.Singular)
-	return statement.Id(functionName).Params(jen.Id(strings.ToLower(props.Singular)).Op("*").Qual(props.Pkg, props.Object)).Error()
+	return statement.Id(functionName).Params(Id(strings.ToLower(props.Singular)).Op("*").Qual(props.Pkg, props.Object)).Error()
 }
 
-func generateAdd(props GeneratorProperties) (jen.Code, jen.Code) {
-	interfaceMethod := renderAddFunctionSignature(&jen.Statement{}, props)
+func generateAdd(props GeneratorProperties) (Code, Code) {
+	interfaceMethod := renderAddFunctionSignature(&Statement{}, props)
 
 	wrapperType := MakeWrapperType(props.Object)
 
 	implementation := renderAddFunctionSignature(renderFuncBStarIndexer(), props).Block(
 		metricLine("Add", props.Object),
-		ifErrReturnError(jen.Id("b").Dot("index").Dot("Index").Dot("Index").Call(
-			jen.Id(strings.ToLower(props.Singular)).Dot(props.IDFunc).Call(),
-			jen.Op("&").Id(wrapperType).Values(jen.Dict{
-				jen.Id("Type"):       jen.Qual(packagenames.V1, props.SearchCategory).Dot("String").Call(),
-				jen.Id(props.Object): jen.Id(strings.ToLower(props.Singular)),
+		ifErrReturnError(Id("b").Dot("index").Dot("Index").Dot("Index").Call(
+			Id(strings.ToLower(props.Singular)).Dot(props.IDFunc).Call(),
+			Op("&").Id(wrapperType).Values(Dict{
+				Id("Type"):       Qual(packagenames.V1, props.SearchCategory).Dot("String").Call(),
+				Id(props.Object): Id(strings.ToLower(props.Singular)),
 			}),
 		)),
-		jen.Return(incrementTxnCount()),
+		Return(incrementTxnCount()),
 	)
 
 	return interfaceMethod, implementation

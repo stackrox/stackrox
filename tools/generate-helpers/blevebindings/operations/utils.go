@@ -4,12 +4,12 @@ import (
 	"path"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 	"github.com/stackrox/rox/tools/generate-helpers/blevebindings/packagenames"
 )
 
-func renderFuncBStarIndexer() *jen.Statement {
-	return jen.Func().Params(jen.Id("b").Op("*").Id("indexerImpl"))
+func renderFuncBStarIndexer() *Statement {
+	return Func().Params(Id("b").Op("*").Id("indexerImpl"))
 }
 
 // MakeWrapperType takes a struct name and formats it like the index wrapper struct name
@@ -20,17 +20,17 @@ func MakeWrapperType(str string) string {
 	return strings.ToLower(str[:1]) + str[1:] + "Wrapper"
 }
 
-func metricLine(op, name string) *jen.Statement {
-	return jen.Defer().Qual(packagenames.Metrics, "SetIndexOperationDurationTime").Call(jen.Qual("time", "Now").Call(), jen.Qual(packagenames.Ops, op), jen.Lit(name))
+func metricLine(op, name string) *Statement {
+	return Defer().Qual(packagenames.Metrics, "SetIndexOperationDurationTime").Call(Qual("time", "Now").Call(), Qual(packagenames.Ops, op), Lit(name))
 }
 
-func bIndex() *jen.Statement {
-	return jen.Id("b").Dot("index")
+func bIndex() *Statement {
+	return Id("b").Dot("index")
 }
 
-func ifErrReturnError(statement *jen.Statement) *jen.Statement {
-	return jen.If(jen.Err().Op(":=").Add(statement), jen.Err().Op("!=").Nil()).Block(
-		jen.Return(jen.Err()),
+func ifErrReturnError(statement *Statement) *Statement {
+	return If(Err().Op(":=").Add(statement), Err().Op("!=").Nil()).Block(
+		Return(Err()),
 	)
 }
 

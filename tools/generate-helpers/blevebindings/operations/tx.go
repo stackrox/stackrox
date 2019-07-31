@@ -1,25 +1,25 @@
 package operations
 
 import (
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
-func incrementTxnCount() *jen.Statement {
+func incrementTxnCount() *Statement {
 	return bIndex().Dot("IncTxnCount").Call()
 }
 
-func generateSetTxn(_ GeneratorProperties) (jen.Code, jen.Code) {
-	sig := jen.Id("SetTxnCount").Params(jen.Id("seq").Uint64()).Error()
+func generateSetTxn(_ GeneratorProperties) (Code, Code) {
+	sig := Id("SetTxnCount").Params(Id("seq").Uint64()).Error()
 	impl := renderFuncBStarIndexer().Add(sig).Block(
-		jen.Return().Add(bIndex().Dot("SetTxnCount").Call(jen.Id("seq"))),
+		Return().Add(bIndex().Dot("SetTxnCount").Call(Id("seq"))),
 	)
 	return sig, impl
 }
 
-func generateGetTxn(_ GeneratorProperties) (jen.Code, jen.Code) {
-	sig := jen.Id("GetTxnCount").Params().Parens(jen.List(jen.Uint64()))
+func generateGetTxn(_ GeneratorProperties) (Code, Code) {
+	sig := Id("GetTxnCount").Params().Parens(List(Uint64()))
 	impl := renderFuncBStarIndexer().Add(sig).Block(
-		jen.Return().Add(bIndex().Dot("GetTxnCount").Call()),
+		Return().Add(bIndex().Dot("GetTxnCount").Call()),
 	)
 	return sig, impl
 }

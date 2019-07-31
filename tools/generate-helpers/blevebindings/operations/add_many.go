@@ -4,46 +4,46 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 	"github.com/stackrox/rox/tools/generate-helpers/blevebindings/packagenames"
 )
 
-func renderAddManyFunctionSignature(statement *jen.Statement, props GeneratorProperties) *jen.Statement {
+func renderAddManyFunctionSignature(statement *Statement, props GeneratorProperties) *Statement {
 	functionName := fmt.Sprintf("Add%s", props.Plural)
-	return statement.Id(functionName).Params(jen.Id(strings.ToLower(props.Plural)).Index().Op("*").Qual(props.Pkg, props.Object)).Error()
+	return statement.Id(functionName).Params(Id(strings.ToLower(props.Plural)).Index().Op("*").Qual(props.Pkg, props.Object)).Error()
 }
 
-func generateAddMany(props GeneratorProperties) (jen.Code, jen.Code) {
-	interfaceMethod := renderAddManyFunctionSignature(&jen.Statement{}, props)
+func generateAddMany(props GeneratorProperties) (Code, Code) {
+	interfaceMethod := renderAddManyFunctionSignature(&Statement{}, props)
 	wrapperType := MakeWrapperType(props.Object)
 
 	implementation := renderAddManyFunctionSignature(renderFuncBStarIndexer(), props).Block(
 		metricLine("AddMany", props.Object),
-		jen.Id("batchManager").Op(":=").Qual(packagenames.RoxBatcher, "New").Call(jen.Id("len").Call(jen.Id(strings.ToLower(props.Plural))), jen.Id("batchSize")),
-		jen.For().Block(
-			jen.List(jen.Id("start"), jen.Id("end"), jen.Id("ok")).Op(":=").Id("batchManager").Dot("Next").Call(),
-			jen.If(jen.Op("!").Id("ok")).Block(
-				jen.Op("break"),
+		Id("batchManager").Op(":=").Qual(packagenames.RoxBatcher, "New").Call(Id("len").Call(Id(strings.ToLower(props.Plural))), Id("batchSize")),
+		For().Block(
+			List(Id("start"), Id("end"), Id("ok")).Op(":=").Id("batchManager").Dot("Next").Call(),
+			If(Op("!").Id("ok")).Block(
+				Op("break"),
 			),
-			jen.If(jen.Err().Op(":=").Id("b").Dot("processBatch").Call(jen.Id(strings.ToLower(props.Plural)).Index(jen.Id("start").Op(":").Id("end"))), jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
+			If(Err().Op(":=").Id("b").Dot("processBatch").Call(Id(strings.ToLower(props.Plural)).Index(Id("start").Op(":").Id("end"))), Err().Op("!=").Nil()).Block(
+				Return(Err()),
 			),
 		),
-		jen.Return(incrementTxnCount()),
-	).Line().Line().Func().Params(jen.Id("b").Op("*").Id("indexerImpl")).Id("processBatch").Params(jen.Id(strings.ToLower(props.Plural)).Index().Op("*").Qual(props.Pkg, props.Object)).Error().Block(
-		jen.Id("batch").Op(":=").Id("b").Dot("index").Dot("NewBatch").Params(),
-		jen.For(jen.List(jen.Id("_"), jen.Id(strings.ToLower(props.Singular))).Op(":=").Range().Id(strings.ToLower(props.Plural))).Block(
-			jen.If(jen.Err().Op(":=").Id("batch").Dot("Index").Call(
-				jen.Id(strings.ToLower(props.Singular)).Dot("GetId").Call(),
-				jen.Op("&").Id(wrapperType).Values(jen.Dict{
-					jen.Id("Type"):       jen.Qual(packagenames.V1, props.SearchCategory).Dot("String").Call(),
-					jen.Id(props.Object): jen.Id(strings.ToLower(props.Singular)),
+		Return(incrementTxnCount()),
+	).Line().Line().Func().Params(Id("b").Op("*").Id("indexerImpl")).Id("processBatch").Params(Id(strings.ToLower(props.Plural)).Index().Op("*").Qual(props.Pkg, props.Object)).Error().Block(
+		Id("batch").Op(":=").Id("b").Dot("index").Dot("NewBatch").Params(),
+		For(List(Id("_"), Id(strings.ToLower(props.Singular))).Op(":=").Range().Id(strings.ToLower(props.Plural))).Block(
+			If(Err().Op(":=").Id("batch").Dot("Index").Call(
+				Id(strings.ToLower(props.Singular)).Dot("GetId").Call(),
+				Op("&").Id(wrapperType).Values(Dict{
+					Id("Type"):       Qual(packagenames.V1, props.SearchCategory).Dot("String").Call(),
+					Id(props.Object): Id(strings.ToLower(props.Singular)),
 				}),
-			), jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
+			), Err().Op("!=").Nil()).Block(
+				Return(Err()),
 			),
 		),
-		jen.Return(jen.Id("b").Dot("index").Dot("Batch").Call(jen.Id("batch"))),
+		Return(Id("b").Dot("index").Dot("Batch").Call(Id("batch"))),
 	)
 
 	return interfaceMethod, implementation

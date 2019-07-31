@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/dave/jennifer/jen"
+	. "github.com/dave/jennifer/jen"
 )
 
 // GeneratorProperties contains the values used by the generator to generate Index-related classes
@@ -22,7 +22,7 @@ type GeneratorProperties struct {
 }
 
 // methodGenerator generates an interface and implementation for a specific kind of DB operation.
-type methodGenerator func(props GeneratorProperties) (interfaceMethod jen.Code, implementation jen.Code)
+type methodGenerator func(props GeneratorProperties) (interfaceMethod Code, implementation Code)
 
 var (
 	supportedMethods = make(map[string]methodGenerator)
@@ -39,9 +39,9 @@ func getOpNames() []string {
 }
 
 // GenerateInterfaceAndImplementation generates the interface definition and the implementation for the given DB operation.
-func GenerateInterfaceAndImplementation(props GeneratorProperties) ([]jen.Code, []jen.Code) {
-	interfaceMethods := make([]jen.Code, 0, len(supportedMethods))
-	implementations := make([]jen.Code, 0, len(supportedMethods))
+func GenerateInterfaceAndImplementation(props GeneratorProperties) ([]Code, []Code) {
+	interfaceMethods := make([]Code, 0, len(supportedMethods))
+	implementations := make([]Code, 0, len(supportedMethods))
 	for _, opName := range getOpNames() {
 		method, ok := supportedMethods[opName]
 		if !ok {
