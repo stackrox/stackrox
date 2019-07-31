@@ -45,6 +45,8 @@ kind: Service
 metadata:
   name: webhookserver
   namespace: stackrox
+  labels:
+    app: webhookserver
 spec:
   ports:
   - name: "nontls"
