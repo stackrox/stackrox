@@ -7,9 +7,7 @@ import { standardTypes } from 'constants/entityTypes';
 import ComplianceByControls from 'Containers/Compliance/widgets/ComplianceByControls';
 import DashboardHeader from './Header';
 import PolicyViolationsBySeverity from './Widgets/PolicyViolationsBySeverity';
-import PolicyViolationsByDeployment from './Widgets/PolicyViolationsByDeployment';
 import UsersWithMostClusterAdminRoles from './Widgets/UsersWithMostClusterAdminRoles';
-import ServiceAccountsWithHighestPrivilages from './Widgets/ServiceAccountsWithHighestPrivilages';
 import SecretsMostUsedAcrossDeployments from './Widgets/SecretsMostUsedAcrossDeployments';
 
 const ConfigManagementDashboardPage = () => {
@@ -38,7 +36,7 @@ const ConfigManagementDashboardPage = () => {
                 alt="Waves"
             />
             <div
-                className="flex-1 relative bg-gradient-diagonal p-6 xxxl:p-8"
+                className="relative bg-gradient-diagonal p-6 xxxl:p-8"
                 style={{ '--start': 'var(--base-200)', '--end': 'var(--primary-100)' }}
                 id="capture-dashboard"
             >
@@ -61,9 +59,7 @@ const ConfigManagementDashboardPage = () => {
                             standardTypes.CIS_Kubernetes_v1_2_0
                         ]}
                     />
-                    <PolicyViolationsByDeployment />
                     <UsersWithMostClusterAdminRoles />
-                    <ServiceAccountsWithHighestPrivilages />
                     <SecretsMostUsedAcrossDeployments />
                 </div>
             </div>
