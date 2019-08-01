@@ -59,18 +59,28 @@ func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*de
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
 func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+
 	clusterID := graphql.ID(resolver.data.GetClusterId())
 	return resolver.root.Cluster(ctx, struct{ graphql.ID }{clusterID})
 }
 
 // NamespaceObject returns a GraphQL resolver for the namespace where this deployment runs
 func (resolver *deploymentResolver) NamespaceObject(ctx context.Context) (*namespaceResolver, error) {
+	if err := readNamespaces(ctx); err != nil {
+		return nil, err
+	}
 	namespaceID := graphql.ID(resolver.data.GetNamespaceId())
 	return resolver.root.Namespace(ctx, struct{ graphql.ID }{namespaceID})
 }
 
 // ServiceAccountObject returns a GraphQL resolver for the service account associated with this deployment
 func (resolver *deploymentResolver) ServiceAccountObject(ctx context.Context) (*serviceAccountResolver, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return nil, err
+	}
 	serviceAccountName := resolver.data.GetServiceAccount()
 	results, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, search.NewQueryBuilder().AddExactMatches(
 		search.ClusterID, resolver.data.GetClusterId()).

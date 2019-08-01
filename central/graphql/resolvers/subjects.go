@@ -22,7 +22,7 @@ func init() {
 		schema.AddExtraResolver("SubjectWithClusterID", `namespace: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `roles: [K8SRole!]!`),
+		schema.AddExtraResolver("SubjectWithClusterID", `roles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `scopedPermissions: [ScopedPermissions!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `clusterAdmin: Boolean!`),
 	)
@@ -119,7 +119,7 @@ func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string,
 	}
 }
 
-func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context) ([]*k8SRoleResolver, error) {
+func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -134,8 +134,13 @@ func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context) ([]*k8S
 		return nil, err
 	}
 
+	filterQ, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
 	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.clusterID).ProtoQuery()
-	roles, err := resolver.subject.root.K8sRoleStore.SearchRawRoles(ctx, q)
+	roles, err := resolver.subject.root.K8sRoleStore.SearchRawRoles(ctx, search.NewConjunctionQuery(q, filterQ))
 
 	if err != nil {
 		return nil, err

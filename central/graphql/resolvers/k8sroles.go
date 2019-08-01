@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
@@ -14,16 +15,25 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("k8sRoles(query: String): [K8SRole!]!"),
+		schema.AddExtraResolver("K8SRole", `cluster: Cluster!`),
 		schema.AddExtraResolver("K8SRole", `type: String!`),
 		schema.AddExtraResolver("K8SRole", `verbs: [String!]!`),
 		schema.AddExtraResolver("K8SRole", `resources: [String!]!`),
 		schema.AddExtraResolver("K8SRole", `urls: [String!]!`),
-		schema.AddExtraResolver("K8SRole", `subjects: [SubjectWithClusterID!]!`),
-		schema.AddExtraResolver("K8SRole", `serviceAccounts: [ServiceAccountResponse!]!`),
+		schema.AddExtraResolver("K8SRole", `subjects(query: String): [SubjectWithClusterID!]!`),
+		schema.AddExtraResolver("K8SRole", `serviceAccounts(query: String): [ServiceAccount!]!`),
 		schema.AddExtraResolver("K8SRole", `roleNamespace: Namespace`),
-		schema.AddType("NonExistentServiceAccount", []string{"message: String!"}),
-		schema.AddUnionType("ServiceAccountResponse", []string{"NonExistentServiceAccount", "ServiceAccount"}),
 	)
+}
+
+// Cluster returns a GraphQL resolver for the cluster of this role
+func (resolver *k8SRoleResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+
+	clusterID := graphql.ID(resolver.data.GetClusterId())
+	return resolver.root.Cluster(ctx, struct{ graphql.ID }{clusterID})
 }
 
 // K8sRoles return k8s roles based on a query
@@ -87,15 +97,20 @@ func (resolver *k8SRoleResolver) Urls(ctx context.Context) ([]string, error) {
 }
 
 // Subjects returns the set of subjects granted permissions to by a given k8s role
-func (resolver *k8SRoleResolver) Subjects(ctx context.Context) ([]*subjectWithClusterIDResolver, error) {
+func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectWithClusterIDResolver, error) {
 	subjects := make([]*subjectWithClusterIDResolver, 0)
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
 
+	filterQ, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.RoleID, resolver.data.GetId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, search.NewConjunctionQuery(q, filterQ))
 
 	if err != nil {
 		return subjects, err
@@ -111,29 +126,14 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context) ([]*subjectWithCl
 	return wrapSubjects(resolver.data.GetClusterId(), subs), nil
 }
 
-type serviceAccountResponseResolver struct {
-	wrapped interface{}
-}
-
-type messageResolver string
-
-func (m messageResolver) Message() string {
-	return string(m)
-}
-
-func (resolver *serviceAccountResponseResolver) ToNonExistentServiceAccount() (*messageResolver, bool) {
-	r, ok := resolver.wrapped.(*messageResolver)
-	return r, ok
-}
-
-func (resolver *serviceAccountResponseResolver) ToServiceAccount() (*serviceAccountResolver, bool) {
-	r, ok := resolver.wrapped.(*serviceAccountResolver)
-	return r, ok
-}
-
 // ServiceAccounts returns the set of service accounts granted permissions to by a given k8s role
-func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context) ([]*serviceAccountResponseResolver, error) {
+func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
 	if err := readServiceAccounts(ctx); err != nil {
+		return nil, err
+	}
+
+	filterQ, err := args.AsV1QueryOrEmpty()
+	if err != nil {
 		return nil, err
 	}
 
@@ -146,19 +146,15 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context) ([]*servic
 	}
 
 	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_SERVICE_ACCOUNT)
-	resolvers := make([]*serviceAccountResponseResolver, 0, len(subjects))
+	resolvers := make([]*serviceAccountResolver, 0, len(subjects))
 	for _, subject := range subjects {
-		sa, err := resolver.convertSubjectToServiceAccount(ctx, resolver.data.GetClusterId(), subject)
+		sa, err := resolver.convertSubjectToServiceAccount(ctx, resolver.data.GetClusterId(), subject, filterQ)
 		if err != nil {
+			log.Warnf("error converting subject to service account: %v", err)
 			continue
 		}
-		if sa == nil {
-			m := messageResolver("service account does not exist")
-			resolvers = append(resolvers, &serviceAccountResponseResolver{&m})
-			continue
-		}
-		sar := &serviceAccountResolver{data: sa, root: resolver.root}
-		resolvers = append(resolvers, &serviceAccountResponseResolver{sar})
+		r, _ := resolver.root.wrapServiceAccount(sa, true, nil)
+		resolvers = append(resolvers, r)
 	}
 	return resolvers, nil
 }
@@ -178,11 +174,11 @@ func (resolver *k8SRoleResolver) RoleNamespace(ctx context.Context) (*namespaceR
 	return resolver.root.wrapNamespace(r.data, true, err)
 }
 
-func (resolver *k8SRoleResolver) convertSubjectToServiceAccount(ctx context.Context, clusterID string, subject *storage.Subject) (*storage.ServiceAccount, error) {
+func (resolver *k8SRoleResolver) convertSubjectToServiceAccount(ctx context.Context, clusterID string, subject *storage.Subject, filterQ *v1.Query) (*storage.ServiceAccount, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
 		AddExactMatches(search.ServiceAccountName, subject.GetName()).ProtoQuery()
 
-	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, q)
+	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, search.NewConjunctionQuery(q, filterQ))
 	if err != nil {
 		return nil, err
 	}
