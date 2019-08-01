@@ -46,8 +46,8 @@ function Widget({
                 <PagerButtonGroup
                     onPageNext={handlePageNext}
                     onPagePrev={handlePagePrev}
-                    isPrev={currentPage - 1 >= 0}
-                    isNext={currentPage + 1 < pages}
+                    enablePrev={currentPage - 1 >= 0}
+                    enableNext={currentPage + 1 < pages}
                 />
             ),
             dots: (
