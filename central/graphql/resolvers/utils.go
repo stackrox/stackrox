@@ -72,8 +72,9 @@ func wrapPermissions(values map[string]map[string]set.StringSet) []*scopedPermis
 }
 
 type subjectWithClusterIDResolver struct {
-	clusterID string
-	subject   *subjectResolver
+	clusterID   string
+	clusterName string
+	subject     *subjectResolver
 }
 
 func (resolver *subjectWithClusterIDResolver) ClusterID(ctx context.Context) string {
@@ -84,21 +85,21 @@ func (resolver *subjectWithClusterIDResolver) Subject(ctx context.Context) *subj
 	return resolver.subject
 }
 
-func wrapSubjects(clusterID string, subjects []*subjectResolver) []*subjectWithClusterIDResolver {
+func wrapSubjects(clusterID string, clusterName string, subjects []*subjectResolver) []*subjectWithClusterIDResolver {
 	if len(subjects) == 0 {
 		return nil
 	}
 
 	output := make([]*subjectWithClusterIDResolver, 0, len(subjects))
 	for _, s := range subjects {
-		output = append(output, &subjectWithClusterIDResolver{clusterID, s})
+		output = append(output, &subjectWithClusterIDResolver{clusterID, clusterName, s})
 	}
 
 	return output
 }
 
-func wrapSubject(clusterID string, subject *subjectResolver) *subjectWithClusterIDResolver {
-	return &subjectWithClusterIDResolver{clusterID, subject}
+func wrapSubject(clusterID string, clusterName string, subject *subjectResolver) *subjectWithClusterIDResolver {
+	return &subjectWithClusterIDResolver{clusterID, clusterName, subject}
 }
 
 func getStandardIDs(ctx context.Context, cs complianceStandards.Repository) ([]string, error) {

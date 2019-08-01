@@ -19,6 +19,7 @@ func init() {
 		schema.AddQuery("subjects(query: String): [Subject!]!"),
 		schema.AddExtraResolver("Subject", `subjectWithClusterID: [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `name: String!`),
+		schema.AddExtraResolver("SubjectWithClusterID", `clusterName: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `namespace: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
@@ -51,7 +52,7 @@ func (resolver *subjectResolver) SubjectWithClusterID(ctx context.Context) ([]*s
 		if err != nil {
 			continue
 		}
-		resolvers = append(resolvers, wrapSubject(cluster.GetId(), subjectResolver))
+		resolvers = append(resolvers, wrapSubject(cluster.GetId(), cluster.GetName(), subjectResolver))
 	}
 	return resolvers, nil
 }
@@ -62,6 +63,13 @@ func (resolver *subjectWithClusterIDResolver) Name(ctx context.Context) (string,
 	}
 
 	return resolver.subject.Name(ctx), nil
+}
+
+func (resolver *subjectWithClusterIDResolver) ClusterName(ctx context.Context) (string, error) {
+	if err := readClusters(ctx); err != nil {
+		return "", err
+	}
+	return resolver.clusterName, nil
 }
 
 func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (string, error) {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
@@ -19,11 +20,14 @@ func init() {
 		schema.AddQuery("serviceAccounts(query: String): [ServiceAccount!]!"),
 		schema.AddType("StringListEntry", []string{"key: String!", "values: [String!]!"}),
 		schema.AddType("ScopedPermissions", []string{"scope: String!", "permissions: [StringListEntry!]!"}),
-		schema.AddExtraResolver("ServiceAccount", `roles: [K8SRole!]!`),
+		schema.AddExtraResolver("ServiceAccount", `roles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("ServiceAccount", `scopedPermissions: [ScopedPermissions!]!`),
-		schema.AddExtraResolver("ServiceAccount", `deployments: [Deployment!]!`),
+		schema.AddExtraResolver("ServiceAccount", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("ServiceAccount", `saNamespace: Namespace!`),
+		schema.AddExtraResolver("ServiceAccount", `cluster: Cluster!`),
 		schema.AddExtraResolver("ServiceAccount", `clusterAdmin: Boolean!`),
+		schema.AddExtraResolver("ServiceAccount", `numImagePullSecrets: Int!`),
+		schema.AddExtraResolver("ServiceAccount", `imagePullSecretObjects(query: String): [Secret!]!`),
 	)
 }
 
@@ -53,7 +57,7 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args rawQuery) ([
 	return serviceAccountResolvers, nil
 }
 
-func (resolver *serviceAccountResolver) Roles(ctx context.Context) ([]*k8SRoleResolver, error) {
+func (resolver *serviceAccountResolver) Roles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -63,14 +67,17 @@ func (resolver *serviceAccountResolver) Roles(ctx context.Context) ([]*k8SRoleRe
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
 	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
-
 	if err != nil {
 		return nil, err
 	}
 
 	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
-	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, q)
+	q, err = resolver.getConjunctionQuery(args, q)
+	if err != nil {
+		return nil, err
+	}
 
+	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -80,23 +87,23 @@ func (resolver *serviceAccountResolver) Roles(ctx context.Context) ([]*k8SRoleRe
 		Namespace: resolver.data.GetNamespace(),
 		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
 	}
-
 	return resolver.root.wrapK8SRoles(k8srbac.NewEvaluator(roles, bindings).RolesForSubject(subject), nil)
 }
 
-func (resolver *serviceAccountResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
+func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
-	deployments, err := resolver.root.DeploymentDataStore.SearchListDeployments(ctx, q)
-
+	q, err := resolver.getConjunctionQuery(args, q)
 	if err != nil {
 		return nil, err
 	}
-
+	deployments, err := resolver.root.DeploymentDataStore.SearchListDeployments(ctx, q)
+	if err != nil {
+		return nil, err
+	}
 	return resolver.root.wrapListDeployments(deployments, nil)
 }
 
@@ -144,6 +151,14 @@ func (resolver *serviceAccountResolver) SaNamespace(ctx context.Context) (*names
 	return resolver.root.wrapNamespace(r.data, true, err)
 }
 
+// Cluster returns the cluster of the service account
+func (resolver *serviceAccountResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetClusterId()))
+}
+
 // ClusterAdmin returns if the service account is a cluster admin or not
 func (resolver *serviceAccountResolver) ClusterAdmin(ctx context.Context) (bool, error) {
 	sa := k8srbac.GetSubjectForServiceAccount(resolver.data)
@@ -178,4 +193,40 @@ func (resolver *serviceAccountResolver) getClusterEvaluator(ctx context.Context)
 
 	return rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 		resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
+}
+
+func (resolver *serviceAccountResolver) NumImagePullSecrets(ctx context.Context) (int32, error) {
+	if err := readSecrets(ctx); err != nil {
+		return 0, err
+	}
+	return int32(len(resolver.data.ImagePullSecrets)), nil
+}
+
+func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	if err := readSecrets(ctx); err != nil {
+		return nil, err
+	}
+	secretNames := resolver.data.GetImagePullSecrets()
+	if len(secretNames) == 0 {
+		return []*secretResolver{}, nil
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.SecretName, secretNames...).
+		AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
+		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).ProtoQuery()
+	q, err := resolver.getConjunctionQuery(args, q)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, q))
+}
+
+func (resolver *serviceAccountResolver) getConjunctionQuery(args rawQuery, q2 *v1.Query) (*v1.Query, error) {
+	if args.Query == nil {
+		return q2, nil
+	}
+	q1, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	return search.NewConjunctionQuery(q1, q2), nil
 }

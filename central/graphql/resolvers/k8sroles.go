@@ -123,7 +123,7 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args rawQuery) ([
 		return subjects, err
 	}
 
-	return wrapSubjects(resolver.data.GetClusterId(), subs), nil
+	return wrapSubjects(resolver.data.GetClusterId(), resolver.data.GetClusterName(), subs), nil
 }
 
 // ServiceAccounts returns the set of service accounts granted permissions to by a given k8s role

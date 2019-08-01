@@ -294,7 +294,7 @@ func (resolver *clusterResolver) Subjects(ctx context.Context, args rawQuery) ([
 	if err != nil {
 		return nil, err
 	}
-	return wrapSubjects(resolver.data.GetId(), subjectResolvers), nil
+	return wrapSubjects(resolver.data.GetId(), resolver.data.GetName(), subjectResolvers), nil
 }
 
 // SubjectCount returns count of Users and Groups in this cluster
@@ -316,7 +316,7 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 	if err != nil {
 		return nil, err
 	}
-	return wrapSubject(resolver.data.GetId(), subject), nil
+	return wrapSubject(resolver.data.GetId(), resolver.data.GetName(), subject), nil
 }
 
 func (resolver *clusterResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
