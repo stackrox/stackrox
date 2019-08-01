@@ -1000,7 +1000,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			for id, violations := range c.expectedViolations {
 				// Test match one
-				gotFromMatchOne, err := m.MatchOne(suite.matchCtx, suite.deploymentSearcher, id)
+				gotFromMatchOne, err := m.MatchOne(suite.matchCtx, suite.deploymentSearcher, id, nil)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, violations.AlertViolations, gotFromMatchOne.AlertViolations, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 				assert.Equal(t, violations.ProcessViolation, gotFromMatchOne.ProcessViolation)
@@ -1271,7 +1271,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			for id, violations := range c.expectedViolations {
 				// Test match one
-				gotFromMatchOne, err := m.MatchOne(suite.testCtx, suite.imageSearcher, id)
+				gotFromMatchOne, err := m.MatchOne(suite.testCtx, suite.imageSearcher, id, nil)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, violations.AlertViolations, gotFromMatchOne.AlertViolations, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 			}

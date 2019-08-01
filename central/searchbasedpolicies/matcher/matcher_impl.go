@@ -23,8 +23,22 @@ func (m *matcherImpl) errorPrefixForMatchOne(id string) string {
 	return fmt.Sprintf("matching policy %s against %s", m.policyName, id)
 }
 
-func (m *matcherImpl) MatchOne(ctx context.Context, searcher search.Searcher, id string) (violations searchbasedpolicies.Violations, err error) {
+func (m *matcherImpl) MatchOne(ctx context.Context, searcher search.Searcher, id string, opts *searchbasedpolicies.MatcherOpts) (violations searchbasedpolicies.Violations, err error) {
 	q := search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(), m.q)
+
+	searchOpts := &v1.SearchOptions{
+		CategoryToIds: make(map[int32]*v1.SearchOptions_IDSlice),
+	}
+
+	if opts != nil {
+		for k, v := range opts.IDFilters {
+			searchOpts.CategoryToIds[int32(k)] = &v1.SearchOptions_IDSlice{
+				Ids: v,
+			}
+		}
+	}
+	q.Options = searchOpts
+
 	results, err := searcher.Search(ctx, q)
 	if err != nil {
 		return

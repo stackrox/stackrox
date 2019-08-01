@@ -225,7 +225,11 @@ func matchAllFieldsQuery(ctx bleveContext, index bleve.Index, category v1.Search
 			highlightCtx.AddFieldToHighlight(fieldAndValue.sf.GetFieldPath())
 		}
 	}
-	conjunction := bleve.NewConjunctionQuery(mfQs...)
+	conjunction := bleve.NewConjunctionQuery()
+	if filterQuery := ctx.filters[category]; filterQuery != nil {
+		conjunction.AddQuery(filterQuery)
+	}
+	conjunction.AddQuery(mfQs...)
 	conjunction.AddQuery(mapQueries...)
 	searchResult, err := runBleveQuery(ctx, conjunction, index, highlightCtx, true)
 	if err != nil {

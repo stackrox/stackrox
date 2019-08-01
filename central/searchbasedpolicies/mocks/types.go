@@ -145,18 +145,18 @@ func (mr *MockMatcherMockRecorder) Match(ctx, searcher interface{}) *gomock.Call
 }
 
 // MatchOne mocks base method
-func (m *MockMatcher) MatchOne(ctx context.Context, searcher search.Searcher, id string) (searchbasedpolicies.Violations, error) {
+func (m *MockMatcher) MatchOne(ctx context.Context, searcher search.Searcher, id string, opts *searchbasedpolicies.MatcherOpts) (searchbasedpolicies.Violations, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MatchOne", ctx, searcher, id)
+	ret := m.ctrl.Call(m, "MatchOne", ctx, searcher, id, opts)
 	ret0, _ := ret[0].(searchbasedpolicies.Violations)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // MatchOne indicates an expected call of MatchOne
-func (mr *MockMatcherMockRecorder) MatchOne(ctx, searcher, id interface{}) *gomock.Call {
+func (mr *MockMatcherMockRecorder) MatchOne(ctx, searcher, id, opts interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchOne", reflect.TypeOf((*MockMatcher)(nil).MatchOne), ctx, searcher, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchOne", reflect.TypeOf((*MockMatcher)(nil).MatchOne), ctx, searcher, id, opts)
 }
 
 // MatchMany mocks base method

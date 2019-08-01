@@ -32,13 +32,18 @@ type ProcessIndicatorGetter interface {
 	GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
 }
 
+// MatcherOpts defines the options for the MatchOne function
+type MatcherOpts struct {
+	IDFilters map[v1.SearchCategory][]string
+}
+
 // Matcher matches objects against a policy.
 //go:generate mockgen-wrapper
 type Matcher interface {
 	// Match matches the policy against all objects, returning a map from object ID to violations.
 	Match(ctx context.Context, searcher search.Searcher) (map[string]Violations, error)
 	// MatchOne matches the policy against the object with the given id.
-	MatchOne(ctx context.Context, searcher search.Searcher, id string) (Violations, error)
+	MatchOne(ctx context.Context, searcher search.Searcher, id string, opts *MatcherOpts) (Violations, error)
 	// MatchMany mathes the policy against just the objects with the given ids.
 	MatchMany(ctx context.Context, searcher search.Searcher, ids ...string) (map[string]Violations, error)
 }

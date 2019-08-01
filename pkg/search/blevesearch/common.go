@@ -41,7 +41,8 @@ type bleveContext struct {
 	pagination        *v1.QueryPagination
 	renderedSortOrder search.SortOrder
 
-	hook *Hook
+	filters map[v1.SearchCategory]query.Query
+	hook    *Hook
 }
 
 func newRelationship(src v1.SearchCategory, dst v1.SearchCategory) relationship {
@@ -173,6 +174,15 @@ func GetValuesFromFields(field string, m map[string]interface{}) []string {
 	return []string{strVal}
 }
 
+func getSubQueryContext(parent bleveContext, category v1.SearchCategory) bleveContext {
+	newCtx := defaultSubQueryContext
+	newCtx.filters = parent.filters
+	if parent.hook != nil && parent.hook.SubQueryHooks != nil {
+		newCtx.hook = parent.hook.SubQueryHooks(category)
+	}
+	return newCtx
+}
+
 // resolveMatchFieldQuery returns a query that matches the given searchField to the given value, in the context of category.
 // If the category is the same as the searchField's category, then it just returns a direct Bleve query.
 // If not, then it actually uses the relationships to run a query, and return results that it can match category against.
@@ -212,10 +222,7 @@ func resolveMatchFieldQuery(ctx bleveContext, index bleve.Index, category v1.Sea
 	}
 
 	// Go get the query that needs to be run
-	subQueryContext := defaultSubQueryContext
-	if ctx.hook != nil && ctx.hook.SubQueryHooks != nil {
-		subQueryContext.hook = ctx.hook.SubQueryHooks(nextHopCategory)
-	}
+	subQueryContext := getSubQueryContext(ctx, nextHopCategory)
 	subQuery, err := resolveMatchFieldQuery(subQueryContext, index, nextHopCategory, searchFieldsAndValues, highlightCtx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "resolving query with next hop: '%s'", nextHopCategory)
@@ -267,6 +274,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 	ctx := bleveContext{
 		pagination:        q.GetPagination(),
 		renderedSortOrder: sortOrder,
+		filters:           make(map[v1.SearchCategory]query.Query),
 	}
 
 	opts := opts{}
@@ -278,6 +286,10 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 
 	if opts.hook != nil {
 		ctx.hook = opts.hook(category)
+	}
+
+	for k, v := range q.GetOptions().GetCategoryToIds() {
+		ctx.filters[v1.SearchCategory(k)] = bleve.NewDocIDQuery(v.GetIds())
 	}
 
 	bleveQuery, highlightContext, err := buildQuery(ctx, index, category, q, optionsMap)

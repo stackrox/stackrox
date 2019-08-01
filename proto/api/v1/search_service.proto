@@ -74,9 +74,16 @@ message QuerySortOption {
 }
 
 message QueryPagination {
-    int32       limit         = 1;
-    int32       offset        = 2;
-    repeated QuerySortOption  sort_options  = 3;
+    int32 limit = 1;
+    int32 offset = 2;
+    repeated QuerySortOption sort_options = 3;
+}
+
+message SearchOptions {
+    message IDSlice {
+        repeated string ids = 1;
+    }
+    map<int32, IDSlice> category_to_ids = 1;
 }
 
 message Query {
@@ -85,7 +92,8 @@ message Query {
         DisjunctionQuery disjunction = 2;
         BaseQuery        base_query  = 3;
     }
-    QueryPagination pagination = 4;
+    QueryPagination pagination       = 4;
+    SearchOptions options            = 5;
 }
 
 // StringQuery represents a query that matches documents that contain the

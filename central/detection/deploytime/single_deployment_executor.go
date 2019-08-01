@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
@@ -88,7 +89,15 @@ func (d *policyExecutor) getViolations(ctx context.Context, enforcement storage.
 	if d.hasImagesWithNoIDs() {
 		return matchWithEmptyImageIDs(ctx, matcher, d.deployment, d.images)
 	}
-	violations, err := matcher.MatchOne(ctx, d.searcher, d.deployment.GetId())
+	imageIDs := make([]string, 0, len(d.images))
+	for _, i := range d.images {
+		imageIDs = append(imageIDs, i.GetId())
+	}
+
+	violations, err := matcher.MatchOne(ctx, d.searcher, d.deployment.GetId(), &searchbasedpolicies.MatcherOpts{
+		IDFilters: map[v1.SearchCategory][]string{
+			v1.SearchCategory_IMAGES: imageIDs,
+		}})
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +110,7 @@ func matchWithEmptyImageIDs(ctx context.Context, matcher searchbasedpolicies.Mat
 		return nil, err
 	}
 	defer utils.IgnoreError(closeableIndex.Close)
-	violations, err := matcher.MatchOne(ctx, deploymentIndex, deploymentID)
+	violations, err := matcher.MatchOne(ctx, deploymentIndex, deploymentID, nil)
 	if err != nil {
 		return nil, err
 	}
