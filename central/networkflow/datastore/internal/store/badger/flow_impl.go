@@ -83,7 +83,6 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 	}
 
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
-	defer badgerhelper.UpdateBadgerPrefixSizeMetric(s.db, globalPrefix, "NetworkFlow")
 
 	_, err = badgerhelper.PutAllBatched(s.db, kvs, batchSize)
 	return err
@@ -92,7 +91,6 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 // RemoveFlow removes an flow from the store if it is present.
 func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
-	defer badgerhelper.UpdateBadgerPrefixSizeMetric(s.db, globalPrefix, "NetworkFlow")
 
 	id := s.getID(props)
 
@@ -102,7 +100,6 @@ func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
 }
 
 func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
-	defer badgerhelper.UpdateBadgerPrefixSizeMetric(s.db, globalPrefix, "NetworkFlow")
 	idBytes := []byte(id)
 	return s.db.Update(func(tx *badger.Txn) error {
 		return badgerhelper.ForEachOverKeySet(tx, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true, IteratorOptions: &badger.IteratorOptions{PrefetchValues: false}},

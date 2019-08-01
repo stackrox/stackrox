@@ -17,6 +17,10 @@ const (
 	BadgerDBDirName = `badgerdb`
 )
 
+var (
+	separator = []byte("\x00")
+)
+
 // New returns an instance of the persistent BadgerDB store
 func New(path string) (*badger.DB, error) {
 	if stat, err := os.Stat(path); os.IsNotExist(err) {
@@ -35,7 +39,6 @@ func New(path string) (*badger.DB, error) {
 	options.Dir = path
 	options.Logger = nullLogger{}
 	options.Truncate = true
-
 	return badger.Open(options)
 }
 
@@ -83,4 +86,13 @@ func Count(txn *badger.Txn, keyPrefix []byte) int {
 		count++
 	}
 	return count
+}
+
+// GetBucketKey returns a key which combines the prefix and the id with a separator
+func GetBucketKey(prefix []byte, id []byte) []byte {
+	result := make([]byte, 0, len(prefix)+len(separator)+len(id))
+	result = append(result, prefix...)
+	result = append(result, separator...)
+	result = append(result, id...)
+	return result
 }

@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	globalPrefix = "networkFlows2"
+	// GlobalPrefix is the generic prefix for network flows
+	GlobalPrefix = "networkFlows2"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided badger DB instance.
@@ -24,7 +25,7 @@ type clusterStoreImpl struct {
 }
 
 func flowStoreKeyPrefix(clusterID string) []byte {
-	return []byte(fmt.Sprintf("%s\x00%s\x00", globalPrefix, clusterID))
+	return []byte(fmt.Sprintf("%s\x00%s\x00", GlobalPrefix, clusterID))
 }
 
 // GetFlowStore returns the FlowStore for the cluster ID, or nil if none exists.
@@ -37,10 +38,11 @@ func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
 
 // CreateFlowStore returns the FlowStore for the cluster ID, or creates one if none exists.
 func (s *clusterStoreImpl) CreateFlowStore(clusterID string) (store.FlowStore, error) {
-	return &flowStoreImpl{
+	fs := &flowStoreImpl{
 		db:        s.db,
 		keyPrefix: flowStoreKeyPrefix(clusterID),
-	}, nil
+	}
+	return fs, nil
 }
 
 // RemoveFlowStore deletes the bucket holding the flow information for the graph in that cluster.

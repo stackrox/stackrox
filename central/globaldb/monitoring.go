@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/metrics"
 )
 
-const gatherFrequency = 20 * time.Second
+const gatherFrequency = 1 * time.Minute
 
 func gatherBucketStats(name string, stats bolt.BucketStats) {
 	metrics.SetGaugeBucketInt(metrics.BranchPageN, stats.BranchPageN, name)

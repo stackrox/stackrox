@@ -17,6 +17,8 @@ var (
 func Singleton() store.ClusterStore {
 	once.Do(func() {
 		instance = badger.NewClusterStore(globaldb.GetGlobalBadgerDB())
+		globaldb.RegisterBucket([]byte(badger.GlobalPrefix), "NetworkFlow")
+
 	})
 	return instance
 }

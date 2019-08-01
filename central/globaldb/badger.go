@@ -16,8 +16,20 @@ var (
 	gcDiscardRatio = 0.7
 	gcInterval     = 5 * time.Minute
 
+	registeredBuckets []registeredBucket
+
 	log = logging.LoggerForModule()
 )
+
+type registeredBucket struct {
+	prefix  []byte
+	objType string
+}
+
+// RegisterBucket registers a bucket to have metrics pulled from it
+func RegisterBucket(bucketName []byte, objType string) {
+	registeredBuckets = append(registeredBuckets, registeredBucket{prefix: badgerhelper.GetBucketKey(bucketName, nil), objType: objType})
+}
 
 // GetGlobalBadgerDB returns the global BadgerDB instance.
 func GetGlobalBadgerDB() *badger.DB {
@@ -28,6 +40,16 @@ func GetGlobalBadgerDB() *badger.DB {
 			log.Panicf("Could not initialize badger DB: %v", err)
 		}
 		go badgerhelper.RunGC(badgerDB, gcDiscardRatio, gcInterval)
+		go startMonitoringBadger(badgerDB)
 	})
 	return badgerDB
+}
+
+func startMonitoringBadger(db *badger.DB) {
+	ticker := time.NewTicker(gatherFrequency)
+	for range ticker.C {
+		for _, bucket := range registeredBuckets {
+			badgerhelper.UpdateBadgerPrefixSizeMetric(db, string(bucket.prefix), bucket.objType)
+		}
+	}
 }
