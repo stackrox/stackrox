@@ -27,7 +27,7 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 			[]search.FieldLabel{search.SubjectName, search.SubjectKind},
 			[]string{search.ExactMatchString(subjectName), search.ExactMatchString(storage.SubjectKind_GROUP.String())}).ProtoQuery(),
 	)
-	bindingsQuery.Pagination = &v1.Pagination{
+	bindingsQuery.Pagination = &v1.QueryPagination{
 		Limit: math.MaxInt32,
 	}
 	relevantBindings, err := bindingDS.SearchRawRoleBindings(ctx, bindingsQuery)
@@ -64,7 +64,7 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 	}
 
 	rolesQuery := search.NewQueryBuilder().AddExactMatches(search.RoleID, roleIDs.AsSlice()...).ProtoQuery()
-	rolesQuery.Pagination = &v1.Pagination{
+	rolesQuery.Pagination = &v1.QueryPagination{
 		Limit: math.MaxInt32,
 	}
 	relevantRoles, err := roleDS.SearchRawRoles(ctx, rolesQuery)

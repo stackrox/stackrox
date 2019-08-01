@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/txn"
 )
 
@@ -70,9 +71,8 @@ func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsR
 			return nil, err
 		}
 	}
-	if request.GetPagination() != nil {
-		q.Pagination = request.GetPagination()
-	}
+
+	paginated.FillPagination(q, request.GetPagination(), alertBatchSize)
 
 	alerts, err := ds.SearchListAlerts(ctx, q)
 	if err != nil {

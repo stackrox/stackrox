@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	defaultSortOption = &v1.SortOption{
+	defaultSortOption = &v1.QuerySortOption{
 		Field: search.Priority.String(),
 	}
 

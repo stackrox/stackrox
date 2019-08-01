@@ -26,7 +26,7 @@ const (
 
 var (
 	defaultSubQueryContext = bleveContext{
-		pagination: &v1.Pagination{
+		pagination: &v1.QueryPagination{
 			Limit: maxSearchResponses,
 		},
 	}
@@ -38,7 +38,7 @@ type relationship struct {
 }
 
 type bleveContext struct {
-	pagination        *v1.Pagination
+	pagination        *v1.QueryPagination
 	renderedSortOrder search.SortOrder
 
 	hook *Hook
@@ -309,23 +309,26 @@ func ResetIndex(category v1.SearchCategory, idx bleve.Index) error {
 	return nil
 }
 
-func getSortOrder(pagination *v1.Pagination, optionsMap searchPkg.OptionsMap) ([]search.SearchSort, error) {
-	so := pagination.GetSortOption()
-	if so == nil {
+func getSortOrder(pagination *v1.QueryPagination, optionsMap searchPkg.OptionsMap) (search.SortOrder, error) {
+	if len(pagination.GetSortOptions()) == 0 {
 		return nil, nil
 	}
-	sf, ok := optionsMap.Get(so.GetField())
-	if !ok {
-		return nil, fmt.Errorf("option %q is not a valid search option", so.GetField())
-	}
-	return []search.SearchSort{
-		&search.SortField{
+
+	ret := make([]search.SearchSort, 0)
+	for _, so := range pagination.SortOptions {
+		sf, ok := optionsMap.Get(so.GetField())
+		if !ok {
+			return nil, fmt.Errorf("option %q is not a valid search option", so.GetField())
+		}
+
+		ret = append(ret, &search.SortField{
 			Field:   sf.GetFieldPath(),
 			Desc:    so.GetReversed(),
 			Type:    search.SortFieldAuto,
 			Missing: search.SortFieldMissingLast,
-		},
-	}, nil
+		})
+	}
+	return ret, nil
 }
 
 func runBleveQuery(ctx bleveContext, query query.Query, index bleve.Index, highlightCtx highlightContext, includeLocations bool, fields ...string) (*bleve.SearchResult, error) {

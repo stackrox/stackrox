@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -1037,14 +1038,19 @@ func (s *baseSuite) TestDeleteAlerts() {
 		})
 	}
 
-	queryBuilder := search.NewQueryBuilder().AddStrings(search.DeploymentName, "deployment").
+	expectedQueryBuilder := search.NewQueryBuilder().
+		AddStrings(search.DeploymentName, "deployment").
 		AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String())
+	expectedQuery := expectedQueryBuilder.ProtoQuery()
+	expectedQuery.Pagination = &v1.QueryPagination{
+		Limit: math.MaxInt32,
+	}
 
-	s.datastoreMock.EXPECT().Search(context.Background(), queryBuilder.ProtoQuery()).Return([]search.Result{}, nil)
+	s.datastoreMock.EXPECT().Search(context.Background(), expectedQuery).Return([]search.Result{}, nil)
 
 	_, err := s.service.DeleteAlerts(context.Background(), &v1.DeleteAlertsRequest{
 		Query: &v1.RawQuery{
-			Query: queryBuilder.Query(),
+			Query: expectedQueryBuilder.Query(),
 		},
 	})
 	s.NoError(err)

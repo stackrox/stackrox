@@ -148,7 +148,7 @@ func (resolver *policyResolver) anyActiveDeployAlerts(ctx context.Context) (bool
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
 		ProtoQuery()
-	q.Pagination = &v1.Pagination{
+	q.Pagination = &v1.QueryPagination{
 		Limit: 1,
 	}
 

@@ -9,15 +9,15 @@ import (
 )
 
 // WithDefaultSortOption is a higher order function that makes sure results are sorted.
-func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.SortOption) search.Searcher {
+func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.QuerySortOption) search.Searcher {
 	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 		// Add pagination sort order if needed.
 		local := proto.Clone(q).(*v1.Query)
 		if local.Pagination == nil {
-			local.Pagination = new(v1.Pagination)
+			local.Pagination = new(v1.QueryPagination)
 		}
-		if local.Pagination.SortOption == nil {
-			local.Pagination.SortOption = defaultSortOption
+		if len(local.Pagination.SortOptions) == 0 {
+			local.Pagination.SortOptions = append(local.Pagination.SortOptions, defaultSortOption)
 		}
 		return searcher.Search(ctx, local)
 	})
@@ -71,11 +71,25 @@ func paginate(offset, limit int, results []search.Result, err error) ([]search.R
 
 // FillPagination fills in the pagination information for a query.
 func FillPagination(query *v1.Query, pagination *v1.Pagination, maxLimit int32) {
-	if pagination == nil {
-		pagination = &v1.Pagination{}
-	}
+	queryPagination := &v1.QueryPagination{}
+
+	// Fill in limit, and check boundaries.
 	if pagination.GetLimit() == 0 || pagination.GetLimit() > maxLimit {
-		pagination.Limit = maxLimit
+		queryPagination.Limit = maxLimit
+	} else {
+		queryPagination.Limit = pagination.GetLimit()
 	}
-	query.Pagination = pagination
+	// Fill in sort options.
+	if pagination.GetSortOption() != nil {
+		queryPagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field:    pagination.GetSortOption().GetField(),
+				Reversed: pagination.GetSortOption().GetReversed(),
+			},
+		}
+	}
+	// Fill in offset.
+	queryPagination.Offset = pagination.GetOffset()
+
+	query.Pagination = queryPagination
 }

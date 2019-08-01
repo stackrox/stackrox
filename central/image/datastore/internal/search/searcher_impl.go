@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	defaultSortOption = &v1.SortOption{
+	defaultSortOption = &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),
 	}
 
@@ -110,7 +110,8 @@ func convertImage(image *storage.ListImage, result search.Result) *v1.SearchResu
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	filteredSearcher := imagesSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	paginatedSearcher := paginated.Paginated(filteredSearcher)
+	swappedSortSearcher := swapImageNameSortOption(filteredSearcher)
+	paginatedSearcher := paginated.Paginated(swappedSortSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher
 }

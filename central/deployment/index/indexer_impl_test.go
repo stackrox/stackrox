@@ -707,13 +707,15 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentDelete() {
 	suite.Len(results, 0)
 }
 
-func newPagination(field search.FieldLabel, from, size int32, reversed bool) *v1.Pagination {
-	return &v1.Pagination{
+func newPagination(field search.FieldLabel, from, size int32, reversed bool) *v1.QueryPagination {
+	return &v1.QueryPagination{
 		Limit:  size,
 		Offset: from,
-		SortOption: &v1.SortOption{
-			Field:    field.String(),
-			Reversed: reversed,
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    field.String(),
+				Reversed: reversed,
+			},
 		},
 	}
 }

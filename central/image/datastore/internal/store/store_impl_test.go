@@ -127,24 +127,14 @@ func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 						Created: ts,
 					},
 				},
-				Scan: &storage.ImageScan{
-					Components: []*storage.ImageScanComponent{
-						{
-							Vulns: []*storage.Vulnerability{
-								{},
-							},
-						},
-						{
-							Vulns: []*storage.Vulnerability{
-								{},
-								{
-									SetFixedBy: &storage.Vulnerability_FixedBy{
-										FixedBy: "hi",
-									},
-								},
-							},
-						},
-					},
+				SetComponents: &storage.Image_Components{
+					Components: 2,
+				},
+				SetCves: &storage.Image_Cves{
+					Cves: 3,
+				},
+				SetFixable: &storage.Image_FixableCves{
+					FixableCves: 1,
 				},
 			},
 			expected: &storage.ListImage{

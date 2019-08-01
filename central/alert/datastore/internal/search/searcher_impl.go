@@ -20,7 +20,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	defaultSortOption = &v1.SortOption{
+	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.ViolationTime.String(),
 		Reversed: true,
 	}

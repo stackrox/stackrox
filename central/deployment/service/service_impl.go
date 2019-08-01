@@ -128,7 +128,7 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	deployments, err := s.datastore.Search(ctx, s.getQuery(ctx, parsedQuery))
+	deployments, err := s.getListDeployments(ctx, parsedQuery)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -146,7 +146,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	// Fill in pagination.
 	paginated.FillPagination(parsedQuery, request.Pagination, maxDeploymentsReturned)
 
-	deployments, err := s.datastore.SearchListDeployments(ctx, s.getQuery(ctx, parsedQuery))
+	deployments, err := s.getListDeployments(ctx, parsedQuery)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -158,7 +158,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 
 func queryForLabels() *v1.Query {
 	q := search.NewQueryBuilder().AddStringsHighlighted(search.Label, search.WildcardString).ProtoQuery()
-	q.Pagination = &v1.Pagination{
+	q.Pagination = &v1.QueryPagination{
 		Limit: math.MaxInt32,
 	}
 	return q
@@ -221,63 +221,89 @@ func labelsMapFromSearchResults(results []search.Result) (keyValuesMap map[strin
 	return
 }
 
-func (s *serviceImpl) getQuery(ctx context.Context, q *v1.Query) *v1.Query {
-	deploymentQuery := s.createDeploymentQuery(s.createDeploymentSortQuery(q))
-	riskQuery := s.createRiskQuery(s.createRiskSortQuery(q))
-	convertedDeploymentQuery := s.convertToDeploymentQuery(ctx, deploymentQuery, riskQuery)
+func (s *serviceImpl) getListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
+	// Split and combine the two queries into a single deployment query.
+	deploymentQuery, riskQuery := splitQueries(q, ranking.DeploymentRanker())
+	convertedDeploymentQuery, deploymentRanking := s.convertToDeploymentQuery(ctx, deploymentQuery, riskQuery)
 
-	if convertedDeploymentQuery == nil {
-		return search.EmptyQuery()
+	// If the deployment query had the sort, use it's pagination so that bleve sorts for us.
+	if len(deploymentQuery.GetPagination().GetSortOptions()) != 0 {
+		convertedDeploymentQuery.Pagination = deploymentQuery.GetPagination()
 	}
-	return convertedDeploymentQuery
+
+	// Get the deployments.
+	deployments, err := s.datastore.SearchListDeployments(ctx, convertedDeploymentQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the risk side has the sort, we need to manually apply it.
+	if len(riskQuery.GetPagination().GetSortOptions()) != 0 {
+		sort.SliceStable(deployments, func(i, j int) bool {
+			return deploymentRanking[deployments[i].GetId()] < deploymentRanking[deployments[j].GetId()]
+		})
+	}
+	return deployments, nil
 }
 
-func (s *serviceImpl) convertToDeploymentQuery(ctx context.Context, deploymentQuery *v1.Query, riskQuery *v1.Query) *v1.Query {
+func (s *serviceImpl) convertToDeploymentQuery(ctx context.Context, deploymentQuery *v1.Query, riskQuery *v1.Query) (*v1.Query, map[string]int) {
 	if riskQuery == nil && deploymentQuery == nil {
-		return nil
+		return search.EmptyQuery(), nil
 	}
 	if riskQuery == nil {
-		return deploymentQuery
+		return deploymentQuery, nil
 	}
 
-	var docIDs []string
-	deploymentTypeQuery := search.NewQueryBuilder().AddStrings(
-		search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).ProtoQuery()
-	risks, err := s.risks.SearchRawRisks(ctx, search.NewConjunctionQuery(riskQuery, deploymentTypeQuery))
+	// Collect the deployments that match the risk query.
+	risks, err := s.risks.SearchRawRisks(ctx, riskQuery)
 	if err != nil {
-		return nil
-	}
-	for _, risk := range risks {
-		docIDs = append(docIDs, risk.GetSubject().GetId())
+		return nil, nil
 	}
 
-	var docIDQuery *v1.Query
-	if len(docIDs) != 0 {
-		docIDQuery = search.NewQueryBuilder().AddDocIDs(docIDs...).ProtoQuery()
+	// Generate a query for the resulting deployments, and map to keep the ordering.
+	deploymentIDQueryBuilder := search.NewQueryBuilder()
+	deploymentIDToRank := make(map[string]int, len(risks))
+	for i, risk := range risks {
+		deploymentIDToRank[risk.GetSubject().GetId()] = i
+		deploymentIDQueryBuilder.AddDocIDs(risk.GetSubject().GetId())
 	}
+	deploymentIDQuery := deploymentIDQueryBuilder.ProtoQuery()
 
-	if docIDQuery == nil && deploymentQuery == nil {
-		return nil
-	}
+	// Combine the queries if needed.
 	if deploymentQuery == nil {
-		return docIDQuery
+		return deploymentIDQuery, deploymentIDToRank
 	}
-	if docIDQuery == nil {
-		return deploymentQuery
-	}
-	return search.NewConjunctionQuery(deploymentQuery, docIDQuery)
+	return search.NewConjunctionQuery(deploymentQuery, deploymentIDQuery), deploymentIDToRank
 }
 
-func (s *serviceImpl) createDeploymentSortQuery(q *v1.Query) *v1.Query {
-	cloneQuery := proto.Clone(q).(*v1.Query)
+// Static helper functions.
+///////////////////////////
 
-	if q.GetPagination().GetSortOption().GetField() == search.Priority.String() {
-		cloneQuery.Pagination.SortOption.Field = ""
+func splitQueries(q *v1.Query, ranker *ranking.Ranker) (deploymentQuery *v1.Query, riskQuery *v1.Query) {
+	// Create the deployment query.
+	deploymentQuery = filterDeploymentQuery(q)
+	deploymentPagination := filterDeploymentPagination(q)
+	if deploymentPagination != nil {
+		if deploymentQuery == nil {
+			deploymentQuery = search.EmptyQuery()
+		}
+		deploymentQuery.Pagination = deploymentPagination
 	}
-	return cloneQuery
+
+	// Create the risk query.
+	riskQuery = filterRiskQuery(q, ranker)
+	riskPagination := filterRiskPagination(q)
+	if riskPagination != nil {
+		if riskQuery == nil {
+			riskQuery = search.EmptyQuery()
+		}
+		riskQuery.Pagination = riskPagination
+	}
+	return
 }
 
-func (s *serviceImpl) createDeploymentQuery(q *v1.Query) *v1.Query {
+func filterDeploymentQuery(q *v1.Query) *v1.Query {
+	// Filter the query.
 	newQuery, _ := search.FilterQuery(q, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
@@ -285,25 +311,43 @@ func (s *serviceImpl) createDeploymentQuery(q *v1.Query) *v1.Query {
 		}
 		return matchFieldQuery.MatchFieldQuery.GetField() != search.Priority.String()
 	})
-
 	return newQuery
 }
 
-func (s *serviceImpl) createRiskSortQuery(q *v1.Query) *v1.Query {
-	cloneQuery := proto.Clone(q).(*v1.Query)
-	if q.GetPagination().GetSortOption().GetField() == search.Priority.String() {
-		paginated.FillPagination(cloneQuery, q.GetPagination(), q.GetPagination().GetLimit())
-		cloneQuery.Pagination.SortOption.Field = search.RiskScore.String()
-		cloneQuery.Pagination.SortOption.Reversed = !q.GetPagination().GetSortOption().GetReversed()
+func filterDeploymentPagination(q *v1.Query) *v1.QueryPagination {
+	// Filter the pagination.
+	if len(q.GetPagination().GetSortOptions()) == 1 &&
+		q.GetPagination().GetSortOptions()[0].Field != search.Priority.String() {
+		return proto.Clone(q.Pagination).(*v1.QueryPagination)
 	}
-	return cloneQuery
+	return nil
 }
 
-func (s *serviceImpl) createRiskQuery(q *v1.Query) *v1.Query {
-	var err error
-	ranker := ranking.DeploymentRanker()
+func filterRiskPagination(q *v1.Query) *v1.QueryPagination {
+	if q == nil {
+		return nil
+	}
 
-	newQuery, _ := search.FilterQuery(q, func(bq *v1.BaseQuery) bool {
+	// If the one sort option in the query is priority, add risk based pagination, otherwise skip pagination.
+	if len(q.GetPagination().GetSortOptions()) == 1 &&
+		q.GetPagination().GetSortOptions()[0].GetField() == search.Priority.String() {
+		newPagination := proto.Clone(q.Pagination).(*v1.QueryPagination)
+		newPagination.GetSortOptions()[0].Field = search.RiskScore.String()
+		newPagination.GetSortOptions()[0].Reversed = !q.GetPagination().GetSortOptions()[0].Reversed
+		return newPagination
+	}
+	return nil
+}
+
+func filterRiskQuery(q *v1.Query, ranker *ranking.Ranker) *v1.Query {
+	if q == nil {
+		return nil
+	}
+	withNoPag := proto.Clone(q).(*v1.Query)
+	withNoPag.Pagination = nil
+
+	var err error
+	newQuery, _ := search.FilterQuery(withNoPag, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
 			return false
@@ -319,12 +363,11 @@ func (s *serviceImpl) createRiskQuery(q *v1.Query) *v1.Query {
 		if !ok {
 			return
 		}
-
 		// Any Priority query, we want to change to be a risk query.
 		// Parse the numeric query so we can swap it to a risk score query.
 		var numericValue blevesearch.NumericQueryValue
 		numericValue, err = blevesearch.ParseNumericQueryValue(matchFieldQuery.MatchFieldQuery.GetValue())
-		if err == nil {
+		if err != nil {
 			return
 		}
 
@@ -335,25 +378,31 @@ func (s *serviceImpl) createRiskQuery(q *v1.Query) *v1.Query {
 		// Set the query to the new value.
 		matchFieldQuery.MatchFieldQuery.Field = search.RiskScore.String()
 		matchFieldQuery.MatchFieldQuery.Value = blevesearch.PrintNumericQueryValue(numericValue)
-
 	})
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
-	return newQuery
+
+	// If we end up with a query, add the deployment type specification for it.
+	return search.ConjunctionQuery(
+		search.NewQueryBuilder().
+			AddStrings(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+			ProtoQuery(),
+		newQuery,
+	)
 }
 
 func priorityComparatorToRiskScoreComparator(comparator storage.Comparator) storage.Comparator {
 	switch comparator {
 	case storage.Comparator_LESS_THAN_OR_EQUALS:
-		return storage.Comparator_GREATER_THAN
-	case storage.Comparator_LESS_THAN:
 		return storage.Comparator_GREATER_THAN_OR_EQUALS
+	case storage.Comparator_LESS_THAN:
+		return storage.Comparator_GREATER_THAN
 	case storage.Comparator_GREATER_THAN_OR_EQUALS:
-		return storage.Comparator_LESS_THAN
-	case storage.Comparator_GREATER_THAN:
 		return storage.Comparator_LESS_THAN_OR_EQUALS
+	case storage.Comparator_GREATER_THAN:
+		return storage.Comparator_LESS_THAN
 	default: // storage.Comparator_EQUALS:
 		return storage.Comparator_EQUALS
 	}

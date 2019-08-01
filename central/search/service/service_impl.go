@@ -244,7 +244,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		return nil, status.Errorf(codes.InvalidArgument, "unable to parse query %q: %v", queryString, err)
 	}
 	// Set the max return size for the query
-	query.Pagination = &v1.Pagination{
+	query.Pagination = &v1.QueryPagination{
 		Limit: maxAutocompleteResults,
 	}
 

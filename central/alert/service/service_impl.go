@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -278,7 +280,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "error parsing query: %v", err)
 	}
-	query.Pagination = request.GetQuery().GetPagination()
+	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
 
 	specified := false
 	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
