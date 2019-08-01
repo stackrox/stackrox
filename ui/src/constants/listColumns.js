@@ -17,11 +17,11 @@ const controlColumns = [
         className: 'hidden'
     },
     {
+        accessor: 'control.standard',
         sortMethod: sortVersion,
         Header: 'Standard',
         headerClassName: `w-1/5 ${defaultHeaderClassName}`,
         className: `w-1/5 ${defaultColumnClassName}`,
-        accessor: 'control.standardId',
         Cell: ({ original }) => standardLabels[original.control.standardId]
     },
     {
@@ -83,7 +83,7 @@ const imageColumns = [
         className: 'w-1/8 pointer-events-none flex items-center justify-end',
         // eslint-disable-next-line react/prop-types
         Expander: ({ isExpanded, ...rest }) => {
-            if (rest.original.components.length === 0) return '';
+            if (!rest.original.components || rest.original.components.length === 0) return '';
             const className = 'rt-expander w-1 pt-2 pointer-events-auto';
             return <div className={`${className} ${isExpanded ? '-open' : ''}`} />;
         }

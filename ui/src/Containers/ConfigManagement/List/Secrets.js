@@ -110,7 +110,7 @@ const createTableRows = data => {
     );
 };
 
-const Secrets = ({ match, location, className, selectedRowId, onRowClick, query }) => {
+const Secrets = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
@@ -131,6 +131,7 @@ const Secrets = ({ match, location, className, selectedRowId, onRowClick, query 
                     desc: true
                 }
             ]}
+            data={data}
         />
     );
 };

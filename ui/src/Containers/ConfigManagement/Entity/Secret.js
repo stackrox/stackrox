@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { SECRET as QUERY } from 'queries/secret';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
@@ -14,6 +13,13 @@ import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/R
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import CollapsibleRow from 'Components/CollapsibleRow';
 import Widget from 'Components/Widget';
+import gql from 'graphql-tag';
+import searchContext from 'Containers/searchContext';
+import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
+import queryService from 'modules/queryService';
+import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import EntityList from '../List/EntityList';
+import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
 const SecretDataMetadata = ({ metadata }) => {
     if (!metadata) return null;
@@ -130,84 +136,140 @@ SecretValues.propTypes = {
     deployments: PropTypes.arrayOf(PropTypes.shape).isRequired
 };
 
-const Secret = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => (
-    <Query query={QUERY} variables={{ id }}>
-        {({ loading, data }) => {
-            if (loading) return <Loader />;
-            const { secret: entity } = data;
-            if (!entity) return <PageNotFound resourceType={entityTypes.SECRET} />;
+const Secret = ({ id, entityListType, query }) => {
+    const searchParam = useContext(searchContext);
 
-            const onRelatedEntityClickHandler = (entityType, entityId) => () => {
-                onRelatedEntityClick(entityType, entityId);
-            };
+    const variables = {
+        id,
+        query: queryService.objectToWhereClause(query[searchParam])
+    };
 
-            const onRelatedEntityListClickHandler = entityListType => () => {
-                onRelatedEntityListClick(entityListType);
-            };
-
-            const {
-                createdAt,
-                labels = [],
-                annotations = [],
-                deployments = [],
-                clusterName,
-                clusterId,
-                files
-            } = entity;
-
-            const metadataKeyValuePairs = [
-                {
-                    key: 'Created',
-                    value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
+    const QUERY = gql`
+    query secret($id: ID!) {
+        secret(id: $id) {
+            id
+            name
+            createdAt
+            files {
+                name
+                type
+                metadata {
+                    __typename
+                    ... on Cert {
+                        endDate
+                        startDate
+                        algorithm
+                        issuer {
+                            commonName
+                            names
+                        }
+                        subject {
+                            commonName
+                            names
+                        }
+                        sans
+                    }
+                    ... on ImagePullSecret {
+                        registries {
+                            name
+                            username
+                        }
+                    }
                 }
-            ];
-            const metadataCounts = [
-                { value: labels.length, text: 'Labels' },
-                { value: annotations.length, text: 'Annotations' }
-            ];
+            }
+            namespace
+            deployments: Deployments {
+                ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
+            }
+            labels {
+                key
+                value
+            }
+            annotations {
+                key
+                value
+            }
+            clusterName
+            clusterId
+        }
+    }
+    ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
 
-            return (
-                <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
-                    <CollapsibleSection title="Secret Details">
-                        <div className="flex mb-4 flex-wrap pdf-page">
-                            <Metadata
-                                className="mx-4 bg-base-100 h-48 mb-4"
-                                keyValuePairs={metadataKeyValuePairs}
-                                counts={metadataCounts}
-                            />
-                            <RelatedEntity
-                                className="mx-4 min-w-48 h-48 mb-4"
-                                entityType={entityTypes.CLUSTER}
-                                name="Cluster"
-                                value={clusterName}
-                                onClick={onRelatedEntityClickHandler(
-                                    entityTypes.CLUSTER,
-                                    clusterId
-                                )}
-                            />
-                            <RelatedEntityListCount
-                                className="mx-4 min-w-48 h-48 mb-4"
-                                name="Deployments"
-                                value={deployments.length}
-                                onClick={onRelatedEntityListClickHandler(entityTypes.DEPLOYMENT)}
-                            />
-                        </div>
-                    </CollapsibleSection>
-                    <CollapsibleSection title="Secret Values">
-                        <div className="flex pdf-page pdf-stretch mb-4 ml-4 mr-4">
-                            <SecretValues files={files} deployments={deployments} />
-                        </div>
-                    </CollapsibleSection>
-                </div>
-            );
-        }}
-    </Query>
-);
+`;
+    return (
+        <Query query={QUERY} variables={variables}>
+            {({ loading, data }) => {
+                if (loading) return <Loader />;
+                const { secret } = data;
+                if (!secret) return <PageNotFound resourceType={entityTypes.SECRET} />;
 
-Secret.propTypes = {
-    id: PropTypes.string.isRequired,
-    onRelatedEntityClick: PropTypes.func.isRequired,
-    onRelatedEntityListClick: PropTypes.func.isRequired
+                const {
+                    createdAt,
+                    labels = [],
+                    annotations = [],
+                    deployments = [],
+                    clusterName,
+                    clusterId,
+                    files
+                } = secret;
+
+                const metadataKeyValuePairs = [
+                    {
+                        key: 'Created',
+                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
+                    }
+                ];
+                const metadataCounts = [
+                    { value: labels.length, text: 'Labels' },
+                    { value: annotations.length, text: 'Annotations' }
+                ];
+
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getSubListFromEntity(secret, entityListType)}
+                            query={query}
+                        />
+                    );
+                }
+                return (
+                    <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
+                        <CollapsibleSection title="Secret Details">
+                            <div className="flex mb-4 flex-wrap pdf-page">
+                                <Metadata
+                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    keyValuePairs={metadataKeyValuePairs}
+                                    counts={metadataCounts}
+                                />
+                                <RelatedEntity
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    entityType={entityTypes.CLUSTER}
+                                    name="Cluster"
+                                    value={clusterName}
+                                    entityId={clusterId}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Deployments"
+                                    value={deployments.length}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                />
+                            </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Secret Values">
+                            <div className="flex pdf-page pdf-stretch mb-4 ml-4 mr-4">
+                                <SecretValues files={files} deployments={deployments} />
+                            </div>
+                        </CollapsibleSection>
+                    </div>
+                );
+            }}
+        </Query>
+    );
 };
+
+Secret.propTypes = entityComponentPropTypes;
+Secret.defaultProps = entityComponentDefaultProps;
 
 export default Secret;

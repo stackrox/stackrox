@@ -10,7 +10,7 @@ import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import searchContext from 'Containers/searchContext';
 import searchContexts from 'constants/searchContexts';
-import List from '../EntityList';
+import List from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
 const ListPage = ({ match, location, history }) => {
@@ -28,11 +28,6 @@ const ListPage = ({ match, location, history }) => {
     function onRowClick(entityId) {
         const urlBuilder = URLService.getURL(match, location).push(entityId);
         history.push(urlBuilder.url());
-    }
-
-    function onClose() {
-        const urlBuilder = URLService.getURL(match, location).clearSidePanelParams();
-        history.replace(urlBuilder.url());
     }
 
     const header = pluralize(entityLabels[pageEntityListType]);
@@ -70,7 +65,6 @@ const ListPage = ({ match, location, history }) => {
                             entityType2={entityType2}
                             entityListType2={entityListType2}
                             entityId2={entityId2}
-                            onClose={onClose}
                             query={query}
                         />
                     </SidePanelAnimation>

@@ -62,10 +62,10 @@ GroupedTabs.propTypes = {
         PropTypes.shape({
             group: PropTypes.string.isRequired,
             value: PropTypes.string.isRequired,
-            string: PropTypes.string.isRequired
+            text: PropTypes.string.isRequired
         })
     ).isRequired,
-    activeTab: PropTypes.shape().isRequired,
+    activeTab: PropTypes.string.isRequired,
     onClick: PropTypes.func.isRequired
 };
 

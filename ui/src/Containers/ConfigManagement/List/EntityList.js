@@ -4,17 +4,17 @@ import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 
 import PageNotFound from 'Components/PageNotFound';
-import Namespaces from './List/Namespaces';
-import Subjects from './List/Subjects';
-import ServiceAccounts from './List/ServiceAccounts';
-import Clusters from './List/Clusters';
-import Nodes from './List/Nodes';
-import Deployments from './List/Deployments';
-import Secrets from './List/Secrets';
-import Roles from './List/Roles';
-import Images from './List/Images';
-import Policies from './List/Policies';
-import CISControls from './List/CISControls';
+import Namespaces from './Namespaces';
+import Subjects from './Subjects';
+import ServiceAccounts from './ServiceAccounts';
+import Clusters from './Clusters';
+import Nodes from './Nodes';
+import Deployments from './Deployments';
+import Secrets from './Secrets';
+import Roles from './Roles';
+import Images from './Images';
+import Policies from './Policies';
+import CISControls from './CISControls';
 
 const entityComponentMap = {
     [entityTypes.SUBJECT]: Subjects,

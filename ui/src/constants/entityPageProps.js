@@ -31,14 +31,25 @@ export const entityPageDefaultProps = {
 export const entityListPropTypes = {
     className: PropTypes.string,
     selectedRowId: PropTypes.string,
-    onRowClick: PropTypes.func.isRequired,
     query: PropTypes.shape({}),
     match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    location: ReactRouterPropTypes.location.isRequired,
+    data: PropTypes.arrayOf(PropTypes.shape({}))
 };
 
 export const entityListDefaultprops = {
     className: '',
     selectedRowId: null,
-    query: null
+    query: null,
+    data: null
+};
+
+export const entityComponentPropTypes = {
+    id: PropTypes.string.isRequired,
+    query: PropTypes.shape({}).isRequired,
+    entityListType: PropTypes.string
+};
+
+export const entityComponentDefaultProps = {
+    entityListType: null
 };

@@ -1,6 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { NODE_QUERY as QUERY } from 'queries/node';
+import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
@@ -14,22 +12,90 @@ import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEnt
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
+import searchContext from 'Containers/searchContext';
+import gql from 'graphql-tag';
+import queryService from 'modules/queryService';
+import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { standardLabels } from 'messages/standards';
+import EntityList from '../List/EntityList';
 
-const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
+const Node = ({ id, entityListType, query }) => {
+    const searchParam = useContext(searchContext);
+
+    const variables = {
+        id,
+        where: queryService.objectToWhereClause(query[searchParam])
+    };
+
+    const QUERY = gql`
+        query getNode($id: ID!) {
+            node(id: $id) {
+                id
+                name
+                clusterId
+                clusterName
+                containerRuntimeVersion
+                externalIpAddresses
+                internalIpAddresses
+                joinedAt
+                kernelVersion
+                osImage
+                labels {
+                    key
+                    value
+                }
+                annotations {
+                    key
+                    value
+                }
+                complianceResults {
+                    resource {
+                        __typename
+                    }
+                    control {
+                        id
+                        standardId
+                        name
+                        description
+                    }
+                    value {
+                        overallState
+                        evidence {
+                            message
+                        }
+                    }
+                }
+                controls {
+                    id
+                    standardId
+                    name
+                    description
+                }
+            }
+        }
+    `;
+    // TODO: use passingControls and failingControls
+    const NODES_QUERY = gql`
+        query getNodesForControls($id: ID!, $clusterId: ID!) {
+            node(id: $id) {
+                id
+                controls {
+                    id
+                    complianceControlNodes(clusterID: $clusterId) {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+    `;
+
     return (
-        <Query query={QUERY} variables={{ id }}>
+        <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader />;
-                const { node: entity } = data;
-                if (!entity) return <PageNotFound resourceType={entityTypes.NODE} />;
-
-                const onRelatedEntityClickHandler = (entityType, entityId) => () => {
-                    onRelatedEntityClick(entityType, entityId);
-                };
-
-                const onRelatedEntityListClickHandler = entityListType => () => {
-                    onRelatedEntityListClick(entityListType);
-                };
+                const { node } = data;
+                if (!node) return <PageNotFound resourceType={entityTypes.NODE} />;
 
                 const {
                     kernelVersion,
@@ -40,8 +106,9 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
                     clusterName,
                     clusterId,
                     annotations,
-                    complianceResults = []
-                } = entity;
+                    complianceResults = [],
+                    controls
+                } = node;
 
                 const metadataKeyValuePairs = [
                     {
@@ -66,9 +133,51 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
                     { value: annotations.length, text: 'Annotations' }
                 ];
 
-                const failedComplianceResults = complianceResults.filter(
-                    cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE'
-                );
+                const failedComplianceResults = complianceResults
+                    .filter(cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
+                    .map(cr => ({
+                        ...cr,
+                        control: {
+                            ...cr.control,
+                            standard: standardLabels[cr.control.standardId]
+                        }
+                    }));
+
+                if (entityListType) {
+                    return (
+                        <Query query={NODES_QUERY} variables={{ id, clusterId }}>
+                            {({ loading: nodesLoading, data: nodesData }) => {
+                                if (nodesLoading) return <Loader />;
+                                const { node: currentNode } = nodesData;
+                                const { controls: controlList } = currentNode;
+                                const controlMap = controlList.reduce(
+                                    (acc, curr) => ({
+                                        ...acc,
+                                        [curr.id]: curr.complianceControlNodes.map(c => c.name)
+                                    }),
+                                    {}
+                                );
+                                const processedControls = controls.map(control => ({
+                                    ...control,
+                                    nodes: controlMap[control.id] || [],
+                                    standard: standardLabels[control.standardId],
+                                    control: `${control.name} - ${control.description}`,
+                                    passing: !failedComplianceResults.find(
+                                        cr => cr.control.id === control.id
+                                    )
+                                }));
+
+                                return (
+                                    <EntityList
+                                        entityListType={entityListType}
+                                        data={processedControls}
+                                        query={query}
+                                    />
+                                );
+                            }}
+                        </Query>
+                    );
+                }
 
                 return (
                     <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
@@ -84,16 +193,13 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
                                     name="Cluster"
                                     entityType={entityTypes.CLUSTER}
                                     value={clusterName}
-                                    onClick={onRelatedEntityClickHandler(
-                                        entityTypes.CLUSTER,
-                                        clusterId
-                                    )}
+                                    entityId={clusterId}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="CIS Controls"
                                     value={complianceResults.length}
-                                    onClick={onRelatedEntityListClickHandler(entityTypes.CONTROL)}
+                                    entityType={entityTypes.CONTROL}
                                 />
                             </div>
                         </CollapsibleSection>
@@ -119,10 +225,7 @@ const Node = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => {
     );
 };
 
-Node.propTypes = {
-    id: PropTypes.string.isRequired,
-    onRelatedEntityClick: PropTypes.func.isRequired,
-    onRelatedEntityListClick: PropTypes.func.isRequired
-};
+Node.propTypes = entityComponentPropTypes;
+Node.defaultProps = entityComponentDefaultProps;
 
 export default Node;

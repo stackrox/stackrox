@@ -1,6 +1,7 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { SERVICE_ACCOUNT } from 'queries/serviceAccount';
+import React, { useContext } from 'react';
+import { ROLE_FRAGMENT } from 'queries/role';
+import { SECRET_FRAGMENT } from 'queries/secret';
+
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
@@ -14,110 +15,166 @@ import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widge
 import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
+import gql from 'graphql-tag';
+import searchContext from 'Containers/searchContext';
+import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
+import queryService from 'modules/queryService';
+import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import EntityList from '../List/EntityList';
+import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
-const ServiceAccount = ({ id, onRelatedEntityClick, onRelatedEntityListClick }) => (
-    <Query query={SERVICE_ACCOUNT} variables={{ id }}>
-        {({ loading, data }) => {
-            if (loading) return <Loader />;
-            const { serviceAccount: entity } = data;
-            if (!entity) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
+const ServiceAccount = ({ id, entityListType, query }) => {
+    const searchParam = useContext(searchContext);
 
-            const onRelatedEntityClickHandler = (entityType, entityId) => () => {
-                onRelatedEntityClick(entityType, entityId);
-            };
+    const variables = {
+        id,
+        where: queryService.objectToWhereClause(query[searchParam])
+    };
 
-            const onRelatedEntityListClickHandler = entityListType => () => {
-                onRelatedEntityListClick(entityListType);
-            };
-
-            const {
-                automountToken = false,
-                createdAt,
-                labels = [],
-                secrets = [],
-                imagePullSecrets = [],
-                deployments = [],
-                roles = [],
-                saNamespace: { metadata = {} },
-                scopedPermissions = []
-            } = entity;
-
-            const { name: namespaceName, id: namespaceId } = metadata;
-
-            const metadataKeyValuePairs = [
-                { key: 'Automounted', value: automountToken.toString() },
-                {
-                    key: 'Created',
-                    value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
+    const QUERY = gql`
+    query serviceAccount($id: ID!) {
+        serviceAccount(id: $id) {
+            id
+            name
+            namespace
+            saNamespace {
+                metadata {
+                    id
+                    name
                 }
-            ];
-            const metadataCounts = [
-                { value: labels.length, text: 'Labels' },
-                { value: secrets.length, text: 'Secrets' },
-                { value: imagePullSecrets.length, text: 'Image Pull Secrets' }
-            ];
+            }
+            deployments {
+                ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
+            }
+            secrets 
+            roles {
+                ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
+            }
+            automountToken
+            createdAt
+            labels {
+                key
+                value
+            }
+            annotations {
+                key
+                value
+            }
+            imagePullSecrets
+            scopedPermissions {
+                scope
+                permissions {
+                    key
+                    values
+                }
+            }
+        }
+    }
+    ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
+    ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
+    ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
+    `;
 
-            return (
-                <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
-                    <CollapsibleSection title="Service Account Details">
-                        <div className="flex mb-4 flex-wrap pdf-page">
-                            <Metadata
-                                className="mx-4 bg-base-100 h-48 mb-4"
-                                keyValuePairs={metadataKeyValuePairs}
-                                counts={metadataCounts}
-                            />
-                            <RelatedEntity
-                                className="mx-4 min-w-48 h-48 mb-4"
-                                entityType={entityTypes.NAMESPACE}
-                                name="Namespace"
-                                value={namespaceName}
-                                onClick={onRelatedEntityClickHandler(
-                                    entityTypes.NAMESPACE,
-                                    namespaceId
-                                )}
-                            />
-                            <RelatedEntityListCount
-                                className="mx-4 min-w-48 h-48 mb-4"
-                                name="Deployments"
-                                value={deployments.length}
-                                onClick={onRelatedEntityListClickHandler(entityTypes.DEPLOYMENT)}
-                            />
-                            <RelatedEntityListCount
-                                className="mx-4 min-w-48 h-48 mb-4"
-                                name="Secrets"
-                                value={secrets.length}
-                                onClick={onRelatedEntityListClickHandler(entityTypes.SECRET)}
-                            />
-                            <RelatedEntityListCount
-                                className="mx-4 min-w-48 h-48 mb-4"
-                                name="Roles"
-                                value={roles.length}
-                                onClick={onRelatedEntityListClickHandler(entityTypes.ROLE)}
-                            />
-                        </div>
-                    </CollapsibleSection>
-                    <CollapsibleSection title="Service Account Permissions">
-                        <div className="flex mb-4 pdf-page pdf-stretch">
-                            <ClusterScopedPermissions
-                                scopedPermissions={scopedPermissions}
-                                className="mx-4 bg-base-100"
-                            />
-                            <NamespaceScopedPermissions
-                                scopedPermissions={scopedPermissions}
-                                className="flex-grow mx-4 bg-base-100"
-                            />
-                        </div>
-                    </CollapsibleSection>
-                </div>
-            );
-        }}
-    </Query>
-);
+    return (
+        <Query query={QUERY} variables={variables}>
+            {({ loading, data }) => {
+                if (loading) return <Loader />;
+                const { serviceAccount: entity } = data;
+                if (!entity) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
 
-ServiceAccount.propTypes = {
-    id: PropTypes.string.isRequired,
-    onRelatedEntityClick: PropTypes.func.isRequired,
-    onRelatedEntityListClick: PropTypes.func.isRequired
+                const {
+                    automountToken = false,
+                    createdAt,
+                    labels = [],
+                    secrets = [],
+                    imagePullSecrets = [],
+                    deployments = [],
+                    roles = [],
+                    saNamespace: { metadata = {} },
+                    scopedPermissions = []
+                } = entity;
+
+                const { name: namespaceName, id: namespaceId } = metadata;
+
+                const metadataKeyValuePairs = [
+                    { key: 'Automounted', value: automountToken.toString() },
+                    {
+                        key: 'Created',
+                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
+                    }
+                ];
+                const metadataCounts = [
+                    { value: labels.length, text: 'Labels' },
+                    { value: secrets.length, text: 'Secrets' },
+                    { value: imagePullSecrets.length, text: 'Image Pull Secrets' }
+                ];
+
+                // TODO: query secrets collection when back end adds it
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getSubListFromEntity(entity, entityListType)}
+                            query={query}
+                        />
+                    );
+                }
+
+                return (
+                    <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
+                        <CollapsibleSection title="Service Account Details">
+                            <div className="flex mb-4 flex-wrap pdf-page">
+                                <Metadata
+                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    keyValuePairs={metadataKeyValuePairs}
+                                    counts={metadataCounts}
+                                />
+                                <RelatedEntity
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    entityType={entityTypes.NAMESPACE}
+                                    name="Namespace"
+                                    value={namespaceName}
+                                    entityId={namespaceId}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Deployments"
+                                    value={deployments.length}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Secrets"
+                                    value={secrets.length}
+                                    entityType={entityTypes.SECRET}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Roles"
+                                    value={roles.length}
+                                    entityType={entityTypes.ROLE}
+                                />
+                            </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Service Account Permissions">
+                            <div className="flex mb-4 pdf-page pdf-stretch">
+                                <ClusterScopedPermissions
+                                    scopedPermissions={scopedPermissions}
+                                    className="mx-4 bg-base-100"
+                                />
+                                <NamespaceScopedPermissions
+                                    scopedPermissions={scopedPermissions}
+                                    className="flex-grow mx-4 bg-base-100"
+                                />
+                            </div>
+                        </CollapsibleSection>
+                    </div>
+                );
+            }}
+        </Query>
+    );
 };
+ServiceAccount.propTypes = entityComponentPropTypes;
+ServiceAccount.defaultProps = entityComponentDefaultProps;
 
 export default ServiceAccount;

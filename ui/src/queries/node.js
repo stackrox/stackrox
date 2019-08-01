@@ -1,5 +1,44 @@
 import gql from 'graphql-tag';
 
+export const NODE_FRAGMENT = gql`
+    fragment nodeFields on Node {
+        id
+        name
+        clusterId
+        clusterName
+        containerRuntimeVersion
+        externalIpAddresses
+        internalIpAddresses
+        joinedAt
+        kernelVersion
+        osImage
+        labels {
+            key
+            value
+        }
+        annotations {
+            key
+            value
+        }
+        complianceResults {
+            resource {
+                __typename
+            }
+            control {
+                id
+                standardId
+                name
+                description
+            }
+            value {
+                overallState
+                evidence {
+                    message
+                }
+            }
+        }
+    }
+`;
 export const NODES_QUERY = gql`
     query nodes($query: String) {
         results: nodes(query: $query) {
@@ -25,40 +64,10 @@ export const NODES_QUERY = gql`
 export const NODE_QUERY = gql`
     query getNode($id: ID!) {
         node(id: $id) {
-            id
-            name
-            clusterId
-            clusterName
-            containerRuntimeVersion
-            externalIpAddresses
-            internalIpAddresses
-            joinedAt
-            kernelVersion
-            osImage
-            labels {
-                key
-                value
-            }
-            annotations {
-                key
-                value
-            }
-            complianceResults {
-                resource {
-                    __typename
-                }
-                control {
-                    id
-                    standardId
-                    name
-                    description
-                }
-                value {
-                    overallState
-                }
-            }
+            ...nodeFields
         }
     }
+    ${NODE_FRAGMENT}
 `;
 
 export const NODES_BY_CLUSTER = gql`

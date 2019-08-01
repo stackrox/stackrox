@@ -2,14 +2,12 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
-import { entityQueryKeys } from 'constants/entityTypes';
 
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Button from 'Components/Button';
 import Panel from 'Components/Panel';
 import searchContext from 'Containers/searchContext';
-import EntityOverview from 'Containers/ConfigManagement/Entity';
-import List from 'Containers/ConfigManagement/EntityList';
+import EntityPage from 'Containers/ConfigManagement/Entity';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import BreadCrumbs from './BreadCrumbs';
 
@@ -32,7 +30,6 @@ const SidePanel = ({
     location,
     history,
     className,
-    onClose,
     entityType1,
     entityId1,
     entityType2,
@@ -43,60 +40,22 @@ const SidePanel = ({
     const searchParam = useContext(searchContext);
     const isList = !entityId1 || ((entityType2 || entityListType2) && !entityId2);
 
-    function onRelatedEntityClick(entityType, entityId) {
-        const urlBuilder = URLService.getURL(match, location).push(entityType, entityId);
-        history.push(urlBuilder.url());
-    }
-
-    function onRelatedEntityListClick(entityListType) {
-        const urlBuilder = URLService.getURL(match, location).push(entityListType);
-        history.push(urlBuilder.url());
-    }
-
-    function onRowClick(entityId) {
-        const urlBuilder = URLService.getURL(match, location).push(entityId);
-        history.push(urlBuilder.url());
-    }
-
     function getCurrentEntityId() {
-        if (isList) return null;
         return entityId2 || entityId1;
     }
 
     function getCurrentEntityType() {
+        if (isList) return entityType1;
         return entityType2 || entityListType2 || entityType1;
+    }
+
+    function getListType() {
+        if (!isList) return null;
+        return entityListType2;
     }
 
     function getSearchParams() {
         return query[searchParam];
-    }
-
-    function getComponent() {
-        const entityId = getCurrentEntityId();
-        const entityType = getCurrentEntityType();
-
-        if (!isList) {
-            return (
-                <EntityOverview
-                    entityType={entityType}
-                    entityId={entityId}
-                    onRelatedEntityClick={onRelatedEntityClick}
-                    onRelatedEntityListClick={onRelatedEntityListClick}
-                />
-            );
-        }
-
-        // Add entityId query parameter if there is another entity in the stack
-        const panelQuery = {};
-        if (entityId1) panelQuery[`${entityQueryKeys[entityType1]}`] = entityId1;
-
-        return (
-            <List
-                entityListType={entityType}
-                onRowClick={onRowClick}
-                query={{ ...panelQuery, ...getSearchParams() }}
-            />
-        );
     }
 
     function onExternalLinkClick() {
@@ -108,7 +67,18 @@ const SidePanel = ({
         history.push(url);
     }
 
-    const component = getComponent();
+    function onClose() {
+        history.push(
+            URLService.getURL(match, location)
+                .clearSidePanelParams()
+                .url()
+        );
+    }
+
+    const entityId = getCurrentEntityId();
+    const entityType = getCurrentEntityType();
+    const listType = getListType();
+
     return (
         <div className={className}>
             <Panel
@@ -126,7 +96,12 @@ const SidePanel = ({
                 headerComponents={<ExternalLink onClick={onExternalLinkClick} />}
                 onClose={onClose}
             >
-                {component}
+                <EntityPage
+                    entityType={entityType}
+                    entityId={entityId}
+                    entityListType={listType}
+                    query={query}
+                />
             </Panel>
         </div>
     );
@@ -142,7 +117,6 @@ SidePanel.propTypes = {
     entityType2: PropTypes.string,
     entityListType2: PropTypes.string,
     entityId2: PropTypes.string,
-    onClose: PropTypes.func,
     query: PropTypes.shape().isRequired
 };
 
@@ -152,8 +126,7 @@ SidePanel.defaultProps = {
     entityId1: null,
     entityType2: null,
     entityListType2: null,
-    entityId2: null,
-    onClose: null
+    entityId2: null
 };
 
 export default withRouter(SidePanel);

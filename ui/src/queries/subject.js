@@ -1,31 +1,45 @@
 import gql from 'graphql-tag';
 
+export const SUBJECT_WITH_CLUSTER_FRAGMENT = gql`
+    fragment subjectWithClusterFields on SubjectWithClusterID {
+        id: name
+        subject {
+            name
+            kind
+            namespace
+        }
+        type
+        scopedPermissions {
+            scope
+            permissions {
+                key
+                values
+            }
+        }
+        clusterAdmin
+        roles {
+            id
+            name
+        }
+    }
+`;
+
+export const SUBJECT_FRAGMENT = gql`
+    fragment subjectFields on Subject {
+        subjectWithClusterID {
+            ...subjectWithClusterFields
+        }
+    }
+    ${SUBJECT_WITH_CLUSTER_FRAGMENT}
+`;
+
 export const SUBJECTS_QUERY = gql`
     query subjects($query: String) {
         subjects(query: $query) {
-            subjectWithClusterID {
-                id: name
-                subject {
-                    name
-                    kind
-                    namespace
-                }
-                type
-                scopedPermissions {
-                    scope
-                    permissions {
-                        key
-                        values
-                    }
-                }
-                clusterAdmin
-                roles {
-                    id
-                    name
-                }
-            }
+            ...subjectFields
         }
     }
+    ${SUBJECT_FRAGMENT}
 `;
 
 export const SUBJECT_QUERY = gql`

@@ -1,5 +1,5 @@
 import entityTypes from 'constants/entityTypes';
-import { SERVICE_ACCOUNT, SERVICE_ACCOUNTS } from 'queries/serviceAccount';
+import { SERVICE_ACCOUNTS } from 'queries/serviceAccount';
 import {
     DEPLOYMENT_QUERY as DEPLOYMENT,
     DEPLOYMENTS_QUERY as DEPLOYMENTS
@@ -13,6 +13,16 @@ import { CONTROL_QUERY as CONTROL } from 'queries/controls';
 import { IMAGE, IMAGES } from 'queries/image';
 import { NODES_QUERY as NODES, NODE_QUERY as NODE } from 'queries/node';
 import { SUBJECTS_QUERY as SUBJECTS, SUBJECT_QUERY as SUBJECT } from 'queries/subject';
+import gql from 'graphql-tag';
+
+const SERVICE_ACCOUNT = gql`
+    query getServiceAccount($id: ID!) {
+        serviceAccount(id: $id) {
+            id
+            name
+        }
+    }
+`;
 
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,

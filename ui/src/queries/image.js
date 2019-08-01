@@ -1,50 +1,60 @@
 import gql from 'graphql-tag';
 
-export const IMAGE = gql`
-    query image($id: ID!) {
-        image(sha: $id) {
+export const IMAGE_FRAGMENT = gql`
+    fragment imageFields on Image {
+        id
+        lastUpdated
+        deployments {
             id
-            lastUpdated
-            metadata {
-                layerShas
-                v1 {
+        }
+        metadata {
+            layerShas
+            v1 {
+                created
+                layers {
+                    instruction
                     created
-                    layers {
-                        instruction
-                        created
-                        value
-                    }
-                }
-                v2 {
-                    digest
+                    value
                 }
             }
-            name {
-                fullName
-                registry
-                remote
-                tag
+            v2 {
+                digest
             }
-            scan {
-                components {
+        }
+        name {
+            fullName
+            registry
+            remote
+            tag
+        }
+        scan {
+            components {
+                name
+                layerIndex
+                version
+                license {
                     name
-                    layerIndex
-                    version
-                    license {
-                        name
-                        type
-                        url
-                    }
-                    vulns {
-                        cve
-                        cvss
-                        link
-                        summary
-                    }
+                    type
+                    url
+                }
+                vulns {
+                    cve
+                    cvss
+                    link
+                    summary
                 }
             }
         }
     }
+`;
+
+export const IMAGE = gql`
+    query image($id: ID!) {
+        image(sha: $id) {
+            ...imageFields
+        }
+    }
+    ${IMAGE_FRAGMENT}
 `;
 
 export const IMAGES = gql`

@@ -1,5 +1,43 @@
 import gql from 'graphql-tag';
 
+export const SERVICE_ACCOUNT_FRAGMENT = gql`
+    fragment serviceAccountFields on serviceAccount {
+        id
+        name
+        namespace
+        saNamespace {
+            metadata {
+                id
+                name
+            }
+        }
+        deployments {
+            id
+        }
+        secrets
+        roles {
+            id
+        }
+        automountToken
+        createdAt
+        labels {
+            key
+            value
+        }
+        annotations {
+            key
+            value
+        }
+        imagePullSecrets
+        scopedPermissions {
+            scope
+            permissions {
+                key
+                values
+            }
+        }
+    }
+`;
 export const SERVICE_ACCOUNTS = gql`
     query serviceAccounts($query: String) {
         results: serviceAccounts(query: $query) {
@@ -31,40 +69,8 @@ export const SERVICE_ACCOUNTS = gql`
 export const SERVICE_ACCOUNT = gql`
     query serviceAccount($id: ID!) {
         serviceAccount(id: $id) {
-            id
-            name
-            namespace
-            saNamespace {
-                metadata {
-                    id
-                    name
-                }
-            }
-            deployments {
-                id
-            }
-            secrets
-            roles {
-                id
-            }
-            automountToken
-            createdAt
-            labels {
-                key
-                value
-            }
-            annotations {
-                key
-                value
-            }
-            imagePullSecrets
-            scopedPermissions {
-                scope
-                permissions {
-                    key
-                    values
-                }
-            }
+            ...serviceAccountFields
         }
     }
+    ${SERVICE_ACCOUNT_FRAGMENT}
 `;

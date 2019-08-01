@@ -1,6 +1,6 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
+import PropTypes from 'prop-types';
 
 import PageNotFound from 'Components/PageNotFound';
 import ServiceAccount from './Entity/ServiceAccount';
@@ -38,7 +38,11 @@ const Entity = ({ entityType, entityId, ...rest }) => {
 
 Entity.propTypes = {
     entityType: PropTypes.string.isRequired,
-    entityId: PropTypes.string.isRequired
+    entityId: PropTypes.string.isRequired,
+    query: PropTypes.shape({})
+};
+Entity.defaultProps = {
+    query: null
 };
 
 export default Entity;

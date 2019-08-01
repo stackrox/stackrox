@@ -98,7 +98,7 @@ const createTableRows = data => {
     return Object.values(controls);
 };
 
-const CISControls = ({ className, selectedRowId, onRowClick, query }) => {
+const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
     const queryText = queryService.objectToWhereClause({ Standard: 'CIS', ...query });
     const variables = {
         where: queryText,
@@ -107,8 +107,8 @@ const CISControls = ({ className, selectedRowId, onRowClick, query }) => {
 
     const complianceState = query ? query[SEARCH_OPTIONS.COMPLIANCE.STATE] : null;
 
-    function createTableRowsFilteredByComplianceState(data) {
-        const tableRows = createTableRows(data);
+    function createTableRowsFilteredByComplianceState(items) {
+        const tableRows = createTableRows(items);
         const filteredTableRows = filterByComplianceState(tableRows, complianceState);
         return filteredTableRows;
     }
@@ -126,6 +126,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query }) => {
             selectedRowId={selectedRowId}
             idAttribute="id"
             defaultSearchOptions={[SEARCH_OPTIONS.COMPLIANCE.STATE]}
+            data={filterByComplianceState(data, complianceState)}
         />
     );
 };

@@ -39,7 +39,7 @@ const tableColumns = [
 
 const createTableRows = data => data.images;
 
-const Images = ({ className, selectedRowId, onRowClick, query }) => {
+const Images = ({ className, selectedRowId, onRowClick, query, data }) => {
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
     return (
@@ -53,15 +53,11 @@ const Images = ({ className, selectedRowId, onRowClick, query }) => {
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            data={data}
         />
     );
 };
 Images.propTypes = entityListPropTypes;
 Images.defaultProps = entityListDefaultprops;
-
-Images.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
 
 export default Images;

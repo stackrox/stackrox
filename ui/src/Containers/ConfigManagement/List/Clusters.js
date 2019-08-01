@@ -189,14 +189,14 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = data => data.results;
 
-const Clusters = ({ match, location, className, selectedRowId, onRowClick, query }) => {
+const Clusters = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
     const tableColumns = buildTableColumns(match, location);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
     const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;
 
-    function createTableRowsFilteredByPolicyStatus(data) {
-        const tableRows = createTableRows(data);
+    function createTableRowsFilteredByPolicyStatus(items) {
+        const tableRows = createTableRows(items);
         const filteredTableRows = filterByPolicyStatus(tableRows, policyStatus);
         return filteredTableRows;
     }
@@ -213,6 +213,7 @@ const Clusters = ({ match, location, className, selectedRowId, onRowClick, query
             selectedRowId={selectedRowId}
             idAttribute="id"
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
+            data={filterByPolicyStatus(data, policyStatus)}
         />
     );
 };

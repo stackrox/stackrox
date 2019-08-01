@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { POLICY as QUERY } from 'queries/policy';
 import entityTypes from 'constants/entityTypes';
 import { entityViolationsColumns } from 'constants/listColumns';
 import { Link } from 'react-router-dom';
+import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -15,6 +15,12 @@ import Widget from 'Components/Widget';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 import Button from 'Components/Button';
+import gql from 'graphql-tag';
+import queryService from 'modules/queryService';
+import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import searchContext from 'Containers/searchContext';
+import EntityList from '../List/EntityList';
+import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
 const PolicyEditButton = ({ id }) => {
     return (
@@ -54,9 +60,56 @@ DeploymentViolations.defaultProps = {
     alerts: []
 };
 
-const Policy = ({ id }) => {
+const Policy = ({ id, entityListType, query }) => {
+    const searchParam = useContext(searchContext);
+
+    const variables = {
+        id,
+        where: queryService.objectToWhereClause(query[searchParam])
+    };
+
+    const QUERY = gql`
+    query getPolicy($id: ID!) {
+        policy(id: $id) {
+            id
+            description
+            lifecycleStages
+            categories
+            disabled
+            enforcementActions
+            rationale
+            remediation
+            severity
+            whitelists {
+                expiration
+            }
+            deployments {
+                ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
+            }
+            alerts {
+                id
+                deployment {
+                    id
+                    name
+                }
+                enforcement {
+                    action
+                    message
+                }
+                policy {
+                    id
+                    severity
+                }
+                time
+            }
+        }
+    }
+    ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
+
+`;
+
     return (
-        <Query query={QUERY} variables={{ id }}>
+        <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader />;
                 const { policy: entity } = data;
@@ -77,6 +130,16 @@ const Policy = ({ id }) => {
                     whitelists = [],
                     alerts = []
                 } = entity;
+
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getSubListFromEntity(entity, entityListType)}
+                            query={query}
+                        />
+                    );
+                }
 
                 const metadataKeyValuePairs = [
                     {
@@ -169,8 +232,7 @@ const Policy = ({ id }) => {
     );
 };
 
-Policy.propTypes = {
-    id: PropTypes.string.isRequired
-};
+Policy.propTypes = entityComponentPropTypes;
+Policy.defaultProps = entityComponentDefaultProps;
 
 export default Policy;

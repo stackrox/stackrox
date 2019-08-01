@@ -103,7 +103,7 @@ const buildTableColumns = (match, location) => {
 const createTableRows = data =>
     data.subjects.reduce((acc, curr) => [...acc, ...curr.subjectWithClusterID], []);
 
-const Subjects = ({ match, location, selectedRowId, onRowClick, query, className }) => {
+const Subjects = ({ match, location, selectedRowId, onRowClick, query, className, data }) => {
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
@@ -128,16 +128,12 @@ const Subjects = ({ match, location, selectedRowId, onRowClick, query, className
                     desc: true
                 }
             ]}
+            data={data}
         />
     );
 };
 
 Subjects.propTypes = entityListPropTypes;
 Subjects.defaultProps = entityListDefaultprops;
-
-Subjects.defaultProps = {
-    className: '',
-    selectedRowId: null
-};
 
 export default Subjects;

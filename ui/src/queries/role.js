@@ -23,77 +23,50 @@ export const ROLE_PERMISSIONS = gql`
     }
 `;
 
+export const ROLE_FRAGMENT = gql`
+    fragment roleFields on K8SRole {
+        id
+        name
+        type
+        verbs
+        createdAt
+        roleNamespace {
+            metadata {
+                id
+                name
+            }
+        }
+        serviceAccounts {
+            ... on ServiceAccount {
+                id
+                name
+            }
+            ... on NonExistentServiceAccount {
+                message
+            }
+        }
+        subjects {
+            name
+        }
+    }
+`;
 export const K8S_ROLE = gql`
     query k8sRole($id: ID!) {
         clusters {
             id
             k8srole(role: $id) {
-                id
-                name
-                type
-                verbs
-                createdAt
-                roleNamespace {
-                    metadata {
-                        id
-                        name
-                    }
-                }
-                serviceAccounts {
-                    ... on ServiceAccount {
-                        id
-                        name
-                    }
-                }
-                subjects {
-                    name
-                }
-                labels {
-                    key
-                    value
-                }
-                annotations {
-                    key
-                    value
-                }
-                rules {
-                    apiGroups
-                    nonResourceUrls
-                    resourceNames
-                    resources
-                    verbs
-                }
+                ...roleFields
             }
         }
     }
+    ${ROLE_FRAGMENT}
 `;
 
 export const K8S_ROLES = gql`
     query k8sRoles($query: String) {
         results: k8sRoles(query: $query) {
-            id
-            name
-            type
-            verbs
-            createdAt
-            roleNamespace {
-                metadata {
-                    id
-                    name
-                }
-            }
-            serviceAccounts {
-                ... on ServiceAccount {
-                    id
-                    name
-                }
-                ... on NonExistentServiceAccount {
-                    message
-                }
-            }
-            subjects {
-                name
-            }
+            ...roleFields
         }
     }
+    ${ROLE_FRAGMENT}
 `;

@@ -116,7 +116,15 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = data => data.results;
 
-const ServiceAccounts = ({ match, location, className, selectedRowId, onRowClick, query }) => {
+const ServiceAccounts = ({
+    match,
+    location,
+    className,
+    selectedRowId,
+    onRowClick,
+    query,
+    data
+}) => {
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
@@ -137,6 +145,7 @@ const ServiceAccounts = ({ match, location, className, selectedRowId, onRowClick
                     desc: true
                 }
             ]}
+            data={data}
         />
     );
 };

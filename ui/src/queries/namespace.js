@@ -1,33 +1,39 @@
 import gql from 'graphql-tag';
 
-export const NAMESPACES_QUERY = gql`
-    query namespaces($query: String) {
-        results: namespaces(query: $query) {
-            metadata {
-                name
-                id
-                clusterId
-                clusterName
-                labels {
-                    key
-                    value
-                }
+export const NAMESPACE_FRAGMENT = gql`
+    fragment namespaceFields on Namespace {
+        metadata {
+            name
+            id
+            clusterId
+            clusterName
+            labels {
+                key
+                value
             }
-            numSecrets
-            imageCount
-            policyCount
-            k8sroleCount
-            serviceAccountCount
-            subjectCount
-            policyStatus {
-                status
-                failingPolicies {
-                    id
-                    name
-                }
+        }
+        numSecrets
+        imageCount
+        policyCount
+        k8sroleCount
+        serviceAccountCount
+        subjectCount
+        policyStatus {
+            status
+            failingPolicies {
+                id
+                name
             }
         }
     }
+`;
+export const NAMESPACES_QUERY = gql`
+    query namespaces($query: String) {
+        results: namespaces(query: $query) {
+            ...namespaceFields
+        }
+    }
+    ${NAMESPACE_FRAGMENT}
 `;
 
 export const ALL_NAMESPACES = gql`

@@ -1,55 +1,61 @@
 import gql from 'graphql-tag';
 
-export const SECRET = gql`
-    query secret($id: ID!) {
-        secret(id: $id) {
-            id
+export const SECRET_FRAGMENT = gql`
+    fragment secretFields on Secret {
+        id
+        name
+        createdAt
+        files {
             name
-            createdAt
-            files {
-                name
-                type
-                metadata {
-                    __typename
-                    ... on Cert {
-                        endDate
-                        startDate
-                        algorithm
-                        issuer {
-                            commonName
-                            names
-                        }
-                        subject {
-                            commonName
-                            names
-                        }
-                        sans
+            type
+            metadata {
+                __typename
+                ... on Cert {
+                    endDate
+                    startDate
+                    algorithm
+                    issuer {
+                        commonName
+                        names
                     }
-                    ... on ImagePullSecret {
-                        registries {
-                            name
-                            username
-                        }
+                    subject {
+                        commonName
+                        names
+                    }
+                    sans
+                }
+                ... on ImagePullSecret {
+                    registries {
+                        name
+                        username
                     }
                 }
             }
-            namespace
-            deployments {
-                id
-                name
-            }
-            labels {
-                key
-                value
-            }
-            annotations {
-                key
-                value
-            }
-            clusterName
-            clusterId
+        }
+        namespace
+        deployments: Deployments {
+            id
+            name
+        }
+        labels {
+            key
+            value
+        }
+        annotations {
+            key
+            value
+        }
+        clusterName
+        clusterId
+    }
+`;
+export const SECRET = gql`
+    query secret($id: ID!) {
+        secret(id: $id) {
+            ...secretFields
         }
     }
+    ${SECRET_FRAGMENT}
 `;
 
 export const SECRETS = gql`
@@ -62,7 +68,7 @@ export const SECRETS = gql`
                 type
             }
             namespace
-            deployments {
+            deployments: Deployments {
                 id
                 name
             }

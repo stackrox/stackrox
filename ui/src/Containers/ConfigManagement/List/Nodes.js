@@ -102,7 +102,7 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = data => data.results;
 
-const Nodes = ({ match, location, className, selectedRowId, onRowClick, query }) => {
+const Nodes = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
@@ -117,6 +117,7 @@ const Nodes = ({ match, location, className, selectedRowId, onRowClick, query })
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            data={data}
         />
     );
 };
