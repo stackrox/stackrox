@@ -1,8 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import featureFlags, { types as featureFlagTypes } from 'utils/featureFlags';
+import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 import * as Icon from 'react-feather';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
+import { connect } from 'react-redux';
 
 const iconClassName = 'h-4 w-4 mb-1';
 
@@ -31,7 +34,7 @@ export const navLinks = [
         text: 'Config Management',
         to: '/main/configmanagement',
         renderIcon: () => <Icon.CheckSquare className={iconClassName} />,
-        featureFlag: featureFlagTypes.SHOW_CONFIG_MANAGEMENT
+        featureFlag: knownBackendFlags.ROX_CONFIG_MGMT_UI
     },
     {
         text: 'Risk',
@@ -56,21 +59,32 @@ export const navLinks = [
     }
 ];
 
-const filteredNavLinks = navLinks.filter(navLink => {
-    if (!navLink.featureFlag) return true;
-    return featureFlags[navLink.featureFlag];
-});
+const getFilteredNavLinks = backendFeatureFlags =>
+    navLinks.filter(navLink => {
+        if (!navLink.featureFlag) return true;
+        return isBackendFeatureFlagEnabled(backendFeatureFlags, navLink.featureFlag, false);
+    });
 
-const LeftSideNavLinks = ({ renderLink }) => (
+const LeftSideNavLinks = ({ renderLink, featureFlags }) => (
     <ul className="flex flex-col list-reset uppercase text-sm tracking-wide">
-        {filteredNavLinks.map(navLink => (
+        {getFilteredNavLinks(featureFlags).map(navLink => (
             <li key={navLink.text}>{renderLink(navLink)}</li>
         ))}
     </ul>
 );
 
 LeftSideNavLinks.propTypes = {
-    renderLink: PropTypes.func.isRequired
+    renderLink: PropTypes.func.isRequired,
+    featureFlags: PropTypes.arrayOf(
+        PropTypes.shape({
+            envVar: PropTypes.string.isRequired,
+            enabled: PropTypes.bool.isRequired
+        })
+    ).isRequired
 };
 
-export default LeftSideNavLinks;
+const mapStateToProps = createStructuredSelector({
+    featureFlags: selectors.getFeatureFlags
+});
+
+export default connect(mapStateToProps)(LeftSideNavLinks);

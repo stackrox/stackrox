@@ -26,7 +26,7 @@ import {
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { actions as cliSearchActions } from 'reducers/cli';
-import featureFlags from 'utils/featureFlags';
+import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 import asyncComponent from 'Components/AsyncComponent';
 import Button from 'Components/Button';
@@ -68,7 +68,13 @@ class MainPage extends Component {
         globalSearchView: PropTypes.bool.isRequired,
         cliDownloadView: PropTypes.bool.isRequired,
         metadata: PropTypes.shape({ stale: PropTypes.bool.isRequired }),
-        pdfLoadingStatus: PropTypes.bool
+        pdfLoadingStatus: PropTypes.bool,
+        featureFlags: PropTypes.arrayOf(
+            PropTypes.shape({
+                envVar: PropTypes.string.isRequired,
+                enabled: PropTypes.bool.isRequired
+            })
+        ).isRequired
     };
 
     static defaultProps = {
@@ -131,7 +137,11 @@ class MainPage extends Component {
                     <ProtectedRoute
                         path={configManagementPath}
                         component={AsyncConfigManagementPage}
-                        featureFlagEnabled={featureFlags.SHOW_CONFIG_MANAGEMENT}
+                        featureFlagEnabled={isBackendFeatureFlagEnabled(
+                            this.props.featureFlags,
+                            knownBackendFlags.ROX_CONFIG_MGMT_UI,
+                            false
+                        )}
                     />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
@@ -189,7 +199,8 @@ const mapStateToProps = createStructuredSelector({
     globalSearchView: selectors.getGlobalSearchView,
     cliDownloadView: selectors.getCLIDownloadView,
     metadata: selectors.getMetadata,
-    pdfLoadingStatus: selectors.getPdfLoadingStatus
+    pdfLoadingStatus: selectors.getPdfLoadingStatus,
+    featureFlags: selectors.getFeatureFlags
 });
 
 const mapDispatchToProps = dispatch => ({

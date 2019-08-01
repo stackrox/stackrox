@@ -19,5 +19,10 @@ var (
 	DBBackupRestoreV2 = registerFeature("Improved DB backup/restore experience", "ROX_DB_BACKUP_RESTORE_V2", false)
 
 	// ScannerV2 enables scanner v2.
+	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	ScannerV2 = registerFeature("Enable Scanner V2", "ROX_SCANNER_V2", false)
+
+	// ConfigMgmtUI enables the config management UI.
+	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
+	ConfigMgmtUI = registerFeature("Enable Config Mgmt UI", "ROX_CONFIG_MGMT_UI", false)
 )

@@ -13,6 +13,7 @@ import { actions as apiTokenActions } from 'reducers/apitokens';
 import { actions as integrationActions } from 'reducers/integrations';
 import { actions as clusterActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
+import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import APITokensModal from './APITokens/APITokensModal';
 
 class IntegrationsPage extends Component {
@@ -186,10 +187,13 @@ class IntegrationsPage extends Component {
     renderIntegrationTiles = source =>
         integrationsList[source].map(tile => {
             if (tile.dependsOnFeatureFlag) {
-                const featureFlag = this.props.featureFlags.find(
-                    flag => flag.envVar === tile.dependsOnFeatureFlag
-                );
-                if (!featureFlag || !featureFlag.enabled) {
+                if (
+                    !isBackendFeatureFlagEnabled(
+                        this.props.featureFlags,
+                        tile.dependsOnFeatureFlag,
+                        false
+                    )
+                ) {
                     return null;
                 }
             }

@@ -1,11 +1,29 @@
 export const types = {
-    SHOW_DISALLOWED_CONNECTIONS: 'SHOW_DISALLOWED_CONNECTIONS',
-    SHOW_CONFIG_MANAGEMENT: 'SHOW_CONFIG_MANAGEMENT'
+    SHOW_DISALLOWED_CONNECTIONS: 'SHOW_DISALLOWED_CONNECTIONS'
 };
 
+// featureFlags defines UI specific feature flags.
 const featureFlags = {
-    [types.SHOW_DISALLOWED_CONNECTIONS]: false,
-    [types.SHOW_CONFIG_MANAGEMENT]: process.env.REACT_APP_CONFIG_MANAGEMENT_ENABLED === 'true'
+    [types.SHOW_DISALLOWED_CONNECTIONS]: false
+};
+
+// knownBackendFlags defines backend feature flags that are checked in the UI.
+export const knownBackendFlags = {
+    ROX_CONFIG_MGMT_UI: 'ROX_CONFIG_MGMT_UI',
+    ROX_SCANNER_V2: 'ROX_SCANNER_V2'
+};
+
+// isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.
+// The defaul should never be required unless there's a programming error.
+export const isBackendFeatureFlagEnabled = (backendFeatureFlags, envVar, defaul) => {
+    const featureFlag = backendFeatureFlags.find(flag => flag.envVar === envVar);
+    if (!featureFlag) {
+        if (process.env.NODE_ENV === 'development') {
+            throw new Error(`EnvVar ${envVar} not found in the backend list, possibly stale?`);
+        }
+        return defaul;
+    }
+    return featureFlag.enabled;
 };
 
 export default featureFlags;
