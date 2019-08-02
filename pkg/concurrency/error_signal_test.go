@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
@@ -116,7 +117,11 @@ func TestErrorSignal_SignalAndResetAreAtomic(t *testing.T) {
 	// were spawned.
 	initWG.Add(1)
 
-	const numGoroutines = 100000
+	numGoroutines := 100000
+	if buildinfo.RaceEnabled {
+		// Race detector has a limit of 8128 goroutines.
+		numGoroutines = 1000
+	}
 
 	for i := 0; i < numGoroutines; i++ {
 		doneWG.Add(1)

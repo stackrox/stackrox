@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	buildTimestampUnixSecs string
+	buildTimestampUnixSecs string //XDef:BUILD_TIMESTAMP
 
 	// BuildTimestamp is the time when this binary was built.
 	BuildTimestamp time.Time

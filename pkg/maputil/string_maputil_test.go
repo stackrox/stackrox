@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
@@ -55,7 +56,10 @@ func TestStringFastRMapThreadSafe(t *testing.T) {
 
 	m := NewStringStringFastRMap()
 
-	const numThreads = 1000
+	numThreads := 1000
+	if buildinfo.RaceEnabled {
+		numThreads = 100 // race detector chokes on this if we have too many goroutines
+	}
 
 	for i := 0; i < numThreads; i++ {
 		wg.Add(1)

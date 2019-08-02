@@ -3,6 +3,13 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
 
+export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS
+CGO_ENABLED := 0
+GOARCH := amd64
+DEFAULT_GOOS := linux
+
+GOBUILD := $(CURDIR)/scripts/go-build.sh
+
 RELEASE_GOTAGS := release
 ifdef CI
 ifneq ($(CIRCLE_TAG),)
@@ -261,70 +268,54 @@ clean-deps:
 ###########
 ## Build ##
 ###########
-PURE := --features=pure
-RACE := --features=race
-LINUX_AMD64 := --cpu=k8
-VARIABLE_STAMPS := --workspace_status_command=$(BASE_DIR)/status.sh --stamp
-BAZEL_OS=linux
+
+HOST_OS=linux
 ifeq ($(UNAME_S),Darwin)
-    BAZEL_OS=darwin
+    HOST_OS=darwin
 endif
-PLATFORMS := --platforms=@io_bazel_rules_go//go/toolchain:$(BAZEL_OS)_amd64
 
-BAZEL_BASE_FLAGS := $(PURE) $(VARIABLE_STAMPS) --define gotags=$(GOTAGS)
-BAZEL_FLAGS := $(BAZEL_BASE_FLAGS) $(LINUX_AMD64)
+.PHONY: build-prep
+build-prep: deps volatile-generated-srcs
+	mkdir -p bin/{darwin,linux,windows}
 
-cleanup:
-	@echo "Total BUILD.bazel files deleted: "
-	@git status --ignored --untracked-files=all --porcelain | grep '^\(!!\|??\) ' | cut -d' ' -f 2- | grep '\(/\|^\)BUILD\.bazel$$' | xargs rm -v | wc -l
-
-.PHONY: gazelle
-gazelle: deps volatile-generated-srcs cleanup
-	bazel run //:gazelle -- -build_tags=$(GOTAGS)
-
-cli: gazelle
+cli: build-prep
 ifdef CI
-	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64 -- //roxctl
-	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 -- //roxctl
-	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:windows_amd64 -- //roxctl
+	GOOS=darwin $(GOBUILD) ./roxctl
+	GOOS=linux $(GOBUILD) ./roxctl
+	GOOS=windows $(GOBUILD) ./roxctl
 else
-	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:$(BAZEL_OS)_amd64 -- //roxctl
+	$(GOBUILD) ./roxctl
 endif
 	# Copy the user's specific OS into gopath
-	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl $(GOPATH)/bin/roxctl
+	cp bin/$(HOST_OS)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
 
 .PHONY: main-build
-main-build: gazelle
+main-build: build-prep
 	@echo "+ $@"
 	@# PLEASE KEEP THE TWO LISTS BELOW IN SYNC.
 	@# The only exception is that `roxctl` should not be built in CI here, since it's built separately when in CI.
 	@# This isn't pretty, but it saves 30 seconds on every build, which seems worth it.
 ifdef CI
-	bazel build $(BAZEL_FLAGS) //central //migrator //sensor/kubernetes //compliance/collection
+	$(GOBUILD) central migrator sensor/kubernetes compliance/collection
 else
-	bazel build $(BAZEL_FLAGS) //central //migrator //sensor/kubernetes //compliance/collection //roxctl
+	$(GOBUILD) central migrator sensor/kubernetes compliance/collection roxctl
 endif
 
 .PHONY: scale-build
-scale-build: gazelle
+scale-build: build-prep
 	@echo "+ $@"
-	bazel build $(BAZEL_FLAGS) \
-		//scale/mocksensor \
-		//scale/mockcollector \
-		//scale/profiler
+	$(GOBUILD) scale/mocksensor scale/mockcollector scale/profiler
 
 .PHONY: webhookserver-build
-webhookserver-build: gazelle
+webhookserver-build: build-prep
 	@echo "+ $@"
-	bazel build $(BAZEL_FLAGS) \
-		//webhookserver
+	$(GOBUILD) webhookserver
 
 .PHONY: mock-grpc-server-build
-mock-grpc-server-build: gazelle
+mock-grpc-server-build: build-prep
 	@echo "+ $@"
-	bazel build $(BAZEL_FLAGS) \
-		//integration-tests/mock-grpc-server
+	$(GOBUILD) integration-tests/mock-grpc-server
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -337,19 +328,16 @@ swagger-docs: $(MERGED_API_SWAGGER_SPEC)
 
 BAZEL_TEST_PATTERNS ?= //...
 
-.PHONY: bazel-test
-bazel-test: gazelle
-	-rm vendor/github.com/coreos/pkg/BUILD
-	-rm vendor/github.com/cloudflare/cfssl/script/BUILD
-	-rm vendor/github.com/grpc-ecosystem/grpc-gateway/BUILD
-	@# Be careful if you add action_env arguments; their values can invalidate cached
-	@# test results. See https://github.com/bazelbuild/bazel/issues/2574#issuecomment-320006871.
-	bazel coverage $(BAZEL_BASE_FLAGS) $(RACE) \
-	    --instrumentation_filter=//... \
-	    --test_output=errors \
-	    -- \
-	    $(BAZEL_TEST_PATTERNS) -proto/... -tests/... -vendor/...
+UNIT_TEST_PACKAGES ?= ./...
 
+.PHONY: test-prep
+test-prep:
+	@echo "+ $@"
+	@mkdir -p test-output
+
+.PHONY: go-unit-tests
+go-unit-tests: build-prep test-prep
+	CGO_ENABLED=1 MUTEX_WATCHDOG_TIMEOUT_SECS=30 go test -p 4 -race -cover -coverprofile test-output/coverage.out -v $(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$')
 
 .PHONY: ui-build
 ui-build:
@@ -365,27 +353,14 @@ ui-test:
 	make -C ui test
 
 .PHONY: test
-test: bazel-test ui-test
+test: go-unit-tests ui-test
 
 .PHONY: integration-unit-tests
-integration-unit-tests: gazelle
+integration-unit-tests: build-prep
 	 go test -tags=integration $(shell go list ./... | grep  "registries\|scanners\|notifiers")
 
 upload-coverage:
-	@# 'mode: set' is repeated in each coverage file, but Coveralls only wants it
-	@# exactly once at the head of the file.
-	@# We might be able to use Coveralls parallel builds to resolve this:
-	@#     https://docs.coveralls.io/parallel-build-webhook
-
-	@echo 'mode: set' > combined_coverage.dat
-	@find ./bazel-testlogs/ -name 'coverage.dat' | xargs grep -h '^github.com/stackrox/rox/' | grep -v vendor >> combined_coverage.dat
-	goveralls -coverprofile="combined_coverage.dat" -ignore 'central/graphql/resolvers/generated.go,generated/storage/*,generated/*/*/*' -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
-
-.PHONY: coverage
-coverage:
-	@echo "+ $@"
-	@go test -cover -coverprofile coverage.out $(shell go list -e ./... | grep -v /tests)
-	@go tool cover -html=coverage.out -o coverage.html
+	goveralls -coverprofile="test-output/coverage.out" -ignore 'central/graphql/resolvers/generated.go,generated/storage/*,generated/*/*/*' -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
 
 ###########
 ## Image ##
@@ -411,8 +386,8 @@ main-image-rhel: all-builds
 	make docker-build-main-image-rhel
 
 .PHONY: deployer-image
-deployer-image: gazelle
-	bazel build $(BAZEL_FLAGS) //roxctl
+deployer-image: build-prep
+	$(GOBUILD) roxctl
 	make docker-build-deployer-image
 
 # The following targets copy compiled artifacts into the expected locations and
@@ -441,26 +416,26 @@ docker-build-data-image:
 
 .PHONY: docker-build-deployer-image
 docker-build-deployer-image:
-	cp -f bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
+	cp -f bin/linux/roxctl image/bin/roxctl-linux
 	docker build -t stackrox/deployer:$(TAG) --build-arg MAIN_IMAGE_TAG=$(TAG) --build-arg SCANNER_IMAGE_TAG=$(shell cat SCANNER_VERSION) image/ --file image/Dockerfile_gcp
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir:
 	cp -r ui/build image/ui/
-	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
+	cp bin/linux/central image/bin/central
 ifdef CI
-	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
-	cp bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl image/bin/roxctl-darwin
-	cp bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe image/bin/roxctl-windows.exe
+	cp bin/linux/roxctl image/bin/roxctl-linux
+	cp bin/darwin/roxctl image/bin/roxctl-darwin
+	cp bin/windows/roxctl.exe image/bin/roxctl-windows.exe
 else
-ifneq ($(BAZEL_OS),linux)
-	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
+ifneq ($(HOST_OS),linux)
+	cp bin/linux/roxctl image/bin/roxctl-linux
 endif
-	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl image/bin/roxctl-$(BAZEL_OS)
+	cp bin/$(HOST_OS)/roxctl image/bin/roxctl-$(HOST_OS)
 endif
-	cp bazel-bin/migrator/linux_amd64_pure_stripped/migrator image/bin/migrator
-	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
-	cp bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection image/bin/compliance
+	cp bin/linux/migrator image/bin/migrator
+	cp bin/linux/kubernetes image/bin/kubernetes-sensor
+	cp bin/linux/collection image/bin/compliance
 
 ifdef CI
 	@[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
@@ -471,21 +446,21 @@ endif
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
-	cp bazel-bin/scale/mocksensor/linux_amd64_pure_stripped/mocksensor scale/image/bin/mocksensor
-	cp bazel-bin/scale/mockcollector/linux_amd64_pure_stripped/mockcollector scale/image/bin/mockcollector
-	cp bazel-bin/scale/profiler/linux_amd64_pure_stripped/profiler scale/image/bin/profiler
+	cp bin/linux/mocksensor scale/image/bin/mocksensor
+	cp bin/linux/mockcollector scale/image/bin/mockcollector
+	cp bin/linux/profiler scale/image/bin/profiler
 	chmod +w scale/image/bin/*
 	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
 
 webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
-	cp bazel-bin/webhookserver/linux_amd64_pure_stripped/webhookserver webhookserver/bin/webhookserver
+	cp bin/linux/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
 	docker build -t stackrox/webhookserver:1.1 -f webhookserver/Dockerfile webhookserver
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
-	cp bazel-bin/integration-tests/mock-grpc-server/linux_amd64_pure_stripped/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
+	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
 
 ###########

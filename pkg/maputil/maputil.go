@@ -104,14 +104,20 @@ func (m *KeyTypeValueTypeFastRMap) cloneAndMutate(mutateFunc func(clonedMap map[
 }
 
 func (m *KeyTypeValueTypeFastRMap) cloneAndMutateWithInitialPtr(initialMapPtr *map[KeyType]ValueType, mutateFunc func(clonedMap map[KeyType]ValueType)) {
-	cloned := CloneKeyTypeValueTypeMap(*initialMapPtr)
-	mutateFunc(cloned)
-	m.lock.Lock()
-	if m.m != initialMapPtr { // our work was for nothing, another goroutine beat us to the write!
-		m.lock.Unlock() // This needs to be done before the recursive call, or we'll deadlock.
-		m.cloneAndMutateWithInitialPtr(m.m, mutateFunc)
-		return
-	}
 	defer m.lock.Unlock()
-	m.m = &cloned
+
+	for {
+		cloned := CloneKeyTypeValueTypeMap(*initialMapPtr)
+		mutateFunc(cloned)
+
+		m.lock.Lock()
+		if m.m == initialMapPtr {
+			m.m = &cloned
+			return
+		}
+
+		// our work was for nothing, another goroutine beat us to the write!
+		initialMapPtr = m.m
+		m.lock.Unlock()
+	}
 }

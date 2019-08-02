@@ -17,11 +17,22 @@ setupGoogleAppCreds: &setupGoogleAppCreds
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud auth list
 
-setupBazel: &setupBazel
-  run:
-    name: Setup Bazel cache access and bazel.rc
-    command: |
-      cp tools/ci-bazel.rc .bazelrc
+restoreGoCache: &restoreGoCache
+  restore_cache:
+    name: Restoring Go build cache
+    keys:
+      - go-cache-v1-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
+      - go-cache-v1-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-
+      - go-cache-v1-{{ .Environment.CIRCLE_JOB }}-master-
+      - go-cache-v1-{{ .Environment.CIRCLE_JOB }}-
+      - go-cache-v1-
+
+saveGoCache: &saveGoCache
+  save_cache:
+    name: Saving Go build cache
+    key: go-cache-v1-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
+    paths:
+      - /home/circleci/.cache/go-build
 
 depCacheKey: &depCacheKey 'v1-rox-go-pkg-dep-{{ checksum "Gopkg.lock" }}'
 restoreDep: &restoreDep
@@ -74,9 +85,9 @@ refreshAlpineBaseImage: &refreshAlpineBaseImage
 
 setupRoxctl: &setupRoxctl
   run:
-    name: Setup Roxctl from bazel-bin
+    name: Setup Roxctl from bin
     command: |
-      cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl $GOPATH/bin/roxctl
+      cp bin/linux/roxctl $GOPATH/bin/roxctl
 
 setupLicense: &setupLicense
   run:
@@ -132,6 +143,9 @@ setupDefaultTLSCerts: &setupDefaultTLSCerts
       cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
 
       cci-export TRUSTSTORE_PATH "${cert_dir}/keystore.p12"
+
+      echo "Contents of ${cert_dir}:"
+      ls -al "${cert_dir}"
 
 setupClientTLSCerts: &setupClientTLSCerts
   run:
@@ -624,8 +638,7 @@ jobs:
     steps:
       - checkout
       - *restoreDep
-      - *setupGoogleAppCreds
-      - *setupBazel
+      - *restoreGoCache
       - run:
           name: Build the CLI
           command: make cli
@@ -635,12 +648,14 @@ jobs:
           paths:
             - /go/pkg/dep
 
+      - *saveGoCache
+
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
-            - bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
-            - bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl
-            - bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe
+            - bin/linux/roxctl
+            - bin/darwin/roxctl
+            - bin/windows/roxctl.exe
 
       - cleanup-clusters-on-fail
 
@@ -650,12 +665,13 @@ jobs:
     steps:
       - checkout
       - *restoreDep
-      - *setupGoogleAppCreds
-      - *setupBazel
+      - *restoreGoCache
 
       - run:
           name: Build the main Go binaries
           command: make main-build
+
+      - *saveGoCache
 
       - run:
           name: Generate the swagger docs
@@ -664,10 +680,10 @@ jobs:
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
-            - bazel-bin/central/linux_amd64_pure_stripped/central
-            - bazel-bin/migrator/linux_amd64_pure_stripped/migrator
-            - bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes
-            - bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection
+            - bin/linux/central
+            - bin/linux/migrator
+            - bin/linux/kubernetes
+            - bin/linux/collection
             - image/docs # This will go into the image as generated docs.
             - image/keys
             - deps # Used to speed up k8s-tests
@@ -722,11 +738,11 @@ jobs:
             - /go/pkg/dep
 
       - store_artifacts:
-          path: bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
+          path: bin/linux/roxctl
           destination: roxctl/roxctl-linux
 
       - store_artifacts:
-          path: bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl
+          path: bin/darwin/roxctl
           destination: roxctl/roxctl-darwin
 
       - run:
@@ -847,12 +863,13 @@ jobs:
       - *refreshAlpineBaseImage
 
       - *restoreDep
-      - *setupGoogleAppCreds
-      - *setupBazel
+      - *restoreGoCache
 
       - run:
           name: Build images
           command: make scale-image mock-grpc-server-image monitoring-image
+
+      - *saveGoCache
 
       - run:
           name: Push new Docker image
@@ -879,12 +896,13 @@ jobs:
       - *restoreGradle
       - *restoreUI
 
-      - *setupGoogleAppCreds
-      - *setupBazel
+      - *restoreGoCache
 
       - run:
           name: Run Go unit tests
-          command: make bazel-test
+          command: make go-unit-tests
+
+      - *saveGoCache
 
       - run:
           name: Run UI unit tests
@@ -946,8 +964,7 @@ jobs:
 
       - *restoreDep
 
-      - *setupGoogleAppCreds
-      - *setupBazel
+      - *restoreGoCache
 
       - run:
           name: Run integration tests
@@ -966,6 +983,8 @@ jobs:
               echo "Failed after ${max_tries} tries"
               exit 1
             fi
+
+      - *saveGoCache
 
   k8s-tests:
     <<: *defaults
@@ -1949,16 +1968,13 @@ jobs:
             gcloud auth list
             MAIN_TAG=$(make tag)
 
-            cd bazel-bin/roxctl
+            cd bin
             for release in "${MAIN_TAG}" latest; do
-              gsutil cp linux_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/linux/roxctl"
-              gsutil cp linux_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/Linux/roxctl"
-
-              gsutil cp darwin_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/darwin/roxctl"
-              gsutil cp darwin_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/Darwin/roxctl"
-
-              gsutil cp windows_amd64_pure_stripped/roxctl.exe "gs://sr-roxc/${release}/bin/windows/roxctl.exe"
-              gsutil cp windows_amd64_pure_stripped/roxctl.exe "gs://sr-roxc/${release}/bin/Windows/roxctl.exe"
+              for platform in Linux Darwin Windows; do
+                platform_lower="$(echo "$platform" | tr A-Z a-z)"
+                gsutil cp "${platform_lower}/roxctl" "gs://sr-roxc/${release}/bin/${platform}/roxctl"
+                gsutil cp "${platform_lower}/roxctl" "gs://sr-roxc/${release}/bin/${platform_lower}/roxctl"
+              done
             done
 
       - run:

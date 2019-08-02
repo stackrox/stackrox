@@ -1,6 +1,7 @@
 package concurrency
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -10,11 +11,10 @@ import (
 func TestPoller(t *testing.T) {
 	a := assert.New(t)
 
-	const numPollsBeforeTrue = 3
-	conditionCounter := 0
+	const numPollsBeforeTrue int64 = 3
+	var conditionCounter int64
 	condition := func() bool {
-		conditionCounter++
-		return conditionCounter >= numPollsBeforeTrue
+		return atomic.AddInt64(&conditionCounter, 1) >= numPollsBeforeTrue
 	}
 	duration := 100 * time.Millisecond
 
@@ -23,14 +23,14 @@ func TestPoller(t *testing.T) {
 		a.False(p.Stop())
 	}()
 	a.False(p.IsDone())
-	a.True(conditionCounter < 3)
+	a.True(atomic.LoadInt64(&conditionCounter) < 3)
 	p.Wait()
 	a.True(p.IsDone())
-	a.Equal(numPollsBeforeTrue, conditionCounter)
+	a.Equal(numPollsBeforeTrue, atomic.LoadInt64(&conditionCounter))
 
 	// Make sure there are no unnecessary polls.
 	time.Sleep(2 * duration)
-	a.Equal(numPollsBeforeTrue, conditionCounter)
+	a.Equal(numPollsBeforeTrue, atomic.LoadInt64(&conditionCounter))
 }
 
 func TestPollerWaitWithTimeout(t *testing.T) {
@@ -50,10 +50,10 @@ func TestPollerStops(t *testing.T) {
 	a := assert.New(t)
 
 	calledSig := NewSignal()
-	count := 0
+	var count int64
 	p := NewPoller(func() bool {
 		calledSig.Signal()
-		count++
+		atomic.AddInt64(&count, 1)
 		return false
 	}, 10*time.Millisecond)
 
@@ -64,5 +64,5 @@ func TestPollerStops(t *testing.T) {
 	// Make sure it stops polling beyond the first time.
 	time.Sleep(100 * time.Millisecond)
 
-	a.Equal(1, count)
+	a.Equal(int64(1), atomic.LoadInt64(&count))
 }

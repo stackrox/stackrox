@@ -7,7 +7,6 @@ GO_BASE_PATH ?= /go/src/github.com/stackrox/rox
 
 .DEFAULT_GOAL = all
 
-
 ###########################
 ## Developer Environment ##
 ###########################
@@ -18,17 +17,6 @@ docs: generated-srcs
 	@echo 'Access your docs at http://localhost:6061/pkg/github.com/stackrox/rox/$(ROX_PROJECT)/'
 	@echo 'Hit CTRL-C to quit.'
 	@godoc -http=:6061
-
-
-#######################
-## Local Compilation ##
-#######################
-
-.PHONY: build
-build:
-	bazel run //:gazelle
-	bazel build --cpu=k8 \
-		//$(PROJECT_SUBDIR)
 
 
 #############
