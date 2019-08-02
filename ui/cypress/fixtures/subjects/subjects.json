@@ -1,0 +1,21 @@
+{
+    "data": {
+        "clusters": [
+            {
+                "id": "ed501845-7391-47ca-a683-1c5fe7d5786d",
+                "subjects": [
+                    {
+                        "subject": {
+                            "name": "sc@stackrox.com",
+                            "__typename": "Subject"
+                        },
+                        "type": "User",
+                        "clusterAdmin": true,
+                        "__typename": "SubjectWithClusterID"
+                    }
+                ],
+                "__typename": "Cluster"
+            }
+        ]
+    }
+}

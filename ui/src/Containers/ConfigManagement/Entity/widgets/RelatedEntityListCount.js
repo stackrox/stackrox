@@ -31,13 +31,19 @@ const RelatedEntityListCount = ({
             type="button"
             className="h-full w-full no-underline text-primary-700 hover:bg-primary-100"
             onClick={onClick}
+            data-test-id="related-entity-list-count-value"
         >
             {content}
         </button>
     );
-
+    const titleComponents = <div data-test-id="related-entity-list-count-title">{name}</div>;
     return (
-        <Widget bodyClassName="flex items-center justify-center" header={name} {...rest}>
+        <Widget
+            id="related-entity-list-count"
+            bodyClassName="flex items-center justify-center"
+            header={titleComponents}
+            {...rest}
+        >
             {result}
         </Widget>
     );

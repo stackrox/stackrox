@@ -7,7 +7,7 @@ const Tab = ({ text, index, active, onClick }) => (
             index !== 0 ? 'border-l border-base-400' : ''
         }`}
     >
-        <button type="button" onClick={onClick}>
+        <button type="button" onClick={onClick} data-test-id="tab">
             <div className="cursor-pointer capitalize p-3">{text}</div>
         </button>
     </li>
@@ -34,6 +34,7 @@ const GroupedTabs = ({ groups, tabs, activeTab, onClick }) => {
             const grouppedTabs = groupMapping[group];
             return (
                 <ul
+                    data-test-id="grouped-tab"
                     className="list-reset flex ml-4 border-l border-base-400 border-r relative"
                     key={group}
                 >
@@ -50,7 +51,10 @@ const GroupedTabs = ({ groups, tabs, activeTab, onClick }) => {
             );
         });
     return (
-        <ul className="list-reset flex border-b border-base-400 px-4 bg-primary-100 uppercase text-sm">
+        <ul
+            data-test-id="grouped-tabs"
+            className="list-reset flex border-b border-base-400 px-4 bg-primary-100 uppercase text-sm"
+        >
             {result}
         </ul>
     );

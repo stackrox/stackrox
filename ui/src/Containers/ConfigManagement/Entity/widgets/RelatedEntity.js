@@ -38,6 +38,7 @@ const RelatedEntity = ({
     );
     const result = onClick ? (
         <button
+            data-test-id="related-entity-value"
             type="button"
             className="h-full w-full no-underline text-primary-700 hover:bg-primary-100"
             onClick={onClick}
@@ -47,8 +48,14 @@ const RelatedEntity = ({
     ) : (
         content
     );
+    const titleComponents = <div data-test-id="related-entity-title">{name}</div>;
     return (
-        <Widget bodyClassName="flex items-center justify-center" header={name} {...rest}>
+        <Widget
+            id="related-entity"
+            bodyClassName="flex items-center justify-center"
+            header={titleComponents}
+            {...rest}
+        >
             {result}
         </Widget>
     );

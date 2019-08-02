@@ -9,6 +9,7 @@ Loader.propTypes = {
 };
 
 const Button = ({
+    dataTestId,
     className,
     icon,
     text,
@@ -35,13 +36,20 @@ const Button = ({
         </div>
     );
     return (
-        <button type="button" className={className} onClick={onClick} disabled={disabled}>
+        <button
+            type="button"
+            className={className}
+            onClick={onClick}
+            disabled={disabled}
+            data-test-id={dataTestId}
+        >
             {isLoading ? <Loader size={loaderSize} /> : content}
         </button>
     );
 };
 
 Button.propTypes = {
+    dataTestId: PropTypes.string,
     className: PropTypes.string,
     icon: PropTypes.element,
     text: PropTypes.string,
@@ -54,6 +62,7 @@ Button.propTypes = {
 };
 
 Button.defaultProps = {
+    dataTestId: null,
     className: '',
     icon: null,
     text: null,

@@ -997,6 +997,7 @@ jobs:
       - ROX_CLIENT_CA_AUTH: true
       - ROX_PLAINTEXT_EXPOSURE: true
       - ROX_PLAINTEXT_ENDPOINTS: "http@8080,grpc@8081"
+      - ROX_CONFIG_MGMT_UI: true
 
     steps:
       - checkout

@@ -20,7 +20,7 @@ class Select extends Component {
 
     onClick = event => {
         const selectedOption = this.props.options.find(
-            option => option.label === event.target.value
+            option => option.value === event.target.value
         );
         this.props.onChange(selectedOption);
     };

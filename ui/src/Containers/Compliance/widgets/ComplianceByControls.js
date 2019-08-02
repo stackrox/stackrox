@@ -3,12 +3,12 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
-import entityTypes, {
-    standardTypes,
-    standardEntityTypes,
-    standardBaseTypes
-} from 'constants/entityTypes';
-import { standardLabels, standardShortLabels } from 'messages/standards';
+import entityTypes, { standardEntityTypes, standardBaseTypes } from 'constants/entityTypes';
+import {
+    standardLabels,
+    standardShortLabels,
+    getStandardAcrossEntityLabel
+} from 'messages/standards';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import searchContext from 'Containers/searchContext';
@@ -204,7 +204,7 @@ const ComplianceByControls = ({
 }) => {
     const searchParam = useContext(searchContext);
     const options = standardOptions.map(standard => ({
-        label: standardLabels[standard],
+        label: `${getStandardAcrossEntityLabel(standard, entityTypes.CLUSTER, 'plural')}`,
         jsonpath: standardLabels[standard],
         value: standardLabels[standard],
         standard
@@ -285,7 +285,6 @@ const ComplianceByControls = ({
                         className={`s-2 ${className}`}
                         titleComponents={titleComponents}
                         headerComponents={headerComponents}
-                        id={`${standardTypes[selectStandard]}-compliance`}
                     >
                         {contents}
                     </Widget>

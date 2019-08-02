@@ -85,7 +85,6 @@ const Image = ({ id, entityListType, query }) => {
                 if (loading) return <Loader />;
                 const { image: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.IMAGE} />;
-                const { lastUpdated, metadata, scan, deployments } = entity;
 
                 if (entityListType) {
                     return (
@@ -96,6 +95,8 @@ const Image = ({ id, entityListType, query }) => {
                         />
                     );
                 }
+
+                const { lastUpdated, metadata, scan, deployments } = entity;
 
                 const metadataKeyValuePairs = [
                     {
@@ -119,7 +120,7 @@ const Image = ({ id, entityListType, query }) => {
                     );
                 }
 
-                const layers = cloneDeep(metadata.v1.layers);
+                const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
 
                 // If we have a scan, then we can try and assume we have layers
                 if (scan) {

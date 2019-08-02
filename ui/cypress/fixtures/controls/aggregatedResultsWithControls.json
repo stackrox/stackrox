@@ -1,0 +1,56 @@
+{
+    "data": {
+        "results": {
+            "__typename": "ComplianceAggregation_Response",
+            "results": [
+                {
+                    "__typename": "ComplianceAggregation_Result",
+                    "aggregationKeys": [
+                        {
+                            "__typename": "ComplianceAggregation_AggregationKey",
+                            "id": "CIS_Docker_v1_1_0:1_1",
+                            "scope": "CONTROL"
+                        }
+                    ],
+                    "numFailing": 1,
+                    "numPassing": 0,
+                    "unit": "CONTROL"
+                },
+                {
+                    "__typename": "ComplianceAggregation_Result",
+                    "aggregationKeys": [
+                        {
+                            "__typename": "ComplianceAggregation_AggregationKey",
+                            "id": "CIS_Docker_v1_1_0:1_2",
+                            "scope": "CONTROL"
+                        }
+                    ],
+                    "numFailing": 0,
+                    "numPassing": 1,
+                    "unit": "CONTROL"
+                }
+            ]
+        },
+        "complianceStandards": [
+            {
+                "__typename": "ComplianceStandardMetadata",
+                "id": "CIS_Docker_v1_1_0",
+                "name": "CIS Docker v1.1.0",
+                "controls": [
+                    {
+                        "__typename": "ComplianceControl",
+                        "id": "CIS_Docker_v1_1_0:1_1",
+                        "name": "1.1",
+                        "description": "Ensure a separate partition for containers has been created"
+                    },
+                    {
+                        "__typename": "ComplianceControl",
+                        "id": "CIS_Docker_v1_1_0:1_2",
+                        "name": "1.2",
+                        "description": "Ensure the container host has been Hardened"
+                    }
+                ]
+            }
+        ]
+    }
+}

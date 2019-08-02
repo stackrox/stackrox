@@ -5,7 +5,6 @@ import { Tooltip } from 'react-tippy';
 import URLService from 'modules/URLService';
 import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
-import networkStatuses from 'constants/networkStatuses';
 import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
 import pluralize from 'pluralize';
@@ -27,6 +26,12 @@ const QUERY = gql`
                     ... on Cert {
                         endDate
                         startDate
+                    }
+                    ... on ImagePullSecret {
+                        registries {
+                            name
+                            username
+                        }
                     }
                 }
             }
@@ -70,54 +75,73 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
     }
     return (
         <Query query={QUERY}>
-            {({ loading, data, networkStatus }) => {
+            {({ loading, data }) => {
                 let contents = <Loader />;
-                let viewAllLink;
-                if (!loading && data && networkStatus === networkStatuses.READY) {
-                    const results = processData(data);
-                    const linkTo = URLService.getURL(match, location)
-                        .base(entityTypes.SECRET)
-                        .url();
+                const viewAllURL = URLService.getURL(match, location)
+                    .base(entityTypes.SECRET)
+                    .url();
 
-                    viewAllLink = (
-                        <Link to={linkTo} className="no-underline">
-                            <button className="btn-sm btn-base" type="button">
-                                View All
-                            </button>
-                        </Link>
-                    );
+                const viewAllLink = (
+                    <Link to={viewAllURL} className="no-underline">
+                        <button className="btn-sm btn-base" type="button">
+                            View All
+                        </button>
+                    </Link>
+                );
+
+                if (!loading && data) {
+                    const results = processData(data);
 
                     contents = (
                         <ul className="list-reset w-full columns-2 columns-gap-0">
-                            {results.map((item, index) => (
-                                <Link
-                                    key={`${item.id}-${index}`}
-                                    to={`${linkTo}/${item.id}`}
-                                    className="no-underline text-base-600 hover:bg-base-400"
-                                >
-                                    <li key={`${item.name}-${index}`} className="hover:bg-base-200">
-                                        <div
-                                            className={`flex flex-row border-base-400 ${
-                                                index !== 4 && index !== 9 ? 'border-b' : ''
-                                            } ${index < 5 ? 'border-r' : ''}`}
+                            {results.map((item, index) => {
+                                const linkTo = URLService.getURL(match, location)
+                                    .base(entityTypes.SECRET, item.id)
+                                    .url();
+                                return (
+                                    <Link
+                                        key={`${item.id}-${index}`}
+                                        to={linkTo}
+                                        className="no-underline text-base-600 hover:bg-base-400"
+                                    >
+                                        <li
+                                            key={`${item.name}-${index}`}
+                                            className="hover:bg-base-200"
                                         >
-                                            <div className="self-center text-2xl tracking-widest pl-4 pr-4">
-                                                {index + 1}
-                                            </div>
-                                            <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
-                                                <span className="text-xs pb-1 italic text-base-500">
-                                                    {item.clusterName}/{item.namespace}
-                                                </span>
-                                                <span className="pb-2">{item.name}</span>
-                                                <Tooltip
-                                                    position="top"
-                                                    trigger="mouseenter"
-                                                    animation="none"
-                                                    duration={0}
-                                                    arrow
-                                                    distance={20}
-                                                    html={
-                                                        <div className="text-sm italic">
+                                            <div
+                                                className={`flex flex-row border-base-400 ${
+                                                    index !== 4 && index !== 9 ? 'border-b' : ''
+                                                } ${index < 5 ? 'border-r' : ''}`}
+                                            >
+                                                <div className="self-center text-2xl tracking-widest pl-4 pr-4">
+                                                    {index + 1}
+                                                </div>
+                                                <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
+                                                    <span className="text-xs pb-1 italic text-base-500">
+                                                        {item.clusterName}/{item.namespace}
+                                                    </span>
+                                                    <span className="pb-2">{item.name}</span>
+                                                    <Tooltip
+                                                        position="top"
+                                                        trigger="mouseenter"
+                                                        animation="none"
+                                                        duration={0}
+                                                        arrow
+                                                        distance={20}
+                                                        html={
+                                                            <div className="text-sm italic">
+                                                                {`${
+                                                                    item.deployments.length
+                                                                } ${pluralize(
+                                                                    'Deployment',
+                                                                    item.deployments.length
+                                                                )}, `}
+                                                                {getCertificateStatus(item.files)}
+                                                            </div>
+                                                        }
+                                                        unmountHTMLWhenHide
+                                                    >
+                                                        <div className="truncate italic">
                                                             {`${
                                                                 item.deployments.length
                                                             } ${pluralize(
@@ -126,22 +150,13 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                             )}, `}
                                                             {getCertificateStatus(item.files)}
                                                         </div>
-                                                    }
-                                                    unmountHTMLWhenHide
-                                                >
-                                                    <div className="truncate italic">
-                                                        {`${item.deployments.length} ${pluralize(
-                                                            'Deployment',
-                                                            item.deployments.length
-                                                        )}, `}
-                                                        {getCertificateStatus(item.files)}
-                                                    </div>
-                                                </Tooltip>
+                                                    </Tooltip>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                </Link>
-                            ))}
+                                        </li>
+                                    </Link>
+                                );
+                            })}
                         </ul>
                     );
                 }

@@ -11,7 +11,7 @@ import Lollipop from 'Components/visuals/Lollipop';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
 const QUERY = gql`
-    query clusters {
+    query usersWithClusterAdminRoles {
         clusters {
             id
             subjects {

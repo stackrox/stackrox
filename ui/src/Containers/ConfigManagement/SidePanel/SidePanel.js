@@ -14,6 +14,7 @@ import BreadCrumbs from './BreadCrumbs';
 const ExternalLink = ({ onClick }) => (
     <div className="flex items-center h-full hover:bg-base-300">
         <Button
+            dataTestId="external-link"
             className="border-l border-base-300 h-full px-4"
             icon={<ExternalLinkIcon className="h-6 w-6 text-base-600" />}
             onClick={onClick}
