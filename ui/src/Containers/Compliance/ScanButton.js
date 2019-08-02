@@ -44,7 +44,7 @@ class ScanButton extends React.Component {
     };
 
     render() {
-        const { className, text, textCondensed, textClass } = this.props;
+        const { className, text, textCondensed, textClass, loaderSize } = this.props;
         return (
             <Mutation mutation={TRIGGER_SCAN}>
                 {(triggerScan, { client }) => {
@@ -76,6 +76,7 @@ class ScanButton extends React.Component {
                                         }
                                         onClick={this.onClick(triggerScan)}
                                         isLoading={polling}
+                                        loaderSize={loaderSize}
                                     />
                                 );
                             }}
@@ -93,7 +94,8 @@ ScanButton.propTypes = {
     textCondensed: PropTypes.string,
     textClass: PropTypes.string,
     clusterId: PropTypes.string,
-    standardId: PropTypes.string
+    standardId: PropTypes.string,
+    loaderSize: PropTypes.number
 };
 
 ScanButton.defaultProps = {
@@ -101,7 +103,8 @@ ScanButton.defaultProps = {
     clusterId: '*',
     textClass: null,
     textCondensed: null,
-    standardId: '*'
+    standardId: '*',
+    loaderSize: 20
 };
 
 export default ScanButton;

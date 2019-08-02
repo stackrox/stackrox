@@ -3,13 +3,18 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
-import entityTypes, { standardTypes, standardEntityTypes } from 'constants/entityTypes';
+import entityTypes, {
+    standardTypes,
+    standardEntityTypes,
+    standardBaseTypes
+} from 'constants/entityTypes';
 import { standardLabels, standardShortLabels } from 'messages/standards';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import searchContext from 'Containers/searchContext';
 import networkStatuses from 'constants/networkStatuses';
 
+import ScanButton from 'Containers/Compliance/ScanButton';
 import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
@@ -190,12 +195,19 @@ const ViewStandardButton = ({ standardType, searchParam, urlBuilder }) => {
     return viewStandardLink;
 };
 
-const ComplianceByControls = ({ match, location, className, standardOptions }) => {
+const ComplianceByControls = ({
+    match,
+    location,
+    className,
+    standardOptions,
+    isConfigMangement
+}) => {
     const searchParam = useContext(searchContext);
     const options = standardOptions.map(standard => ({
         label: standardLabels[standard],
         jsonpath: standardLabels[standard],
-        value: standardLabels[standard]
+        value: standardLabels[standard],
+        standard
     }));
     const [selectedStandard, selectStandard] = useState(options[0]);
 
@@ -221,12 +233,28 @@ const ComplianceByControls = ({ match, location, className, standardOptions }) =
                         options={options}
                     />
                 );
+
                 const headerComponents = (
-                    <ViewStandardButton
-                        urlBuilder={urlBuilder}
-                        standardType={selectedStandard}
-                        searchParam={searchParam}
-                    />
+                    <div className="flex">
+                        {isConfigMangement && (
+                            <ScanButton
+                                className="btn-sm btn-base mr-2"
+                                text={`Scan ${standardBaseTypes[selectedStandard.standard]}`}
+                                textClass="hidden lg:block"
+                                textCondensed={`Scan ${
+                                    standardBaseTypes[selectedStandard.standard]
+                                }`}
+                                clusterId="*"
+                                standardId={selectedStandard.standard}
+                                loaderSize={10}
+                            />
+                        )}
+                        <ViewStandardButton
+                            urlBuilder={urlBuilder}
+                            standardType={selectedStandard}
+                            searchParam={searchParam}
+                        />
+                    </div>
                 );
                 let contents = <Loader />;
                 if (data && networkStatus === networkStatuses.READY) {
@@ -271,11 +299,13 @@ ComplianceByControls.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     className: PropTypes.string,
-    standardOptions: PropTypes.arrayOf(PropTypes.shape).isRequired
+    standardOptions: PropTypes.arrayOf(PropTypes.shape).isRequired,
+    isConfigMangement: PropTypes.bool
 };
 
 ComplianceByControls.defaultProps = {
-    className: ''
+    className: '',
+    isConfigMangement: false
 };
 
 export default withRouter(ComplianceByControls);

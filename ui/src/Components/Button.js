@@ -2,7 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ClipLoader } from 'react-spinners';
 
-const Loader = () => <ClipLoader loading size={20} color="currentColor" />;
+const Loader = ({ size }) => <ClipLoader loading size={size} color="currentColor" />;
+
+Loader.propTypes = {
+    size: PropTypes.number.isRequired
+};
 
 const Button = ({
     className,
@@ -12,7 +16,8 @@ const Button = ({
     textClass,
     onClick,
     disabled,
-    isLoading
+    isLoading,
+    loaderSize
 }) => {
     const content = (
         <div className="flex items-center">
@@ -31,7 +36,7 @@ const Button = ({
     );
     return (
         <button type="button" className={className} onClick={onClick} disabled={disabled}>
-            {isLoading ? <Loader /> : content}
+            {isLoading ? <Loader size={loaderSize} /> : content}
         </button>
     );
 };
@@ -44,7 +49,8 @@ Button.propTypes = {
     textClass: PropTypes.string,
     onClick: PropTypes.func.isRequired,
     disabled: PropTypes.bool,
-    isLoading: PropTypes.bool
+    isLoading: PropTypes.bool,
+    loaderSize: PropTypes.number
 };
 
 Button.defaultProps = {
@@ -54,7 +60,8 @@ Button.defaultProps = {
     textCondensed: null,
     textClass: null,
     disabled: false,
-    isLoading: false
+    isLoading: false,
+    loaderSize: 20
 };
 
 export default Button;
