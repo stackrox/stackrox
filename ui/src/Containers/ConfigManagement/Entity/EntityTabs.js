@@ -16,167 +16,63 @@ const TAB_GROUPS = {
     POLICIES: 'Policies & CIS Controls'
 };
 
+const ENTITY_TO_TAB = {
+    [entityTypes.ROLE]: TAB_GROUPS.RBAC_CONFIG,
+    [entityTypes.SUBJECT]: TAB_GROUPS.RBAC_CONFIG,
+    [entityTypes.SERVICE_ACCOUNT]: TAB_GROUPS.RBAC_CONFIG,
+
+    [entityTypes.DEPLOYMENT]: TAB_GROUPS.APPLICATION_RESOURCES,
+    [entityTypes.SECRET]: TAB_GROUPS.APPLICATION_RESOURCES,
+    [entityTypes.NODE]: TAB_GROUPS.APPLICATION_RESOURCES,
+    [entityTypes.CLUSTER]: TAB_GROUPS.APPLICATION_RESOURCES,
+    [entityTypes.NAMESPACE]: TAB_GROUPS.APPLICATION_RESOURCES,
+    [entityTypes.IMAGE]: TAB_GROUPS.APPLICATION_RESOURCES,
+
+    [entityTypes.POLICY]: TAB_GROUPS.POLICIES,
+    [entityTypes.CONTROL]: TAB_GROUPS.POLICIES
+};
+
+function getTab(entityType, text) {
+    return {
+        group: ENTITY_TO_TAB[entityType],
+        value: entityType,
+        text: text || pluralize(entityLabels[entityType])
+    };
+}
+
 const entityTabsMap = {
     [entityTypes.SERVICE_ACCOUNT]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.DEPLOYMENT,
-            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
-        },
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.SECRET,
-            text: pluralize(entityLabels[entityTypes.SECRET])
-        },
-        {
-            group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.ROLE,
-            text: pluralize(entityLabels[entityTypes.ROLE])
-        }
+        getTab(entityTypes.DEPLOYMENT),
+        getTab(entityTypes.SECRET),
+        getTab(entityTypes.ROLE)
     ],
-    [entityTypes.ROLE]: [
-        {
-            group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.SUBJECT,
-            text: pluralize(entityLabels[entityTypes.SUBJECT])
-        },
-        {
-            group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.SERVICE_ACCOUNT,
-            text: pluralize(entityLabels[entityTypes.SERVICE_ACCOUNT])
-        }
-    ],
-    [entityTypes.SECRET]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.DEPLOYMENT,
-            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
-        }
-    ],
+    [entityTypes.ROLE]: [getTab(entityTypes.SUBJECT), getTab(entityTypes.SERVICE_ACCOUNT)],
+    [entityTypes.SECRET]: [getTab(entityTypes.DEPLOYMENT)],
     [entityTypes.CLUSTER]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.NODE,
-            text: pluralize(entityLabels[entityTypes.NODE])
-        },
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.NAMESPACE,
-            text: pluralize(entityLabels[entityTypes.NAMESPACE])
-        },
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.DEPLOYMENT,
-            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
-        },
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.SECRET,
-            text: pluralize(entityLabels[entityTypes.SECRET])
-        },
-        {
-            group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.SUBJECT,
-            text: pluralize(entityLabels[entityTypes.SUBJECT])
-        },
-        {
-            group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.SERVICE_ACCOUNT,
-            text: pluralize(entityLabels[entityTypes.SERVICE_ACCOUNT])
-        },
-        {
-            group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.ROLE,
-            text: pluralize(entityLabels[entityTypes.ROLE])
-        },
-        {
-            group: TAB_GROUPS.POLICIES,
-            value: entityTypes.POLICY,
-            text: pluralize(entityLabels[entityTypes.POLICY])
-        }
+        getTab(entityTypes.NODE),
+        getTab(entityTypes.SECRET),
+        getTab(entityTypes.NAMESPACE),
+        getTab(entityTypes.DEPLOYMENT),
+        getTab(entityTypes.SUBJECT),
+        getTab(entityTypes.SERVICE_ACCOUNT),
+        getTab(entityTypes.ROLE)
     ],
-    [entityTypes.DEPLOYMENT]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.IMAGE,
-            text: pluralize(entityLabels[entityTypes.IMAGE])
-        },
-        {
-            group: TAB_GROUPS.POLICIES,
-            value: entityTypes.POLICY,
-            text: `Failing ${pluralize(entityLabels[entityTypes.POLICY])}`
-        },
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.SECRET,
-            text: pluralize(entityLabels[entityTypes.SECRET])
-        }
-    ],
-
     [entityTypes.NAMESPACE]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.DEPLOYMENT,
-            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
-        },
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.SECRET,
-            text: pluralize(entityLabels[entityTypes.SECRET])
-        },
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.IMAGE,
-            text: pluralize(entityLabels[entityTypes.IMAGE])
-        },
-        {
-            group: TAB_GROUPS.POLICIES,
-            value: entityTypes.POLICY,
-            text: pluralize(entityLabels[entityTypes.POLICY])
-        }
+        getTab(entityTypes.DEPLOYMENT),
+        getTab(entityTypes.SECRET),
+        getTab(entityTypes.IMAGE),
+        getTab(entityTypes.POLICY)
     ],
-    [entityTypes.NODE]: [
-        {
-            group: TAB_GROUPS.POLICY,
-            value: entityTypes.CONTROL,
-            text: pluralize(entityLabels[entityTypes.CONTROL])
-        }
+    [entityTypes.NODE]: [getTab(entityTypes.CONTROL)],
+    [entityTypes.IMAGE]: [getTab(entityTypes.DEPLOYMENT)],
+    [entityTypes.CIS_Docker_v1_1_0]: [getTab(entityTypes.NODE)],
+    [entityTypes.CIS_Kubernetes_v1_2_0]: [getTab(entityTypes.NODE)],
+    [entityTypes.SUBJECT]: [getTab(entityTypes.ROLE)],
+    [entityTypes.DEPLOYMENT]: [
+        getTab(entityTypes.IMAGE),
+        getTab(entityTypes.POLICY, `Failing ${pluralize(entityLabels[entityTypes.POLICY])}`)
     ],
-    [entityTypes.IMAGE]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.DEPLOYMENT,
-            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
-        }
-    ],
-    [entityTypes.CIS_Docker_v1_1_0]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.NODE,
-            text: pluralize(entityLabels[entityTypes.NODE])
-        }
-    ],
-    [entityTypes.CIS_Kubernetes_v1_2_0]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.NODE,
-            text: pluralize(entityLabels[entityTypes.NODE])
-        }
-    ],
-    [entityTypes.POLICY]: [
-        {
-            group: TAB_GROUPS.APPLICATION_RESOURCES,
-            value: entityTypes.DEPLOYMENT,
-            text: pluralize(entityLabels[entityTypes.DEPLOYMENT])
-        }
-    ],
-    [entityTypes.SUBJECT]: [
-        {
-            group: TAB_GROUPS.RBAC_CONFIG,
-            value: entityTypes.ROLE,
-            text: pluralize(entityLabels[entityTypes.ROLE])
-        }
-    ]
+    [entityTypes.POLICY]: [getTab(entityTypes.DEPLOYMENT)]
 };
 
 const EntityTabs = ({
