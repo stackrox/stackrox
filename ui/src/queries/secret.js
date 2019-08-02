@@ -33,7 +33,7 @@ export const SECRET_FRAGMENT = gql`
             }
         }
         namespace
-        deployments: Deployments {
+        deployments {
             id
             name
         }
@@ -68,7 +68,7 @@ export const SECRETS = gql`
                 type
             }
             namespace
-            deployments: Deployments {
+            deployments {
                 id
                 name
             }

@@ -46,7 +46,6 @@ const ServiceAccount = ({ id, entityListType, query }) => {
             deployments {
                 ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
             }
-            secrets 
             roles {
                 ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
             }
@@ -60,7 +59,9 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                 key
                 value
             }
-            imagePullSecrets
+            secrets: imagePullSecretObjects {
+                ${entityListType === entityTypes.SECRET ? '...secretFields' : 'id'}
+            }
             scopedPermissions {
                 scope
                 permissions {
@@ -87,11 +88,11 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                     createdAt,
                     labels = [],
                     secrets = [],
-                    imagePullSecrets = [],
                     deployments = [],
                     roles = [],
                     saNamespace: { metadata = {} },
-                    scopedPermissions = []
+                    scopedPermissions = [],
+                    annotations
                 } = entity;
 
                 const { name: namespaceName, id: namespaceId } = metadata;
@@ -105,11 +106,10 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                 ];
                 const metadataCounts = [
                     { value: labels.length, text: 'Labels' },
-                    { value: secrets.length, text: 'Secrets' },
-                    { value: imagePullSecrets.length, text: 'Image Pull Secrets' }
+                    { value: annotations.length, text: 'Annotations' },
+                    { value: secrets.length, text: 'Image Pull Secrets' }
                 ];
 
-                // TODO: query secrets collection when back end adds it
                 if (entityListType) {
                     return (
                         <EntityList
