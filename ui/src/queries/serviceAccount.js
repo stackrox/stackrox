@@ -1,7 +1,7 @@
 import gql from 'graphql-tag';
 
 export const SERVICE_ACCOUNT_FRAGMENT = gql`
-    fragment serviceAccountFields on serviceAccount {
+    fragment serviceAccountFields on ServiceAccount {
         id
         name
         namespace
