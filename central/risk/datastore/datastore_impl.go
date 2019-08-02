@@ -50,9 +50,12 @@ func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectTy
 		return nil, err
 	}
 
-	risk, err := d.getRisk(id)
+	risk, exists, err := d.getRisk(id)
 	if err != nil {
 		return nil, err
+	}
+	if !exists {
+		return nil, errors.Errorf("risk %s not found", id)
 	}
 
 	if allowed, err := allowed(ctx, storage.Access_READ_ACCESS, risk); err != nil || !allowed {
@@ -109,8 +112,8 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 		return err
 	}
 
-	risk, err := d.getRisk(id)
-	if err != nil {
+	risk, exists, err := d.getRisk(id)
+	if err != nil || !exists {
 		return err
 	}
 
@@ -127,17 +130,17 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 	return d.indexer.DeleteRisk(id)
 }
 
-func (d *datastoreImpl) getRisk(id string) (*storage.Risk, error) {
+func (d *datastoreImpl) getRisk(id string) (*storage.Risk, bool, error) {
 	risk, err := d.storage.GetRisk(id)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if risk == nil {
-		return nil, errors.Errorf("risk %s not found", id)
+		return nil, false, nil
 	}
 
-	return risk, nil
+	return risk, true, nil
 }
 
 func allowed(ctx context.Context, sm storage.Access, risk *storage.Risk) (bool, error) {

@@ -240,6 +240,11 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	} else if !ok {
 		return errors.New("permission denied")
 	}
+	// Dedupe the removed deployments. This can happen because Pods have many completion states
+	// and we may receive multiple Remove calls
+	if ds.deletedDeploymentCache.Get(id) != nil {
+		return nil
+	}
 	ds.deletedDeploymentCache.Add(id, struct{}{})
 
 	ds.keyedMutex.Lock(id)
