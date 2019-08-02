@@ -127,7 +127,9 @@ func createProgressBars(ctx context.Context, name string, totalSize int64) (*mpb
 	)
 
 	shutdownFunc := func() {
-		progressBars.Abort(progressBar, false)
+		if totalSize == 0 {
+			progressBars.Abort(progressBar, false)
+		}
 		shutdownSig.Signal()
 		progressBars.Wait()
 	}

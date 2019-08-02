@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -17,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -158,7 +158,7 @@ func (m *manager) waitForRestore(process *restoreProcess) {
 		log.Infof("Database restore process %s succeeded!", process.Metadata().GetId())
 		log.Infof("Bouncing central to pick up newly imported DB")
 		time.Sleep(restartGracePeriod)
-		os.Exit(0)
+		osutils.Restart()
 		return
 	}
 

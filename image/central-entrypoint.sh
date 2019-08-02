@@ -21,6 +21,4 @@ import-additional-cas
 
 [ ! -d /var/lib/stackrox/badgerdb ] || chmod u+x /var/lib/stackrox/badgerdb
 
-restore-central-db
-/stackrox/bin/migrator
-exec /stackrox/central "$@"
+exec /stackrox/start-central.sh "$@"

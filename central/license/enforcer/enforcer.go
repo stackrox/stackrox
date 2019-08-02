@@ -1,7 +1,6 @@
 package enforcer
 
 import (
-	"os"
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -10,6 +9,7 @@ import (
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/osutils"
 )
 
 const (
@@ -78,5 +78,5 @@ func (e *enforcer) enforce() {
 	log.Infof("Closing databases ...")
 	globaldb.Close()
 	log.Info("Central is restarting.")
-	os.Exit(0)
+	osutils.Restart()
 }

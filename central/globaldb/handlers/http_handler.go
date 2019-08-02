@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,7 +12,9 @@ import (
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/globaldb/export"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -41,10 +44,11 @@ func logAndWriteErrorMsg(w http.ResponseWriter, code int, t string, args ...inte
 }
 
 // This will EOF if we call exit at the end of a handler
-func deferredExit(code int) {
+func deferredRestart(ctx context.Context) {
 	go func() {
-		time.Sleep(5 * time.Second)
-		os.Exit(code)
+		concurrency.WaitWithTimeout(ctx, 5*time.Second)
+		time.Sleep(1 * time.Second)
+		osutils.Restart()
 	}()
 }
 
@@ -92,7 +96,7 @@ func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
 		}
 
 		log.Infof("Bouncing Central to pick up newly imported DB")
-		deferredExit(0)
+		deferredRestart(req.Context())
 	})
 }
 
