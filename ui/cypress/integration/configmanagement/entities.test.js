@@ -308,10 +308,10 @@ describe('Config Management Entities', () => {
             navigateToSingleEntityPage('subject');
         });
 
-        xit('should show the related cluster widget', () => {
+        it('should show the related cluster widget', () => {
             renderListAndSidePanel('subjects');
             navigateToSingleEntityPage('subject');
-            hasRelatedEntityFor('cluster');
+            hasRelatedEntityFor('Cluster');
         });
 
         it('should have the correct count widgets for a single entity view', () => {

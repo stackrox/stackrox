@@ -6,6 +6,7 @@ import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
+import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
@@ -18,11 +19,21 @@ import EntityList from '../List/EntityList';
 const processSubjectDataByClusters = data => {
     const entity = data.clusters.reduce(
         (acc, curr) => {
-            const { subject, type, clusterAdmin, roles, ...rest } = curr.subject;
+            const {
+                subject,
+                type,
+                clusterAdmin,
+                clusterID,
+                clusterName,
+                roles,
+                ...rest
+            } = curr.subject;
             return {
                 subject,
                 type,
                 clusterAdmin,
+                clusterID,
+                clusterName,
                 roles,
                 clusters: [...acc.clusters, { ...rest }]
             };
@@ -60,6 +71,8 @@ const Subject = ({ id, entityListType, query }) => {
                         }
                     }
                     clusterAdmin
+                    clusterID
+                    clusterName
                     roles {
                         ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
                     }
@@ -77,7 +90,7 @@ const Subject = ({ id, entityListType, query }) => {
                     return <PageNotFound resourceType={entityTypes.SUBJECT} />;
 
                 const entity = processSubjectDataByClusters(data);
-                const { type, clusterAdmin, clusters = [] } = entity;
+                const { type, clusterAdmin, clusterID, clusterName, clusters = [] } = entity;
 
                 if (entityListType) {
                     let listData;
@@ -117,6 +130,13 @@ const Subject = ({ id, entityListType, query }) => {
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                     counts={metadataCounts}
+                                />
+                                <RelatedEntity
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    entityType={entityTypes.CLUSTER}
+                                    name="Cluster"
+                                    value={clusterName}
+                                    entityId={clusterID}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
