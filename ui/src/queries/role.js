@@ -41,9 +41,6 @@ export const ROLE_FRAGMENT = gql`
                 id
                 name
             }
-            ... on NonExistentServiceAccount {
-                message
-            }
         }
         subjects {
             name
