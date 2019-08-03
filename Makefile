@@ -284,7 +284,7 @@ ifdef CI
 	GOOS=linux $(GOBUILD) ./roxctl
 	GOOS=windows $(GOBUILD) ./roxctl
 else
-	$(GOBUILD) ./roxctl
+	GOOS=$(HOST_OS) $(GOBUILD) ./roxctl
 endif
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)/roxctl $(GOPATH)/bin/roxctl
