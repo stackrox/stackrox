@@ -19,6 +19,7 @@ import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
+import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import EntityList from '../List/EntityList';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
@@ -52,7 +53,7 @@ const DeploymentViolations = ({ className, alerts }) => {
 
 DeploymentViolations.propTypes = {
     className: PropTypes.string,
-    alerts: PropTypes.arrayOf()
+    alerts: PropTypes.arrayOf(PropTypes.shape({}))
 };
 
 DeploymentViolations.defaultProps = {
@@ -128,7 +129,8 @@ const Policy = ({ id, entityListType, query }) => {
                     labels = [],
                     annotations = [],
                     whitelists = [],
-                    alerts = []
+                    alerts = [],
+                    deployments
                 } = entity;
 
                 if (entityListType) {
@@ -185,6 +187,12 @@ const Policy = ({ id, entityListType, query }) => {
                                     className="sx-2 bg-base-100 h-48"
                                     keyValuePairs={metadataKeyValuePairs}
                                     counts={metadataCounts}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Deployments"
+                                    value={deployments.length}
+                                    entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <Widget
                                     className="sx-1 h-48"

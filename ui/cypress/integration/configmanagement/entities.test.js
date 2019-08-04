@@ -47,7 +47,7 @@ describe('Config Management Entities', () => {
             navigateToSingleEntityPage('policy');
         });
 
-        xit('should have the correct count widgets for a single entity view', () => {
+        it('should have the correct count widgets for a single entity view', () => {
             renderListAndSidePanel('policies');
             navigateToSingleEntityPage('policy');
             hasCountWidgetsFor(['Deployments']);
