@@ -134,7 +134,7 @@ func (k ResourceSet) AsSortedSlice(less func(i, j Resource) bool) []Resource {
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortableresourceSlice{slice: slice, less: less}
+	sortable := &sortableResourceSlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }
@@ -194,20 +194,20 @@ func NewThreadSafeResourceSet(initial ...Resource) ResourceSet {
 	return k
 }
 
-type sortableresourceSlice struct {
+type sortableResourceSlice struct {
 	slice []Resource
 	less  func(i, j Resource) bool
 }
 
-func (s *sortableresourceSlice) Len() int {
+func (s *sortableResourceSlice) Len() int {
 	return len(s.slice)
 }
 
-func (s *sortableresourceSlice) Less(i, j int) bool {
+func (s *sortableResourceSlice) Less(i, j int) bool {
 	return s.less(s.slice[i], s.slice[j])
 }
 
-func (s *sortableresourceSlice) Swap(i, j int) {
+func (s *sortableResourceSlice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
 }
 
@@ -274,7 +274,7 @@ func (k FrozenResourceSet) AsSortedSlice(less func(i, j Resource) bool) []Resour
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortableresourceSlice{slice: slice, less: less}
+	sortable := &sortableResourceSlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }

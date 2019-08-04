@@ -4,6 +4,31 @@ package metrics
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[Add-0]
+	_ = x[AddMany-1]
+	_ = x[Count-2]
+	_ = x[Dedupe-3]
+	_ = x[Get-4]
+	_ = x[GetAll-5]
+	_ = x[GetMany-6]
+	_ = x[GetGrouped-7]
+	_ = x[List-8]
+	_ = x[Prune-9]
+	_ = x[Reset-10]
+	_ = x[Rename-11]
+	_ = x[Remove-12]
+	_ = x[RemoveMany-13]
+	_ = x[Search-14]
+	_ = x[Update-15]
+	_ = x[UpdateMany-16]
+	_ = x[Upsert-17]
+	_ = x[UpsertAll-18]
+}
+
 const _Op_name = "AddAddManyCountDedupeGetGetAllGetManyGetGroupedListPruneResetRenameRemoveRemoveManySearchUpdateUpdateManyUpsertUpsertAll"
 
 var _Op_index = [...]uint8{0, 3, 10, 15, 21, 24, 30, 37, 47, 51, 56, 61, 67, 73, 83, 89, 95, 105, 111, 120}

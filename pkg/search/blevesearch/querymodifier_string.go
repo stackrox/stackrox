@@ -4,6 +4,16 @@ package blevesearch
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[atLeastOne-0]
+	_ = x[negation-1]
+	_ = x[regex-2]
+	_ = x[equality-3]
+}
+
 const _queryModifier_name = "atLeastOnenegationregexequality"
 
 var _queryModifier_index = [...]uint8{0, 10, 18, 23, 31}

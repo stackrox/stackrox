@@ -4,6 +4,16 @@ package version
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[InvalidKind-0]
+	_ = x[DevelopmentKind-1]
+	_ = x[RCKind-2]
+	_ = x[ReleaseKind-3]
+}
+
 const _Kind_name = "InvalidKindDevelopmentKindRCKindReleaseKind"
 
 var _Kind_index = [...]uint8{0, 11, 26, 32, 43}

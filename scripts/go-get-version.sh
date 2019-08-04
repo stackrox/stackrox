@@ -8,6 +8,8 @@ function usage() {
 
 [[ "$#" -ge 2 ]] || usage
 
+export GO111MODULE=off  # force legacy go get mode
+
 function install() {
   package="$1"
   hash_or_tag="$2"

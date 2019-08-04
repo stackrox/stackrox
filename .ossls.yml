@@ -1,6 +1,5 @@
-dep:
-  lockfile: Gopkg.lock
-  vendor-dir: vendor
+gomod:
+  mod-file: go.mod
 
 yarn:
   lockfile: ui/yarn.lock

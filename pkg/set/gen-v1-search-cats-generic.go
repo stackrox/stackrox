@@ -5,11 +5,11 @@
 
 package set
 
-import "github.com/stackrox/rox/generated/api/v1"
 import (
 	"sort"
 
 	mapset "github.com/deckarep/golang-set"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // If you want to add a set for your custom type, simply add another go generate line along with the
@@ -135,7 +135,7 @@ func (k V1SearchCategorySet) AsSortedSlice(less func(i, j v1.SearchCategory) boo
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortablev1SearchCategorySlice{slice: slice, less: less}
+	sortable := &sortableV1SearchCategorySlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }
@@ -195,20 +195,20 @@ func NewThreadSafeV1SearchCategorySet(initial ...v1.SearchCategory) V1SearchCate
 	return k
 }
 
-type sortablev1SearchCategorySlice struct {
+type sortableV1SearchCategorySlice struct {
 	slice []v1.SearchCategory
 	less  func(i, j v1.SearchCategory) bool
 }
 
-func (s *sortablev1SearchCategorySlice) Len() int {
+func (s *sortableV1SearchCategorySlice) Len() int {
 	return len(s.slice)
 }
 
-func (s *sortablev1SearchCategorySlice) Less(i, j int) bool {
+func (s *sortableV1SearchCategorySlice) Less(i, j int) bool {
 	return s.less(s.slice[i], s.slice[j])
 }
 
-func (s *sortablev1SearchCategorySlice) Swap(i, j int) {
+func (s *sortableV1SearchCategorySlice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
 }
 
@@ -275,7 +275,7 @@ func (k FrozenV1SearchCategorySet) AsSortedSlice(less func(i, j v1.SearchCategor
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortablev1SearchCategorySlice{slice: slice, less: less}
+	sortable := &sortableV1SearchCategorySlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }

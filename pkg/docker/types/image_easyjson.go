@@ -221,7 +221,7 @@ func easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 				if out.Healthcheck == nil {
 					out.Healthcheck = new(container.HealthConfig)
 				}
-				easyjson220accf5DecodeGithubComStackroxRoxVendorGithubComDockerDockerApiTypesContainer(in, &*out.Healthcheck)
+				easyjson220accf5DecodeGithubComDockerDockerApiTypesContainer(in, &*out.Healthcheck)
 			}
 		case "User":
 			out.User = string(in.String())
@@ -247,7 +247,7 @@ func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 		} else {
 			out.RawString(prefix)
 		}
-		easyjson220accf5EncodeGithubComStackroxRoxVendorGithubComDockerDockerApiTypesContainer(out, *in.Healthcheck)
+		easyjson220accf5EncodeGithubComDockerDockerApiTypesContainer(out, *in.Healthcheck)
 	}
 	if in.User != "" {
 		const prefix string = ",\"User\":"
@@ -261,7 +261,7 @@ func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 	}
 	out.RawByte('}')
 }
-func easyjson220accf5DecodeGithubComStackroxRoxVendorGithubComDockerDockerApiTypesContainer(in *jlexer.Lexer, out *container.HealthConfig) {
+func easyjson220accf5DecodeGithubComDockerDockerApiTypesContainer(in *jlexer.Lexer, out *container.HealthConfig) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -321,7 +321,7 @@ func easyjson220accf5DecodeGithubComStackroxRoxVendorGithubComDockerDockerApiTyp
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComStackroxRoxVendorGithubComDockerDockerApiTypesContainer(out *jwriter.Writer, in container.HealthConfig) {
+func easyjson220accf5EncodeGithubComDockerDockerApiTypesContainer(out *jwriter.Writer, in container.HealthConfig) {
 	out.RawByte('{')
 	first := true
 	_ = first

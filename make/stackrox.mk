@@ -5,6 +5,9 @@ BINARY ?= $(ROX_PROJECT)
 BASE_PATH ?= $(CURDIR)/..
 GO_BASE_PATH ?= /go/src/github.com/stackrox/rox
 
+GO111MODULE := on
+export GO111MODULE
+
 .DEFAULT_GOAL = all
 
 ###########################

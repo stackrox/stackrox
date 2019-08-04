@@ -4,6 +4,27 @@ package metrics
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[Alert-0]
+	_ = x[Deployment-1]
+	_ = x[ProcessIndicator-2]
+	_ = x[Image-3]
+	_ = x[Secret-4]
+	_ = x[Namespace-5]
+	_ = x[NetworkPolicy-6]
+	_ = x[Node-7]
+	_ = x[ProviderMetadata-8]
+	_ = x[ComplianceReturn-9]
+	_ = x[ImageIntegration-10]
+	_ = x[ServiceAccount-11]
+	_ = x[Role-12]
+	_ = x[RoleBinding-13]
+	_ = x[DeploymentReprocess-14]
+}
+
 const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNodeProviderMetadataComplianceReturnImageIntegrationServiceAccountRoleRoleBindingDeploymentReprocess"
 
 var _Resource_index = [...]uint8{0, 5, 15, 31, 36, 42, 51, 64, 68, 84, 100, 116, 130, 134, 145, 164}

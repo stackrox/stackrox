@@ -4,7 +4,7 @@ ui/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
 central/compliance/standards/metadata/pci_dss_3_2.go
 central/graphql/resolvers/generated.go
-Gopkg.lock
+go.sum
 proto/storage/proto.lock
 pkg/docker/types/types_easyjson.go
 qa-tests-backend/artifacts/upgrade-tests/v2.4.16.4/stackrox_db_2019_03_01_03_48_45.zip

@@ -42,8 +42,6 @@ PROTOC := $(PROTOC_TMP)/bin/protoc
 
 PROTOC_INCLUDES := $(PROTOC_TMP)/include/google
 
-PROTOC_GEN_GO := $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go
-
 PROTOC_GEN_GO_BIN := $(GOPATH)/bin/protoc-gen-gofast
 
 $(PROTOC_GEN_GO_BIN):
@@ -52,7 +50,7 @@ $(PROTOC_GEN_GO_BIN):
 	mkdir -p $(GOPATH)/src/github.com/gogo
 	git clone https://github.com/connorgorman/protobuf.git $(GOPATH)/src/github.com/gogo/protobuf
 	cd $(GOPATH)/src/github.com/gogo/protobuf && git reset --hard a81e5c3a5053f77bc517be4fb2824a1fb62fa37c && cd -
-	go install github.com/gogo/protobuf/protoc-gen-gofast/...
+	GO111MODULE=off go install github.com/gogo/protobuf/protoc-gen-gofast/...
 
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 
@@ -109,7 +107,7 @@ proto-fmt:
 		--proto_path=$(PROTO_BASE_PATH) \
 		$(ALL_PROTOS)
 
-PROTO_DEPS=$(PROTOC_GEN_GO) $(PROTOC) $(PROTOC_INCLUDES)
+PROTO_DEPS=$(PROTOC) $(PROTOC_INCLUDES)
 
 ###############
 ## Utilities ##
@@ -151,7 +149,6 @@ PROTOC_GEN_GRPC_GATEWAY := $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway
 
 $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway:
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh google.golang.org/genproto/googleapis bb713bdc0e5239f2b68e560efbe1c701a6fe78f9 --skip-install
 # keep in sync with Gopkg.toml
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... v1.9.0
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... v1.9.0
@@ -163,7 +160,7 @@ $(GENERATED_DOC_PATH):
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
-$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS)
+$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS)
 	@echo "+ $@"
 	@mkdir -p $(dir $@)
 	@$(PROTOC) \

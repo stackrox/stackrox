@@ -134,7 +134,7 @@ func (k Uint32Set) AsSortedSlice(less func(i, j uint32) bool) []uint32 {
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortableuint32Slice{slice: slice, less: less}
+	sortable := &sortableUint32Slice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }
@@ -194,20 +194,20 @@ func NewThreadSafeUint32Set(initial ...uint32) Uint32Set {
 	return k
 }
 
-type sortableuint32Slice struct {
+type sortableUint32Slice struct {
 	slice []uint32
 	less  func(i, j uint32) bool
 }
 
-func (s *sortableuint32Slice) Len() int {
+func (s *sortableUint32Slice) Len() int {
 	return len(s.slice)
 }
 
-func (s *sortableuint32Slice) Less(i, j int) bool {
+func (s *sortableUint32Slice) Less(i, j int) bool {
 	return s.less(s.slice[i], s.slice[j])
 }
 
-func (s *sortableuint32Slice) Swap(i, j int) {
+func (s *sortableUint32Slice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
 }
 
@@ -274,7 +274,7 @@ func (k FrozenUint32Set) AsSortedSlice(less func(i, j uint32) bool) []uint32 {
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortableuint32Slice{slice: slice, less: less}
+	sortable := &sortableUint32Slice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }

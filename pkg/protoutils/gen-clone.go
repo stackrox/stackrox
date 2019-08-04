@@ -5,8 +5,10 @@
 
 package protoutils
 
-import "github.com/stackrox/rox/generated/storage"
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // *storage.Policy represents a generic proto type that we clone.
 

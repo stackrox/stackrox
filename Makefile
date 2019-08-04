@@ -3,10 +3,11 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
 
-export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS
+export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE
 CGO_ENABLED := 0
 GOARCH := amd64
 DEFAULT_GOOS := linux
+GO111MODULE := on
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
@@ -58,9 +59,9 @@ ui-lint:
 	make -C ui lint
 
 STATICCHECK_BIN := $(GOPATH)/bin/staticcheck
-$(STATICCHECK_BIN):
+$(STATICCHECK_BIN): deps
 	@echo "+ $@"
-	@go get honnef.co/go/tools/cmd/staticcheck
+	@go install honnef.co/go/tools/cmd/staticcheck
 
 .PHONY: staticcheck
 staticcheck: $(STATICCHECK_BIN)
@@ -81,7 +82,7 @@ endif
 	@echo $(FORMATTING_FILES) | xargs gofmt -s -l -w
 
 .PHONY: imports
-imports: deps volatile-generated-srcs
+imports: deps volatile-generated-srcs $(GOIMPORTS_BIN)
 	@echo "+ $@"
 ifdef CI
 		@echo "The environment indicates we are in CI; checking goimports."
@@ -103,24 +104,15 @@ no-large-files:
 	@echo "+ $@"
 	@$(BASE_DIR)/tools/large-git-files/find.sh
 
-.PHONY: roxvet
-roxvet:
-	@echo "+ $@"
-	@go install $(BASE_DIR)/tools/roxvet
-	@go vet -vettool "$$(go env GOPATH)/bin/roxvet" $(shell go list -e ./... | grep -v -e 'stackrox/rox/image')
-
 .PHONY: keys
 keys:
 	@echo "+ $@"
 	go generate github.com/stackrox/rox/central/ed
 
 PROTOLOCK_BIN := $(GOPATH)/bin/protolock
-$(PROTOLOCK_BIN):
+$(PROTOLOCK_BIN): deps
 	@echo "+ $@"
-	$(BASE_PATH)/scripts/go-get-version.sh github.com/viswajithiii/protolock 43bb8a9ba4e8de043a5ffacc64b1c38d95419e1d --skip-install
-	mkdir -p $(GOPATH)/src/github.com/nilslice
-	mv $(GOPATH)/src/github.com/viswajithiii/protolock $(GOPATH)/src/github.com/nilslice/protolock
-	go install github.com/nilslice/protolock/...
+	@go install github.com/nilslice/protolock/cmd/protolock
 
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
@@ -128,7 +120,7 @@ storage-protos-compatible: $(PROTOLOCK_BIN)
 	@protolock status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
 
 .PHONY: lint
-lint:
+lint: $(GOLINT_BIN)
 	@echo "+ $@"
 	@$(BASE_DIR)/tools/go-lint.sh $(FORMATTING_FILES)
 
@@ -154,13 +146,8 @@ else
 endif
 
 .PHONY: dev
-dev:
+dev: install-dev-tools
 	@echo "+ $@"
-	@go get -u golang.org/x/lint/golint
-	@go get -u golang.org/x/tools/cmd/goimports
-	@go get -u github.com/jstemmer/go-junit-report
-	@go get -u github.com/golang/dep/cmd/dep
-	@go install ./tools/roxvet
 
 
 #####################################
@@ -171,26 +158,45 @@ PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
+ROXVET_BIN := $(GOPATH)/bin/roxvet
+$(ROXVET_BIN): deps
+	@echo "+ $@"
+	go install ./tools/roxvet
+
 STRINGER_BIN := $(GOPATH)/bin/stringer
 $(STRINGER_BIN):
 	@echo "+ $@"
-	@go get golang.org/x/tools/cmd/stringer
+	go install golang.org/x/tools/cmd/stringer
 
 MOCKGEN_BIN := $(GOPATH)/bin/mockgen
 $(MOCKGEN_BIN):
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh golang.org/x/tools e21233ffa6c386fc230b4328493f77af54ff9372 --skip-install
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/mock/mockgen dd8d2a22370e4c8a334e80ca8477f71356c8e4bb
+	go install github.com/golang/mock/mockgen
 
 GENNY_BIN := $(GOPATH)/bin/genny
-$(GENNY_BIN):
+$(GENNY_BIN): deps
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/mauricelam/genny e937528877485c089aa62cfa9f60968749d650f1
+	go install github.com/mauricelam/genny
 
 PACKR_BIN := $(GOPATH)/bin/packr
-$(PACKR_BIN):
+$(PACKR_BIN): deps
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gobuffalo/packr/packr 899fe0e4176fca9bca81763c810d74af82548c78
+	go install github.com/gobuffalo/packr/packr
+
+GOLINT_BIN := $(GOPATH)/bin/golint
+$(GOLINT_BIN): deps
+	@echo "+ $@"
+	go install golang.org/x/lint/golint
+
+GOIMPORTS_BIN := $(GOPATH)/bin/goimports
+$(GOIMPORTS_BIN): deps
+	@echo "+ $@"
+	go install golang.org/x/tools/cmd/goimports
+
+GO_JUNIT_REPORT_BIN := $(GOPATH)/bin/go-junit-report
+$(GO_JUNIT_REPORT_BIN): deps
+	@echo "+ $@"
+	go install github.com/jstemmer/go-junit-report
 
 .PHONY: go-packr-srcs
 go-packr-srcs: $(PACKR_BIN)
@@ -204,9 +210,9 @@ clean-packr-srcs:
 	@find . -name '*-packr.go' -exec rm {} \;
 
 EASYJSON_BIN := $(GOPATH)/bin/easyjson
-$(EASYJSON_BIN):
+$(EASYJSON_BIN): deps
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/mailru/easyjson/easyjson 60711f1a8329503b04e1c88535f419d0bb440bff
+	go install github.com/mailru/easyjson/easyjson
 
 .PHONY: go-easyjson-srcs
 go-easyjson-srcs: $(EASYJSON_BIN)
@@ -248,17 +254,22 @@ generated-srcs: volatile-generated-srcs go-generated-srcs
 clean-generated-srcs: clean-packr-srcs clean-proto-generated-srcs
 	@echo "+ $@"
 
-deps: Gopkg.toml Gopkg.lock proto-generated-srcs
+deps: go.mod proto-generated-srcs
 	@echo "+ $@"
-ifdef CI
-	@# `dep check` exits with a nonzero code if there is a toml->lock mismatch.
-	dep check -skip-vendor
-endif
 	@$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	@test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	@# `dep ensure` can be flaky sometimes, so try rerunning it if it fails.
-	dep ensure || (rm -rf vendor .vendor-new && dep ensure)
+	@go mod tidy
+	@$(MAKE) download-deps
+ifdef CI
+	@git diff -q -- go.mod || { echo "go.mod file was updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
+	go mod verify
+endif
 	@touch deps
+
+.PHONY: download-deps
+download-deps:
+	@echo "+ $@"
+	@go get
 
 .PHONY: clean-deps
 clean-deps:
@@ -486,11 +497,13 @@ else
 	@echo $(TAG)
 endif
 
-ossls-audit:
+.PHONY: ossls-audit
+ossls-audit: download-deps
 	ossls version
 	ossls audit
 
-ossls-notice:
+.PHONY: ossls-notice
+ossls-notice: download-deps
 	ossls version
 	ossls audit --export image/THIRD_PARTY_NOTICES
 
@@ -501,3 +514,25 @@ collector-tag:
 .PHONY: scanner-tag
 scanner-tag:
 	@cat SCANNER_VERSION
+
+
+GET_DEVTOOLS_CMD := $(MAKE) -qp | sed -e '/^\# Not a target:$$/{ N; d; }' | egrep -v '^(\s*(\#.*)?$$|\s|%|\(|\.)' | egrep '^[^[:space:]:]*: ' | cut -d: -f1 | sort | uniq | grep '^$(GOPATH)/bin/'
+.PHONY: clean-dev-tools
+clean-dev-tools:
+	@echo "+ $@"
+	@$(GET_DEVTOOLS_CMD) | xargs rm -fv
+
+.PHONY: reinstall-dev-tools
+reinstall-dev-tools: clean-dev-tools
+	@echo "+ $@"
+	@$(MAKE) install-dev-tools
+
+.PHONY: install-dev-tools
+install-dev-tools:
+	@echo "+ $@"
+	@$(GET_DEVTOOLS_CMD) | xargs $(MAKE)
+
+.PHONY: roxvet
+roxvet: $(ROXVET_BIN)
+	@echo "+ $@"
+	@go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v -e 'stackrox/rox/image')

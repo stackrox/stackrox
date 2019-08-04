@@ -134,7 +134,7 @@ func (k IntSet) AsSortedSlice(less func(i, j int) bool) []int {
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortableintSlice{slice: slice, less: less}
+	sortable := &sortableIntSlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }
@@ -194,20 +194,20 @@ func NewThreadSafeIntSet(initial ...int) IntSet {
 	return k
 }
 
-type sortableintSlice struct {
+type sortableIntSlice struct {
 	slice []int
 	less  func(i, j int) bool
 }
 
-func (s *sortableintSlice) Len() int {
+func (s *sortableIntSlice) Len() int {
 	return len(s.slice)
 }
 
-func (s *sortableintSlice) Less(i, j int) bool {
+func (s *sortableIntSlice) Less(i, j int) bool {
 	return s.less(s.slice[i], s.slice[j])
 }
 
-func (s *sortableintSlice) Swap(i, j int) {
+func (s *sortableIntSlice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
 }
 
@@ -274,7 +274,7 @@ func (k FrozenIntSet) AsSortedSlice(less func(i, j int) bool) []int {
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortableintSlice{slice: slice, less: less}
+	sortable := &sortableIntSlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }
