@@ -14,6 +14,9 @@ tmp
 vendor/
 api/generated
 
+# Test output
+/junit-reports/
+
 # Makefile cruft
 deps
 proto-generated-srcs

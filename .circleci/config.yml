@@ -306,7 +306,7 @@ storeProfilingResults: &storeProfilingResults
     destination: pprof
 
 storeCypressResults: &storeCypressResults
- store_test_results:
+  store_test_results:
     path: ui/cypress/reports
 
 storeCypressVideos: &storeCypressVideos
@@ -905,12 +905,25 @@ jobs:
       - *saveGoCache
 
       - run:
+          name: Generate JUnit reports
+          command: scripts/generate-junit-reports.sh
+          when: always
+
+      - store_test_results:
+          path: junit-reports
+
+      - store_artifacts:
+          path: junit-reports
+          destination: junit-reports
+
+      - run:
           name: Run UI unit tests
           command: make ui-test
 
       - run:
           name: Upload coverage information
           command: make upload-coverage
+          when: always
 
   style-checks:
     <<: *defaults

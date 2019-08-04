@@ -8462,9 +8462,9 @@ mobx@^4.2.0:
   integrity sha512-Mg/xMLV8uxaIu4mris0sWPPO3yzwVxtN5wfvtD+GhVazfAwGJU8WqxEZMpoFi4Q2QIPgiuLgaR4MLvctipBvyA==
 
 mocha-junit-reporter@^1.22.0:
-  version "1.22.0"
-  resolved "https://registry.yarnpkg.com/mocha-junit-reporter/-/mocha-junit-reporter-1.22.0.tgz#4eee2f3318398bf424a64b7594ca7a39d924479c"
-  integrity sha512-nRBCVxzYYhOqQr2XlByLRj5MAAy7djArRkGUSx9dGc+B9NMu4yCeo74uXKALAnMhXjuLmtAL9F8WGe3wQV30IA==
+  version "1.23.1"
+  resolved "https://registry.yarnpkg.com/mocha-junit-reporter/-/mocha-junit-reporter-1.23.1.tgz#ba11519c0b967f404e4123dd69bc4ba022ab0f12"
+  integrity sha512-qeDvKlZyAH2YJE1vhryvjUQ06t2hcnwwu4k5Ddwn0GQINhgEYFhlGM0DwYCVUHq5cuo32qAW6HDsTHt7zz99Ng==
   dependencies:
     debug "^2.2.0"
     md5 "^2.1.0"

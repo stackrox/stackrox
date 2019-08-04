@@ -326,8 +326,6 @@ gendocs: $(GENERATED_API_DOCS)
 swagger-docs: $(MERGED_API_SWAGGER_SPEC)
 	@echo "+ $@"
 
-BAZEL_TEST_PATTERNS ?= //...
-
 UNIT_TEST_PACKAGES ?= ./...
 
 .PHONY: test-prep
@@ -337,7 +335,10 @@ test-prep:
 
 .PHONY: go-unit-tests
 go-unit-tests: build-prep test-prep
-	CGO_ENABLED=1 MUTEX_WATCHDOG_TIMEOUT_SECS=30 go test -p 4 -race -cover -coverprofile test-output/coverage.out -v $(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$')
+	CGO_ENABLED=1 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
+		go test -p 4 -race -cover -coverprofile test-output/coverage.out -v \
+		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		| tee test-output/test.log
 
 .PHONY: ui-build
 ui-build:
