@@ -51,7 +51,7 @@ func (suite *loopTestSuite) TestTimerDoesNotTick() {
 
 func (suite *loopTestSuite) TestTimerTicksOnce() {
 	duration := 1 * time.Second // Need this to be long enough that the enrichAndDetectTicker won't get called twice during the test.
-	loop := newLoopWithDuration(suite.mockManager, suite.mockDeployment, duration, duration)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockDeployment, duration, duration, duration)
 	suite.expectCalls(1, false)
 	loop.Start()
 	time.Sleep(duration + 10*time.Millisecond)
@@ -60,7 +60,7 @@ func (suite *loopTestSuite) TestTimerTicksOnce() {
 
 func (suite *loopTestSuite) TestTimerTicksTwice() {
 	duration := 100 * time.Millisecond
-	loop := newLoopWithDuration(suite.mockManager, suite.mockDeployment, duration, duration)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockDeployment, duration, duration, duration)
 	suite.expectCalls(2, true)
 	loop.Start()
 	time.Sleep((2 * duration) + (10 * time.Millisecond))

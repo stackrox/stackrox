@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/throttle"
 	"github.com/stackrox/rox/pkg/uuid"
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -28,6 +29,8 @@ var (
 
 	once sync.Once
 	loop Loop
+
+	maxInjectionDelay = 500 * time.Millisecond
 
 	getDeploymentsContext = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -56,16 +59,17 @@ type Loop interface {
 
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, deployments datastore.DataStore) Loop {
-	return newLoopWithDuration(connManager, deployments, time.Hour, 15*time.Second)
+	return newLoopWithDuration(connManager, deployments, 4*time.Hour, 30*time.Minute, 15*time.Second)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
-func newLoopWithDuration(connManager connection.Manager, deployments datastore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration) Loop {
+func newLoopWithDuration(connManager connection.Manager, deployments datastore.DataStore, enrichAndDetectDuration, enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
 	return &loopImpl{
-		enrichAndDetectTickerDuration: enrichAndDetectDuration,
-		deploymenRiskTickerDuration:   deploymentRiskDuration,
+		enrichAndDetectTickerDuration:  enrichAndDetectDuration,
+		deploymenRiskTickerDuration:    deploymentRiskDuration,
+		enrichAndDetectInjectionPeriod: enrichAndDetectInjectionPeriod,
 
 		deployments:       deployments,
 		deploymentRiskSet: set.NewStringSet(),
@@ -80,8 +84,9 @@ func newLoopWithDuration(connManager connection.Manager, deployments datastore.D
 }
 
 type loopImpl struct {
-	enrichAndDetectTickerDuration time.Duration
-	enrichAndDetectTicker         *time.Ticker
+	enrichAndDetectTickerDuration  time.Duration
+	enrichAndDetectInjectionPeriod time.Duration
+	enrichAndDetectTicker          *time.Ticker
 
 	deployments                 datastore.DataStore
 	deploymentRiskSet           set.StringSet
@@ -98,7 +103,7 @@ type loopImpl struct {
 }
 
 func (l *loopImpl) ReprocessRisk() {
-	l.throttler.Run(func() { l.sendDeployments(true) })
+	l.throttler.Run(func() { l.sendDeployments(true, 0) })
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
@@ -127,7 +132,7 @@ func (l *loopImpl) ShortCircuit() {
 	}
 }
 
-func (l *loopImpl) sendDeployments(riskOnly bool, deploymentIDs ...string) {
+func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration, deploymentIDs ...string) {
 	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
 	if len(deploymentIDs) > 0 {
 		query = query.AddDocIDs(deploymentIDs...)
@@ -142,6 +147,15 @@ func (l *loopImpl) sendDeployments(riskOnly bool, deploymentIDs ...string) {
 	path, ok := mappings.OptionsMap.Get(search.ClusterID.String())
 	if !ok {
 		panic("No Cluster ID option for deployments")
+	}
+
+	var injectionLimiter *rate.Limiter
+	if injectionPeriod != 0 && len(results) != 0 {
+		calculatedRate := time.Duration(l.enrichAndDetectInjectionPeriod.Nanoseconds() / int64(len(results)))
+		if calculatedRate > maxInjectionDelay {
+			calculatedRate = maxInjectionDelay
+		}
+		injectionLimiter = rate.NewLimiter(rate.Every(calculatedRate), 1)
 	}
 
 	for _, r := range results {
@@ -162,6 +176,9 @@ func (l *loopImpl) sendDeployments(riskOnly bool, deploymentIDs ...string) {
 		} else {
 			dedupeKey = uuid.NewV5(dedupeNamespace, r.Id).String()
 		}
+		if injectionLimiter != nil {
+			_ = injectionLimiter.Wait(context.Background())
+		}
 
 		msg := &central.MsgFromSensor{
 			HashKey:   r.Id,
@@ -177,6 +194,7 @@ func (l *loopImpl) sendDeployments(riskOnly bool, deploymentIDs ...string) {
 				},
 			},
 		}
+
 		conn.InjectMessageIntoQueue(msg)
 	}
 }
@@ -190,13 +208,13 @@ func (l *loopImpl) loop() {
 		case <-l.stopChan.Done():
 			return
 		case <-l.shortChan:
-			l.sendDeployments(false)
+			l.sendDeployments(false, 0)
 		case <-l.enrichAndDetectTicker.C:
-			l.sendDeployments(false)
+			l.sendDeployments(false, l.enrichAndDetectInjectionPeriod)
 		case <-l.deploymentRiskTicker.C:
 			l.deploymentRiskLock.Lock()
 			if l.deploymentRiskSet.Cardinality() > 0 {
-				l.sendDeployments(true, l.deploymentRiskSet.AsSlice()...)
+				l.sendDeployments(true, 0, l.deploymentRiskSet.AsSlice()...)
 				l.deploymentRiskSet.Clear()
 			}
 			l.deploymentRiskLock.Unlock()

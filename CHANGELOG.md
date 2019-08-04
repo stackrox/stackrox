@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [27.0]
+### Changed
+- Reprocessing of deployments and images has been moved to an interval of 4 hours
+
 ## [25.0]
 ### Added
 - `roxctl sensor generate openshift` can be used to generate sensor bundles for OpenShift clusters from
