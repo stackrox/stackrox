@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/vbauerster/mpb"
-	"github.com/vbauerster/mpb/decor"
+	"github.com/vbauerster/mpb/v4"
+	"github.com/vbauerster/mpb/v4/decor"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -34,7 +34,7 @@ func newSingleCounterDecorator(fmt string) decor.Decorator {
 }
 
 func (d *singleCounterDecorator) Decor(st *decor.Statistics) string {
-	str := fmt.Sprintf(d.fmt, decor.CounterKiB(st.Current))
+	str := fmt.Sprintf(d.fmt, decor.SizeB1024(st.Current))
 	return d.FormatMsg(str)
 }
 
@@ -67,7 +67,7 @@ func (f *unknownTotalSizeFiller) Fill(w io.Writer, width int, stat *decor.Statis
 func createProgressBars(ctx context.Context, name string, totalSize int64) (*mpb.Bar, func()) {
 	outFile := os.Stderr
 
-	opts := []mpb.ProgressOption{
+	opts := []mpb.ContainerOption{
 		mpb.WithWidth(progressBarWidth),
 		mpb.WithOutput(outFile),
 	}
@@ -127,8 +127,8 @@ func createProgressBars(ctx context.Context, name string, totalSize int64) (*mpb
 	)
 
 	shutdownFunc := func() {
-		if totalSize == 0 {
-			progressBars.Abort(progressBar, false)
+		if totalSize == 0 && !progressBar.Completed() {
+			progressBar.Abort(false)
 		}
 		shutdownSig.Signal()
 		progressBars.Wait()

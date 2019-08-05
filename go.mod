@@ -12,7 +12,6 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v0.0.0-20181104233218-fe8f9c4593d0
 	github.com/RoaringBitmap/roaring v0.4.17
-	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/andygrunwald/go-jira v1.10.0
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 	github.com/aws/aws-sdk-go v1.19.37
@@ -86,7 +85,6 @@ require (
 	github.com/kisielk/sqlstruct v0.0.0-20150923205031-648daed35d49 // indirect
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329
-	github.com/mattn/go-isatty v0.0.8 // indirect
 	github.com/mattn/go-shellwords v1.0.5 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
@@ -125,13 +123,12 @@ require (
 	github.com/tkuchiki/go-timezone v0.1.3
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/vbatts/tar-split v0.11.1 // indirect
-	github.com/vbauerster/mpb v3.4.0+incompatible
+	github.com/vbauerster/mpb/v4 v4.9.0
 	go.etcd.io/bbolt v1.3.3 // indirect
-	golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4
+	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	golang.org/x/oauth2 v0.0.0-20190523182746-aaccbc9213b0
-	golang.org/x/sys v0.0.0-20190523142557-0e01d883c5c5 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	golang.org/x/tools v0.0.0-20190802220118-1d1727260058

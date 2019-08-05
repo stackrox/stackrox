@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/v4"
 )
 
 type progressWatchReader struct {
