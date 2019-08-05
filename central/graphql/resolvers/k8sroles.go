@@ -153,6 +153,10 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args rawQu
 			log.Warnf("error converting subject to service account: %v", err)
 			continue
 		}
+		if sa == nil {
+			log.Warnf("service account: %s does not exist", subject.GetName())
+			continue
+		}
 		r, _ := resolver.root.wrapServiceAccount(sa, true, nil)
 		resolvers = append(resolvers, r)
 	}
