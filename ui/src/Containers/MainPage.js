@@ -175,11 +175,11 @@ class MainPage extends Component {
         return (
             <AppWrapper>
                 <section className="flex flex-1 flex-col h-full relative">
+                    <UnreachableWarning />
                     <Notifications />
                     <LicenseReminder />
                     <div className="navigation-gradient" />
                     {this.renderVersionOutOfDate()}
-                    <UnreachableWarning />
                     <header className="flex z-20">
                         <TopNavigation />
                     </header>
