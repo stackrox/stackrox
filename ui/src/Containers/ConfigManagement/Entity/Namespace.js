@@ -11,6 +11,7 @@ import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
+import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import DeploymentsWithFailedPolicies from 'Containers/ConfigManagement/Entity/widgets/DeploymentsWithFailedPolicies';
 import gql from 'graphql-tag';
@@ -33,8 +34,6 @@ const Namespace = ({ id, entityListType, query }) => {
     query getNamespace($id: ID!) {
         entity: namespace(id: $id) {
             metadata {
-                clusterId
-                clusterName
                 name
                 id
                 labels {
@@ -42,6 +41,10 @@ const Namespace = ({ id, entityListType, query }) => {
                     value
                 }
                 creationTime
+            }
+            cluster {
+                id
+                name
             }
             deployments {
                 ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
@@ -79,6 +82,7 @@ const Namespace = ({ id, entityListType, query }) => {
                 if (!entity) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
                 const {
                     metadata = {},
+                    cluster,
                     numDeployments = 0,
                     numSecrets = 0,
                     policyCount = 0,
@@ -113,6 +117,13 @@ const Namespace = ({ id, entityListType, query }) => {
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                     counts={metadataCounts}
+                                />
+                                <RelatedEntity
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    entityType={entityTypes.CLUSTER}
+                                    name="Cluster"
+                                    value={cluster.name}
+                                    entityId={cluster.id}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"

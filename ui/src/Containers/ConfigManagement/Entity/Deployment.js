@@ -37,8 +37,10 @@ const Deployment = ({ id, entityListType, query }) => {
                     key
                     value
                 }
-                clusterId
-                clusterName
+                cluster {
+                    id
+                    name
+                }
                 hostNetwork: id
                 imagePullSecrets
                 inactive
@@ -108,6 +110,7 @@ const Deployment = ({ id, entityListType, query }) => {
                 if (!entity) return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
 
                 const {
+                    cluster,
                     updatedAt,
                     type,
                     replicas,
@@ -117,14 +120,14 @@ const Deployment = ({ id, entityListType, query }) => {
                     namespaceId,
                     serviceAccount,
                     serviceAccountID,
-                    secretCount,
-                    imagesCount
+                    imagesCount,
+                    policyStatus
                 } = entity;
 
                 if (entityListType) {
                     const listData =
                         entityListType === entityTypes.POLICY
-                            ? entity.policyStatus.failingPolicies
+                            ? policyStatus.failingPolicies
                             : getSubListFromEntity(entity, entityListType);
 
                     return (
@@ -162,6 +165,13 @@ const Deployment = ({ id, entityListType, query }) => {
                                 />
                                 <RelatedEntity
                                     className="mx-4 min-w-48 h-48 mb-4"
+                                    entityType={entityTypes.CLUSTER}
+                                    entityId={cluster.id}
+                                    name="Cluster"
+                                    value={cluster.name}
+                                />
+                                <RelatedEntity
+                                    className="mx-4 min-w-48 h-48 mb-4"
                                     entityType={entityTypes.NAMESPACE}
                                     entityId={namespaceId}
                                     name="Namespace"
@@ -176,15 +186,15 @@ const Deployment = ({ id, entityListType, query }) => {
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
-                                    name="Secrets"
-                                    value={secretCount}
-                                    entityType={entityTypes.SECRET}
-                                />
-                                <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
                                     name="Images"
                                     value={imagesCount}
                                     entityType={entityTypes.IMAGE}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Failing Policies"
+                                    value={policyStatus.failingPolicies.length}
+                                    entityType={entityTypes.POLICY}
                                 />
                             </div>
                         </CollapsibleSection>

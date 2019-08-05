@@ -138,10 +138,10 @@ describe('Config Management Entities', () => {
             navigateToSingleEntityPage('namespace');
         });
 
-        xit('should show the related cluster widget', () => {
+        it('should show the related cluster widget', () => {
             renderListAndSidePanel('namespaces');
-            navigateToSingleEntityPage('namspace');
-            hasRelatedEntityFor('cluster');
+            navigateToSingleEntityPage('namespace');
+            hasRelatedEntityFor('Cluster');
         });
 
         it('should have the correct count widgets for a single entity view', () => {
@@ -150,7 +150,7 @@ describe('Config Management Entities', () => {
             hasCountWidgetsFor(['Deployments', 'Secrets', 'Images', 'Policies']);
         });
 
-        xit('should have the correct tabs for a single entity view', () => {
+        it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('namespaces');
             navigateToSingleEntityPage('namespace');
             hasTabsFor(['deployments', 'secrets', 'images', 'policies']);
@@ -196,15 +196,15 @@ describe('Config Management Entities', () => {
             navigateToSingleEntityPage('deployment');
         });
 
-        xit('should show the related cluster, namespace, and service account widgets', () => {
+        it('should show the related cluster, namespace, and service account widgets', () => {
             renderListAndSidePanel('deployments');
             navigateToSingleEntityPage('deployment');
-            hasRelatedEntityFor('cluster');
-            hasRelatedEntityFor('namespace');
-            hasRelatedEntityFor('service account');
+            hasRelatedEntityFor('Cluster');
+            hasRelatedEntityFor('Namespace');
+            hasRelatedEntityFor('Service Account');
         });
 
-        xit('should have the correct count widgets for a single entity view', () => {
+        it('should have the correct count widgets for a single entity view', () => {
             renderListAndSidePanel('deployments');
             navigateToSingleEntityPage('deployment');
             hasCountWidgetsFor(['Images', 'Policies']);
