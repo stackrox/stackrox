@@ -41,7 +41,7 @@ const RelatedEntityListCount = ({
         <Widget
             id="related-entity-list-count"
             bodyClassName="flex items-center justify-center"
-            header={titleComponents}
+            titleComponents={titleComponents}
             {...rest}
         >
             {result}
