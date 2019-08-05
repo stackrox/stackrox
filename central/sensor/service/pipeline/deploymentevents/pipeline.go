@@ -3,7 +3,6 @@ package deploymentevents
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/mitchellh/hashstructure"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -17,7 +16,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -48,7 +47,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		clusterEnrichment: newClusterEnrichment(clusters),
 		updateImages:      newUpdateImages(images),
 		persistDeployment: newPersistDeployment(deployments),
-		createResponse:    newCreateResponse(manager.DeploymentUpdated, manager.DeploymentRemoved),
+		lifecycleManager:  manager,
 
 		graphEvaluator: graphEvaluator,
 		deployments:    deployments,
@@ -62,7 +61,7 @@ type pipelineImpl struct {
 	clusterEnrichment *clusterEnrichmentImpl
 	updateImages      *updateImagesImpl
 	persistDeployment *persistDeploymentImpl
-	createResponse    *createResponseImpl
+	lifecycleManager  lifecycle.Manager
 
 	deployments deploymentDataStore.DataStore
 	clusters    clusterDataStore.DataStore
@@ -79,8 +78,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Deployment)(nil))
 	return reconciliation.Perform(store, search.ResultsToIDSet(results), "deployments", func(id string) error {
-		_, err := s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
-		return err
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
 	})
 }
 
@@ -96,51 +94,35 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	deployment := event.GetDeployment()
 	deployment.ClusterId = clusterID
 
-	var resp *central.SensorEnforcement
 	var err error
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		resp, err = s.runRemovePipeline(ctx, event.GetAction(), deployment)
+		err = s.runRemovePipeline(ctx, event.GetAction(), deployment)
 	default:
-		resp, err = s.runGeneralPipeline(ctx, event.GetAction(), deployment)
+		err = s.runGeneralPipeline(ctx, event.GetAction(), deployment, injector)
 	}
-	if err != nil {
-		return err
-	}
-	if resp != nil {
-		if enforcers.ShouldEnforce(deployment.GetAnnotations()) {
-			err := injector.InjectMessage(ctx, &central.MsgToSensor{
-				Msg: &central.MsgToSensor_Enforcement{
-					Enforcement: resp,
-				},
-			})
-			if err != nil {
-				log.Errorf("Failed to inject enforcement action %s: %v", proto.MarshalTextString(resp), err)
-			}
-		} else {
-			log.Warnf("Did not inject enforcement because deployment %s contained Enforcement Bypass annotations", deployment.GetName())
-		}
-	}
-	return nil
+	return err
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment) error {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
 	if err := s.persistDeployment.do(ctx, action, deployment, false); err != nil {
-		return nil, err
+		return err
 	}
 
 	s.graphEvaluator.IncrementEpoch()
 
 	// Process the deployment (enrichment, alert generation, enforcement action generation.)
-	resp := s.createResponse.do(deployment, action)
-	return resp, nil
+	if err := s.lifecycleManager.DeploymentRemoved(deployment); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *pipelineImpl) dedupeBasedOnHash(ctx context.Context, action central.ResourceAction, newDeployment *storage.Deployment) (bool, error) {
@@ -167,41 +149,48 @@ func (s *pipelineImpl) dedupeBasedOnHash(ctx context.Context, action central.Res
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment, injector common.MessageInjector) error {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
-		return nil, err
+		return err
 	}
 
 	dedupe, err := s.dedupeBasedOnHash(ctx, action, deployment)
 	if err != nil {
 		err = errors.Wrapf(err, "Could not check deployment %q for deduping", deployment.GetName())
 		log.Error(err)
-		return nil, err
+		return err
 	}
 	if dedupe {
-		return nil, nil
+		return nil
 	}
 
 	// Fill in cluster information.
 	if err := s.clusterEnrichment.do(ctx, deployment); err != nil {
 		log.Errorf("Couldn't get cluster identity: %s", err)
+		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
 	if err := s.persistDeployment.do(ctx, action, deployment, true); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Update the deployments images with the latest version from storage.
 	s.updateImages.do(ctx, deployment)
 
 	// Process the deployment (alert generation, enforcement action generation)
-	resp := s.createResponse.do(deployment, action)
-
+	// Only pass in the enforcement injector (which is a signal to the lifecycle manager
+	// that it should inject enforcement) on creates.
+	var injectorToPass common.MessageInjector
+	if action == central.ResourceAction_CREATE_RESOURCE {
+		injectorToPass = injector
+	}
+	if err := s.lifecycleManager.DeploymentUpdated(enricher.EnrichmentContext{}, deployment, injectorToPass); err != nil {
+		return err
+	}
 	s.graphEvaluator.IncrementEpoch()
-
-	return resp, nil
+	return nil
 }
 
 func (s *pipelineImpl) OnFinish(_ string) {}

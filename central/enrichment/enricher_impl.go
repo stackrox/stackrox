@@ -26,10 +26,6 @@ type enricherImpl struct {
 
 // EnrichDeployment enriches a deployment with data from registries and scanners.
 func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, []int, error) {
-	return e.enrichDeployment(ctx, deployment)
-}
-
-func (e *enricherImpl) enrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, []int, error) {
 	var (
 		images         []*storage.Image
 		updatedIndices []int

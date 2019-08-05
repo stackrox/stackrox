@@ -34,9 +34,9 @@ var (
 //go:generate mockgen-wrapper
 type Manager interface {
 	IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error
-	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning
-	// enforcement action.
-	DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (string, string, storage.EnforcementAction, error)
+	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store.
+	// It also performs any enforcement actions necessary IF it is passed a non-nil injector to send the enforcement to.
+	DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, injector common.MessageInjector) error
 	UpsertPolicy(policy *storage.Policy) error
 	RecompilePolicy(policy *storage.Policy) error
 

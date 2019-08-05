@@ -17,9 +17,12 @@ var (
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
 type EnrichmentContext struct {
+	// NoExternalMetadata runs the enforcement through a "fast-path", skipping any calls to external metadata services.
+	// This includes image registries and scanners.
 	NoExternalMetadata bool
-	EnforcementOnly    bool
-	IgnoreExisting     bool
+	// EnforcementOnly indicates that we don't care about any violations unless they have enforcement enabled.
+	EnforcementOnly bool
+	IgnoreExisting  bool
 }
 
 // ImageEnricher provides functions for enriching images with integrations.

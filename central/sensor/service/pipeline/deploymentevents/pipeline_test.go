@@ -44,44 +44,6 @@ func (suite *PipelineTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-func (suite *PipelineTestSuite) TestCreateResponseForUpdate() {
-	events := fakeDeploymentEvents()
-
-	// Expect that our enforcement generator is called with expected data.
-	suite.detector.On("DeploymentUpdated", events[0].GetDeployment()).
-		Return("a1", "p1", storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, nil)
-
-	// Call function.
-	tested := &createResponseImpl{
-		onUpdate: suite.detector.DeploymentUpdated,
-		onRemove: suite.detector.DeploymentRemoved,
-	}
-	response := tested.do(events[0].GetDeployment(), events[0].GetAction())
-
-	// Pull one more time to get nil
-	suite.Equal(events[0].GetDeployment().GetId(), response.GetDeployment().GetDeploymentId())
-	suite.Equal("a1", response.GetDeployment().GetAlertId())
-	suite.detector.AssertExpectations(suite.T())
-}
-
-func (suite *PipelineTestSuite) TestCreateResponseForRemove() {
-	events := fakeDeploymentEvents()
-
-	// Expect that our enforcement generator is called with expected data.
-	suite.detector.On("DeploymentRemoved", events[0].GetDeployment()).Return(nil)
-
-	// Call function.
-	tested := &createResponseImpl{
-		onUpdate: suite.detector.DeploymentUpdated,
-		onRemove: suite.detector.DeploymentRemoved,
-	}
-	response := tested.do(events[0].GetDeployment(), central.ResourceAction_REMOVE_RESOURCE)
-
-	// Should be no response for remove since no enforcement should be needed.
-	suite.Nil(response)
-	suite.detector.AssertExpectations(suite.T())
-}
-
 func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 	events := fakeDeploymentEvents()
 	events[0].Action = central.ResourceAction_CREATE_RESOURCE
