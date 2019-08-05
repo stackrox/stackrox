@@ -62,7 +62,13 @@ DockerfileButton.propTypes = {
     openModal: PropTypes.func.isRequired
 };
 
-const ImageDetails = ({ image, setDeploymentsSearchOptions, loading, history, location }) => {
+const ImageDetails = ({
+    image,
+    setSelectedImageId,
+    setDeploymentsSearchOptions,
+    loading,
+    history
+}) => {
     const [modalOpen, setModalOpen] = useState(false);
 
     function onViewDeploymentsClick() {
@@ -83,10 +89,7 @@ const ImageDetails = ({ image, setDeploymentsSearchOptions, loading, history, lo
     }
 
     function unselectImage() {
-        history.push({
-            pathname: `/main/images`,
-            search: location.search
-        });
+        setSelectedImageId(undefined);
     }
 
     function renderOverview() {
@@ -164,7 +167,7 @@ ImageDetails.propTypes = {
     }).isRequired,
     loading: PropTypes.bool.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
+    setSelectedImageId: PropTypes.func.isRequired,
     setDeploymentsSearchOptions: PropTypes.func.isRequired
 };
 

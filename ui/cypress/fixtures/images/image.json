@@ -1,0 +1,9 @@
+{
+    "id": "sha256:26714cf202c4afa3d1df792ec1475d40ba33d1249a58f470caf79ba092e90f91",
+    "name": {
+        "fullName": "apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest"
+    },
+    "components": "57",
+    "cves": "202",
+    "created": "2017-10-30T22:37:02.975949433Z"
+}

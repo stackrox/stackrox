@@ -23,7 +23,9 @@ export const search = {
 };
 
 export const images = {
-    list: '/v1/images*'
+    list: '/v1/images*',
+    count: '/v1/imagescount*',
+    get: '/v1/images/*'
 };
 
 export const auth = {

@@ -1,154 +1,82 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
 
-import { selectors } from 'reducers';
-import { actions as imagesActions, types } from 'reducers/images';
+import ImagesPageHeader from './ImagesPageHeader';
+import ImagesTablePanel from './ImagesTablePanel';
+import ImageSidePanel from './ImageSidePanel';
 
-import PageHeader, { PageHeaderComponent } from 'Components/PageHeader';
-import SearchInput from 'Components/SearchInput';
-import ImageDetails from 'Containers/Images/ImageDetails';
-import Panel from 'Components/Panel';
-import TablePagination from 'Components/TablePagination';
-import ImagesTable from './ImagesTable';
-
-const ImageSidePanel = ({ selectedImage, isFetchingImage }) => {
-    if (!selectedImage) return '';
-    return <ImageDetails image={selectedImage} loading={isFetchingImage} />;
-};
-
-ImageSidePanel.propTypes = {
-    selectedImage: PropTypes.shape({}),
-    isFetchingImage: PropTypes.bool
-};
-
-ImageSidePanel.defaultProps = {
-    isFetchingImage: false,
-    selectedImage: null
-};
-
-const ImagesPage = ({
+function ImagesPage({
     history,
-    images,
-    isViewFiltered,
-    selectedImage,
-    searchModifiers,
-    searchOptions,
-    searchSuggestions,
-    setSearchOptions,
-    setSearchModifiers,
-    setSearchSuggestions,
-    isFetchingImage
-}) => {
-    const [page, setPage] = useState(0);
-    function onSearch(newSearchOptions) {
-        if (newSearchOptions.length && !newSearchOptions[newSearchOptions.length - 1].type) {
-            history.push('/main/images');
-        }
+    location: { search },
+    match: {
+        params: { imageId }
     }
+}) {
+    // Handle changes to applied search options.
+    const [isViewFiltered, setIsViewFiltered] = useState(false);
 
-    const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
-    const defaultOption = searchModifiers.find(x => x.value === 'Image:');
-    const { length } = images;
-    const paginationComponent = (
-        <TablePagination page={page} dataLength={length} setPage={setPage} />
+    // Handle changes in the currently selected image.
+    const [selectedImageId, setSelectedImageId] = useState(imageId);
+
+    // Handle changes in the current table page.
+    const [currentPage, setCurrentPage] = useState(0);
+
+    // Handle changes in the currently displayed images.
+    const [currentImages, setCurrentImages] = useState([]);
+    const [sortOption, setSortOption] = useState({ field: 'Image', reversed: false });
+    const [imagesCount, setImagesCount] = useState(0);
+
+    // When the selected image changes, update the URL.
+    useEffect(
+        () => {
+            const urlSuffix = selectedImageId ? `/${selectedImageId}` : '';
+            history.push({
+                pathname: `/main/images${urlSuffix}`,
+                search
+            });
+        },
+        [selectedImageId, history, search]
     );
 
-    const headerComponent = (
-        <PageHeaderComponent length={length} type="Image" isViewFiltered={isViewFiltered} />
-    );
     return (
         <section className="flex flex-1 flex-col h-full">
             <div className="flex flex-1 flex-col">
-                <PageHeader header="Images" subHeader={subHeader}>
-                    <SearchInput
-                        className="w-full"
-                        id="images"
-                        searchOptions={searchOptions}
-                        searchModifiers={searchModifiers}
-                        searchSuggestions={searchSuggestions}
-                        setSearchOptions={setSearchOptions}
-                        setSearchModifiers={setSearchModifiers}
-                        setSearchSuggestions={setSearchSuggestions}
-                        onSearch={onSearch}
-                        defaultOption={defaultOption}
-                        autoCompleteCategories={['IMAGES']}
-                    />
-                </PageHeader>
+                <ImagesPageHeader
+                    currentPage={currentPage}
+                    sortOption={sortOption}
+                    setCurrentImages={setCurrentImages}
+                    setImagesCount={setImagesCount}
+                    setSelectedImageId={setSelectedImageId}
+                    isViewFiltered={isViewFiltered}
+                    setIsViewFiltered={setIsViewFiltered}
+                />
                 <div className="flex flex-1 relative">
                     <div className="shadow border-primary-300 bg-base-100 w-full overflow-hidden">
-                        <Panel
-                            headerTextComponent={headerComponent}
-                            headerComponents={paginationComponent}
-                        >
-                            <div className="w-full">
-                                <ImagesTable
-                                    rows={images}
-                                    selectedImage={selectedImage}
-                                    page={page}
-                                />
-                            </div>
-                        </Panel>
+                        <ImagesTablePanel
+                            currentPage={currentPage}
+                            setCurrentPage={setCurrentPage}
+                            currentImages={currentImages}
+                            selectedImageId={selectedImageId}
+                            setSelectedImageId={setSelectedImageId}
+                            imagesCount={imagesCount}
+                            isViewFiltered={isViewFiltered}
+                            setSortOption={setSortOption}
+                        />
                     </div>
                     <ImageSidePanel
-                        isFetchingImage={isFetchingImage}
-                        selectedImage={selectedImage}
+                        selectedImageId={selectedImageId}
+                        setSelectedImageId={setSelectedImageId}
                     />
                 </div>
             </div>
         </section>
     );
-};
+}
 
 ImagesPage.propTypes = {
-    images: PropTypes.arrayOf(PropTypes.object).isRequired,
-    selectedImage: PropTypes.shape({}),
-    searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
-    searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    setSearchOptions: PropTypes.func.isRequired,
-    setSearchModifiers: PropTypes.func.isRequired,
-    setSearchSuggestions: PropTypes.func.isRequired,
-    isViewFiltered: PropTypes.bool.isRequired,
-    isFetchingImage: PropTypes.bool,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
+    match: ReactRouterPropTypes.match.isRequired
 };
 
-ImagesPage.defaultProps = {
-    isFetchingImage: false,
-    selectedImage: null
-};
-
-const isViewFiltered = createSelector(
-    [selectors.getImagesSearchOptions],
-    searchOptions => searchOptions.length !== 0
-);
-
-const getSelectedImage = (state, props) => {
-    const { imageId } = props.match.params;
-    return imageId ? selectors.getImage(state, imageId) : null;
-};
-
-const mapStateToProps = createStructuredSelector({
-    images: selectors.getFilteredImages,
-    selectedImage: getSelectedImage,
-    searchOptions: selectors.getImagesSearchOptions,
-    searchModifiers: selectors.getImagesSearchModifiers,
-    searchSuggestions: selectors.getImagesSearchSuggestions,
-    isViewFiltered,
-    isFetchingImage: state => selectors.getLoadingStatus(state, types.FETCH_IMAGE)
-});
-
-const mapDispatchToProps = {
-    setSearchOptions: imagesActions.setImagesSearchOptions,
-    setSearchModifiers: imagesActions.setImagesSearchModifiers,
-    setSearchSuggestions: imagesActions.setImagesSearchSuggestions,
-    fetchImage: imagesActions.fetchImage
-};
-
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(ImagesPage);
+export default ImagesPage;

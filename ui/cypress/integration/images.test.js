@@ -12,8 +12,12 @@ describe('Images page', () => {
         cy.fixture('images/images.json').as('imagesJson');
         cy.route('GET', api.images.list, '@imagesJson').as('images');
 
+        cy.fixture('images/imagescount.json').as('imagesCountJson');
+        cy.route('GET', api.images.count, '@imagesCountJson').as('imagesCount');
+
         cy.visit(imagesUrl);
         cy.wait('@images');
+        cy.wait('@imagesCount');
     });
 
     it('Should have values for "Created at", "Components", and "CVEs" in the table rows', () => {
@@ -29,21 +33,36 @@ describe('Images page', () => {
     });
 
     it('Should show image in panel header', () => {
+        cy.fixture('images/image.json').as('imageJson');
+        cy.route('GET', api.images.get, '@imageJson').as('image');
+
         cy.get(imageSelectors.firstTableRow).click();
+        cy.wait('@images');
+
         cy.get(imageSelectors.panelHeader)
             .eq(1)
             .should('have.text', 'apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest');
     });
 
     it('Should add the image id to the url when clicking a row', () => {
+        cy.fixture('images/image.json').as('imageJson');
+        cy.route('GET', api.images.get, '@imageJson').as('image');
+
         cy.get(imageSelectors.firstTableRow).click();
+        cy.wait('@images');
+
         cy.fixture('images/images.json').then(json => {
-            cy.url().should('contain', `${imagesUrl}/${json.images[1].id}`);
+            cy.url().should('contain', `${imagesUrl}/${json.images[0].id}`);
         });
     });
 
     it('Should go to Risk page and pre-populate search input when clicking "View Deployments"', () => {
+        cy.fixture('images/image.json').as('imageJson');
+        cy.route('GET', api.images.get, '@imageJson').as('image');
+
         cy.get(imageSelectors.firstTableRow).click();
+        cy.wait('@images');
+
         cy.get(imageSelectors.viewDeploymentsButton).click();
         cy.url().should('contain', riskUrl);
         cy.get(riskSelectors.search.searchModifier).should('contain', 'Image:');

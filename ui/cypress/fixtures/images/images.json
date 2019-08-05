@@ -1,11 +1,6 @@
 {
     "images": [
         {
-            "id": "sha256:4771d09578c7c6a65299e110b3ee1c0a2592f5ea2618d23e4ffe7a4cab1ce5de",
-            "name": "docker.io/library/nginx:latest",
-            "created": null
-        },
-        {
             "id": "sha256:26714cf202c4afa3d1df792ec1475d40ba33d1249a58f470caf79ba092e90f91",
             "name": "apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest",
             "components": "57",
@@ -18,6 +13,11 @@
             "components": "206",
             "cves": "117",
             "created": "2017-06-23T12:25:31.969445004Z"
+        },
+        {
+            "id": "sha256:4771d09578c7c6a65299e110b3ee1c0a2592f5ea2618d23e4ffe7a4cab1ce5de",
+            "name": "docker.io/library/nginx:latest",
+            "created": null
         }
     ]
 }
