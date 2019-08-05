@@ -240,7 +240,7 @@ describe('Config Management Entities', () => {
         });
     });
 
-    xcontext('Secret', () => {
+    context('Secret', () => {
         it('should render the secrets list and open the side panel when a row is clicked', () => {
             renderListAndSidePanel('secrets');
         });
@@ -250,7 +250,7 @@ describe('Config Management Entities', () => {
             navigateToSingleEntityPage('secret');
         });
 
-        it('should show the related namespace widget', () => {
+        xit('should show the related namespace widget', () => {
             renderListAndSidePanel('secrets');
             navigateToSingleEntityPage('secret');
             hasRelatedEntityFor('namespace');

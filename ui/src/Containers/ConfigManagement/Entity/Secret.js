@@ -178,7 +178,7 @@ const Secret = ({ id, entityListType, query }) => {
                 }
             }
             namespace
-            deployments: Deployments {
+            deployments {
                 ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
             }
             labels {
