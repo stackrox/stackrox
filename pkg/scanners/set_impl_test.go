@@ -16,16 +16,11 @@ import (
 )
 
 type fakeScanner struct {
-	global bool
-	typ    string
+	typ string
 }
 
 func (*fakeScanner) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
-}
-
-func (f *fakeScanner) Global() bool {
-	return f.global
 }
 
 func (*fakeScanner) Match(image *storage.Image) bool {
@@ -103,7 +98,7 @@ func TestSet(t *testing.T) {
 	s := NewSet(mockFactory)
 
 	goodIntegration := &storage.ImageIntegration{Id: "GOOD"}
-	mockFactory.EXPECT().CreateScanner(goodIntegration).Return(&fakeScanner{global: true}, nil).Times(2)
+	mockFactory.EXPECT().CreateScanner(goodIntegration).Return(&fakeScanner{typ: "FAKE"}, nil).Times(2)
 
 	badIntegration := &storage.ImageIntegration{Id: "BAD"}
 	var nilFS *fakeScanner
@@ -118,7 +113,7 @@ func TestSet(t *testing.T) {
 
 	all := s.GetAll()
 	assert.Len(t, all, 1)
-	assert.True(t, all[0].Global())
+	assert.Equal(t, "FAKE", all[0].Type())
 
 	s.Clear()
 	assert.Len(t, s.GetAll(), 0)
@@ -127,7 +122,7 @@ func TestSet(t *testing.T) {
 	require.Nil(t, err)
 	all = s.GetAll()
 	assert.Len(t, all, 1)
-	assert.True(t, all[0].Global())
+	assert.Equal(t, "FAKE", all[0].Type())
 
 	err = s.RemoveImageIntegration(goodIntegration.GetId())
 	require.Nil(t, err)

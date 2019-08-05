@@ -291,10 +291,6 @@ func (a *anchore) Match(image *storage.Image) bool {
 	return a.activeRegistries.Match(image)
 }
 
-func (a *anchore) Global() bool {
-	return len(a.protoImageIntegration.GetClusters()) == 0
-}
-
 func (a *anchore) Type() string {
 	return typeString
 }

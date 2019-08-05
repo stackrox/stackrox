@@ -170,10 +170,6 @@ func (c *clairify) Match(image *storage.Image) bool {
 	return c.activeRegistries.Match(image)
 }
 
-func (c *clairify) Global() bool {
-	return len(c.protoImageIntegration.GetClusters()) == 0
-}
-
 func (c *clairify) Type() string {
 	return typeString
 }

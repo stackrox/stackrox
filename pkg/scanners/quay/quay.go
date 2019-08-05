@@ -137,10 +137,6 @@ func (q *quay) Match(image *storage.Image) bool {
 	return q.registry.Match(image)
 }
 
-func (q *quay) Global() bool {
-	return len(q.protoImageIntegration.GetClusters()) == 0
-}
-
 func (q *quay) Type() string {
 	return typeString
 }

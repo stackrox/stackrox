@@ -149,10 +149,6 @@ func (c *clair) Match(image *storage.Image) bool {
 	return true
 }
 
-func (c *clair) Global() bool {
-	return len(c.protoImageIntegration.GetClusters()) == 0
-}
-
 func (c *clair) Type() string {
 	return typeString
 }

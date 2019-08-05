@@ -202,10 +202,6 @@ func (d *dtr) Match(image *storage.Image) bool {
 	return d.registry == image.GetName().GetRegistry()
 }
 
-func (d *dtr) Global() bool {
-	return len(d.protoImageIntegration.GetClusters()) == 0
-}
-
 func (d *dtr) Type() string {
 	return typeString
 }

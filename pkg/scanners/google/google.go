@@ -251,10 +251,6 @@ func (c *googleScanner) Match(image *storage.Image) bool {
 	return image.GetName().GetRegistry() == c.registry && strings.HasPrefix(image.GetName().GetRemote(), c.project)
 }
 
-func (c *googleScanner) Global() bool {
-	return len(c.protoIntegration.GetClusters()) == 0
-}
-
 func (c *googleScanner) Type() string {
 	return typeString
 }

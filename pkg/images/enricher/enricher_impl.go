@@ -100,9 +100,6 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 }
 
 func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) bool {
-	if !scanner.Global() {
-		return false
-	}
 	if !scanner.Match(image) {
 		return false
 	}

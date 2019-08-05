@@ -9,6 +9,5 @@ type ImageScanner interface {
 	GetLastScan(image *storage.Image) (*storage.ImageScan, error)
 	Match(image *storage.Image) bool
 	Test() error
-	Global() bool
 	Type() string
 }

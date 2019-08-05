@@ -48,8 +48,6 @@ type tenable struct {
 	config *storage.TenableConfig
 
 	reg *dockerRegistry.Registry
-
-	protoImageIntegration *storage.ImageIntegration
 }
 
 func validate(config *storage.TenableConfig) error {
@@ -161,10 +159,6 @@ func (d *tenable) GetLastScan(image *storage.Image) (*storage.ImageScan, error) 
 // Match decides if the image is contained within this registry
 func (d *tenable) Match(image *storage.Image) bool {
 	return registry == image.GetName().GetRegistry()
-}
-
-func (d *tenable) Global() bool {
-	return len(d.protoImageIntegration.GetClusters()) == 0
 }
 
 func (d *tenable) Type() string {
