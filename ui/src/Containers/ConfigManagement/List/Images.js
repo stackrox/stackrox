@@ -9,8 +9,6 @@ import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table
 import queryService from 'modules/queryService';
 import pluralize from 'pluralize';
 import URLService from 'modules/URLService';
-import Query from 'Components/ThrowingQuery';
-import { DEPLOYMENT_NAME } from 'queries/deployment';
 import TableCellLink from './Link';
 import List from './List';
 
@@ -45,26 +43,18 @@ const buildTableColumns = (match, location) => [
         className: `w-1/8 ${defaultColumnClassName}`,
         // eslint-disable-next-line
         Cell: ({ original, pdf }) => {
-            const { deploymentIDs, id } = original;
-            const num = deploymentIDs.length;
+            const { deployments, id } = original;
+            const num = deployments.length;
             const text = `${num} ${pluralize('deployment', num)}`;
             if (num === 0) return text;
 
             if (num === 1 && !pdf) {
-                const deploymentId = deploymentIDs[0];
+                const deployment = deployments[0];
                 const url = URLService.getURL(match, location)
                     .push(id)
-                    .push(entityTypes.DEPLOYMENT, deploymentId)
+                    .push(entityTypes.DEPLOYMENT, deployment.id)
                     .url();
-                return (
-                    <Query query={DEPLOYMENT_NAME} variables={{ id: deploymentId }}>
-                        {({ loading, data }) => {
-                            if (loading || !data || !data.result)
-                                return <TableCellLink pdf={pdf} url={url} text={text} />;
-                            return <TableCellLink pdf={pdf} url={url} text={data.result.name} />;
-                        }}
-                    </Query>
-                );
+                return <TableCellLink pdf={pdf} url={url} text={deployment.name} />;
             }
 
             const url = URLService.getURL(match, location)
@@ -73,7 +63,7 @@ const buildTableColumns = (match, location) => [
                 .url();
             return <TableCellLink pdf={pdf} url={url} text={text} />;
         },
-        accessor: 'deploymentIDs'
+        accessor: 'deployments'
     }
 ];
 

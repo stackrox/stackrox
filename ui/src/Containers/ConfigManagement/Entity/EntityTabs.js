@@ -41,7 +41,11 @@ function getTab(entityType, text) {
 }
 
 const entityTabsMap = {
-    [entityTypes.SERVICE_ACCOUNT]: [getTab(entityTypes.DEPLOYMENT), getTab(entityTypes.ROLE)],
+    [entityTypes.SERVICE_ACCOUNT]: [
+        getTab(entityTypes.DEPLOYMENT),
+        getTab(entityTypes.ROLE),
+        getTab(entityTypes.SECRET)
+    ],
     [entityTypes.ROLE]: [getTab(entityTypes.SUBJECT), getTab(entityTypes.SERVICE_ACCOUNT)],
     [entityTypes.SECRET]: [getTab(entityTypes.DEPLOYMENT)],
     [entityTypes.CLUSTER]: [

@@ -77,7 +77,10 @@ export const IMAGES = gql`
                 remote
                 tag
             }
-            deploymentIDs
+            deployments {
+                id
+                name
+            }
         }
     }
 `;
