@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import { ROLE_FRAGMENT } from 'queries/role';
-import { SECRET_FRAGMENT } from 'queries/secret';
 
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
@@ -60,7 +59,7 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                 value
             }
             secrets: imagePullSecretObjects {
-                ${entityListType === entityTypes.SECRET ? '...secretFields' : 'id'}
+                id
             }
             scopedPermissions {
                 scope
@@ -73,8 +72,6 @@ const ServiceAccount = ({ id, entityListType, query }) => {
     }
     ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
     ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
-    ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
-
     `;
 
     return (
@@ -148,12 +145,6 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                                     name="Roles"
                                     value={roles.length}
                                     entityType={entityTypes.ROLE}
-                                />
-                                <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    name="Secrets"
-                                    value={secrets.length}
-                                    entityType={entityTypes.SECRET}
                                 />
                             </div>
                         </CollapsibleSection>

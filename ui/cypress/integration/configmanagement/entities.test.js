@@ -346,13 +346,13 @@ describe('Config Management Entities', () => {
         it('should have the correct count widgets for a single entity view', () => {
             renderListAndSidePanel('serviceAccounts');
             navigateToSingleEntityPage('serviceAccount');
-            hasCountWidgetsFor(['Deployments', 'Secrets', 'Roles']);
+            hasCountWidgetsFor(['Deployments', 'Roles']);
         });
 
         it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('serviceAccounts');
             navigateToSingleEntityPage('serviceAccount');
-            hasTabsFor(['deployments', 'secrets', 'roles']);
+            hasTabsFor(['deployments', 'roles']);
         });
     });
 });
