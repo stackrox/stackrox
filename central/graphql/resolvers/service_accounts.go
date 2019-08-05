@@ -100,11 +100,7 @@ func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args ra
 	if err != nil {
 		return nil, err
 	}
-	deployments, err := resolver.root.DeploymentDataStore.SearchListDeployments(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return resolver.root.wrapListDeployments(deployments, nil)
+	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, q))
 }
 
 // Permission returns which scopes do the permissions for the service acc

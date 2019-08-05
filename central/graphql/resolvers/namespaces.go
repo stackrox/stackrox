@@ -287,7 +287,7 @@ func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapListImages(resolver.root.ImageDataStore.SearchListImages(ctx, q))
+	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx, q))
 }
 
 func (resolver *namespaceResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
@@ -298,7 +298,7 @@ func (resolver *namespaceResolver) Secrets(ctx context.Context, args rawQuery) (
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapListSecrets(resolver.root.SecretsDataStore.SearchListSecrets(ctx, q))
+	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, q))
 }
 
 func (resolver *namespaceResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
@@ -309,7 +309,7 @@ func (resolver *namespaceResolver) Deployments(ctx context.Context, args rawQuer
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapListDeployments(resolver.root.DeploymentDataStore.SearchListDeployments(ctx, q))
+	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, q))
 }
 
 func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolver, error) {

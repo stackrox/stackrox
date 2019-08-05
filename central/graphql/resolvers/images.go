@@ -28,8 +28,8 @@ func (resolver *Resolver) Images(ctx context.Context, args rawQuery) ([]*imageRe
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapListImages(
-		resolver.ImageDataStore.SearchListImages(ctx, q))
+	return resolver.wrapImages(
+		resolver.ImageDataStore.SearchRawImages(ctx, q))
 }
 
 // Image returns a graphql resolver for the identified image, if it exists
