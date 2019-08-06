@@ -227,9 +227,6 @@ func (a *anchore) registerRegistry(image *storage.Image) error {
 }
 
 func getImageAnalysisRequest(image *storage.Image) (*anchoreClient.ImageAnalysisRequest, error) {
-	if image.GetName().GetTag() == "" {
-		return nil, fmt.Errorf("anchore cannot scan image %q because it does not contain a tag", image.GetName().GetFullName())
-	}
 	var iar anchoreClient.ImageAnalysisRequest
 	if image.GetId() != "" {
 		iar.Digest = image.GetId()
