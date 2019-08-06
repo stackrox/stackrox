@@ -128,8 +128,8 @@ func (c *clair) retrieveLayerData(layer string) (*clairV1.LayerEnvelope, error) 
 	return le, nil
 }
 
-// GetLastScan retrieves the most recent scan
-func (c *clair) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
+// GetScan retrieves the most recent scan
+func (c *clair) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}

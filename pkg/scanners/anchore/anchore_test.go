@@ -46,7 +46,7 @@ func TestAnchore(t *testing.T) {
 	}, registrySet)
 	require.NoError(t, err)
 
-	scan, err := anchore.GetLastScan(&storage.Image{
+	scan, err := anchore.GetScan(&storage.Image{
 		Id: "sha256:23df717980b4aa08d2da6c4cfa327f1b730d92ec9cf740959d2d5911830d82fb",
 		Name: &storage.ImageName{
 			Registry: "k8s.gcr.io",

@@ -19,7 +19,7 @@ type fakeScanner struct {
 	typ string
 }
 
-func (*fakeScanner) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
+func (*fakeScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
 }
 

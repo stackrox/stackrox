@@ -186,7 +186,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		injectorToPass = injector
 	}
-	if err := s.lifecycleManager.DeploymentUpdated(enricher.EnrichmentContext{}, deployment, injectorToPass); err != nil {
+	if err := s.lifecycleManager.DeploymentUpdated(enricher.EnrichmentContext{UseNonBlockingCallsWherePossible: true}, deployment, injectorToPass); err != nil {
 		return err
 	}
 	s.graphEvaluator.IncrementEpoch()

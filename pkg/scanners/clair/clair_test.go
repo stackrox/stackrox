@@ -69,7 +69,7 @@ func (suite *ClairSuite) TestScanTest() {
 	suite.NoError(err)
 }
 
-func (suite *ClairSuite) TestGetLastScan() {
+func (suite *ClairSuite) TestGetScan() {
 	image := &storage.Image{
 		Name: &storage.ImageName{
 			Registry: "quay.io",
@@ -83,7 +83,7 @@ func (suite *ClairSuite) TestGetLastScan() {
 			},
 		},
 	}
-	scan, err := suite.scanner.GetLastScan(image)
+	scan, err := suite.scanner.GetScan(image)
 	suite.NoError(err)
 
 	features, _ := mock.GetTestFeatures()

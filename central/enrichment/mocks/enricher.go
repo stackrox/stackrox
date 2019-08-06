@@ -35,13 +35,14 @@ func (m *MockEnricher) EXPECT() *MockEnricherMockRecorder {
 }
 
 // EnrichDeployment mocks base method
-func (m *MockEnricher) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, []int, error) {
+func (m *MockEnricher) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, []int, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnrichDeployment", ctx, deployment)
 	ret0, _ := ret[0].([]*storage.Image)
 	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret2, _ := ret[2].(bool)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
 // EnrichDeployment indicates an expected call of EnrichDeployment

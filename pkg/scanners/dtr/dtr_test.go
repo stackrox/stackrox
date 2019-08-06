@@ -98,7 +98,7 @@ func (suite *DTRSuite) TestTestFunc() {
 	suite.NoError(d.Test())
 }
 
-func (suite *DTRSuite) TestGetLastScan() {
+func (suite *DTRSuite) TestGetScan() {
 	d := suite.dtr.(*dtr)
 
 	image := &storage.Image{
@@ -108,7 +108,7 @@ func (suite *DTRSuite) TestGetLastScan() {
 			Tag:      "1.10",
 		},
 	}
-	scan, err := d.GetLastScan(image)
+	scan, err := d.GetScan(image)
 	suite.NoError(err)
 
 	expectedScanSummary, err := getExpectedImageScan()
@@ -119,7 +119,7 @@ func (suite *DTRSuite) TestGetLastScan() {
 	suite.Equal(expectedScan, scan)
 }
 
-func (suite *DTRSuite) TestGetLastScanWithEmptyResult() {
+func (suite *DTRSuite) TestGetScanWithEmptyResult() {
 	d := suite.dtr.(*dtr)
 
 	image := &storage.Image{
@@ -129,6 +129,6 @@ func (suite *DTRSuite) TestGetLastScanWithEmptyResult() {
 			Tag:      "1.11",
 		},
 	}
-	_, err := d.GetLastScan(image)
+	_, err := d.GetScan(image)
 	suite.Error(err)
 }

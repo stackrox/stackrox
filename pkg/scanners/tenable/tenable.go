@@ -130,8 +130,8 @@ func getShortenedDigest(s string) string {
 	return s
 }
 
-// GetLastScan retrieves the most recent scan
-func (d *tenable) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
+// GetScan retrieves the most recent scan
+func (d *tenable) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}

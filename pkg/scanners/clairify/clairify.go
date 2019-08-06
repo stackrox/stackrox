@@ -129,8 +129,8 @@ func (c *clairify) getScan(image *storage.Image) (*clairV1.LayerEnvelope, error)
 	return c.client.RetrieveImageDataByName(v1ImageToClairifyImage(image), true, true)
 }
 
-// GetLastScan retrieves the most recent scan
-func (c *clairify) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
+// GetScan retrieves the most recent scan
+func (c *clairify) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	// If we haven't retrieved any metadata then we won't be able to scan with Clairify
 	if image.GetMetadata() == nil {
 		return nil, nil

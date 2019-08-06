@@ -43,7 +43,7 @@ func TestTenable(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, scanner.Test())
 
-	scan, err := scanner.GetLastScan(image)
+	scan, err := scanner.GetScan(image)
 	require.NoError(t, err)
 	require.NotNil(t, scan)
 }

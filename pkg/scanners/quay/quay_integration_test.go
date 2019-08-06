@@ -48,7 +48,7 @@ func (suite *QuayIntegrationSuite) TestScanTest() {
 	suite.NoError(err)
 }
 
-func (suite *QuayIntegrationSuite) TestGetLastScan() {
+func (suite *QuayIntegrationSuite) TestGetScan() {
 	image := &storage.Image{
 		Id: "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 		Name: &storage.ImageName{
@@ -61,7 +61,7 @@ func (suite *QuayIntegrationSuite) TestGetLastScan() {
 	var scan *storage.ImageScan
 	err := retry.WithRetry(func() error {
 		var err error
-		scan, err = suite.quay.GetLastScan(image)
+		scan, err = suite.quay.GetScan(image)
 		return err
 	},
 		retry.Tries(10),

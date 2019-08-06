@@ -111,7 +111,7 @@ func (suite *QuaySuite) TestScanTest() {
 	suite.NoError(err)
 }
 
-func (suite *QuaySuite) TestGetLastScan() {
+func (suite *QuaySuite) TestGetScan() {
 	image := &storage.Image{
 		Id: "sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
 		Name: &storage.ImageName{
@@ -120,7 +120,7 @@ func (suite *QuaySuite) TestGetLastScan() {
 			Tag:      "1.10",
 		},
 	}
-	scan, err := suite.scanner.GetLastScan(image)
+	scan, err := suite.scanner.GetScan(image)
 	suite.NoError(err)
 
 	expectedQuayScan, err := getImageScan()

@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	rateLimitDuration = 10 * time.Second
-	tickerDuration    = 1 * time.Minute
+	rateLimitDuration            = 10 * time.Second
+	indicatorFlushTickerDuration = 1 * time.Minute
 )
 
 var (
@@ -64,9 +64,12 @@ func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Dete
 
 		queuedIndicators: make(map[string]indicatorWithInjector),
 
-		limiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
-		ticker:  time.NewTicker(tickerDuration),
+		indicatorRateLimiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
+		indicatorFlushTicker: time.NewTicker(indicatorFlushTickerDuration),
 	}
+
+	deploymentsPendingEnrichment := newDeploymentsPendingEnrichment(m)
+	m.deploymentsPendingEnrichment = deploymentsPendingEnrichment
 	go m.flushQueuePeriodically()
 	return m
 }

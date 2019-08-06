@@ -61,16 +61,17 @@ type managerImpl struct {
 
 	queuedIndicators map[string]indicatorWithInjector
 
-	queueLock           sync.Mutex
-	flushProcessingLock concurrency.TransparentMutex
+	indicatorQueueLock   sync.Mutex
+	flushProcessingLock  concurrency.TransparentMutex
+	indicatorRateLimiter *rate.Limiter
+	indicatorFlushTicker *time.Ticker
 
-	limiter *rate.Limiter
-	ticker  *time.Ticker
+	deploymentsPendingEnrichment *deploymentsPendingEnrichment
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorWithInjector {
-	m.queueLock.Lock()
-	defer m.queueLock.Unlock()
+	m.indicatorQueueLock.Lock()
+	defer m.indicatorQueueLock.Unlock()
 	if len(m.queuedIndicators) == 0 {
 		return nil
 	}
@@ -81,8 +82,8 @@ func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorWithInjec
 }
 
 func (m *managerImpl) flushQueuePeriodically() {
-	defer m.ticker.Stop()
-	for range m.ticker.C {
+	defer m.indicatorFlushTicker.Stop()
+	for range m.indicatorFlushTicker.C {
 		m.flushIndicatorQueue()
 	}
 }
@@ -153,8 +154,8 @@ func (m *managerImpl) flushIndicatorQueue() {
 }
 
 func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector common.MessageInjector) {
-	m.queueLock.Lock()
-	defer m.queueLock.Unlock()
+	m.indicatorQueueLock.Lock()
+	defer m.indicatorQueueLock.Unlock()
 
 	m.queuedIndicators[indicator.GetId()] = indicatorWithInjector{
 		indicator:           indicator,
@@ -230,15 +231,26 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, inject
 
 	m.addToQueue(indicator, injector)
 
-	if m.limiter.Allow() {
+	if m.indicatorRateLimiter.Allow() {
 		go m.flushIndicatorQueue()
 	}
 	return nil
 }
 
 func (m *managerImpl) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, injector common.MessageInjector) error {
+	m.deploymentsPendingEnrichment.maybeRemove(deployment.GetId())
+	enrichmentPending, err := m.processDeploymentUpdate(ctx, deployment, injector)
+	if err != nil {
+		return err
+	}
+	if enrichmentPending {
+		m.deploymentsPendingEnrichment.add(ctx, deployment, injector)
+	}
+	return nil
+}
+func (m *managerImpl) processDeploymentUpdate(ctx enricher.EnrichmentContext, deployment *storage.Deployment, injector common.MessageInjector) (bool, error) {
 	// Attempt to enrich the image before detection.
-	images, updatedIndices, err := m.enricher.EnrichDeployment(ctx, deployment)
+	images, updatedIndices, pendingEnrichment, err := m.enricher.EnrichDeployment(ctx, deployment)
 	if err != nil {
 		log.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
 	}
@@ -257,14 +269,15 @@ func (m *managerImpl) DeploymentUpdated(ctx enricher.EnrichmentContext, deployme
 
 	presentAlerts, err := m.deploytimeDetector.Detect(deploytime.DetectionContext{}, deployment, images)
 	if err != nil {
-		return errors.Wrap(err, "fetching deploy time alerts")
+		return false, errors.Wrap(err, "fetching deploy time alerts")
 	}
 	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, presentAlerts,
 		alertmanager.WithLifecycleStage(storage.LifecycleStage_DEPLOY), alertmanager.WithDeploymentIDs(deployment.GetId())); err != nil {
-		return err
+		return false, err
 	}
 	m.maybeInjectEnforcement(presentAlerts, deployment, injector)
-	return nil
+
+	return pendingEnrichment, nil
 }
 
 func (m *managerImpl) maybeInjectEnforcement(presentAlerts []*storage.Alert, deployment *storage.Deployment, injector common.MessageInjector) {

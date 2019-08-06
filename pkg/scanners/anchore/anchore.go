@@ -23,7 +23,14 @@ import (
 const (
 	typeString = "anchore"
 
-	defaultTimeout = 5 * time.Second
+	defaultTimeout = 10 * time.Second
+
+	// It can take a really long time to retrieve vulnerabilities and components.
+	scanRetrievalTimeout = time.Minute
+
+	// This is the interval between polls to see if Anchore finished scanning an image.
+	pollInterval    = 5 * time.Second
+	maxPollAttempts = 50
 )
 
 var (
@@ -102,10 +109,13 @@ func (a *anchore) getContentTypes(imageID string) ([]string, error) {
 }
 
 func (a *anchore) getComponentsForType(imageID, cType string) ([]anchoreClient.ContentPackageResponseContent, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), scanRetrievalTimeout)
 	defer cancel()
 
 	contentResponse, _, err := a.client.ImageContentApi.GetImageContentByType(ctx, imageID, cType, nil)
+	if err != nil {
+		return nil, err
+	}
 	return contentResponse.Content, err
 }
 
@@ -131,7 +141,7 @@ func (a *anchore) getPackages(imageID string) ([]anchoreClient.ContentPackageRes
 }
 
 func (a *anchore) getVulnerabilities(imageID string) ([]anchoreClient.Vulnerability, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), scanRetrievalTimeout)
 	defer cancel()
 
 	vulnResponse, _, err := a.client.VulnerabilitiesApi.GetImageVulnerabilitiesByType(ctx, imageID, "all", nil)
@@ -141,7 +151,7 @@ func (a *anchore) getVulnerabilities(imageID string) ([]anchoreClient.Vulnerabil
 	return vulnResponse.Vulnerabilities, nil
 }
 
-func (a *anchore) getImage(image *storage.Image) (*anchoreClient.AnchoreImage, bool, error) {
+func (a *anchore) getImage(image *storage.Image) (*anchoreClient.AnchoreImage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -159,19 +169,18 @@ func (a *anchore) getImage(image *storage.Image) (*anchoreClient.AnchoreImage, b
 		imageList, resp, err = a.client.ImagesApi.GetImage(ctx, image.GetId(), nil)
 	}
 	if resp != nil && resp.StatusCode == http.StatusNotFound {
-		return nil, false, nil
+		return nil, nil
 	}
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	if len(imageList) == 0 {
-		return nil, false, fmt.Errorf("expected to get NotFound instead of empty list for image %q", image.GetName().GetFullName())
+		return nil, fmt.Errorf("expected to get NotFound instead of empty list for image %q", image.GetName().GetFullName())
 	}
-	return &imageList[0], true, nil
+	return &imageList[0], nil
 }
 
-// Test
 func (a *anchore) Test() error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
@@ -180,28 +189,48 @@ func (a *anchore) Test() error {
 	return err
 }
 
-// GetLastScan retrieves the most recent scan
-func (a *anchore) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
-	img, exists, err := a.getImage(image)
+func (a *anchore) GetOrTriggerScan(image *storage.Image) (*storage.ImageScan, error) {
+	return a.getOrTriggerScan(image)
+}
+
+func (a *anchore) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+	for attempt := 0; attempt < maxPollAttempts; attempt++ {
+		scan, err := a.getOrTriggerScan(image)
+		if err != nil {
+			return nil, err
+		}
+		if scan != nil {
+			return scan, nil
+		}
+		time.Sleep(pollInterval)
+	}
+	return nil, errors.Errorf("timed out waiting for anchore to scan %q", image.GetName().GetFullName())
+}
+
+func (a *anchore) getOrTriggerScan(image *storage.Image) (*storage.ImageScan, error) {
+	anchoreImg, err := a.getImage(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting image %q", image.GetName().GetFullName())
 	}
-	if !exists {
-		err := a.scan(image)
+	if anchoreImg == nil {
+		err := a.triggerScan(image)
 		return nil, err
 	}
-	if !strings.EqualFold(img.AnalysisStatus, "analyzed") {
+	if strings.EqualFold(anchoreImg.AnalysisStatus, "analysis_failed") {
+		return nil, errors.Errorf("anchore couldn't analyze image %q: analysis failed", image.GetName().GetFullName())
+	}
+	if !strings.EqualFold(anchoreImg.AnalysisStatus, "analyzed") {
 		return nil, nil
 	}
-	packages, err := a.getPackages(img.ImageDigest)
+	packages, err := a.getPackages(anchoreImg.ImageDigest)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error retrieving packages for %q", img.ImageDigest)
+		return nil, errors.Wrapf(err, "error retrieving packages for %q", anchoreImg.ImageDigest)
 	}
-	vulns, err := a.getVulnerabilities(img.ImageDigest)
+	vulns, err := a.getVulnerabilities(anchoreImg.ImageDigest)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error retrieve vulnerabilities for %q", img.ImageDigest)
+		return nil, errors.Wrapf(err, "error retrieve vulnerabilities for %q", anchoreImg.ImageDigest)
 	}
-	return convertImageScan(img, packages, vulns), nil
+	return convertImageScan(anchoreImg, packages, vulns), nil
 }
 
 func (a *anchore) registerRegistry(image *storage.Image) error {
@@ -261,7 +290,7 @@ func getBody(resp *http.Response) string {
 	return string(body)
 }
 
-func (a *anchore) scan(image *storage.Image) error {
+func (a *anchore) triggerScan(image *storage.Image) error {
 	iarPtr, err := getImageAnalysisRequest(image)
 	if err != nil {
 		return err

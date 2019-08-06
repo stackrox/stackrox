@@ -25,17 +25,14 @@ type enricherImpl struct {
 }
 
 // EnrichDeployment enriches a deployment with data from registries and scanners.
-func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, []int, error) {
-	var (
-		images         []*storage.Image
-		updatedIndices []int
-	)
+func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (images []*storage.Image, updatedIndices []int, pendingEnrichment bool, err error) {
 	for i, c := range deployment.GetContainers() {
 		var imgToProcess *storage.Image
 		if !ctx.IgnoreExisting && c.GetImage().GetId() != "" {
-			img, _, err := e.images.GetImage(getImageContext, c.GetImage().GetId())
+			var img *storage.Image
+			img, _, err = e.images.GetImage(getImageContext, c.GetImage().GetId())
 			if err != nil {
-				return nil, nil, err
+				return
 			}
 			imgToProcess = img
 		}
@@ -43,9 +40,13 @@ func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployme
 			imgToProcess = types.ToImage(c.GetImage())
 		}
 		images = append(images, imgToProcess)
-		if updated := e.imageEnricher.EnrichImage(ctx, imgToProcess); updated && imgToProcess.GetId() != "" {
+		enrichmentResult := e.imageEnricher.EnrichImage(ctx, imgToProcess)
+		if enrichmentResult.ImageUpdated && imgToProcess.GetId() != "" {
 			updatedIndices = append(updatedIndices, i)
 		}
+		if enrichmentResult.ScanResult == enricher.ScanTriggered {
+			pendingEnrichment = true
+		}
 	}
-	return images, updatedIndices, nil
+	return
 }

@@ -24,10 +24,13 @@ type enricherImpl struct {
 }
 
 // EnrichImage enriches an image with the integration set present.
-func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) bool {
+func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) EnrichmentResult {
 	updatedMetadata := e.enrichWithMetadata(ctx, image)
-	updatedScan := e.enrichWithScan(ctx, image)
-	return updatedMetadata || updatedScan
+	scanResult := e.enrichWithScan(ctx, image)
+	return EnrichmentResult{
+		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone),
+		ScanResult:   scanResult,
+	}
 }
 
 func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.Image) bool {
@@ -90,22 +93,23 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 	return true
 }
 
-func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) bool {
+func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) ScanResult {
 	for _, scanner := range e.integrations.ScannerSet().GetAll() {
-		if updated := e.enrichImageWithScanner(ctx, image, scanner); updated {
-			return true
+		result := e.enrichImageWithScanner(ctx, image, scanner)
+		if result != ScanNotDone {
+			return result
 		}
 	}
-	return false
+	return ScanNotDone
 }
 
-func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) bool {
+func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) ScanResult {
 	if !scanner.Match(image) {
-		return false
+		return ScanNotDone
 	}
 
 	if !ctx.IgnoreExisting && image.GetScan() != nil {
-		return false
+		return ScanNotDone
 	}
 
 	ref := getRef(image)
@@ -113,24 +117,44 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		e.metrics.IncrementScanCacheHit()
 		image.Scan = scanValue.(*storage.ImageScan)
 		FillScanStats(image)
-		return true
+		return ScanSucceeded
 	}
 	e.metrics.IncrementScanCacheMiss()
 
 	if ctx.NoExternalMetadata {
-		return false
+		return ScanNotDone
 	}
 
 	// Wait until limiter allows entrance
 	_ = e.scanLimiter.Wait(context.Background())
-	scan, err := scanner.GetLastScan(image)
-	if err != nil {
-		log.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)
-		return false
+
+	var scan *storage.ImageScan
+
+	if asyncScanner, ok := scanner.(scannerTypes.AsyncImageScanner); ok && ctx.UseNonBlockingCallsWherePossible {
+		var err error
+		scan, err = asyncScanner.GetOrTriggerScan(image)
+		if err != nil {
+			log.Errorf("Error triggering scan for %q: %v", image.GetName().GetFullName(), err)
+			return ScanNotDone
+		}
+		if scan == nil {
+			return ScanTriggered
+		}
+	} else {
+		var err error
+		scan, err = scanner.GetScan(image)
+		if err != nil {
+			log.Errorf("Error scanning %q: %v", image.GetName().GetFullName(), err)
+			return ScanNotDone
+		}
+		if scan == nil {
+			return ScanNotDone
+		}
 	}
-	if scan == nil {
-		return false
-	}
+
+	// Assume:
+	//  scan != nil
+	//  no error scanning.
 	image.Scan = scan
 	FillScanStats(image)
 
@@ -143,7 +167,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 			e.scanCache.Add(digest, scan)
 		}
 	}
-	return true
+	return ScanSucceeded
 }
 
 // FillScanStats fills in the higher level stats from the scan data.

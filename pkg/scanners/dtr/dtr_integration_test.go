@@ -46,7 +46,7 @@ func (suite *DTRIntegrationSuite) SetupSuite() {
 
 func (suite *DTRIntegrationSuite) TearDownSuite() {}
 
-func (suite *DTRIntegrationSuite) TestGetLastScan() {
+func (suite *DTRIntegrationSuite) TestGetScan() {
 	image := &storage.Image{
 		Name: &storage.ImageName{
 			Registry: dtrServer,
@@ -54,7 +54,7 @@ func (suite *DTRIntegrationSuite) TestGetLastScan() {
 			Tag:      "1.12",
 		},
 	}
-	scan, err := suite.GetLastScan(image)
+	scan, err := suite.GetScan(image)
 	suite.Nil(err)
 	suite.NotEmpty(scan)
 	suite.NotEmpty(scan.GetComponents())

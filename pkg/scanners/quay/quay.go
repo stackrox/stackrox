@@ -106,8 +106,8 @@ func (q *quay) Test() error {
 	return q.registry.Test()
 }
 
-// GetLastScan retrieves the most recent scan
-func (q *quay) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
+// GetScan retrieves the most recent scan
+func (q *quay) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}

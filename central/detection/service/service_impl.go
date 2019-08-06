@@ -96,7 +96,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 
 	img := types.ToImage(req.GetImage())
-	_ = s.imageEnricher.EnrichImage(enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}, img)
+	s.imageEnricher.EnrichImage(enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}, img)
 
 	alerts, err := s.buildTimeDetector.Detect(img)
 	if err != nil {
@@ -108,7 +108,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 }
 
 func (s *serviceImpl) enrichAndDetect(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
-	images, _, err := s.deploymentEnricher.EnrichDeployment(ctx, deployment)
+	images, _, _, err := s.deploymentEnricher.EnrichDeployment(ctx, deployment)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

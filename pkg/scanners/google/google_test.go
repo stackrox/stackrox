@@ -56,7 +56,7 @@ func TestGoogle(t *testing.T) {
 		img.Metadata = metadata
 		img.Id = utils.GetSHA(img)
 
-		scan, err := scanner.GetLastScan(img)
+		scan, err := scanner.GetScan(img)
 		require.NoError(t, err)
 		require.NotEmpty(t, scan.GetComponents())
 		for _, c := range scan.GetComponents() {
