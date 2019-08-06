@@ -6,12 +6,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
 	"github.com/stackrox/rox/roxctl/common"
@@ -24,16 +27,21 @@ const (
 
 // Command defines the db backup command
 func Command() *cobra.Command {
+	var output string
 	c := &cobra.Command{
 		Use:          "backup",
 		Short:        "Save a snapshot of the DB as a backup.",
 		Long:         "Save a snapshot of the DB as a backup.",
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, _ []string) error {
-			return getBackup(flags.Timeout(c))
+			return getBackup(flags.Timeout(c), output)
 		},
 	}
 
+	c.Flags().StringVar(&output, "output", "", `where to write the backup to.
+If the provided path is a file path, the backup will be written to the file, overwriting it if it exists already. (The directory MUST exist.)
+If the provided path is a directory, the backup will be saved in that directory with the server-provided filename.
+If this argument is omitted, the backup will be saved in the current working directory with the server-provided filename.`)
 	return c
 }
 
@@ -54,7 +62,56 @@ func parseContentLengthFromHeader(header http.Header) (int64, error) {
 	return strconv.ParseInt(data, 10, 64)
 }
 
-func getBackup(timeout time.Duration) error {
+func parseUserProvidedOutput(userProvidedOutput string) (string, error) {
+	if userProvidedOutput == "" {
+		return "", nil
+	}
+
+	f, err := os.Stat(userProvidedOutput)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return "", err
+		}
+		// If they specified a directory, it must exist.
+		if strings.HasSuffix(userProvidedOutput, string(os.PathSeparator)) {
+			return "", errors.Errorf("invalid output %q: directory does not exist", userProvidedOutput)
+		}
+		// Now we know they've provided a filename. We check to make sure the containing directory exists.
+		containingDir := filepath.Dir(userProvidedOutput)
+		dirExists, err := fileutils.Exists(containingDir)
+		if err != nil {
+			return "", err
+		}
+		if !dirExists {
+			return "", errors.Errorf("invalid output %q: containing directory %q does not exist", userProvidedOutput, containingDir)
+		}
+		return userProvidedOutput, nil
+	}
+	if f.IsDir() {
+		return stringutils.EnsureSuffix(userProvidedOutput, string(os.PathSeparator)), nil
+	}
+	return userProvidedOutput, nil
+}
+
+func getFilePath(respHeader http.Header, userProvidedOutput string) (string, error) {
+	parsedOutputLocation, err := parseUserProvidedOutput(userProvidedOutput)
+	if err != nil {
+		return "", err
+	}
+
+	finalLocation := parsedOutputLocation
+	// If they haven't specified a filename, fetch the filename from the server.
+	if finalLocation == "" || strings.HasSuffix(finalLocation, string(os.PathSeparator)) {
+		parsedFileName, err := parseFilenameFromHeader(respHeader)
+		if err != nil {
+			return "", err
+		}
+		finalLocation = filepath.Join(finalLocation, parsedFileName)
+	}
+	return finalLocation, nil
+}
+
+func getBackup(timeout time.Duration, userProvidedOutput string) error {
 	deadline := time.Now().Add(timeout)
 
 	req, err := http.NewRequest("GET", common.GetURL("/db/backup"), nil)
@@ -92,10 +149,11 @@ func getBackup(timeout time.Duration) error {
 		return fmt.Errorf("Error with status code %d when trying to get a backup. Response body: %s", resp.StatusCode, string(body))
 	}
 
-	filename, err := parseFilenameFromHeader(resp.Header)
+	filename, err := getFilePath(resp.Header, userProvidedOutput)
 	if err != nil {
 		return err
 	}
+
 	totalSize, err := parseContentLengthFromHeader(resp.Header)
 	if err != nil {
 		return err

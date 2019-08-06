@@ -384,6 +384,18 @@ check-qa-tests-kernel-module-label: &check-qa-tests-kernel-module-label
         circleci step halt
       fi
 
+backupDB: &backupDB
+  run:
+    name: Backup DB
+    command: |
+      mkdir -p db-backup
+      roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup --output db-backup
+
+storeDBBackupArtifact: &storeDBBackupArtifact
+  store_artifacts:
+    path: db-backup
+    destination: db-backup
+
 version: 2.1
 
 commands:
@@ -1111,6 +1123,8 @@ jobs:
       - *storeImbuedUILogs
 
       - *collectK8sLogs
+      - *backupDB
+      - *storeDBBackupArtifact
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
@@ -1219,6 +1233,8 @@ jobs:
       - *storeQASpockReports
 
       - *collectK8sLogs
+      - *backupDB
+      - *storeDBBackupArtifact
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
@@ -1316,6 +1332,8 @@ jobs:
       - *storeQASpockReports
 
       - *collectK8sLogs
+      - *backupDB
+      - *storeDBBackupArtifact
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
@@ -1708,6 +1726,9 @@ jobs:
       - *storeQATestResults
       - *storeQASpockReports
 
+      - *backupDB
+      - *storeDBBackupArtifact
+
       - *collectK8sLogs
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
@@ -1888,6 +1909,8 @@ jobs:
       - *storeImbuedUILogs
 
       - *collectK8sLogs
+      - *backupDB
+      - *storeDBBackupArtifact
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 

@@ -5,6 +5,9 @@ All notable changes to this project that require documentation updates will be d
 ### Changed
 - Reprocessing of deployments and images has been moved to an interval of 4 hours
 
+### Added
+- `roxctl central db backup` now supports an optional `--output` argument to specify the output location to write the backup to.
+
 ## [25.0]
 ### Added
 - `roxctl sensor generate openshift` can be used to generate sensor bundles for OpenShift clusters from
