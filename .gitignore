@@ -1,18 +1,9 @@
-webhookserver/bin/*
-
 # Deployment
 sensor*.zip
 tmp
 
-# Generated API docs
-/image/docs/
-
 # Generated packr sources
 *-packr.go
-
-# Uncommitted code
-vendor/
-api/generated
 
 # Test output
 /junit-reports/
@@ -27,10 +18,8 @@ coverage.out
 coverage.html
 combined_coverage.dat
 
-# Bazel
-bazel-*
-BUILD.bazel
-!/BUILD.bazel
+# Build output
+/bin/
 
 # Miscellaneous
 *.g4
@@ -48,7 +37,3 @@ BUILD.bazel
 
 # Openshift automation workspace artifacts
 /openshift/
-
-qa-tests-backend/bin/*
-qa-tests-backend/.project
-qa-tests-backend/src/main/proto/*

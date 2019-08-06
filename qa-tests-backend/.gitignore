@@ -1,11 +1,12 @@
 .gradle
-build
+/build/
+/buildSrc/build/
 gradle
 gradlew
 gradlew.bat
-src/main/java
 qa-tests-backend.iml
 /out/
-.project
-bin/
-classes
+/.project
+/bin/
+/classes/
+/src/main/proto/
