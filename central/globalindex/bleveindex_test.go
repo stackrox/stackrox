@@ -5,14 +5,15 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/blevesearch/bleve/mapping"
+	bleveMapping "github.com/blevesearch/bleve/mapping"
+	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCompareMapping(t *testing.T) {
-	indexMapping := getIndexMapping()
+	indexMapping := mapping.GetIndexMapping()
 
 	tmpDir, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
@@ -32,7 +33,7 @@ func TestCompareMapping(t *testing.T) {
 	// We need to marshal and unmarshal it as getIndexMapping() uses the same underlying pointer
 	bytes, err := json.Marshal(indexMapping)
 	require.NoError(t, err)
-	var newIndexMapping mapping.IndexMappingImpl
+	var newIndexMapping bleveMapping.IndexMappingImpl
 	require.NoError(t, json.Unmarshal(bytes, &newIndexMapping))
 
 	newIndexMapping.TypeMapping[v1.SearchCategory_ALERTS.String()].Properties["list_alert"].Properties["state"].Fields[0].Store = false

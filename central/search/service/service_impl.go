@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceSearch "github.com/stackrox/rox/central/compliance/search"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
@@ -46,7 +46,7 @@ const maxAutocompleteResults = 10
 var (
 	categoryToOptionsMultimap = func() map[v1.SearchCategory]search.OptionsMultiMap {
 		result := make(map[v1.SearchCategory]search.OptionsMultiMap)
-		for cat, optMap := range globalindex.GetEntityOptionsMap() {
+		for cat, optMap := range mapping.GetEntityOptionsMap() {
 			result[cat] = search.MultiMapFromMaps(optMap)
 		}
 		result[v1.SearchCategory_COMPLIANCE] = complianceSearch.SearchOptionsMultiMap

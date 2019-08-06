@@ -8,39 +8,17 @@ import (
 	"path/filepath"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/analysis/analyzer/custom"
 	_ "github.com/blevesearch/bleve/analysis/analyzer/standard" // Import the standard analyzer so that it can be referred to from proto files
-	"github.com/blevesearch/bleve/analysis/token/lowercase"
-	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/index/store/moss"
 	"github.com/blevesearch/bleve/index/upsidedown"
-	"github.com/blevesearch/bleve/mapping"
-	alertMapping "github.com/stackrox/rox/central/alert/mappings"
-	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
+	bleveMapping "github.com/blevesearch/bleve/mapping"
 	complianceMapping "github.com/stackrox/rox/central/compliance/search"
-	"github.com/stackrox/rox/central/compliance/standards/index"
-	deploymentMapping "github.com/stackrox/rox/central/deployment/mappings"
-	imageMapping "github.com/stackrox/rox/central/image/mappings"
-	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
-	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
-	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/mappings"
-	processWhitelistMapping "github.com/stackrox/rox/central/processwhitelist/index/mappings"
-	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
-	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
-	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
-	riskMappings "github.com/stackrox/rox/central/risk/mappings"
-	secretOptions "github.com/stackrox/rox/central/secret/mappings"
-	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
+	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/blevehelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -50,52 +28,15 @@ var (
 		var searchMap = map[v1.SearchCategory][]search.FieldLabel{
 			v1.SearchCategory_COMPLIANCE: complianceMapping.Options,
 		}
-		entityOptions := GetEntityOptionsMap()
+		entityOptions := mapping.GetEntityOptionsMap()
 		for k, v := range entityOptions {
 			searchMap[k] = optionsMapToSlice(v)
 		}
 		return searchMap
 	}
 
-	indexMappingOnce sync.Once
-	indexMapping     *mapping.IndexMappingImpl
-
 	log = logging.LoggerForModule()
 )
-
-// GetEntityOptionsMap is a mapping from search categories to the options
-func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
-	// EntityOptionsMap is a mapping from search categories to the options map for that category.
-	// search document maps are also built off this map
-
-	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
-		v1.SearchCategory_ALERTS:              alertMapping.OptionsMap,
-		v1.SearchCategory_DEPLOYMENTS:         deploymentMapping.OptionsMap,
-		v1.SearchCategory_IMAGES:              imageMapping.OptionsMap,
-		v1.SearchCategory_POLICIES:            policyMapping.OptionsMap,
-		v1.SearchCategory_SECRETS:             secretOptions.OptionsMap,
-		v1.SearchCategory_PROCESS_INDICATORS:  processIndicatorMapping.OptionsMap,
-		v1.SearchCategory_COMPLIANCE_STANDARD: index.StandardOptions,
-		v1.SearchCategory_COMPLIANCE_CONTROL:  index.ControlOptions,
-		v1.SearchCategory_CLUSTERS:            clusterMapping.OptionsMap,
-		v1.SearchCategory_NAMESPACES:          namespaceMapping.OptionsMap,
-		v1.SearchCategory_NODES:               nodeMapping.OptionsMap,
-		v1.SearchCategory_PROCESS_WHITELISTS:  processWhitelistMapping.OptionsMap,
-		v1.SearchCategory_RISKS:               riskMappings.OptionsMap,
-	}
-
-	if features.K8sRBAC.Enabled() {
-		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_SERVICE_ACCOUNTS] = serviceAccountOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_SUBJECTS] = subjectMapping.OptionsMap
-	}
-
-	return entityOptionsMap
-
-}
 
 func optionsMapToSlice(options search.OptionsMap) []search.FieldLabel {
 	labels := make([]search.FieldLabel, 0, len(options.Original()))
@@ -119,7 +60,7 @@ func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
 
 // MemOnlyIndex returns a temporary mem-only index.
 func MemOnlyIndex() (bleve.Index, error) {
-	return bleve.NewUsing("", getIndexMapping(), upsidedown.Name, moss.Name, nil)
+	return bleve.NewUsing("", mapping.GetIndexMapping(), upsidedown.Name, moss.Name, nil)
 }
 
 // InitializeIndices initializes the index in the specified path.
@@ -143,7 +84,7 @@ func initializeIndices(scorchPath string) (bleve.Index, error) {
 		if !os.IsNotExist(err) {
 			return nil, err
 		}
-		globalIndex, err = bleve.NewUsing(scorchPath, getIndexMapping(), scorch.Name, scorch.Name, kvconfig)
+		globalIndex, err = bleve.NewUsing(scorchPath, mapping.GetIndexMapping(), scorch.Name, scorch.Name, kvconfig)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +96,7 @@ func initializeIndices(scorchPath string) (bleve.Index, error) {
 
 		// This implies that the index mapping has changed and therefore we should reindex everything
 		// This can only happen on upgrades
-		if !compareMappings(globalIndex.Mapping(), indexMapping) {
+		if !compareMappings(globalIndex.Mapping(), mapping.GetIndexMapping()) {
 			log.Infof("[STARTUP] Found new index mapping. Removing index and rebuilding")
 			if err := globalIndex.Close(); err != nil {
 				log.Errorf("error closing global index: %v", err)
@@ -171,16 +112,9 @@ func initializeIndices(scorchPath string) (bleve.Index, error) {
 	return globalIndex, nil
 }
 
-func getDefaultDocMapping() *mapping.DocumentMapping {
-	return &mapping.DocumentMapping{
-		Enabled: false,
-		Dynamic: false,
-	}
-}
-
 // compareMappings marshals the index mappings into JSON (which is sorted and deterministic) and then compares the bytes
 // this will determine if the index mapping has changed and the index needs to be rebuilt
-func compareMappings(im1, im2 mapping.IndexMapping) bool {
+func compareMappings(im1, im2 bleveMapping.IndexMapping) bool {
 	bytes1, err := json.Marshal(im1)
 	if err != nil {
 		return false
@@ -190,39 +124,4 @@ func compareMappings(im1, im2 mapping.IndexMapping) bool {
 		return false
 	}
 	return bytes.Equal(bytes1, bytes2)
-}
-
-func getIndexMapping() mapping.IndexMapping {
-	indexMappingOnce.Do(func() {
-		indexMapping = bleve.NewIndexMapping()
-
-		utils.Must(indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer()))
-		indexMapping.DefaultAnalyzer = "single_term" // Default to our analyzer
-
-		indexMapping.IndexDynamic = false
-		indexMapping.StoreDynamic = false
-		indexMapping.TypeField = "Type"
-		indexMapping.DefaultMapping = getDefaultDocMapping()
-
-		for category, optMap := range GetEntityOptionsMap() {
-			indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap.Original()))
-		}
-
-		disabledSection := bleve.NewDocumentDisabledMapping()
-		indexMapping.AddDocumentMapping("_all", disabledSection)
-	})
-	return indexMapping
-}
-
-// This is the custom analyzer definition
-func singleTermAnalyzer() map[string]interface{} {
-	return map[string]interface{}{
-		"type":         custom.Name,
-		"char_filters": []string{},
-		"tokenizer":    whitespace.Name,
-		// Ignore case sensitivity
-		"token_filters": []string{
-			lowercase.Name,
-		},
-	}
 }
