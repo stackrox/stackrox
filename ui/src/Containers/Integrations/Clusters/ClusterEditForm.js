@@ -22,7 +22,7 @@ const runtimeOptions = [
         value: 'KERNEL_MODULE'
     },
     {
-        label: '[BETA] eBPF Support',
+        label: 'eBPF Support',
         value: 'EBPF'
     }
 ];
