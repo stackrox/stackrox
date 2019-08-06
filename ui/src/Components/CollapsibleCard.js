@@ -55,6 +55,7 @@ class CollapsibleCard extends Component {
                     trigger={renderWhenClosed()}
                     triggerWhenOpen={renderWhenOpened()}
                     transitionTime={100}
+                    lazyRender
                 >
                     {this.props.children}
                 </Collapsible>
