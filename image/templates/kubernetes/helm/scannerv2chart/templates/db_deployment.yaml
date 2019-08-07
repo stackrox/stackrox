@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: {{ .Values.dbAppName }}
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
     spec:
       containers:
       - name: {{ .Values.dbAppName }}
@@ -36,8 +38,6 @@ spec:
             secretKeyRef:
               name: {{ .Values.dbAppName }}
               key: postgres-password
-        - name: POD_IP
-          valueFrom: { fieldRef: { fieldPath: status.podIP } }
         ports:
         - name: postgresql
           containerPort: 5432
@@ -46,7 +46,7 @@ spec:
             command:
             - sh
             - -c
-            - exec pg_isready --host $POD_IP
+            - exec pg_isready --host 127.0.0.1
           initialDelaySeconds: 360
           timeoutSeconds: 5
           failureThreshold: 6
@@ -56,7 +56,7 @@ spec:
             command:
             - sh
             - -c
-            - exec pg_isready --host $POD_IP
+            - exec pg_isready --host 127.0.0.1
           initialDelaySeconds: 5
           timeoutSeconds: 3
           periodSeconds: 5

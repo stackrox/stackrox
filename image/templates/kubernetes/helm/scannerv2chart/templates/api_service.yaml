@@ -9,7 +9,7 @@ metadata:
 spec:
   type: {{ .Values.anchoreApi.service.type }}
   ports:
-    - name: anchore-external-api
+    - name: http-anchore-external-api
       port: {{ .Values.anchoreApi.service.port }}
       targetPort: {{ .Values.anchoreApi.service.port }}
       protocol: TCP

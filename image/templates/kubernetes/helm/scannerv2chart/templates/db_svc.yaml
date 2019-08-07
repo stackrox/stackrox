@@ -9,7 +9,7 @@ metadata:
 spec:
   type: {{ .Values.postgresql.service.type }}
   ports:
-  - name: postgresql
+  - name: http-postgresql
     port: {{ .Values.postgresql.service.port }}
     targetPort: postgresql
   selector:
