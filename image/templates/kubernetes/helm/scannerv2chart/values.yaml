@@ -8,6 +8,7 @@ scratchVolumeMountPath: /analysis_scratch
 
 dbAppName: scanner-v2-db
 dbImage: {{.K8sConfig.ScannerV2DBImage}}
+dbImagePullPolicy: Always
 
 ## END STACKROX
 

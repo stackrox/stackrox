@@ -22,7 +22,7 @@ spec:
       containers:
       - name: {{ .Values.dbAppName }}
         image: {{ .Values.dbImage | quote }}
-        imagePullPolicy: {{ .Values.imagePullPolicy | quote }}
+        imagePullPolicy: {{ .Values.dbImagePullPolicy | quote }}
         env:
         - name: POSTGRES_USER
           value: {{ .Values.postgresql.postgresUser | quote }}
