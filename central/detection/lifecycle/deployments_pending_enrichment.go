@@ -16,7 +16,7 @@ const (
 	deploymentPendingEnrichmentMaxTTL = 15 * time.Minute
 )
 
-type pendingEnrichmentDeployment struct {
+type deploymentPendingEnrichment struct {
 	deployment    *storage.Deployment
 	enrichmentCtx enricher.EnrichmentContext
 	injector      common.MessageInjector
@@ -25,9 +25,9 @@ type pendingEnrichmentDeployment struct {
 
 func newDeploymentsPendingEnrichment(m *managerImpl) *deploymentsPendingEnrichment {
 	dpe := &deploymentsPendingEnrichment{
-		manager:                      m,
-		pendingEnrichmentDeployments: make(map[string]pendingEnrichmentDeployment),
-		deploymentFlushTicker:        time.NewTicker(deploymentFlushTickerDuration),
+		manager:    m,
+		pendingMap: make(map[string]deploymentPendingEnrichment),
+		ticker:     time.NewTicker(deploymentFlushTickerDuration),
 	}
 	go dpe.flushPeriodically()
 	return dpe
@@ -36,49 +36,42 @@ func newDeploymentsPendingEnrichment(m *managerImpl) *deploymentsPendingEnrichme
 type deploymentsPendingEnrichment struct {
 	manager *managerImpl
 
-	pendingEnrichmentDeployments     map[string]pendingEnrichmentDeployment
-	pendingEnrichmentDeploymentsLock sync.Mutex
-	deploymentFlushTicker            *time.Ticker
-}
-
-func (d *deploymentsPendingEnrichment) existsWithNonNilinjectorNoLock(deploymentID string) bool {
-	dpe, ok := d.pendingEnrichmentDeployments[deploymentID]
-	return ok && dpe.injector != nil
+	pendingMap map[string]deploymentPendingEnrichment
+	lock       sync.Mutex
+	ticker     *time.Ticker
 }
 
 func (d *deploymentsPendingEnrichment) add(enrichmentCtx enricher.EnrichmentContext, deployment *storage.Deployment, injector common.MessageInjector) {
-	d.pendingEnrichmentDeploymentsLock.Lock()
-	defer d.pendingEnrichmentDeploymentsLock.Unlock()
-	if d.existsWithNonNilinjectorNoLock(deployment.GetId()) {
-		return
-	}
-	d.pendingEnrichmentDeployments[deployment.GetId()] = pendingEnrichmentDeployment{deployment: deployment, enrichmentCtx: enrichmentCtx, injector: injector, inserted: time.Now()}
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	d.pendingMap[deployment.GetId()] = deploymentPendingEnrichment{deployment: deployment, enrichmentCtx: enrichmentCtx, injector: injector, inserted: time.Now()}
 }
 
-// remove the deployment pending enrichment if we see the same deployment again.
-// However, we take special case not to remove anything pending enrichment which has a non-nil injector
-// because that would clobber enforcement.
-func (d *deploymentsPendingEnrichment) maybeRemove(deploymentID string) {
-	d.pendingEnrichmentDeploymentsLock.Lock()
-	defer d.pendingEnrichmentDeploymentsLock.Unlock()
-	if d.existsWithNonNilinjectorNoLock(deploymentID) {
-		return
+// Remove the deployment pending enrichment if we see the same deployment again.
+// Return the injector associated with that deployment, if any.
+func (d *deploymentsPendingEnrichment) removeAndRetrieveInjector(deploymentID string) common.MessageInjector {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	var injector common.MessageInjector
+	if dpe, exists := d.pendingMap[deploymentID]; exists {
+		injector = dpe.injector
 	}
-	delete(d.pendingEnrichmentDeployments, deploymentID)
+	delete(d.pendingMap, deploymentID)
+	return injector
 }
 
 func (d *deploymentsPendingEnrichment) flushPeriodically() {
-	defer d.deploymentFlushTicker.Stop()
-	for range d.deploymentFlushTicker.C {
+	defer d.ticker.Stop()
+	for range d.ticker.C {
 		d.flush()
 	}
 }
 
 func (d *deploymentsPendingEnrichment) flush() {
-	var deploymentsPendingEnrichmentCopy map[string]pendingEnrichmentDeployment
-	concurrency.WithLock(&d.pendingEnrichmentDeploymentsLock, func() {
-		deploymentsPendingEnrichmentCopy = make(map[string]pendingEnrichmentDeployment, len(d.pendingEnrichmentDeployments))
-		for id, dep := range d.pendingEnrichmentDeployments {
+	var deploymentsPendingEnrichmentCopy map[string]deploymentPendingEnrichment
+	concurrency.WithLock(&d.lock, func() {
+		deploymentsPendingEnrichmentCopy = make(map[string]deploymentPendingEnrichment, len(d.pendingMap))
+		for id, dep := range d.pendingMap {
 			deploymentsPendingEnrichmentCopy[id] = dep
 		}
 	})
@@ -101,7 +94,7 @@ func (d *deploymentsPendingEnrichment) flush() {
 }
 
 func (d *deploymentsPendingEnrichment) remove(deploymentID string) {
-	d.pendingEnrichmentDeploymentsLock.Lock()
-	defer d.pendingEnrichmentDeploymentsLock.Unlock()
-	delete(d.pendingEnrichmentDeployments, deploymentID)
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	delete(d.pendingMap, deploymentID)
 }

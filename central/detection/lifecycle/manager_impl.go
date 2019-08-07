@@ -238,7 +238,16 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, inject
 }
 
 func (m *managerImpl) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, injector common.MessageInjector) error {
-	m.deploymentsPendingEnrichment.maybeRemove(deployment.GetId())
+	retrievedInjector := m.deploymentsPendingEnrichment.removeAndRetrieveInjector(deployment.GetId())
+	// Enforcement-related: IF the pending deployment had an injector, that means we have an enforcement decision pending.
+	// If we deleted it, we would lose the opportunity to perform that enforcement forever.
+	// So, delete it, but keep the enforcement injector.
+	// Doing it this way ensures that we are performing detection on the most up-to-date version of the deployment
+	// (which is the argument passed to this function); the one in the pendingCache might be stale.
+	// This also ensures that we're more likely to persist the image (since we may not get the image ID until an update)
+	if injector == nil && retrievedInjector != nil {
+		injector = retrievedInjector
+	}
 	enrichmentPending, err := m.processDeploymentUpdate(ctx, deployment, injector)
 	if err != nil {
 		return err
@@ -397,6 +406,7 @@ func (m *managerImpl) RecompilePolicy(policy *storage.Policy) error {
 }
 
 func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
+	m.deploymentsPendingEnrichment.remove(deployment.GetId())
 	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
 	return err
 }
