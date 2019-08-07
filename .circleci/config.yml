@@ -1284,7 +1284,7 @@ jobs:
 
     steps:
       - run-qa-tests:
-          cluster-id: qa-tests
+          cluster-id: qa-tests-kernel-module
           determine-whether-to-run:
             - *check-qa-tests-kernel-module-label
 
