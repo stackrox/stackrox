@@ -41,23 +41,13 @@ function ImageSidePanel({ selectedImageId, setSelectedImageId }) {
 
     useEffect(
         () => {
-            if (isFetchingSelectedImage) {
-                return;
-            }
             if (!selectedImageId) {
                 setSelectedImage(undefined);
-            } else if (!selectedImage || selectedImageId !== selectedImage.id) {
-                loadImage(selectedImageId, setSelectedImage, setIsFetchingSelectedImage);
+                return;
             }
+            loadImage(selectedImageId, setSelectedImage, setIsFetchingSelectedImage);
         },
-        [
-            selectedImageId,
-            selectedImage,
-            isFetchingSelectedImage,
-            setSelectedImageId,
-            setSelectedImage,
-            setIsFetchingSelectedImage
-        ]
+        [selectedImageId, setSelectedImageId, setSelectedImage, setIsFetchingSelectedImage]
     );
 
     // Only render if we have image data to render.

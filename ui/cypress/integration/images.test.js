@@ -37,7 +37,7 @@ describe('Images page', () => {
         cy.route('GET', api.images.get, '@imageJson').as('image');
 
         cy.get(imageSelectors.firstTableRow).click();
-        cy.wait('@images');
+        cy.wait('@image');
 
         cy.get(imageSelectors.panelHeader)
             .eq(1)
