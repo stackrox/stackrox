@@ -619,6 +619,89 @@ commands:
           command: |
             ./scripts/ci/create-scopedaccessserver.sh
 
+  run-qa-tests:
+    parameters:
+      cluster-id:
+        type: string
+
+      determine-whether-to-run:
+        type: steps
+
+    steps:
+      - checkout
+
+      - steps: << parameters.determine-whether-to-run >>
+
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *setupRoxctl
+      - setup-gcp
+      - attach-gke-cluster:
+          cluster-id: << parameters.cluster-id >>
+      - *setupGoogleAppCreds
+      - *setupLicense
+
+      - *setupDefaultTLSCerts
+
+      - *deployGKE
+      - *setupCIMonitoring
+
+      - *setupClientTLSCerts
+
+      - *waitForAPI
+      - *waitForSensorK8s
+
+      - deploy-default-psp
+      - deploy-webhook-server
+      - deploy-authz-plugin
+
+      - *restoreGradle
+      - run:
+          name: QA Automation Platform Part 1
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME="${API_HOSTNAME}"
+            export PORT="${API_PORT}"
+            if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
+              echo "On master, running all QA tests..."
+              make -C qa-tests-backend test
+            elif .circleci/pr_has_label.sh ci-all-qa-tests; then
+              echo "ci-all-qa-tests label was specified, so running all QA tests..."
+              make -C qa-tests-backend test
+            else
+              echo "On a PR branch, running BAT tests only..."
+              make -C qa-tests-backend bat-test
+            fi
+
+      - *collectK8sLogs
+
+      - run:
+          name: QA Automation Platform Part 2
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME="${API_HOSTNAME}"
+            export PORT="${API_PORT}"
+            make -C qa-tests-backend sensor-bounce-test
+
+      - save_cache:
+          key: *gradleCacheKey
+          paths:
+            - ~/.gradle/caches/
+
+      - *storeQATestResults
+      - *storeQASpockReports
+
+      - *collectK8sLogs
+      - *backupDB
+      - *storeDBBackupArtifact
+      - *verifyNoStackRoxRestarts
+      - *storeK8sLogs
+
+      - teardown-gke
+
 jobs:
 
   provision-cluster-k8s-tests:
@@ -1169,81 +1252,11 @@ jobs:
       - ADMISSION_CONTROLLER: true
 
     steps:
-      - checkout
-
-      - check-label-to-skip-tests:
-          label: ci-no-qa-tests
-
-      - setup_remote_docker
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - *setupRoxctl
-      - setup-gcp
-      - attach-gke-cluster:
+      - run-qa-tests:
           cluster-id: qa-tests
-      - *setupGoogleAppCreds
-      - *setupLicense
-
-      - *setupDefaultTLSCerts
-
-      - *deployGKE
-      - *setupCIMonitoring
-
-      - *setupClientTLSCerts
-
-      - *waitForAPI
-      - *waitForSensorK8s
-
-      - deploy-default-psp
-      - deploy-webhook-server
-      - deploy-authz-plugin
-
-      - *restoreGradle
-      - run:
-          name: QA Automation Platform Part 1
-          command: |
-            export CLUSTER=K8S
-            export HOSTNAME="${API_HOSTNAME}"
-            export PORT="${API_PORT}"
-            if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
-              echo "On master, running all QA tests..."
-              make -C qa-tests-backend test
-            elif .circleci/pr_has_label.sh ci-all-qa-tests; then
-              echo "ci-all-qa-tests label was specified, so running all QA tests..."
-              make -C qa-tests-backend test
-            else
-              echo "On a PR branch, running BAT tests only..."
-              make -C qa-tests-backend bat-test
-            fi
-
-      - *collectK8sLogs
-
-      - run:
-          name: QA Automation Platform Part 2
-          command: |
-            export CLUSTER=K8S
-            export HOSTNAME="${API_HOSTNAME}"
-            export PORT="${API_PORT}"
-            make -C qa-tests-backend sensor-bounce-test
-
-      - save_cache:
-          key: *gradleCacheKey
-          paths:
-          - ~/.gradle/caches/
-
-      - *storeQATestResults
-      - *storeQASpockReports
-
-      - *collectK8sLogs
-      - *backupDB
-      - *storeDBBackupArtifact
-      - *verifyNoStackRoxRestarts
-      - *storeK8sLogs
-
-      - teardown-gke
-
+          determine-whether-to-run:
+            - check-label-to-skip-tests:
+                label: ci-no-qa-tests
 
   provision-cluster-qa-tests-kernel-module:
     <<: *defaults
@@ -1270,78 +1283,10 @@ jobs:
       - ADMISSION_CONTROLLER: true
 
     steps:
-      - checkout
-
-      - *check-qa-tests-kernel-module-label
-
-      - setup_remote_docker
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - *setupRoxctl
-      - setup-gcp
-      - attach-gke-cluster:
-          cluster-id: qa-tests-kernel-module
-      - *setupGoogleAppCreds
-      - *setupLicense
-
-      - *setupDefaultTLSCerts
-
-      - *deployGKE
-      - *setupCIMonitoring
-
-      - *setupClientTLSCerts
-
-      - *waitForAPI
-      - *waitForSensorK8s
-
-      - deploy-webhook-server
-      - deploy-authz-plugin
-
-      - *restoreGradle
-      - run:
-          name: QA Automation Platform Part 1
-          command: |
-            export CLUSTER=K8S
-            export HOSTNAME="${API_HOSTNAME}"
-            export PORT="${API_PORT}"
-            if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
-              echo "On master, running all QA tests..."
-              make -C qa-tests-backend test
-            elif .circleci/pr_has_label.sh ci-all-qa-tests; then
-              echo "ci-all-qa-tests label was specified, so running all QA tests..."
-              make -C qa-tests-backend test
-            else
-              echo "On a PR branch, running RUNTIME tests only..."
-              make -C qa-tests-backend runtime-test
-            fi
-
-      - *collectK8sLogs
-
-      - run:
-          name: QA Automation Platform Part 2
-          command: |
-            export CLUSTER=K8S
-            export HOSTNAME="${API_HOSTNAME}"
-            export PORT="${API_PORT}"
-            make -C qa-tests-backend sensor-bounce-test
-
-      - save_cache:
-          key: *gradleCacheKey
-          paths:
-          - ~/.gradle/caches/
-
-      - *storeQATestResults
-      - *storeQASpockReports
-
-      - *collectK8sLogs
-      - *backupDB
-      - *storeDBBackupArtifact
-      - *verifyNoStackRoxRestarts
-      - *storeK8sLogs
-
-      - teardown-gke
+      - run-qa-tests:
+          cluster-id: qa-tests
+          determine-whether-to-run:
+            - *check-qa-tests-kernel-module-label
 
   provision-cluster-upgrade-test:
     <<: *defaults
@@ -1528,39 +1473,6 @@ jobs:
             mkdir /tmp/pprof
             ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 6
       - *storeProfilingResults
-
-      # TODO(viswa): Figure out how to fix this.
-      # - run:
-      #    name: Delete all mock sensors
-      #    command: kubectl -n stackrox delete deployments --selector "type=mocksensor"
-
-      # - run:
-      #    name: Launch da real sensor
-      #    command: |
-      #      kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-gke@ultra-current-825.iam.gserviceaccount.com
-      #      ./deploy/k8s/sensor.sh
-      #      kubectl delete clusterrolebinding temporary-admin
-
-      # - *waitForSensorK8s
-
-      # - run:
-      #    name: Kill our pods a few times
-      #    command: ./scripts/ci/chaos_monkey.sh
-      # - run:
-      #    name: Restart port forward
-      #    command: ./scripts/k8s/local-port-forward.sh
-      #    background: true
-      # - *waitForAPI
-      # - *waitForSensorK8s
-      # - *restoreGradle
-      # - run:
-      #    name: QA Automation Platform
-      #    command: |
-      #      export CLUSTER=K8S
-      #      export HOSTNAME="${API_HOSTNAME}"
-      #      export PORT="${API_PORT}"
-      #      make -C qa-tests-backend smoke-test
-
       - *collectK8sLogs
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
