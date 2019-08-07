@@ -12,13 +12,7 @@ import (
 func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.QuerySortOption) search.Searcher {
 	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 		// Add pagination sort order if needed.
-		local := proto.Clone(q).(*v1.Query)
-		if local.Pagination == nil {
-			local.Pagination = new(v1.QueryPagination)
-		}
-		if len(local.Pagination.SortOptions) == 0 {
-			local.Pagination.SortOptions = append(local.Pagination.SortOptions, defaultSortOption)
-		}
+		local := FillDefaultSortOption(q, defaultSortOption)
 		return searcher.Search(ctx, local)
 	})
 }
@@ -92,4 +86,17 @@ func FillPagination(query *v1.Query, pagination *v1.Pagination, maxLimit int32) 
 	queryPagination.Offset = pagination.GetOffset()
 
 	query.Pagination = queryPagination
+}
+
+// FillDefaultSortOption returns a copy of the query with the default sort option added if none is present.
+func FillDefaultSortOption(q *v1.Query, defaultSortOption *v1.QuerySortOption) *v1.Query {
+	// Add pagination sort order if needed.
+	local := proto.Clone(q).(*v1.Query)
+	if local.Pagination == nil {
+		local.Pagination = new(v1.QueryPagination)
+	}
+	if len(local.Pagination.SortOptions) == 0 {
+		local.Pagination.SortOptions = append(local.Pagination.SortOptions, defaultSortOption)
+	}
+	return local
 }

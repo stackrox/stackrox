@@ -147,6 +147,7 @@ func TestConvertQuery(t *testing.T) {
 		input                   *v1.Query
 		expectedDeploymentQuery *v1.Query
 		expectedRiskQuery       *v1.Query
+		expectedFilterOnRisk    bool
 	}{
 		{
 			name: "Only deployment query",
@@ -182,7 +183,8 @@ func TestConvertQuery(t *testing.T) {
 				}
 				return query
 			}(),
-			expectedRiskQuery: nil,
+			expectedRiskQuery:    nil,
+			expectedFilterOnRisk: false,
 		},
 		{
 			name: "Only risk query",
@@ -224,6 +226,7 @@ func TestConvertQuery(t *testing.T) {
 				}
 				return query
 			}(),
+			expectedFilterOnRisk: true,
 		},
 		{
 			name: "Mixed with deployment sort",
@@ -271,6 +274,7 @@ func TestConvertQuery(t *testing.T) {
 				)
 				return query
 			}(),
+			expectedFilterOnRisk: true,
 		},
 		{
 			name: "Mixed with risk sort",
@@ -318,15 +322,17 @@ func TestConvertQuery(t *testing.T) {
 				}
 				return query
 			}(),
+			expectedFilterOnRisk: true,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			deploymentQuery, riskQuery := splitQueries(c.input, ranker)
+			deploymentQuery, riskQuery, filterOnRisk := splitQueries(c.input, ranker)
 
 			assert.Equal(t, c.expectedDeploymentQuery, deploymentQuery)
 			assert.Equal(t, c.expectedRiskQuery, riskQuery)
+			assert.Equal(t, c.expectedFilterOnRisk, filterOnRisk)
 		})
 	}
 }

@@ -145,8 +145,11 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 
 	// Fill in pagination.
 	paginated.FillPagination(parsedQuery, request.Pagination, maxDeploymentsReturned)
+	sortedQuery := paginated.FillDefaultSortOption(parsedQuery, &v1.QuerySortOption{
+		Field: search.Priority.String(),
+	})
 
-	deployments, err := s.getListDeployments(ctx, parsedQuery)
+	deployments, err := s.getListDeployments(ctx, sortedQuery)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -223,8 +226,8 @@ func labelsMapFromSearchResults(results []search.Result) (keyValuesMap map[strin
 
 func (s *serviceImpl) getListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	// Split and combine the two queries into a single deployment query.
-	deploymentQuery, riskQuery := splitQueries(q, ranking.DeploymentRanker())
-	convertedDeploymentQuery, deploymentRanking := s.convertToDeploymentQuery(ctx, deploymentQuery, riskQuery)
+	deploymentQuery, riskQuery, filterOnRisk := splitQueries(q, ranking.DeploymentRanker())
+	convertedDeploymentQuery, deploymentRanking := s.convertToDeploymentQuery(ctx, deploymentQuery, riskQuery, filterOnRisk)
 
 	// If the deployment query had the sort, use it's pagination so that bleve sorts for us.
 	if len(deploymentQuery.GetPagination().GetSortOptions()) != 0 {
@@ -237,16 +240,24 @@ func (s *serviceImpl) getListDeployments(ctx context.Context, q *v1.Query) ([]*s
 		return nil, err
 	}
 
-	// If the risk side has the sort, we need to manually apply it.
+	// If the risk side has the sort, we need to manually apply it. Rank may be missing if the deployment has no risk
+	// value yet.
 	if len(riskQuery.GetPagination().GetSortOptions()) != 0 {
 		sort.SliceStable(deployments, func(i, j int) bool {
-			return deploymentRanking[deployments[i].GetId()] < deploymentRanking[deployments[j].GetId()]
+			iVal, iHasVal := deploymentRanking[deployments[i].GetId()]
+			jVal, jHasVal := deploymentRanking[deployments[j].GetId()]
+			if !iHasVal {
+				return false
+			} else if !jHasVal {
+				return true
+			}
+			return iVal < jVal
 		})
 	}
 	return deployments, nil
 }
 
-func (s *serviceImpl) convertToDeploymentQuery(ctx context.Context, deploymentQuery *v1.Query, riskQuery *v1.Query) (*v1.Query, map[string]int) {
+func (s *serviceImpl) convertToDeploymentQuery(ctx context.Context, deploymentQuery *v1.Query, riskQuery *v1.Query, filterOnRisk bool) (*v1.Query, map[string]int) {
 	if riskQuery == nil && deploymentQuery == nil {
 		return search.EmptyQuery(), nil
 	}
@@ -261,25 +272,31 @@ func (s *serviceImpl) convertToDeploymentQuery(ctx context.Context, deploymentQu
 	}
 
 	// Generate a query for the resulting deployments, and map to keep the ordering.
-	deploymentIDQueryBuilder := search.NewQueryBuilder()
 	deploymentIDToRank := make(map[string]int, len(risks))
 	for i, risk := range risks {
 		deploymentIDToRank[risk.GetSubject().GetId()] = i
-		deploymentIDQueryBuilder.AddDocIDs(risk.GetSubject().GetId())
 	}
-	deploymentIDQuery := deploymentIDQueryBuilder.ProtoQuery()
 
-	// Combine the queries if needed.
-	if deploymentQuery == nil {
-		return deploymentIDQuery, deploymentIDToRank
+	// If we want to filter to what is returned for risk data, then generate an ID query for the deployment ids returned
+	// with risk objects, and add it to the query.
+	if filterOnRisk {
+		deploymentIDQueryBuilder := search.NewQueryBuilder()
+		for _, risk := range risks {
+			deploymentIDQueryBuilder.AddDocIDs(risk.GetSubject().GetId())
+		}
+		deploymentIDQuery := deploymentIDQueryBuilder.ProtoQuery()
+		if deploymentQuery == nil {
+			return deploymentIDQuery, deploymentIDToRank
+		}
+		return search.NewConjunctionQuery(deploymentQuery, deploymentIDQuery), deploymentIDToRank
 	}
-	return search.NewConjunctionQuery(deploymentQuery, deploymentIDQuery), deploymentIDToRank
+	return deploymentQuery, deploymentIDToRank
 }
 
 // Static helper functions.
 ///////////////////////////
 
-func splitQueries(q *v1.Query, ranker *ranking.Ranker) (deploymentQuery *v1.Query, riskQuery *v1.Query) {
+func splitQueries(q *v1.Query, ranker *ranking.Ranker) (deploymentQuery *v1.Query, riskQuery *v1.Query, filterOnRisk bool) {
 	// Create the deployment query.
 	deploymentQuery = filterDeploymentQuery(q)
 	deploymentPagination := filterDeploymentPagination(q)
@@ -292,6 +309,11 @@ func splitQueries(q *v1.Query, ranker *ranking.Ranker) (deploymentQuery *v1.Quer
 
 	// Create the risk query.
 	riskQuery = filterRiskQuery(q, ranker)
+	if riskQuery != nil {
+		// If we paginate on risk, we will be limited to the deployments with risk entries, so we need to explicitly
+		// not add the risk ids in the conversion step.
+		filterOnRisk = true
+	}
 	riskPagination := filterRiskPagination(q)
 	if riskPagination != nil {
 		if riskQuery == nil {

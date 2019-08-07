@@ -17,10 +17,6 @@ import (
 )
 
 var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field: search.Priority.String(),
-	}
-
 	deploymentsSearchHelper = sac.ForResource(resources.Deployment).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
 )
 
@@ -111,6 +107,5 @@ func convertDeployment(deployment *storage.ListDeployment, result search.Result)
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	filteredSearcher := deploymentsSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
-	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
-	return defaultSortedSearcher
+	return paginatedSearcher
 }
