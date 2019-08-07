@@ -187,7 +187,10 @@ func (r *resumableReader) Read(buf []byte) (int, error) {
 		r.finishErr = finishErr
 	}
 
-	close(r.eventsC)
+	if r.eventsC != nil {
+		close(r.eventsC)
+		r.eventsC = nil
+	}
 	return 0, r.finishErr
 }
 
@@ -206,8 +209,12 @@ func (r *resumableReader) Close() error {
 		err = Close(r.currentReader)
 		r.currentReader = nil
 	}
-	close(r.eventsC)
-	close(r.cmdC)
+
+	if r.eventsC != nil {
+		close(r.eventsC)
+		r.eventsC = nil
+	}
+	r.finishErr = errors.New("reader closed")
 
 	return err
 }

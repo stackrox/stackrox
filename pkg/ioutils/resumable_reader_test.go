@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,6 +42,7 @@ func (r *readerWithErr) Read(buf []byte) (int, error) {
 
 func TestResumableReader(t *testing.T) {
 	reader, initialAttach, detachmentEvents := NewResumableReader(crc32.NewIEEE())
+	defer utils.IgnoreError(reader.Close)
 
 	readResultC := make(chan string)
 	go func() {

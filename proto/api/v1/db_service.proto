@@ -6,6 +6,7 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "api/v1/empty.proto";
+import "api/v1/common.proto";
 import "google/protobuf/timestamp.proto";
 
 package v1;
@@ -46,6 +47,30 @@ message DBRestoreProcessMetadata {
     google.protobuf.Timestamp start_time = 3;
     // The user who initiated the database restore process.
     string initiating_user_name          = 4;
+}
+
+message DBRestoreProcessStatus {
+    enum State {
+        UNKNOWN     = 0;
+        NOT_STARTED = 1;
+        IN_PROGRESS = 2;
+        PAUSED      = 3;
+        COMPLETED   = 4;  // successful if error is empty, unsuccessful otherwise
+    }
+
+    message ResumeInfo {
+        int64 pos = 1;
+    }
+
+    DBRestoreProcessMetadata metadata = 1;
+
+    string attempt_id      = 2;
+    State state            = 3;
+    ResumeInfo resume_info = 4;  // only populated if state is PAUSED
+    string error           = 5;  // only populated when state is COMPLETED
+
+    int64 bytes_read       = 6;  // Payload bytes read so far (approximate)
+    int64 files_processed  = 7;  // Files processed so far (approximate)
 }
 
 // A DB export manifest describes the file contents of a restore request. To prevent data loss, a manifest is always
@@ -93,6 +118,19 @@ message GetDBExportCapabilitiesResponse {
     repeated DBExportManifest.EncodingType supported_encodings = 2;
 }
 
+message GetActiveDBRestoreProcessResponse {
+    DBRestoreProcessStatus active_status = 1;
+}
+
+message InterruptDBRestoreProcessRequest {
+    string process_id = 1;
+    string attempt_id = 2;
+}
+
+message InterruptDBRestoreProcessResponse {
+    DBRestoreProcessStatus.ResumeInfo resume_info = 1;
+}
+
 service DBService {
 
     rpc GetExportCapabilities(Empty) returns (GetDBExportCapabilitiesResponse) {
@@ -101,4 +139,21 @@ service DBService {
         };
     }
 
+    rpc GetActiveRestoreProcess(Empty) returns (GetActiveDBRestoreProcessResponse) {
+        option (google.api.http) = {
+            get: "/v1/db/restore"
+        };
+    }
+
+    rpc InterruptRestoreProcess(InterruptDBRestoreProcessRequest) returns (InterruptDBRestoreProcessResponse) {
+        option (google.api.http) = {
+            post: "/v1/db/interruptrestore/{process_id}/{attempt_id}"
+        };
+    }
+
+    rpc CancelRestoreProcess(ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/db/restore/{id}"
+        };
+    }
 }

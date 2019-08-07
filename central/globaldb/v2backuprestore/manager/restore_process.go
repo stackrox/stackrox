@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sync/atomic"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -15,14 +17,29 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/timeutil"
+	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	defaultReattachTimeout = 24 * time.Hour
 )
 
 // RestoreProcess provides a handle to ongoing database restore processes.
 type RestoreProcess interface {
 	Metadata() *v1.DBRestoreProcessMetadata
+	ProtoStatus() *v1.DBRestoreProcessStatus
 	Completion() concurrency.ErrorWaitable
 	Cancel()
+
+	// Interrupt interrupts the currently active restore attempt, provided its ID matches the given attempt ID.
+	// This function will behave as if the interruption was successful even if no attempt is currently active.
+	Interrupt(ctx context.Context, attemptID string) (*v1.DBRestoreProcessStatus_ResumeInfo, error)
+
+	// Resume tries to attach the given data reader at the given position, using the previous content checksum for
+	// verifying integrity. If successful, the given attempt ID will be used to refer to this attempt.
+	Resume(ctx context.Context, attemptID string, data io.Reader, pos int64, checksum []byte) (concurrency.ErrorWaitable, error)
 }
 
 type restoreFile struct {
@@ -31,17 +48,32 @@ type restoreFile struct {
 }
 
 type restoreProcess struct {
-	metadata *v1.DBRestoreProcessMetadata
+	// mutex protects all fields in the current block
+	mutex           sync.RWMutex
+	reattachPos     int64                // only valid if attachment is possible
+	reattachC       chan reattachRequest // only non-nil if attachment is possible
+	reattachableSig concurrency.Signal   // triggered whenever a new reader can be attached, reset after it has been attached
+	attemptID       string               // for safe interruptions
 
-	files []*restoreFile
-	data  io.Reader
+	metadata *v1.DBRestoreProcessMetadata // static, populated on construction
+	files    []*restoreFile               // static, populated on construction
 
-	started    concurrency.Flag
-	cancelSig  concurrency.Signal
-	stoppedSig concurrency.ErrorSignal
+	// Resumable data reader fields
+	data            io.ReadCloser
+	detachEvents    <-chan ioutils.ReaderDetachmentEvent
+	reattachTimeout time.Duration
+
+	started           concurrency.Flag        // prevents multiple starts of the same process
+	cancelSig         concurrency.Signal      // trigger to cancel the current process
+	completionSig     concurrency.ErrorSignal // triggered after process has finished running (successful or otherwise)
+	currentAttemptSig concurrency.ErrorSignal // trigger to cancel current *attempt*
+
+	// For statistics (atomic access; approximate only)
+	bytesRead      int64
+	filesProcessed int64
 }
 
-func newRestoreProcess(ctx context.Context, header *v1.DBRestoreRequestHeader, handlerFuncs []common.RestoreFileHandlerFunc, data io.Reader) (*restoreProcess, error) {
+func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreRequestHeader, handlerFuncs []common.RestoreFileHandlerFunc, data io.Reader) (*restoreProcess, error) {
 	mfFiles := header.GetManifest().GetFiles()
 	if len(mfFiles) != len(handlerFuncs) {
 		return nil, errorhelpers.PanicOnDevelopmentf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles))
@@ -56,7 +88,7 @@ func newRestoreProcess(ctx context.Context, header *v1.DBRestoreRequestHeader, h
 	}
 
 	metadata := &v1.DBRestoreProcessMetadata{
-		Id:        uuid.NewV4().String(),
+		Id:        id,
 		Header:    header,
 		StartTime: types.TimestampNow(),
 	}
@@ -65,26 +97,41 @@ func newRestoreProcess(ctx context.Context, header *v1.DBRestoreRequestHeader, h
 		metadata.InitiatingUserName = identity.User().GetUsername()
 	}
 
-	return &restoreProcess{
-		metadata: metadata,
-		files:    files,
-		data:     data,
+	resumableDataReader, initAttach, detachEvents := ioutils.NewResumableReader(crc32.NewIEEE())
+	if err := initAttach.Attach(data, 0, nil); err != nil {
+		return nil, errorhelpers.PanicOnDevelopmentf("could not attach initial reader to resumable reader: %v", err)
+	}
 
-		cancelSig:  concurrency.NewSignal(),
-		stoppedSig: concurrency.NewErrorSignal(),
-	}, nil
+	p := &restoreProcess{
+		metadata:        metadata,
+		files:           files,
+		detachEvents:    detachEvents,
+		reattachTimeout: defaultReattachTimeout,
+
+		cancelSig:       concurrency.NewSignal(),
+		completionSig:   concurrency.NewErrorSignal(),
+		reattachableSig: concurrency.NewSignal(),
+	}
+
+	p.data = ioutils.NewCountingReader(resumableDataReader, &p.bytesRead)
+
+	return p, nil
 }
 
 func (p *restoreProcess) Metadata() *v1.DBRestoreProcessMetadata {
 	return p.metadata
 }
 
-func (p *restoreProcess) Launch(tempOutputDir, finalDir string) error {
+func (p *restoreProcess) Launch(tempOutputDir, finalDir string) (concurrency.ErrorWaitable, error) {
 	if p.started.TestAndSet(true) {
-		return errors.New("restore process has already been started")
+		return nil, errors.New("restore process has already been started")
 	}
-	go p.run(context.Background(), tempOutputDir, finalDir)
-	return nil
+
+	p.currentAttemptSig.Reset()
+	currAttemptDone := p.currentAttemptSig.Snapshot()
+
+	go p.run(tempOutputDir, finalDir)
+	return currAttemptDone, nil
 }
 
 func (p *restoreProcess) cleanUp(outputDir string) {
@@ -94,16 +141,19 @@ func (p *restoreProcess) cleanUp(outputDir string) {
 	}
 }
 
-func (p *restoreProcess) run(ctx context.Context, tempOutputDir, finalDir string) {
+func (p *restoreProcess) run(tempOutputDir, finalDir string) {
+	defer utils.IgnoreError(p.data.Close)
 	defer p.cleanUp(tempOutputDir)
-
 	defer p.cancelSig.Signal()
-	// Make sure the process runs in a context that respects the stop signal.
-	subCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	concurrency.CancelContextOnSignal(subCtx, cancel, &p.cancelSig)
+	defer p.currentAttemptSig.Signal()
 
-	p.stoppedSig.SignalWithError(p.doRun(subCtx, tempOutputDir, finalDir))
+	// Make sure the process runs in a context that respects the stop signal.
+	ctx, cancel := concurrency.DependentContext(context.Background(), &p.cancelSig)
+	defer cancel()
+
+	go p.resumeCtrl()
+
+	p.completionSig.SignalWithError(p.doRun(ctx, tempOutputDir, finalDir))
 }
 
 func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir string) error {
@@ -130,10 +180,192 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir stri
 
 func (p *restoreProcess) Cancel() {
 	p.cancelSig.Signal()
+	p.currentAttemptSig.SignalWithError(errors.New("restore canceled"))
+}
+
+func (p *restoreProcess) Interrupt(ctx context.Context, attemptID string) (*v1.DBRestoreProcessStatus_ResumeInfo, error) {
+	var resumeInfo *v1.DBRestoreProcessStatus_ResumeInfo
+	var err error
+	var reattachCond concurrency.Waitable
+
+	concurrency.WithLock(&p.mutex, func() {
+		if p.reattachC != nil {
+			// Process is already interrupted
+			resumeInfo = &v1.DBRestoreProcessStatus_ResumeInfo{
+				Pos: p.reattachPos,
+			}
+			return
+		}
+
+		if p.attemptID != attemptID {
+			err = errors.Errorf("provided attempt ID %q does not match ID %s of current attempt", attemptID, p.attemptID)
+			return
+		}
+
+		reattachCond = p.reattachableSig.Snapshot()
+		p.currentAttemptSig.SignalWithError(errors.New("attempt canceled"))
+	})
+
+	if reattachCond == nil {
+		// function passed to WithLock above returned early, so return early here.
+		return resumeInfo, err
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-reattachCond.Done():
+	}
+
+	pos, reattachC := p.getReattachC()
+	if reattachC == nil {
+		return nil, errors.New("process was interrupted, but has already been resumed")
+	}
+	return &v1.DBRestoreProcessStatus_ResumeInfo{
+		Pos: pos,
+	}, nil
+}
+
+func (p *restoreProcess) getReattachC() (int64, chan<- reattachRequest) {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	if p.reattachC == nil {
+		return 0, nil
+	}
+
+	return p.reattachPos, p.reattachC
+}
+
+type reattachRequest struct {
+	attemptID string
+	reader    io.Reader
+	pos       int64
+	checksum  []byte
+
+	respC chan reattachResponse
+}
+
+type reattachResponse struct {
+	attemptDone concurrency.ErrorWaitable
+	err         error
+}
+
+func (p *restoreProcess) Resume(ctx context.Context, attemptID string, data io.Reader, pos int64, checksum []byte) (concurrency.ErrorWaitable, error) {
+	subCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	_, reattachC := p.getReattachC()
+	if reattachC == nil {
+		return nil, errors.New("restore process is not currently available for resuming")
+	}
+
+	respC := make(chan reattachResponse, 1)
+
+	req := reattachRequest{
+		attemptID: attemptID,
+		reader:    data,
+		pos:       pos,
+		checksum:  checksum,
+		respC:     respC,
+	}
+
+	select {
+	case reattachC <- req:
+	case <-p.completionSig.Done():
+		return nil, errors.New("could not resume restore process: process was stopped")
+	case <-subCtx.Done():
+		return nil, errors.Wrap(subCtx.Err(), "timed out trying to resume (the restore process might have been resumed otherwise, or timed out)")
+	}
+
+	select {
+	case resp := <-respC:
+		if resp.err != nil {
+			return nil, errors.Wrap(resp.err, "could not resume restore process")
+		}
+		return resp.attemptDone, nil
+	case <-subCtx.Done():
+		return nil, errors.Wrap(subCtx.Err(), "timed out waiting for resume response")
+	}
+}
+
+func (p *restoreProcess) onReaderDetached(event ioutils.ReaderDetachmentEvent) {
+	_ = ioutils.Close(event.DetachedReader())
+
+	if event.ReadError() == io.EOF {
+		if err := event.Finish(io.EOF); err != nil {
+			errorhelpers.PanicOnDevelopment(err)
+		}
+		return
+	}
+
+	timer := time.NewTimer(p.reattachTimeout)
+	defer timeutil.StopTimer(timer)
+
+	reattachC := make(chan reattachRequest)
+	concurrency.WithLock(&p.mutex, func() {
+		p.reattachC = reattachC
+		p.reattachPos = event.Position()
+		p.attemptID = ""
+	})
+
+	p.reattachableSig.Signal()
+	defer p.reattachableSig.Reset()
+
+	var winningAttemptID string
+	defer concurrency.WithLock(&p.mutex, func() {
+		p.reattachC = nil
+		p.reattachPos = 0
+		p.attemptID = winningAttemptID
+	})
+
+	for {
+		select {
+		case <-p.cancelSig.Done():
+			if err := event.Finish(errors.New("process canceled")); err != nil {
+				errorhelpers.PanicOnDevelopment(err)
+			}
+			return
+		case <-timer.C:
+			if err := event.Finish(errors.Errorf("timeout: no new data stream attached after %v", p.reattachTimeout)); err != nil {
+				errorhelpers.PanicOnDevelopment(err)
+			}
+			return
+		case req := <-reattachC:
+			reattachErr := event.Attach(req.reader, req.pos, req.checksum)
+			// req.respC is buffered with capacity 1 and only written to once, so the following sends will never block.
+			if reattachErr == nil {
+				p.currentAttemptSig.Reset()
+				req.respC <- reattachResponse{
+					attemptDone: p.currentAttemptSig.Snapshot(),
+				}
+				winningAttemptID = req.attemptID
+				return
+			}
+			req.respC <- reattachResponse{
+				err: reattachErr,
+			}
+		}
+	}
+}
+
+func (p *restoreProcess) resumeCtrl() {
+	for {
+		select {
+		case event, ok := <-p.detachEvents:
+			if !ok {
+				return
+			}
+			p.onReaderDetached(event)
+		case <-p.cancelSig.Done():
+			p.currentAttemptSig.SignalWithError(errors.New(""))
+			return
+		}
+	}
 }
 
 func (p *restoreProcess) Completion() concurrency.ErrorWaitable {
-	return &p.stoppedSig
+	return &p.completionSig
 }
 
 func (p *restoreProcess) processFiles(ctx *restoreProcessContext) error {
@@ -181,5 +413,39 @@ func (p *restoreProcess) processSingleFile(ctx *restoreProcessContext, file *res
 	if n, err := fileChunkReader.Read(buf[:]); err != io.EOF || n != 0 {
 		return errors.New("not all bytes in file chunk were read")
 	}
+
+	atomic.AddInt64(&p.filesProcessed, 1)
+
 	return nil
+}
+
+func (p *restoreProcess) ProtoStatus() *v1.DBRestoreProcessStatus {
+	status := &v1.DBRestoreProcessStatus{
+		Metadata:       p.Metadata(),
+		BytesRead:      atomic.LoadInt64(&p.bytesRead),
+		FilesProcessed: atomic.LoadInt64(&p.filesProcessed),
+	}
+
+	if !p.started.Get() {
+		status.State = v1.DBRestoreProcessStatus_NOT_STARTED
+	} else if err, done := p.completionSig.Error(); !done {
+		concurrency.WithLock(&p.mutex, func() {
+			if p.reattachC != nil {
+				status.State = v1.DBRestoreProcessStatus_PAUSED
+				status.ResumeInfo = &v1.DBRestoreProcessStatus_ResumeInfo{
+					Pos: p.reattachPos,
+				}
+			} else {
+				status.State = v1.DBRestoreProcessStatus_IN_PROGRESS
+				status.AttemptId = p.attemptID
+			}
+		})
+	} else {
+		status.State = v1.DBRestoreProcessStatus_COMPLETED
+		if err != nil {
+			status.Error = err.Error()
+		}
+	}
+
+	return status
 }

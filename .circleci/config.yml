@@ -1355,6 +1355,7 @@ jobs:
     environment:
       - STORAGE: pvc
       - LOAD_BALANCER: lb
+      - ROX_DB_BACKUP_RESTORE_V2: true
 
     steps:
       - checkout
@@ -1404,7 +1405,8 @@ jobs:
             new_image="stackrox/main:$(make tag)"
             central_patch='[
               {"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "'"$new_image"'"},
-              {"op": "replace", "path": "/spec/template/spec/containers/0/ports", "value": [{"name": "api", "containerPort": 8443}]}
+              {"op": "replace", "path": "/spec/template/spec/containers/0/ports", "value": [{"name": "api", "containerPort": 8443}]},
+              {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "ROX_DB_BACKUP_RESTORE_V2", "value": "true"}}
             ]'
             kubectl -n stackrox patch deploy/central --type json -p "$central_patch"
             kubectl -n stackrox describe deploy/central
@@ -1438,6 +1440,22 @@ jobs:
           command: |
             roxctl -e "${API_HOSTNAME}:${API_PORT}" central license add --license="$ROX_LICENSE_KEY"
             sleep 3
+
+      - *waitForAPI
+
+      - run:
+          name: Back up and restore the DB
+          command: |
+            roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" central db backup \
+              --output /tmp/stackrox-db.zip \
+              --timeout 1m
+
+            ls -lh /tmp/stackrox-db.zip
+
+            roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" central db restore \
+              --file /tmp/stackrox-db.zip \
+              --timeout 1m
+            sleep 5
 
       - *waitForAPI
 

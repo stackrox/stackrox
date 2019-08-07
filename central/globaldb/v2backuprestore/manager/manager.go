@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -33,11 +32,8 @@ type Manager interface {
 	GetExportFormats() formats.ExportFormatList
 	GetSupportedFileEncodings() []v1.DBExportManifest_EncodingType
 
-	RestoreHandler() http.Handler
-
-	CancelRestoreProcess(ctx context.Context, id string) error
+	LaunchRestoreProcess(ctx context.Context, id string, requestHeader *v1.DBRestoreRequestHeader, data io.Reader) (concurrency.ErrorWaitable, error)
 	GetActiveRestoreProcess() RestoreProcess
-	LaunchRestoreProcess(ctx context.Context, requestHeader *v1.DBRestoreRequestHeader, data io.Reader) (RestoreProcess, error)
 }
 
 type manager struct {
@@ -113,7 +109,7 @@ func (m *manager) finalOutputDir() string {
 	return filepath.Join(m.outputRoot, ".restore")
 }
 
-func (m *manager) LaunchRestoreProcess(ctx context.Context, requestHeader *v1.DBRestoreRequestHeader, data io.Reader) (RestoreProcess, error) {
+func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHeader *v1.DBRestoreRequestHeader, data io.Reader) (concurrency.ErrorWaitable, error) {
 	format := m.formatRegistry.GetFormat(requestHeader.GetFormatName())
 	if format == nil {
 		return nil, errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
@@ -128,7 +124,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, requestHeader *v1.DB
 		return nil, err
 	}
 
-	process, err := newRestoreProcess(ctx, requestHeader, handlerFuncs, data)
+	process, err := newRestoreProcess(ctx, id, requestHeader, handlerFuncs, data)
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +139,16 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, requestHeader *v1.DB
 		return nil, errors.Errorf("an active restore process currently exists; cancel it before initiating a new restore process")
 	}
 
-	if err := process.Launch(tempOutputDir, finalOutputDir); err != nil {
+	attemptDone, err := process.Launch(tempOutputDir, finalOutputDir)
+	if err != nil {
 		return nil, errors.Wrap(err, "could not launch restore process")
 	}
 
+	m.activeProcess = process
+
 	go m.waitForRestore(process)
 
-	return process, nil
+	return attemptDone, nil
 }
 
 func (m *manager) waitForRestore(process *restoreProcess) {
@@ -176,27 +175,8 @@ func (m *manager) GetActiveRestoreProcess() RestoreProcess {
 	m.activeProcessMutex.RLock()
 	defer m.activeProcessMutex.RUnlock()
 
-	return m.activeProcess
-}
-
-func (m *manager) CancelRestoreProcess(ctx context.Context, id string) error {
-	activeProcess := m.GetActiveRestoreProcess()
-	if activeProcess == nil {
-		return errors.New("no restore process is currently active")
-	}
-
-	if activeProcess.Metadata().GetId() != id {
-		return errors.Errorf("ID %q is invalid for identifying the currently active restore process", id)
-	}
-
-	activeProcess.Cancel()
-	select {
-	case <-activeProcess.Completion().Done():
-		if activeProcess.Completion().Err() == nil {
-			return errors.New("cancellation of restore process failed as process already completed successfully")
-		}
+	if m.activeProcess == nil {
 		return nil
-	case <-ctx.Done():
-		return ctx.Err()
 	}
+	return m.activeProcess
 }

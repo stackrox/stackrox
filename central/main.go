@@ -35,8 +35,8 @@ import (
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
 	"github.com/stackrox/rox/central/globaldb"
+	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
-	backupRestoreManager "github.com/stackrox/rox/central/globaldb/v2backuprestore/manager"
 	backupRestoreService "github.com/stackrox/rox/central/globaldb/v2backuprestore/service"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupService "github.com/stackrox/rox/central/group/service"
@@ -302,7 +302,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	}
 
 	if features.DBBackupRestoreV2.Enabled() {
-		servicesToRegister = append(servicesToRegister, backupRestoreService.New(backupRestoreManager.Singleton()))
+		servicesToRegister = append(servicesToRegister, backupRestoreService.Singleton())
 	}
 
 	return servicesToRegister
@@ -500,19 +500,19 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/db/backup",
-			Authorizer:    user.With(resources.AllResourcesViewPermissions()...),
+			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
 			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/export",
-			Authorizer:    user.With(resources.AllResourcesViewPermissions()...),
+			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
 			ServerHandler: globaldbHandlers.ExportDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/restore",
-			Authorizer:    user.With(resources.AllResourcesModifyPermissions()...),
+			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 		},
 		{
@@ -536,11 +536,19 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 	}
 
 	if features.DBBackupRestoreV2.Enabled() {
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/v2/restore",
-			Authorizer:    user.With(resources.AllResourcesModifyPermissions()...),
-			ServerHandler: backupRestoreManager.Singleton().RestoreHandler(),
-		})
+		svc := backupRestoreService.Singleton()
+		customRoutes = append(customRoutes, []routes.CustomRoute{
+			{
+				Route:         "/db/v2/restore",
+				Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
+				ServerHandler: svc.RestoreHandler(),
+			},
+			{
+				Route:         "/db/v2/resumerestore",
+				Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
+				ServerHandler: svc.ResumeRestoreHandler(),
+			},
+		}...)
 	}
 
 	logImbueRoute := "/api/logimbue"

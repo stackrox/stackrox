@@ -4,7 +4,7 @@ package retry
 // the OnlyIf option.
 func MakeRetryable(e error) error {
 	if e == nil {
-		panic("retiryable is an error type, nil is no error at all.")
+		panic("retryable is an error type, nil is no error at all.")
 	}
 	return &retryableError{error: e}
 }

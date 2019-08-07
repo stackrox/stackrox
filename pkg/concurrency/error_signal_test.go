@@ -15,6 +15,21 @@ var (
 	err2 = errors.New("testerr2")
 )
 
+func TestErrorSignal_ZeroValueIsTriggered(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	var s ErrorSignal
+	a.True(s.IsDone(), "error signal should be triggered")
+
+	err, ok := s.Error()
+	a.NoError(err, "zero value should return a nil error")
+	a.True(ok, "zero value should indicate it is triggered")
+
+	a.True(s.Reset(), "reset on zero value signal should work")
+	a.False(s.IsDone(), "signal should not be done after reset")
+}
+
 func TestNewErrorSignalIsNotDone(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)

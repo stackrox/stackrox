@@ -77,3 +77,22 @@ func ErrorC(ew ErrorWaitable, cancelCond Waitable) <-chan error {
 	}()
 	return errC
 }
+
+type errorNow struct {
+	err error
+}
+
+func (e errorNow) Err() error {
+	return e.err
+}
+
+func (e errorNow) Done() <-chan struct{} {
+	return closedCh
+}
+
+// ErrorNow returns an `ErrorWaitable` that is always triggered and returns the given error.
+func ErrorNow(err error) ErrorWaitable {
+	return errorNow{
+		err: err,
+	}
+}

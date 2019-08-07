@@ -169,7 +169,12 @@ func (s *ErrorSignal) Reset() bool {
 // It is guaranteed that for any number of concurrent callers to `ErrorAndReset` (and no triggering happening at the
 // same time), exactly one caller will see a `true` return value with a potentially non-nil error.
 func (s *ErrorSignal) ErrorAndReset() (Error, bool) {
-	state := s.getStateOrDefault()
+	rawState := s.getState()
+	state := rawState
+	if state == nil {
+		state = defaultErrorSignalState
+	}
+
 	if !state.IsDone() {
 		// If we get triggered after the above fetch, that's okay - we pretend the Reset() (which then is a no-op)
 		// happened strictly before the trigger.
@@ -180,7 +185,7 @@ func (s *ErrorSignal) ErrorAndReset() (Error, bool) {
 	// concurrent reset happened and succeeded, this Reset invocation will not. If the signal has been reset and
 	// triggered in the meantime, we fail, too, pretending this Reset invocation happened as the first action in a
 	// Reset - Trigger - Reset sequence.
-	if !atomic.CompareAndSwapPointer(&s.statePtr, unsafe.Pointer(state), unsafe.Pointer(newErrorSignalState())) {
+	if !atomic.CompareAndSwapPointer(&s.statePtr, unsafe.Pointer(rawState), unsafe.Pointer(newErrorSignalState())) {
 		return nil, false
 	}
 	return state.Err(), true
