@@ -1,7 +1,7 @@
 package image
 
 import (
-	"path/filepath"
+	"path"
 	"strings"
 	"text/template"
 
@@ -43,8 +43,8 @@ func LoadFileContents(filename string) (string, error) {
 }
 
 // ReadFileAndTemplate reads and renders the template for the file
-func ReadFileAndTemplate(path string, funcs template.FuncMap) (*template.Template, error) {
-	templatePath := filepath.Join(templatePath, path)
+func ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (*template.Template, error) {
+	templatePath := path.Join(templatePath, pathToFile)
 	contents, err := LoadFileContents(templatePath)
 	if err != nil {
 		return nil, err
