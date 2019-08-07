@@ -67,11 +67,15 @@ class Panel extends Component {
     };
 
     // Add or remove enforcement actions from the policy being edited (form data).
-    toggleStage = stage => () => {
+    toggleOn = stage => () => {
+        if (!this.hasEnforcementForLifecycle(stage)) {
+            this.addEnforcementsForLifecycle(stage);
+        }
+    };
+
+    toggleOff = stage => () => {
         if (this.hasEnforcementForLifecycle(stage)) {
             this.removeEnforcementsForLifecycle(stage);
-        } else {
-            this.addEnforcementsForLifecycle(stage);
         }
     };
 
@@ -92,7 +96,8 @@ class Panel extends Component {
                             enabled={this.lifecycleStageEnabled(key)}
                             applied={this.hasEnforcementForLifecycle(key)}
                             enforcement={lifecycleTileMap[key]}
-                            onOffAction={this.toggleStage(key)}
+                            onAction={this.toggleOn(key)}
+                            offAction={this.toggleOff(key)}
                         />
                     ))}
                 </div>

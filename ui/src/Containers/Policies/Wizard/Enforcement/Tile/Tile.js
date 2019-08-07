@@ -19,7 +19,8 @@ const Tile = props => {
                         <OnOffSwitch
                             enabled={props.enabled}
                             applied={props.applied}
-                            onClick={props.onOffAction}
+                            onAction={props.onAction}
+                            offAction={props.offAction}
                         />
                     </div>
                 </div>
@@ -41,7 +42,8 @@ Tile.propTypes = {
         header: PropTypes.string.isRequired,
         description: PropTypes.string.isRequired
     }).isRequired,
-    onOffAction: PropTypes.func.isRequired
+    onAction: PropTypes.func.isRequired,
+    offAction: PropTypes.func.isRequired
 };
 
 export default Tile;

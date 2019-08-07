@@ -5,7 +5,8 @@ class OnOffSwitch extends Component {
     static propTypes = {
         enabled: PropTypes.bool.isRequired,
         applied: PropTypes.bool.isRequired,
-        onClick: PropTypes.func.isRequired
+        onAction: PropTypes.func.isRequired,
+        offAction: PropTypes.func.isRequired
     };
 
     renderSwitch = () => {
@@ -24,7 +25,7 @@ class OnOffSwitch extends Component {
                 <button
                     type="button"
                     className={onSwitchClass}
-                    onClick={this.props.onClick}
+                    onClick={this.props.onAction}
                     disabled={!this.props.enabled}
                 >
                     On
@@ -32,7 +33,7 @@ class OnOffSwitch extends Component {
                 <button
                     type="button"
                     className={offSwitchClass}
-                    onClick={this.props.onClick}
+                    onClick={this.props.offAction}
                     disabled={!this.props.enabled}
                 >
                     Off
