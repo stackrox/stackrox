@@ -339,6 +339,10 @@ checkOpenshiftLabel: &checkOpenshiftLabel
   run:
     name: Determine whether to run OpenShift tests
     command: |
+      # TODO(ROX-2925): Fix, and re-enable.
+      echo "Skipping OpenShift tests unconditionally until we fix them..."
+      circleci step halt
+
       set +e
       .circleci/pr_has_label.sh ci-openshift-tests
       if [ $? -eq 1 ]; then
