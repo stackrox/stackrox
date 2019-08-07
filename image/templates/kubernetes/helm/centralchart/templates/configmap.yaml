@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  central-config.yaml: |-
+    maintenance:
+      compaction:
+        enabled: false
+        fillFraction: .5
+kind: ConfigMap
+metadata:
+  name: central-config
+  namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox

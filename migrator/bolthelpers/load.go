@@ -14,10 +14,15 @@ const (
 	dbFileName = "stackrox.db"
 )
 
+// Path returns the path to the Bolt DB
+func Path() string {
+	return filepath.Join(migrations.DBMountPath, dbFileName)
+}
+
 // Load loads an instance of Bolt from disk.
 // It returns nil and no error if no DB is found in the expected location; the caller MUST check for this.
 func Load() (*bolt.DB, error) {
-	dbPath := filepath.Join(migrations.DBMountPath, dbFileName)
+	dbPath := Path()
 	_, err := os.Stat(dbPath)
 	if os.IsNotExist(err) {
 		return nil, nil

@@ -102,6 +102,8 @@ spec:
           readOnly: true
         - name: {{.Values.persistence.name}}
           mountPath: /var/lib/stackrox
+        - name: central-config-volume
+          mountPath: /etc/stackrox
       {{if .Values.monitoring}}
         - name: monitoring-client-volume
           mountPath: /run/secrets/stackrox.io/monitoring/certs
@@ -178,6 +180,10 @@ spec:
       - name: central-license-volume
         secret:
           secretName: central-license
+          optional: true
+      - name: central-config-volume
+        configMap:
+          name: central-config
           optional: true
       {{if .Values.monitoring}}
       - name: monitoring-client-volume

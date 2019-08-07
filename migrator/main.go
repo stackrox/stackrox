@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/compact"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/runner"
 )
@@ -18,6 +19,10 @@ func main() {
 }
 
 func run() error {
+	if err := compact.Compact(); err != nil {
+		log.WriteToStderr("error compacting DB: %v", err)
+	}
+
 	boltDB, err := bolthelpers.Load()
 	if err != nil {
 		return errors.Wrap(err, "failed to open bolt DB")
