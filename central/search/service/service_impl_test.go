@@ -23,7 +23,6 @@ import (
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -90,8 +89,7 @@ func TestAutocomplete(t *testing.T) {
 	idx, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	testDB, err := bolthelper.NewTemp(testutils.DBFileNameForT(t))
-	require.NoError(t, err)
+	testDB := testutils.BadgerDBForT(t)
 	defer utils.IgnoreError(testDB.Close)
 
 	mockIndicators := mocks.NewMockDataStore(mockCtrl)
@@ -101,7 +99,7 @@ func TestAutocomplete(t *testing.T) {
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	deploymentDS, err := deploymentDatastore.New(testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil)
+	deploymentDS, err := deploymentDatastore.NewBadger(testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil)
 	require.NoError(t, err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())

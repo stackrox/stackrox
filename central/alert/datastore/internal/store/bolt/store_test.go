@@ -1,9 +1,10 @@
-package store
+package bolt
 
 import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -20,7 +21,7 @@ type alertStoreTestSuite struct {
 
 	db *bolt.DB
 
-	store Store
+	store store.Store
 }
 
 func (s *alertStoreTestSuite) SetupSuite() {

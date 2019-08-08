@@ -20,6 +20,7 @@ import (
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -83,7 +84,7 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 	var containers []*storage.Container
 	for _, id := range imageIDs {
 		containers = append(containers, &storage.Container{
-			Image: &storage.ContainerImage{Id: id},
+			Image: &storage.ContainerImage{Id: types.NewDigest(id).Digest()},
 		})
 	}
 	return &storage.Deployment{
@@ -93,13 +94,13 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 }
 
 func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
-	db := testutils.DBForT(t)
+	db := testutils.BadgerDBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
 	// Initialize real datastore
-	images, err := imageDatastore.New(db, bleveIndex, true)
+	images, err := imageDatastore.NewBadger(db, bleveIndex, true)
 	require.NoError(t, err)
 
 	ctrl := gomock.NewController(t)
@@ -115,14 +116,14 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
-	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil)
+	deployments, err := deploymentDatastore.NewBadger(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil)
 	require.NoError(t, err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments
 }
 
 func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
-	db := testutils.DBForT(t)
+	db := testutils.BadgerDBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
@@ -142,7 +143,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
-	deployments, err := deploymentDatastore.New(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil)
+	deployments, err := deploymentDatastore.NewBadger(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil)
 	require.NoError(t, err)
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
@@ -222,6 +223,7 @@ func TestImagePruning(t *testing.T) {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
 			}
 			for _, image := range c.images {
+				image.Id = types.NewDigest(image.Id).Digest()
 				require.NoError(t, images.UpsertImage(ctx, image))
 			}
 
@@ -238,6 +240,10 @@ func TestImagePruning(t *testing.T) {
 			for _, i := range remainingImages {
 				ids = append(ids, i.GetId())
 			}
+			for i, eid := range c.expectedIDs {
+				c.expectedIDs[i] = types.NewDigest(eid).Digest()
+			}
+
 			assert.ElementsMatch(t, c.expectedIDs, ids)
 		})
 	}

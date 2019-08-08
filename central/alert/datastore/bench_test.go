@@ -7,17 +7,30 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	badgerStore "github.com/stackrox/rox/central/alert/datastore/internal/store/badger"
+	boltStore "github.com/stackrox/rox/central/alert/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/require"
 )
 
-func BenchmarkLoad(b *testing.B) {
-	tmpStore, err := bolthelper.NewTemp("alert_bench_test.db")
-	require.NoError(b, err)
-	s := store.New(tmpStore)
+func BenchmarkDBs(b *testing.B) {
+	b.Run("bolt", func(b *testing.B) {
+		tmpStore, err := bolthelper.NewTemp("alert_bench_test.db")
+		require.NoError(b, err)
+		benchmarkLoad(b, boltStore.New(tmpStore))
+	})
 
+	b.Run("badger", func(b *testing.B) {
+		db, _, err := badgerhelper.NewTemp("alert_bench_test")
+		require.NoError(b, err)
+		benchmarkLoad(b, badgerStore.New(db))
+	})
+}
+
+func benchmarkLoad(b *testing.B, s store.Store) {
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(b, err)
 	idx := index.New(tmpIndex)

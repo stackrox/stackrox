@@ -5,8 +5,11 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store/badger"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -17,7 +20,12 @@ var (
 )
 
 func initialize() {
-	storage := store.New(globaldb.GetGlobalDB())
+	var storage store.Store
+	if features.BadgerDB.Enabled() {
+		storage = badger.New(globaldb.GetGlobalBadgerDB())
+	} else {
+		storage = bolt.New(globaldb.GetGlobalDB())
+	}
 	indexer := index.New(globalindex.GetGlobalIndex())
 	searcher := search.New(storage, indexer)
 

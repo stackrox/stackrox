@@ -12,6 +12,7 @@ var (
 func init() {
 	// general
 	prometheus.MustRegister(
+		badgerOperationHistogramVec,
 		boltOperationHistogramVec,
 		indexOperationHistogramVec,
 		sensorEventQueueCounterVec,

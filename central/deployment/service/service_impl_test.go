@@ -108,13 +108,13 @@ func TestLabelsMap(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			boltDB := testutils2.DBForT(t)
-			defer utils.IgnoreError(boltDB.Close)
+			badgerDB := testutils2.BadgerDBForT(t)
+			defer utils.IgnoreError(badgerDB.Close)
 
 			bleveIndex, err := globalindex.MemOnlyIndex()
 			require.NoError(t, err)
 
-			deploymentsDS, err := datastore.New(boltDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil)
+			deploymentsDS, err := datastore.NewBadger(badgerDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil)
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {

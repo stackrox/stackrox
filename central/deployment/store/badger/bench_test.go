@@ -1,4 +1,4 @@
-package store
+package badger
 
 import (
 	"fmt"
@@ -6,8 +6,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
@@ -15,8 +16,8 @@ import (
 
 const maxGRPCSize = 4194304
 
-func getDeploymentStore(b *testing.B) Store {
-	db, err := bolthelper.NewTemp(b.Name() + ".db")
+func getDeploymentStore(b *testing.B) store.Store {
+	db, _, err := badgerhelper.NewTemp(b.Name() + ".db")
 	if err != nil {
 		b.Fatal(err)
 	}

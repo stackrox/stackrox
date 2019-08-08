@@ -13,8 +13,8 @@ var (
 	badgerDBInit sync.Once
 	badgerDB     *badger.DB
 
-	gcDiscardRatio = 0.7
-	gcInterval     = 5 * time.Minute
+	gcDiscardRatio = 0.5
+	gcInterval     = 1 * time.Minute
 
 	registeredBuckets []registeredBucket
 

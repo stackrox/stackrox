@@ -24,7 +24,7 @@ func PutAllBatched(db *badger.DB, kvs []bolthelper.KV, batchSize int) (int, erro
 	b := batcher.New(len(kvs), batchSize)
 
 	for start, end, valid := b.Next(); valid; start, end, valid = b.Next() {
-		if err := db.Update(func(txn *badger.Txn) error { return PutAll(txn, kvs[start:end]...) }); err != nil {
+		if err := RetryableUpdate(db, func(txn *badger.Txn) error { return PutAll(txn, kvs[start:end]...) }); err != nil {
 			return start, err
 		}
 	}

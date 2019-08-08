@@ -4,21 +4,23 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/deployment/store"
+	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	search2 "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,22 +35,23 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	tempPath, err := ioutil.TempDir("", "")
 	require.NoError(b, err)
 
-	boltPath := filepath.Join(tempPath, "bolt.db")
 	blevePath := filepath.Join(tempPath, "scorch.bleve")
 
-	db, err := bolthelper.New(boltPath)
+	db, dir, err := badgerhelper.NewTemp("benchmark_search_all")
 	require.NoError(b, err)
+	defer utils.IgnoreError(db.Close)
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	bleveIndex, err := globalindex.InitializeIndices(blevePath)
 	require.NoError(b, err)
 
-	deploymentsStore, err := store.New(db)
+	deploymentsStore, err := badgerStore.New(db)
 	require.NoError(b, err)
 
 	deploymentsIndexer := index.New(bleveIndex)
 	deploymentsSearcher := search.New(deploymentsStore, deploymentsIndexer)
 
-	imageDS, err := imageDatastore.New(db, bleveIndex, false)
+	imageDS, err := imageDatastore.NewBadger(db, bleveIndex, false)
 	require.NoError(b, err)
 
 	deploymentsDatastore, err := newDatastoreImpl(deploymentsStore, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil, nil)

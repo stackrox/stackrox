@@ -1,13 +1,14 @@
-package store
+package badger
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
-	bolt "github.com/etcd-io/bbolt"
+	"github.com/dgraph-io/badger"
+	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,23 +19,26 @@ func TestIndicatorStore(t *testing.T) {
 type IndicatorStoreTestSuite struct {
 	suite.Suite
 
-	db *bolt.DB
+	db  *badger.DB
+	dir string
 
-	store Store
+	store store.Store
 }
 
 func (suite *IndicatorStoreTestSuite) SetupSuite() {
-	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
+	db, dir, err := badgerhelper.NewTemp(suite.T().Name() + ".db")
 	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
+		suite.FailNow("Failed to make BadgerDB", err.Error())
 	}
 
 	suite.db = db
+	suite.dir = dir
 	suite.store = New(db)
 }
 
 func (suite *IndicatorStoreTestSuite) TearDownSuite() {
-	testutils.TearDownDB(suite.db)
+	_ = suite.db.Close()
+	_ = os.RemoveAll(suite.dir)
 }
 
 func (suite *IndicatorStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
@@ -85,32 +89,86 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	}
 
 	for _, i := range indicators {
-		_, err := suite.store.AddProcessIndicator(i)
+		tx, err := suite.store.GetTxnCount()
 		suite.NoError(err)
+		_, err = suite.store.AddProcessIndicator(i)
+		suite.NoError(err)
+
+		newTx, err := suite.store.GetTxnCount()
+		suite.NoError(err)
+		suite.Equal(tx+1, newTx)
 	}
 
 	suite.verifyIndicatorsAre(indicators...)
 
 	// Adding an indicator with the same secondary key should replace the original one.
+	tx, err := suite.store.GetTxnCount()
+	suite.NoError(err)
 	removed, err := suite.store.AddProcessIndicator(repeatIndicator)
 	suite.NoError(err)
 	suite.Equal("id1", removed)
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 
+	newTx, err := suite.store.GetTxnCount()
+	suite.NoError(err)
+	suite.Equal(tx+2, newTx)
+
 	for _, i := range []*storage.ProcessIndicator{indicators[1], repeatIndicator} {
+		tx, err := suite.store.GetTxnCount()
+		suite.NoError(err)
+
 		suite.NoError(suite.store.RemoveProcessIndicator(i.GetId()))
+
+		newTx, err := suite.store.GetTxnCount()
+		suite.NoError(err)
+		suite.Equal(tx+1, newTx)
 	}
 	suite.verifyIndicatorsAre()
+
+	tx, err = suite.store.GetTxnCount()
+	suite.NoError(err)
 
 	oldIDs, err := suite.store.AddProcessIndicators(indicators...)
 	suite.NoError(err)
 	suite.Empty(oldIDs)
 
+	newTx, err = suite.store.GetTxnCount()
+	suite.NoError(err)
+	suite.Equal(tx+1, newTx)
+
 	// Modify indicator ids so we can batch add and we should get the old values out
 	for idx, i := range indicators {
 		i.Id = fmt.Sprintf("id%d", idx+3)
 	}
+
+	tx, err = suite.store.GetTxnCount()
+	suite.NoError(err)
+
 	oldIDs, err = suite.store.AddProcessIndicators(indicators...)
 	suite.NoError(err)
 	suite.ElementsMatch([]string{"id1", "id2"}, oldIDs)
+
+	newTx, err = suite.store.GetTxnCount()
+	suite.NoError(err)
+	suite.Equal(tx+2, newTx)
+
+	indicators, err = suite.store.GetProcessIndicators()
+	suite.NoError(err)
+
+	var ids []string
+	for _, i := range indicators {
+		ids = append(ids, i.GetId())
+	}
+	tx, err = suite.store.GetTxnCount()
+	suite.NoError(err)
+
+	suite.NoError(suite.store.RemoveProcessIndicators(ids))
+
+	newTx, err = suite.store.GetTxnCount()
+	suite.NoError(err)
+	suite.Equal(tx+1, newTx)
+
+	v, err := suite.store.GetProcessInfoToArgs()
+	suite.NoError(err)
+	suite.Len(v, 0)
 }

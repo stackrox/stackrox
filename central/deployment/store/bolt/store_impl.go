@@ -1,17 +1,44 @@
-package store
+package bolt
 
 import (
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/objects"
 )
+
+var (
+	deploymentBucket     = []byte("deployments")
+	deploymentListBucket = []byte("deployments_list")
+)
+
+var (
+	log = logging.LoggerForModule()
+)
+
+// New returns a new Store instance using the provided bolt DB instance.
+func New(db *bolt.DB) (store.Store, error) {
+	bolthelper.RegisterBucketOrPanic(db, deploymentBucket)
+	bolthelper.RegisterBucketOrPanic(db, deploymentListBucket)
+
+	wrapper, err := bolthelper.NewBoltWrapper(db, deploymentBucket)
+	if err != nil {
+		panic(err)
+	}
+
+	s := &storeImpl{
+		BoltWrapper: wrapper,
+	}
+	return s, nil
+}
 
 type storeImpl struct {
 	*bolthelper.BoltWrapper

@@ -1,4 +1,4 @@
-package store
+package bolt
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/alert/convert"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -16,10 +17,28 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	alertBucket     = []byte("alerts")
+	alertListBucket = []byte("alerts_list")
 )
 
 type storeImpl struct {
 	*bolthelper.BoltWrapper
+}
+
+// New returns a new Store instance using the provided bolt DB instance.
+func New(db *bolt.DB) store.Store {
+	bolthelper.RegisterBucketOrPanic(db, alertBucket)
+	bolthelper.RegisterBucketOrPanic(db, alertListBucket)
+
+	wrapper, err := bolthelper.NewBoltWrapper(db, alertBucket)
+	if err != nil {
+		panic(err)
+	}
+
+	return &storeImpl{
+		BoltWrapper: wrapper,
+	}
 }
 
 // GetAlert returns an alert with given id.
@@ -41,22 +60,18 @@ func (b *storeImpl) ListAlert(id string) (alert *storage.ListAlert, exists bool,
 }
 
 // GetAlertStates returns a minimal message in order to determine the state of the alerts
-func (b *storeImpl) GetAlertStates() ([]*storage.AlertState, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "GetAlertStates")
+func (b *storeImpl) GetAlertIDs() ([]string, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "AlertIDs")
 
-	var alerts []*storage.AlertState
+	var ids []string
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(alertListBucket)
 		return b.ForEach(func(k, v []byte) error {
-			var alert storage.AlertState
-			if err := proto.Unmarshal(v, &alert); err != nil {
-				return err
-			}
-			alerts = append(alerts, &alert)
+			ids = append(ids, string(k))
 			return nil
 		})
 	})
-	return alerts, err
+	return ids, err
 }
 
 // ListAlerts returns a minimal form of the Alert struct for faster marshalling

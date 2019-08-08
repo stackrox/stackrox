@@ -1,4 +1,4 @@
-package store
+package bolt
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/convert"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -17,7 +18,7 @@ import (
 
 const maxGRPCSize = 4194304
 
-func getAlertStore(b *testing.B) Store {
+func getAlertStore(b *testing.B) store.Store {
 	db, err := bolthelper.NewTemp(b.Name() + ".db")
 	if err != nil {
 		b.Fatal(err)
@@ -58,16 +59,6 @@ func BenchmarkListAlert(b *testing.B) {
 	require.NoError(b, store.AddAlert(alert))
 	for i := 0; i < b.N; i++ {
 		_, err := store.ListAlerts()
-		require.NoError(b, err)
-	}
-}
-
-func BenchmarkStateAlert(b *testing.B) {
-	store := getAlertStore(b)
-	alert := fixtures.GetAlert()
-	require.NoError(b, store.AddAlert(alert))
-	for i := 0; i < b.N; i++ {
-		_, err := store.GetAlertStates()
 		require.NoError(b, err)
 	}
 }

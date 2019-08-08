@@ -1,19 +1,7 @@
 package store
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	deploymentBucket     = []byte("deployments")
-	deploymentListBucket = []byte("deployments_list")
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Store provides storage functionality for alerts.
@@ -33,20 +21,4 @@ type Store interface {
 
 	GetTxnCount() (txNum uint64, err error)
 	IncTxnCount() error
-}
-
-// New returns a new Store instance using the provided bolt DB instance.
-func New(db *bolt.DB) (Store, error) {
-	bolthelper.RegisterBucketOrPanic(db, deploymentBucket)
-	bolthelper.RegisterBucketOrPanic(db, deploymentListBucket)
-
-	wrapper, err := bolthelper.NewBoltWrapper(db, deploymentBucket)
-	if err != nil {
-		panic(err)
-	}
-
-	s := &storeImpl{
-		BoltWrapper: wrapper,
-	}
-	return s, nil
 }

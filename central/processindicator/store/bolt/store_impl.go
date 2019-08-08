@@ -1,4 +1,4 @@
-package store
+package bolt
 
 import (
 	"fmt"
@@ -9,10 +9,37 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
+	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
+
+var (
+	log = logging.LoggerForModule()
+)
+
+var (
+	processIndicatorBucket = []byte("process_indicators")
+	uniqueProcessesBucket  = []byte("process_indicators_unique")
+)
+
+// New returns a new Store instance using the provided bolt DB instance.
+func New(db *bolt.DB) store.Store {
+	bolthelper.RegisterBucketOrPanic(db, processIndicatorBucket)
+	bolthelper.RegisterBucketOrPanic(db, uniqueProcessesBucket)
+
+	wrapper, err := bolthelper.NewBoltWrapper(db, processIndicatorBucket)
+	if err != nil {
+		panic(err)
+	}
+
+	s := &storeImpl{
+		BoltWrapper: wrapper,
+	}
+	return s
+}
 
 type storeImpl struct {
 	*bolthelper.BoltWrapper

@@ -64,11 +64,6 @@ message Alert {
     google.protobuf.Timestamp snooze_till    = 12;
 }
 
-message AlertState {
-    string id            = 1;
-    ViolationState state = 6;
-}
-
 message ListAlert {
     string id                               = 1;
     LifecycleStage lifecycle_stage          = 2 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];

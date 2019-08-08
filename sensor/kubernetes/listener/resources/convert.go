@@ -170,7 +170,6 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		// instead of looking for it inside a PodTemplate.
 		podLabels = o.Labels
 		labelSelector = w.populateK8sComponentIfNecessary(o)
-
 	case *v1beta1.CronJob:
 		// Cron jobs have a Job spec that then have a Pod Template underneath
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()

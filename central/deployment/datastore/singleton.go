@@ -10,6 +10,7 @@ import (
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -25,8 +26,13 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = New(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentCacheSingleton())
-	utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
+	if features.BadgerDB.Enabled() {
+		ad, err = NewBadger(globaldb.GetGlobalBadgerDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentCacheSingleton())
+		utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
+	} else {
+		ad, err = NewBolt(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentCacheSingleton())
+		utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
+	}
 }
 
 // Singleton provides the interface for non-service external interaction.

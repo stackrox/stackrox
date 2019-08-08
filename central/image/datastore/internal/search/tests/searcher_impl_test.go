@@ -5,17 +5,18 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/etcd-io/bbolt"
+	"github.com/dgraph-io/badger"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	. "github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
+	badgerStore "github.com/stackrox/rox/central/image/datastore/internal/store/badger"
 	"github.com/stackrox/rox/central/image/index"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -31,7 +32,7 @@ type searcherSuite struct {
 	ns1ReadAccessCtx  context.Context
 	fullReadAccessCtx context.Context
 
-	boltDB     *bbolt.DB
+	badgerDB   *badger.DB
 	bleveIndex bleve.Index
 
 	store    store.Store
@@ -66,10 +67,10 @@ func (s *searcherSuite) SetupTest() {
 
 	s.indexer = index.New(s.bleveIndex)
 
-	s.boltDB, err = bolthelper.NewTemp(testutils.DBFileName(s))
+	s.badgerDB, _, err = badgerhelper.NewTemp(testutils.DBFileName(s))
 	s.Require().NoError(err)
 
-	s.store = store.New(s.boltDB, false)
+	s.store = badgerStore.New(s.badgerDB, false)
 
 	s.searcher = New(s.store, s.indexer)
 }
@@ -231,7 +232,7 @@ func (s *searcherSuite) TestNoSharedImageLeak() {
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	deploymentDS, err := datastore.New(s.boltDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil)
+	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil)
 	s.Require().NoError(err)
 
 	clusterNSScopes := make(map[string]string)

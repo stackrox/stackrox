@@ -39,6 +39,9 @@ func New(path string) (*badger.DB, error) {
 	options.Dir = path
 	options.Logger = nullLogger{}
 	options.Truncate = true
+	options.NumLevelZeroTables = 2
+	options.NumLevelZeroTablesStall = 5
+
 	return badger.Open(options)
 }
 
@@ -71,6 +74,11 @@ func DeletePrefixRange(txn *badger.Txn, keyPrefix []byte) error {
 		}
 	}
 	return nil
+}
+
+// BucketKeyCount returns the number of objects in a "Bucket"
+func BucketKeyCount(txn *badger.Txn, keyPrefix []byte) int {
+	return Count(txn, GetBucketKey(keyPrefix, nil))
 }
 
 // Count gets the number of keys with a specific prefix

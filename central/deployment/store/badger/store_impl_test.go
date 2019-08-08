@@ -1,13 +1,13 @@
-package store
+package badger
 
 import (
 	"testing"
 
-	bolt "github.com/etcd-io/bbolt"
+	"github.com/dgraph-io/badger"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,27 +19,29 @@ func TestDeploymentStore(t *testing.T) {
 type DeploymentStoreTestSuite struct {
 	suite.Suite
 
-	db *bolt.DB
+	db  *badger.DB
+	dir string
 
-	store Store
+	store store.Store
 }
 
 func (suite *DeploymentStoreTestSuite) SetupSuite() {
-	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
+	db, dir, err := badgerhelper.NewTemp(suite.T().Name() + ".db")
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}
 
 	suite.db = db
+	suite.dir = dir
 	suite.store, err = New(db)
 	suite.Require().NoError(err)
 }
 
 func (suite *DeploymentStoreTestSuite) TearDownSuite() {
-	testutils.TearDownDB(suite.db)
+	testutils.TearDownBadger(suite.db, suite.dir)
 }
 
-func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store Store, deployments ...*storage.Deployment) {
+func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store store.Store, deployments ...*storage.Deployment) {
 	for _, d := range deployments {
 		// Test retrieval of full objects
 		got, exists, err := store.GetDeployment(d.GetId())
@@ -55,7 +57,6 @@ func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store Store, deploym
 			Id:        d.GetId(),
 			Name:      d.GetName(),
 			UpdatedAt: d.GetUpdatedAt(),
-			Priority:  d.GetPriority(),
 		}, gotList)
 	}
 
@@ -85,7 +86,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 	for _, d := range deployments {
 		err := suite.store.UpdateDeployment(d)
 		suite.Require().Error(err)
-		suite.Equal(dberrors.ErrNotFound{Type: "Deployment", ID: d.GetId()}, err)
+		suite.Error(err)
 		suite.NoError(suite.store.UpsertDeployment(d))
 		// Update should be idempotent
 		suite.NoError(suite.store.UpdateDeployment(d))

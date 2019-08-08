@@ -1,14 +1,7 @@
 package store
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-)
-
-var (
-	alertBucket     = []byte("alerts")
-	alertListBucket = []byte("alerts_list")
 )
 
 // Store provides storage functionality for alerts.
@@ -18,8 +11,7 @@ type Store interface {
 	ListAlerts() ([]*storage.ListAlert, error)
 	GetListAlerts([]string) ([]*storage.ListAlert, []int, error)
 
-	GetAlertStates() ([]*storage.AlertState, error)
-
+	GetAlertIDs() ([]string, error)
 	GetAlert(id string) (*storage.Alert, bool, error)
 	GetAlerts(ids []string) ([]*storage.Alert, []int, error)
 	AddAlert(alert *storage.Alert) error
@@ -29,19 +21,4 @@ type Store interface {
 
 	GetTxnCount() (txNum uint64, err error)
 	IncTxnCount() error
-}
-
-// New returns a new Store instance using the provided bolt DB instance.
-func New(db *bolt.DB) Store {
-	bolthelper.RegisterBucketOrPanic(db, alertBucket)
-	bolthelper.RegisterBucketOrPanic(db, alertListBucket)
-
-	wrapper, err := bolthelper.NewBoltWrapper(db, alertBucket)
-	if err != nil {
-		panic(err)
-	}
-
-	return &storeImpl{
-		BoltWrapper: wrapper,
-	}
 }

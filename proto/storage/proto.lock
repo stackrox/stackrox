@@ -309,21 +309,6 @@
             ]
           },
           {
-            "name": "AlertState",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 6,
-                "name": "state",
-                "type": "ViolationState"
-              }
-            ]
-          },
-          {
             "name": "ListAlert",
             "fields": [
               {

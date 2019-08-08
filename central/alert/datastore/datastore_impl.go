@@ -23,14 +23,14 @@ import (
 	"github.com/stackrox/rox/pkg/txn"
 )
 
-const (
-	alertBatchSize = 1000
-)
-
 var (
 	log = logging.LoggerForModule()
 
 	alertSAC = sac.ForResource(resources.Alert)
+)
+
+const (
+	alertBatchSize = 1000
 )
 
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
@@ -130,6 +130,7 @@ func (ds *datastoreImpl) UpdateAlert(ctx context.Context, alert *storage.Alert) 
 
 	oldAlert, exists, err := ds.GetAlert(ctx, alert.GetId())
 	if err != nil {
+		log.Infof("Error in get alert: %v", err)
 		return err
 	}
 	if exists {
@@ -211,19 +212,24 @@ func (ds *datastoreImpl) buildIndex() error {
 		return err
 	}
 
-	stateAlerts, err := ds.storage.GetAlertStates()
+	defer debug.FreeOSMemory()
+
+	alertIDs, err := ds.storage.GetAlertIDs()
 	if err != nil {
 		return err
 	}
 
-	ids := make([]string, 0, len(stateAlerts))
-	for _, a := range stateAlerts {
-		ids = append(ids, a.GetId())
+	alertBatcher := batcher.New(len(alertIDs), alertBatchSize)
+	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
+		listAlerts, _, err := ds.storage.GetListAlerts(alertIDs[start:end])
+		if err != nil {
+			return err
+		}
+		if err := ds.indexer.AddListAlerts(listAlerts); err != nil {
+			return err
+		}
 	}
 
-	if err := ds.getAndIndexAlertsBatch(ids); err != nil {
-		return err
-	}
 	log.Info("[STARTUP] Successfully indexed all alerts")
 
 	if err := ds.storage.IncTxnCount(); err != nil {
@@ -233,28 +239,5 @@ func (ds *datastoreImpl) buildIndex() error {
 		return err
 	}
 
-	return nil
-}
-
-func (ds *datastoreImpl) getAndIndexAlertsBatch(ids []string) error {
-	b := batcher.New(len(ids), alertBatchSize)
-	for start, end, ok := b.Next(); ok; start, end, ok = b.Next() {
-		if err := ds.getAndIndexAlerts(ids[start:end]); err != nil {
-			return err
-		}
-		log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(ids))
-	}
-	return nil
-}
-
-func (ds *datastoreImpl) getAndIndexAlerts(ids []string) error {
-	defer debug.FreeOSMemory()
-	alerts, _, err := ds.storage.GetListAlerts(ids)
-	if err != nil {
-		return err
-	}
-	if err := ds.indexer.AddListAlerts(alerts); err != nil {
-		return err
-	}
 	return nil
 }

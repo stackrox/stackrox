@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/blevesearch/bleve"
-	bolt "github.com/etcd-io/bbolt"
+	"github.com/dgraph-io/badger"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	alertStore "github.com/stackrox/rox/central/alert/datastore/internal/store/badger"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -49,8 +50,8 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 }
 
 // NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
-func NewWithDb(db *bolt.DB, bIndex bleve.Index) DataStore {
-	store := store.New(db)
+func NewWithDb(db *badger.DB, bIndex bleve.Index) DataStore {
+	store := alertStore.New(db)
 	indexer := index.New(bIndex)
 	searcher := search.New(store, indexer)
 

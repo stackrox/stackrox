@@ -18,10 +18,11 @@ import (
 	processSearch "github.com/stackrox/rox/central/processindicator/search"
 	searchMocks "github.com/stackrox/rox/central/processindicator/search/mocks"
 	"github.com/stackrox/rox/central/processindicator/store"
+	badgerStore "github.com/stackrox/rox/central/processindicator/store/badger"
 	storeMocks "github.com/stackrox/rox/central/processindicator/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
@@ -61,9 +62,9 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Indicator)))
 
-	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
+	db, _, err := badgerhelper.NewTemp(testutils.DBFileName(suite))
 	suite.NoError(err)
-	suite.storage = store.New(db)
+	suite.storage = badgerStore.New(db)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.NoError(err)

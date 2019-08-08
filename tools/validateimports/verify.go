@@ -135,7 +135,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 	// Please be VERY prudent about adding to this list, since everything that's added to this list
 	// will need to be protected by strict compatibility guarantees.
 	if validImportRoot == "migrator" {
-		allowedPackages = append(allowedPackages, "pkg/migrations", "pkg/testutils", "pkg/batcher", "pkg/config")
+		allowedPackages = append(allowedPackages, "pkg/migrations", "pkg/testutils", "pkg/batcher", "pkg/config", "pkg/features")
 	}
 
 	// Allow central and roxctl to import "image" (for fixtures)

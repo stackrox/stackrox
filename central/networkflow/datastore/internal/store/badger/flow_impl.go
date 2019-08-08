@@ -94,14 +94,16 @@ func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
 
 	id := s.getID(props)
 
-	return s.db.Update(func(tx *badger.Txn) error {
+	return badgerhelper.RetryableUpdate(s.db, func(tx *badger.Txn) error {
 		return tx.Delete(id)
 	})
 }
 
 func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
+	var keysToDelete [][]byte
+
 	idBytes := []byte(id)
-	return s.db.Update(func(tx *badger.Txn) error {
+	err := s.db.View(func(tx *badger.Txn) error {
 		return badgerhelper.ForEachOverKeySet(tx, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true, IteratorOptions: &badger.IteratorOptions{PrefetchValues: false}},
 			func(k []byte) error {
 				if bytes.Equal(k, updatedTSKey) {
@@ -111,11 +113,24 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
 				if bytes.Equal(idBytes, srcID) || bytes.Equal(idBytes, dstID) {
 					// Delete is lazy, so we must ensure the byte slice is not modified until the transaction is
 					// complete.
-					return tx.Delete(s.getFullKey(k))
+					b := make([]byte, len(k))
+					copy(b, k)
+					keysToDelete = append(keysToDelete, s.getFullKey(k))
+					return nil
 				}
 				return nil
 			})
 	})
+	if err != nil {
+		return err
+	}
+	batch := s.db.NewWriteBatch()
+	for _, key := range keysToDelete {
+		if err := batch.Delete(key); err != nil {
+			return err
+		}
+	}
+	return batch.Flush()
 }
 
 func (s *flowStoreImpl) getFullKey(localKey []byte) []byte {

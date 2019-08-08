@@ -13,11 +13,11 @@ import (
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
-	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
+	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store/badger"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
@@ -48,7 +48,7 @@ policyLoop:
 }
 
 func setup(b require.TestingT) (processIndicatorDataStore.DataStore, imageIndexer.Indexer, index.Indexer) {
-	db, err := bolthelper.NewTemp("bench_test.db")
+	db, _, err := badgerhelper.NewTemp("bench_test.db")
 	require.NoError(b, err)
 
 	bleveIndex, err := globalindex.TempInitializeIndices("")

@@ -80,19 +80,19 @@ func (mr *MockStoreMockRecorder) GetListAlerts(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetListAlerts", reflect.TypeOf((*MockStore)(nil).GetListAlerts), arg0)
 }
 
-// GetAlertStates mocks base method
-func (m *MockStore) GetAlertStates() ([]*storage.AlertState, error) {
+// GetAlertIDs mocks base method
+func (m *MockStore) GetAlertIDs() ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAlertStates")
-	ret0, _ := ret[0].([]*storage.AlertState)
+	ret := m.ctrl.Call(m, "GetAlertIDs")
+	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAlertStates indicates an expected call of GetAlertStates
-func (mr *MockStoreMockRecorder) GetAlertStates() *gomock.Call {
+// GetAlertIDs indicates an expected call of GetAlertIDs
+func (mr *MockStoreMockRecorder) GetAlertIDs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlertStates", reflect.TypeOf((*MockStore)(nil).GetAlertStates))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlertIDs", reflect.TypeOf((*MockStore)(nil).GetAlertIDs))
 }
 
 // GetAlert mocks base method
