@@ -25,7 +25,6 @@ func init() {
 		schema.AddExtraResolver("Namespace", `serviceAccounts(query: String): [ServiceAccount!]!`),
 		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
 		schema.AddExtraResolver("Namespace", `k8sroles(query: String): [K8SRole!]!`),
-		schema.AddExtraResolver("Namespace", `policyCount: Int!`),
 		schema.AddExtraResolver("Namespace", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Namespace", `policies(query: String): [Policy!]!`),
