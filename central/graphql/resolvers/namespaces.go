@@ -22,7 +22,9 @@ func init() {
 		schema.AddExtraResolver("Namespace", `subjects(query: String): [Subject!]!`),
 		schema.AddExtraResolver("Namespace", `subjectCount: Int!`),
 		schema.AddExtraResolver("Namespace", `serviceAccountCount: Int!`),
+		schema.AddExtraResolver("Namespace", `serviceAccounts(query: String): [ServiceAccount!]!`),
 		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
+		schema.AddExtraResolver("Namespace", `k8sroles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("Namespace", `policyCount: Int!`),
 		schema.AddExtraResolver("Namespace", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Namespace", `policies(query: String): [Policy!]!`),
@@ -131,8 +133,7 @@ func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context) (int
 	if err := readServiceAccounts(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
+	q := resolver.getClusterNamespaceQuery()
 	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
 	if err != nil {
 		return 0, err
@@ -140,13 +141,24 @@ func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context) (int
 	return int32(len(results)), nil
 }
 
+// ServiceAccounts returns the ServiceAccounts which have any permission on this cluster namespace
+func (resolver *namespaceResolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return nil, err
+	}
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapServiceAccounts(resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, q))
+}
+
 // K8sRoleCount returns count of K8s roles in this cluster namespace
 func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context) (int32, error) {
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery()
+	q := resolver.getClusterNamespaceQuery()
 	results, err := resolver.root.K8sRoleStore.Search(ctx, q)
 	if err != nil {
 		return 0, err
@@ -154,12 +166,23 @@ func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context) (int32, err
 	return int32(len(results)), nil
 }
 
+// K8sRoles returns count of K8s roles in this cluster namespace
+func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
+	if err := readK8sRoles(ctx); err != nil {
+		return nil, err
+	}
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapK8SRoles(resolver.root.K8sRoleStore.SearchRawRoles(ctx, q))
+}
+
 func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error) {
 	if err := readNamespaces(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
+	q := resolver.getClusterNamespaceQuery()
 	results, err := resolver.root.ImageDataStore.Search(ctx, q)
 	if err != nil {
 		return 0, err
@@ -283,7 +306,7 @@ func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getClusterNamespaceQuery(args)
+	q, err := resolver.getConjunctionQuery(args)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +317,7 @@ func (resolver *namespaceResolver) Secrets(ctx context.Context, args rawQuery) (
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getClusterNamespaceQuery(args)
+	q, err := resolver.getConjunctionQuery(args)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +328,7 @@ func (resolver *namespaceResolver) Deployments(ctx context.Context, args rawQuer
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getClusterNamespaceQuery(args)
+	q, err := resolver.getConjunctionQuery(args)
 	if err != nil {
 		return nil, err
 	}
@@ -319,12 +342,19 @@ func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolve
 	return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetMetadata().GetClusterId()))
 }
 
-func (resolver *namespaceResolver) getClusterNamespaceQuery(args rawQuery) (*v1.Query, error) {
-	q1, err := args.AsV1QueryOrEmpty()
+func (resolver *namespaceResolver) getConjunctionQuery(args rawQuery) (*v1.Query, error) {
+	q1 := resolver.getClusterNamespaceQuery()
+	if args.String() == "" {
+		return q1, nil
+	}
+	q2, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	q2 := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
+	return search.NewConjunctionQuery(q2, q1), nil
+}
+
+func (resolver *namespaceResolver) getClusterNamespaceQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
-	return search.NewConjunctionQuery(q1, q2), nil
 }
