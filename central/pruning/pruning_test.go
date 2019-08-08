@@ -34,6 +34,21 @@ const (
 	testRetentionDeletedRuntime = 3
 )
 
+var (
+	testConfig = &storage.Config{
+		PrivateConfig: &storage.PrivateConfig{
+			AlertRetention: &storage.PrivateConfig_AlertConfig{
+				AlertConfig: &storage.AlertRetentionConfig{
+					AllRuntimeRetentionDurationDays:     testRetentionAllRuntime,
+					DeletedRuntimeRetentionDurationDays: testRetentionDeletedRuntime,
+					ResolvedDeployRetentionDurationDays: testRetentionResolvedDeploy,
+				},
+			},
+			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
+		},
+	}
+)
+
 func newAlertInstance(id string, daysOld int, stage storage.LifecycleStage, state storage.ViolationState) *storage.Alert {
 	return newAlertInstanceWithDeployment(id, daysOld, stage, state, nil)
 }
@@ -94,14 +109,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
-	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(&storage.Config{
-		PrivateConfig: &storage.PrivateConfig{
-			AlertRetention: &storage.PrivateConfig_DEPRECATEDAlertRetentionDurationDays{
-				DEPRECATEDAlertRetentionDurationDays: configDatastore.DefaultAlertRetention,
-			},
-			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
-		},
-	}, nil)
+	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
 
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
@@ -130,18 +138,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	mockImageDatastore := imageDatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
-	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(&storage.Config{
-		PrivateConfig: &storage.PrivateConfig{
-			AlertRetention: &storage.PrivateConfig_AlertConfig{
-				AlertConfig: &storage.AlertRetentionConfig{
-					AllRuntimeRetentionDurationDays:     testRetentionAllRuntime,
-					DeletedRuntimeRetentionDurationDays: testRetentionDeletedRuntime,
-					ResolvedDeployRetentionDurationDays: testRetentionResolvedDeploy,
-				},
-			},
-			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
-		},
-	}, nil)
+	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())

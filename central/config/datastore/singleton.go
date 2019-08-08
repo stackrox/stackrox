@@ -14,8 +14,12 @@ import (
 )
 
 const (
-	// DefaultAlertRetention is the number of days to retain alerts for
-	DefaultAlertRetention = 30
+	// DefaultDeployAlertRetention is the number of days to retain resolved deployment alerts
+	DefaultDeployAlertRetention = 7
+	// DefaultRuntimeAlertRetention is the number of days to retain all runtime alerts
+	DefaultRuntimeAlertRetention = 30
+	// DefaultDeletedRuntimeAlertRetention is the number of days to retain runtime alerts for deleted deployments
+	DefaultDeletedRuntimeAlertRetention = 7
 	// DefaultImageRetention is the number of days to retain images for
 	DefaultImageRetention = 7
 )
@@ -27,6 +31,13 @@ var (
 
 	defaultPrivateConfig = storage.PrivateConfig{
 		ImageRetentionDurationDays: DefaultImageRetention,
+		AlertRetention: &storage.PrivateConfig_AlertConfig{
+			AlertConfig: &storage.AlertRetentionConfig{
+				ResolvedDeployRetentionDurationDays: DefaultDeployAlertRetention,
+				DeletedRuntimeRetentionDurationDays: DefaultDeletedRuntimeAlertRetention,
+				AllRuntimeRetentionDurationDays:     DefaultRuntimeAlertRetention,
+			},
+		},
 	}
 
 	log = logging.LoggerForModule()
