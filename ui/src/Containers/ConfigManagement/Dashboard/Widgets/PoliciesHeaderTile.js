@@ -41,7 +41,9 @@ const policiesHeaderTile = ({ match, location }) => {
     return (
         <Query
             query={policiesQuery}
-            variables={{ query: queryService.objectToWhereClause({ disabled: false }) }}
+            variables={{
+                query: queryService.objectToWhereClause({ 'Lifecycle Stage': 'DEPLOY' })
+            }}
         >
             {({ loading, data }) => {
                 const { totalPolicies, hasViolations } = processPoliciesData(data);

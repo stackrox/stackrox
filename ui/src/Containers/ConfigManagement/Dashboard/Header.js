@@ -6,8 +6,9 @@ import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
-import { AGGREGATED_RESULTS_WITH_CONTROLS as CISControlsQuery } from 'queries/controls';
+import { LIST_STANDARD } from 'queries/standard';
 import pluralize from 'pluralize';
+import { standardLabels } from 'messages/standards';
 
 import Query from 'Components/ThrowingQuery';
 import TileLink from 'Components/TileLink';
@@ -19,25 +20,44 @@ import PoliciesHeaderTile from './Widgets/PoliciesHeaderTile';
 
 const getLabel = entityType => pluralize(entityLabels[entityType]);
 
-function processControlsData(data) {
-    let totalControls = 0;
-    let hasViolations = false;
+const createTableRows = data => {
+    if (!data || !data.results || !data.results.results.length) return [];
 
-    if (!data || !data.results || !data.results.results || !data.results.results.length)
-        return { totalControls, hasViolations };
-
-    const { results } = data.results;
-    totalControls = data.complianceStandards
-        .filter(standard => standard.name.includes('CIS'))
-        .reduce((total, standard) => {
-            return total + standard.controls.length;
-        }, 0);
-
-    hasViolations = !!results.find(({ numFailing }) => {
-        return numFailing > 0;
+    let standardKeyIndex = 0;
+    let controlKeyIndex = 0;
+    let nodeKeyIndex = 0;
+    data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
+        if (scope === entityTypes.STANDARD) standardKeyIndex = idx;
+        if (scope === entityTypes.CONTROL) controlKeyIndex = idx;
+        if (scope === entityTypes.NODE) nodeKeyIndex = idx;
     });
+    const controls = {};
+    data.results.results.forEach(({ keys, numFailing }) => {
+        if (!keys[controlKeyIndex]) return;
+        const controlId = keys[controlKeyIndex].id;
+        if (controls[controlId]) {
+            controls[controlId].nodes.push(keys[nodeKeyIndex].name);
+            if (numFailing) {
+                controls[controlId].passing = false;
+            }
+        } else {
+            controls[controlId] = {
+                id: controlId,
+                standard: standardLabels[keys[standardKeyIndex].id],
+                control: `${keys[controlKeyIndex].name} - ${keys[controlKeyIndex].description}`,
+                passing: !numFailing,
+                nodes: [keys[nodeKeyIndex].name]
+            };
+        }
+    });
+    return Object.values(controls);
+};
 
-    return { totalControls, hasViolations };
+function processControlsData(data) {
+    const controls = createTableRows(data);
+    const hasFailingControls = controls.some(control => !control.passing);
+
+    return { numControls: controls.length, hasFailingControls };
 }
 
 const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) => {
@@ -105,19 +125,18 @@ const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) 
                 <PoliciesHeaderTile />
 
                 <Query
-                    query={CISControlsQuery}
+                    query={LIST_STANDARD}
                     variables={{
-                        groupBy: entityTypes.CONTROL,
-                        unit: entityTypes.CONTROL,
-                        where: queryService.objectToWhereClause({ standard: 'CIS' })
+                        where: queryService.objectToWhereClause({ Standard: 'CIS' }),
+                        groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE]
                     }}
                 >
                     {({ loading, data }) => {
-                        const { totalControls, hasViolations } = processControlsData(data);
+                        const { numControls, hasFailingControls } = processControlsData(data);
                         return (
                             <TileLink
-                                value={totalControls}
-                                isError={hasViolations}
+                                value={numControls}
+                                isError={hasFailingControls}
                                 caption="CIS Controls"
                                 to={controlsLink}
                                 loading={loading}

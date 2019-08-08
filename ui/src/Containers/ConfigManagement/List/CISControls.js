@@ -61,7 +61,7 @@ const tableColumns = [
 ];
 
 const filterByComplianceState = (rows, state) => {
-    if (!state) return rows;
+    if (!state || !rows) return rows;
     return rows.filter(row => (state === COMPLIANCE_STATES.Pass ? row.passing : !row.passing));
 };
 
@@ -77,12 +77,12 @@ const createTableRows = data => {
         if (scope === entityTypes.NODE) nodeKeyIndex = idx;
     });
     const controls = {};
-    data.results.results.forEach(({ keys, numFailing }) => {
+    data.results.results.forEach(({ keys, numFailing, numPassing }) => {
         if (!keys[controlKeyIndex]) return;
         const controlId = keys[controlKeyIndex].id;
         if (controls[controlId]) {
             controls[controlId].nodes.push(keys[nodeKeyIndex].name);
-            if (numFailing) {
+            if (numFailing || (!numPassing && !numFailing)) {
                 controls[controlId].passing = false;
             }
         } else {

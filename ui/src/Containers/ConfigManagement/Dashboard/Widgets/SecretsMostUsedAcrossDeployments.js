@@ -96,7 +96,8 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                         <ul className="list-reset w-full columns-2 columns-gap-0">
                             {results.map((item, index) => {
                                 const linkTo = URLService.getURL(match, location)
-                                    .base(entityTypes.SECRET, item.id)
+                                    .base(entityTypes.SECRET)
+                                    .push(item.id)
                                     .url();
                                 return (
                                     <Link

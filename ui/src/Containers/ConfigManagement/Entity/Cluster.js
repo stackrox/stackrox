@@ -58,7 +58,7 @@ const Cluster = ({ id, entityListType, query }) => {
                 ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
             }
             secrets {
-                ${entityListType === entityTypes.SECRET ? 'id' : 'id'}
+                ${entityListType === entityTypes.SECRET ? '...secretFields' : 'id'}
             }
             policies {
                 ${entityListType === entityTypes.POLICY ? '...policyFields' : 'id'}

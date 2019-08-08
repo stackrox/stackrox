@@ -92,7 +92,10 @@ const createTableRows = data => data.policies;
 
 const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
-    const queryText = queryService.objectToWhereClause({ ...restQuery });
+    const queryText = queryService.objectToWhereClause({
+        'Lifecycle Stage': 'DEPLOY',
+        ...restQuery
+    });
     const variables = queryText ? { query: queryText } : null;
 
     function createTableRowsFilteredByPolicyStatus(items) {

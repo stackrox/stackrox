@@ -33,6 +33,7 @@ export const url = {
 export const dashboardSelectors = {
     widgets: "[data-test-id='widget']",
     tileLinks: "[data-test-id='tile-link']",
+    tileLinkValue: "[data-test-id='tile-link-value']",
     applicationAndInfrastructureDropdown: 'button:contains("Application & Infrastructure")',
     rbacVisibilityDropdown: 'button:contains("RBAC")',
     getMenuListItem: name => {
@@ -67,7 +68,7 @@ export const listSelectors = {
 
 export const entitySelectors = {
     metadataWidget: '[data-test-id="widget"]:contains("Metadata")',
-    externalLink: '[data-test-id="panel"]:eq(1) button[data-test-id="external-link"]',
+    externalLink: '[data-test-id="side-panel"] button[data-test-id="external-link"]',
     countWidgets: '[data-test-id="related-entity-list-count"]',
     countWidgetTitle: '[data-test-id="related-entity-list-count-title"]',
     countWidgetValue: '[data-test-id="related-entity-list-count-value"]',

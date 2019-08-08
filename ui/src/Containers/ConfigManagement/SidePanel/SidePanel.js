@@ -88,7 +88,8 @@ const SidePanel = ({
     return (
         <div className={className}>
             <Panel
-                bodyClassName="bg-primary-100"
+                id="side-panel"
+                bodyClassName={`${entityListType2 ? 'bg-base-100' : 'bg-primary-100'}`}
                 headerTextComponent={
                     <BreadCrumbs
                         className="font-700 leading-normal text-base-600 uppercase tracking-wide"

@@ -45,7 +45,7 @@ const ServiceAccount = ({ id, entityListType, query }) => {
             deployments {
                 ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
             }
-            roles {
+            k8sroles: roles {
                 ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
             }
             automountToken
@@ -87,7 +87,7 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                     labels = [],
                     secrets = [],
                     deployments = [],
-                    roles = [],
+                    k8sroles = [],
                     saNamespace: { metadata = {} },
                     scopedPermissions = [],
                     annotations
@@ -143,7 +143,7 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Roles"
-                                    value={roles.length}
+                                    value={k8sroles.length}
                                     entityType={entityTypes.ROLE}
                                 />
                             </div>

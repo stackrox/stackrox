@@ -1,4 +1,4 @@
-import { url, dashboardSelectors as selectors } from '../constants/ConfigManagementPage';
+import { url, selectors } from '../constants/ConfigManagementPage';
 import withAuth from '../helpers/basicAuth';
 import mockGraphQL from '../helpers/mockGraphQL';
 
@@ -30,6 +30,25 @@ describe('Config Management Dashboard Page', () => {
             .should('not.exist');
     });
 
+    it('should show same number of policies between the tile and the policies list', () => {
+        cy.visit(url.dashboard);
+        cy.get(selectors.tileLinks)
+            .eq(0)
+            .find(selectors.tileLinkValue)
+            .invoke('text')
+            .then(value => {
+                const numPolicies = value;
+                cy.get(selectors.tileLinks)
+                    .eq(0)
+                    .click();
+                cy.get(`[data-test-id="panel"] [data-test-id="panel-header"]`)
+                    .invoke('text')
+                    .then(panelHeaderText => {
+                        expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numPolicies, 10));
+                    });
+            });
+    });
+
     it("should show a red tile for # of cis controls when at least one control isn't passing", () => {
         mockGraphQL('getAggregatedResults', controls);
         cy.visit(url.dashboard);
@@ -49,6 +68,25 @@ describe('Config Management Dashboard Page', () => {
             .eq(1)
             .find('.bg-alert-200')
             .should('not.exist');
+    });
+
+    it('should show same number of controls between the tile and the controls list', () => {
+        cy.visit(url.dashboard);
+        cy.get(selectors.tileLinks)
+            .eq(1)
+            .find(selectors.tileLinkValue)
+            .invoke('text')
+            .then(value => {
+                const numControls = value;
+                cy.get(selectors.tileLinks)
+                    .eq(1)
+                    .click();
+                cy.get(`[data-test-id="panel"] [data-test-id="panel-header"]`)
+                    .invoke('text')
+                    .then(panelHeaderText => {
+                        expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numControls, 10));
+                    });
+            });
     });
 
     it('should properly navigate to the policies list', () => {
@@ -176,21 +214,24 @@ describe('Config Management Dashboard Page', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.policyViolationsBySeverity.link.ratedAsHigh).click();
         cy.url().should('contain', url.list.policies);
-        cy.url().should('contain', '[severity]=HIGH_SEVERITY');
+        cy.url().should('contain', '[Severity]=HIGH_SEVERITY');
+        cy.url().should('contain', '[Policy%20Status]=Fail');
     });
 
     it('clicking the "Policy Violations By Severity" widget\'s "rated as low" link should take you to the policies list and filter by low severity', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.policyViolationsBySeverity.link.ratedAsLow).click();
         cy.url().should('contain', url.list.policies);
-        cy.url().should('contain', '[severity]=LOW_SEVERITY');
+        cy.url().should('contain', '[Severity]=LOW_SEVERITY');
+        cy.url().should('contain', '[Policy%20Status]=Fail');
     });
 
     it('clicking the "Policy Violations By Severity" widget\'s "policies not violated" link should take you to the policies list and filter by nothing', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.policyViolationsBySeverity.link.policiesWithoutViolations).click();
         cy.url().should('contain', url.list.policies);
-        cy.url().should('not.contain', '[severity]=LOW_SEVERITY');
+        cy.url().should('contain', '[Policy%20Status]=Pass');
+        cy.url().should('contain', '[Disabled]=False');
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {

@@ -20,7 +20,7 @@ const sortSeverity = (a, b) => {
         High: 'HIGH_SEVERITY',
         Critical: 'CRITICAL_SEVERITY'
     };
-    const priorityArray = ['LOW_SEVERITY', 'MEDIUM_SEVERITY', 'HIGH_SEVERITY', 'CRITICAL_SEVERITY'];
+    const priorityArray = ['CRITICAL_SEVERITY', 'HIGH_SEVERITY', 'MEDIUM_SEVERITY', 'LOW_SEVERITY'];
     const firstSeverity = map[a] || a;
     const secondSeverity = map[b] || b;
 

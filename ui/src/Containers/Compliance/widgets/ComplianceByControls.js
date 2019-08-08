@@ -4,11 +4,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import entityTypes, { standardEntityTypes, standardBaseTypes } from 'constants/entityTypes';
-import {
-    standardLabels,
-    standardShortLabels,
-    getStandardAcrossEntityLabel
-} from 'messages/standards';
+import { standardLabels, getStandardAcrossEntityLabel } from 'messages/standards';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import searchContext from 'Containers/searchContext';
@@ -118,14 +114,14 @@ const getSunburstRootData = (
     controlsPassing,
     controlsFailing,
     urlBuilder,
-    selectedStandard,
+    standardType,
     searchParam
 ) => {
     const controlsPassingLink = urlBuilder
         .base(entityTypes.CONTROL)
         .query({
             [searchParam]: {
-                standard: standardShortLabels[selectedStandard],
+                standard: standardLabels[standardType],
                 'Compliance State': 'Pass'
             }
         })
@@ -135,7 +131,7 @@ const getSunburstRootData = (
         .base(entityTypes.CONTROL)
         .query({
             [searchParam]: {
-                standard: standardShortLabels[selectedStandard],
+                standard: standardLabels[standardType],
                 'Compliance State': 'Fail'
             }
         })
@@ -156,14 +152,14 @@ const getSunburstRootData = (
     return sunburstRootData;
 };
 
-const getSunburstProps = (data, urlBuilder, selectedStandard, searchParam) => {
+const getSunburstProps = (data, urlBuilder, standardType, searchParam) => {
     const categoryMapping = getCategoryControlMapping(data);
     const { controlsPassing, controlsFailing } = getTotalPassingFailing(data);
     const sunburstRootData = getSunburstRootData(
         controlsPassing,
         controlsFailing,
         urlBuilder,
-        selectedStandard,
+        standardType,
         searchParam
     );
     const sunburstData = getSunburstData(categoryMapping, urlBuilder);
@@ -179,7 +175,7 @@ const ViewStandardButton = ({ standardType, searchParam, urlBuilder }) => {
         .base(entityTypes.CONTROL)
         .query({
             [searchParam]: {
-                standard: standardShortLabels[standardType],
+                standard: standardLabels[standardType],
                 groupBy: entityTypes.CATEGORY
             }
         })
@@ -224,7 +220,6 @@ const ComplianceByControls = ({
     return (
         <Query query={QUERY} variables={variables}>
             {({ data, networkStatus }) => {
-                const urlBuilder = URLService.getURL(match, location);
                 const titleComponents = (
                     <Select
                         className="bg-base-100 w-full focus:outline-none"
@@ -250,8 +245,8 @@ const ComplianceByControls = ({
                             />
                         )}
                         <ViewStandardButton
-                            urlBuilder={urlBuilder}
-                            standardType={selectedStandard}
+                            urlBuilder={URLService.getURL(match, location)}
+                            standardType={selectedStandard.standard}
                             searchParam={searchParam}
                         />
                     </div>
@@ -261,8 +256,8 @@ const ComplianceByControls = ({
                     if (data.aggregatedResults.results.length) {
                         const { sunburstData, sunburstRootData, totalPassing } = getSunburstProps(
                             data,
-                            urlBuilder,
-                            selectedStandard,
+                            URLService.getURL(match, location),
+                            selectedStandard.standard,
                             searchParam
                         );
                         contents = (
@@ -299,12 +294,12 @@ ComplianceByControls.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     className: PropTypes.string,
     standardOptions: PropTypes.arrayOf(PropTypes.shape).isRequired,
-    isConfigMangement: PropTypes.bool
+    isConfigMangement: PropTypes.string
 };
 
 ComplianceByControls.defaultProps = {
     className: '',
-    isConfigMangement: false
+    isConfigMangement: 'false'
 };
 
 export default withRouter(ComplianceByControls);

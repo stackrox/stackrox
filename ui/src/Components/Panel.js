@@ -84,7 +84,7 @@ const Panel = props => (
         className={`flex flex-col h-full border-r border-base-400 overflow-auto w-full ${
             props.className
         }`}
-        data-test-id="panel"
+        data-test-id={props.id}
     >
         <div className="border-b border-base-400 flex-no-wrap">
             <div className={props.headerClassName}>
@@ -120,6 +120,7 @@ const Panel = props => (
 );
 
 Panel.propTypes = {
+    id: PropTypes.string,
     header: PropTypes.string,
     headerTextComponent: PropTypes.element,
     headerClassName: PropTypes.string,
@@ -135,6 +136,7 @@ Panel.propTypes = {
 };
 
 Panel.defaultProps = {
+    id: 'panel',
     header: ' ',
     headerTextComponent: null,
     headerClassName,

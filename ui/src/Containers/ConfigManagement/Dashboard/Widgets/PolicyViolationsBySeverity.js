@@ -11,8 +11,10 @@ import gql from 'graphql-tag';
 import { max, sum, uniqBy } from 'lodash';
 import pluralize from 'pluralize';
 import { severityValues, severities } from 'constants/severities';
+import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
 const severityColorMap = {
     CRITICAL_SEVERITY: 'var(--alert-400)',
@@ -166,42 +168,86 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         const lowCount = getCount(severities.LOW_SEVERITY);
         const passingCount = data.length - policiesInViolation.length;
 
+        const links = [];
+
         const url = URLService.getURL(match, location).base(entityTypes.POLICY);
 
-        const links = [];
         if (criticalCount)
             links.push({
                 text: `${criticalCount} rated as critical`,
                 color: severityTextColorMap.CRITICAL_SEVERITY,
-                link: url.query({ [searchParam]: { severity: severities.CRITICAL_SEVERITY } }).url()
+                link: url
+                    .query({
+                        [searchParam]: {
+                            Severity: severities.CRITICAL_SEVERITY,
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                        }
+                    })
+                    .url()
             });
+
+        url.query(null);
 
         if (highCount)
             links.push({
                 text: `${highCount} rated as high`,
                 color: severityTextColorMap.HIGH_SEVERITY,
-                link: url.query({ [searchParam]: { severity: severities.HIGH_SEVERITY } }).url()
+                link: url
+                    .query({
+                        [searchParam]: {
+                            Severity: severities.HIGH_SEVERITY,
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                        }
+                    })
+                    .url()
             });
+
+        url.query(null);
 
         if (mediumCount)
             links.push({
                 text: `${mediumCount} rated as medium`,
                 color: severityTextColorMap.MEDIUM_SEVERITY,
-                link: url.query({ [searchParam]: { severity: severities.MEDIUM_SEVERITY } }).url()
+                link: url
+                    .query({
+                        [searchParam]: {
+                            Severity: severities.MEDIUM_SEVERITY,
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                        }
+                    })
+                    .url()
             });
+
+        url.query(null);
 
         if (lowCount)
             links.push({
                 text: `${lowCount} rated as low`,
                 color: severityTextColorMap.LOW_SEVERITY,
-                link: url.query({ [searchParam]: { severity: severities.LOW_SEVERITY } }).url()
+                link: url
+                    .query({
+                        [searchParam]: {
+                            Severity: severities.LOW_SEVERITY,
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                        }
+                    })
+                    .url()
             });
+
+        url.query(null);
 
         if (passingCount)
             links.push({
                 text: `${passingCount} policies without violations`,
                 color: passingLinkColor,
-                link: url.query().url()
+                link: url
+                    .query({
+                        [searchParam]: {
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.PASS,
+                            Disabled: 'False'
+                        }
+                    })
+                    .url()
             });
 
         return links;

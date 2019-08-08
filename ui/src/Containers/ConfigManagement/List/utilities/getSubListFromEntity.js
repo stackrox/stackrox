@@ -3,6 +3,7 @@ import entityTypes from 'constants/entityTypes';
 
 function getSubfieldName(entityType) {
     if (entityType === entityTypes.SERVICE_ACCOUNT) return 'serviceAccounts';
+    if (entityType === entityTypes.ROLE) return 'k8sroles';
     return pluralize(entityType.toLowerCase());
 }
 
