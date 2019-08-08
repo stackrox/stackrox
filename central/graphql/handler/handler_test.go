@@ -15,15 +15,25 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	processMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8srolebindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	fakeClusterID = "fakeClusterId"
+	fakeClusterID      = "fakeClusterId"
+	fakeClusterName    = "fakeClusterName"
+	fakeNamespaceID    = "fakeNamespaceId"
+	fakeNamespaceName  = "fakeNamespaceName"
+	fakeDeploymentID   = "fakeDeploymentID"
+	fakeDeploymentName = "fakeDeploymentName"
+	fakeSecretID       = "fakeSecretID"
+	fakeSecretName     = "fakeSecret"
 )
 
 var (
@@ -36,6 +46,9 @@ type mocks struct {
 	process        *processMocks.MockDataStore
 	k8srole        *k8sroleMocks.MockDataStore
 	k8srolebinding *k8srolebindingMocks.MockDataStore
+	namespace      *namespaceMocks.MockDataStore
+	secret         *secretMocks.MockDataStore
+	nps            *npsMocks.MockDataStore
 	resolver       *resolvers.Resolver
 }
 
@@ -46,6 +59,9 @@ func mockResolver(t *testing.T) mocks {
 	process := processMocks.NewMockDataStore(ctrl)
 	k8srole := k8sroleMocks.NewMockDataStore(ctrl)
 	k8srolebinding := k8srolebindingMocks.NewMockDataStore(ctrl)
+	namespace := namespaceMocks.NewMockDataStore(ctrl)
+	secret := secretMocks.NewMockDataStore(ctrl)
+	nps := npsMocks.NewMockDataStore(ctrl)
 
 	resolver := &resolvers.Resolver{
 		ClusterDataStore:      cluster,
@@ -53,6 +69,9 @@ func mockResolver(t *testing.T) mocks {
 		ProcessIndicatorStore: process,
 		K8sRoleBindingStore:   k8srolebinding,
 		K8sRoleStore:          k8srole,
+		NamespaceDataStore:    namespace,
+		SecretsDataStore:      secret,
+		NetworkPoliciesStore:  nps,
 	}
 
 	return mocks{
@@ -62,6 +81,9 @@ func mockResolver(t *testing.T) mocks {
 		process:        process,
 		k8srole:        k8srole,
 		k8srolebinding: k8srolebinding,
+		namespace:      namespace,
+		secret:         secret,
+		nps:            nps,
 	}
 }
 
