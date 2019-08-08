@@ -96,8 +96,8 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(&storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
-			AlertRetention: &storage.PrivateConfig_AlertRetentionDurationDays{
-				AlertRetentionDurationDays: configDatastore.DefaultAlertRetention,
+			AlertRetention: &storage.PrivateConfig_DEPRECATEDAlertRetentionDurationDays{
+				DEPRECATEDAlertRetentionDurationDays: configDatastore.DefaultAlertRetention,
 			},
 			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
 		},

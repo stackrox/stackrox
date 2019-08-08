@@ -42,7 +42,7 @@ message AlertRetentionConfig {
 message PrivateConfig {
     oneof alert_retention {
         // will be deprecated after migration is ready
-        int32 alert_retention_duration_days = 1;
+        int32 DEPRECATED_alert_retention_duration_days = 1;
         AlertRetentionConfig alert_config   = 3;
     }
     int32 image_retention_duration_days = 2;

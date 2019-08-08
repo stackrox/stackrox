@@ -126,8 +126,8 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 
 func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter int32) {
 	alertRetention := config.GetAlertRetention()
-	if val, ok := alertRetention.(*storage.PrivateConfig_AlertRetentionDurationDays); ok {
-		global := val.AlertRetentionDurationDays
+	if val, ok := alertRetention.(*storage.PrivateConfig_DEPRECATEDAlertRetentionDurationDays); ok {
+		global := val.DEPRECATEDAlertRetentionDurationDays
 		return global, global, global
 
 	} else if val, ok := alertRetention.(*storage.PrivateConfig_AlertConfig); ok {

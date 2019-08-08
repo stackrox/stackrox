@@ -72,7 +72,10 @@ class UpgradesTest extends BaseSpecification {
         "Alert retention duration is nil, image rentention duration is 7 days"
         def config = ConfigService.getConfig()
         config != Null
-        config.getPrivateConfig().getAlertRetentionDurationDays() == 0
+        config.getPrivateConfig().getAlertConfig() != Null
+        config.getPrivateConfig().getAlertConfig().getAllRuntimeRetentionDurationDays() == 0
+        config.getPrivateConfig().getAlertConfig().getResolvedDeployRetentionDurationDays() == 0
+        config.getPrivateConfig().getAlertConfig().getDeletedRuntimeRetentionDurationDays() == 0
         config.getPrivateConfig().getImageRetentionDurationDays() == 7
     }
 
