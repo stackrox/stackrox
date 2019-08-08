@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	"github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
+	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,6 +29,8 @@ type datastoreImpl struct {
 	indexer       index.Indexer
 	searcher      search.Searcher
 	whitelistLock *concurrency.KeyedMutex
+
+	processWhitelistResults processWhitelistResultsStore.DataStore
 }
 
 func (ds *datastoreImpl) SearchRawProcessWhitelists(ctx context.Context, q *v1.Query) ([]*storage.ProcessWhitelist, error) {
@@ -100,6 +103,13 @@ func (ds *datastoreImpl) removeProcessWhitelistByID(id string) error {
 	return nil
 }
 
+func (ds *datastoreImpl) removeProcessWhitelistResults(ctx context.Context, deploymentID string) error {
+	if err := ds.processWhitelistResults.DeleteWhitelistResults(ctx, deploymentID); err != nil {
+		return errors.Wrap(err, "removing whitelist results")
+	}
+	return nil
+}
+
 func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) error {
 	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil {
 		return err
@@ -111,7 +121,20 @@ func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storag
 	if err != nil {
 		return err
 	}
-	return ds.removeProcessWhitelistByID(id)
+	if err := ds.removeProcessWhitelistByID(id); err != nil {
+		return err
+	}
+	// Delete whitelist results if this is the last whitelist with the given deploymentID
+	deploymentID := key.GetDeploymentId()
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
+	results, err := ds.indexer.Search(q)
+	if err != nil {
+		return errors.Wrapf(err, "failed to query for deployment %s during process whitelist deletion", deploymentID)
+	}
+	if len(results) == 0 {
+		return ds.removeProcessWhitelistResults(ctx, deploymentID)
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) RemoveProcessWhitelistsByDeployment(ctx context.Context, deploymentID string) error {
@@ -133,6 +156,10 @@ func (ds *datastoreImpl) RemoveProcessWhitelistsByDeployment(ctx context.Context
 		if err != nil {
 			errList = append(errList, err)
 		}
+	}
+
+	if err := ds.removeProcessWhitelistResults(ctx, deploymentID); err != nil {
+		errList = append(errList, err)
 	}
 
 	if len(errList) > 0 {

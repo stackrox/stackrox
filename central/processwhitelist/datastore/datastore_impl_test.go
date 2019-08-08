@@ -4,10 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
+	"github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,6 +34,10 @@ type ProcessWhitelistDataStoreTestSuite struct {
 	storage        store.Store
 	indexer        index.Indexer
 	searcher       whitelistSearch.Searcher
+
+	whitelistResultsStore *mocks.MockDataStore
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
@@ -55,13 +61,20 @@ func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
 	suite.searcher, err = whitelistSearch.New(suite.storage, suite.indexer)
 	suite.NoError(err)
 
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher)
+	suite.mockCtrl = gomock.NewController(suite.T())
+
+	suite.whitelistResultsStore = mocks.NewMockDataStore(suite.mockCtrl)
+	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, suite.whitelistResultsStore)
+}
+
+func (suite *ProcessWhitelistDataStoreTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) mustSerializeKey(key *storage.ProcessWhitelistKey) string {
 	serialized, err := keyToID(key)
 	suite.Require().NoError(err)
-	return string(serialized)
+	return serialized
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) createAndStoreWhitelist(key *storage.ProcessWhitelistKey) *storage.ProcessWhitelist {
@@ -143,6 +156,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRemoveProcessWhitelist() {
 	whitelist := suite.createAndStoreWhitelistWithRandomKey()
 	key := whitelist.GetKey()
 	suite.doGet(whitelist.GetKey(), true, whitelist)
+	suite.whitelistResultsStore.EXPECT().DeleteWhitelistResults(suite.requestContext, key.GetDeploymentId()).Return(nil)
 	err := suite.datastore.RemoveProcessWhitelist(suite.requestContext, key)
 	suite.NoError(err)
 	suite.doGet(key, false, nil)
@@ -273,6 +287,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRemoveByDeployment() {
 	suite.doGet(key2, true, nil)
 	suite.doGet(key3, true, nil)
 
+	suite.whitelistResultsStore.EXPECT().DeleteWhitelistResults(suite.requestContext, dep1).Return(nil)
 	err := suite.datastore.RemoveProcessWhitelistsByDeployment(suite.requestContext, dep1)
 	suite.NoError(err)
 

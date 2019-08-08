@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
@@ -258,6 +259,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		return err
 	}
 
+	errorList := errorhelpers.NewErrorList("deleting related objects of deployments")
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -268,13 +270,17 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		return err
 	}
 	if err := ds.whitelists.RemoveProcessWhitelistsByDeployment(deleteRelatedCtx, id); err != nil {
-		return err
+		errorList.AddError(err)
 	}
 	if err := ds.indicators.RemoveProcessIndicatorsByDeployment(deleteRelatedCtx, id); err != nil {
-		return err
+		errorList.AddError(err)
 	}
 	flowStore := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
-	return flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id)
+	if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
+		errorList.AddError(err)
+	}
+
+	return errorList.ToError()
 }
 
 func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {

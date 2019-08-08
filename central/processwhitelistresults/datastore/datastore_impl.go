@@ -40,3 +40,16 @@ func (d *datastoreImpl) GetWhitelistResults(ctx context.Context, deploymentID st
 
 	return pWResults, nil
 }
+
+func (d *datastoreImpl) DeleteWhitelistResults(ctx context.Context, deploymentID string) error {
+	pWResults, err := d.storage.GetWhitelistResults(deploymentID)
+	if err != nil || pWResults == nil {
+		return err
+	}
+
+	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil || !ok {
+		return err
+	}
+
+	return d.storage.DeleteWhitelistResults(deploymentID)
+}

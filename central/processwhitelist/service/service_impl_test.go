@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
+	resultsMocks "github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
 	"github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -53,11 +54,12 @@ func TestProcessWhitelistService(t *testing.T) {
 
 type ProcessWhitelistServiceTestSuite struct {
 	suite.Suite
-	datastore   datastore.DataStore
-	service     Service
-	db          *bbolt.DB
-	reprocessor *mocks.MockLoop
-	mockCtrl    *gomock.Controller
+	datastore       datastore.DataStore
+	service         Service
+	db              *bbolt.DB
+	reprocessor     *mocks.MockLoop
+	resultDatastore *resultsMocks.MockDataStore
+	mockCtrl        *gomock.Controller
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
@@ -74,8 +76,9 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 	searcher, err := whitelistSearch.New(wlStore, indexer)
 	suite.NoError(err)
 
-	suite.datastore = datastore.New(wlStore, indexer, searcher)
 	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.resultDatastore = resultsMocks.NewMockDataStore(suite.mockCtrl)
+	suite.datastore = datastore.New(wlStore, indexer, searcher, suite.resultDatastore)
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
 	suite.service = New(suite.datastore, suite.reprocessor)
 }

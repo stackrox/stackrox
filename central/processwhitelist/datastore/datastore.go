@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	"github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
+	"github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -27,12 +28,13 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, processWhitelistResults datastore.DataStore) DataStore {
 	d := &datastoreImpl{
-		storage:       storage,
-		indexer:       indexer,
-		searcher:      searcher,
-		whitelistLock: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		storage:                 storage,
+		indexer:                 indexer,
+		searcher:                searcher,
+		whitelistLock:           concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		processWhitelistResults: processWhitelistResults,
 	}
 	return d
 }

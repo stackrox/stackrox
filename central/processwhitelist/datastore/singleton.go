@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	"github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
+	"github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -26,7 +27,7 @@ func initialize() {
 		panic("unable to load search index for process whitelist")
 	}
 
-	ad = New(storage, indexer, searcher)
+	ad = New(storage, indexer, searcher, datastore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.
