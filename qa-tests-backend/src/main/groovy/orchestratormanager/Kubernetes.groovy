@@ -535,7 +535,7 @@ class Kubernetes implements OrchestratorMain {
         if (deployment.createLoadBalancer) {
             int waitTime = 0
             println "Waiting for LB external IP for " + deployment.name
-            while (waitTime < maxWaitTime) {
+            while (waitTime < 600000) {
                 ServiceList sList = client.services().inNamespace(deployment.namespace).list()
 
                 for (Service service : sList.getItems()) {
