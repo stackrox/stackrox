@@ -20,7 +20,7 @@ var (
 
 	// ScannerV2 enables scanner v2.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
-	ScannerV2 = registerFeature("Enable Scanner V2", "ROX_SCANNER_V2", false)
+	ScannerV2 = registerFeature("Enable Scanner V2", "ROX_SCANNER_V2", true)
 
 	// ConfigMgmtUI enables the config management UI.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
