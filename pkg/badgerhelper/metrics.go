@@ -22,14 +22,14 @@ var (
 )
 
 // UpdateBadgerPrefixSizeMetric sets the badger metric for number of objects with a specific prefix
-func UpdateBadgerPrefixSizeMetric(db *badger.DB, prefix, objType string) {
+func UpdateBadgerPrefixSizeMetric(db *badger.DB, prefix []byte, metricPrefix, objType string) {
 	var count int
 	err := db.View(func(txn *badger.Txn) error {
-		count = Count(txn, []byte(prefix))
+		count = Count(txn, prefix)
 		return nil
 	})
 	if err != nil {
 		return
 	}
-	badgerPrefixSize.With(prometheus.Labels{"Prefix": prefix, "Type": objType}).Set(float64(count))
+	badgerPrefixSize.With(prometheus.Labels{"Prefix": metricPrefix, "Type": objType}).Set(float64(count))
 }

@@ -22,13 +22,18 @@ var (
 )
 
 type registeredBucket struct {
-	prefix  []byte
-	objType string
+	badgerPrefix []byte
+	prefixString string
+	objType      string
 }
 
 // RegisterBucket registers a bucket to have metrics pulled from it
 func RegisterBucket(bucketName []byte, objType string) {
-	registeredBuckets = append(registeredBuckets, registeredBucket{prefix: badgerhelper.GetBucketKey(bucketName, nil), objType: objType})
+	registeredBuckets = append(registeredBuckets, registeredBucket{
+		prefixString: string(bucketName),
+		badgerPrefix: badgerhelper.GetBucketKey(bucketName, nil),
+		objType:      objType,
+	})
 }
 
 // GetGlobalBadgerDB returns the global BadgerDB instance.
@@ -49,7 +54,7 @@ func startMonitoringBadger(db *badger.DB) {
 	ticker := time.NewTicker(gatherFrequency)
 	for range ticker.C {
 		for _, bucket := range registeredBuckets {
-			badgerhelper.UpdateBadgerPrefixSizeMetric(db, string(bucket.prefix), bucket.objType)
+			badgerhelper.UpdateBadgerPrefixSizeMetric(db, bucket.badgerPrefix, bucket.prefixString, bucket.objType)
 		}
 	}
 }
