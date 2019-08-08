@@ -15,5 +15,16 @@
     }
   },
   "rationale": "Leaving download tools like curl in an image makes it easier for attackers to use compromised containers, since they can easily download software.",
-  "remediation": "Use your package manager's \"remove\" command to remove curl from the image build for production containers."
+  "remediation": "Use your package manager's \"remove\" command to remove curl from the image build for production containers.",
+  "whitelists": [
+    {
+      "name": "Don't alert on StackRox scanner-v2",
+      "deployment": {
+        "name": "scanner-v2",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    }
+  ]
 }
