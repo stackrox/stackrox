@@ -19,6 +19,7 @@ spec:
     metadata:
       namespace: {{.Values.namespace}}
       labels:
+        app.kubernetes.io/name: stackrox
         app: scanner
     spec:
       {{if eq .Values.clusterType "OPENSHIFT_CLUSTER"}}

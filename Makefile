@@ -429,7 +429,10 @@ docker-build-data-image:
 .PHONY: docker-build-deployer-image
 docker-build-deployer-image:
 	cp -f bin/linux/roxctl image/bin/roxctl-linux
-	docker build -t stackrox/deployer:$(TAG) --build-arg MAIN_IMAGE_TAG=$(TAG) --build-arg SCANNER_IMAGE_TAG=$(shell cat SCANNER_VERSION) image/ --file image/Dockerfile_gcp
+	docker build -t stackrox/deployer:$(TAG) \
+		--build-arg MAIN_IMAGE_TAG=$(TAG) \
+		--build-arg SCANNER_IMAGE_TAG=$(shell cat SCANNER_VERSION) \
+		image/ --file image/Dockerfile_gcp
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir:

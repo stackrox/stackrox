@@ -98,6 +98,7 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 	fields := map[string]interface{}{
 		"Image":         mainImageName.GetFullName(),
 		"ImageRegistry": mainRegistry,
+		"ImageRemote":   mainImageName.GetRemote(),
 		"ImageTag":      mainImageName.GetTag(),
 
 		"PublicEndpointEnv": env.CentralEndpoint.EnvVar(),

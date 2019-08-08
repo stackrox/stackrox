@@ -81,33 +81,19 @@ spec:
       app.kubernetes.io/name: stackrox
 
   componentKinds:
-    - group: rbac.authorization.k8s.io
-      kind: ClusterRole
-    - group: rbac.authorization.k8s.io/v1
-      kind: ClusterRoleBinding
-    - group: v1
-      kind: ConfigMap
-    - group: apps/v1beta2
-      kind: DaemonSet
-    - group: extensions/v1beta1
-      kind: Deployment
-    - group: networking.k8s.io/v1
-      kind: NetworkPolicy
-    - group: v1
-      kind: PersistentVolumeClaim
-    - group: rbac.authorization.k8s.io/v1beta1
-      kind: Role
-    - group: rbac.authorization.k8s.io/v1
-      kind: RoleBinding
-    - group: route.openshift.io/v1
-      kind: Route
-    - group: v1
-      kind: Secret
-    - group: v1
-      kind: SecurityContextConstraints
-    - group: v1
-      kind: Service
-    - group: v1
-      kind: ServiceAccount
-    - group: admissionregistration.k8s.io/v1beta1
-      kind: ValidatingWebhookConfiguration
+    - kind: ClusterRole
+    - kind: ClusterRoleBinding
+    - kind: ConfigMap
+    - kind: DaemonSet
+    - kind: Deployment
+    - kind: NetworkPolicy
+    - kind: PersistentVolumeClaim
+    - kind: Pod
+    - kind: Role
+    - kind: RoleBinding
+    - kind: Route
+    - kind: Secret
+    - kind: SecurityContextConstraints
+    - kind: Service
+    - kind: ServiceAccount
+    - kind: ValidatingWebhookConfiguration

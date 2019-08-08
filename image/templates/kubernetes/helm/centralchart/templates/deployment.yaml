@@ -19,6 +19,7 @@ spec:
     metadata:
       namespace: {{.Values.namespace}}
       labels:
+        app.kubernetes.io/name: stackrox
         app: central
     spec:
       {{if .Values.nodeSelector -}}

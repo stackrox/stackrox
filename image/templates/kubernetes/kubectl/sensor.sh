@@ -21,6 +21,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
 
+{{if and (ne .ImageRemote "stackrox-launcher-project-1/stackrox") (ne .ImageRemote "cloud-marketplace/stackrox-launcher-project-1/stackrox-kubernetes-security")}}
 if ! ${KUBE_COMMAND} get namespace stackrox > /dev/null; then
   ${KUBE_COMMAND} create -f - <<EOF
 apiVersion: v1
@@ -62,6 +63,7 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
+{{- end}}
 {{- end}}
 
 function print_rbac_instructions {

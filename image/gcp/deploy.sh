@@ -67,6 +67,88 @@ update_description() {
         -p "[{\"op\":\"replace\",\"path\":\"/spec/descriptor/description\",\"value\":${markdown}}]"
 }
 
+wait_for_central_pod() {
+    # Wait 2 minutes for a central pod to be ready.
+    echo "Waiting for central pod..."
+    kubectl -n stackrox wait --for=condition=Ready --selector=app=central --timeout=2m pod
+}
+
+wait_for_sensor_pod() {
+    # Wait 2 minutes for a sensor pod to be ready.
+    echo "Waiting for sensor pod..."
+    kubectl -n stackrox wait --for=condition=Ready --selector=app=sensor --timeout=2m pod
+}
+
+wait_for_central_api() {
+    # Wait 2 minutes for the central API to be ready.
+    echo "Waiting for central api..."
+    for i in $(seq 1 24); do
+        status="$( (curl --max-time 5 -ks https://central.stackrox:443/v1/ping || true) | jq -r .status)"
+        if [[ "$status" = 'ok' ]]; then
+            echo "API ready"
+            break
+        fi
+        sleep 5
+    done
+}
+
+run_compliance() {
+    password="$(cat /tmp/stackrox/password)"
+    endpoint='central.stackrox:443'
+    compliance_body='{"selection":{"cluster_id":"*","standard_id":"*"}}'
+
+    echo "Running compliance scans..."
+    curl -u "admin:${password}" -k -XPOST -d "$compliance_body"    "https://${endpoint}/v1/compliancemanagement/runs"
+}
+
+get_cluster_name() {
+    # Get the name of the first listed node. Node name should be in the form
+    # "gke-<NAME>-default-pool-0b062835-7gfz"
+    node_name="$(kubectl get nodes -o jsonpath={.items[0].metadata.name} 2>/dev/null || true)"
+    if [[ -z "$node_name" ]]; then
+        echo "gke"
+        return
+    fi
+
+    # Extract the cluster name from the middle of the node name.
+    cluster_name="$(echo "$node_name" | sed 's/gke-\(.*\)-.*-pool.*/\1/')"
+    if [[ -z "$node_name" ]]; then
+        echo "gke"
+        return
+    fi
+
+    echo "$cluster_name" | tr '[:upper:]' '[:lower:]'
+}
+
+try_install_sensor() {
+    if [[ -z "$(cat /data/values/license)" ]]; then
+        echo "StackRox isn't currently licensed, cannot create sensor."
+        return 0
+    fi
+
+    # Get cluster name, if possible.
+    cluster_name="$(get_cluster_name)"
+
+    wait_for_central_pod
+    wait_for_central_api
+
+    roxctl --endpoint central.stackrox:443 --password "$(cat /tmp/stackrox/password)" sensor generate k8s \
+    --central central.stackrox:443 \
+    --collection-method none \
+    --image "$(cat /data/values/main-image | sed 's/[:@].*//')" \
+    --name "$cluster_name"
+
+    if [[ "$?" -ne 0 ]]; then
+        echo "Failed to provision sensor with roxctl."
+        return 0
+    fi
+
+    "./sensor-${cluster_name}/sensor.sh"
+
+    wait_for_sensor_pod
+    run_compliance
+}
+
 update_network_docs() {
     local name="$(cat /data/values/name)"
     local network_type="$(cat /data/values/network)"
@@ -77,7 +159,7 @@ update_network_docs() {
     # Use the appropriate selector.
     case "$network_type" in
         "Load Balancer")
-            selector='{.status.loadBalancer.ingress[0].ip}'
+            selector='{.status.loadBalancer.ingress..ip}'
             ;;
         "Node Port")
             selector='{.spec.clusterIP}'
@@ -154,20 +236,19 @@ app_api_version=$(kubectl get "applications.app.k8s.io/$NAME" \
 
 /bin/expand_config.py --values_mode raw --app_uid "$app_uid"
 
+# Generate installation bundles for both Central and Scanner.
 roxctl gcp generate --values-file /data/final_values.yaml --output-dir /tmp/stackrox
-mkdir -p /data/chart
-mv /tmp/stackrox/central /tmp/stackrox/chart
-tar -czvf /data/chart/central.tar.gz -C /tmp/stackrox chart
+mkdir -p /tmp/stackrox/rendered
+helm template /tmp/stackrox/central > /tmp/stackrox/rendered/central-rendered.yaml
+helm template /tmp/stackrox/scanner > /tmp/stackrox/rendered/scanner-rendered.yaml
 
-create_manifests.sh
-
-# Assign owner references for the resources.
+## Assign owner references for the resources.
 /bin/set_ownership.py \
   --app_name "$NAME" \
   --app_uid "$app_uid" \
   --app_api_version "$app_api_version" \
-  --manifests "/data/manifest-expanded" \
-  --dest "/data/resources.yaml"
+  --manifests /tmp/stackrox/rendered/ \
+  --dest /data/resources.yaml
 
 # Ensure assembly phase is "Pending", until successful kubectl apply.
 /bin/setassemblyphase.py \
@@ -175,9 +256,13 @@ create_manifests.sh
   --status "Pending"
 
 # Apply the manifest.
-kubectl apply --namespace="$NAMESPACE" --filename="/data/resources.yaml"
+kubectl apply --namespace=stackrox --filename=/data/resources.yaml
 
-update_network_docs
+# Attempt to provision a sensor.
+try_install_sensor || true
+
+# Attempt to update the GKE Application sidebar docs.
+update_network_docs || true
 
 # Clean up IAM resources
 patch_assembly_phase.sh --status="Success"
