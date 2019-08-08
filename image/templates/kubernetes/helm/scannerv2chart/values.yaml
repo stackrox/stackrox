@@ -10,6 +10,8 @@ dbAppName: scanner-v2-db
 dbImage: {{.K8sConfig.ScannerV2DBImage}}
 dbImagePullPolicy: Always
 
+clusterType: {{.ClusterType.String}}
+
 ## END STACKROX
 
 # Anchore engine has a dependency on Postgresql, configure here
