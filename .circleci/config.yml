@@ -339,10 +339,6 @@ checkOpenshiftLabel: &checkOpenshiftLabel
   run:
     name: Determine whether to run OpenShift tests
     command: |
-      # TODO(ROX-2925): Fix, and re-enable.
-      echo "Skipping OpenShift tests unconditionally until we fix them..."
-      circleci step halt
-
       set +e
       .circleci/pr_has_label.sh ci-openshift-tests
       if [ $? -eq 1 ]; then
@@ -1482,7 +1478,7 @@ jobs:
   provision-openshift:
     machine: true
     environment:
-      - OPENSHIFT_AUTOMATION_VERSION: 0.4.2-2-g35e2610
+      - OPENSHIFT_AUTOMATION_VERSION: snapshot-0.4.2-7-g6255c49
     steps:
       - checkout
       - *checkOpenshiftLabel
@@ -1554,7 +1550,7 @@ jobs:
   openshift-tests:
     <<: *defaults
     environment:
-      - OPENSHIFT_AUTOMATION_VERSION: 0.4.1-1-g1e9c69d
+      - OPENSHIFT_AUTOMATION_VERSION: snapshot-0.4.2-7-g6255c49
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true

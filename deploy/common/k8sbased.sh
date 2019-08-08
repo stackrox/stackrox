@@ -154,6 +154,7 @@ function launch_central {
         echo
     elif [[ "$SCANNER_SUPPORT" == "true" ]]; then
         echo "Deploying Scanning..."
+        $unzip_dir/scanner/scripts/setup.sh
         launch_service $unzip_dir scanner
         echo
     fi
