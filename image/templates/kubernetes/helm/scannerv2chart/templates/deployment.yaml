@@ -24,6 +24,13 @@ spec:
       - name: analyzer
         image: {{ .Values.image }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "4000m"
         command: ["anchore-manager"]
         args: ["service", "start", "analyzer"]
         envFrom:
@@ -67,6 +74,13 @@ spec:
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         command: ["anchore-manager"]
         args: ["service", "start", "apiext"]
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
         envFrom:
         - secretRef:
             name: {{ .Values.appName }}
@@ -104,6 +118,13 @@ spec:
       - name: catalog
         image: {{ .Values.image }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
         command: ["anchore-manager"]
         args: ["service", "start", "catalog"]
         envFrom:
@@ -143,6 +164,13 @@ spec:
       - name: policy
         image: {{ .Values.image }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
         command: ["anchore-manager"]
         args: ["service", "start", "policy_engine"]
         envFrom:
@@ -182,6 +210,13 @@ spec:
       - name: simplequeue
         image: {{ .Values.image }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
         command: ["anchore-manager"]
         args: ["service", "start", "simplequeue"]
         envFrom:

@@ -23,6 +23,13 @@ spec:
       - name: {{ .Values.dbAppName }}
         image: {{ .Values.dbImage | quote }}
         imagePullPolicy: {{ .Values.dbImagePullPolicy | quote }}
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
         env:
         - name: POSTGRES_USER
           value: {{ .Values.postgresql.postgresUser | quote }}
