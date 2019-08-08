@@ -118,7 +118,7 @@ func TestReadme(t *testing.T) {
 					Command:          c.orchCommand,
 					Monitoring:       MonitoringConfig{Type: c.monitoringType},
 					DeploymentFormat: c.deploymentFormat,
-					EnableScannerV2:  c.enableScannerV2,
+					ScannerV2Config:  ScannerV2Config{Enable: c.enableScannerV2},
 				},
 			}
 			out, err := generateReadme(&config, c.mode)

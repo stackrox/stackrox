@@ -270,6 +270,14 @@ func getOrCreateGroup(groups map[string]*flagGroup, groupAnnotation []string) *f
 	return group
 }
 
+// optional interface to indicate boolean flags that can be
+// supplied without "=value" text
+// COPIED FROM COBRA.
+type boolFlag interface {
+	pflag.Value
+	IsBoolFlag() bool
+}
+
 func flagGroups(flags []*pflag.Flag) []*flagGroup {
 	groups := make(map[string]*flagGroup)
 	sort.Slice(flags, func(i, j int) bool {
@@ -331,6 +339,10 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 					printlnToStderr(err.Error())
 					continue
 				}
+			}
+			// For bool flags, we want to convert all values to "true" or "false"
+			if _, ok := fw.Flag.Value.(boolFlag); ok {
+				value = fw.Flag.Value.String()
 			}
 			processedSuccessfully = true
 			argSlice.addArg(arg{commandLine: commandline, flagName: fw.Name})

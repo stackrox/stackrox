@@ -19,6 +19,10 @@ spec:
       annotations:
         sidecar.istio.io/rewriteAppHTTPProbers: "true"
     spec:
+      {{if .Values.nodeSelector -}}
+      nodeSelector:
+      {{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end}}
       containers:
       - name: {{ .Values.dbAppName }}
         image: {{ .Values.dbImage | quote }}
@@ -74,9 +78,4 @@ spec:
       serviceAccount: {{ .Values.dbAppName }}
       volumes:
       - name: data
-      {{- if .Values.postgresql.persistence.enabled }}
-        persistentVolumeClaim:
-          claimName: {{ .Values.dbAppName }}
-      {{- else }}
-        emptyDir: {}
-      {{- end }}
+{{ toYaml .Values.persistence.value | indent 8 }}

@@ -40,7 +40,7 @@ the login page, and log in with username "admin" and the password found in the
     - Run helm install --name central central
   - Deploy Scanner
     {{ $scannerName := "" -}}
-    {{ if .K8sConfig.EnableScannerV2 -}}
+    {{ if .K8sConfig.ScannerV2Config.Enable -}}
     {{ $scannerName = "scannerv2" }}
     {{ else }}
     {{ $scannerName = "scanner" }}
@@ -61,12 +61,12 @@ the login page, and log in with username "admin" and the password found in the
 
 	kubectlScannerTemplate = `
   {{ $scannerName := "" -}}
-  {{ if .K8sConfig.EnableScannerV2 -}}
+  {{ if .K8sConfig.ScannerV2Config.Enable -}}
   {{ $scannerName = "scannerv2" }}
   {{ else }}
   {{ $scannerName = "scanner" }}
   {{ end -}}
-  - Deploy Scanner {{ if .K8sConfig.EnableScannerV2 -}}V2{{ end }}
+  - Deploy Scanner {{ if .K8sConfig.ScannerV2Config.Enable -}}V2{{ end }}
      If you want to run the StackRox scanner:
      - Run {{$scannerName}}/scripts/setup.sh
      - Run {{.K8sConfig.Command}} create -R -f {{$scannerName}}

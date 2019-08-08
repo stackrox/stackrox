@@ -1,16 +1,19 @@
-{{- if .Values.postgresql.persistence.enabled -}}
+{{if eq .Values.persistence.type "pv" -}}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ .Values.dbAppName }}
+  name: {{.Values.persistence.name}}
   namespace: stackrox
   labels:
     app: {{ .Values.dbAppName }}
     app.kubernetes.io/name: stackrox
 spec:
+  {{if .Values.persistence.storageClass -}}
+  storageClassName: {{.Values.persistence.storageClass}}
+  {{- end}}
   accessModes:
     - {{ .Values.postgresql.persistence.accessMode | quote }}
   resources:
     requests:
-      storage: {{ .Values.postgresql.persistence.size | quote }}
-{{- end -}}
+      storage: {{ .Values.persistence.size }}Gi
+{{- end}}

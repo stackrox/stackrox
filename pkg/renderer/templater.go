@@ -49,6 +49,7 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 type CommonConfig struct {
 	MainImage        string
 	ScannerImage     string
+	ScannerV2Image   string
 	ScannerV2DBImage string
 	MonitoringImage  string
 }
@@ -129,6 +130,15 @@ type MonitoringConfig struct {
 	HostPath        *HostPathPersistence
 }
 
+// ScannerV2Config encapsulates the scanner v2 configuration.
+type ScannerV2Config struct {
+	Enable bool
+
+	PersistenceType PersistenceType
+	External        ExternalPersistence
+	HostPath        HostPathPersistence
+}
+
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
@@ -143,7 +153,8 @@ type K8sConfig struct {
 	ScannerRegistry string
 	// If the scanner registry is different from the central registry get a separate secret
 	ScannerSecretName string
-	EnableScannerV2   bool
+
+	ScannerV2Config ScannerV2Config
 
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.

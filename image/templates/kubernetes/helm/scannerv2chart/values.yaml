@@ -2,7 +2,7 @@
 
 scannerSecretName: {{.K8sConfig.ScannerSecretName}}
 appName: scanner-v2
-image: {{.K8sConfig.ScannerImage}}
+image: {{.K8sConfig.ScannerV2Image}}
 imagePullPolicy: IfNotPresent
 scratchVolumeMountPath: /analysis_scratch
 
@@ -11,6 +11,34 @@ dbImage: {{.K8sConfig.ScannerV2DBImage}}
 dbImagePullPolicy: Always
 
 clusterType: {{.ClusterType.String}}
+
+
+persistence:
+{{if eq .K8sConfig.ScannerV2Config.PersistenceType.String "hostpath"}}
+  name: scanner-v2-db
+  type: hostpath
+  value:
+    hostPath:
+      path: {{.K8sConfig.ScannerV2Config.HostPath.HostPath}}
+{{- else if eq .K8sConfig.ScannerV2Config.PersistenceType.String "pvc"}}
+  name: {{.K8sConfig.ScannerV2Config.External.Name}}
+  type: pv
+  storageClass: {{.K8sConfig.ScannerV2Config.External.StorageClass}}
+  size: {{ .K8sConfig.ScannerV2Config.External.Size }}
+  value:
+    persistentVolumeClaim:
+      claimName: {{.K8sConfig.ScannerV2Config.External.Name}}
+{{- else}}
+  name: empty-db
+  type: none
+  value:
+    emptyDir: {}
+  {{- end}}
+
+{{if ne .K8sConfig.ScannerV2Config.HostPath.NodeSelectorKey "" -}}
+nodeSelector:
+  {{.K8sConfig.ScannerV2Config.HostPath.NodeSelectorKey}}: {{.K8sConfig.ScannerV2Config.HostPath.NodeSelectorValue}}
+{{end -}}
 
 ## END STACKROX
 
@@ -30,9 +58,7 @@ postgresql:
   # Configure size of the persistent volume used with helm managed chart.
   # This should be commented out if using an external endpoint.
   persistence:
-    enabled: true
     resourcePolicy: nil
-    size: 20Gi
     accessMode: ReadWriteOnce
     subPath: "postgresql-db"
     mountPath: /var/lib/postgresql/data/pgdata

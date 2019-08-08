@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/roximages/defaults"
 	"github.com/stackrox/rox/pkg/zip"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
@@ -52,7 +51,7 @@ func getChartsToProcess(c Config, mode mode) (chartsToProcess []chartPrefixPair)
 		return
 	}
 	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(), "central"}}
-	if c.K8sConfig.EnableScannerV2 {
+	if c.K8sConfig.ScannerV2Config.Enable {
 		chartsToProcess = append(chartsToProcess, chartPrefixPair{image.GetScannerV2Chart(), "scannerv2"})
 	} else {
 		chartsToProcess = append(chartsToProcess, scannerChart)
@@ -88,12 +87,6 @@ func postProcessConfig(c *Config, mode mode) error {
 		c.K8sConfig.Command = "kubectl"
 	} else {
 		c.K8sConfig.Command = "oc"
-	}
-
-	if c.K8sConfig.EnableScannerV2 {
-		if c.K8sConfig.ScannerImage == defaults.ScannerImage() {
-			c.K8sConfig.ScannerImage = defaults.ScannerV2Image()
-		}
 	}
 
 	var err error

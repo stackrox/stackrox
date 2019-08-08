@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/roximages/defaults"
@@ -15,6 +16,11 @@ import (
 
 type persistentFlagsWrapper struct {
 	*pflag.FlagSet
+}
+
+func (w *persistentFlagsWrapper) UInt32Var(p *uint32, name string, value uint32, usage string, groups ...string) {
+	w.FlagSet.Uint32Var(p, name, value, usage)
+	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
 func (w *persistentFlagsWrapper) StringVar(p *string, name, value, usage string, groups ...string) {
@@ -92,17 +98,49 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	flagWrap.StringVar(&k8sConfig.Monitoring.HostPath.NodeSelectorValue, "monitoring-node-selector-value", "", "monitoring node selector value", "monitoring", "monitoring-type=on-prem", "monitoring-persistence-type=hostpath")
 
 	// Scanner
-	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", defaults.ScannerImage(), "Scanner image to use", "scanner")
-	flagWrap.BoolVar(&k8sConfig.EnableScannerV2, "enable-scanner-v2", false, "Whether to enable scanner v2", "scanner")
-	utils.Must(flagWrap.MarkHidden("enable-scanner-v2"))
-	flagWrap.StringVar(&k8sConfig.ScannerV2DBImage, "scanner-db-image", defaults.ScannerV2DBImage(), "Scanner V2 DB image to use", "scanner")
-	utils.Must(flagWrap.MarkHidden("scanner-db-image"))
+	flagWrap.BoolVar(&k8sConfig.ScannerV2Config.Enable, "enable-scanner-v2", false, "Whether to use the preview of Scanner V2", "scanner")
+	if !features.ScannerV2.Enabled() {
+		utils.Must(flagWrap.MarkHidden("enable-scanner-v2"))
+	}
+
+	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", defaults.ScannerImage(), "Scanner image to use", "scanner", "enable-scanner-v2=false")
+	flagWrap.StringVar(&k8sConfig.ScannerV2Image, "scanner-v2-image", defaults.ScannerV2Image(), "Scanner V2 image to use", "scanner", "enable-scanner-v2=true")
+	flagWrap.StringVar(&k8sConfig.ScannerV2DBImage, "scanner-db-image", defaults.ScannerV2DBImage(), "Scanner V2 DB image to use", "scanner", "enable-scanner-v2=true")
+	if !features.ScannerV2.Enabled() {
+		utils.Must(flagWrap.MarkHidden("scanner-v2-image"), flagWrap.MarkHidden("scanner-db-image"))
+	}
+
+	// Scanner-V2 Persistence flags
+	flagWrap.Var(&persistenceTypeWrapper{PersistenceType: &k8sConfig.ScannerV2Config.PersistenceType}, "scanner-v2-persistence-type", "scanner-v2 persistence type (pvc, hostpath, none)", "scanner", "enable-scanner-v2=true")
+
+	flagWrap.StringVar(&k8sConfig.ScannerV2Config.External.Name, "scanner-v2-persistence-name", "scanner-v2-db", "external volume name", "scanner", "enable-scanner-v2=true", "scanner-v2-persistence-type=pvc")
+	flagWrap.StringVar(&k8sConfig.ScannerV2Config.External.StorageClass, "scanner-v2-persistence-storage-class", "", "scanner-v2 storage class name (optional if you have a default StorageClass configured)", "scanner", "enable-scanner-v2=true", "scanner-v2-persistence-type=pvc")
+	flagWrap.UInt32Var(&k8sConfig.ScannerV2Config.External.Size, "scanner-v2-persistence-size", 50, "size of scanner v2 persistent volume (in Gi)", "scanner", "enable-scanner-v2=true", "scanner-v2-persistence-type=pvc")
+
+	flagWrap.StringVar(&k8sConfig.ScannerV2Config.HostPath.HostPath, "scanner-v2-persistence-hostpath", "/var/lib/stackrox/scanner-v2", "path on the host", "scanner", "enable-scanner-v2=true", "scanner-v2-persistence-type=hostpath")
+	flagWrap.StringVar(&k8sConfig.ScannerV2Config.HostPath.NodeSelectorKey, "scanner-v2-node-selector-key", "", "hostpath node selector key (e.g. kubernetes.io/hostname)", "scanner", "enable-scanner-v2=true", "scanner-v2-persistence-type=hostpath")
+	flagWrap.StringVar(&k8sConfig.ScannerV2Config.HostPath.NodeSelectorValue, "scanner-v2-node-selector-value", "", "hostpath node selector value", "scanner", "enable-scanner-v2=true", "scanner-v2-persistence-type=hostpath")
+
+	if !features.ScannerV2.Enabled() {
+		utils.Must(
+			flagWrap.MarkHidden("scanner-v2-persistence-type"),
+			flagWrap.MarkHidden("scanner-v2-persistence-name"),
+			flagWrap.MarkHidden("scanner-v2-persistence-storage-class"),
+			flagWrap.MarkHidden("scanner-v2-persistence-storage-size"),
+			flagWrap.MarkHidden("scanner-v2-persistence-storage-hostpath"),
+			flagWrap.MarkHidden("scanner-v2-node-selector-key"),
+			flagWrap.MarkHidden("scanner-v2-node-selector-value"),
+		)
+	}
 
 	return c
 }
 
 func newK8sConfig() *renderer.K8sConfig {
 	return &renderer.K8sConfig{
+		ScannerV2Config: renderer.ScannerV2Config{
+			PersistenceType: renderer.PersistencePVC,
+		},
 		Monitoring: renderer.MonitoringConfig{
 			HostPath: &renderer.HostPathPersistence{},
 			External: &renderer.ExternalPersistence{},
