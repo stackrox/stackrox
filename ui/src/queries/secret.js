@@ -58,6 +58,15 @@ export const SECRET = gql`
     ${SECRET_FRAGMENT}
 `;
 
+export const SECRET_NAME = gql`
+    query getSecretName($id: ID!) {
+        secret(id: $id) {
+            id
+            name
+        }
+    }
+`;
+
 export const SECRETS = gql`
     query secrets($query: String) {
         secrets(query: $query) {

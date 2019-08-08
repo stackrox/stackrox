@@ -84,8 +84,8 @@ export const NODES_BY_CLUSTER = gql`
 `;
 
 export const NODE_NAME = gql`
-    query getNode($id: ID!) {
-        result: node(id: $id) {
+    query getNodeName($id: ID!) {
+        node(id: $id) {
             id
             name
         }

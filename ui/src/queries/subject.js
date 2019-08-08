@@ -42,6 +42,20 @@ export const SUBJECTS_QUERY = gql`
     ${SUBJECT_FRAGMENT}
 `;
 
+export const SUBJECT_NAME = gql`
+    query getSubjectName($id: String!) {
+        clusters {
+            id
+            subject(name: $id) {
+                id: name
+                subject {
+                    name
+                }
+            }
+        }
+    }
+`;
+
 export const SUBJECT_QUERY = gql`
     query subject($id: String!) {
         clusters {

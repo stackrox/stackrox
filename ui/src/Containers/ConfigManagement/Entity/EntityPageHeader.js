@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import getEntityName from 'Containers/ConfigManagement/modules/getEntityName';
-import { entityQueryMap } from 'Containers/ConfigManagement/modules/queryMap';
+import getEntityName from 'modules/getEntityName';
+import { entityNameQueryMap } from 'modules/queryMap';
 
 import Query from 'Components/ThrowingQuery';
 import PageHeader from 'Components/PageHeader';
 
 const getQueryAndVariables = (entityType, entityId) => {
-    const query = entityQueryMap[entityType] || null;
+    const query = entityNameQueryMap[entityType] || null;
     return {
         query,
         variables: {

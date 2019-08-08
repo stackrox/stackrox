@@ -66,6 +66,15 @@ export const SERVICE_ACCOUNTS = gql`
     }
 `;
 
+export const SERVICE_ACCOUNT_NAME = gql`
+    query getServiceAccountName($id: ID!) {
+        serviceAccount(id: $id) {
+            id
+            name
+        }
+    }
+`;
+
 export const SERVICE_ACCOUNT = gql`
     query serviceAccount($id: ID!) {
         serviceAccount(id: $id) {

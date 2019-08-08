@@ -48,6 +48,17 @@ export const IMAGE_FRAGMENT = gql`
     }
 `;
 
+export const IMAGE_NAME = gql`
+    query getImageName($id: ID!) {
+        image(sha: $id) {
+            id
+            name {
+                fullName
+            }
+        }
+    }
+`;
+
 export const IMAGE = gql`
     query image($id: ID!) {
         image(sha: $id) {

@@ -104,8 +104,8 @@ export const RELATED_DEPLOYMENTS = gql`
 `;
 
 export const NAMESPACE_NAME = gql`
-    query getNamespace($id: ID!) {
-        result: namespace(id: $id) {
+    query getNamespaceName($id: ID!) {
+        namespace(id: $id) {
             metadata {
                 name
                 id

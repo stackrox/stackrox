@@ -83,8 +83,8 @@ export const CLUSTER_QUERY = gql`
 `;
 
 export const CLUSTER_NAME = gql`
-    query getCluster($id: ID!) {
-        result: cluster(id: $id) {
+    query getClusterName($id: ID!) {
+        cluster(id: $id) {
             id
             name
         }

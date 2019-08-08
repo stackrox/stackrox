@@ -6,13 +6,9 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
-import { CLUSTER_NAME } from 'queries/cluster';
-import { NODE_NAME } from 'queries/node';
-import { NAMESPACE_NAME } from 'queries/namespace';
-import { DEPLOYMENT_NAME } from 'queries/deployment';
-import { CONTROL_QUERY } from 'queries/controls';
+import getEntityName from 'modules/getEntityName';
+import { entityNameQueryMap } from 'modules/queryMap';
 import Query from 'Components/ThrowingQuery';
-import { standardLabels } from 'messages/standards';
 import * as Icon from 'react-feather';
 import NamespacePage from '../Entity/Namespace';
 import ClusterPage from '../Entity/Cluster';
@@ -37,34 +33,6 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
         }
     }
 
-    function getQuery() {
-        switch (entityType) {
-            case resourceTypes.NODE:
-                return NODE_NAME;
-            case resourceTypes.NAMESPACE:
-                return NAMESPACE_NAME;
-            case resourceTypes.CLUSTER:
-                return CLUSTER_NAME;
-            case resourceTypes.DEPLOYMENT:
-                return DEPLOYMENT_NAME;
-            case standardEntityTypes.CONTROL:
-                return CONTROL_QUERY;
-            default:
-                return null;
-        }
-    }
-
-    function getLinkText(data) {
-        switch (entityType) {
-            case resourceTypes.NAMESPACE:
-                return data.result.metadata.name;
-            case standardEntityTypes.CONTROL:
-                return `${standardLabels[data.results.standardId]} : ${data.results.name}`;
-            default:
-                return data.result.name;
-        }
-    }
-
     function closeSidePanel() {
         const baseURL = URLService.getURL(match, location)
             .clearSidePanelParams()
@@ -76,11 +44,11 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
         .url();
 
     return (
-        <Query query={getQuery()} variables={{ id: entityId }}>
+        <Query query={entityNameQueryMap[entityType]} variables={{ id: entityId }}>
             {({ loading, data }) => {
                 let linkText = 'loading...';
                 if (!loading && data) {
-                    linkText = getLinkText(data);
+                    linkText = getEntityName(entityType, data);
                 }
                 const headerTextComponent = (
                     <div className="w-full flex items-center">

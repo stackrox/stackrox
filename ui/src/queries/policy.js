@@ -53,6 +53,15 @@ export const POLICY = gql`
     }
     ${POLICY_FRAGMENT}
 `;
+export const POLICY_NAME = gql`
+    query getPolicyName($id: ID!) {
+        policy(id: $id) {
+            id
+            name
+        }
+    }
+`;
+
 export const POLICIES = gql`
     query policies($query: String) {
         policies(query: $query) {

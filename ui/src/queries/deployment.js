@@ -70,7 +70,7 @@ export const DEPLOYMENT_QUERY = gql`
 
 export const DEPLOYMENT_NAME = gql`
     query getDeployment($id: ID!) {
-        result: deployment(id: $id) {
+        deployment(id: $id) {
             id
             name
         }

@@ -5,8 +5,8 @@ import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 import URLService from 'modules/URLService';
 import { Link, withRouter } from 'react-router-dom';
-import getEntityName from 'Containers/ConfigManagement/modules/getEntityName';
-import { entityQueryMap } from 'Containers/ConfigManagement/modules/queryMap';
+import getEntityName from 'modules/getEntityName';
+import { entityNameQueryMap } from 'modules/queryMap';
 
 import { ChevronRight } from 'react-feather';
 import Query from 'Components/ThrowingQuery';
@@ -95,11 +95,11 @@ const BreadCrumbs = props => {
     const { entityType1, entityId1, entityType2, entityListType2, entityId2 } = params;
     if (!entityId1) return null;
 
-    const entityQuery = entityQueryMap[entityType1];
+    const entityQuery = entityNameQueryMap[entityType1];
     const entityVariables = { id: entityId1 };
 
     const relatedEntityType = entityListType2 || entityType2;
-    const relatedEntityQuery = entityQueryMap[relatedEntityType];
+    const relatedEntityQuery = entityNameQueryMap[relatedEntityType];
     const relatedEntityVariables = { id: entityId2 };
 
     return (

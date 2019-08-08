@@ -59,6 +59,17 @@ export const K8S_ROLE = gql`
     ${ROLE_FRAGMENT}
 `;
 
+export const ROLE_NAME = gql`
+    query k8sRole($id: ID!) {
+        clusters {
+            id
+            k8srole(role: $id) {
+                name
+            }
+        }
+    }
+`;
+
 export const K8S_ROLES = gql`
     query k8sRoles($query: String) {
         results: k8sRoles(query: $query) {

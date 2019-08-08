@@ -5,14 +5,14 @@ import isEmpty from 'lodash/isEmpty';
 const entityNameKeyMap = {
     [entityTypes.SERVICE_ACCOUNT]: data => resolvePath(data, 'serviceAccount.name'),
     [entityTypes.SECRET]: data => resolvePath(data, 'secret.name'),
-    [entityTypes.CLUSTER]: data => resolvePath(data, 'results.name'),
+    [entityTypes.CLUSTER]: data => resolvePath(data, 'cluster.name'),
     [entityTypes.DEPLOYMENT]: data => resolvePath(data, 'deployment.name'),
-    [entityTypes.NAMESPACE]: data => resolvePath(data, 'results.metadata.name'),
+    [entityTypes.NAMESPACE]: data => resolvePath(data, 'namespace.metadata.name'),
     [entityTypes.ROLE]: data => resolvePath(data, 'clusters[0].k8srole.name'),
     [entityTypes.NODE]: data => resolvePath(data, 'node.name'),
     [entityTypes.CONTROL]: data => {
-        if (!data.results) return null;
-        return `${data.results.name} - ${data.results.description}`;
+        if (!data.control) return null;
+        return `${data.control.name} - ${data.control.description}`;
     },
     [entityTypes.IMAGE]: data => resolvePath(data, 'image.name.fullName'),
     [entityTypes.POLICY]: data => resolvePath(data, 'policy.name'),

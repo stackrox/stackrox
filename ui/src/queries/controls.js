@@ -119,6 +119,16 @@ export const AGGREGATED_RESULTS_WITH_CONTROLS = gql`
     }
 `;
 
+export const CONTROL_NAME = gql`
+    query getControlName($id: ID!) {
+        control: complianceControl(id: $id) {
+            id
+            name
+            description
+        }
+    }
+`;
+
 export const CONTROL_QUERY = gql`
     query controlById($id: ID!, $groupBy: [ComplianceAggregation_Scope!], $where: String) {
         results: complianceControl(id: $id) {
