@@ -26,6 +26,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
 		schema.AddExtraResolver("Namespace", `k8sroles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("Namespace", `policyCount: Int!`),
+		schema.AddExtraResolver("Namespace", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Namespace", `policies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Namespace", `images(query: String): [Image!]!`),
@@ -201,11 +202,15 @@ func (resolver *namespaceResolver) filterPoliciesApplicableToNamespace(policies 
 	return filteredPolicies
 }
 
-func (resolver *namespaceResolver) getNamespacePolicies(ctx context.Context) ([]*storage.Policy, error) {
+func (resolver *namespaceResolver) getNamespacePolicies(ctx context.Context, args rawQuery) ([]*storage.Policy, error) {
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
-	policies, err := resolver.root.PolicyDataStore.GetPolicies(ctx)
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	policies, err := resolver.root.PolicyDataStore.SearchRawPolicies(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -213,8 +218,8 @@ func (resolver *namespaceResolver) getNamespacePolicies(ctx context.Context) ([]
 }
 
 // PolicyCount returns count of policies applicable to this namespace
-func (resolver *namespaceResolver) PolicyCount(ctx context.Context) (int32, error) {
-	policies, err := resolver.getNamespacePolicies(ctx)
+func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args rawQuery) (int32, error) {
+	policies, err := resolver.getNamespacePolicies(ctx, args)
 	if err != nil {
 		return 0, err
 	}
@@ -242,7 +247,7 @@ func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Poli
 	if len(policy.Scope) == 0 {
 		return true
 	}
-	// Clustered or namespaced scope policy, evaluate all scopes
+	// Clustered or namespace scope policy, evaluate all scopes
 	for _, scope := range policy.Scope {
 		if scope.GetCluster() != "" {
 			if scope.GetCluster() == clusterID &&
@@ -254,7 +259,12 @@ func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Poli
 				return true
 			}
 		} else {
-			return true
+			if scope.GetLabel() != nil {
+				label := scope.GetLabel()
+				if resolver.data.GetMetadata().GetLabels()[label.GetKey()] == label.GetValue() {
+					return true
+				}
+			}
 		}
 	}
 	return false
