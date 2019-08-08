@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/alert/convert"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
@@ -27,12 +28,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testRetentionResolvedDeploy = 7
+	testRetentionAllRuntime     = 6
+	testRetentionDeletedRuntime = 3
+)
+
 func newAlertInstance(id string, daysOld int, stage storage.LifecycleStage, state storage.ViolationState) *storage.Alert {
+	return newAlertInstanceWithDeployment(id, daysOld, stage, state, nil)
+}
+func newAlertInstanceWithDeployment(id string, daysOld int, stage storage.LifecycleStage, state storage.ViolationState, deployment *storage.Deployment) *storage.Alert {
+	var alertDeployment *storage.Alert_Deployment
+	if deployment != nil {
+		alertDeployment = convert.ToAlertDeployment(deployment)
+	} else {
+		alertDeployment = &storage.Alert_Deployment{
+			Id:       "inactive",
+			Inactive: true,
+		}
+	}
 	return &storage.Alert{
 		Id: id,
 
 		LifecycleStage: stage,
 		State:          state,
+		Deployment:     alertDeployment,
 		Time:           protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Duration(daysOld) * time.Hour)),
 	}
 }
@@ -112,8 +132,12 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(&storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
-			AlertRetention: &storage.PrivateConfig_AlertRetentionDurationDays{
-				AlertRetentionDurationDays: configDatastore.DefaultAlertRetention,
+			AlertRetention: &storage.PrivateConfig_AlertConfig{
+				AlertConfig: &storage.AlertRetentionConfig{
+					AllRuntimeRetentionDurationDays:     testRetentionAllRuntime,
+					DeletedRuntimeRetentionDurationDays: testRetentionDeletedRuntime,
+					ResolvedDeployRetentionDurationDays: testRetentionResolvedDeploy,
+				},
 			},
 			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
 		},
@@ -192,16 +216,16 @@ func TestImagePruning(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			alerts, config, imageDatastore, deployments := generateImageDataStructures(ctx, t)
+			alerts, config, images, deployments := generateImageDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, imageDatastore, deployments, config).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, deployments, config).(*garbageCollectorImpl)
 
 			// Add images and deployments into the datastores
 			if c.deployment != nil {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
 			}
 			for _, image := range c.images {
-				require.NoError(t, imageDatastore.UpsertImage(ctx, image))
+				require.NoError(t, images.UpsertImage(ctx, image))
 			}
 
 			conf, err := config.GetConfig(ctx)
@@ -210,7 +234,7 @@ func TestImagePruning(t *testing.T) {
 			gc.collectImages(conf.GetPrivateConfig())
 
 			// Grab the  actual remaining images and make sure they match the images expected to be remaining
-			remainingImages, err := imageDatastore.SearchListImages(ctx, search.EmptyQuery())
+			remainingImages, err := images.SearchListImages(ctx, search.EmptyQuery())
 			require.NoError(t, err)
 
 			var ids []string
@@ -223,10 +247,18 @@ func TestImagePruning(t *testing.T) {
 }
 
 func TestAlertPruning(t *testing.T) {
+	existsDeployment := &storage.Deployment{
+		Id:        "deploymentId1",
+		Name:      "test deployment",
+		Namespace: "ns",
+		ClusterId: "clusterid",
+	}
+
 	var cases = []struct {
 		name        string
 		alerts      []*storage.Alert
 		expectedIDs []string
+		deployments []*storage.Deployment
 	}{
 		{
 			name: "No pruning",
@@ -240,31 +272,42 @@ func TestAlertPruning(t *testing.T) {
 			name: "One old alert, and one new alert",
 			alerts: []*storage.Alert{
 				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
-				newAlertInstance("id2", configDatastore.DefaultAlertRetention+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
+				newAlertInstance("id2", testRetentionAllRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
 			expectedIDs: []string{"id1"},
 		},
 		{
 			name: "One old runtime alert, and one old deploy time unresolved alert",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", configDatastore.DefaultAlertRetention+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
-				newAlertInstance("id2", configDatastore.DefaultAlertRetention+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
+				newAlertInstance("id1", testRetentionAllRuntime+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newAlertInstance("id2", testRetentionAllRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
 			expectedIDs: []string{"id1"},
 		},
 		{
 			name: "one old deploy time alert resolved",
 			alerts: []*storage.Alert{
-				newAlertInstance("id1", configDatastore.DefaultAlertRetention+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
+				newAlertInstance("id1", testRetentionResolvedDeploy+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
 			},
 			expectedIDs: []string{},
+		},
+		{
+			name: "two old-ish runtime alerts, one with no deployment",
+			alerts: []*storage.Alert{
+				newAlertInstanceWithDeployment("id1", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED, nil),
+				newAlertInstanceWithDeployment("id2", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED, existsDeployment),
+			},
+			expectedIDs: []string{"id2"},
+			deployments: []*storage.Deployment{
+				existsDeployment,
+			},
 		},
 	}
 	scc := sac.OneStepSCC{
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
 			sac.ResourceScopeKeys(resources.Alert, resources.Config, resources.Deployment, resources.Image)),
 		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Alert, resources.Image)),
+			sac.ResourceScopeKeys(resources.Alert, resources.Image, resources.Deployment)),
 	}
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
@@ -273,14 +316,22 @@ func TestAlertPruning(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			alerts, config, imageDatastore, deployments := generateAlertDataStructures(ctx, t)
+			alerts, config, images, deployments := generateAlertDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, imageDatastore, deployments, config).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, deployments, config).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
 				require.NoError(t, alerts.AddAlert(ctx, alert))
 			}
+			for _, deployment := range c.deployments {
+				require.NoError(t, deployments.UpsertDeployment(ctx, deployment))
+			}
+			all, err := alerts.Search(ctx, search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).ProtoQuery())
+			if err != nil {
+				t.Error(err)
+			}
+			log.Infof("All query returns %d objects: %v", len(all), search.ResultsToIDs(all))
 
 			conf, err := config.GetConfig(ctx)
 			require.NoError(t, err, "failed to get config")

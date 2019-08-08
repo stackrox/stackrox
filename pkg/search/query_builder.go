@@ -161,6 +161,12 @@ func (qb *QueryBuilder) AddDays(k FieldLabel, days int64) *QueryBuilder {
 	return qb.AddStrings(k, fmt.Sprintf(">%dd", days))
 }
 
+// AddDaysBefore adds a query on the (timestamp) field k that matches if the value in k
+// is more recent 'days' before time.Now.
+func (qb *QueryBuilder) AddDaysBefore(k FieldLabel, days int64) *QueryBuilder {
+	return qb.AddStrings(k, fmt.Sprintf("<%dd", days))
+}
+
 // MarkHighlighted marks the field as one that we want results to be highlighted for.
 func (qb *QueryBuilder) MarkHighlighted(k FieldLabel) *QueryBuilder {
 	qb.highlightedFields[k] = struct{}{}

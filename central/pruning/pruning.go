@@ -124,6 +124,20 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	}
 }
 
+func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter int32) {
+	alertRetention := config.GetAlertRetention()
+	if val, ok := alertRetention.(*storage.PrivateConfig_AlertRetentionDurationDays); ok {
+		global := val.AlertRetentionDurationDays
+		return global, global, global
+
+	} else if val, ok := alertRetention.(*storage.PrivateConfig_AlertConfig); ok {
+		return val.AlertConfig.GetResolvedDeployRetentionDurationDays(),
+			val.AlertConfig.GetAllRuntimeRetentionDurationDays(),
+			val.AlertConfig.GetDeletedRuntimeRetentionDurationDays()
+	}
+	return 0, 0, 0
+}
+
 func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	alertRetention := config.GetAlertRetention()
@@ -132,31 +146,51 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 		return
 	}
 
-	pruneAlertsAfterDays := config.GetAlertRetentionDurationDays()
+	pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter := getConfigValues(config)
 
-	runtimeAlerts := search.NewQueryBuilder().
-		AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
-		AddStrings(search.ViolationState,
-			storage.ViolationState_ACTIVE.String(), storage.ViolationState_RESOLVED.String()).
-		AddDays(search.ViolationTime, int64(pruneAlertsAfterDays)).ProtoQuery()
+	var queries []*v1.Query
 
-	deploytimeAlerts := search.NewQueryBuilder().
-		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
-		AddStrings(search.ViolationState,
-			storage.ViolationState_RESOLVED.String()).
-		AddDays(search.ViolationTime, int64(pruneAlertsAfterDays)).ProtoQuery()
+	if pruneResolvedDeployAfter > 0 {
+		q := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+			AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
+			AddDays(search.ViolationTime, int64(pruneResolvedDeployAfter)).
+			ProtoQuery()
+		queries = append(queries, q)
+	}
+
+	if pruneAllRuntimeAfter > 0 {
+		q := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddDays(search.ViolationTime, int64(pruneAllRuntimeAfter)).
+			ProtoQuery()
+		queries = append(queries, q)
+	}
+
+	if pruneDeletedRuntimeAfter > 0 && pruneAllRuntimeAfter != pruneDeletedRuntimeAfter {
+		q := search.NewQueryBuilder().
+			AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
+			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddDays(search.ViolationTime, int64(pruneDeletedRuntimeAfter)).
+			AddBools(search.Inactive, true).
+			ProtoQuery()
+		queries = append(queries, q)
+	}
+
+	if len(queries) == 0 {
+		log.Info("No alert retention configuration, skipping")
+		return
+	}
 
 	alertResults, err := g.alerts.Search(pruningCtx,
-		search.NewDisjunctionQuery([]*v1.Query{runtimeAlerts, deploytimeAlerts}...))
-
+		search.NewDisjunctionQuery(queries...))
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	log.Infof("[Alert pruning] Found %d alert search results", len(alertResults))
-
 	alertsToPrune := search.ResultsToIDs(alertResults)
+
 	if len(alertsToPrune) > 0 {
 		log.Infof("[Alert pruning] Removing %d alerts", len(alertsToPrune))
 		if err := g.alerts.DeleteAlerts(pruningCtx, alertsToPrune...); err != nil {
