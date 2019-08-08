@@ -31,6 +31,8 @@ const SidePanel = ({
     location,
     history,
     className,
+    contextEntityType,
+    contextEntityId,
     entityType1,
     entityId1,
     entityType2,
@@ -79,6 +81,9 @@ const SidePanel = ({
     const entityId = getCurrentEntityId();
     const entityType = getCurrentEntityType();
     const listType = getListType();
+    const entityContext = {};
+    if (contextEntityType) entityContext[contextEntityType] = contextEntityId;
+    if (entityId2) entityContext[entityType1] = entityId1;
 
     return (
         <div className={className}>
@@ -98,6 +103,7 @@ const SidePanel = ({
                 onClose={onClose}
             >
                 <EntityPage
+                    entityContext={entityContext}
                     entityType={entityType}
                     entityId={entityId}
                     entityListType={listType}
@@ -113,6 +119,8 @@ SidePanel.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
     className: PropTypes.string,
+    contextEntityType: PropTypes.string,
+    contextEntityId: PropTypes.string,
     entityType1: PropTypes.string,
     entityId1: PropTypes.string,
     entityType2: PropTypes.string,
@@ -123,6 +131,8 @@ SidePanel.propTypes = {
 
 SidePanel.defaultProps = {
     className: '',
+    contextEntityType: null,
+    contextEntityId: null,
     entityType1: null,
     entityId1: null,
     entityType2: null,

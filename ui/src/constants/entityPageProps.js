@@ -47,9 +47,13 @@ export const entityListDefaultprops = {
 export const entityComponentPropTypes = {
     id: PropTypes.string.isRequired,
     query: PropTypes.shape({}).isRequired,
-    entityListType: PropTypes.string
+    entityListType: PropTypes.string,
+    entityContext: PropTypes.shape({})
 };
 
 export const entityComponentDefaultProps = {
-    entityListType: null
+    entityListType: null,
+    contextEntityType: null,
+    contextEntityId: null,
+    entityContext: null
 };

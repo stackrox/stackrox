@@ -68,6 +68,8 @@ const EntityPage = ({ match, location }) => {
                     <SidePanelAnimation className="w-3/4" condition={!!entityId1}>
                         <SidePanel
                             className="w-full h-full bg-base-100 border-l-2 border-base-300"
+                            contextEntityId={pageEntityId}
+                            contextEntityType={pageEntityType}
                             entityType1={entityListType1}
                             entityId1={entityId1}
                             entityType2={entityType2}
