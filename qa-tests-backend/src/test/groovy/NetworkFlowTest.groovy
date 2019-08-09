@@ -244,6 +244,9 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify connections from external sources"() {
         given:
+        "Only run on non-OpenShift until we can fix the route issue in CI"
+        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+
         "Deployment A, where an external source communicates to A"
         String deploymentUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
