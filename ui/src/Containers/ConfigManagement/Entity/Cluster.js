@@ -20,6 +20,7 @@ import { SECRET_FRAGMENT } from 'queries/secret';
 import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import { POLICY_FRAGMENT } from 'queries/policy';
+import { IMAGE_FRAGMENT } from 'queries/image';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
@@ -41,6 +42,9 @@ const Cluster = ({ id, entityListType, query }) => {
             admissionController
             centralApiEndpoint
             alertsCount
+            images {
+                ${entityListType === entityTypes.IMAGE ? '...imageFields' : 'id'}
+            }
             nodes {
                 ${entityListType === entityTypes.NODE ? '...nodeFields' : 'id'}
             }
@@ -59,7 +63,7 @@ const Cluster = ({ id, entityListType, query }) => {
             secrets {
                 ${entityListType === entityTypes.SECRET ? '...secretFields' : 'id'}
             }
-            policies {
+            policies(query: "Lifecycle Stage:DEPLOY") {
                 ${entityListType === entityTypes.POLICY ? '...policyFields' : 'id'}
             }
             serviceAccounts {
@@ -77,6 +81,7 @@ const Cluster = ({ id, entityListType, query }) => {
             }
         }
     }
+    ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
     ${entityListType === entityTypes.NODE ? NODE_FRAGMENT : ''}
     ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
     ${entityListType === entityTypes.NAMESPACE ? NAMESPACE_FRAGMENT : ''}
@@ -102,6 +107,9 @@ const Cluster = ({ id, entityListType, query }) => {
                     subjects = [],
                     serviceAccounts = [],
                     k8sroles = [],
+                    secrets = [],
+                    images = [],
+                    policies = [],
                     status: { orchestratorMetadata = null }
                 } = entity;
 
@@ -153,6 +161,18 @@ const Cluster = ({ id, entityListType, query }) => {
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Secrets"
+                                    value={secrets.length}
+                                    entityType={entityTypes.SECRET}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Images"
+                                    value={images.length}
+                                    entityType={entityTypes.IMAGE}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
                                     name="Users & Groups"
                                     value={subjects.length}
                                     entityType={entityTypes.SUBJECT}
@@ -168,6 +188,12 @@ const Cluster = ({ id, entityListType, query }) => {
                                     name="Roles"
                                     value={k8sroles.length}
                                     entityType={entityTypes.ROLE}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Policies"
+                                    value={policies.length}
+                                    entityType={entityTypes.POLICY}
                                 />
                             </div>
                         </CollapsibleSection>

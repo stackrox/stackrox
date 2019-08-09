@@ -47,11 +47,13 @@ const entityTabsMap = {
     [entityTypes.CLUSTER]: [
         getTab(entityTypes.NODE),
         getTab(entityTypes.SECRET),
+        getTab(entityTypes.IMAGE),
         getTab(entityTypes.NAMESPACE),
         getTab(entityTypes.DEPLOYMENT),
         getTab(entityTypes.SUBJECT),
         getTab(entityTypes.SERVICE_ACCOUNT),
-        getTab(entityTypes.ROLE)
+        getTab(entityTypes.ROLE),
+        getTab(entityTypes.POLICY)
     ],
     [entityTypes.NAMESPACE]: [
         getTab(entityTypes.DEPLOYMENT),
