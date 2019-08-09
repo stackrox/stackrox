@@ -10,9 +10,15 @@ import (
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb/badgerutils"
+	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/odirect"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	backupVersion uint32 = 2
 )
 
 func scrubSecretsAndCompact(dbDumpFile string) (string, error) {
@@ -117,6 +123,17 @@ func backupBolt(ctx context.Context, db *bolt.DB, out io.Writer, scrubSecrets bo
 }
 
 func backupBadger(ctx context.Context, db *badger.DB, out io.Writer) error {
+	// Write backup version out to writer as first 4 bytes
+	magic := binenc.BigEndian.EncodeUint32(badgerutils.MagicNumber)
+	if _, err := out.Write(magic); err != nil {
+		return errors.Wrapf(err, "error writing magic to output")
+	}
+
+	version := binenc.BigEndian.EncodeUint32(backupVersion)
+	if _, err := out.Write(version); err != nil {
+		return errors.Wrapf(err, "error writing version to output")
+	}
+
 	_, err := db.Backup(out, 0)
 	if err != nil {
 		return errors.Wrap(err, "could not create badger backup")

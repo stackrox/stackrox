@@ -11,6 +11,7 @@ import (
 	"time"
 
 	deploymentBadgerStore "github.com/stackrox/rox/central/deployment/store/badger"
+	"github.com/stackrox/rox/central/globaldb/badgerutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -90,7 +91,7 @@ func TestBackup(t *testing.T) {
 	b, err := badgerhelper.New("backup.db")
 	require.NoError(t, err)
 
-	require.NoError(t, b.Load(badgerFile))
+	require.NoError(t, badgerutils.Load(badgerFile, b))
 
 	depStore, err := deploymentBadgerStore.New(b)
 	require.NoError(t, err)

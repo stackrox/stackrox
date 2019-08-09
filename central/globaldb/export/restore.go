@@ -11,12 +11,14 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb/badgerutils"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/odirect"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -62,15 +64,9 @@ func tryRestoreBadger(r io.Reader, outDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "could not create new badger DB in empty dir")
 	}
+	defer utils.IgnoreError(db.Close)
 
-	if err := db.Load(r); err != nil {
-		return errors.Wrap(err, "could not load badger DB backup")
-	}
-	if err := db.Close(); err != nil {
-		return errors.Wrap(err, "could not close badger DB after loading")
-	}
-
-	return nil
+	return badgerutils.Load(r, db)
 }
 
 func tryRestoreZip(backupFile *os.File, outPath string) error {

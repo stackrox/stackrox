@@ -4,13 +4,10 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb/badgerutils"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 )
-
-//const (
-//	badgerMaxPendingWrites = 10
-//)
 
 func restoreBadger(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
 	absDirPath, err := ctx.Mkdir(badgerhelper.BadgerDBDirName, 0700)
@@ -23,7 +20,7 @@ func restoreBadger(ctx common.RestoreFileContext, fileReader io.Reader, size int
 		return errors.Wrapf(err, "could not create new badger DB in empty dir %s", absDirPath)
 	}
 
-	if err := db.Load(fileReader); err != nil {
+	if err := badgerutils.Load(fileReader, db); err != nil {
 		return errors.Wrap(err, "could not load badger DB backup")
 	}
 

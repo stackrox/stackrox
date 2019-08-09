@@ -15,7 +15,7 @@ import (
 var (
 	bucketName = []byte("bucket")
 
-	maxTxnSize  = 15 * badger.DefaultOptions.MaxTableSize / 100
+	maxTxnSize  = 15 * badger.DefaultOptions("").MaxTableSize / 100
 	maxTxnCount = maxTxnSize / int64(skl.MaxNodeSize)
 )
 

@@ -4,7 +4,6 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.34.0
-	github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f // indirect
@@ -36,13 +35,11 @@ require (
 	github.com/dave/jennifer v1.3.0
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dgraph-io/badger v0.0.0-20190131175406-28ef9bfd2438
-	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2 // indirect
 	github.com/docker/distribution v0.0.0-20170726174610-edc3ab29cdff
 	github.com/docker/docker v0.0.0-20170906102241-7c9e64a2e189
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/etcd-io/bbolt v1.3.2
 	github.com/facebookgo/ensure v0.0.0-20160127193407-b4ab57deab51 // indirect
@@ -153,6 +150,7 @@ require (
 
 replace (
 	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20190801223638-6a34917e4f76
+	github.com/dgraph-io/badger => github.com/stackrox/badger v1.6.1-0.20190729174558-01eff4d61fcc
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20190220010025-a81e5c3a5053
