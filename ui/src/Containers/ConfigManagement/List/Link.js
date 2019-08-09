@@ -11,7 +11,7 @@ const Link = ({ url, text, pdf }) => {
     return (
         <RouterLink
             to={url}
-            className="underline w-full h-full text-left items-center flex text-base-700 hover:text-primary-700"
+            className="underline h-full text-left items-center flex text-base-700 hover:text-primary-700"
             onClick={onClick}
         >
             {text}

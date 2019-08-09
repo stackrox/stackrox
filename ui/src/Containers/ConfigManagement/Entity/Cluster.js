@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
-import { distanceInWordsToNow } from 'date-fns';
 import queryService from 'modules/queryService';
 import gql from 'graphql-tag';
 import Query from 'Components/ThrowingQuery';
@@ -86,8 +85,6 @@ const Cluster = ({ id, entityListType, query }) => {
     ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
     ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
     ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
-
-
 `;
 
     return (
@@ -99,7 +96,6 @@ const Cluster = ({ id, entityListType, query }) => {
 
                 const {
                     name,
-                    alertsCount = 'N/A',
                     nodes = [],
                     namespaces = [],
                     deployments = [],
@@ -119,19 +115,14 @@ const Cluster = ({ id, entityListType, query }) => {
                     );
                 }
 
-                const { buildDate, version = 'N/A' } = orchestratorMetadata;
+                const { version = 'N/A' } = orchestratorMetadata;
 
                 const metadataKeyValuePairs = [
                     {
                         key: 'K8s version',
                         value: version
-                    },
-                    {
-                        key: 'Cluster age',
-                        value: buildDate ? distanceInWordsToNow(buildDate) : 'N/A'
                     }
                 ];
-                const metadataCounts = [{ value: alertsCount, text: 'Alerts' }];
 
                 return (
                     <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
@@ -140,7 +131,7 @@ const Cluster = ({ id, entityListType, query }) => {
                                 <Metadata
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    counts={metadataCounts}
+                                    counts={null}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"

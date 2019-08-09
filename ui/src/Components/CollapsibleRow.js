@@ -9,8 +9,8 @@ const Content = posed.div({
     open: { height: 'inherit' }
 });
 
-const CollapsibleRow = ({ header, isCollapsible, children }) => {
-    const [open, setOpen] = useState(true);
+const CollapsibleRow = ({ header, isCollapsible, children, isCollapsibleOpen, hasTitleBorder }) => {
+    const [open, setOpen] = useState(isCollapsibleOpen);
 
     function toggleOpen() {
         if (!isCollapsible) return;
@@ -37,7 +37,7 @@ const CollapsibleRow = ({ header, isCollapsible, children }) => {
     };
 
     return (
-        <div className="border-b border-base-300 w-full">
+        <div className={`${hasTitleBorder ? 'border-b' : ''} border-base-300 w-full`}>
             <button
                 type="button"
                 className={`flex flex-1 w-full ${
@@ -51,7 +51,7 @@ const CollapsibleRow = ({ header, isCollapsible, children }) => {
                 </div>
             </button>
             <Content className="overflow-hidden" pose={open ? 'open' : 'closed'}>
-                {children}
+                {open && children}
             </Content>
         </div>
     );
@@ -60,11 +60,15 @@ const CollapsibleRow = ({ header, isCollapsible, children }) => {
 CollapsibleRow.propTypes = {
     header: PropTypes.node.isRequired,
     isCollapsible: PropTypes.bool,
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
+    isCollapsibleOpen: PropTypes.bool,
+    hasTitleBorder: PropTypes.string
 };
 
 CollapsibleRow.defaultProps = {
-    isCollapsible: true
+    isCollapsible: true,
+    isCollapsibleOpen: true,
+    hasTitleBorder: true
 };
 
 export default CollapsibleRow;

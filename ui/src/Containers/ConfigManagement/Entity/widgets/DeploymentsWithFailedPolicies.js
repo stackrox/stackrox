@@ -8,7 +8,7 @@ import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import uniq from 'lodash/uniq';
-import { sortSeverity } from 'sorters/sorters';
+import CollapsibleRow from 'Components/CollapsibleRow';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -71,20 +71,19 @@ const Deployments = ({ original: policy, match, location, history }) => {
             columns={columns}
             onRowClick={onRowClick}
             idAttribute="id"
-            id="capture-list"
             noDataText="No results found. Please refine your search."
         />
     );
 };
 
 Deployments.propTypes = {
-    original: PropTypes.shape({
-        deployments: PropTypes.arrayOf().isRequired
-    }).isRequired,
+    original: PropTypes.shape({}).isRequired,
     match: PropTypes.string.isRequired,
     location: PropTypes.string.isRequired,
     history: PropTypes.string.isRequired
 };
+
+const DeploymentsWithRouter = withRouter(Deployments);
 
 const DeploymentsWithFailedPolicies = ({ query }) => {
     return (
@@ -96,51 +95,40 @@ const DeploymentsWithFailedPolicies = ({ query }) => {
                 const numDeployments = uniq(data.violations.map(violation => violation.deployment))
                     .length;
                 const header = `${numDeployments} deployments with failed policies`;
-                const groupColumns = [
-                    {
-                        expander: true,
-                        headerClassName: `w-1/8 ${defaultHeaderClassName} pointer-events-none`,
-                        className: 'w-1/8 pointer-events-none flex items-center justify-end',
-                        // eslint-disable-next-line react/prop-types
-                        Expander: ({ isExpanded, ...rest }) => {
-                            if (rest.original.deployments.length === 0) return '';
-                            const className = 'rt-expander w-1 pt-2 pointer-events-auto';
-                            return <div className={`${className} ${isExpanded ? '-open' : ''}`} />;
-                        }
-                    },
-                    {
-                        Header: 'Id',
-                        headerClassName: 'hidden',
-                        className: 'hidden',
-                        accessor: 'id'
-                    },
+                const columns = [
                     {
                         Header: `Policy`,
-                        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                        className: `w-1/8 ${defaultColumnClassName}`,
-                        accessor: 'name'
-                    },
-                    {
-                        Header: `Severity`,
-                        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                        className: `w-1/8 ${defaultColumnClassName}`,
-                        // eslint-disable-next-line
+                        headerClassName: `${defaultHeaderClassName} hidden`,
+                        className: `${defaultColumnClassName} hidden`,
+                        accessor: 'name',
                         Cell: ({ original }) => {
-                            const { severity } = original;
-                            return <SeverityLabel severity={severity} />;
-                        },
-                        accessor: 'severity',
-                        sortMethod: sortSeverity
-                    },
-                    {
-                        Header: `Categories`,
-                        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                        className: `w-1/8 ${defaultColumnClassName}`,
-                        Cell: ({ original }) => {
-                            const { categories } = original;
-                            return categories.join(', ');
-                        },
-                        accessor: 'lifecycleStages'
+                            const { severity, categories, name } = original;
+
+                            const groupHeader = (
+                                <div className="flex flex-1">
+                                    <div className="flex flex-1">{name}</div>
+                                    <div>
+                                        <span>
+                                            Severity: <SeverityLabel severity={severity} />
+                                        </span>
+                                        <span className="pl-2 pr-2">|</span>
+                                        <span>Categories: {categories.join(',')}</span>
+                                    </div>
+                                </div>
+                            );
+                            const group = (
+                                <CollapsibleRow
+                                    key={name}
+                                    header={groupHeader}
+                                    isCollapsibleOpen={false}
+                                    className="z-20"
+                                    hasTitleBorder={false}
+                                >
+                                    <DeploymentsWithRouter original={original} />
+                                </CollapsibleRow>
+                            );
+                            return group;
+                        }
                     }
                 ];
                 return (
@@ -149,9 +137,9 @@ const DeploymentsWithFailedPolicies = ({ query }) => {
                         rows={groups}
                         noDataText="No Nodes"
                         className="bg-base-100 w-full"
-                        columns={groupColumns}
-                        SubComponent={withRouter(Deployments)}
+                        columns={columns}
                         idAttribute="id"
+                        hasNestedTable
                     />
                 );
             }}

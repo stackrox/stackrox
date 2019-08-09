@@ -9,11 +9,13 @@ const Metadata = ({ keyValuePairs, counts, ...rest }) => {
             {value}
         </li>
     ));
-    const countsList = counts.map(({ value, text }) => (
-        <li className="rounded border border-base-400 m-4 p-1 px-4 text-center" key={text}>
-            {value} {text}
-        </li>
-    ));
+    const countsList =
+        counts &&
+        counts.map(({ value, text }) => (
+            <li className="rounded border border-base-400 m-4 p-1 px-4 text-center" key={text}>
+                {value} {text}
+            </li>
+        ));
     return (
         <Widget header="Metadata" {...rest}>
             <div className="flex w-full text-sm">

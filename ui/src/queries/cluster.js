@@ -28,6 +28,7 @@ export const CLUSTERS_QUERY = gql`
                 }
                 control {
                     id
+                    name
                 }
             }
             policyStatus {

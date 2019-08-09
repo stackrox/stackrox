@@ -96,13 +96,15 @@ const buildTableColumns = (match, location) => {
                     .push(original.id)
                     .push(entityTypes.CONTROL)
                     .url();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${length} ${pluralize('Controls', length)}`}
-                    />
-                );
+                if (length > 1)
+                    return (
+                        <TableCellLink
+                            pdf={pdf}
+                            url={url}
+                            text={`${length} ${pluralize('Controls', length)}`}
+                        />
+                    );
+                return original.complianceResults[0].control.name;
             }
         },
         {
@@ -119,13 +121,15 @@ const buildTableColumns = (match, location) => {
                     .push(original.id)
                     .push(entityTypes.SUBJECT)
                     .url();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${length} ${pluralize('Users & Groups', length)}`}
-                    />
-                );
+                if (length > 1)
+                    return (
+                        <TableCellLink
+                            pdf={pdf}
+                            url={url}
+                            text={`${length} ${pluralize('Users & Groups', length)}`}
+                        />
+                    );
+                return original.subjects[0].id;
             },
             id: 'subjects',
             accessor: d => d.subjects,
@@ -149,7 +153,7 @@ const buildTableColumns = (match, location) => {
                         <TableCellLink
                             pdf={pdf}
                             url={url}
-                            text={`${length} ${pluralize('Subjects', length)}`}
+                            text={`${length} ${pluralize('Service Accounts', length)}`}
                         />
                     );
                 return original.serviceAccounts[0].name;
@@ -164,7 +168,7 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { length } = original.k8sroles;
-                if (!length) return <LabelChip text="No Matches" type="alert" />;
+                if (!length) return <LabelChip text="No Roles" type="alert" />;
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.ROLE)
