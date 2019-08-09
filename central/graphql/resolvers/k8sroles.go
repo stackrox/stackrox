@@ -20,7 +20,9 @@ func init() {
 		schema.AddExtraResolver("K8SRole", `verbs: [String!]!`),
 		schema.AddExtraResolver("K8SRole", `resources: [String!]!`),
 		schema.AddExtraResolver("K8SRole", `urls: [String!]!`),
+		schema.AddExtraResolver("K8SRole", `subjectCount: Int!`),
 		schema.AddExtraResolver("K8SRole", `subjects(query: String): [SubjectWithClusterID!]!`),
+		schema.AddExtraResolver("K8SRole", `serviceAccountCount: Int!`),
 		schema.AddExtraResolver("K8SRole", `serviceAccounts(query: String): [ServiceAccount!]!`),
 		schema.AddExtraResolver("K8SRole", `roleNamespace: Namespace`),
 	)
@@ -96,16 +98,38 @@ func (resolver *k8SRoleResolver) Urls(ctx context.Context) ([]string, error) {
 	return k8srbac.GetNonResourceURLsForRole(resolver.data).AsSlice(), nil
 }
 
+// SubjectCount returns the number of subjects granted permissions to by a given k8s role
+func (resolver *k8SRoleResolver) SubjectCount(ctx context.Context) (int32, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return 0, err
+	}
+
+	subjects, err := resolver.getSubjects(ctx, rawQuery{})
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(subjects)), nil
+}
+
 // Subjects returns the set of subjects granted permissions to by a given k8s role
 func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectWithClusterIDResolver, error) {
-	subjects := make([]*subjectWithClusterIDResolver, 0)
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
 
-	filterQ, err := args.AsV1QueryOrEmpty()
+	subjects, err := resolver.root.wrapSubjects(resolver.getSubjects(ctx, args))
 	if err != nil {
 		return nil, err
+	}
+	return wrapSubjects(resolver.data.GetClusterId(), resolver.data.GetClusterName(), subjects), nil
+}
+
+func (resolver *k8SRoleResolver) getSubjects(ctx context.Context, args rawQuery) ([]*storage.Subject, error) {
+	subjects := make([]*storage.Subject, 0)
+
+	filterQ, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return subjects, err
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
@@ -115,15 +139,8 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args rawQuery) ([
 	if err != nil {
 		return subjects, err
 	}
-
-	subs, err := resolver.root.wrapSubjects(
-		k8srbac.GetAllSubjects(bindings,
-			storage.SubjectKind_USER, storage.SubjectKind_GROUP), nil)
-	if err != nil {
-		return subjects, err
-	}
-
-	return wrapSubjects(resolver.data.GetClusterId(), resolver.data.GetClusterName(), subs), nil
+	return k8srbac.GetAllSubjects(bindings,
+		storage.SubjectKind_USER, storage.SubjectKind_GROUP), nil
 }
 
 // ServiceAccounts returns the set of service accounts granted permissions to by a given k8s role
@@ -132,6 +149,22 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args rawQu
 		return nil, err
 	}
 
+	return resolver.root.wrapServiceAccounts(resolver.getServiceAccounts(ctx, args))
+}
+
+// ServiceAccountCount returns the count of service accounts granted permissions to by a given k8s role
+func (resolver *k8SRoleResolver) ServiceAccountCount(ctx context.Context) (int32, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return 0, err
+	}
+	serviceAccounts, err := resolver.getServiceAccounts(ctx, rawQuery{})
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(serviceAccounts)), nil
+}
+
+func (resolver *k8SRoleResolver) getServiceAccounts(ctx context.Context, args rawQuery) ([]*storage.ServiceAccount, error) {
 	filterQ, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -146,7 +179,7 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args rawQu
 	}
 
 	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_SERVICE_ACCOUNT)
-	resolvers := make([]*serviceAccountResolver, 0, len(subjects))
+	accounts := make([]*storage.ServiceAccount, 0, len(subjects))
 	for _, subject := range subjects {
 		sa, err := resolver.convertSubjectToServiceAccount(ctx, resolver.data.GetClusterId(), subject, filterQ)
 		if err != nil {
@@ -157,10 +190,10 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args rawQu
 			log.Warnf("service account: %s does not exist", subject.GetName())
 			continue
 		}
-		r, _ := resolver.root.wrapServiceAccount(sa, true, nil)
-		resolvers = append(resolvers, r)
+		accounts = append(accounts, sa)
 	}
-	return resolvers, nil
+
+	return accounts, nil
 }
 
 // RoleNamespace returns the namespace of the k8s role

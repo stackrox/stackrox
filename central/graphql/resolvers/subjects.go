@@ -23,6 +23,7 @@ func init() {
 		schema.AddExtraResolver("SubjectWithClusterID", `namespace: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
+		schema.AddExtraResolver("SubjectWithClusterID", `roleCount: Int!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `roles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `scopedPermissions: [ScopedPermissions!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `clusterAdmin: Boolean!`),
@@ -127,6 +128,21 @@ func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string,
 	}
 }
 
+func (resolver *subjectWithClusterIDResolver) RoleCount(ctx context.Context) (int32, error) {
+	if err := readK8sRoles(ctx); err != nil {
+		return 0, err
+	}
+	if err := readK8sRoleBindings(ctx); err != nil {
+		return 0, err
+	}
+
+	roles, err := resolver.getRolesForSubject(ctx, rawQuery{})
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(roles)), nil
+}
+
 func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
@@ -135,7 +151,19 @@ func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args ra
 		return nil, err
 	}
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.clusterID).ProtoQuery()
+	roles, err := resolver.getRolesForSubject(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.subject.root.wrapK8SRoles(roles, nil)
+
+}
+
+func (resolver *subjectWithClusterIDResolver) getRolesForSubject(ctx context.Context, args rawQuery) ([]*storage.K8SRole, error) {
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.clusterID).
+		AddExactMatches(search.SubjectName, resolver.subject.Name(ctx)).
+		AddExactMatches(search.SubjectKind, resolver.subject.Kind(ctx)).
+		ProtoQuery()
 	bindings, err := resolver.subject.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
@@ -154,8 +182,7 @@ func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args ra
 		return nil, err
 	}
 
-	return resolver.subject.root.wrapK8SRoles(k8srbac.NewEvaluator(roles, bindings).RolesForSubject(resolver.subject.data), nil)
-
+	return k8srbac.NewEvaluator(roles, bindings).RolesForSubject(resolver.subject.data), nil
 }
 
 // Permission returns which scopes do the permissions for the subject

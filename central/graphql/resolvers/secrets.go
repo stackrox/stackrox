@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -17,6 +18,7 @@ func init() {
 		schema.AddQuery("secret(id:ID!): Secret"),
 		schema.AddQuery("secrets(query: String): [Secret!]!"),
 		schema.AddExtraResolver("Secret", "deployments(query: String): [Deployment!]!"),
+		schema.AddExtraResolver("Secret", "deploymentCount: Int!"),
 	)
 }
 
@@ -58,6 +60,30 @@ func (resolver *secretResolver) Deployments(ctx context.Context, args rawQuery) 
 		return nil, err
 	}
 
+	q, err := resolver.getDeploymentQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapDeployments(
+		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, q))
+}
+
+func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, error) {
+	if err := readDeployments(ctx); err != nil {
+		return 0, err
+	}
+
+	q, err := resolver.getDeploymentQuery(rawQuery{})
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.root.DeploymentDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), err
+}
+func (resolver *secretResolver) getDeploymentQuery(args rawQuery) (*v1.Query, error) {
 	deploymentFilterQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -71,10 +97,8 @@ func (resolver *secretResolver) Deployments(ctx context.Context, args rawQuery) 
 	}
 	deploymentIDQuery := search.NewQueryBuilder().AddDocIDs(deploymentIDs.AsSlice()...).ProtoQuery()
 
-	return resolver.root.wrapDeployments(
-		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, search.NewConjunctionQuery(deploymentIDQuery, deploymentFilterQuery)))
+	return search.NewConjunctionQuery(deploymentIDQuery, deploymentFilterQuery), nil
 }
-
 func (resolver *Resolver) getSecret(ctx context.Context, id string) *storage.Secret {
 	secret, ok, err := resolver.SecretsDataStore.GetSecret(ctx, id)
 	if err != nil || !ok {
