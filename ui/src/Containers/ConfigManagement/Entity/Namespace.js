@@ -5,6 +5,9 @@ import { format } from 'date-fns';
 import queryService from 'modules/queryService';
 import { SECRET_FRAGMENT } from 'queries/secret';
 import { POLICY_FRAGMENT } from 'queries/policy';
+import { SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
+import { ROLE_FRAGMENT } from 'queries/role';
+import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -64,14 +67,28 @@ const Namespace = ({ id, entityListType, query }) => {
             policies {
                 ${entityListType === entityTypes.POLICY ? '...policyFields' : 'id'}
             }
+            subjects {
+                ${entityListType === entityTypes.SUBJECT ? '...subjectWithClusterFields' : 'name'}
+            }
+            k8sroles {
+                ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
+            }
+            serviceAccounts {
+                ${
+                    entityListType === entityTypes.SERVICE_ACCOUNT
+                        ? '...serviceAccountFields'
+                        : 'id'
+                }                
+            }
         }
     }
     ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
     ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
     ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
     ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
-
-
+    ${entityListType === entityTypes.SUBJECT ? SUBJECT_WITH_CLUSTER_FRAGMENT : ''}
+    ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
+    ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
 `;
 
     return (

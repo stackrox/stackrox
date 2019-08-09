@@ -426,20 +426,17 @@ describe('Config Management Entities', () => {
             });
         });
 
-        // @TODO: Fix this test
-        xit('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
+        it('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
             cy.visit(url.list.clusters);
             entityListCountMatchesTableLinkCount(USERS_AND_GROUPS_COLUMN_INDEX);
         });
 
-        // @TODO: Fix this test
-        xit('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
+        it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
             cy.visit(url.list.clusters);
             entityListCountMatchesTableLinkCount(SERVICE_ACCOUNTS_COLUMN_INDEX);
         });
 
-        // @TODO: Fix this test
-        xit('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
+        it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
             cy.visit(url.list.clusters);
             entityListCountMatchesTableLinkCount(ROLES_COLUMN_INDEX);
         });
