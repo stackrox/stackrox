@@ -8,7 +8,7 @@
     "prettier",
     "mocha",
     "react-hooks"
-  ],  
+  ],
   "rules": {
     "prettier/prettier": ["error", {
       "printWidth": 100,
@@ -16,11 +16,9 @@
       "tabWidth": 4
     }],
 
-    "jsx-a11y/label-has-for": [ "error", {
-      "required": {
-        "some": [ "nesting", "id"  ]
-      }
-    }],
+    // DEPRECATED in favor of label-has-associated-control
+    // https://github.com/evcohen/eslint-plugin-jsx-a11y/blob/master/docs/rules/label-has-for.md#rule-details
+    "jsx-a11y/label-has-for": [ 0 ],
 
     "mocha/no-exclusive-tests": "error",
 

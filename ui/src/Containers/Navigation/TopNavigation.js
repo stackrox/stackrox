@@ -24,13 +24,12 @@ const topNavMenuBtnClass =
 const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
     function renderNavBarMenu() {
         const NavItem = () => <Icon.MoreHorizontal className="mx-4 h-4 w-4 pointer-events-none" />;
-        const options = [
-            { label: 'System Config', link: '/main/systemconfig' },
-            { label: 'Logout', onClick: () => logout() }
-        ];
+        const options = [{ label: 'Logout', onClick: () => logout() }];
+
         if (shouldHaveReadPermission('Licenses')) {
             options.unshift({ label: 'Product License', link: '/main/license' });
         }
+
         return (
             <Menu
                 className={`${topNavMenuBtnClass} border-l border-base-400`}

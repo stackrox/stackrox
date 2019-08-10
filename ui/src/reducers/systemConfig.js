@@ -21,7 +21,7 @@ export const actions = {
 
 // Reducers
 
-const systemConfig = (state = [], action) => {
+const systemConfig = (state = {}, action) => {
     if (action.type === types.FETCH_SYSTEM_CONFIG.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
     }

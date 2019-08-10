@@ -2,9 +2,10 @@ export const systemConfigUrl = '/main/systemconfig';
 
 const selectors = {
     navLinks: {
+        config: '[data-test-id="configure"]',
+        subnavMenu: '[data-test-id="configure-subnav"]',
+        systemConfig: '[data-test-id="system-config"]',
         topNav: '[data-test-id="top-nav-btns"] button',
-        menu: '[data-test-id="menu-list"]',
-        systemConfig: '[data-test-id="System Config"]',
         logout: '[data-test-id="Logout"]'
     },
     pageHeader: {

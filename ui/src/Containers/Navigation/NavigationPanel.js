@@ -1,19 +1,30 @@
 import React, { Component } from 'react';
 import { NavLink as Link, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import {
+    policiesListPath,
+    integrationsPath,
+    accessControlPath,
+    systemConfigPath
+} from 'routePaths';
 
 const navLinks = [
     {
         text: 'System Policies',
-        to: '/main/policies'
+        to: policiesListPath
     },
     {
         text: 'Integrations',
-        to: '/main/integrations'
+        to: integrationsPath
     },
     {
         text: 'Access Control',
-        to: '/main/access'
+        to: accessControlPath
+    },
+    {
+        text: 'System Configuration',
+        to: systemConfigPath,
+        data: 'system-config'
     }
 ];
 
@@ -43,6 +54,7 @@ class NavigationPanel extends Component {
                         to={navLink.to}
                         onClick={this.props.onClose(true, 'configure')}
                         className="block no-underline text-base-100 px-1 font-700 border-b py-5 border-primary-900 pl-2 pr-2 hover:bg-base-700"
+                        data-test-id={navLink.data || navLink.text}
                     >
                         {navLink.text}
                     </Link>
@@ -53,7 +65,10 @@ class NavigationPanel extends Component {
 
     render() {
         return (
-            <div className="navigation-panel w-full flex theme-light">
+            <div
+                className="navigation-panel w-full flex theme-light"
+                data-test-id="configure-subnav"
+            >
                 {this.panels[this.props.panelType]()}
                 <div
                     role="button"

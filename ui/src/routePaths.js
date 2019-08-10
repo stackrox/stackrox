@@ -14,7 +14,8 @@ export const dashboardPath = `${mainPath}/dashboard`;
 export const networkPath = `${mainPath}/network/:deploymentId?`;
 export const violationsPath = `${mainPath}/violations/:alertId?`;
 export const integrationsPath = `${mainPath}/integrations`;
-export const policiesPath = `${mainPath}/policies/:policyId?`;
+export const policiesListPath = `${mainPath}/policies`;
+export const policiesPath = `${policiesListPath}/:policyId?`;
 export const riskPath = `${mainPath}/risk/:deploymentId?`;
 export const imagesPath = `${mainPath}/images/:imageId?`;
 export const secretsPath = `${mainPath}/secrets/:secretId?`;
@@ -24,6 +25,7 @@ export const licensePath = `${mainPath}/license`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
 export const configManagementPath = `${mainPath}/configmanagement`;
+export const dataRetentionPath = `${mainPath}/retention`;
 /**
  * New Framwork-related route paths
  */

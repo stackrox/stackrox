@@ -27,7 +27,7 @@ const ConfigBannerDetailWidget = ({ type, config }) => {
 
                 <div className="flex flex-col pt-2 pb-4 px-4 w-full">
                     <div className="flex w-full justify-between">
-                        <div className="w-full pr-4 whitespace-pre-wrap">
+                        <div className="w-full pr-4 whitespace-pre-wrap leading-normal">
                             <div className={keyClassName}>Text (2000 character limit):</div>
                             {getValue('text')}
                         </div>

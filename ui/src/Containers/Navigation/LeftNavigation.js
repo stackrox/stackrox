@@ -100,6 +100,7 @@ const LeftNavigation = ({ location, metadata }) => {
                 activeClassName={getActiveClassName(navLink)}
                 onClick={showNavigationPanel(navLink)}
                 className={linkClassName}
+                data-test-id={navLink.data || navLink.text}
             >
                 <div className="text-center pb-1">{navLink.renderIcon()}</div>
                 <div className={`text-center ${isDarkMode ? 'text-base-600' : 'text-base-100'}`}>

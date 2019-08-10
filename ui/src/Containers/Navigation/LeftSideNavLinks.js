@@ -55,7 +55,8 @@ export const navLinks = [
         text: 'Configure',
         to: '',
         renderIcon: () => <Icon.Settings className={iconClassName} />,
-        panelType: 'configure'
+        panelType: 'configure',
+        data: 'configure'
     }
 ];
 

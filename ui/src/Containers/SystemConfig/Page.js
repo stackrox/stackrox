@@ -6,7 +6,7 @@ import { selectors } from 'reducers';
 import { actions } from 'reducers/systemConfig';
 
 import PageHeader from 'Components/PageHeader';
-import SaveButton from 'Components/SaveButton';
+import FormEditButtons from 'Components/FormEditButtons';
 import Form from './Form';
 import Detail from './Detail';
 
@@ -28,53 +28,22 @@ const defaultPublicConfig = {
 const Page = ({ systemConfig, saveSystemConfig }) => {
     const [isEditing, setIsEditing] = useState(false);
 
-    function setEditingTrue() {
-        setIsEditing(true);
-    }
-
-    function setEditingFalse() {
-        setIsEditing(false);
-    }
-
     function saveHandler(config) {
         saveSystemConfig(config);
         setIsEditing(false);
-    }
-
-    function getHeaderButtons() {
-        if (isEditing) {
-            return (
-                <>
-                    <button
-                        className="btn btn-base mr-2"
-                        type="button"
-                        onClick={setEditingFalse}
-                        data-test-id="cancel-btn"
-                    >
-                        Cancel
-                    </button>
-                    <SaveButton formName="system-config-form" />
-                </>
-            );
-        }
-        return (
-            <button
-                data-test-id="edit-btn"
-                className="btn btn-base"
-                type="button"
-                onClick={setEditingTrue}
-                disabled={isEditing}
-            >
-                Edit
-            </button>
-        );
     }
 
     function getContent() {
         const modifiedSystemConfig = { ...systemConfig };
         if (!systemConfig.publicConfig) modifiedSystemConfig.publicConfig = defaultPublicConfig;
         if (isEditing) {
-            return <Form initialValues={modifiedSystemConfig} onSubmit={saveHandler} />;
+            return (
+                <Form
+                    initialValues={modifiedSystemConfig}
+                    onSubmit={saveHandler}
+                    config={modifiedSystemConfig}
+                />
+            );
         }
         return <Detail config={modifiedSystemConfig} />;
     }
@@ -83,7 +52,13 @@ const Page = ({ systemConfig, saveSystemConfig }) => {
         <section className="flex flex-1 flex-col h-full w-full">
             <div className="flex flex-1 flex-col w-full">
                 <PageHeader header="System Configuration">
-                    <div className="flex flex-1 justify-end">{getHeaderButtons()}</div>
+                    <div className="flex flex-1 justify-end">
+                        <FormEditButtons
+                            formName="system-config-form"
+                            isEditing={isEditing}
+                            setIsEditing={setIsEditing}
+                        />
+                    </div>
                 </PageHeader>
                 <div className="w-full h-full flex pb-0 bg-base-200 overflow-auto">
                     {getContent()}

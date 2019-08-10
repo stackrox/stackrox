@@ -17,7 +17,7 @@ const ConfigLoginDetailWidget = ({ config }) => {
             </div>
 
             <div className="flex flex-col pt-2 pb-4 px-4 w-full">
-                <div className="w-full pr-4 whitespace-pre-wrap">
+                <div className="w-full pr-4 whitespace-pre-wrap leading-normal">
                     <div className={keyClassName}>Text (2000 character limit):</div>
                     {publicConfig && publicConfig.loginNotice && publicConfig.loginNotice.text
                         ? publicConfig.loginNotice.text

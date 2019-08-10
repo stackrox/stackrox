@@ -4,18 +4,22 @@ import withAuth from './helpers/basicAuth';
 describe('System Config', () => {
     withAuth();
 
-    const openNav = () => {
+    const openConfigNav = () => {
+        cy.get(selectors.navLinks.config).click();
+    };
+
+    const openTopNav = () => {
         cy.get(selectors.navLinks.topNav)
             .last()
             .click();
     };
 
     const editBaseConfig = type => {
-        cy.get(selectors.pageHeader.editButton).click();
+        cy.get(selectors.pageHeader.editButton, { timeout: 10000 }).click();
 
         cy.get(selectors[type].config.toggle).should('exist');
         cy.get(selectors[type].config.toggle).click();
-        cy.get(selectors[type].config.textInput).type(text.banner);
+        cy.get(selectors[type].config.textInput, { timeout: 10000 }).type(text.banner);
     };
 
     const editBannerConfig = type => {
@@ -51,16 +55,20 @@ describe('System Config', () => {
         cy.get(selectors[type].state).contains('disabled');
     };
 
-    it('should have link from top navigation', () => {
+    it('should have link from Config side nav sub-menu', () => {
         cy.visit('/');
-        openNav();
-        cy.get(selectors.navLinks.menu).contains('System Config');
+        openConfigNav();
+        cy.get(selectors.navLinks.subnavMenu)
+            .get(selectors.navLinks.systemConfig)
+            .contains('System Config');
     });
 
     it('should go to System Config page', () => {
         cy.visit('/');
-        openNav();
-        cy.get(selectors.navLinks.systemConfig).click();
+        openConfigNav();
+        cy.get(selectors.navLinks.subnavMenu)
+            .get(selectors.navLinks.systemConfig)
+            .click();
         cy.url().should('contain', systemConfigUrl);
         cy.get(selectors.header.widget).should('exist');
         cy.get(selectors.footer.widget).should('exist');
@@ -92,7 +100,7 @@ describe('System Config', () => {
         cy.visit(systemConfigUrl);
         editBaseConfig('loginNotice');
         saveConfig('loginNotice');
-        openNav();
+        openTopNav();
         cy.get(selectors.navLinks.logout).click();
         cy.get(selectors.loginNotice.banner).should('exist');
     });
