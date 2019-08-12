@@ -61,6 +61,8 @@ func (c *queryConverter) baseQueryToBleve(ctx bleveContext, bq *v1.BaseQuery) (b
 			bleveQuery = bleve.NewDocIDQuery(bq.DocIdQuery.GetIds())
 		}
 		return
+	case *v1.BaseQuery_MatchNoneQuery:
+		return bleve.NewMatchNoneQuery(), nil
 	default:
 		panic(fmt.Sprintf("Unhandled base query type: %T", bq))
 	}

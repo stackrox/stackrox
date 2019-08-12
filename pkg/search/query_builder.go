@@ -324,6 +324,17 @@ func EmptyQuery() *v1.Query {
 	return &v1.Query{}
 }
 
+// MatchNoneQuery returns a v1.Query that maps to a bleve query that does not match any results
+func MatchNoneQuery() *v1.Query {
+	return &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchNoneQuery{},
+			},
+		},
+	}
+}
+
 // NewConjunctionQuery takes in a variadic of queries and creates a conjunction query from them
 func NewConjunctionQuery(q ...*v1.Query) *v1.Query {
 	return &v1.Query{

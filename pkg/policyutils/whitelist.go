@@ -9,7 +9,7 @@ import (
 // DeploymentWhitelistToQuery returns the proto query to get all whiteisted deployments
 func DeploymentWhitelistToQuery(whitelists []*storage.Whitelist) *v1.Query {
 	if len(whitelists) == 0 {
-		return search.EmptyQuery()
+		return search.MatchNoneQuery()
 	}
 
 	queries := make([]*v1.Query, 0, len(whitelists))
