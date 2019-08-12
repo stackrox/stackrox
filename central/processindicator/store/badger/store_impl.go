@@ -1,13 +1,11 @@
 package badger
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -39,9 +37,6 @@ func keyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *badger.DB) store.Store {
-	globaldb.RegisterBucket(processIndicatorBucket, "ProcessIndicator")
-	globaldb.RegisterBucket(uniqueProcessesBucket, "ProcessIndicator")
-
 	wrapper, err := badgerhelper.NewTxnHelper(db, processIndicatorBucket)
 	utils.Must(err)
 	return &storeImpl{
@@ -55,6 +50,10 @@ type storeImpl struct {
 	*badgerhelper.TxnHelper
 	*badger.DB
 	crud generic.Crud
+}
+
+type deleter interface {
+	Delete(id []byte) error
 }
 
 func getProcessIndicator(tx *badger.Txn, id string) (indicator *storage.ProcessIndicator, exists bool, err error) {
@@ -154,17 +153,9 @@ func getSecondaryKey(indicator *storage.ProcessIndicator) ([]byte, error) {
 	return proto.Marshal(uniqueKey)
 }
 
-func (b *storeImpl) addProcessIndicator(tx *badger.Txn, indicator *storage.ProcessIndicator, data []byte) (string, error) {
+func (b *storeImpl) addProcessIndicator(tx *badger.Txn, batch *badger.WriteBatch, indicator *storage.ProcessIndicator, data []byte) (string, error) {
 	indicatorID := []byte(indicator.GetId())
 	fullyQualifiedIndicatorID := badgerhelper.GetBucketKey(processIndicatorBucket, indicatorID)
-
-	_, err := tx.Get(fullyQualifiedIndicatorID)
-	if err != nil && err != badger.ErrKeyNotFound {
-		return "", err
-	}
-	if err == nil {
-		return "", fmt.Errorf("indicator with id %q already exists", indicator.GetId())
-	}
 
 	secondaryKey, err := getSecondaryKey(indicator)
 	if err != nil {
@@ -186,15 +177,15 @@ func (b *storeImpl) addProcessIndicator(tx *badger.Txn, indicator *storage.Proce
 			return "", err
 		}
 		oldIDString = string(oldIDBytes)
-		if err := removeProcessIndicator(tx, oldIDString); err != nil {
+		if err := removeProcessIndicator(tx, batch, oldIDString); err != nil {
 			return "", errors.Wrap(err, "Removing old indicator")
 		}
 	}
 
-	if err := tx.Set(fullyQualifiedIndicatorID, data); err != nil {
+	if err := batch.SetEntry(&badger.Entry{Key: fullyQualifiedIndicatorID, Value: data}); err != nil {
 		return "", errors.Wrap(err, "inserting into indicator bucket")
 	}
-	if err := tx.Set(fullyQualifiedUniqueKey, indicatorID); err != nil {
+	if err := batch.SetEntry(&badger.Entry{Key: fullyQualifiedUniqueKey, Value: indicatorID}); err != nil {
 		return "", errors.Wrap(err, "inserting into unique field bucket")
 	}
 	return oldIDString, nil
@@ -211,14 +202,23 @@ func (b *storeImpl) AddProcessIndicator(indicator *storage.ProcessIndicator) (st
 		return "", errors.Wrap(err, "process indicator proto marshalling")
 	}
 
+	batch := b.DB.NewWriteBatch()
+	defer batch.Cancel()
+
 	var oldIDString string
-	err = b.DB.Update(func(tx *badger.Txn) error {
-		oldIDString, err = b.addProcessIndicator(tx, indicator, indicatorBytes)
+	err = b.DB.View(func(tx *badger.Txn) error {
+		oldIDString, err = b.addProcessIndicator(tx, batch, indicator, indicatorBytes)
 		if err != nil {
 			return err
 		}
 		return nil
 	})
+	if err != nil {
+		return "", err
+	}
+	if err := batch.Flush(); err != nil {
+		return "", errors.Wrap(err, "error flushing process indicator")
+	}
 	if oldIDString != "" {
 		if err := b.IncTxnCount(); err != nil {
 			return oldIDString, err
@@ -230,9 +230,36 @@ func (b *storeImpl) AddProcessIndicator(indicator *storage.ProcessIndicator) (st
 	return oldIDString, b.IncTxnCount()
 }
 
+func (b *storeImpl) batchAddProcessIndicators(start, end int, indicators []*storage.ProcessIndicator, dataBytes [][]byte) ([]string, error) {
+	writeBatch := b.DB.NewWriteBatch()
+	defer writeBatch.Cancel()
+
+	var deletedIndicators []string
+	err := b.DB.View(func(tx *badger.Txn) error {
+		for i := start; i < end; i++ {
+			indicator := indicators[i]
+			data := dataBytes[i]
+			oldID, err := b.addProcessIndicator(tx, writeBatch, indicator, data)
+			if err != nil {
+				return err
+			}
+			if oldID != "" {
+				deletedIndicators = append(deletedIndicators, oldID)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "error iterating over process indicators")
+	}
+	if err := writeBatch.Flush(); err != nil {
+		return nil, errors.Wrap(err, "error flushing process indicators")
+	}
+	return deletedIndicators, nil
+}
+
 func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator) ([]string, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
-	var deletedIndicators []string
 	dataBytes := make([][]byte, 0, len(indicators))
 	for _, i := range indicators {
 		data, err := proto.Marshal(i)
@@ -242,27 +269,14 @@ func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator
 		dataBytes = append(dataBytes, data)
 	}
 
+	var deletedIndicators []string
 	batch := batcher.New(len(indicators), 1000)
-
 	for start, end, valid := batch.Next(); valid; start, end, valid = batch.Next() {
-		err := b.DB.Update(func(tx *badger.Txn) error {
-
-			for i := start; i < end; i++ {
-				indicator := indicators[i]
-				data := dataBytes[i]
-				oldID, err := b.addProcessIndicator(tx, indicator, data)
-				if err != nil {
-					return err
-				}
-				if oldID != "" {
-					deletedIndicators = append(deletedIndicators, oldID)
-				}
-			}
-			return nil
-		})
+		batchedIndicators, err := b.batchAddProcessIndicators(start, end, indicators, dataBytes)
 		if err != nil {
-			return deletedIndicators, err
+			return nil, err
 		}
+		deletedIndicators = append(deletedIndicators, batchedIndicators...)
 	}
 	if len(deletedIndicators) > 0 {
 		// Purposefully increment the txn count here as it will be a call in the datastore
@@ -273,7 +287,7 @@ func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator
 	return deletedIndicators, b.IncTxnCount()
 }
 
-func removeProcessIndicator(tx *badger.Txn, id string) error {
+func removeProcessIndicator(tx *badger.Txn, deleter deleter, id string) error {
 	indicator, exists, err := getProcessIndicator(tx, id)
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing indicator")
@@ -288,10 +302,10 @@ func removeProcessIndicator(tx *badger.Txn, id string) error {
 		return err
 	}
 	fullyQualifiedSecondaryKey := badgerhelper.GetBucketKey(uniqueProcessesBucket, secondaryKey)
-	if err := tx.Delete(fullyQualifiedSecondaryKey); err != nil {
+	if err := deleter.Delete(fullyQualifiedSecondaryKey); err != nil {
 		return errors.Wrap(err, "deleting from unique bucket")
 	}
-	if err := tx.Delete(badgerhelper.GetBucketKey(processIndicatorBucket, []byte(id))); err != nil {
+	if err := deleter.Delete(badgerhelper.GetBucketKey(processIndicatorBucket, []byte(id))); err != nil {
 		return errors.Wrap(err, "removing indicator")
 	}
 	return nil
@@ -300,7 +314,7 @@ func removeProcessIndicator(tx *badger.Txn, id string) error {
 func (b *storeImpl) RemoveProcessIndicator(id string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "ProcessIndicator")
 	err := b.DB.Update(func(tx *badger.Txn) error {
-		return removeProcessIndicator(tx, id)
+		return removeProcessIndicator(tx, tx, id)
 	})
 	if err != nil {
 		return err
@@ -310,12 +324,17 @@ func (b *storeImpl) RemoveProcessIndicator(id string) error {
 
 func (b *storeImpl) RemoveProcessIndicators(ids []string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "ProcessIndicators")
+	batch := b.DB.NewWriteBatch()
+	defer batch.Cancel()
 	for _, id := range ids {
 		if err := badgerhelper.RetryableUpdate(b.DB, func(tx *badger.Txn) error {
-			return removeProcessIndicator(tx, id)
+			return removeProcessIndicator(tx, batch, id)
 		}); err != nil {
 			return err
 		}
+	}
+	if err := batch.Flush(); err != nil {
+		return errors.Wrap(err, "error on flushing removed process indicators")
 	}
 	return b.IncTxnCount()
 }

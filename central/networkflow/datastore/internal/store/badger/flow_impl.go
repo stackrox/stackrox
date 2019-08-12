@@ -125,6 +125,7 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
 		return err
 	}
 	batch := s.db.NewWriteBatch()
+	defer batch.Cancel()
 	for _, key := range keysToDelete {
 		if err := batch.Delete(key); err != nil {
 			return err
