@@ -28,6 +28,16 @@ const tableColumns = [
         accessor: 'name'
     },
     {
+        Header: `Enabled`,
+        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        className: `w-1/8 ${defaultColumnClassName}`,
+        Cell: ({ original }) => {
+            const { disabled } = original;
+            return disabled ? 'No' : 'Yes';
+        },
+        accessor: 'disabled'
+    },
+    {
         Header: `Enforced`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,

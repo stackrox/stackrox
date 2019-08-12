@@ -59,18 +59,18 @@ const buildTableColumns = (match, location) => {
             sortMethod: sortValueByLength
         },
         {
-            Header: `Namespace`,
+            Header: `Cluster`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'namespace',
+            accessor: 'clusterName',
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { namespace, id } = original;
+                const { clusterName, clusterId, id } = original;
                 const url = URLService.getURL(match, location)
                     .push(id)
-                    .push(entityTypes.NAMESPACE)
+                    .push(entityTypes.CLUSTER, clusterId)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={namespace} />;
+                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
             }
         },
         {

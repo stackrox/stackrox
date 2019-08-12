@@ -81,6 +81,8 @@ export const SECRETS = gql`
                 id
                 name
             }
+            clusterName
+            clusterId
         }
     }
 `;

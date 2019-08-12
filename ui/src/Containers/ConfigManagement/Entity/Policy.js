@@ -126,8 +126,6 @@ const Policy = ({ id, entityListType, query }) => {
                     remediation,
                     disabled,
                     enforcementActions,
-                    labels = [],
-                    annotations = [],
                     whitelists = [],
                     alerts = [],
                     deployments
@@ -170,11 +168,7 @@ const Policy = ({ id, entityListType, query }) => {
                         value: !disabled ? 'Yes' : 'No'
                     }
                 ];
-                const metadataCounts = [
-                    { value: labels.length, text: 'Labels' },
-                    { value: annotations.length, text: 'Annotations' },
-                    { value: whitelists.length, text: 'Whitelists' }
-                ];
+                const metadataCounts = [{ value: whitelists.length, text: 'Whitelists' }];
 
                 return (
                     <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">

@@ -15,7 +15,7 @@ import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import { SUBJECT_FRAGMENT } from 'queries/subject';
+import { SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
 import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import EntityList from '../List/EntityList';
@@ -52,7 +52,11 @@ const Role = ({ id, entityListType, query }) => {
                         }
                     }
                     subjects {
-                        ${entityListType === entityTypes.SUBJECT ? '...subjectFields' : 'name'}
+                        ${
+                            entityListType === entityTypes.SUBJECT
+                                ? '...subjectWithClusterFields'
+                                : 'name'
+                        }
                     }
                     rules {
                         apiGroups
@@ -65,7 +69,7 @@ const Role = ({ id, entityListType, query }) => {
             }
         }
 
-    ${entityListType === entityTypes.SUBJECT ? SUBJECT_FRAGMENT : ''}
+    ${entityListType === entityTypes.SUBJECT ? SUBJECT_WITH_CLUSTER_FRAGMENT : ''}
     ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
 
 

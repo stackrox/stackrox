@@ -60,18 +60,14 @@ const sidePanelEntityCountMatchesTableRows = listEntity => {
     entityCountMatchesTableRows(listEntity, 'Side Panel');
 };
 
-const entityListCountMatchesTableLinkCount = columnIndex => {
-    cy.get(selectors.tableRows)
-        .eq(0)
-        .find(selectors.tableCells)
-        .eq(columnIndex)
+const entityListCountMatchesTableLinkCount = entities => {
+    cy.get(selectors.tableLinks)
+        .contains(entities)
         .invoke('text')
         .then(value => {
             const numEntities = parseInt(value, 10);
-            cy.get(selectors.tableRows)
-                .eq(0)
-                .find(selectors.tableCells)
-                .eq(columnIndex)
+            cy.get(selectors.tableLinks)
+                .contains(entities)
                 .click();
             cy.get('[data-test-id="side-panel"] [data-test-id="panel-header"]')
                 .invoke('text')
@@ -157,10 +153,6 @@ describe('Config Management Entities', () => {
     });
 
     context('Cluster', () => {
-        const USERS_AND_GROUPS_COLUMN_INDEX = 6;
-        const SERVICE_ACCOUNTS_COLUMN_INDEX = 7;
-        const ROLES_COLUMN_INDEX = 8;
-
         it('should render the clusters list and open the side panel when a row is clicked', () => {
             renderListAndSidePanel('clusters');
         });
@@ -326,25 +318,21 @@ describe('Config Management Entities', () => {
 
         it('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
             cy.visit(url.list.clusters);
-            entityListCountMatchesTableLinkCount(USERS_AND_GROUPS_COLUMN_INDEX);
+            entityListCountMatchesTableLinkCount('Users & Groups');
         });
 
         it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
             cy.visit(url.list.clusters);
-            entityListCountMatchesTableLinkCount(SERVICE_ACCOUNTS_COLUMN_INDEX);
+            entityListCountMatchesTableLinkCount('Service Accounts');
         });
 
         it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
             cy.visit(url.list.clusters);
-            entityListCountMatchesTableLinkCount(ROLES_COLUMN_INDEX);
+            entityListCountMatchesTableLinkCount('Roles');
         });
     });
 
     context('Namespace', () => {
-        const USERS_AND_GROUPS_COLUMN_INDEX = 6;
-        const SERVICE_ACCOUNTS_COLUMN_INDEX = 7;
-        const ROLES_COLUMN_INDEX = 8;
-
         it('should render the namespaces list and open the side panel when a row is clicked', () => {
             renderListAndSidePanel('namespaces');
         });
@@ -426,17 +414,17 @@ describe('Config Management Entities', () => {
 
         it('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
             cy.visit(url.list.clusters);
-            entityListCountMatchesTableLinkCount(USERS_AND_GROUPS_COLUMN_INDEX);
+            entityListCountMatchesTableLinkCount('Users & Groups');
         });
 
         it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
             cy.visit(url.list.clusters);
-            entityListCountMatchesTableLinkCount(SERVICE_ACCOUNTS_COLUMN_INDEX);
+            entityListCountMatchesTableLinkCount('Service Accounts');
         });
 
         it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
             cy.visit(url.list.clusters);
-            entityListCountMatchesTableLinkCount(ROLES_COLUMN_INDEX);
+            entityListCountMatchesTableLinkCount('Roles');
         });
     });
 

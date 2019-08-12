@@ -72,6 +72,7 @@ export const POLICIES = gql`
             severity
             categories
             lifecycleStages
+            disabled
         }
     }
 `;

@@ -52,7 +52,7 @@ const buildTableColumns = (match, location) => [
                 const deployment = deployments[0];
                 const url = URLService.getURL(match, location)
                     .push(id)
-                    .push(entityTypes.DEPLOYMENT, deployment.id)
+                    .push(entityTypes.DEPLOYMENT)
                     .url();
                 return <TableCellLink pdf={pdf} url={url} text={deployment.name} />;
             }

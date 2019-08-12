@@ -233,6 +233,7 @@ const ComplianceByControls = ({
                     <div className="flex">
                         {isConfigMangement && (
                             <ScanButton
+                                key={selectedStandard.standard}
                                 className="btn-sm btn-base mr-2"
                                 text={`Scan ${standardBaseTypes[selectedStandard.standard]}`}
                                 textClass="hidden lg:block"
