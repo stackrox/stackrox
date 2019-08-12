@@ -78,6 +78,10 @@ function launch_central {
     add_args "--license"
     add_maybe_file_arg "${ROX_LICENSE_KEY:-${k8s_dir}/../common/dev-license.lic}"
 
+    if [[ -n "$SCANNER_IMAGE" ]]; then
+        add_args "--scanner-image=$SCANNER_IMAGE"
+    fi
+
     if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
     	add_args "--default-tls-cert"
     	add_file_arg "$ROX_DEFAULT_TLS_CERT_FILE"
