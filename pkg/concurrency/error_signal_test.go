@@ -122,7 +122,7 @@ func TestErrorSignalTriggerTwiceWithReset(t *testing.T) {
 func TestErrorSignal_SignalAndResetAreAtomic(t *testing.T) {
 	t.Parallel()
 
-	var errSig ErrorSignal
+	errSig := NewErrorSignal()
 
 	var triggeredErrs, resetErrs []error
 	var mutex sync.Mutex

@@ -158,7 +158,8 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAdd() {
 	suite.setupDataStoreNoPruning()
 
 	indicators, repeatIndicator := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, append(indicators, repeatIndicator)...))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, repeatIndicator))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 

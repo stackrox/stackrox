@@ -78,6 +78,8 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.resultDatastore = resultsMocks.NewMockDataStore(suite.mockCtrl)
+	suite.resultDatastore.EXPECT().DeleteWhitelistResults(gomock.Any(), gomock.Any()).AnyTimes()
+
 	suite.datastore = datastore.New(wlStore, indexer, searcher, suite.resultDatastore)
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
 	suite.service = New(suite.datastore, suite.reprocessor)
@@ -119,7 +121,7 @@ func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelist() {
 			shouldFail:     false,
 		},
 		{
-			name: "Search for non-existant",
+			name: "Search for non-existent",
 			whitelists: []*storage.ProcessWhitelist{
 				fixtures.GetProcessWhitelistWithKey(),
 				fixtures.GetProcessWhitelistWithKey(),

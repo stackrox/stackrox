@@ -66,7 +66,7 @@ func (suite *migrationTestSuite) TestConfigMigration() {
 	}
 	suite.NoError(insertThing(ref, "\x00", config))
 	suite.NoError(migration.Run(suite.db, nil))
-	suite.NoError(ref.Update(func(b *bolt.Bucket) error {
+	suite.NoError(ref.View(func(b *bolt.Bucket) error {
 		return b.ForEach(func(k, v []byte) error {
 			suite.Equal(k, []byte("\x00"))
 			config := &storage.Config{}
@@ -75,7 +75,7 @@ func (suite *migrationTestSuite) TestConfigMigration() {
 			suite.Equal(true, config.GetPublicConfig().GetLoginNotice().GetEnabled())
 			suite.Equal(int32(27), config.GetPrivateConfig().GetImageRetentionDurationDays())
 			suite.IsType(new(storage.PrivateConfig_AlertConfig), config.GetPrivateConfig().GetAlertRetention())
-			suite.Equal(int32(30), config.GetPrivateConfig().GetAlertConfig().GetAllRuntimeRetentionDurationDays())
+			suite.Equal(int32(0), config.GetPrivateConfig().GetAlertConfig().GetAllRuntimeRetentionDurationDays())
 			suite.Equal(int32(30), config.GetPrivateConfig().GetAlertConfig().GetDeletedRuntimeRetentionDurationDays())
 			suite.Equal(int32(30), config.GetPrivateConfig().GetAlertConfig().GetResolvedDeployRetentionDurationDays())
 			return nil

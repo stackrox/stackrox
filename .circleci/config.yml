@@ -1019,7 +1019,14 @@ jobs:
 
       - run:
           name: Upload coverage information
-          command: make upload-coverage
+          command: |
+            retries=0
+            success=0
+            while (( retries < 5 && success == 0 )); do
+              retries=$((retries + 1))
+              success=1
+              make upload-coverage || success=0
+            done
           when: always
 
   style-checks:
