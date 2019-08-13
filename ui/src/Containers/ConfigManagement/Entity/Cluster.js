@@ -139,7 +139,6 @@ const Cluster = ({ id, entityListType, query }) => {
                                 <Metadata
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    counts={null}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"

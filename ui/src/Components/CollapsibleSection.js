@@ -36,7 +36,7 @@ const CollapsibleSection = ({ title, children, headerComponents }) => {
                 </div>
                 {headerComponents}
             </header>
-            <Content className="overflow-hidden" pose={open ? 'open' : 'closed'}>
+            <Content className={open ? '' : 'overflow-hidden'} pose={open ? 'open' : 'closed'}>
                 {children}
             </Content>
         </div>

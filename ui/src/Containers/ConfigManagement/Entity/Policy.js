@@ -82,7 +82,7 @@ const Policy = ({ id, entityListType, query }) => {
             remediation
             severity
             whitelists {
-                expiration
+                name
             }
             deployments {
                 ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
@@ -168,7 +168,6 @@ const Policy = ({ id, entityListType, query }) => {
                         value: !disabled ? 'Yes' : 'No'
                     }
                 ];
-                const metadataCounts = [{ value: whitelists.length, text: 'Whitelists' }];
 
                 return (
                     <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
@@ -180,7 +179,7 @@ const Policy = ({ id, entityListType, query }) => {
                                 <Metadata
                                     className="sx-2 bg-base-100 h-48"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    counts={metadataCounts}
+                                    whitelists={whitelists}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"

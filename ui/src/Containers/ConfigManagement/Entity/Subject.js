@@ -120,7 +120,6 @@ const Subject = ({ id, entityListType, query }) => {
                         value: clusterAdmin ? 'Enabled' : 'Disabled'
                     }
                 ];
-                const metadataCounts = [];
 
                 return (
                     <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
@@ -129,7 +128,6 @@ const Subject = ({ id, entityListType, query }) => {
                                 <Metadata
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    counts={metadataCounts}
                                 />
                                 <RelatedEntity
                                     className="mx-4 min-w-48 h-48 mb-4"

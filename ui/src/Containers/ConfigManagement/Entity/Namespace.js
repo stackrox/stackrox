@@ -124,8 +124,6 @@ const Namespace = ({ id, entityListType, query }) => {
                     );
                 }
 
-                const metadataCounts = [{ value: labels.length, text: 'Labels' }];
-
                 return (
                     <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Namespace Details">
@@ -133,7 +131,7 @@ const Namespace = ({ id, entityListType, query }) => {
                                 <Metadata
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    counts={metadataCounts}
+                                    labels={labels}
                                 />
                                 <RelatedEntity
                                     className="mx-4 min-w-48 h-48 mb-4"

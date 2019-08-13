@@ -104,7 +104,6 @@ const Image = ({ id, entityListType, query }) => {
                         value: lastUpdated ? format(lastUpdated, dateTimeFormat) : 'N/A'
                     }
                 ];
-                const metadataCounts = [];
 
                 function renderCVEsTable(row) {
                     const layer = row.original;
@@ -147,7 +146,6 @@ const Image = ({ id, entityListType, query }) => {
                                 <Metadata
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    counts={metadataCounts}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"

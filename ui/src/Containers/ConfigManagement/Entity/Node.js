@@ -128,10 +128,6 @@ const Node = ({ id, entityListType, query }) => {
                         value: joinedAt ? format(joinedAt, dateTimeFormat) : 'N/A'
                     }
                 ];
-                const metadataCounts = [
-                    { value: labels.length, text: 'Labels' },
-                    { value: annotations.length, text: 'Annotations' }
-                ];
 
                 const failedComplianceResults = complianceResults
                     .filter(cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
@@ -186,7 +182,8 @@ const Node = ({ id, entityListType, query }) => {
                                 <Metadata
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    counts={metadataCounts}
+                                    labels={labels}
+                                    annotations={annotations}
                                 />
                                 <RelatedEntity
                                     className="mx-4 min-w-48 h-48 mb-4"

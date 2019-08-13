@@ -105,10 +105,6 @@ const Role = ({ id, entityListType, query }) => {
                         value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
                     }
                 ];
-                const metadataCounts = [
-                    { value: labels.length, text: 'Labels' },
-                    { value: annotations.length, text: 'Annotations' }
-                ];
 
                 if (entityListType) {
                     return (
@@ -127,7 +123,8 @@ const Role = ({ id, entityListType, query }) => {
                                 <Metadata
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    counts={metadataCounts}
+                                    labels={labels}
+                                    annotations={annotations}
                                 />
                                 {roleNamespace && (
                                     <RelatedEntity
