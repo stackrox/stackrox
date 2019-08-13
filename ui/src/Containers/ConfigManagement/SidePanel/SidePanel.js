@@ -81,6 +81,7 @@ const SidePanel = ({
     const entityId = getCurrentEntityId();
     const entityType = getCurrentEntityType();
     const listType = getListType();
+
     const entityContext = {};
     if (contextEntityType) entityContext[contextEntityType] = contextEntityId;
     if (entityId2) entityContext[entityType1] = entityId1;
@@ -89,7 +90,9 @@ const SidePanel = ({
         <div className={className}>
             <Panel
                 id="side-panel"
-                bodyClassName={`${entityListType2 ? 'bg-base-100' : 'bg-primary-100'}`}
+                bodyClassName={`${
+                    entityListType2 && !entityId2 ? 'bg-base-100' : 'bg-primary-100'
+                }`}
                 headerTextComponent={
                     <BreadCrumbs
                         className="font-700 leading-normal text-base-600 uppercase tracking-wide"

@@ -53,7 +53,7 @@ const RelatedEntity = ({
         <Widget
             id="related-entity"
             bodyClassName="flex items-center justify-center"
-            header={titleComponents}
+            titleComponents={titleComponents}
             {...rest}
         >
             {result}

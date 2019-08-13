@@ -12,16 +12,16 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
-import FailedPoliciesAcrossDeployment from 'Containers/ConfigManagement/Entity/widgets/FailedPoliciesAcrossDeployment';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
 import { IMAGE_FRAGMENT } from 'queries/image';
-import EntityList from '../List/EntityList';
-import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
+import EntityList from '../../List/EntityList';
+import getSubListFromEntity from '../../List/utilities/getSubListFromEntity';
+import DeploymentFindings from './DeploymentFindings';
 
-const Deployment = ({ id, entityListType, query }) => {
+const Deployment = ({ id, entityContext, entityListType, query }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -200,7 +200,10 @@ const Deployment = ({ id, entityListType, query }) => {
                         </CollapsibleSection>
                         <CollapsibleSection title="Deployment Findings">
                             <div className="flex pdf-page pdf-stretch rounded relative rounded mb-4 ml-4 mr-4">
-                                <FailedPoliciesAcrossDeployment deploymentID={id} />
+                                <DeploymentFindings
+                                    entityContext={entityContext}
+                                    deploymentID={id}
+                                />
                             </div>
                         </CollapsibleSection>
                     </div>

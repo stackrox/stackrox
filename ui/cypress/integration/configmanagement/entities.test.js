@@ -552,16 +552,16 @@ describe('Config Management Entities', () => {
             hasTabsFor(['deployments']);
         });
 
-        it('should have the same number of Policies in the count widget as in the Policies table', () => {
+        it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
             context('Page', () => {
-                renderListAndSidePanel('deployments');
-                navigateToSingleEntityPage('deployment');
-                pageEntityCountMatchesTableRows('Policies');
+                renderListAndSidePanel('images');
+                navigateToSingleEntityPage('image');
+                pageEntityCountMatchesTableRows('Deployments');
             });
 
             context('Side Panel', () => {
-                renderListAndSidePanel('deployments');
-                sidePanelEntityCountMatchesTableRows('Policies');
+                renderListAndSidePanel('images');
+                sidePanelEntityCountMatchesTableRows('Deployments');
             });
         });
     });

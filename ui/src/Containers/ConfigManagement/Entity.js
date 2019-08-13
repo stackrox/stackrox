@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import PageNotFound from 'Components/PageNotFound';
 import ServiceAccount from './Entity/ServiceAccount';
 import Secret from './Entity/Secret';
-import Deployment from './Entity/Deployment';
+import Deployment from './Entity/Deployment/Deployment';
 import Node from './Entity/Node';
 import Cluster from './Entity/Cluster';
 import Namespace from './Entity/Namespace';

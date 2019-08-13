@@ -128,7 +128,7 @@ const Policy = ({ id, entityListType, query }) => {
                     enforcementActions,
                     whitelists = [],
                     alerts = [],
-                    deployments
+                    deployments = []
                 } = entity;
 
                 if (entityListType) {

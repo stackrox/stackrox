@@ -55,5 +55,5 @@ export const entityComponentDefaultProps = {
     entityListType: null,
     contextEntityType: null,
     contextEntityId: null,
-    entityContext: null
+    entityContext: {}
 };
