@@ -170,13 +170,11 @@ const ConnectedForm = reduxForm({ form: clusterFormId })(ClusterEditForm);
 const initialValuesFactories = {
     OPENSHIFT_CLUSTER: {
         centralApiEndpoint: 'central.stackrox:443',
-        monitoringEndpoint: 'monitoring.stackrox:443',
         collectionMethod: 'KERNEL_MODULE',
         collectorImage: `collector.stackrox.io/collector`
     },
     KUBERNETES_CLUSTER: {
         centralApiEndpoint: 'central.stackrox:443',
-        monitoringEndpoint: 'monitoring.stackrox:443',
         collectionMethod: 'KERNEL_MODULE',
         collectorImage: `collector.stackrox.io/collector`,
         admissionController: false
