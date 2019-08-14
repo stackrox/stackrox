@@ -114,8 +114,10 @@ func newStringQuery(category v1.SearchCategory, field string, value string, quer
 		if err != nil {
 			return nil, errors.Wrapf(err, "error computing sub query under negation: %s %s", field, value)
 		}
-		nq := NewNegationQuery(typeQuery(category), subQuery, false)
-		return nq, nil
+		bq := bleve.NewBooleanQuery()
+		bq.AddMust(typeQuery(category))
+		bq.AddMustNot(subQuery)
+		return bq, nil
 	case negation:
 		subQuery, err := newStringQuery(category, field, value, queryModifiers[1:]...)
 		if err != nil {
