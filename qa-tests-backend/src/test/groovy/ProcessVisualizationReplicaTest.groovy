@@ -2,10 +2,12 @@ import services.ProcessService
 
 import groups.BAT
 import groups.RUNTIME
+import spock.lang.Ignore
 import spock.lang.Unroll
 import objects.Deployment
 import org.junit.experimental.categories.Category
 
+@Ignore
 class ProcessVisualizationReplicaTest extends BaseSpecification {
     static final private Integer REPLICACOUNT = 4
 
@@ -101,9 +103,10 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
 
         expectedFilePaths | depName
 
-        // Missing apache server image after DTR dumpsterfire - skipping for now
-        // ["/bin/mktemp", "/bin/mv", "/main.sh", "/usr/sbin/apache2", "/usr/sbin/apache2ctl",
-        //  "/bin/chown", "/usr/bin/stat", "/bin/chmod", "/bin/mkdir"] as Set | APACHEDEPLOYMENT
+        /*
+        ["/bin/mktemp", "/bin/mv", "/main.sh", "/usr/sbin/apache2", "/usr/sbin/apache2ctl",
+          "/bin/chown", "/usr/bin/stat", "/bin/chmod", "/bin/mkdir"] as Set | APACHEDEPLOYMENT
+        */
 
         ["/bin/true", "/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
          "/bin/rm", "/usr/bin/id", "/usr/bin/find",
