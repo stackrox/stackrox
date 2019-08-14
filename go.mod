@@ -11,6 +11,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v0.0.0-20181104233218-fe8f9c4593d0
 	github.com/RoaringBitmap/roaring v0.4.17
+	github.com/VividCortex/ewma v1.1.1
 	github.com/andygrunwald/go-jira v1.10.0
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 	github.com/aws/aws-sdk-go v1.19.37

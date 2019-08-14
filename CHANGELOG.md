@@ -4,6 +4,22 @@ All notable changes to this project that require documentation updates will be d
 ## [27.0]
 ### Changed
 - Reprocessing of deployments and images has been moved to an interval of 4 hours
+- Improved user experience for `roxctl central db restore`:
+  - Resuming restores is now supported, either after connection interruptions (automatic) or
+    after terminating `roxctl` (manual). In the latter case, resuming is performed automatically
+    by invoking `roxctl` with the same database export file.
+  - The `--timeout` flag now specifies the relative time (from the start of the `roxctl` invocation) after which
+    `roxctl` will no longer automatically try to resume restore operations. This does not affect the
+    restore operation on the server side, it can still be resumed by restarting `roxctl` with the same parameters.
+  - Restore operations cannot be resumed across restarts of the Central pod. If a restore
+    operation is interrupted, it must be resumed within 24 hours (and before Central restarts), otherwise it will be canceled.
+  - `roxctl central db restore status` can be used to inspect the status of the ongoing restore process,
+    if any.
+  - `roxctl central db restore cancel` can be used to cancel any ongoing restore process.
+  - The `--file` flag is deprecated (but still valid). The preferred invocation now is
+    `roxctl central db restore <file>` instead of `roxctl central db restore --file <file>`. If for
+    any reason the name of the database export file is `status` or `cancel`, insert an `--` in front
+    of the file name, e.g., `roxctl central db restore -- status`.
 
 ### Added
 - `roxctl central db backup` now supports an optional `--output` argument to specify the output location to write the backup to.

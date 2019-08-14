@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/roxctl/central/db/backup"
 	"github.com/stackrox/rox/roxctl/central/db/restore"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -17,7 +18,11 @@ func Command() *cobra.Command {
 		Long:  "DB is the list of commands that control DB operations",
 	}
 	c.AddCommand(backup.Command())
-	c.AddCommand(restore.Command())
+	if features.DBBackupRestoreV2.Enabled() {
+		c.AddCommand(restore.V2Command())
+	} else {
+		c.AddCommand(restore.V1Command())
+	}
 	flags.AddTimeoutWithDefault(c, 1*time.Hour)
 	return c
 }

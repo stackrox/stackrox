@@ -41,6 +41,7 @@ func versionCommand() *cobra.Command {
 func main() {
 	c := &cobra.Command{
 		SilenceUsage: true,
+		Use:          os.Args[0],
 	}
 	// Image Commands
 	c.AddCommand(

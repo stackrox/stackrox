@@ -16,7 +16,7 @@ var (
 	PlaintextExposure = registerFeature("Plaintext UI & API exposure", "ROX_PLAINTEXT_EXPOSURE", true)
 
 	// DBBackupRestoreV2 enables an improved database backup/restore experience.
-	DBBackupRestoreV2 = registerFeature("Improved DB backup/restore experience", "ROX_DB_BACKUP_RESTORE_V2", false)
+	DBBackupRestoreV2 = registerFeature("Improved DB backup/restore experience", "ROX_DB_BACKUP_RESTORE_V2", true)
 
 	// ScannerV2 enables scanner v2.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
