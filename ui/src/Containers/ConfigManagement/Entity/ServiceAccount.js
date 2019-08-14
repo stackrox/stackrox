@@ -42,6 +42,8 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                     name
                 }
             }
+            clusterName
+            clusterId
             deployments {
                 ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
             }
@@ -91,7 +93,9 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                     k8sroles = [],
                     saNamespace: { metadata = {} },
                     scopedPermissions = [],
-                    annotations
+                    annotations,
+                    clusterName,
+                    clusterId
                 } = entity;
 
                 const { name: namespaceName, id: namespaceId } = metadata;
@@ -124,6 +128,13 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                                     labels={labels}
                                     annotations={annotations}
                                     secrets={secrets}
+                                />
+                                <RelatedEntity
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    entityType={entityTypes.CLUSTER}
+                                    name="Cluster"
+                                    value={clusterName}
+                                    entityId={clusterId}
                                 />
                                 <RelatedEntity
                                     className="mx-4 min-w-48 h-48 mb-4"

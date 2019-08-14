@@ -11,6 +11,8 @@ export const SERVICE_ACCOUNT_FRAGMENT = gql`
                 name
             }
         }
+        clusterName
+        clusterId
         deployments {
             id
         }
@@ -58,6 +60,8 @@ export const SERVICE_ACCOUNTS = gql`
                     name
                 }
             }
+            clusterName
+            clusterId
             roles {
                 id
                 name

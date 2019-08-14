@@ -45,6 +45,8 @@ export const ROLE_FRAGMENT = gql`
         subjects {
             name
         }
+        clusterName
+        clusterId
     }
 `;
 export const K8S_ROLE = gql`

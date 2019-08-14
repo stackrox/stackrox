@@ -65,6 +65,8 @@ const Role = ({ id, entityListType, query }) => {
                         resources
                         verbs
                     }
+                    clusterName
+                    clusterId
                 }
             }
         }
@@ -92,7 +94,9 @@ const Role = ({ id, entityListType, query }) => {
                     subjects = [],
                     labels = [],
                     annotations = [],
-                    rules
+                    rules,
+                    clusterName,
+                    clusterId
                 } = entity;
                 const { name: namespaceName, id: namespaceId } = roleNamespace
                     ? roleNamespace.metadata
@@ -125,6 +129,13 @@ const Role = ({ id, entityListType, query }) => {
                                     keyValuePairs={metadataKeyValuePairs}
                                     labels={labels}
                                     annotations={annotations}
+                                />
+                                <RelatedEntity
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    entityType={entityTypes.CLUSTER}
+                                    name="Cluster"
+                                    value={clusterName}
+                                    entityId={clusterId}
                                 />
                                 {roleNamespace && (
                                     <RelatedEntity

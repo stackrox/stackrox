@@ -58,6 +58,21 @@ const buildTableColumns = (match, location) => {
             sortMethod: sortDate
         },
         {
+            Header: `Cluster`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'clusterName',
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { clusterName, clusterId, id } = original;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.CLUSTER, clusterId)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+            }
+        },
+        {
             Header: `Namespace Scope`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,

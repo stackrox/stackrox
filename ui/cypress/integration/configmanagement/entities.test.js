@@ -619,6 +619,12 @@ describe('Config Management Entities', () => {
             navigateToSingleEntityPage('role');
         });
 
+        it('should show the related cluster widget', () => {
+            renderListAndSidePanel('roles');
+            navigateToSingleEntityPage('role');
+            hasRelatedEntityFor('Cluster');
+        });
+
         it('should have the correct count widgets for a single entity view', () => {
             renderListAndSidePanel('roles');
             navigateToSingleEntityPage('role');
@@ -708,6 +714,12 @@ describe('Config Management Entities', () => {
         it('should take you to a service account single when the "navigate away" button is clicked', () => {
             renderListAndSidePanel('serviceAccounts');
             navigateToSingleEntityPage('serviceAccount');
+        });
+
+        it('should show the related cluster widget', () => {
+            renderListAndSidePanel('serviceAccounts');
+            navigateToSingleEntityPage('serviceAccount');
+            hasRelatedEntityFor('Cluster');
         });
 
         // @TODO: Fix this test
