@@ -62,7 +62,7 @@ const BreadCrumbLinks = props => {
         );
         if (!state) return null;
         return (
-            <span className="flex items-center" key={i}>
+            <span className="flex items-center" key={i} data-test-id="breadcrumb-link-text">
                 {content} {icon}
             </span>
         );

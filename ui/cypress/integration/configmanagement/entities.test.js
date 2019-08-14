@@ -1,3 +1,4 @@
+import capitalize from 'lodash/capitalize';
 import { url, selectors } from '../constants/ConfigManagementPage';
 import withAuth from '../helpers/basicAuth';
 
@@ -20,6 +21,72 @@ const hasCountWidgetsFor = entities => {
     entities.forEach(entity => {
         cy.get(`${selectors.countWidgetTitle}:contains('${entity}')`);
     });
+};
+
+const clickOnCountWidget = (entity, type) => {
+    cy.get(`${selectors.countWidgets}:contains('${capitalize(entity)}')`)
+        .find(selectors.countWidgetValue)
+        .click({ force: true });
+
+    if (type === 'side-panel') {
+        cy.get('[data-test-id="side-panel"]')
+            .find('[data-test-id="breadcrumb-link-text"]')
+            .contains(entity);
+    }
+
+    if (type === 'entityList') {
+        cy.get(`${selectors.groupedTabs}:contains('${entity}')`);
+        cy.get('li.bg-primary-200').contains(entity);
+    }
+};
+
+const clickOnEntityWidget = (entity, type) => {
+    cy.get(`${selectors.relatedEntityWidgets}:contains('${capitalize(entity)}')`)
+        .find(selectors.relatedEntityWidgetValue)
+        .invoke('text')
+        .then(value => {
+            cy.get(`${selectors.relatedEntityWidgets}:contains('${capitalize(entity)}')`).click();
+            cy.wait(500); // it takes time to load the page
+            if (type === 'side-panel') {
+                cy.get('[data-test-id="side-panel"]')
+                    .find('[data-test-id="breadcrumb-link-text"]')
+                    .contains(value);
+            }
+        });
+};
+
+const clickOnRowEntity = (entity, subEntity, isNotCapitalized) => {
+    cy.visit(url.list[entity]);
+    cy.get(selectors.tableRows)
+        .find(
+            `${selectors.tableCells} a:contains('${
+                isNotCapitalized ? subEntity : capitalize(subEntity)
+            }')`
+        )
+        .eq(0)
+        .click({ force: true });
+
+    cy.get('[data-test-id="side-panel"]')
+        .find('[data-test-id="breadcrumb-link-text"]')
+        .contains(subEntity.toLowerCase());
+};
+
+const clickOnSingleEntity = (entity, subEntity) => {
+    cy.visit(url.list[entity]);
+    cy.get(selectors.tableRows)
+        .find(`${selectors.tableCells} a[href*='/${subEntity}']`)
+        .eq(0)
+        .invoke('text')
+        .then(value => {
+            cy.get(selectors.tableRows)
+                .find(`${selectors.tableCells} a[href*='/${subEntity}']`)
+                .eq(0)
+                .click({ force: true });
+            cy.wait(500); // it takes time to load the page
+            cy.get('[data-test-id="side-panel"]')
+                .find('[data-test-id="breadcrumb-link-text"]')
+                .contains(value);
+        });
 };
 
 const hasTabsFor = entities => {
@@ -96,6 +163,12 @@ describe('Config Management Entities', () => {
             hasCountWidgetsFor(['Deployments']);
         });
 
+        it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
+            renderListAndSidePanel('policies');
+            navigateToSingleEntityPage('policy');
+            clickOnCountWidget('deployments', 'entityList');
+        });
+
         it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('policies');
             navigateToSingleEntityPage('policy');
@@ -132,6 +205,12 @@ describe('Config Management Entities', () => {
             hasCountWidgetsFor(['Nodes']);
         });
 
+        it('should click on the nodes count widget in the entity page and show the nodes tab', () => {
+            renderListAndSidePanel('controls');
+            navigateToSingleEntityPage('control');
+            clickOnCountWidget('nodes', 'entityList');
+        });
+
         it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('controls');
             navigateToSingleEntityPage('control');
@@ -155,6 +234,14 @@ describe('Config Management Entities', () => {
     context('Cluster', () => {
         it('should render the clusters list and open the side panel when a row is clicked', () => {
             renderListAndSidePanel('clusters');
+        });
+
+        it('should click on the roles link in the clusters list and open the side panel with the roles list', () => {
+            clickOnRowEntity('clusters', 'roles');
+        });
+
+        it('should click on the service accounts link in the clusters list and open the side panel with the service accounts list', () => {
+            clickOnRowEntity('clusters', 'Service Accounts', true);
         });
 
         it('should take you to a cluster single when the "navigate away" button is clicked', () => {
@@ -337,6 +424,20 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('namespaces');
         });
 
+        it('should render the namespaces list and open the side panel with the clicked cluster value', () => {
+            clickOnSingleEntity('namespaces', 'cluster');
+        });
+
+        // @TODO: Fix this test
+        xit('should click on the service accounts link in the namespaces list and open the side panel with the service accounts list', () => {
+            clickOnRowEntity('namespaces', 'Service Accounts', true);
+        });
+
+        it('should click on the cluster entity widget in the side panel and match the header ', () => {
+            renderListAndSidePanel('namespaces');
+            clickOnEntityWidget('cluster', 'side-panel');
+        });
+
         it('should take you to a namespace single when the "navigate away" button is clicked', () => {
             renderListAndSidePanel('namespaces');
             navigateToSingleEntityPage('namespace');
@@ -352,6 +453,12 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('namespaces');
             navigateToSingleEntityPage('namespace');
             hasCountWidgetsFor(['Deployments', 'Secrets', 'Images', 'Policies']);
+        });
+
+        it('should click on the secrets count widget in the entity page and show the secrets tab', () => {
+            renderListAndSidePanel('namespaces');
+            navigateToSingleEntityPage('namespace');
+            clickOnCountWidget('secrets', 'entityList');
         });
 
         it('should have the correct tabs for a single entity view', () => {
@@ -433,6 +540,15 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('nodes');
         });
 
+        it('should render the nodes list and open the side panel with the clicked cluster value', () => {
+            clickOnSingleEntity('nodes', 'cluster');
+        });
+
+        it('should click on the cluster entity widget in the side panel and match the header ', () => {
+            renderListAndSidePanel('nodes');
+            clickOnEntityWidget('cluster', 'side-panel');
+        });
+
         it('should take you to a nodes single when the "navigate away" button is clicked', () => {
             renderListAndSidePanel('nodes');
             navigateToSingleEntityPage('node');
@@ -458,6 +574,13 @@ describe('Config Management Entities', () => {
             hasTabsFor(['controls']);
         });
 
+        // @TODO: Fix this test
+        xit('should click on the controls count widget in the entity page and show the controls tab', () => {
+            renderListAndSidePanel('nodes');
+            navigateToSingleEntityPage('node');
+            clickOnCountWidget('controls', 'entityList');
+        });
+
         it('should have the same number of Controls in the count widget as in the Controls table', () => {
             context('Page', () => {
                 renderListAndSidePanel('nodes');
@@ -475,6 +598,15 @@ describe('Config Management Entities', () => {
     context('Deployment', () => {
         it('should render the deployments list and open the side panel when a row is clicked', () => {
             renderListAndSidePanel('deployments');
+        });
+
+        it('should click on the secrets link in the deployments list and open the side panel with the secrets list', () => {
+            clickOnRowEntity('deployments', 'secret', true);
+        });
+
+        it('should click on the cluster entity widget in the side panel and match the header ', () => {
+            renderListAndSidePanel('deployments');
+            clickOnEntityWidget('cluster', 'side-panel');
         });
 
         it('should take you to a deployments single when the "navigate away" button is clicked', () => {
@@ -500,6 +632,12 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('deployments');
             navigateToSingleEntityPage('deployment');
             hasTabsFor(['images', 'policies']);
+        });
+
+        it('should click on the images count widget in the entity page and show the images tab', () => {
+            renderListAndSidePanel('deployments');
+            navigateToSingleEntityPage('deployment');
+            clickOnCountWidget('images', 'entityList');
         });
 
         // @TODO: Fix this test
@@ -535,6 +673,10 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('images');
         });
 
+        it('should click on the deployments link in the images list and open the side panel with the images list', () => {
+            clickOnRowEntity('images', 'deployments', true);
+        });
+
         it('should take you to a images single when the "navigate away" button is clicked', () => {
             renderListAndSidePanel('images');
             navigateToSingleEntityPage('image');
@@ -544,6 +686,13 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('images');
             navigateToSingleEntityPage('image');
             hasCountWidgetsFor(['Deployments']);
+        });
+
+        it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
+            renderListAndSidePanel('images');
+            navigateToSingleEntityPage('image');
+            hasCountWidgetsFor(['Deployments']);
+            clickOnCountWidget('deployments', 'entityList');
         });
 
         it('should have the correct tabs for a single entity view', () => {
@@ -571,6 +720,15 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('secrets');
         });
 
+        it('should render the deployments link and open the side panel when a row is clicked', () => {
+            clickOnRowEntity('secrets', 'deployments');
+        });
+
+        it('should click on the cluster entity widget in the side panel and match the header ', () => {
+            renderListAndSidePanel('secrets');
+            clickOnEntityWidget('cluster', 'side-panel');
+        });
+
         it('should take you to a secrets single when the "navigate away" button is clicked', () => {
             renderListAndSidePanel('secrets');
             navigateToSingleEntityPage('secret');
@@ -595,6 +753,12 @@ describe('Config Management Entities', () => {
             hasTabsFor(['deployments']);
         });
 
+        it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
+            renderListAndSidePanel('secrets');
+            navigateToSingleEntityPage('secret');
+            clickOnCountWidget('deployments', 'entityList');
+        });
+
         it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
             context('Page', () => {
                 renderListAndSidePanel('secrets');
@@ -612,6 +776,21 @@ describe('Config Management Entities', () => {
     context('Role', () => {
         it('should render the roles list and open the side panel when a row is clicked', () => {
             renderListAndSidePanel('roles');
+        });
+
+        // @TODO: Fix this test
+        xit('should click on the users & groups link in the roles list and open the side panel with the users & groups list', () => {
+            clickOnRowEntity('roles', 'Users & Groups', true);
+        });
+
+        // @TODO: Fix this test
+        xit('should render the roles list and open the side panel with the clicked namespace value', () => {
+            clickOnSingleEntity('roles', 'namespace');
+        });
+
+        it('should click on the cluster entity widget in the side panel and match the header ', () => {
+            renderListAndSidePanel('roles');
+            clickOnEntityWidget('cluster', 'side-panel');
         });
 
         it('should take you to a roles single when the "navigate away" button is clicked', () => {
@@ -669,6 +848,15 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('subjects');
         });
 
+        it('should click on the roles link in the users & groups list and open the side panel with the roles list', () => {
+            clickOnRowEntity('subjects', 'roles');
+        });
+
+        it('should click on the cluster entity widget in the side panel and match the header ', () => {
+            renderListAndSidePanel('subjects');
+            clickOnEntityWidget('cluster', 'side-panel');
+        });
+
         it('should take you to a subject single when the "navigate away" button is clicked', () => {
             renderListAndSidePanel('subjects');
             navigateToSingleEntityPage('subject');
@@ -692,6 +880,12 @@ describe('Config Management Entities', () => {
             hasTabsFor(['roles']);
         });
 
+        it('should click on the roles count widget in the entity page and show the roles tab', () => {
+            renderListAndSidePanel('subjects');
+            navigateToSingleEntityPage('subject');
+            clickOnCountWidget('roles', 'entityList');
+        });
+
         it('should have the same number of Roles in the count widget as in the Roles table', () => {
             context('Page', () => {
                 renderListAndSidePanel('subjects');
@@ -709,6 +903,15 @@ describe('Config Management Entities', () => {
     context('Service Account', () => {
         it('should render the service accounts list and open the side panel when a row is clicked', () => {
             renderListAndSidePanel('serviceAccounts');
+        });
+
+        it('should click on the namespace entity widget in the side panel and match the header', () => {
+            renderListAndSidePanel('serviceAccounts');
+            clickOnEntityWidget('namespace', 'side-panel');
+        });
+
+        it('should render the service list and open the side panel with the clicked namespace value', () => {
+            clickOnSingleEntity('serviceAccounts', 'namespace');
         });
 
         it('should take you to a service account single when the "navigate away" button is clicked', () => {
@@ -739,6 +942,12 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('serviceAccounts');
             navigateToSingleEntityPage('serviceAccount');
             hasTabsFor(['deployments', 'roles']);
+        });
+
+        it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
+            renderListAndSidePanel('serviceAccounts');
+            navigateToSingleEntityPage('serviceAccount');
+            clickOnCountWidget('deployments', 'entityList');
         });
 
         it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
