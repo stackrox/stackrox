@@ -14,6 +14,8 @@ func init() {
 	prometheus.MustRegister(
 		badgerOperationHistogramVec,
 		boltOperationHistogramVec,
+		graphQLOperationHistogramVec,
+		graphQLQueryHistogramVec,
 		indexOperationHistogramVec,
 		sensorEventQueueCounterVec,
 		policyEvaluationHistogram,

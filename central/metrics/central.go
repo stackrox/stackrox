@@ -35,6 +35,24 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	graphQLOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "graphql_op_duration",
+		Help:      "Time taken to run a single graphql sub resolver/sub query",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Resolver", "Operation"})
+
+	graphQLQueryHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "graphql_query_duration",
+		Help:      "Time taken to run a single graphql query",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Query"})
+
 	sensorEventDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -94,6 +112,16 @@ func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
 // SetBadgerOperationDurationTime times how long a particular bolt operation took on a particular resource
 func SetBadgerOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	badgerOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+}
+
+// SetGraphQLOperationDurationTime times how long a particular graphql API took on a particular resource
+func SetGraphQLOperationDurationTime(start time.Time, resolver metrics.Resolver, op string) {
+	graphQLOperationHistogramVec.With(prometheus.Labels{"Resolver": resolver.String(), "Operation": op}).Observe(startTimeToMS(start))
+}
+
+// SetGraphQLQueryDurationTime times how long a particular graphql API took on a particular resource
+func SetGraphQLQueryDurationTime(start time.Time, query string) {
+	graphQLQueryHistogramVec.With(prometheus.Labels{"Query": query}).Observe(startTimeToMS(start))
 }
 
 // SetSensorEventRunDuration times how long a particular sensor event operation took on a particular resource

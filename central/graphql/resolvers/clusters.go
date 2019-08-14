@@ -3,13 +3,16 @@ package resolvers
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -23,7 +26,7 @@ func init() {
 		schema.AddQuery("clusters(query: String): [Cluster!]!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
-		schema.AddExtraResolver("Cluster", `alertsCount: Int!`),
+		schema.AddExtraResolver("Cluster", `alertCount: Int!`),
 		schema.AddExtraResolver("Cluster", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Cluster", `nodes(query: String): [Node!]!`),
 		schema.AddExtraResolver("Cluster", `nodeCount: Int!`),
@@ -57,6 +60,7 @@ func init() {
 
 // Cluster returns a GraphQL resolver for the given cluster
 func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }) (*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Cluster")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -65,6 +69,7 @@ func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }
 
 // Clusters returns GraphQL resolvers for all clusters
 func (resolver *Resolver) Clusters(ctx context.Context, args rawQuery) ([]*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Clusters")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -80,6 +85,8 @@ func (resolver *Resolver) Clusters(ctx context.Context, args rawQuery) ([]*clust
 
 // Alerts returns GraphQL resolvers for all alerts on this cluster
 func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Alerts")
+
 	if err := readAlerts(ctx); err != nil {
 		return nil, err // could return nil, nil to prevent errors from propagating.
 	}
@@ -88,7 +95,9 @@ func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, 
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
 
-func (resolver *clusterResolver) AlertsCount(ctx context.Context) (int32, error) {
+func (resolver *clusterResolver) AlertCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "AlertCount")
+
 	if err := readAlerts(ctx); err != nil {
 		return 0, err
 	}
@@ -103,6 +112,8 @@ func (resolver *clusterResolver) AlertsCount(ctx context.Context) (int32, error)
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster
 func (resolver *clusterResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Deployments")
+
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -115,6 +126,8 @@ func (resolver *clusterResolver) Deployments(ctx context.Context, args rawQuery)
 
 // Nodes returns all nodes on the cluster
 func (resolver *clusterResolver) Nodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Nodes")
+
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -127,6 +140,8 @@ func (resolver *clusterResolver) Nodes(ctx context.Context, args rawQuery) ([]*n
 
 // NodeCount returns count of all nodes on the cluster
 func (resolver *clusterResolver) NodeCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeCount")
+
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
@@ -145,6 +160,8 @@ func (resolver *clusterResolver) NodeCount(ctx context.Context) (int32, error) {
 
 // Node returns a given node on a cluster
 func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node graphql.ID }) (*nodeResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Node")
+
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -158,6 +175,8 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 
 // Namespace returns a given namespace on a cluster.
 func (resolver *clusterResolver) Namespaces(ctx context.Context, args rawQuery) ([]*namespaceResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespaces")
+
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
@@ -172,6 +191,8 @@ func (resolver *clusterResolver) Namespaces(ctx context.Context, args rawQuery) 
 
 // Namespace returns a given namespace on a cluster.
 func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Name string }) (*namespaceResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespace")
+
 	return resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{
 		ClusterID: graphql.ID(resolver.data.GetId()),
 		Name:      args.Name,
@@ -179,6 +200,8 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 }
 
 func (resolver *clusterResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComplianceResults")
+
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -196,6 +219,8 @@ func (resolver *clusterResolver) ComplianceResults(ctx context.Context, args raw
 
 // K8sRoles returns GraphQL resolvers for all k8s roles
 func (resolver *clusterResolver) K8sRoles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sRoles")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -208,6 +233,8 @@ func (resolver *clusterResolver) K8sRoles(ctx context.Context, args rawQuery) ([
 
 // K8sRoleCount returns count of K8s roles in this cluster
 func (resolver *clusterResolver) K8sRoleCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sRoleCount")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
 	}
@@ -221,6 +248,8 @@ func (resolver *clusterResolver) K8sRoleCount(ctx context.Context) (int32, error
 
 // K8sRole returns clusterResolver GraphQL resolver for a given k8s role
 func (resolver *clusterResolver) K8sRole(ctx context.Context, args struct{ Role graphql.ID }) (*k8SRoleResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sRole")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -243,6 +272,8 @@ func (resolver *clusterResolver) K8sRole(ctx context.Context, args struct{ Role 
 
 // ServiceAccounts returns GraphQL resolvers for all service accounts in this cluster
 func (resolver *clusterResolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ServiceAccounts")
+
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
@@ -255,6 +286,8 @@ func (resolver *clusterResolver) ServiceAccounts(ctx context.Context, args rawQu
 
 // ServiceAccountCount returns count of Service Accounts in this cluster
 func (resolver *clusterResolver) ServiceAccountCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ServiceAccountCount")
+
 	if err := readServiceAccounts(ctx); err != nil {
 		return 0, err
 	}
@@ -268,6 +301,8 @@ func (resolver *clusterResolver) ServiceAccountCount(ctx context.Context) (int32
 
 // ServiceAccount returns clusterResolver GraphQL resolver for a given service account
 func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct{ Sa graphql.ID }) (*serviceAccountResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ServiceAccount")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -290,6 +325,8 @@ func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct
 
 // Subjects returns GraphQL resolvers for all subjects in this cluster
 func (resolver *clusterResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectWithClusterIDResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Subjects")
+
 	subjectResolvers, err := resolver.root.wrapSubjects(resolver.getSubjects(ctx, args))
 	if err != nil {
 		return nil, err
@@ -299,6 +336,8 @@ func (resolver *clusterResolver) Subjects(ctx context.Context, args rawQuery) ([
 
 // SubjectCount returns count of Users and Groups in this cluster
 func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "SubjectCount")
+
 	subjects, err := resolver.getSubjects(ctx, rawQuery{})
 	if err != nil {
 		return 0, err
@@ -308,6 +347,8 @@ func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error
 
 // ServiceAccount returns clusterResolver GraphQL resolver for a given service account
 func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectWithClusterIDResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Subject")
+
 	bindings, err := resolver.getRoleBindings(ctx, rawQuery{})
 	if err != nil {
 		return nil, err
@@ -320,6 +361,8 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 }
 
 func (resolver *clusterResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Images")
+
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -331,6 +374,8 @@ func (resolver *clusterResolver) Images(ctx context.Context, args rawQuery) ([]*
 }
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageCount")
+
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
@@ -343,6 +388,8 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) 
 }
 
 func (resolver *clusterResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Policies")
+
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
@@ -401,6 +448,7 @@ func (resolver *clusterResolver) PolicyCount(ctx context.Context) (int32, error)
 
 // PolicyStatus returns true if there is no policy violation for this cluster
 func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatusResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PolicyStatus")
 
 	alerts, err := resolver.getActiveDeployAlerts(ctx)
 	if err != nil {
@@ -427,6 +475,8 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatu
 }
 
 func (resolver *clusterResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Secrets")
+
 	query, err := resolver.getConjunctionQuery(args)
 	if err != nil {
 		return nil, err
@@ -435,6 +485,8 @@ func (resolver *clusterResolver) Secrets(ctx context.Context, args rawQuery) ([]
 }
 
 func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "SecretCount")
+
 	query := resolver.getQuery()
 	result, err := resolver.root.SecretsDataStore.Search(ctx, query)
 	if err != nil {
@@ -444,6 +496,8 @@ func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error)
 }
 
 func (resolver *clusterResolver) ControlStatus(ctx context.Context) (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ControlStatus")
+
 	if err := readCompliance(ctx); err != nil {
 		return false, err
 	}
@@ -458,6 +512,8 @@ func (resolver *clusterResolver) ControlStatus(ctx context.Context) (bool, error
 }
 
 func (resolver *clusterResolver) Controls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Controls")
+
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -473,6 +529,8 @@ func (resolver *clusterResolver) Controls(ctx context.Context, args rawQuery) ([
 }
 
 func (resolver *clusterResolver) PassingControls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PassingControls")
+
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -488,6 +546,8 @@ func (resolver *clusterResolver) PassingControls(ctx context.Context, args rawQu
 }
 
 func (resolver *clusterResolver) FailingControls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "FailingControls")
+
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -503,6 +563,8 @@ func (resolver *clusterResolver) FailingControls(ctx context.Context, args rawQu
 }
 
 func (resolver *clusterResolver) NumComplianceControls(ctx context.Context) (*numComplianceControlsResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NumComplianceControls")
+
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}

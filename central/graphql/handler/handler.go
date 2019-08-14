@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -47,6 +49,8 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.WithValue(r.Context(), paramsContextKey{}, params)
+
+	defer metrics.SetGraphQLQueryDurationTime(time.Now(), params.Query)
 
 	response := h.Schema.Exec(ctx, params.Query, params.OperationName, params.Variables)
 	responseJSON, err := json.Marshal(response)
