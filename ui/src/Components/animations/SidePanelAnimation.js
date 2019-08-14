@@ -5,11 +5,11 @@ import posed, { PoseGroup } from 'react-pose';
 const Container = posed.div({
     enter: {
         x: 0,
-        transition: { ease: 'easeInOut', duration: 500 }
+        transition: { ease: 'easeIn', duration: 300 }
     },
     exit: {
         x: '100%',
-        transition: { ease: 'easeInOut', duration: 300 }
+        transition: { ease: 'easeOut', duration: 300 }
     }
 });
 

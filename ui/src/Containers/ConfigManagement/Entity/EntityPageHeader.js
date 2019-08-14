@@ -24,7 +24,7 @@ const EntityPageHeader = ({ entityType, entityId, children }) => {
             {({ data }) => {
                 const header = getEntityName(entityType, data) || '-';
                 return (
-                    <PageHeader classes="bg-primary-100" header={header} subHeader={entityType}>
+                    <PageHeader classes="bg-primary-100 z-1" header={header} subHeader={entityType}>
                         {children}
                     </PageHeader>
                 );

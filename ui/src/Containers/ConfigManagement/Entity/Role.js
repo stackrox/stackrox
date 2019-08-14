@@ -75,7 +75,7 @@ const Role = ({ id, entityListType, query }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
+                if (loading) return <Loader transparent />;
                 const { clusters } = data;
                 if (!clusters || !clusters.length)
                     return <PageNotFound resourceType={entityTypes.ROLE} />;
@@ -117,7 +117,7 @@ const Role = ({ id, entityListType, query }) => {
                 ];
 
                 return (
-                    <div className="bg-primary-100 w-full">
+                    <div className="w-full">
                         <CollapsibleSection title="Role Details">
                             <div className="flex mb-4 flex-wrap">
                                 <Metadata

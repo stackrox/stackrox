@@ -85,7 +85,7 @@ const Subject = ({ id, entityListType, query }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
+                if (loading) return <Loader transparent />;
                 if (!data.clusters || !data.clusters.length)
                     return <PageNotFound resourceType={entityTypes.SUBJECT} />;
 
@@ -122,7 +122,7 @@ const Subject = ({ id, entityListType, query }) => {
                 ];
 
                 return (
-                    <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
+                    <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Subject Details">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata

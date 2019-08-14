@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import onClickOutside from 'react-onclickoutside';
+import { useTheme } from 'Containers/ThemeProvider';
 
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Button from 'Components/Button';
@@ -12,16 +13,21 @@ import EntityPage from 'Containers/ConfigManagement/Entity';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import BreadCrumbs from './BreadCrumbs';
 
-const ExternalLink = ({ onClick }) => (
-    <div className="flex items-center h-full hover:bg-base-300">
-        <Button
-            dataTestId="external-link"
-            className="border-l border-base-300 h-full px-4"
-            icon={<ExternalLinkIcon className="h-6 w-6 text-base-600" />}
-            onClick={onClick}
-        />
-    </div>
-);
+const ExternalLink = ({ onClick }) => {
+    const { isDarkMode } = useTheme();
+    return (
+        <div className="flex items-center h-full hover:bg-base-300">
+            <Button
+                dataTestId="external-link"
+                className={`${
+                    !isDarkMode ? 'border-l border-base-100' : 'border-l border-base-400'
+                } h-full px-4`}
+                icon={<ExternalLinkIcon className="h-6 w-6 text-base-600" />}
+                onClick={onClick}
+            />
+        </div>
+    );
+};
 
 ExternalLink.propTypes = {
     onClick: PropTypes.func.isRequired
@@ -41,6 +47,7 @@ const SidePanel = ({
     entityId2,
     query
 }) => {
+    const { isDarkMode } = useTheme();
     const searchParam = useContext(searchContext);
     const isList = !entityId1 || ((entityType2 || entityListType2) && !entityId2);
 
@@ -95,8 +102,15 @@ const SidePanel = ({
         <div className={className}>
             <Panel
                 id="side-panel"
+                headerClassName={`flex w-full h-12 ${
+                    !isDarkMode
+                        ? 'bg-side-panel-wave border-b border-base-100'
+                        : 'border-b border-base-400'
+                }`}
                 bodyClassName={`${
-                    entityListType2 && !entityId2 ? 'bg-base-100' : 'bg-primary-100'
+                    (entityListType2 && !entityId2) || isDarkMode
+                        ? 'bg-base-100'
+                        : 'bg-side-panel-wave'
                 }`}
                 headerTextComponent={
                     <BreadCrumbs
@@ -110,6 +124,9 @@ const SidePanel = ({
                 }
                 headerComponents={<ExternalLink onClick={onExternalLinkClick} />}
                 onClose={onClose}
+                closeButtonClassName={
+                    isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
+                }
             >
                 <EntityPage
                     entityContext={entityContext}

@@ -55,7 +55,7 @@ const EntityPage = ({ match, location }) => {
                 entityListType={entityListType1}
                 disabled={!!overlay}
             />
-            <div className="flex flex-1 w-full h-full bg-base-100 relative">
+            <div className="flex flex-1 w-full h-full bg-base-100 relative z-0">
                 <div className={`${overlay ? 'overlay' : ''} w-full`}>
                     <Entity
                         entityType={pageEntityType}
@@ -67,7 +67,7 @@ const EntityPage = ({ match, location }) => {
                 <searchContext.Provider value={searchContexts.sidePanel}>
                     <SidePanelAnimation className="w-3/4" condition={!!entityId1}>
                         <SidePanel
-                            className="w-full h-full bg-base-100 border-l-2 border-base-300"
+                            className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel"
                             contextEntityId={pageEntityId}
                             contextEntityType={pageEntityType}
                             entityType1={entityListType1}

@@ -84,7 +84,7 @@ const Image = ({ id, entityListType, query }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
+                if (loading) return <Loader transparent />;
                 const { image: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.IMAGE} />;
 
@@ -142,7 +142,7 @@ const Image = ({ id, entityListType, query }) => {
                     });
                 }
                 return (
-                    <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
+                    <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Image Details">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata

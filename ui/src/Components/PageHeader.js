@@ -9,7 +9,7 @@ const renderSubHeader = subHeader => {
 
 const PageHeader = props => (
     <div
-        className={`flex h-18 px-4 bg-base-100 border-b border-base-400 w-full flex-no-shrink ${
+        className={`flex h-18 px-4 bg-base-100 border-b border-base-400 w-full flex-no-shrink z-1 ${
             props.classes
         }`}
         style={props.bgStyle}
@@ -33,7 +33,7 @@ PageHeader.propTypes = {
 PageHeader.defaultProps = {
     children: null,
     subHeader: null,
-    classes: null,
+    classes: '',
     bgStyle: null
 };
 

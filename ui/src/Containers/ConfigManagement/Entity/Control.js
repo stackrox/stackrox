@@ -27,7 +27,7 @@ const Control = ({ id, entityListType, query }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
+                if (loading) return <Loader transparent />;
                 const { results: entity, entities } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.CONTROL} />;
 
@@ -50,7 +50,7 @@ const Control = ({ id, entityListType, query }) => {
                 }
 
                 return (
-                    <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
+                    <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Control Details">
                             <div className="flex flex-wrap pdf-page">
                                 <ControlDetails

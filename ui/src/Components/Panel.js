@@ -5,7 +5,7 @@ import { throttle } from 'lodash';
 import 'rc-tooltip/assets/bootstrap.css';
 import CloseButton from './CloseButton';
 
-export const headerClassName = 'flex w-full h-12';
+export const headerClassName = 'flex w-full h-12 border-b border-base-400';
 
 export const TooltipDiv = ({ header, isUpperCase }) => {
     const titleClassName = isUpperCase ? 'uppercase' : 'capitalize';
@@ -86,7 +86,7 @@ const Panel = props => (
         }`}
         data-test-id={props.id}
     >
-        <div className="border-b border-base-400 flex-no-wrap">
+        <div className="flex-no-wrap">
             <div className={props.headerClassName}>
                 {props.leftButtons && (
                     <div className="flex items-center pr-3 relative border-base-400 border-r hover:bg-primary-300 hover:border-primary-300">
@@ -143,7 +143,7 @@ Panel.defaultProps = {
     bodyClassName: null,
     className: '',
     onClose: null,
-    closeButtonClassName: '',
+    closeButtonClassName: 'border-base-400 border-l',
     closeButtonIconColor: '',
     headerComponents: null,
     leftButtons: null,

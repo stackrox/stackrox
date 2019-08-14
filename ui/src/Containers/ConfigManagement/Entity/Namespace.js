@@ -72,7 +72,7 @@ const Namespace = ({ id, entityListType, query }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
+                if (loading) return <Loader transparent />;
                 const { entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
 
@@ -104,7 +104,7 @@ const Namespace = ({ id, entityListType, query }) => {
                 ];
 
                 return (
-                    <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
+                    <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Namespace Details">
                             <div className="flex flex-wrap pdf-page">
                                 <Metadata

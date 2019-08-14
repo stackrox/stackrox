@@ -24,7 +24,7 @@ const TileLink = ({ value, caption, to, loading, isError, className }) => {
     const positionClasses = `flex flex-col items-center justify-center px-2 lg:px-4 min-w-20 lg:min-w-24 border-2 ${
         className.includes('rounded') ? '' : 'rounded'
     } min-h-14 uppercase`;
-    const colors = 'text-base-100 hover:bg-primary-800 border-primary-400';
+    const colors = 'text-base-600 hover:bg-base-300 border-primary-400 bg-base-100';
     const darkModeColors = 'text-base-600 hover:bg-primary-200 border-primary-400';
     const errorColors = 'text-alert-700 bg-alert-200 hover:bg-alert-300 border-alert-500';
     const errorDarkModeColors = 'text-base-100 bg-alert-400 hover:bg-alert-500 border-alert-600';

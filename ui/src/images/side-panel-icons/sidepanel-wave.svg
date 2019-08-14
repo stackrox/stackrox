@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1282px" height="194px" viewBox="0 0 1282 194" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
+    <title>cluster remote / deployments / single copy 3@2x</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="0%" y1="15.904772%" x2="99.3500365%" y2="15.904772%" id="linearGradient-1">
+            <stop stop-color="#CFE1FF" offset="0%"></stop>
+            <stop stop-color="#DEEAFF" offset="31.5271326%"></stop>
+            <stop stop-color="#DEEAFF" offset="69.8796453%"></stop>
+            <stop stop-color="#CFE1FF" offset="99.9498522%"></stop>
+        </linearGradient>
+        <rect id="path-2" x="0" y="0" width="1282" height="194"></rect>
+    </defs>
+    <g id="cluster-remote-/-deployments-/-single-copy-3" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect fill="#FFFFFF" x="0" y="0" width="1282" height="194"></rect>
+        <g id="Group">
+            <mask id="mask-3" fill="white">
+                <use xlink:href="#path-2"></use>
+            </mask>
+            <use id="Mask" fill="url(#linearGradient-1)" xlink:href="#path-2"></use>
+            <path d="M-63,91.3554251 C80.321231,86.4127473 164.087155,80 344.419748,80 C664.325749,80 742.080034,113.346695 1285.13552,114.443714 C1294.21745,114.46206 1278.80038,588 1278.80038,588 L-62.9999999,588 C-62.9999999,588 -62.9999993,91.3554255 -63,91.3554251 Z" id="Path-1-Copy-3" fill-opacity="0.470907998" fill="#B2C3FF" opacity="0.347470238" mask="url(#mask-3)"></path>
+            <path d="M-63,134.534251 C80.321231,129.513735 164.087155,123 344.419748,123 C664.325749,123 742.080034,156.87184 1285.13552,157.986135 C1294.21745,158.00477 1278.80038,639 1278.80038,639 L-62.9999999,639 C-62.9999999,639 -62.9999993,134.534251 -63,134.534251 Z" id="Path-1-Copy-2" fill="#E8EFFF" mask="url(#mask-3)"></path>
+        </g>
+    </g>
+</svg>

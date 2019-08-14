@@ -147,9 +147,9 @@ const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) 
                 </Query>
                 <Menu
                     className="w-32"
-                    buttonClass="bg-base-100 hover:bg-base-200 border border-base-400 btn flex font-condensed h-full text-primary-500 w-full"
+                    buttonClass="bg-base-100 hover:bg-base-200 border border-base-400 btn flex font-condensed h-full text-base-600 w-full"
                     buttonContent={
-                        <div className="flex items-center">
+                        <div className="flex items-center text-left px-1">
                             Application & Infrastructure
                             <ChevronDown className="pointer-events-none" />
                         </div>
@@ -158,10 +158,10 @@ const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) 
                 />
                 <Menu
                     className="w-32"
-                    buttonClass="bg-base-100 hover:bg-base-200 border border-base-400 btn flex font-condensed h-full text-primary-500 w-full"
+                    buttonClass="bg-base-100 hover:bg-base-200 border border-base-400 btn flex font-condensed h-full text-base-600 w-full"
                     buttonContent={
-                        <div className="flex items-center">
-                            RBAC Visibility & Controls
+                        <div className="flex items-center text-left px-1">
+                            RBAC Visibility & Configuration
                             <ChevronDown className="pointer-events-none" />
                         </div>
                     }
