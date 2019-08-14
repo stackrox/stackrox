@@ -24,7 +24,7 @@ export const ROLE_PERMISSIONS = gql`
 `;
 
 export const ROLE_FRAGMENT = gql`
-    fragment roleFields on K8SRole {
+    fragment k8roleFields on K8SRole {
         id
         name
         type
@@ -54,7 +54,7 @@ export const K8S_ROLE = gql`
         clusters {
             id
             k8srole(role: $id) {
-                ...roleFields
+                ...k8roleFields
             }
         }
     }
@@ -75,7 +75,7 @@ export const ROLE_NAME = gql`
 export const K8S_ROLES = gql`
     query k8sRoles($query: String) {
         results: k8sRoles(query: $query) {
-            ...roleFields
+            ...k8roleFields
         }
     }
     ${ROLE_FRAGMENT}

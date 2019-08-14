@@ -15,6 +15,7 @@ func init() {
 		schema.AddQuery("images(query:String): [Image!]!"),
 		schema.AddQuery("image(sha:ID!): Image"),
 		schema.AddExtraResolver("Image", "deployments(query: String): [Deployment!]!"),
+		schema.AddExtraResolver("Image", "deploymentCount: Int!"),
 		schema.AddExtraResolver("ImageScanComponent", "layerIndex: Int"),
 	)
 }
@@ -55,6 +56,19 @@ func (resolver *imageResolver) Deployments(ctx context.Context, args rawQuery) (
 
 	return resolver.root.wrapDeployments(
 		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, search.NewConjunctionQuery(imageIDQuery, q)))
+}
+
+// Deployments returns the deployments which use this image for the identified image, if it exists
+func (resolver *imageResolver) DeploymentCount(ctx context.Context) (int32, error) {
+	if err := readDeployments(ctx); err != nil {
+		return 0, err
+	}
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).ProtoQuery()
+	results, err := resolver.root.DeploymentDataStore.Search(ctx, query)
+	if err != nil {
+		return 0, nil
+	}
+	return int32(len(results)), nil
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {

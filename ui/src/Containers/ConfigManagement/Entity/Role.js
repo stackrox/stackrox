@@ -44,19 +44,15 @@ const Role = ({ id, entityListType, query }) => {
                             name
                         }
                     }
-                    serviceAccounts {
-                        ${
-                            entityListType === entityTypes.SERVICE_ACCOUNT
-                                ? '...serviceAccountFields'
-                                : 'id'
-                        }
+                    ${
+                        entityListType === entityTypes.SERVICE_ACCOUNT
+                            ? 'serviceAccounts {...serviceAccountFields}'
+                            : 'serviceAccountCount'
                     }
-                    subjects {
-                        ${
-                            entityListType === entityTypes.SUBJECT
-                                ? '...subjectWithClusterFields'
-                                : 'name'
-                        }
+                    ${
+                        entityListType === entityTypes.SUBJECT
+                            ? 'subjects {...subjectWithClusterFields}'
+                            : 'subjectCount'
                     }
                     rules {
                         apiGroups
@@ -86,12 +82,22 @@ const Role = ({ id, entityListType, query }) => {
 
                 const { k8srole: entity } = clusters[0];
 
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getSubListFromEntity(entity, entityListType)}
+                            query={query}
+                        />
+                    );
+                }
+
                 const {
                     type,
                     createdAt,
                     roleNamespace,
-                    serviceAccounts = [],
-                    subjects = [],
+                    serviceAccountCount,
+                    subjectCount,
                     labels = [],
                     annotations = [],
                     rules,
@@ -109,16 +115,6 @@ const Role = ({ id, entityListType, query }) => {
                         value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
                     }
                 ];
-
-                if (entityListType) {
-                    return (
-                        <EntityList
-                            entityListType={entityListType}
-                            data={getSubListFromEntity(entity, entityListType)}
-                            query={query}
-                        />
-                    );
-                }
 
                 return (
                     <div className="bg-primary-100 w-full">
@@ -149,13 +145,13 @@ const Role = ({ id, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Users & Groups"
-                                    value={subjects.length}
+                                    value={subjectCount}
                                     entityType={entityTypes.SUBJECT}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Service Accounts"
-                                    value={serviceAccounts.length}
+                                    value={serviceAccountCount}
                                     entityType={entityTypes.SERVICE_ACCOUNT}
                                 />
                             </div>

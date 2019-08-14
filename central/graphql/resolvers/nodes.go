@@ -21,8 +21,8 @@ func init() {
 		schema.AddQuery("node(id:ID!): Node"),
 		schema.AddQuery("nodes(query: String): [Node!]!"),
 		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddType("NumComplianceControls", []string{"numFailing: Int!", "numPassing: Int!"}),
-		schema.AddExtraResolver("Node", "numNodeComplianceControls: NumComplianceControls!"),
+		schema.AddType("ComplianceControlCount", []string{"failingCount: Int!", "passingCount: Int!"}),
+		schema.AddExtraResolver("Node", "nodeComplianceControlCount: ComplianceControlCount!"),
 		schema.AddExtraResolver("Node", "controlStatus: Boolean!"),
 		schema.AddExtraResolver("Node", "failingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
@@ -108,7 +108,7 @@ func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args rawQue
 	return *output, nil
 }
 
-func (resolver *nodeResolver) NumNodeComplianceControls(ctx context.Context) (*numComplianceControlsResolver, error) {
+func (resolver *nodeResolver) NodeComplianceControlCount(ctx context.Context) (*complianceControlCountResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -117,12 +117,12 @@ func (resolver *nodeResolver) NumNodeComplianceControls(ctx context.Context) (*n
 		return nil, err
 	}
 	if r == nil {
-		return &numComplianceControlsResolver{}, nil
+		return &complianceControlCountResolver{}, nil
 	}
 	if len(r) != 1 {
-		return &numComplianceControlsResolver{}, errors.Errorf("unexpected node aggregation results length: expected: 1, actual: %d", len(r))
+		return &complianceControlCountResolver{}, errors.Errorf("unexpected node aggregation results length: expected: 1, actual: %d", len(r))
 	}
-	return &numComplianceControlsResolver{numFailing: r[0].GetNumFailing(), numPassing: r[0].GetNumPassing()}, nil
+	return &complianceControlCountResolver{failingCount: r[0].GetNumFailing(), passingCount: r[0].GetNumPassing()}, nil
 }
 
 func (resolver *nodeResolver) ControlStatus(ctx context.Context) (bool, error) {
@@ -236,15 +236,15 @@ func getComplianceControlsFromAggregationResults(results []*v1.ComplianceAggrega
 	return controls, nil
 }
 
-type numComplianceControlsResolver struct {
-	numFailing int32
-	numPassing int32
+type complianceControlCountResolver struct {
+	failingCount int32
+	passingCount int32
 }
 
-func (resolver *numComplianceControlsResolver) NumFailing() int32 {
-	return resolver.numFailing
+func (resolver *complianceControlCountResolver) FailingCount() int32 {
+	return resolver.failingCount
 }
 
-func (resolver *numComplianceControlsResolver) NumPassing() int32 {
-	return resolver.numPassing
+func (resolver *complianceControlCountResolver) PassingCount() int32 {
+	return resolver.passingCount
 }

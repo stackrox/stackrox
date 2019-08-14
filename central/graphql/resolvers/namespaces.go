@@ -33,6 +33,8 @@ func init() {
 		schema.AddExtraResolver("Namespace", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Namespace", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Namespace", "cluster: Cluster!"),
+		schema.AddExtraResolver("Namespace", `secretCount: Int!`),
+		schema.AddExtraResolver("Namespace", `deploymentCount: Int!`),
 	)
 }
 
@@ -349,6 +351,20 @@ func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolve
 		return nil, err
 	}
 	return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetMetadata().GetClusterId()))
+}
+
+func (resolver *namespaceResolver) SecretCount(ctx context.Context) (int32, error) {
+	if err := readSecrets(ctx); err != nil {
+		return 0, err
+	}
+	return resolver.data.GetNumSecrets(), nil
+}
+
+func (resolver *namespaceResolver) DeploymentCount(ctx context.Context) (int32, error) {
+	if err := readDeployments(ctx); err != nil {
+		return 0, err
+	}
+	return resolver.data.GetNumDeployments(), nil
 }
 
 func (resolver *namespaceResolver) getConjunctionQuery(args rawQuery) (*v1.Query, error) {

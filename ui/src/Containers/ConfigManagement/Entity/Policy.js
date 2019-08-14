@@ -84,8 +84,10 @@ const Policy = ({ id, entityListType, query }) => {
             whitelists {
                 name
             }
-            deployments {
-                ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
+            ${
+                entityListType === entityTypes.DEPLOYMENT
+                    ? 'deployments { ...deploymentFields }'
+                    : 'deploymentCount'
             }
             alerts {
                 id
@@ -116,6 +118,16 @@ const Policy = ({ id, entityListType, query }) => {
                 const { policy: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.POLICY} />;
 
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getSubListFromEntity(entity, entityListType)}
+                            query={query}
+                        />
+                    );
+                }
+
                 const {
                     id: policyId,
                     lifecycleStages = [],
@@ -128,18 +140,8 @@ const Policy = ({ id, entityListType, query }) => {
                     enforcementActions,
                     whitelists = [],
                     alerts = [],
-                    deployments = []
+                    deploymentCount
                 } = entity;
-
-                if (entityListType) {
-                    return (
-                        <EntityList
-                            entityListType={entityListType}
-                            data={getSubListFromEntity(entity, entityListType)}
-                            query={query}
-                        />
-                    );
-                }
 
                 const metadataKeyValuePairs = [
                     {
@@ -184,7 +186,7 @@ const Policy = ({ id, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"
-                                    value={deployments.length}
+                                    value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <Widget

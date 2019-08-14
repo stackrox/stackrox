@@ -41,37 +41,31 @@ const Cluster = ({ id, entityListType, query }) => {
             name
             admissionController
             centralApiEndpoint
-            alertsCount
-            images {
-                ${entityListType === entityTypes.IMAGE ? '...imageFields' : 'id'}
+            ${entityListType === entityTypes.IMAGE ? 'images {...imageFields}' : 'imageCount'}
+            
+            ${entityListType === entityTypes.NODE ? 'nodes {...nodeFields}' : 'nodeCount'}
+            ${
+                entityListType === entityTypes.DEPLOYMENT
+                    ? 'deployments {...deploymentFields}'
+                    : 'deploymentCount'
             }
-            nodes {
-                ${entityListType === entityTypes.NODE ? '...nodeFields' : 'id'}
+            ${
+                entityListType === entityTypes.NAMESPACE
+                    ? 'namespaces {...namespaceFields}'
+                    : 'namespaceCount'
             }
-            deployments {
-                ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
+            ${
+                entityListType === entityTypes.SUBJECT
+                    ? 'subjects {...subjectWithClusterFields}'
+                    : 'subjectCount'
             }
-            namespaces {
-                ${entityListType === entityTypes.NAMESPACE ? '...namespaceFields' : 'metadata{id}'}
-            }
-            subjects {
-                ${entityListType === entityTypes.SUBJECT ? '...subjectWithClusterFields' : 'name'}
-            }
-            k8sroles {
-                ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
-            }
-            secrets {
-                ${entityListType === entityTypes.SECRET ? '...secretFields' : 'id'}
-            }
-            policies(query: "Lifecycle Stage:DEPLOY") {
-                ${entityListType === entityTypes.POLICY ? '...policyFields' : 'id'}
-            }
-            serviceAccounts {
-                ${
-                    entityListType === entityTypes.SERVICE_ACCOUNT
-                        ? '...serviceAccountFields'
-                        : 'id'
-                }                
+            ${entityListType === entityTypes.ROLE ? 'k8sroles {...k8roleFields}' : 'k8sroleCount'}
+            ${entityListType === entityTypes.SECRET ? 'secrets { ...secretFields }' : 'secretCount'}
+            ${entityListType === entityTypes.POLICY ? 'policies {...policyFields}' : 'policyCount'}
+            ${
+                entityListType === entityTypes.SERVICE_ACCOUNT
+                    ? 'serviceAccounts {...serviceAccountFields}'
+                    : 'serviceAccountCount'
             }
             status {
                 orchestratorMetadata {
@@ -99,20 +93,6 @@ const Cluster = ({ id, entityListType, query }) => {
                 const { cluster: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.CLUSTER} />;
 
-                const {
-                    name,
-                    nodes = [],
-                    namespaces = [],
-                    deployments = [],
-                    subjects = [],
-                    serviceAccounts = [],
-                    k8sroles = [],
-                    secrets = [],
-                    images = [],
-                    policies = [],
-                    status: { orchestratorMetadata = null }
-                } = entity;
-
                 if (entityListType) {
                     return (
                         <EntityList
@@ -122,6 +102,20 @@ const Cluster = ({ id, entityListType, query }) => {
                         />
                     );
                 }
+
+                const {
+                    name,
+                    nodeCount,
+                    deploymentCount,
+                    namespaceCount,
+                    subjectCount,
+                    serviceAccountCount,
+                    k8sroleCount,
+                    secretCount,
+                    imageCount,
+                    policyCount,
+                    status: { orchestratorMetadata = null }
+                } = entity;
 
                 const { version = 'N/A' } = orchestratorMetadata;
 
@@ -143,55 +137,55 @@ const Cluster = ({ id, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Nodes"
-                                    value={nodes.length}
+                                    value={nodeCount}
                                     entityType={entityTypes.NODE}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Namespaces"
-                                    value={namespaces.length}
+                                    value={namespaceCount}
                                     entityType={entityTypes.NAMESPACE}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"
-                                    value={deployments.length}
+                                    value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Secrets"
-                                    value={secrets.length}
+                                    value={secretCount}
                                     entityType={entityTypes.SECRET}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Images"
-                                    value={images.length}
+                                    value={imageCount}
                                     entityType={entityTypes.IMAGE}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Users & Groups"
-                                    value={subjects.length}
+                                    value={subjectCount}
                                     entityType={entityTypes.SUBJECT}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Service Accounts"
-                                    value={serviceAccounts.length}
+                                    value={serviceAccountCount}
                                     entityType={entityTypes.SERVICE_ACCOUNT}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Roles"
-                                    value={k8sroles.length}
+                                    value={k8sroleCount}
                                     entityType={entityTypes.ROLE}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Policies"
-                                    value={policies.length}
+                                    value={policyCount}
                                     entityType={entityTypes.POLICY}
                                 />
                             </div>

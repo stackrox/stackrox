@@ -56,7 +56,7 @@ export const DEPLOYMENT_FRAGMENT = gql`
         type
         updatedAt
         secretCount
-        imagesCount
+        imageCount
     }
 `;
 export const DEPLOYMENT_QUERY = gql`
@@ -86,7 +86,7 @@ export const DEPLOYMENTS_QUERY = gql`
             clusterId
             namespace
             namespaceId
-            deployAlertsCount
+            deployAlertCount
             serviceAccount
             serviceAccountID
             policyStatus {
@@ -97,7 +97,7 @@ export const DEPLOYMENTS_QUERY = gql`
                 }
             }
             secretCount
-            imagesCount
+            imageCount
         }
     }
 `;

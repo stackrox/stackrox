@@ -288,7 +288,6 @@ class URL {
         delete p.entityType2;
         delete p.entityListType2;
         delete p.entityId2;
-        delete p.entityListType1;
         delete this.q.s2;
 
         return this;

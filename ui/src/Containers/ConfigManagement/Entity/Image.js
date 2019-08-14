@@ -33,8 +33,10 @@ const Image = ({ id, entityListType, query }) => {
             image(sha: $id) {
                 id
                 lastUpdated
-                deployments {
-                    ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
+                ${
+                    entityListType === entityTypes.DEPLOYMENT
+                        ? 'deployments {...deploymentFields}'
+                        : 'deploymentCount'
                 }
                 metadata {
                     layerShas
@@ -96,7 +98,7 @@ const Image = ({ id, entityListType, query }) => {
                     );
                 }
 
-                const { lastUpdated, metadata, scan, deployments } = entity;
+                const { lastUpdated, metadata, scan, deploymentCount } = entity;
 
                 const metadataKeyValuePairs = [
                     {
@@ -150,7 +152,7 @@ const Image = ({ id, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"
-                                    value={deployments.length}
+                                    value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                             </div>

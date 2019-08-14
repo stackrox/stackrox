@@ -62,7 +62,7 @@ const QUERY = gql`
                     name
                 }
             }
-            alertsCount
+            alertCount
         }
     }
 `;
@@ -147,7 +147,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
     }
 
     function getCenterValue(data) {
-        const policiesInViolation = data.filter(policy => policy.alertsCount).length;
+        const policiesInViolation = data.filter(policy => policy.alertCount).length;
         return policiesInViolation;
     }
 

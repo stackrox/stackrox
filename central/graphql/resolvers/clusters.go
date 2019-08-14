@@ -28,11 +28,13 @@ func init() {
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Cluster", `alertCount: Int!`),
 		schema.AddExtraResolver("Cluster", `deployments(query: String): [Deployment!]!`),
+		schema.AddExtraResolver("Cluster", `deploymentCount: Int!`),
 		schema.AddExtraResolver("Cluster", `nodes(query: String): [Node!]!`),
 		schema.AddExtraResolver("Cluster", `nodeCount: Int!`),
 		schema.AddExtraResolver("Cluster", `node(node: ID!): Node`),
 		schema.AddExtraResolver("Cluster", `namespaces(query: String): [Namespace!]!`),
 		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
+		schema.AddExtraResolver("Cluster", `namespaceCount: Int!`),
 		schema.AddExtraResolver("Cluster", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Cluster", `k8sroles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("Cluster", `k8srole(role: ID!): K8SRole`),
@@ -54,7 +56,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", "controls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Cluster", "failingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Cluster", "passingControls(query: String): [ComplianceControl!]!"),
-		schema.AddExtraResolver("Cluster", "numComplianceControls: NumComplianceControls!"),
+		schema.AddExtraResolver("Cluster", "complianceControlCount: ComplianceControlCount!"),
 	)
 }
 
@@ -97,7 +99,6 @@ func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, 
 
 func (resolver *clusterResolver) AlertCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "AlertCount")
-
 	if err := readAlerts(ctx); err != nil {
 		return 0, err
 	}
@@ -122,6 +123,19 @@ func (resolver *clusterResolver) Deployments(ctx context.Context, args rawQuery)
 		return nil, err
 	}
 	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, query))
+}
+
+// DeploymentCount returns count of all deployments in this cluster
+func (resolver *clusterResolver) DeploymentCount(ctx context.Context) (int32, error) {
+	if err := readDeployments(ctx); err != nil {
+		return 0, err
+	}
+	q := resolver.getQuery()
+	results, err := resolver.root.DeploymentDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), err
 }
 
 // Nodes returns all nodes on the cluster
@@ -197,6 +211,19 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 		ClusterID: graphql.ID(resolver.data.GetId()),
 		Name:      args.Name,
 	})
+}
+
+// NamespaceCount returns counts of namespaces on a cluster.
+func (resolver *clusterResolver) NamespaceCount(ctx context.Context) (int32, error) {
+	if err := readNamespaces(ctx); err != nil {
+		return 0, err
+	}
+	q := resolver.getQuery()
+	results, err := resolver.root.NamespaceDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, nil
+	}
+	return int32(len(results)), nil
 }
 
 func (resolver *clusterResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
@@ -562,9 +589,8 @@ func (resolver *clusterResolver) FailingControls(ctx context.Context, args rawQu
 	return resolvers, nil
 }
 
-func (resolver *clusterResolver) NumComplianceControls(ctx context.Context) (*numComplianceControlsResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NumComplianceControls")
-
+func (resolver *clusterResolver) ComplianceControlCount(ctx context.Context) (*complianceControlCountResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComplianceControlCount")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -573,12 +599,12 @@ func (resolver *clusterResolver) NumComplianceControls(ctx context.Context) (*nu
 		return nil, err
 	}
 	if r == nil {
-		return &numComplianceControlsResolver{}, nil
+		return &complianceControlCountResolver{}, nil
 	}
 	if len(r) != 1 {
-		return &numComplianceControlsResolver{}, errors.Errorf("unexpected number of results: expected: 1, actual: %d", len(r))
+		return &complianceControlCountResolver{}, errors.Errorf("unexpected number of results: expected: 1, actual: %d", len(r))
 	}
-	return &numComplianceControlsResolver{numFailing: r[0].GetNumFailing(), numPassing: r[0].GetNumPassing()}, nil
+	return &complianceControlCountResolver{failingCount: r[0].GetNumFailing(), passingCount: r[0].GetNumPassing()}, nil
 }
 
 func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope, args rawQuery) ([]*v1.ComplianceAggregation_Result, error) {

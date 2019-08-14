@@ -74,7 +74,7 @@ const Subject = ({ id, entityListType, query }) => {
                     clusterID
                     clusterName
                     roles {
-                        ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
+                        ${entityListType === entityTypes.ROLE ? '...k8roleFields' : 'id'}
                     }
                 }
             }

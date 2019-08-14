@@ -178,7 +178,7 @@ const Deployments = ({ match, location, className, selectedRowId, onRowClick, qu
             idAttribute="id"
             defaultSorted={[
                 {
-                    id: 'deployAlertsCount',
+                    id: 'deployAlertCount',
                     desc: true
                 }
             ]}

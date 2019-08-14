@@ -31,7 +31,7 @@ const ServiceAccount = ({ id, entityListType, query }) => {
     };
 
     const QUERY = gql`
-    query serviceAccount($id: ID!) {
+    query getServiceAccount($id: ID!) {
         serviceAccount(id: $id) {
             id
             name
@@ -44,12 +44,17 @@ const ServiceAccount = ({ id, entityListType, query }) => {
             }
             clusterName
             clusterId
-            deployments {
-                ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
+            ${
+                entityListType === entityTypes.DEPLOYMENT
+                    ? 'deployments {...deploymentFields}'
+                    : 'deploymentCount'
             }
-            k8sroles: roles {
-                ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
+            ${
+                entityListType === entityTypes.ROLE
+                    ? 'k8sroles: roles {...k8roleFields}'
+                    : 'roleCount'
             }
+
             automountToken
             createdAt
             labels {
@@ -84,13 +89,23 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                 const { serviceAccount: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
 
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getSubListFromEntity(entity, entityListType)}
+                            query={query}
+                        />
+                    );
+                }
+
                 const {
                     automountToken = false,
                     createdAt,
                     labels = [],
                     secrets = [],
-                    deployments = [],
-                    k8sroles = [],
+                    deploymentCount,
+                    roleCount,
                     saNamespace: { metadata = {} },
                     scopedPermissions = [],
                     annotations,
@@ -107,16 +122,6 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                         value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
                     }
                 ];
-
-                if (entityListType) {
-                    return (
-                        <EntityList
-                            entityListType={entityListType}
-                            data={getSubListFromEntity(entity, entityListType)}
-                            query={query}
-                        />
-                    );
-                }
 
                 return (
                     <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
@@ -146,13 +151,13 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"
-                                    value={deployments.length}
+                                    value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Roles"
-                                    value={k8sroles.length}
+                                    value={roleCount}
                                     entityType={entityTypes.ROLE}
                                 />
                             </div>

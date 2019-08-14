@@ -145,57 +145,56 @@ const Secret = ({ id, entityListType, query }) => {
     };
 
     const QUERY = gql`
-    query secret($id: ID!) {
-        secret(id: $id) {
-            id
-            name
-            createdAt
-            files {
+        query secret($id: ID!) {
+            secret(id: $id) {
+                id
                 name
-                type
-                metadata {
-                    __typename
-                    ... on Cert {
-                        endDate
-                        startDate
-                        algorithm
-                        issuer {
-                            commonName
-                            names
+                createdAt
+                files {
+                    name
+                    type
+                    metadata {
+                        __typename
+                        ... on Cert {
+                            endDate
+                            startDate
+                            algorithm
+                            issuer {
+                                commonName
+                                names
+                            }
+                            subject {
+                                commonName
+                                names
+                            }
+                            sans
                         }
-                        subject {
-                            commonName
-                            names
-                        }
-                        sans
-                    }
-                    ... on ImagePullSecret {
-                        registries {
-                            name
-                            username
+                        ... on ImagePullSecret {
+                            registries {
+                                name
+                                username
+                            }
                         }
                     }
                 }
+                namespace
+                deployments {
+                    ...deploymentFields
+                }
+                labels {
+                    key
+                    value
+                }
+                annotations {
+                    key
+                    value
+                }
+                clusterName
+                clusterId
             }
-            namespace
-            deployments {
-                ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
-            }
-            labels {
-                key
-                value
-            }
-            annotations {
-                key
-                value
-            }
-            clusterName
-            clusterId
         }
-    }
-    ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
-
-`;
+        ${DEPLOYMENT_FRAGMENT}
+    `;
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {

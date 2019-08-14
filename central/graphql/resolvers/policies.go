@@ -18,9 +18,9 @@ func init() {
 		schema.AddQuery("policies(query: String): [Policy!]!"),
 		schema.AddQuery("policy(id: ID): Policy"),
 		schema.AddExtraResolver("Policy", `alerts: [Alert!]!`),
-		schema.AddExtraResolver("Policy", `alertsCount: Int!`),
+		schema.AddExtraResolver("Policy", `alertCount: Int!`),
 		schema.AddExtraResolver("Policy", `deployments(query: String): [Deployment!]!`),
-		schema.AddExtraResolver("Policy", `deploymentsCount: Int!`),
+		schema.AddExtraResolver("Policy", `deploymentCount: Int!`),
 		schema.AddExtraResolver("Policy", `policyStatus: String!`),
 	)
 }
@@ -58,7 +58,7 @@ func (resolver *policyResolver) Alerts(ctx context.Context) ([]*alertResolver, e
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
 
-func (resolver *policyResolver) AlertsCount(ctx context.Context) (int32, error) {
+func (resolver *policyResolver) AlertCount(ctx context.Context) (int32, error) {
 	if err := readAlerts(ctx); err != nil {
 		return 0, err // could return nil, nil to prevent errors from propagating.
 	}
@@ -93,7 +93,7 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args rawQuery) 
 }
 
 // DeploymentCount returns the count of all deployments that this policy applies to
-func (resolver *policyResolver) DeploymentsCount(ctx context.Context) (int32, error) {
+func (resolver *policyResolver) DeploymentCount(ctx context.Context) (int32, error) {
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}

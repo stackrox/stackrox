@@ -18,21 +18,23 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddQuery("deployment(id: ID): Deployment"),
+		schema.AddQuery("deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
 		schema.AddExtraResolver("Deployment", `namespaceObject: Namespace`),
 		schema.AddExtraResolver("Deployment", `serviceAccountObject: ServiceAccount`),
 		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
 		schema.AddExtraResolver("Deployment", `deployAlerts: [Alert!]!`),
-		schema.AddExtraResolver("Deployment", `deployAlertsCount: Int!`),
+		schema.AddExtraResolver("Deployment", `deployAlertCount: Int!`),
+		schema.AddExtraResolver("Deployment", `failingPolicies(query: String): [Policy!]!`),
+		schema.AddExtraResolver("Deployment", `failingPolicyCount(query: String): Int!`),
 		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
 		schema.AddExtraResolver("Deployment", `images(query: String): [Image!]!`),
-		schema.AddExtraResolver("Deployment", `imagesCount: Int!`),
+		schema.AddExtraResolver("Deployment", `imageCount: Int!`),
 		schema.AddExtraResolver("Deployment", "secrets(query: String): [Secret!]!"),
 		schema.AddExtraResolver("Deployment", "secretCount: Int!"),
-		schema.AddExtraResolver("Deployment", "policyStatus: PolicyStatus!"),
-		schema.AddQuery("deployment(id: ID): Deployment"),
-		schema.AddQuery("deployments(query: String): [Deployment!]!"),
+		schema.AddExtraResolver("Deployment", "policyStatus(query: String) : PolicyStatus!"),
 	)
 }
 
@@ -112,7 +114,7 @@ func (resolver *deploymentResolver) DeployAlerts(ctx context.Context) ([]*alertR
 		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
 
-func (resolver *deploymentResolver) DeployAlertsCount(ctx context.Context) (int32, error) {
+func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context) (int32, error) {
 	if err := readAlerts(ctx); err != nil {
 		return 0, err // could return nil, nil to prevent errors from propagating.
 	}
@@ -122,6 +124,49 @@ func (resolver *deploymentResolver) DeployAlertsCount(ctx context.Context) (int3
 		return 0, err
 	}
 	return int32(len(results)), nil
+}
+
+// FailingPolicies returns policy resolvers for policies failing on this deployment
+func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+	query, err := resolver.getFailingAlertsQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	alerts, err := resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	var policies []*storage.Policy
+	set := set.NewStringSet()
+	for _, alert := range alerts {
+		if set.Add(alert.GetPolicy().GetId()) {
+			policies = append(policies, alert.GetPolicy())
+		}
+	}
+	return resolver.root.wrapPolicies(policies, nil)
+}
+
+// FailingPolicyCount returns count of policies failing on this deployment
+func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args rawQuery) (int32, error) {
+	if err := readPolicies(ctx); err != nil {
+		return 0, err
+	}
+	query, err := resolver.getFailingAlertsQuery(args)
+	if err != nil {
+		return 0, err
+	}
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, query)
+	if err != nil {
+		return 0, nil
+	}
+	set := set.NewStringSet()
+	for _, alert := range alerts {
+		set.Add(alert.GetPolicy().GetId())
+	}
+	return int32(len(set.AsSlice())), nil
 }
 
 // Secrets returns the total number of secrets for this deployment
@@ -247,13 +292,13 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args rawQuery) (
 		search.NewConjunctionQuery(imageShaQuery, q)))
 }
 
-func (resolver *deploymentResolver) ImagesCount(ctx context.Context) (int32, error) {
+func (resolver *deploymentResolver) ImageCount(ctx context.Context) (int32, error) {
 	imageShas := resolver.getImageShas(ctx)
 	return int32(len(imageShas)), nil
 }
 
-func (resolver *deploymentResolver) PolicyStatus(ctx context.Context) (*policyStatusResolver, error) {
-	alerts, err := resolver.getActiveDeployAlerts(ctx)
+func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args rawQuery) (*policyStatusResolver, error) {
+	alerts, err := resolver.getAlerts(ctx, args)
 
 	if err != nil {
 		return nil, err
@@ -295,16 +340,37 @@ func (resolver *deploymentResolver) getImageShas(ctx context.Context) []string {
 	return imageShas.AsSlice()
 }
 
-func (resolver *deploymentResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {
+func (resolver *deploymentResolver) getAlerts(ctx context.Context, args rawQuery) ([]*storage.ListAlert, error) {
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
-
-	deployment := resolver.data
-
-	q := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).
-		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
-
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+}
+
+func (resolver *deploymentResolver) getQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
+}
+
+func (resolver *deploymentResolver) getConjunctionQuery(args rawQuery) (*v1.Query, error) {
+	q1 := resolver.getQuery()
+	if args.String() == "" {
+		return q1, nil
+	}
+	q2, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	return search.NewConjunctionQuery(q2, q1), nil
+}
+
+func (resolver *deploymentResolver) getFailingAlertsQuery(args rawQuery) (*v1.Query, error) {
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, err
+	}
+	return search.NewConjunctionQuery(q, search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()), nil
 }

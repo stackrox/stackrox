@@ -49,37 +49,15 @@ const Namespace = ({ id, entityListType, query }) => {
                 id
                 name
             }
-            deployments {
-                ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}
+            ${
+                entityListType === entityTypes.DEPLOYMENT
+                    ? 'deployments { ...deploymentFields }'
+                    : 'deploymentCount'
+            }
+            ${entityListType === entityTypes.IMAGE ? 'images { ...imageFields }' : 'imageCount'}
+            ${entityListType === entityTypes.SECRET ? 'secrets { ...secretFields }' : 'secretCount'}
+            ${entityListType === entityTypes.POLICY ? 'policies {...policyFields}' : 'policyCount'}
 
-            }
-            numDeployments
-            numNetworkPolicies
-            numSecrets
-            imageCount
-            policyCount
-            images {
-                ${entityListType === entityTypes.IMAGE ? '...imageFields' : 'id'}
-            }
-            secrets {
-                ${entityListType === entityTypes.SECRET ? '...secretFields' : 'id'}
-            }
-            policies {
-                ${entityListType === entityTypes.POLICY ? '...policyFields' : 'id'}
-            }
-            subjects {
-                ${entityListType === entityTypes.SUBJECT ? '...subjectWithClusterFields' : 'name'}
-            }
-            k8sroles {
-                ${entityListType === entityTypes.ROLE ? '...roleFields' : 'id'}
-            }
-            serviceAccounts {
-                ${
-                    entityListType === entityTypes.SERVICE_ACCOUNT
-                        ? '...serviceAccountFields'
-                        : 'id'
-                }                
-            }
         }
     }
     ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
@@ -97,13 +75,23 @@ const Namespace = ({ id, entityListType, query }) => {
                 if (loading) return <Loader />;
                 const { entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
+
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getSubListFromEntity(entity, entityListType)}
+                        />
+                    );
+                }
+
                 const {
                     metadata = {},
                     cluster,
-                    numDeployments = 0,
-                    numSecrets = 0,
-                    policyCount = 0,
-                    imageCount = 0
+                    deploymentCount,
+                    secretCount,
+                    policyCount,
+                    imageCount
                 } = entity;
 
                 const { name, creationTime, labels = [] } = metadata;
@@ -114,15 +102,6 @@ const Namespace = ({ id, entityListType, query }) => {
                         value: creationTime ? format(creationTime, dateTimeFormat) : 'N/A'
                     }
                 ];
-
-                if (entityListType) {
-                    return (
-                        <EntityList
-                            entityListType={entityListType}
-                            data={getSubListFromEntity(entity, entityListType)}
-                        />
-                    );
-                }
 
                 return (
                     <div className="bg-primary-100 w-full" id="capture-dashboard-stretch">
@@ -143,13 +122,13 @@ const Namespace = ({ id, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"
-                                    value={numDeployments}
+                                    value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Secrets"
-                                    value={numSecrets}
+                                    value={secretCount}
                                     entityType={entityTypes.SECRET}
                                 />
                                 <RelatedEntityListCount

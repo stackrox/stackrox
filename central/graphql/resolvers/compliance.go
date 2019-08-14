@@ -46,8 +46,8 @@ func InitCompliance() {
 			schema.AddExtraResolver("ComplianceStandardMetadata", "complianceResults(query: String): [ControlResult!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceResults(query: String): [ControlResult!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlEntities(clusterID: ID!): [Node!]!"),
-			schema.AddType("NumComplianceControlNodes", []string{"numFailing: Int!", "numPassing: Int!"}),
-			schema.AddExtraResolver("ComplianceControl", "numComplianceControlNodes(clusterID: ID!, query: String): NumComplianceControlNodes"),
+			schema.AddType("ComplianceControlNodeCount", []string{"failingCount: Int!", "passingCount: Int!"}),
+			schema.AddExtraResolver("ComplianceControl", "complianceControlNodeCount(clusterID: ID!, query: String): ComplianceControlNodeCount"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlNodes(clusterID: ID!, query: String): [Node!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlFailingNodes(clusterID: ID!, query: String): [Node!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlPassingNodes(clusterID: ID!, query: String): [Node!]!"),
@@ -424,12 +424,12 @@ func (resolver *complianceControlResolver) ComplianceControlEntities(ctx context
 	return resolver.root.wrapNodes(store.ListNodes())
 }
 
-func (resolver *complianceControlResolver) NumComplianceControlNodes(
+func (resolver *complianceControlResolver) ComplianceControlNodeCount(
 	ctx context.Context,
 	args struct {
 		ClusterID graphql.ID
 		Query     *string
-	}) (*numComplianceControlNodesResolver, error) {
+	}) (*complianceControlNodeCountResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -457,7 +457,7 @@ func (resolver *complianceControlResolver) NumComplianceControlNodes(
 	if len(r) != 1 {
 		return nil, errors.Wrapf(errors.New("unexpected control-node aggregation results length"), "length of aggregated results expected: 1, actual : %d", len(r))
 	}
-	nr := numComplianceControlNodesResolver{r[0].GetNumFailing(), r[0].GetNumPassing()}
+	nr := complianceControlNodeCountResolver{failingCount: r[0].GetNumFailing(), passingCount: r[0].GetNumPassing()}
 	return &nr, nil
 }
 
@@ -626,15 +626,15 @@ func getScopeIDFromAggregationResult(result *v1.ComplianceAggregation_Result, sc
 	return "", errors.Errorf("bad arguments: scope was not one of the aggregation keys")
 }
 
-type numComplianceControlNodesResolver struct {
-	numFailing int32
-	numPassing int32
+type complianceControlNodeCountResolver struct {
+	failingCount int32
+	passingCount int32
 }
 
-func (resolver *numComplianceControlNodesResolver) NumFailing() int32 {
-	return resolver.numFailing
+func (resolver *complianceControlNodeCountResolver) FailingCount() int32 {
+	return resolver.failingCount
 }
 
-func (resolver *numComplianceControlNodesResolver) NumPassing() int32 {
-	return resolver.numPassing
+func (resolver *complianceControlNodeCountResolver) PassingCount() int32 {
+	return resolver.passingCount
 }

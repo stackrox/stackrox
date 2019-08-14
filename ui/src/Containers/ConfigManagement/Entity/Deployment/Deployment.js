@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
-import { SECRET_FRAGMENT } from 'queries/secret';
 import { POLICY_FRAGMENT } from 'queries/policy';
 
 import Query from 'Components/ThrowingQuery';
@@ -74,9 +73,9 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                 serviceAccountID
                 policyStatus {
                     status
-                    failingPolicies {
-                        ${entityListType === entityTypes.POLICY ? '...policyFields' : 'id'}
-                    }
+                    failingPolicies {${
+                        entityListType === entityTypes.POLICY ? '...policyFields' : 'id'
+                    }}
                 }
                 tolerations {
                     key
@@ -86,17 +85,9 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                 }
                 type
                 updatedAt
-                secretCount
-                secrets {
-                    ${entityListType === entityTypes.SECRET ? '...secretFields' : 'id'}
-                }
-                imagesCount
-                images {
-                    ${entityListType === entityTypes.IMAGE ? '...imageFields' : 'id'}
-                }
+                ${entityListType === entityTypes.IMAGE ? 'images { ...imageFields }' : 'imageCount'}
             }
         }
-    ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
     ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
     ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
 
@@ -109,6 +100,17 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                 const { deployment: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
 
+                if (entityListType) {
+                    const listData =
+                        entityListType === entityTypes.POLICY
+                            ? entity.policyStatus.failingPolicies
+                            : getSubListFromEntity(entity, entityListType);
+
+                    return (
+                        <EntityList entityListType={entityListType} data={listData} query={query} />
+                    );
+                }
+
                 const {
                     cluster,
                     updatedAt,
@@ -120,20 +122,9 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                     namespaceId,
                     serviceAccount,
                     serviceAccountID,
-                    imagesCount,
+                    imageCount,
                     policyStatus
                 } = entity;
-
-                if (entityListType) {
-                    const listData =
-                        entityListType === entityTypes.POLICY
-                            ? policyStatus.failingPolicies
-                            : getSubListFromEntity(entity, entityListType);
-
-                    return (
-                        <EntityList entityListType={entityListType} data={listData} query={query} />
-                    );
-                }
 
                 const metadataKeyValuePairs = [
                     {
@@ -184,7 +175,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Images"
-                                    value={imagesCount}
+                                    value={imageCount}
                                     entityType={entityTypes.IMAGE}
                                 />
                                 <RelatedEntityListCount
