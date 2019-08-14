@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
+import onClickOutside from 'react-onclickoutside';
 
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Button from 'Components/Button';
@@ -78,6 +79,10 @@ const SidePanel = ({
         );
     }
 
+    SidePanel.handleClickOutside = () => {
+        onClose();
+    };
+
     const entityId = getCurrentEntityId();
     const entityType = getCurrentEntityType();
     const listType = getListType();
@@ -144,4 +149,12 @@ SidePanel.defaultProps = {
     entityId2: null
 };
 
-export default withRouter(SidePanel);
+const clickOutsideConfig = {
+    handleClickOutside: () => SidePanel.handleClickOutside
+};
+
+/*
+ * If more than one SidePanel is rendered, this Pure Functional Component will need to be converted to
+ * a Class Component in order to work correctly. See https://github.com/stackrox/rox/pull/3090#pullrequestreview-274948849
+ */
+export default onClickOutside(withRouter(SidePanel), clickOutsideConfig);
