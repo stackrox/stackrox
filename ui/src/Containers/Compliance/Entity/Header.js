@@ -24,8 +24,8 @@ const EntityHeader = ({
         : `${entityType} "${entityId}"`;
     const pdfId = listEntityType ? 'capture-list' : 'capture-dashboard';
 
-    const scanCluster = entityType === entityTypes.CLUSTER ? entityId : null;
-    const scanStandard = entityType === entityTypes.STANDARD ? entityId : null;
+    const scanCluster = entityType === entityTypes.CLUSTER ? entityId : '*';
+    const scanStandard = entityType === entityTypes.STANDARD ? entityId : '*';
 
     return (
         <PageHeader classes="bg-base-100" header={header} subHeader={subHeader}>

@@ -46,10 +46,6 @@ func (s *globalStoreImpl) GetClusterNodeStore(clusterID string, writeAccess bool
 		var err error
 		if writeAccess {
 			_, err = b.CreateBucketIfNotExists([]byte(clusterID))
-		} else {
-			if b.Bucket([]byte(clusterID)) == nil {
-				err = errors.New("not found")
-			}
 		}
 		return err
 	})

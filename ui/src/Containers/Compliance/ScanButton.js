@@ -1,6 +1,8 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Mutation } from 'react-apollo';
+import { actions as notificationActions } from 'reducers/notifications';
 import { TRIGGER_SCAN, RUN_STATUSES } from 'queries/standard';
 
 import Button from 'Components/Button';
@@ -29,7 +31,12 @@ class ScanButton extends React.Component {
 
     onClick = triggerScan => () => {
         const { clusterId, standardId } = this.props;
-        triggerScan({ variables: { clusterId, standardId } }).then(this.mutationCompleted);
+        triggerScan({ variables: { clusterId, standardId } })
+            .then(this.mutationCompleted)
+            .catch(e => {
+                this.props.addToast(e.message);
+                setTimeout(this.props.removeToast, 2000);
+            });
     };
 
     mutationCompleted = ({ data }) => {
@@ -95,7 +102,10 @@ ScanButton.propTypes = {
     textClass: PropTypes.string,
     clusterId: PropTypes.string,
     standardId: PropTypes.string,
-    loaderSize: PropTypes.number
+    loaderSize: PropTypes.number,
+
+    addToast: PropTypes.func.isRequired,
+    removeToast: PropTypes.func.isRequired
 };
 
 ScanButton.defaultProps = {
@@ -107,4 +117,12 @@ ScanButton.defaultProps = {
     loaderSize: 20
 };
 
-export default ScanButton;
+const mapDispatchToProps = {
+    addToast: notificationActions.addNotification,
+    removeToast: notificationActions.removeOldestNotification
+};
+
+export default connect(
+    null,
+    mapDispatchToProps
+)(ScanButton);

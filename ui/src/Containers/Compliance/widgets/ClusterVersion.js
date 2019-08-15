@@ -16,9 +16,11 @@ const ClusterVersion = ({ clusterId }) => {
             {({ loading, data }) => {
                 let contents = <Loader />;
                 let headerText = '';
-                if (!loading && data && data.cluster) {
-                    const { type } = data.cluster;
-                    const { orchestratorMetadata } = data.cluster.status;
+                if (!loading && data) {
+                    const cluster = data.cluster || {};
+                    const { type } = cluster;
+                    const status = cluster.status || {};
+                    const { orchestratorMetadata } = status;
                     if (!orchestratorMetadata || !type) {
                         contents = (
                             <NoResultsMessage message="An error occurred retrieving cluster version data." />

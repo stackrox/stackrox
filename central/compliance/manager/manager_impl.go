@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/central/scrape/factory"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -136,7 +137,10 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "could not get node store for cluster %s", clusterID)
 	}
 	nodes, err := clusterNodeStore.ListNodes()
-	if err != nil {
+
+	if errors.Cause(err) == bolthelper.ErrBucketNotFound {
+		nodes = nil
+	} else if err != nil {
 		return nil, errors.Wrapf(err, "listing nodes for cluster %s", clusterID)
 	}
 

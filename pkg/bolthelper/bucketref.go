@@ -1,9 +1,13 @@
 package bolthelper
 
 import (
-	"fmt"
-
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
+)
+
+var (
+	// ErrBucketNotFound is returned when an operation is invoked on a bucket that does not exist.
+	ErrBucketNotFound = errors.New("bucket not found")
 )
 
 // BucketRef is a reference to a bucket. The user does not need to care whether this is a top-level bucket, or a nested
@@ -39,7 +43,7 @@ func (r *topLevelBucketRef) getApplyFunc(fn func(b *bolt.Bucket) error) func(tx 
 	return func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(r.key)
 		if bucket == nil {
-			return fmt.Errorf("no such bucket: %v", r.key)
+			return ErrBucketNotFound
 		}
 		return fn(bucket)
 	}
@@ -62,7 +66,7 @@ func (r *nestedBucketRef) getApplyFunc(fn func(b *bolt.Bucket) error) func(b *bo
 	return func(b *bolt.Bucket) error {
 		nested := b.Bucket(r.key)
 		if nested == nil {
-			return fmt.Errorf("no such bucket: %v", r.key)
+			return ErrBucketNotFound
 		}
 		return fn(nested)
 	}
