@@ -145,7 +145,7 @@ const Secret = ({ id, entityListType, query }) => {
     };
 
     const QUERY = gql`
-        query secret($id: ID!) {
+        query secret($id: ID!, $query: String) {
             secret(id: $id) {
                 id
                 name
@@ -178,7 +178,7 @@ const Secret = ({ id, entityListType, query }) => {
                     }
                 }
                 namespace
-                deployments {
+                deployments(query: $query) {
                     ...deploymentFields
                 }
                 labels {

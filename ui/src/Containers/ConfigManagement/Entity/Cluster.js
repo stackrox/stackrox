@@ -29,62 +29,85 @@ import EntityList from '../List/EntityList';
 const Cluster = ({ id, entityListType, query }) => {
     const searchParam = useContext(searchContext);
 
+    const queryObject = { ...query[searchParam] };
+
+    if (entityListType === entityTypes.POLICY) queryObject['Lifecycle Stage'] = 'DEPLOY';
+
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(queryObject)
     };
 
     const QUERY = gql`
-    query getCluster($id: ID!) {
-        cluster(id: $id) {
-            id
-            name
-            admissionController
-            centralApiEndpoint
-            ${entityListType === entityTypes.IMAGE ? 'images {...imageFields}' : 'imageCount'}
-            
-            ${entityListType === entityTypes.NODE ? 'nodes {...nodeFields}' : 'nodeCount'}
-            ${
-                entityListType === entityTypes.DEPLOYMENT
-                    ? 'deployments {...deploymentFields}'
-                    : 'deploymentCount'
-            }
-            ${
-                entityListType === entityTypes.NAMESPACE
-                    ? 'namespaces {...namespaceFields}'
-                    : 'namespaceCount'
-            }
-            ${
-                entityListType === entityTypes.SUBJECT
-                    ? 'subjects {...subjectWithClusterFields}'
-                    : 'subjectCount'
-            }
-            ${entityListType === entityTypes.ROLE ? 'k8sroles {...k8roleFields}' : 'k8sroleCount'}
-            ${entityListType === entityTypes.SECRET ? 'secrets { ...secretFields }' : 'secretCount'}
-            ${entityListType === entityTypes.POLICY ? 'policies {...policyFields}' : 'policyCount'}
-            ${
-                entityListType === entityTypes.SERVICE_ACCOUNT
-                    ? 'serviceAccounts {...serviceAccountFields}'
-                    : 'serviceAccountCount'
-            }
-            status {
-                orchestratorMetadata {
-                    version
-                    buildDate
+        query getCluster($id: ID!${entityListType ? ', $query: String' : ''}) {
+            cluster(id: $id) {
+                id
+                name
+                admissionController
+                centralApiEndpoint
+                ${
+                    entityListType === entityTypes.IMAGE
+                        ? 'images(query: $query) { ...imageFields }'
+                        : 'imageCount'
+                }
+                ${
+                    entityListType === entityTypes.NODE
+                        ? 'nodes(query: $query) { ...nodeFields }'
+                        : 'nodeCount'
+                }
+                ${
+                    entityListType === entityTypes.DEPLOYMENT
+                        ? 'deployments(query: $query) { ...deploymentFields }'
+                        : 'deploymentCount'
+                }
+                ${
+                    entityListType === entityTypes.NAMESPACE
+                        ? 'namespaces(query: $query) { ...namespaceFields }'
+                        : 'namespaceCount'
+                }
+                ${
+                    entityListType === entityTypes.SUBJECT
+                        ? 'subjects(query: $query) { ...subjectWithClusterFields }'
+                        : 'subjectCount'
+                }
+                ${
+                    entityListType === entityTypes.ROLE
+                        ? 'k8sroles(query: $query) { ...k8roleFields }'
+                        : 'k8sroleCount'
+                }
+                ${
+                    entityListType === entityTypes.SECRET
+                        ? 'secrets(query: $query) { ...secretFields }'
+                        : 'secretCount'
+                }
+                ${
+                    entityListType === entityTypes.POLICY
+                        ? 'policies(query: $query) { ...policyFields }'
+                        : 'policyCount'
+                }
+                ${
+                    entityListType === entityTypes.SERVICE_ACCOUNT
+                        ? 'serviceAccounts(query: $query) { ...serviceAccountFields }'
+                        : 'serviceAccountCount'
+                }
+                status {
+                    orchestratorMetadata {
+                        version
+                        buildDate
+                    }
                 }
             }
         }
-    }
-    ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
-    ${entityListType === entityTypes.NODE ? NODE_FRAGMENT : ''}
-    ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
-    ${entityListType === entityTypes.NAMESPACE ? NAMESPACE_FRAGMENT : ''}
-    ${entityListType === entityTypes.SUBJECT ? SUBJECT_WITH_CLUSTER_FRAGMENT : ''}
-    ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
-    ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
-    ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
-    ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
-`;
+        ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
+        ${entityListType === entityTypes.NODE ? NODE_FRAGMENT : ''}
+        ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
+        ${entityListType === entityTypes.NAMESPACE ? NAMESPACE_FRAGMENT : ''}
+        ${entityListType === entityTypes.SUBJECT ? SUBJECT_WITH_CLUSTER_FRAGMENT : ''}
+        ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
+        ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
+        ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
+        ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
+    `;
 
     return (
         <Query query={QUERY} variables={variables}>

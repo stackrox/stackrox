@@ -27,59 +27,58 @@ const ServiceAccount = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
-    query getServiceAccount($id: ID!) {
-        serviceAccount(id: $id) {
-            id
-            name
-            namespace
-            saNamespace {
-                metadata {
+        query getServiceAccount($id: ID!${entityListType ? ', $query: String' : ''}) {
+            serviceAccount(id: $id) {
+                id
+                name
+                namespace
+                saNamespace {
+                    metadata {
+                        id
+                        name
+                    }
+                }
+                clusterName
+                clusterId
+                ${
+                    entityListType === entityTypes.DEPLOYMENT
+                        ? 'deployments(query: $query) { ...deploymentFields }'
+                        : 'deploymentCount'
+                }
+                ${
+                    entityListType === entityTypes.ROLE
+                        ? 'k8sroles: roles(query: $query) { ...k8roleFields }'
+                        : 'roleCount'
+                }
+                automountToken
+                createdAt
+                labels {
+                    key
+                    value
+                }
+                annotations {
+                    key
+                    value
+                }
+                secrets: imagePullSecretObjects {
                     id
                     name
                 }
-            }
-            clusterName
-            clusterId
-            ${
-                entityListType === entityTypes.DEPLOYMENT
-                    ? 'deployments {...deploymentFields}'
-                    : 'deploymentCount'
-            }
-            ${
-                entityListType === entityTypes.ROLE
-                    ? 'k8sroles: roles {...k8roleFields}'
-                    : 'roleCount'
-            }
-
-            automountToken
-            createdAt
-            labels {
-                key
-                value
-            }
-            annotations {
-                key
-                value
-            }
-            secrets: imagePullSecretObjects {
-                id
-                name
-            }
-            scopedPermissions {
-                scope
-                permissions {
-                    key
-                    values
+                scopedPermissions {
+                    scope
+                    permissions {
+                        key
+                        values
+                    }
                 }
             }
         }
-    }
-    ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
-    ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
+        ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
+        ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
     `;
 
     return (

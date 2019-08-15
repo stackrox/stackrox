@@ -30,11 +30,14 @@ const Namespace = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        query: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause({
+            ...query[searchParam],
+            'Lifecycle Stage': 'DEPLOY'
+        })
     };
 
     const QUERY = gql`
-    query getNamespace($id: ID!) {
+    query getNamespace($id: ID!, $query: String) {
         entity: namespace(id: $id) {
             metadata {
                 name
@@ -50,14 +53,40 @@ const Namespace = ({ id, entityListType, query }) => {
                 name
             }
             ${
+                entityListType === entityTypes.IMAGE
+                    ? 'images(query: $query) {...imageFields}'
+                    : 'imageCount'
+            }
+            ${
                 entityListType === entityTypes.DEPLOYMENT
-                    ? 'deployments { ...deploymentFields }'
+                    ? 'deployments(query: $query) { ...deploymentFields }'
                     : 'deploymentCount'
             }
-            ${entityListType === entityTypes.IMAGE ? 'images { ...imageFields }' : 'imageCount'}
-            ${entityListType === entityTypes.SECRET ? 'secrets { ...secretFields }' : 'secretCount'}
-            ${entityListType === entityTypes.POLICY ? 'policies {...policyFields}' : 'policyCount'}
-
+            ${
+                entityListType === entityTypes.SUBJECT
+                    ? 'subjects {...subjectWithClusterFields}'
+                    : 'subjectCount'
+            }
+            ${
+                entityListType === entityTypes.ROLE
+                    ? 'k8sroles(query: $query) {...k8roleFields}'
+                    : 'k8sroleCount'
+            }
+            ${
+                entityListType === entityTypes.SERVICE_ACCOUNT
+                    ? 'serviceAccounts(query: $query) {...serviceAccountFields}'
+                    : 'serviceAccountCount'
+            }
+            ${
+                entityListType === entityTypes.SECRET
+                    ? 'secrets(query: $query) { ...secretFields }'
+                    : 'secretCount'
+            }
+            ${
+                entityListType === entityTypes.POLICY
+                    ? 'policies(query: $query) {...policyFields}'
+                    : 'policyCount(query: $query)'
+            }
         }
     }
     ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}

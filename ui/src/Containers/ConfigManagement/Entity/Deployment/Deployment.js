@@ -16,6 +16,7 @@ import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
 import { IMAGE_FRAGMENT } from 'queries/image';
+import { SECRET_FRAGMENT } from 'queries/secret';
 import EntityList from '../../List/EntityList';
 import getSubListFromEntity from '../../List/utilities/getSubListFromEntity';
 import DeploymentFindings from './DeploymentFindings';
@@ -25,11 +26,11 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
 
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
-        query getDeployment($id: ID!) {
+        query getDeployment($id: ID!, $query: String) {
             deployment(id: $id) {
                 id
                 annotations {
@@ -71,11 +72,13 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                 replicas
                 serviceAccount
                 serviceAccountID
+                ${
+                    entityListType === entityTypes.POLICY
+                        ? 'failingPolicies(query: $query) { ...policyFields }'
+                        : 'failingPolicyCount(query: $query)'
+                }
                 policyStatus {
                     status
-                    failingPolicies {${
-                        entityListType === entityTypes.POLICY ? '...policyFields' : 'id'
-                    }}
                 }
                 tolerations {
                     key
@@ -85,12 +88,21 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                 }
                 type
                 updatedAt
-                ${entityListType === entityTypes.IMAGE ? 'images { ...imageFields }' : 'imageCount'}
+                ${
+                    entityListType === entityTypes.SECRET
+                        ? 'secrets(query: $query) { ...secretFields }'
+                        : 'secretCount'
+                }
+                ${
+                    entityListType === entityTypes.IMAGE
+                        ? 'images(query: $query) { ...imageFields }'
+                        : 'imageCount'
+                }
             }
         }
     ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
     ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
-
+    ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
     `;
 
     return (
@@ -103,7 +115,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                 if (entityListType) {
                     const listData =
                         entityListType === entityTypes.POLICY
-                            ? entity.policyStatus.failingPolicies
+                            ? entity.failingPolicies
                             : getSubListFromEntity(entity, entityListType);
 
                     return (
@@ -123,7 +135,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                     serviceAccount,
                     serviceAccountID,
                     imageCount,
-                    policyStatus
+                    failingPolicyCount
                 } = entity;
 
                 const metadataKeyValuePairs = [
@@ -181,7 +193,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Failing Policies"
-                                    value={policyStatus.failingPolicies.length}
+                                    value={failingPolicyCount}
                                     entityType={entityTypes.POLICY}
                                 />
                             </div>

@@ -66,11 +66,13 @@ const Policy = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
-    query getPolicy($id: ID!) {
+    query getPolicy($id: ID!${
+        entityListType === entityTypes.DEPLOYMENT ? ', $query: String' : ''
+    }) {
         policy(id: $id) {
             id
             description
@@ -86,7 +88,7 @@ const Policy = ({ id, entityListType, query }) => {
             }
             ${
                 entityListType === entityTypes.DEPLOYMENT
-                    ? 'deployments { ...deploymentFields }'
+                    ? 'deployments(query: $query) { ...deploymentFields }'
                     : 'deploymentCount'
             }
             alerts {

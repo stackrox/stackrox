@@ -25,17 +25,17 @@ const Image = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
-        query image($id: ID!) {
+        query image($id: ID!${entityListType ? ', $query: String' : ''}) {
             image(sha: $id) {
                 id
                 lastUpdated
                 ${
                     entityListType === entityTypes.DEPLOYMENT
-                        ? 'deployments {...deploymentFields}'
+                        ? 'deployments(query: $query) {...deploymentFields}'
                         : 'deploymentCount'
                 }
                 metadata {

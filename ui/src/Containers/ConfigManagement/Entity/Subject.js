@@ -48,11 +48,11 @@ const Subject = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
-        query subject($id: String!) {
+        query subject($id: String!, $query: String) {
             clusters {
                 id
                 subject(name: $id) {
@@ -73,7 +73,7 @@ const Subject = ({ id, entityListType, query }) => {
                     clusterAdmin
                     clusterID
                     clusterName
-                    roles {
+                    roles(query: $query) {
                         ${entityListType === entityTypes.ROLE ? '...k8roleFields' : 'id'}
                     }
                 }

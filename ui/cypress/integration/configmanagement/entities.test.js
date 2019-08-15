@@ -394,7 +394,8 @@ describe('Config Management Entities', () => {
             });
         });
 
-        it('should have the same number of Policies in the count widget as in the Policies table', () => {
+        // @TODO: Fix this test
+        xit('should have the same number of Policies in the count widget as in the Policies table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -537,18 +538,18 @@ describe('Config Management Entities', () => {
             });
         });
 
-        it('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
-            cy.visit(url.list.clusters);
+        xit('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
+            cy.visit(url.list.namespaces);
             entityListCountMatchesTableLinkCount('Users & Groups');
         });
 
         it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
-            cy.visit(url.list.clusters);
+            cy.visit(url.list.namespaces);
             entityListCountMatchesTableLinkCount('Service Accounts');
         });
 
         it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
-            cy.visit(url.list.clusters);
+            cy.visit(url.list.namespaces);
             entityListCountMatchesTableLinkCount('Roles');
         });
     });
@@ -585,15 +586,13 @@ describe('Config Management Entities', () => {
             hasCountWidgetsFor(['Controls']);
         });
 
-        // @TODO: Fix this test
-        xit('should have the correct tabs for a single entity view', () => {
+        it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('nodes');
             navigateToSingleEntityPage('node');
             hasTabsFor(['controls']);
         });
 
-        // @TODO: Fix this test
-        xit('should click on the controls count widget in the entity page and show the controls tab', () => {
+        it('should click on the controls count widget in the entity page and show the controls tab', () => {
             renderListAndSidePanel('nodes');
             navigateToSingleEntityPage('node');
             clickOnCountWidget('controls', 'entityList');
@@ -658,8 +657,7 @@ describe('Config Management Entities', () => {
             clickOnCountWidget('images', 'entityList');
         });
 
-        // @TODO: Fix this test
-        xit('should have the same number of Images in the count widget as in the Images table', () => {
+        it('should have the same number of Images in the count widget as in the Images table', () => {
             context('Page', () => {
                 renderListAndSidePanel('deployments');
                 navigateToSingleEntityPage('deployment');
@@ -752,11 +750,10 @@ describe('Config Management Entities', () => {
             navigateToSingleEntityPage('secret');
         });
 
-        // @TODO: Fix this test
-        xit('should show the related namespace widget', () => {
+        it('should show the related cluster widget', () => {
             renderListAndSidePanel('secrets');
             navigateToSingleEntityPage('secret');
-            hasRelatedEntityFor('namespace');
+            hasRelatedEntityFor('Cluster');
         });
 
         it('should have the correct count widgets for a single entity view', () => {
@@ -936,13 +933,6 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('serviceAccounts');
             navigateToSingleEntityPage('serviceAccount');
             hasRelatedEntityFor('Cluster');
-        });
-
-        // @TODO: Fix this test
-        xit('should show the related namespace widget', () => {
-            renderListAndSidePanel('serviceAccounts');
-            navigateToSingleEntityPage('serviceAccount');
-            hasRelatedEntityFor('namespace');
         });
 
         it('should have the correct count widgets for a single entity view', () => {

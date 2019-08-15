@@ -24,11 +24,11 @@ const Node = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
-        query getNode($id: ID!) {
+        query getNode($id: ID!, $query: String) {
             node(id: $id) {
                 id
                 name
@@ -65,7 +65,7 @@ const Node = ({ id, entityListType, query }) => {
                         }
                     }
                 }
-                controls {
+                controls(query: $query) {
                     id
                     standardId
                     name

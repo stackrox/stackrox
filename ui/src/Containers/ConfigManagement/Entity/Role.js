@@ -25,11 +25,11 @@ const Role = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
-        query k8sRole($id: ID!) {
+        query k8sRole($id: ID!${entityListType ? ', $query: String' : ''}) {
             clusters {
                 id
                 k8srole(role: $id) {
@@ -46,12 +46,12 @@ const Role = ({ id, entityListType, query }) => {
                     }
                     ${
                         entityListType === entityTypes.SERVICE_ACCOUNT
-                            ? 'serviceAccounts {...serviceAccountFields}'
+                            ? 'serviceAccounts(query: $query) {...serviceAccountFields}'
                             : 'serviceAccountCount'
                     }
                     ${
                         entityListType === entityTypes.SUBJECT
-                            ? 'subjects {...subjectWithClusterFields}'
+                            ? 'subjects(query: $query) {...subjectWithClusterFields}'
                             : 'subjectCount'
                     }
                     rules {
