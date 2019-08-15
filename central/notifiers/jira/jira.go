@@ -22,6 +22,14 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	defaultPriorities = map[storage.Severity]string{
+		storage.Severity_CRITICAL_SEVERITY: "P0-Highest",
+		storage.Severity_HIGH_SEVERITY:     "P1-High",
+		storage.Severity_MEDIUM_SEVERITY:   "P2-Medium",
+		storage.Severity_LOW_SEVERITY:      "P3-Low",
+		storage.Severity_UNSET_SEVERITY:    "P4-Lowest",
+	}
 )
 
 // Jira notifier plugin
@@ -31,6 +39,8 @@ type jira struct {
 	conf *storage.Jira
 
 	notifier *storage.Notifier
+
+	priorities map[storage.Severity]string
 }
 
 func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
@@ -74,7 +84,7 @@ func (j *jira) AlertNotify(alert *storage.Alert) error {
 			},
 			Description: description,
 			Priority: &jiraLib.Priority{
-				Name: severityToPriority(alert.GetPolicy().GetSeverity()),
+				Name: j.severityToPriority(alert.GetPolicy().GetSeverity()),
 			},
 		},
 	}
@@ -105,7 +115,7 @@ func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 			},
 			Description: description,
 			Priority: &jiraLib.Priority{
-				Name: severityToPriority(storage.Severity_MEDIUM_SEVERITY),
+				Name: j.severityToPriority(storage.Severity_MEDIUM_SEVERITY),
 			},
 		},
 	}
@@ -130,11 +140,10 @@ func validate(jira *storage.Jira) error {
 }
 
 func newJira(notifier *storage.Notifier) (*jira, error) {
-	jiraConfig, ok := notifier.GetConfig().(*storage.Notifier_Jira)
-	if !ok {
+	conf := notifier.GetJira()
+	if conf == nil {
 		return nil, fmt.Errorf("Jira configuration required")
 	}
-	conf := jiraConfig.Jira
 	if err := validate(conf); err != nil {
 		return nil, err
 	}
@@ -146,24 +155,27 @@ func newJira(notifier *storage.Notifier) (*jira, error) {
 	httpClient := &http.Client{
 		Timeout: timeout,
 	}
-	client, err := jiraLib.NewClient(httpClient, url)
+	bat := &jiraLib.BasicAuthTransport{
+		Username:  conf.GetUsername(),
+		Password:  conf.GetPassword(),
+		Transport: httpClient.Transport,
+	}
+	client, err := jiraLib.NewClient(bat.Client(), url)
 	if err != nil {
 		return nil, err
 	}
-	res, err := client.Authentication.AcquireSessionCookie(conf.GetUsername(), conf.GetPassword())
+
+	prios, _, err := client.Priority.GetList()
+
 	if err != nil {
 		return nil, err
 	}
-	if !res {
-		return nil, errors.New("Result of authentication is false")
-	}
-	// forces the auth to use basic auth per request
-	client.Authentication.SetBasicAuth(conf.GetUsername(), conf.GetPassword())
 
 	return &jira{
-		client:   client,
-		conf:     notifier.GetConfig().(*storage.Notifier_Jira).Jira,
-		notifier: notifier,
+		client:     client,
+		conf:       notifier.GetJira(),
+		notifier:   notifier,
+		priorities: mapPriorities(prios),
 	}, nil
 }
 
@@ -199,26 +211,32 @@ func (j *jira) Test() error {
 			},
 			Summary: "This is a test issue created to test integration with StackRox.",
 			Priority: &jiraLib.Priority{
-				Name: severityToPriority(storage.Severity_LOW_SEVERITY),
+				Name: j.severityToPriority(storage.Severity_LOW_SEVERITY),
 			},
 		},
 	}
 	return j.createIssue(i)
 }
 
-func severityToPriority(sev storage.Severity) string {
-	switch sev {
-	case storage.Severity_CRITICAL_SEVERITY:
-		return "P0-Highest"
-	case storage.Severity_HIGH_SEVERITY:
-		return "P1-High"
-	case storage.Severity_MEDIUM_SEVERITY:
-		return "P2-Medium"
-	case storage.Severity_LOW_SEVERITY:
-		return "P3-Low"
-	default:
-		return "P4-Lowest"
+func mapPriorities(prios []jiraLib.Priority) map[storage.Severity]string {
+	output := make(map[storage.Severity]string)
+	for k, name := range defaultPriorities {
+		for _, p := range prios {
+			if name[:3] == p.Name[:3] {
+				name = p.Name
+			}
+		}
+		output[k] = name
 	}
+	return output
+}
+
+func (j *jira) severityToPriority(sev storage.Severity) string {
+	name, ok := j.priorities[sev]
+	if ok {
+		return name
+	}
+	return j.priorities[storage.Severity_UNSET_SEVERITY]
 }
 
 func init() {
