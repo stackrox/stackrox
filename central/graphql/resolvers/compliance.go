@@ -3,14 +3,17 @@ package resolvers
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -57,6 +60,7 @@ func InitCompliance() {
 
 // ComplianceStandards returns graphql resolvers for all compliance standards
 func (resolver *Resolver) ComplianceStandards(ctx context.Context) ([]*complianceStandardMetadataResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceStandards")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -66,6 +70,7 @@ func (resolver *Resolver) ComplianceStandards(ctx context.Context) ([]*complianc
 
 // ComplianceStandard returns a graphql resolver for a named compliance standard
 func (resolver *Resolver) ComplianceStandard(ctx context.Context, args struct{ graphql.ID }) (*complianceStandardMetadataResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceStandard")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -75,6 +80,7 @@ func (resolver *Resolver) ComplianceStandard(ctx context.Context, args struct{ g
 
 // ComplianceControl retrieves an individual control by ID
 func (resolver *Resolver) ComplianceControl(ctx context.Context, args struct{ graphql.ID }) (*complianceControlResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceControl")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -84,6 +90,7 @@ func (resolver *Resolver) ComplianceControl(ctx context.Context, args struct{ gr
 
 // ComplianceControlGroup retrieves a control group by ID
 func (resolver *Resolver) ComplianceControlGroup(ctx context.Context, args struct{ graphql.ID }) (*complianceControlGroupResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceControlGroups")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -99,6 +106,8 @@ type aggregatedResultQuery struct {
 
 // AggregatedResults returns the aggregration of the last runs aggregated by scope, unit and filtered by a query
 func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) (*complianceAggregationResponseWithDomainResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "AggregatedResults")
+
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -219,6 +228,8 @@ func (resolver *complianceDomainKeyResolver) ToComplianceControlGroup() (group *
 
 // ComplianceDomain returns a graphql resolver that loads the underlying object for an aggregation key
 func (resolver *complianceAggregationResultWithDomainResolver) Keys(ctx context.Context) ([]*complianceDomainKeyResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Compliance, "Keys")
+
 	output := make([]*complianceDomainKeyResolver, len(resolver.data.AggregationKeys))
 	for i, v := range resolver.data.AggregationKeys {
 		wrapped := newComplianceDomainKeyResolverWrapped(ctx, resolver.root, resolver.domain, v)
@@ -231,6 +242,8 @@ func (resolver *complianceAggregationResultWithDomainResolver) Keys(ctx context.
 
 // ComplianceResults returns graphql resolvers for all matching compliance results
 func (resolver *Resolver) ComplianceResults(ctx context.Context, query rawQuery) ([]*complianceControlResultResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Compliance, "ComplianceResults")
+
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -366,6 +379,8 @@ func (resolver *controlResultResolver) Value(ctx context.Context) *complianceRes
 }
 
 func (resolver *complianceStandardMetadataResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Compliance, "ComplianceResults")
+
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}

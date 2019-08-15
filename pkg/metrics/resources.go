@@ -20,6 +20,5 @@ const (
 	ServiceAccount
 	Role
 	RoleBinding
-
 	DeploymentReprocess
 )

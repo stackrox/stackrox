@@ -2,11 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -30,6 +33,8 @@ func init() {
 
 // Cluster returns a GraphQL resolver for the cluster of this role
 func (resolver *k8SRoleResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "Cluster")
+
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -40,6 +45,8 @@ func (resolver *k8SRoleResolver) Cluster(ctx context.Context) (*clusterResolver,
 
 // K8sRoles return k8s roles based on a query
 func (resolver *Resolver) K8sRoles(ctx context.Context, arg rawQuery) ([]*k8SRoleResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sRoles")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -61,6 +68,8 @@ func (resolver *Resolver) K8sRoles(ctx context.Context, arg rawQuery) ([]*k8SRol
 }
 
 func (resolver *k8SRoleResolver) Type(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "Type")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return "", err
 	}
@@ -73,6 +82,8 @@ func (resolver *k8SRoleResolver) Type(ctx context.Context) (string, error) {
 
 // Verbs returns the set of verbs granted by a given k8s role
 func (resolver *k8SRoleResolver) Verbs(ctx context.Context) ([]string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "Verbs")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -83,6 +94,8 @@ func (resolver *k8SRoleResolver) Verbs(ctx context.Context) ([]string, error) {
 
 // Resources returns the set of resources that have been granted permissions to by a given k8s role
 func (resolver *k8SRoleResolver) Resources(ctx context.Context) ([]string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "Resources")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -92,6 +105,8 @@ func (resolver *k8SRoleResolver) Resources(ctx context.Context) ([]string, error
 
 // NonResourceURLs returns the set of non resource urls granted permissions to by a given k8s role
 func (resolver *k8SRoleResolver) Urls(ctx context.Context) ([]string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "Urls")
+
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -100,6 +115,8 @@ func (resolver *k8SRoleResolver) Urls(ctx context.Context) ([]string, error) {
 
 // SubjectCount returns the number of subjects granted permissions to by a given k8s role
 func (resolver *k8SRoleResolver) SubjectCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "SubjectCount")
+
 	if err := readK8sSubjects(ctx); err != nil {
 		return 0, err
 	}
@@ -113,6 +130,8 @@ func (resolver *k8SRoleResolver) SubjectCount(ctx context.Context) (int32, error
 
 // Subjects returns the set of subjects granted permissions to by a given k8s role
 func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectWithClusterIDResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "Subjects")
+
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
@@ -145,6 +164,8 @@ func (resolver *k8SRoleResolver) getSubjects(ctx context.Context, args rawQuery)
 
 // ServiceAccounts returns the set of service accounts granted permissions to by a given k8s role
 func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "ServiceAccounts")
+
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
@@ -154,6 +175,8 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args rawQu
 
 // ServiceAccountCount returns the count of service accounts granted permissions to by a given k8s role
 func (resolver *k8SRoleResolver) ServiceAccountCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "ServiceAccountCount")
+
 	if err := readServiceAccounts(ctx); err != nil {
 		return 0, err
 	}
@@ -198,6 +221,8 @@ func (resolver *k8SRoleResolver) getServiceAccounts(ctx context.Context, args ra
 
 // RoleNamespace returns the namespace of the k8s role
 func (resolver *k8SRoleResolver) RoleNamespace(ctx context.Context) (*namespaceResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "RoleNamespace")
+
 	role := resolver.data
 	if role.GetNamespace() == "" {
 		return nil, nil

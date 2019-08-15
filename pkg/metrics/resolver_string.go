@@ -10,25 +10,27 @@ func _() {
 	var x [1]struct{}
 	_ = x[Cluster-0]
 	_ = x[Compliance-1]
-	_ = x[Deployments-2]
-	_ = x[Groups-3]
-	_ = x[Images-4]
-	_ = x[K8sRoles-5]
-	_ = x[Namespaces-6]
-	_ = x[Nodes-7]
-	_ = x[Notifiers-8]
-	_ = x[Policies-9]
-	_ = x[Roles-10]
-	_ = x[Secrets-11]
-	_ = x[ServiceAccounts-12]
-	_ = x[Subjects-13]
-	_ = x[Tokens-14]
-	_ = x[Violations-15]
+	_ = x[ComlianceControl-2]
+	_ = x[Deployments-3]
+	_ = x[Groups-4]
+	_ = x[Images-5]
+	_ = x[K8sRoles-6]
+	_ = x[Namespaces-7]
+	_ = x[Nodes-8]
+	_ = x[Notifiers-9]
+	_ = x[Policies-10]
+	_ = x[Roles-11]
+	_ = x[Root-12]
+	_ = x[Secrets-13]
+	_ = x[ServiceAccounts-14]
+	_ = x[Subjects-15]
+	_ = x[Tokens-16]
+	_ = x[Violations-17]
 }
 
-const _Resolver_name = "ClusterComplianceDeploymentsGroupsImagesK8sRolesNamespacesNodesNotifiersPoliciesRolesSecretsServiceAccountsSubjectsTokensViolations"
+const _Resolver_name = "ClusterComplianceComlianceControlDeploymentsGroupsImagesK8sRolesNamespacesNodesNotifiersPoliciesRolesRootSecretsServiceAccountsSubjectsTokensViolations"
 
-var _Resolver_index = [...]uint8{0, 7, 17, 28, 34, 40, 48, 58, 63, 72, 80, 85, 92, 107, 115, 121, 131}
+var _Resolver_index = [...]uint8{0, 7, 17, 33, 44, 50, 56, 64, 74, 79, 88, 96, 101, 105, 112, 127, 135, 141, 151}
 
 func (i Resolver) String() string {
 	if i < 0 || i >= Resolver(len(_Resolver_index)-1) {

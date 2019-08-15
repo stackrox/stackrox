@@ -3,13 +3,16 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator/service"
 	"github.com/stackrox/rox/central/secret/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,6 +43,7 @@ func init() {
 
 // Deployment returns a GraphQL resolver for a given id
 func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.ID }) (*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployment")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -61,6 +65,7 @@ func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*de
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
 func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Cluster")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -71,6 +76,8 @@ func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolv
 
 // NamespaceObject returns a GraphQL resolver for the namespace where this deployment runs
 func (resolver *deploymentResolver) NamespaceObject(ctx context.Context) (*namespaceResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "NamespaceObject")
+
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
@@ -80,6 +87,8 @@ func (resolver *deploymentResolver) NamespaceObject(ctx context.Context) (*names
 
 // ServiceAccountObject returns a GraphQL resolver for the service account associated with this deployment
 func (resolver *deploymentResolver) ServiceAccountObject(ctx context.Context) (*serviceAccountResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ServiceAccountObject")
+
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
@@ -97,6 +106,8 @@ func (resolver *deploymentResolver) ServiceAccountObject(ctx context.Context) (*
 }
 
 func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*processNameGroupResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "GroupedProcesses")
+
 	if err := readIndicators(ctx); err != nil {
 		return nil, err
 	}
@@ -106,6 +117,8 @@ func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*pr
 }
 
 func (resolver *deploymentResolver) DeployAlerts(ctx context.Context) ([]*alertResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "DeployAlerts")
+
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -115,6 +128,8 @@ func (resolver *deploymentResolver) DeployAlerts(ctx context.Context) ([]*alertR
 }
 
 func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "DeployAlertsCount")
+
 	if err := readAlerts(ctx); err != nil {
 		return 0, err // could return nil, nil to prevent errors from propagating.
 	}
@@ -171,6 +186,8 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 
 // Secrets returns the total number of secrets for this deployment
 func (resolver *deploymentResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Secrets")
+
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -184,6 +201,8 @@ func (resolver *deploymentResolver) Secrets(ctx context.Context, args rawQuery) 
 
 // SecretCount returns the total number of secrets for this deployment
 func (resolver *deploymentResolver) SecretCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "SecretCount")
+
 	secrets, err := resolver.getDeploymentSecrets(ctx, search.EmptyQuery())
 	if err != nil {
 		return 0, err
@@ -257,6 +276,8 @@ func (resolver *deploymentResolver) ComplianceResults(ctx context.Context, args 
 }
 
 func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ServiceAccountID")
+
 	if err := readServiceAccounts(ctx); err != nil {
 		return "", err
 	}
@@ -280,6 +301,8 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 }
 
 func (resolver *deploymentResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
+
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -293,11 +316,15 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args rawQuery) (
 }
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCount")
+
 	imageShas := resolver.getImageShas(ctx)
 	return int32(len(imageShas)), nil
 }
 
 func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args rawQuery) (*policyStatusResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PolicyStatus")
+
 	alerts, err := resolver.getAlerts(ctx, args)
 
 	if err != nil {

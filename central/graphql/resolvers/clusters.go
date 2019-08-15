@@ -62,7 +62,7 @@ func init() {
 
 // Cluster returns a GraphQL resolver for the given cluster
 func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }) (*clusterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Cluster")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Cluster")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }
 
 // Clusters returns GraphQL resolvers for all clusters
 func (resolver *Resolver) Clusters(ctx context.Context, args rawQuery) ([]*clusterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Clusters")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Clusters")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}

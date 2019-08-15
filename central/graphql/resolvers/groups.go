@@ -2,8 +2,11 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -17,6 +20,8 @@ func init() {
 
 // Groups returns GraphQL resolvers for all groups
 func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Groups")
+
 	err := readGroups(ctx)
 	if err != nil {
 		return nil, err
@@ -26,6 +31,8 @@ func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) 
 
 // Group returns a GraphQL resolver for the matching group, if it exists
 func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID, Key, Value *string }) (*groupResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Group")
+
 	err := readGroups(ctx)
 	if err != nil {
 		return nil, err

@@ -8,6 +8,7 @@ type Resolver int
 const (
 	Cluster Resolver = iota
 	Compliance
+	ComlianceControl
 	Deployments
 	Groups
 	Images
@@ -17,6 +18,7 @@ const (
 	Notifiers
 	Policies
 	Roles
+	Root
 	Secrets
 	ServiceAccounts
 	Subjects

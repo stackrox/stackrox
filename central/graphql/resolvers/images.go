@@ -2,9 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -22,6 +25,8 @@ func init() {
 
 // Images returns GraphQL resolvers for all images
 func (resolver *Resolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Images")
+
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -35,6 +40,8 @@ func (resolver *Resolver) Images(ctx context.Context, args rawQuery) ([]*imageRe
 
 // Image returns a graphql resolver for the identified image, if it exists
 func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID }) (*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Image")
+
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -44,6 +51,8 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID
 
 // Deployments returns the deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Deployments")
+
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
