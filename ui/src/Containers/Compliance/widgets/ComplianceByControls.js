@@ -235,7 +235,7 @@ const ComplianceByControls = ({
                             <ScanButton
                                 key={selectedStandard.standard}
                                 className="btn-sm btn-base mr-2"
-                                text={`Scan ${standardBaseTypes[selectedStandard.standard]}`}
+                                text="Scan"
                                 textClass="hidden lg:block"
                                 textCondensed={`Scan ${
                                     standardBaseTypes[selectedStandard.standard]

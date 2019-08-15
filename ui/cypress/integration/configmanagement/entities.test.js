@@ -642,13 +642,13 @@ describe('Config Management Entities', () => {
         it('should have the correct count widgets for a single entity view', () => {
             renderListAndSidePanel('deployments');
             navigateToSingleEntityPage('deployment');
-            hasCountWidgetsFor(['Images', 'Policies']);
+            hasCountWidgetsFor(['Images', 'Policies', 'Secrets']);
         });
 
         it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('deployments');
             navigateToSingleEntityPage('deployment');
-            hasTabsFor(['images', 'policies']);
+            hasTabsFor(['images', 'policies', 'secrets']);
         });
 
         it('should click on the images count widget in the entity page and show the images tab', () => {
@@ -667,6 +667,19 @@ describe('Config Management Entities', () => {
             context('Side Panel', () => {
                 renderListAndSidePanel('deployments');
                 sidePanelEntityCountMatchesTableRows('Images');
+            });
+        });
+
+        it('should have the same number of Secrets in the count widget as in the Secrets table', () => {
+            context('Page', () => {
+                renderListAndSidePanel('deployments');
+                navigateToSingleEntityPage('deployment');
+                pageEntityCountMatchesTableRows('Secrets');
+            });
+
+            context('Side Panel', () => {
+                renderListAndSidePanel('deployments');
+                sidePanelEntityCountMatchesTableRows('Secrets');
             });
         });
 

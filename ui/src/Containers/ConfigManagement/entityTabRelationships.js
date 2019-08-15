@@ -25,7 +25,7 @@ const entityTabsMap = {
     [entityTypes.IMAGE]: [entityTypes.DEPLOYMENT],
     [entityTypes.CONTROL]: [entityTypes.NODE],
     [entityTypes.SUBJECT]: [entityTypes.ROLE],
-    [entityTypes.DEPLOYMENT]: [entityTypes.IMAGE, entityTypes.POLICY],
+    [entityTypes.DEPLOYMENT]: [entityTypes.IMAGE, entityTypes.SECRET, entityTypes.POLICY],
     [entityTypes.POLICY]: [entityTypes.DEPLOYMENT]
 };
 

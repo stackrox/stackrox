@@ -51,7 +51,7 @@ const List = ({
         const header = `${tableRows.length} ${pluralize(headerText || entityLabels[entityType])}`;
 
         return (
-            <section id="capture-list" className="w-full">
+            <section id="capture-list" className="h-full w-full">
                 <Panel className={className} header={header} headerComponents={headerComponents}>
                     <Table
                         rows={tableRows}

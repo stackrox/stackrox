@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import getEntityName from 'modules/getEntityName';
 import { entityNameQueryMap } from 'modules/queryMap';
+import capitalize from 'lodash/capitalize';
 
 import Query from 'Components/ThrowingQuery';
 import PageHeader from 'Components/PageHeader';
@@ -23,8 +24,9 @@ const EntityPageHeader = ({ entityType, entityId, children }) => {
         <Query query={query} variables={variables}>
             {({ data }) => {
                 const header = getEntityName(entityType, data) || '-';
+                const subHeader = capitalize(entityType);
                 return (
-                    <PageHeader classes="bg-primary-100 z-1" header={header} subHeader={entityType}>
+                    <PageHeader classes="bg-primary-100 z-1" header={header} subHeader={subHeader}>
                         {children}
                     </PageHeader>
                 );

@@ -135,7 +135,8 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                     serviceAccount,
                     serviceAccountID,
                     imageCount,
-                    failingPolicyCount
+                    failingPolicyCount,
+                    secretCount
                 } = entity;
 
                 const metadataKeyValuePairs = [
@@ -189,6 +190,12 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                     name="Images"
                                     value={imageCount}
                                     entityType={entityTypes.IMAGE}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Secrets"
+                                    value={secretCount}
+                                    entityType={entityTypes.SECRET}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
