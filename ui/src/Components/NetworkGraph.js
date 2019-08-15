@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
+
 import { actions as graphActions } from 'reducers/network/graph';
 
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
@@ -638,7 +639,7 @@ const NetworkGraph = ({
 
     useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
-    useEffect(runLayout, [nodes.length]);
+    useEffect(runLayout, [allowedNodes]);
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
 

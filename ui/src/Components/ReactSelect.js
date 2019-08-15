@@ -15,7 +15,7 @@ export const selectMenuOnTopStyles = {
         position: 'absolute !important',
         top: 'auto !important',
         bottom: '100% !important',
-        zIndex: '100',
+        zIndex: '100000',
         'border-radius': '5px 5px 0px 0px !important'
     })
 };

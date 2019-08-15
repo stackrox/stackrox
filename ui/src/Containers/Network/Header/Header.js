@@ -36,7 +36,7 @@ class Header extends Component {
             <PageHeader
                 header="Network Graph"
                 subHeader={subHeader}
-                className="w-2/3 bg-primary-200 "
+                classes="w-2/3 bg-primary-200 z-10"
             >
                 <ClusterSelect />
                 <SearchInput
