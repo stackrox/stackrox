@@ -25,13 +25,7 @@ func (e *evaluator) ForSubject(subject *storage.Subject) PolicyRuleSet {
 
 // IsClusterAdmin returns true if the subject has cluster admin privs, false otherwise
 func (e *evaluator) IsClusterAdmin(subject *storage.Subject) bool {
-	clusterAdmins := getSubjectsGrantedClusterAdmin(e.k8sroles, e.k8sbindings)
-	for _, admin := range clusterAdmins {
-		if subjectsAreEqual(admin, subject) {
-			return true
-		}
-	}
-	return false
+	return isSubjectClusterAdmin(subject, e.k8sroles, e.k8sbindings)
 }
 
 // RolesForSubject returns the roles assigned to the subject based on the evaluator's bindings
@@ -57,18 +51,10 @@ func subjectsAreEqual(subject1 *storage.Subject, subject2 *storage.Subject) bool
 
 func getSubjectsGrantedClusterAdmin(roles []*storage.K8SRole, roleBindings []*storage.K8SRoleBinding) []*storage.Subject {
 	// Collect the id of cluster admin roles. Expected to be 1.
-	clusterAdminRoleIDs := set.NewStringSet()
-	for _, role := range roles {
-		if role.GetName() == clusterAdmin {
-			clusterAdminRoleIDs.Add(role.GetId())
-		} else if role.GetClusterRole() && grantsAllCoreAPIAccess(role) {
-			clusterAdminRoleIDs.Add(role.GetId())
-		}
-	}
+	clusterAdminRoleIDs := getClusterAdminRoles(roles)
 	if clusterAdminRoleIDs.Cardinality() == 0 {
 		return nil
 	}
-
 	// For every binding that binds to a cluster admin role, collects all of it's subjects.
 	subjectsWithClusterAdmin := NewSubjectSet()
 	for _, binding := range roleBindings {
@@ -77,6 +63,34 @@ func getSubjectsGrantedClusterAdmin(roles []*storage.K8SRole, roleBindings []*st
 		}
 	}
 	return subjectsWithClusterAdmin.ToSlice()
+}
+
+func isSubjectClusterAdmin(subject *storage.Subject, roles []*storage.K8SRole, roleBindings []*storage.K8SRoleBinding) bool {
+	clusterAdminRoleIDs := getClusterAdminRoles(roles)
+	subjectsWithClusterAdmin := NewSubjectSet()
+	for _, binding := range roleBindings {
+		if clusterAdminRoleIDs.Contains(binding.GetRoleId()) {
+			subjectsWithClusterAdmin.Add(binding.GetSubjects()...)
+		}
+	}
+	for _, s := range subjectsWithClusterAdmin.ToSlice() {
+		if subjectsAreEqual(subject, s) {
+			return true
+		}
+	}
+	return false
+}
+
+func getClusterAdminRoles(roles []*storage.K8SRole) set.StringSet {
+	clusterAdminRoleIDs := set.NewStringSet()
+	for _, role := range roles {
+		if role.GetName() == clusterAdmin {
+			clusterAdminRoleIDs.Add(role.GetId())
+		} else if role.GetClusterRole() && grantsAllCoreAPIAccess(role) {
+			clusterAdminRoleIDs.Add(role.GetId())
+		}
+	}
+	return clusterAdminRoleIDs
 }
 
 func grantsAllCoreAPIAccess(role *storage.K8SRole) bool {
