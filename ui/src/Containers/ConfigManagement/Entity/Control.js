@@ -1,8 +1,7 @@
 import React, { useContext } from 'react';
-import { CONTROL_QUERY as QUERY } from 'queries/controls';
+import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'modules/queryService';
-
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -13,9 +12,39 @@ import Widget from 'Components/Widget';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import EntityWithFailedControls, { getRelatedEntities } from './widgets/EntityWithFailedControls';
-import EntityList from '../List/EntityList';
+import Nodes from '../List/Nodes';
 
-const Control = ({ id, entityListType, query }) => {
+const QUERY = gql`
+    query controlById($id: ID!, $groupBy: [ComplianceAggregation_Scope!], $where: String) {
+        results: complianceControl(id: $id) {
+            interpretationText
+            description
+            id
+            name
+            standardId
+        }
+
+        entities: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                keys {
+                    ... on Node {
+                        clusterName
+                        id
+                        name
+                    }
+                }
+                numFailing
+                numPassing
+            }
+        }
+    }
+`;
+
+const Control = ({ id, entityListType, query, match, location }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -40,16 +69,13 @@ const Control = ({ id, entityListType, query }) => {
                     description = '',
                     interpretationText = ''
                 } = entity;
-                const relatedEntities = getRelatedEntities(entities, entityTypes.NODE);
+                const nodes = getRelatedEntities(entities, entityTypes.NODE);
 
                 if (entityListType) {
-                    return (
-                        <EntityList
-                            entityListType={entityListType}
-                            data={relatedEntities}
-                            query={query}
-                        />
-                    );
+                    const nodeIds = nodes.map(node => node.id).join();
+                    const whereVars = { ...query[searchParam], 'Node Id': nodeIds };
+                    if (nodeIds.length) whereVars.id = nodeIds;
+                    return <Nodes match={match} location={location} query={whereVars} />;
                 }
 
                 return (
@@ -75,7 +101,7 @@ const Control = ({ id, entityListType, query }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Nodes"
-                                    value={relatedEntities.length}
+                                    value={nodes.length}
                                     entityType={entityTypes.NODE}
                                 />
                             </div>

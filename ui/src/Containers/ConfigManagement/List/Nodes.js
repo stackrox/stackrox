@@ -11,6 +11,7 @@ import { sortDate } from 'sorters/sorters';
 
 import LabelChip from 'Components/LabelChip';
 import pluralize from 'pluralize';
+import { withRouter } from 'react-router-dom';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -124,4 +125,4 @@ const Nodes = ({ match, location, className, selectedRowId, onRowClick, query, d
 Nodes.propTypes = entityListPropTypes;
 Nodes.defaultProps = entityListDefaultprops;
 
-export default Nodes;
+export default withRouter(Nodes);

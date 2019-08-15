@@ -24,12 +24,13 @@ function translateTypes(obj) {
     }, {});
 }
 
+const baseContext = 'configmanagement';
 const baseParams = {
-    context: 'compliance'
+    context: baseContext
 };
 
 const ENTITY_ENTITY_PARAMS = {
-    context: 'compliance',
+    context: baseContext,
     pageEntityType: urlEntityTypes.CLUSTER,
     pageEntityId: 'pageEntityId',
     entityListType1: urlEntityListTypes.DEPLOYMENT,
@@ -39,7 +40,7 @@ const ENTITY_ENTITY_PARAMS = {
 };
 
 const LIST_ENTITY_PARAMS = {
-    context: 'compliance',
+    context: baseContext,
     pageEntityListType: urlEntityListTypes.CLUSTER,
     entityId1: 'entityId1',
     entityType2: urlEntityTypes.NAMESPACE,
@@ -47,7 +48,7 @@ const LIST_ENTITY_PARAMS = {
 };
 
 const ENTITY_LIST_PARAMS = {
-    context: 'compliance',
+    context: baseContext,
     pageEntityType: urlEntityTypes.CLUSTER,
     pageEntityId: 'pageEntityId',
     entityListType1: urlEntityListTypes.DEPLOYMENT,
@@ -57,7 +58,7 @@ const ENTITY_LIST_PARAMS = {
 };
 
 const LIST_LIST_PARAMS = {
-    context: 'compliance',
+    context: baseContext,
     pageEntityListType: urlEntityListTypes.CLUSTER,
     entityId1: 'entityId1',
     entityListType2: urlEntityListTypes.NAMESPACE,
@@ -72,14 +73,14 @@ it('copies and translates params', () => {
 });
 
 it('sets base params for list path', () => {
-    const match = getMatch({ context: 'compliance' });
+    const match = getMatch({ context: baseContext });
     const url = URLService.getURL(match, location);
     url.base(entityTypes.CLUSTER);
     expect(url.urlParams.pageEntityListType).toEqual(entityTypes.CLUSTER);
 });
 
 it('sets base params for entity path', () => {
-    const match = getMatch({ context: 'compliance' });
+    const match = getMatch({ context: baseContext });
     const url = URLService.getURL(match, location);
     const pageEntityId = '123';
 
@@ -100,41 +101,43 @@ it('sets base context', () => {
 it('Incrementally pushes list_entity path', () => {
     const match = getMatch(baseParams);
     const url = URLService.getURL(match);
-    expect(url.url()).toEqual(`${mainPath}/compliance`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement`);
 
     url.push(entityTypes.CLUSTER);
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/clusters`);
 
     url.push('entityId1');
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: 'entityId1'
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters/entityId1`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/clusters/entityId1`);
 
     url.push(entityTypes.DEPLOYMENT);
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: 'entityId1',
         entityListType2: entityTypes.DEPLOYMENT
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters/entityId1/deployments`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/clusters/entityId1/deployments`);
 
     url.push('entityId2');
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: 'entityId1',
         entityListType2: entityTypes.DEPLOYMENT,
         entityId2: 'entityId2'
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters/entityId1/deployments/entityId2`);
+    expect(url.url()).toEqual(
+        `${mainPath}/configmanagement/clusters/entityId1/deployments/entityId2`
+    );
 });
 
 it('Incrementally pushes list_list path', () => {
@@ -145,13 +148,15 @@ it('Incrementally pushes list_list path', () => {
         .push(entityTypes.DEPLOYMENT, 'entityId2');
 
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: 'entityId1',
         entityType2: entityTypes.DEPLOYMENT,
         entityId2: 'entityId2'
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters/entityId1/deployment/entityId2`);
+    expect(url.url()).toEqual(
+        `${mainPath}/configmanagement/clusters/entityId1/deployment/entityId2`
+    );
 });
 
 it('incrementally pushes entity_entity path', () => {
@@ -160,34 +165,36 @@ it('incrementally pushes entity_entity path', () => {
 
     url.push(entityTypes.CLUSTER, 'pageEntityId');
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/cluster/pageEntityId`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/cluster/pageEntityId`);
 
     url.push(entityTypes.DEPLOYMENT);
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/cluster/pageEntityId/deployments`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/cluster/pageEntityId/deployments`);
 
     url.push('entityId1');
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT,
         entityId1: 'entityId1'
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/cluster/pageEntityId/deployments/entityId1`);
+    expect(url.url()).toEqual(
+        `${mainPath}/configmanagement/cluster/pageEntityId/deployments/entityId1`
+    );
 
     url.push(entityTypes.NAMESPACE);
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -195,12 +202,12 @@ it('incrementally pushes entity_entity path', () => {
         entityListType2: entityTypes.NAMESPACE
     });
     expect(url.url()).toEqual(
-        `${mainPath}/compliance/cluster/pageEntityId/deployments/entityId1/namespaces`
+        `${mainPath}/configmanagement/cluster/pageEntityId/deployments/entityId1/namespaces`
     );
 
     url.push('entityId2');
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -209,7 +216,7 @@ it('incrementally pushes entity_entity path', () => {
         entityId2: 'entityId2'
     });
     expect(url.url()).toEqual(
-        `${mainPath}/compliance/cluster/pageEntityId/deployments/entityId1/namespaces/entityId2`
+        `${mainPath}/configmanagement/cluster/pageEntityId/deployments/entityId1/namespaces/entityId2`
     );
 });
 
@@ -222,7 +229,7 @@ it('incrementally pushes entity_list path', () => {
         .push(entityTypes.NAMESPACE, 'entityId2');
 
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -232,7 +239,7 @@ it('incrementally pushes entity_list path', () => {
     });
 
     expect(url.url()).toEqual(
-        `${mainPath}/compliance/cluster/pageEntityId/deployments/entityId1/namespace/entityId2`
+        `${mainPath}/configmanagement/cluster/pageEntityId/deployments/entityId1/namespace/entityId2`
     );
 });
 
@@ -242,36 +249,38 @@ it('pops entity_entity path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityType: entityTypes.CLUSTER,
         pageEntityId: ENTITY_ENTITY_PARAMS.pageEntityId,
         entityListType1: entityTypes.DEPLOYMENT,
         entityId1: ENTITY_ENTITY_PARAMS.entityId1
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/cluster/pageEntityId/deployments/entityId1`);
+    expect(url.url()).toEqual(
+        `${mainPath}/configmanagement/cluster/pageEntityId/deployments/entityId1`
+    );
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: ENTITY_ENTITY_PARAMS.pageEntityId,
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/cluster/pageEntityId/deployments`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/cluster/pageEntityId/deployments`);
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: ENTITY_ENTITY_PARAMS.pageEntityId,
         pageEntityType: entityTypes.CLUSTER
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/cluster/pageEntityId`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/cluster/pageEntityId`);
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE
+        context: contextTypes.CONFIG_MANAGEMENT
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement`);
 });
 
 it('pops entity_list path', () => {
@@ -280,7 +289,7 @@ it('pops entity_list path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityType: entityTypes.CLUSTER,
         pageEntityId: ENTITY_ENTITY_PARAMS.pageEntityId,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -288,7 +297,7 @@ it('pops entity_list path', () => {
         entityListType2: entityTypes.NAMESPACE
     });
     expect(url.url()).toEqual(
-        `${mainPath}/compliance/cluster/pageEntityId/deployments/entityId1/namespaces`
+        `${mainPath}/configmanagement/cluster/pageEntityId/deployments/entityId1/namespaces`
     );
 });
 
@@ -297,28 +306,30 @@ it('pops list_entity path', () => {
     const url = URLService.getURL(match);
 
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: LIST_ENTITY_PARAMS.entityId1,
         entityType2: entityTypes.NAMESPACE,
         entityId2: LIST_ENTITY_PARAMS.entityId2
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters/entityId1/namespace/entityId2`);
+    expect(url.url()).toEqual(
+        `${mainPath}/configmanagement/clusters/entityId1/namespace/entityId2`
+    );
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: LIST_ENTITY_PARAMS.entityId1
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters/entityId1`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/clusters/entityId1`);
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/clusters`);
 });
 
 it('pops list_list path', () => {
@@ -327,12 +338,12 @@ it('pops list_list path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: LIST_ENTITY_PARAMS.entityId1,
         entityListType2: entityTypes.NAMESPACE
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/clusters/entityId1/namespaces`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/clusters/entityId1/namespaces`);
 });
 
 it('replaces entity_entity path', () => {
@@ -343,26 +354,28 @@ it('replaces entity_entity path', () => {
         .push(entityTypes.DEPLOYMENT)
         .push(entityTypes.NAMESPACE);
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.NAMESPACE
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/cluster/pageEntityId/namespaces`);
+    expect(url.url()).toEqual(`${mainPath}/configmanagement/cluster/pageEntityId/namespaces`);
 
     url.push('entityId1').push('entityId1-1');
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.NAMESPACE,
         entityId1: 'entityId1-1'
     });
-    expect(url.url()).toEqual(`${mainPath}/compliance/cluster/pageEntityId/namespaces/entityId1-1`);
+    expect(url.url()).toEqual(
+        `${mainPath}/configmanagement/cluster/pageEntityId/namespaces/entityId1-1`
+    );
 
     url.push(entityTypes.DEPLOYMENT, 'entityId2');
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.NAMESPACE,
@@ -371,7 +384,7 @@ it('replaces entity_entity path', () => {
         entityId2: 'entityId2'
     });
     expect(url.url()).toEqual(
-        `${mainPath}/compliance/cluster/pageEntityId/namespaces/entityId1-1/deployment/entityId2`
+        `${mainPath}/configmanagement/cluster/pageEntityId/namespaces/entityId1-1/deployment/entityId2`
     );
 });
 
@@ -386,7 +399,7 @@ it('replaces entity_list path', () => {
         .push(entityTypes.DEPLOYMENT)
         .push(entityTypes.NODE);
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.NAMESPACE,
@@ -402,20 +415,20 @@ it('replaces list_entity path', () => {
         .push(entityTypes.NAMESPACE);
 
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.NAMESPACE
     });
 
     url.push('entityId1').push('entityId1-1');
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.NAMESPACE,
         entityId1: 'entityId1-1'
     });
 
     url.push(entityTypes.DEPLOYMENT).push(entityTypes.NODE);
     expect(url.urlParams).toEqual({
-        context: contextTypes.COMPLIANCE,
+        context: contextTypes.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.NAMESPACE,
         entityId1: 'entityId1-1',
         entityListType2: entityTypes.NODE
@@ -429,7 +442,7 @@ it('overflows all paths', () => {
         let url = URLService.getURL(match);
         url.push(entityTypes.DEPLOYMENT);
         expect(url.urlParams).toEqual({
-            context: contextTypes.COMPLIANCE,
+            context: contextTypes.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.NAMESPACE,
             pageEntityId: ENTITY_ENTITY_PARAMS.entityId2,
             entityListType1: entityTypes.DEPLOYMENT
@@ -438,11 +451,30 @@ it('overflows all paths', () => {
         url = URLService.getURL(match);
         url.push(entityTypes.DEPLOYMENT, 'overflowId');
         expect(url.urlParams).toEqual({
-            context: contextTypes.COMPLIANCE,
+            context: contextTypes.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.NAMESPACE,
             pageEntityId: ENTITY_ENTITY_PARAMS.entityId2,
             entityListType1: entityTypes.DEPLOYMENT,
             entityId1: 'overflowId'
         });
+    });
+});
+
+it('overflows a parent entity', () => {
+    const match = getMatch({
+        context: baseContext,
+        pageEntityType: urlEntityTypes.NODE,
+        pageEntityId: 'pageEntityId',
+        entityListType1: urlEntityListTypes.CONTROL,
+        entityId1: 'entityId1',
+        entityType2: urlEntityTypes.NODE,
+        entityId2: 'nodeId2'
+    });
+    const url = URLService.getURL(match);
+    url.push(entityTypes.CLUSTER, 'clusterId');
+    expect(url.urlParams).toEqual({
+        context: contextTypes.CONFIG_MANAGEMENT,
+        pageEntityType: entityTypes.CLUSTER,
+        pageEntityId: 'clusterId'
     });
 });

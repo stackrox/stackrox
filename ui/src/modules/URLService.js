@@ -5,6 +5,8 @@ import { generatePath } from 'react-router-dom';
 import { entityParamNames, listParamNames } from 'constants/url';
 import entityTypes from 'constants/entityTypes';
 import merge from 'deepmerge';
+import configMgmtEntityRelationship from 'Containers/ConfigManagement/entityTabRelationships';
+
 import {
     nestedPaths,
     riskPath,
@@ -38,6 +40,14 @@ function getPageType(urlParams) {
         return pageTypes.ENTITY;
     }
     return pageTypes.DASHBOARD;
+}
+
+function getTabsPerEntity(entityType, context) {
+    const contextRelationships = {
+        [contextTypes.CONFIG_MANAGEMENT]: configMgmtEntityRelationship
+    };
+    if (!contextRelationships[context] || !contextRelationships[context][entityType]) return [];
+    return contextRelationships[context][entityType];
 }
 
 function getPath(urlParams) {
@@ -241,13 +251,23 @@ class URL {
                 newParams[replaceParamName] = val;
             }
         } else if (isType) {
-            newParams = {
-                context: urlParams.context,
-                pageEntityType: urlParams.entityType2 || urlParams.entityListType2,
-                pageEntityId: urlParams.entityId2,
-                entityListType1: val
-            };
-            if (val2) newParams.entityId1 = val2;
+            const expectedNewPageType = urlParams.entityType2 || urlParams.entityListType2;
+            const tabs = getTabsPerEntity(expectedNewPageType, urlParams.context);
+            if (tabs.includes(val)) {
+                newParams = {
+                    context: urlParams.context,
+                    pageEntityType: urlParams.entityType2 || urlParams.entityListType2,
+                    pageEntityId: urlParams.entityId2,
+                    entityListType1: val
+                };
+                if (val2) newParams.entityId1 = val2;
+            } else {
+                newParams = {
+                    context: urlParams.context,
+                    pageEntityType: val,
+                    pageEntityId: val2
+                };
+            }
         } else {
             return this;
         }

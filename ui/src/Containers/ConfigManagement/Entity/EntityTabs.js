@@ -7,6 +7,7 @@ import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import GroupedTabs from 'Components/GroupedTabs';
+import entityTabsMap from '../entityTabRelationships';
 
 const TAB_GROUPS = {
     OVERVIEW: 'Overview',
@@ -32,46 +33,21 @@ const ENTITY_TO_TAB = {
     [entityTypes.CONTROL]: TAB_GROUPS.POLICIES
 };
 
-function getTab(entityType, text) {
+function getTab(relationship, entityType) {
+    if (entityType === entityTypes.DEPLOYMENT && relationship === entityTypes.POLICY) {
+        return {
+            group: ENTITY_TO_TAB[relationship],
+            value: relationship,
+            text: `Failing ${pluralize(entityLabels[entityTypes.POLICY])}`
+        };
+    }
+
     return {
-        group: ENTITY_TO_TAB[entityType],
-        value: entityType,
-        text: text || pluralize(entityLabels[entityType])
+        group: ENTITY_TO_TAB[relationship],
+        value: relationship,
+        text: pluralize(entityLabels[relationship])
     };
 }
-
-const entityTabsMap = {
-    [entityTypes.SERVICE_ACCOUNT]: [getTab(entityTypes.DEPLOYMENT), getTab(entityTypes.ROLE)],
-    [entityTypes.ROLE]: [getTab(entityTypes.SUBJECT), getTab(entityTypes.SERVICE_ACCOUNT)],
-    [entityTypes.SECRET]: [getTab(entityTypes.DEPLOYMENT)],
-    [entityTypes.CLUSTER]: [
-        getTab(entityTypes.NODE),
-        getTab(entityTypes.SECRET),
-        getTab(entityTypes.IMAGE),
-        getTab(entityTypes.NAMESPACE),
-        getTab(entityTypes.DEPLOYMENT),
-        getTab(entityTypes.SUBJECT),
-        getTab(entityTypes.SERVICE_ACCOUNT),
-        getTab(entityTypes.ROLE),
-        getTab(entityTypes.POLICY)
-    ],
-    [entityTypes.NAMESPACE]: [
-        getTab(entityTypes.DEPLOYMENT),
-        getTab(entityTypes.SECRET),
-        getTab(entityTypes.IMAGE),
-        getTab(entityTypes.POLICY)
-    ],
-    [entityTypes.NODE]: [getTab(entityTypes.CONTROL)],
-    [entityTypes.IMAGE]: [getTab(entityTypes.DEPLOYMENT)],
-    [entityTypes.CIS_Docker_v1_1_0]: [getTab(entityTypes.NODE)],
-    [entityTypes.CIS_Kubernetes_v1_2_0]: [getTab(entityTypes.NODE)],
-    [entityTypes.SUBJECT]: [getTab(entityTypes.ROLE)],
-    [entityTypes.DEPLOYMENT]: [
-        getTab(entityTypes.IMAGE),
-        getTab(entityTypes.POLICY, `Failing ${pluralize(entityLabels[entityTypes.POLICY])}`)
-    ],
-    [entityTypes.POLICY]: [getTab(entityTypes.DEPLOYMENT)]
-};
 
 const EntityTabs = ({
     match,
@@ -91,12 +67,9 @@ const EntityTabs = ({
         history.push(builder.url());
     }
 
-    // this is because each standard relates to different resources, so we need to show different tabs
-    const getStandardId = controlId => controlId.split(':')[0];
-    const key = entityType === entityTypes.CONTROL ? getStandardId(pageEntityId) : entityType;
-    const entityTabs = entityTabsMap[key];
-    if (!entityTabs) return null;
-
+    const relationships = entityTabsMap[entityType];
+    if (!relationships) return null;
+    const entityTabs = relationships.map(relationship => getTab(relationship, entityType));
     const groups = Object.values(TAB_GROUPS);
 
     const tabs = [{ group: TAB_GROUPS.OVERVIEW, value: '', text: 'Overview' }, ...entityTabs];

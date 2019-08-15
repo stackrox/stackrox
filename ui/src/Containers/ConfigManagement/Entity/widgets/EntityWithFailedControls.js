@@ -14,16 +14,12 @@ export const getRelatedEntities = (data, entityType) => {
         if (scope === entityTypes[entityType]) entityKey = idx;
     });
     results.forEach(({ keys, numFailing }) => {
-        const { id, name, clusterName } = keys[entityKey];
+        const { id } = keys[entityKey];
         if (!relatedEntities[id]) {
-            relatedEntities[id] = {
-                id,
-                name,
-                clusterName,
-                passing: numFailing === 0
-            };
+            relatedEntities[id] = { ...keys[entityKey] };
         } else if (numFailing) relatedEntities[id].passing = false;
     });
+
     return Object.values(relatedEntities);
 };
 
