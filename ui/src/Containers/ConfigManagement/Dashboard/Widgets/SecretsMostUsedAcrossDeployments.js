@@ -70,6 +70,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
         if (!data || !data.secrets) return [];
 
         return data.secrets
+            .filter(secret => secret.deployments.length !== 0)
             .sort((a, b) => b.deployments.length - a.deployments.length)
             .slice(0, 10);
     }
@@ -93,7 +94,10 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                     const results = processData(data);
 
                     contents = (
-                        <ul className="list-reset w-full columns-2 columns-gap-0">
+                        <ul
+                            className="list-reset w-full columns-2 columns-gap-0"
+                            style={{ columnRule: '1px solid var(--base-300)' }}
+                        >
                             {results.map((item, index) => {
                                 const linkTo = URLService.getURL(match, location)
                                     .base(entityTypes.SECRET)
@@ -103,17 +107,12 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                     <Link
                                         key={`${item.id}-${index}`}
                                         to={linkTo}
-                                        className="no-underline text-base-600 hover:bg-base-400"
+                                        className={`no-underline text-base-600 hover:bg-base-400 hover:bg-base-200 inline-block border-base-300 w-full ${
+                                            index !== 4 || index !== 9 ? 'border-b' : ''
+                                        }`}
                                     >
-                                        <li
-                                            key={`${item.name}-${index}`}
-                                            className="hover:bg-base-200"
-                                        >
-                                            <div
-                                                className={`flex flex-row border-base-400 ${
-                                                    index !== 4 && index !== 9 ? 'border-b' : ''
-                                                } ${index < 5 ? 'border-r' : ''}`}
-                                            >
+                                        <li key={`${item.name}-${index}`}>
+                                            <div className="flex flex-row">
                                                 <div className="self-center text-2xl tracking-widest pl-4 pr-4">
                                                     {index + 1}
                                                 </div>
@@ -142,15 +141,17 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                         }
                                                         unmountHTMLWhenHide
                                                     >
-                                                        <div className="truncate italic">
-                                                            {`${
-                                                                item.deployments.length
-                                                            } ${pluralize(
-                                                                'Deployment',
-                                                                item.deployments.length
-                                                            )}, `}
-                                                            {getCertificateStatus(item.files)}
-                                                        </div>
+                                                        {item.deployments.length > 0 && (
+                                                            <div className="truncate italic">
+                                                                {`${
+                                                                    item.deployments.length
+                                                                } ${pluralize(
+                                                                    'Deployment',
+                                                                    item.deployments.length
+                                                                )}, `}
+                                                                {getCertificateStatus(item.files)}
+                                                            </div>
+                                                        )}
                                                     </Tooltip>
                                                 </div>
                                             </div>
