@@ -2,11 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,6 +43,7 @@ func init() {
 
 // Namespace returns a GraphQL resolver for the given namespace.
 func (resolver *Resolver) Namespace(ctx context.Context, args struct{ graphql.ID }) (*namespaceResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Namespace")
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
@@ -48,6 +52,7 @@ func (resolver *Resolver) Namespace(ctx context.Context, args struct{ graphql.ID
 
 // Namespaces returns GraphQL resolvers for all namespaces based on an optional query.
 func (resolver *Resolver) Namespaces(ctx context.Context, args rawQuery) ([]*namespaceResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Namespaces")
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
@@ -68,6 +73,7 @@ type clusterIDAndNameQuery struct {
 
 // NamespaceByClusterIDAndName returns a GraphQL resolver for the (unique) namespace specified by this query.
 func (resolver *Resolver) NamespaceByClusterIDAndName(ctx context.Context, args clusterIDAndNameQuery) (*namespaceResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "NamespaceByClusterIDAndName")
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
@@ -75,6 +81,7 @@ func (resolver *Resolver) NamespaceByClusterIDAndName(ctx context.Context, args 
 }
 
 func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ComplianceResults")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -94,6 +101,7 @@ func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args r
 
 // SubjectCount returns the count of Subjects which have any permission on this namespace or the cluster it belongs to
 func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "SubjectCount")
 	if err := readK8sSubjects(ctx); err != nil {
 		return 0, err
 	}
@@ -109,6 +117,7 @@ func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, err
 
 // Subjects returns the Subjects which have any permission in namespace or cluster wide
 func (resolver *namespaceResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Subjects")
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
@@ -132,6 +141,7 @@ func (resolver *namespaceResolver) Subjects(ctx context.Context, args rawQuery) 
 
 // ServiceAccountCount returns the count of ServiceAccounts which have any permission on this cluster namespace
 func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ServiceAccountCount")
 	if err := readServiceAccounts(ctx); err != nil {
 		return 0, err
 	}
@@ -145,6 +155,7 @@ func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context) (int
 
 // ServiceAccounts returns the ServiceAccounts which have any permission on this cluster namespace
 func (resolver *namespaceResolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ServiceAccounts")
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
@@ -157,6 +168,7 @@ func (resolver *namespaceResolver) ServiceAccounts(ctx context.Context, args raw
 
 // K8sRoleCount returns count of K8s roles in this cluster namespace
 func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "K8sRoleCount")
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
 	}
@@ -170,6 +182,7 @@ func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context) (int32, err
 
 // K8sRoles returns count of K8s roles in this cluster namespace
 func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "K8sRoles")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -181,6 +194,7 @@ func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args rawQuery) 
 }
 
 func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageCount")
 	if err := readNamespaces(ctx); err != nil {
 		return 0, err
 	}
@@ -204,9 +218,6 @@ func (resolver *namespaceResolver) filterPoliciesApplicableToNamespace(policies 
 }
 
 func (resolver *namespaceResolver) getNamespacePolicies(ctx context.Context, args rawQuery) ([]*storage.Policy, error) {
-	if err := readPolicies(ctx); err != nil {
-		return nil, err
-	}
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -220,6 +231,10 @@ func (resolver *namespaceResolver) getNamespacePolicies(ctx context.Context, arg
 
 // PolicyCount returns count of policies applicable to this namespace
 func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyCount")
+	if err := readPolicies(ctx); err != nil {
+		return 0, err
+	}
 	policies, err := resolver.getNamespacePolicies(ctx, args)
 	if err != nil {
 		return 0, err
@@ -229,18 +244,11 @@ func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args rawQuer
 
 // Policies returns all the policies applicable to this namespace
 func (resolver *namespaceResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Policies")
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	policies, err := resolver.root.PolicyDataStore.SearchRawPolicies(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return resolver.root.wrapPolicies(resolver.filterPoliciesApplicableToNamespace(policies), nil)
+	return resolver.root.wrapPolicies(resolver.getNamespacePolicies(ctx, args))
 }
 
 func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Policy, clusterID string) bool {
@@ -273,7 +281,7 @@ func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Poli
 
 // PolicyStatus returns true if there is no policy violation for this cluster
 func (resolver *namespaceResolver) PolicyStatus(ctx context.Context) (*policyStatusResolver, error) {
-
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyStatus")
 	alerts, err := resolver.getActiveDeployAlerts(ctx)
 	if err != nil {
 		return nil, err
@@ -314,6 +322,7 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context) ([
 }
 
 func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -325,6 +334,7 @@ func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([
 }
 
 func (resolver *namespaceResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Secrets")
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
@@ -336,6 +346,7 @@ func (resolver *namespaceResolver) Secrets(ctx context.Context, args rawQuery) (
 }
 
 func (resolver *namespaceResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -347,6 +358,7 @@ func (resolver *namespaceResolver) Deployments(ctx context.Context, args rawQuer
 }
 
 func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Cluster")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -354,6 +366,7 @@ func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolve
 }
 
 func (resolver *namespaceResolver) SecretCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "SecretCount")
 	if err := readSecrets(ctx); err != nil {
 		return 0, err
 	}
@@ -361,6 +374,7 @@ func (resolver *namespaceResolver) SecretCount(ctx context.Context) (int32, erro
 }
 
 func (resolver *namespaceResolver) DeploymentCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}

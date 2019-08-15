@@ -48,7 +48,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Cluster", `imageCount: Int!`),
 		schema.AddExtraResolver("Cluster", `policies(query: String): [Policy!]!`),
-		schema.AddExtraResolver("Cluster", `policyCount: Int!`),
+		schema.AddExtraResolver("Cluster", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Cluster", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
@@ -465,8 +465,11 @@ func (resolver *clusterResolver) policyAppliesToCluster(ctx context.Context, pol
 	return false
 }
 
-func (resolver *clusterResolver) PolicyCount(ctx context.Context) (int32, error) {
-	resolvers, err := resolver.Policies(ctx, rawQuery{})
+func (resolver *clusterResolver) PolicyCount(ctx context.Context, args rawQuery) (int32, error) {
+	if err := readPolicies(ctx); err != nil {
+		return 0, err
+	}
+	resolvers, err := resolver.Policies(ctx, args)
 	if err != nil {
 		return 0, err
 	}

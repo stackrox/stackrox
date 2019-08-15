@@ -2,9 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -18,6 +21,7 @@ func init() {
 
 // Tokens gets a list of all tokens (or just the ones that are or are not resolved)
 func (resolver *Resolver) Tokens(ctx context.Context, args struct{ Revoked *bool }) ([]*tokenMetadataResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Tokens")
 	if err := readTokens(ctx); err != nil {
 		return nil, err
 	}
@@ -31,6 +35,7 @@ func (resolver *Resolver) Tokens(ctx context.Context, args struct{ Revoked *bool
 
 // Token gets a single API token by ID
 func (resolver *Resolver) Token(ctx context.Context, args struct{ graphql.ID }) (*tokenMetadataResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Token")
 	if err := readTokens(ctx); err != nil {
 		return nil, err
 	}

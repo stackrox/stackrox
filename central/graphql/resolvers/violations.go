@@ -2,9 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -19,6 +22,7 @@ func init() {
 
 // Violations returns a list of all violations, or those that match the requested query
 func (resolver *Resolver) Violations(ctx context.Context, args rawQuery) ([]*alertResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Violations")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -35,6 +39,7 @@ func (resolver *Resolver) Violations(ctx context.Context, args rawQuery) ([]*ale
 
 // Violation returns the violation with the requested ID
 func (resolver *Resolver) Violation(ctx context.Context, args struct{ graphql.ID }) (*alertResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Violation")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}

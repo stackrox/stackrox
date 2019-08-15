@@ -2,12 +2,15 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/service"
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -22,7 +25,6 @@ func init() {
 		schema.AddExtraResolver("SubjectWithClusterID", `clusterName: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `namespace: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `roleCount: Int!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `roles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `scopedPermissions: [ScopedPermissions!]!`),
@@ -31,6 +33,7 @@ func init() {
 }
 
 func (resolver *subjectResolver) SubjectWithClusterID(ctx context.Context) ([]*subjectWithClusterIDResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "SubjectWithClusterID")
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
@@ -59,6 +62,7 @@ func (resolver *subjectResolver) SubjectWithClusterID(ctx context.Context) ([]*s
 }
 
 func (resolver *subjectWithClusterIDResolver) Name(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Name")
 	if err := readK8sSubjects(ctx); err != nil {
 		return "", err
 	}
@@ -67,6 +71,7 @@ func (resolver *subjectWithClusterIDResolver) Name(ctx context.Context) (string,
 }
 
 func (resolver *subjectWithClusterIDResolver) ClusterName(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "ClusterName")
 	if err := readClusters(ctx); err != nil {
 		return "", err
 	}
@@ -74,6 +79,7 @@ func (resolver *subjectWithClusterIDResolver) ClusterName(ctx context.Context) (
 }
 
 func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Namespace")
 	if err := readK8sSubjects(ctx); err != nil {
 		return "", err
 	}
@@ -83,6 +89,7 @@ func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (st
 
 // Subjects resolves list of subjects matching a query
 func (resolver *Resolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Subjects")
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
@@ -113,6 +120,7 @@ func (resolver *Resolver) Subjects(ctx context.Context, args rawQuery) ([]*subje
 }
 
 func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Type")
 	if err := readK8sSubjects(ctx); err != nil {
 		return "", err
 	}
@@ -129,6 +137,7 @@ func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string,
 }
 
 func (resolver *subjectWithClusterIDResolver) RoleCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "RoleCount")
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
 	}
@@ -144,6 +153,7 @@ func (resolver *subjectWithClusterIDResolver) RoleCount(ctx context.Context) (in
 }
 
 func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Roles")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -187,6 +197,7 @@ func (resolver *subjectWithClusterIDResolver) getRolesForSubject(ctx context.Con
 
 // Permission returns which scopes do the permissions for the subject
 func (resolver *subjectWithClusterIDResolver) ScopedPermissions(ctx context.Context) ([]*scopedPermissionsResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "ScopedPermissions")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -213,6 +224,7 @@ func (resolver *subjectWithClusterIDResolver) ScopedPermissions(ctx context.Cont
 
 // ClusterAdmin returns if the service account is a cluster admin or not
 func (resolver *subjectWithClusterIDResolver) ClusterAdmin(ctx context.Context) (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "ClusterAdmin")
 	subject := resolver.subject.data
 	evaluator := resolver.getClusterEvaluator(ctx)
 

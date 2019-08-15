@@ -2,11 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -24,6 +27,7 @@ func init() {
 
 // Secret gets a single secret by ID
 func (resolver *Resolver) Secret(ctx context.Context, arg struct{ graphql.ID }) (*secretResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Secret")
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
@@ -37,6 +41,7 @@ func (resolver *Resolver) Secret(ctx context.Context, arg struct{ graphql.ID }) 
 
 // Secrets gets a list of all secrets
 func (resolver *Resolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Secrets")
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
@@ -56,6 +61,7 @@ func (resolver *Resolver) Secrets(ctx context.Context, args rawQuery) ([]*secret
 }
 
 func (resolver *secretResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Secrets, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -69,6 +75,7 @@ func (resolver *secretResolver) Deployments(ctx context.Context, args rawQuery) 
 }
 
 func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Secrets, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -83,6 +90,7 @@ func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, err
 	}
 	return int32(len(results)), err
 }
+
 func (resolver *secretResolver) getDeploymentQuery(args rawQuery) (*v1.Query, error) {
 	deploymentFilterQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -99,6 +107,7 @@ func (resolver *secretResolver) getDeploymentQuery(args rawQuery) (*v1.Query, er
 
 	return search.NewConjunctionQuery(deploymentIDQuery, deploymentFilterQuery), nil
 }
+
 func (resolver *Resolver) getSecret(ctx context.Context, id string) *storage.Secret {
 	secret, ok, err := resolver.SecretsDataStore.GetSecret(ctx, id)
 	if err != nil || !ok {

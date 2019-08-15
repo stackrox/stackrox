@@ -2,12 +2,15 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/metrics"
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -35,6 +38,7 @@ func init() {
 
 // ServiceAccount gets a service account by ID.
 func (resolver *Resolver) ServiceAccount(ctx context.Context, args struct{ graphql.ID }) (*serviceAccountResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ServiceAccount")
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
@@ -43,6 +47,7 @@ func (resolver *Resolver) ServiceAccount(ctx context.Context, args struct{ graph
 
 // ServiceAccounts gets service accounts based on a query
 func (resolver *Resolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ServiceAccounts")
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
@@ -60,6 +65,7 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args rawQuery) ([
 }
 
 func (resolver *serviceAccountResolver) RoleCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "RoleCount")
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
 	}
@@ -81,6 +87,7 @@ func (resolver *serviceAccountResolver) RoleCount(ctx context.Context) (int32, e
 }
 
 func (resolver *serviceAccountResolver) Roles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "Roles")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -121,6 +128,7 @@ func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context,
 }
 
 func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -135,6 +143,7 @@ func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args ra
 }
 
 func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -150,6 +159,7 @@ func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context) (in
 
 // Permission returns which scopes do the permissions for the service acc
 func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) ([]*scopedPermissionsResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "ScopedPermissions")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
@@ -182,6 +192,7 @@ func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) (
 
 // SaNamespace returns the namespace of the service account
 func (resolver *serviceAccountResolver) SaNamespace(ctx context.Context) (*namespaceResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "SaNamespace")
 	sa := resolver.data
 	r, err := resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(sa.GetClusterId()), sa.GetNamespace()})
 
@@ -194,6 +205,7 @@ func (resolver *serviceAccountResolver) SaNamespace(ctx context.Context) (*names
 
 // Cluster returns the cluster of the service account
 func (resolver *serviceAccountResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "Cluster")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -202,6 +214,7 @@ func (resolver *serviceAccountResolver) Cluster(ctx context.Context) (*clusterRe
 
 // ClusterAdmin returns if the service account is a cluster admin or not
 func (resolver *serviceAccountResolver) ClusterAdmin(ctx context.Context) (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "ClusterAdmin")
 	sa := k8srbac.GetSubjectForServiceAccount(resolver.data)
 	evaluator := resolver.getClusterEvaluator(ctx)
 
@@ -237,6 +250,7 @@ func (resolver *serviceAccountResolver) getClusterEvaluator(ctx context.Context)
 }
 
 func (resolver *serviceAccountResolver) ImagePullSecretCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "ImagePullSecretCount")
 	if err := readSecrets(ctx); err != nil {
 		return 0, err
 	}
@@ -244,6 +258,7 @@ func (resolver *serviceAccountResolver) ImagePullSecretCount(ctx context.Context
 }
 
 func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "ImagePullSecretObjects")
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}

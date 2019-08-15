@@ -2,10 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -27,6 +30,7 @@ func init() {
 
 // Policies returns GraphQL resolvers for all policies
 func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policies")
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
@@ -42,6 +46,7 @@ func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*polic
 
 // Policy returns a GraphQL resolver for a given policy
 func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }) (*policyResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policy")
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
@@ -50,6 +55,7 @@ func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }
 
 // Alerts returns GraphQL resolvers for all alerts for this policy
 func (resolver *policyResolver) Alerts(ctx context.Context) ([]*alertResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "Alerts")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -59,6 +65,7 @@ func (resolver *policyResolver) Alerts(ctx context.Context) ([]*alertResolver, e
 }
 
 func (resolver *policyResolver) AlertCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "AlertCount")
 	if err := readAlerts(ctx); err != nil {
 		return 0, err // could return nil, nil to prevent errors from propagating.
 	}
@@ -72,6 +79,7 @@ func (resolver *policyResolver) AlertCount(ctx context.Context) (int32, error) {
 
 // Deployments returns GraphQL resolvers for all deployments that this policy applies to
 func (resolver *policyResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -94,6 +102,8 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args rawQuery) 
 
 // DeploymentCount returns the count of all deployments that this policy applies to
 func (resolver *policyResolver) DeploymentCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "DeploymentCount")
+
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -107,6 +117,7 @@ func (resolver *policyResolver) DeploymentCount(ctx context.Context) (int32, err
 
 // PolicyStatus returns the policy statusof this policy
 func (resolver *policyResolver) PolicyStatus(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "PolicyStatus")
 	alertsActive, err := resolver.anyActiveDeployAlerts(ctx)
 
 	if err != nil {
