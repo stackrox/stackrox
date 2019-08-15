@@ -19,6 +19,7 @@ export const SERVICE_ACCOUNT_FRAGMENT = gql`
         secrets
         roles {
             id
+            name
         }
         automountToken
         createdAt

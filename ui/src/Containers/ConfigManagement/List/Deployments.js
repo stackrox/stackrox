@@ -67,21 +67,21 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { policyStatus, id } = original;
                 const { failingPolicies } = policyStatus;
-                if (failingPolicies.length)
-                    return (
-                        <LabelChip
-                            text={`${failingPolicies.length} ${pluralize(
-                                'Policies',
-                                failingPolicies.length
-                            )}`}
-                            type="alert"
-                        />
-                    );
+                if (!failingPolicies.length) return 'No Violations';
+                const labelLink = (
+                    <LabelChip
+                        text={`${failingPolicies.length} ${pluralize(
+                            'Policies',
+                            failingPolicies.length
+                        )}`}
+                        type="alert"
+                    />
+                );
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.POLICY)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text="View Policies" />;
+                return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
             },
             id: 'failingPolicies',
             accessor: d => d.policyStatus.failingPolicies,
@@ -106,15 +106,15 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { imagesCount, id } = original;
-                if (imagesCount === 0) return 'No images';
+                const { imageCount, id } = original;
+                if (imageCount === 0) return 'No images';
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.IMAGE)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${imagesCount} image(s)`} />;
+                return <TableCellLink pdf={pdf} url={url} text={`${imageCount} image(s)`} />;
             },
-            accessor: 'imagesCount'
+            accessor: 'imageCount'
         },
         {
             Header: `Secrets`,

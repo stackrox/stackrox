@@ -31,7 +31,7 @@ const buildTableColumns = (match, location) => [
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { metadata } = original;
-            if (!metadata) return null;
+            if (!metadata) return '-';
             return format(metadata.v1.created, dateTimeFormat);
         },
         accessor: 'metadata.v1.created',

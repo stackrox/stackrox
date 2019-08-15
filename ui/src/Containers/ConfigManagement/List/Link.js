@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Link as RouterLink } from 'react-router-dom';
 
-const Link = ({ url, text, pdf }) => {
+const Link = ({ url, text, component, pdf }) => {
     function onClick(e) {
         e.stopPropagation();
     }
@@ -14,18 +14,21 @@ const Link = ({ url, text, pdf }) => {
             className="underline h-full text-left items-center flex text-base-700 hover:text-primary-700"
             onClick={onClick}
         >
-            {text}
+            {component || text}
         </RouterLink>
     );
 };
 
 Link.propTypes = {
-    text: PropTypes.string.isRequired,
+    component: PropTypes.element,
+    text: PropTypes.string,
     url: PropTypes.string.isRequired,
     pdf: PropTypes.bool
 };
 
 Link.defaultProps = {
+    component: null,
+    text: null,
     pdf: false
 };
 

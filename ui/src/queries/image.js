@@ -6,6 +6,7 @@ export const IMAGE_FRAGMENT = gql`
         lastUpdated
         deployments {
             id
+            name
         }
         metadata {
             layerShas
