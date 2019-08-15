@@ -23,9 +23,9 @@ var (
 
 // ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
 type ExternalPersistence struct {
-	Name         string
-	StorageClass string
-	Size         uint32
+	Name         string `json:"name,omitempty"`
+	StorageClass string `json:"storageClass,omitempty"`
+	Size         uint32 `json:"size,omitempty"`
 }
 
 // HostPathPersistence describes the parameters for a bind mount
@@ -132,11 +132,11 @@ type MonitoringConfig struct {
 
 // ScannerV2Config encapsulates the scanner v2 configuration.
 type ScannerV2Config struct {
-	Enable bool
+	Enable bool `json:"enable"`
 
-	PersistenceType PersistenceType
-	External        ExternalPersistence
-	HostPath        HostPathPersistence
+	PersistenceType PersistenceType     `json:"persistenceType"`
+	External        ExternalPersistence `json:"externalPersistence,omitempty"`
+	HostPath        HostPathPersistence `json:"hostPathPersistence,omitempty"`
 }
 
 // K8sConfig contains k8s fields

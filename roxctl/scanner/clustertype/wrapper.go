@@ -1,4 +1,4 @@
-package generate
+package clustertype
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-type clusterTypeWrapper struct {
+type wrapper struct {
 	ClusterType *storage.ClusterType
 }
 
@@ -29,11 +29,11 @@ var (
 	}()
 )
 
-func (w clusterTypeWrapper) String() string {
+func (w wrapper) String() string {
 	return clusterEnumToString[*w.ClusterType]
 }
 
-func (w clusterTypeWrapper) Set(input string) error {
+func (w wrapper) Set(input string) error {
 	if val, ok := clusterStringToType[strings.ToLower(input)]; ok {
 		*w.ClusterType = val
 		return nil
@@ -41,6 +41,6 @@ func (w clusterTypeWrapper) Set(input string) error {
 	return fmt.Errorf("invalid cluster type: %q; valid values are %+v", input, validClusterStrings)
 }
 
-func (w clusterTypeWrapper) Type() string {
+func (w wrapper) Type() string {
 	return "cluster type"
 }

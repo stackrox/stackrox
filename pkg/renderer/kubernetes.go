@@ -35,7 +35,7 @@ type mode int
 const (
 	// renderAll renders all objects (central/scanner/monitoring).
 	renderAll mode = iota
-	// scannerOnly renders only the scanner.
+	// scannerOnly renders only the scanner (which one depends on the config).
 	scannerOnly
 )
 
@@ -44,18 +44,20 @@ type chartPrefixPair struct {
 	prefix string
 }
 
+func getScannerChart(c *Config) chartPrefixPair {
+	if c.K8sConfig.ScannerV2Config.Enable {
+		return chartPrefixPair{image.GetScannerV2Chart(), "scannerv2"}
+	}
+	return chartPrefixPair{image.GetScannerChart(), "scanner"}
+}
+
 func getChartsToProcess(c Config, mode mode) (chartsToProcess []chartPrefixPair) {
-	scannerChart := chartPrefixPair{image.GetScannerChart(), "scanner"}
 	if mode == scannerOnly {
-		chartsToProcess = []chartPrefixPair{scannerChart}
+		chartsToProcess = []chartPrefixPair{getScannerChart(&c)}
 		return
 	}
-	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(), "central"}}
-	if c.K8sConfig.ScannerV2Config.Enable {
-		chartsToProcess = append(chartsToProcess, chartPrefixPair{image.GetScannerV2Chart(), "scannerv2"})
-	} else {
-		chartsToProcess = append(chartsToProcess, scannerChart)
-	}
+
+	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(), "central"}, getScannerChart(&c)}
 	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		chartsToProcess = append(chartsToProcess,
 			chartPrefixPair{image.GetMonitoringChart(), "monitoring"},

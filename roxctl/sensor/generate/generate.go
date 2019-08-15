@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/roximages/defaults"
+	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 	"google.golang.org/grpc/codes"

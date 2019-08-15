@@ -70,7 +70,7 @@ the login page, and log in with username "admin" and the password found in the
      If you want to run the StackRox scanner:
      - Run {{$scannerName}}/scripts/setup.sh
      - Run {{.K8sConfig.Command}} create -R -f {{$scannerName}}
-	`
+`
 )
 
 // instructions returns instructions based on the config, which get echoed to standard error,

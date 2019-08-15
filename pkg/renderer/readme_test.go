@@ -94,7 +94,7 @@ func TestReadme(t *testing.T) {
 			mode:             renderAll,
 			enableScannerV2:  true,
 
-			mustContain:                           []string{"kubectl create -R -f scannerv2", "scannerv2/scripts/setup.sh", "Scanner V2"},
+			mustContain:                           []string{"kubectl create -R -f scannerv2", "scannerv2/scripts/setup.sh", "Scanner V2", "kubectl create -R -f central"},
 			mustNotContain:                        []string{"kubectl create -R -f monitoring", "helm install", "scanner/scripts/setup.sh"},
 			mustContainInstructionSuffixAndPrefix: true,
 		},
@@ -107,6 +107,23 @@ func TestReadme(t *testing.T) {
 			mustContain:                           []string{"helm install --name scannerv2 scannerv2", "scannerv2/scripts/setup.sh"},
 			mustNotContain:                        []string{"kubectl create -R -f scanner", "scanner/scripts/setup.sh"},
 			mustContainInstructionSuffixAndPrefix: true,
+		},
+		{
+			orchCommand:      "kubectl",
+			monitoringType:   None,
+			deploymentFormat: v1.DeploymentFormat_KUBECTL,
+			mode:             scannerOnly,
+			enableScannerV2:  true,
+
+			mustContain:    []string{"kubectl create -R -f scannerv2", "scannerv2/scripts/setup.sh", "Scanner V2"},
+			mustNotContain: []string{"kubectl create -R -f monitoring", "helm install", "scanner/scripts/setup.sh", "kubectl create -R -f central"},
+		},
+		{
+			monitoringType:   None,
+			deploymentFormat: v1.DeploymentFormat_HELM,
+			mode:             scannerOnly,
+			expectedErr:      true,
+			enableScannerV2:  true,
 		},
 	}
 
