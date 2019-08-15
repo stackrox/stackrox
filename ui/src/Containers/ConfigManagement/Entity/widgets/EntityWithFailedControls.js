@@ -19,7 +19,8 @@ export const getRelatedEntities = (data, entityType) => {
             relatedEntities[id] = {
                 id,
                 name,
-                clusterName
+                clusterName,
+                passing: numFailing === 0
             };
         } else if (numFailing) relatedEntities[id].passing = false;
     });

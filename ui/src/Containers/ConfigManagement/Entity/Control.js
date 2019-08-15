@@ -20,7 +20,10 @@ const Control = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        where: queryService.objectToWhereClause(query[searchParam]),
+        where: queryService.objectToWhereClause({
+            ...query[searchParam],
+            'Control Id': id
+        }),
         groupBy: [entityTypes.CONTROL, entityTypes.NODE]
     };
 

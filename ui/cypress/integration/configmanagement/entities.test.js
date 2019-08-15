@@ -1,5 +1,5 @@
 import capitalize from 'lodash/capitalize';
-import { url, selectors } from '../constants/ConfigManagementPage';
+import { url, selectors, controlStatus } from '../constants/ConfigManagementPage';
 import withAuth from '../helpers/basicAuth';
 
 const renderListAndSidePanel = entity => {
@@ -228,6 +228,24 @@ describe('Config Management Entities', () => {
                 renderListAndSidePanel('controls');
                 sidePanelEntityCountMatchesTableRows('Nodes');
             });
+        });
+
+        it('should show no failing nodes in the control findings section of a passing control', () => {
+            cy.visit(url.list.controls);
+            cy.get(selectors.tableCells)
+                .contains(controlStatus.pass)
+                .eq(0)
+                .click({ force: true });
+            cy.get(selectors.failingNodes).should('have.length', 0);
+        });
+
+        it('should show failing nodes in the control findings section of a failing control', () => {
+            cy.visit(url.list.controls);
+            cy.get(selectors.tableCells)
+                .contains(controlStatus.fail)
+                .eq(0)
+                .click({ force: true });
+            cy.get(selectors.failingNodes).should('not.have.length', 0);
         });
     });
 
@@ -786,11 +804,6 @@ describe('Config Management Entities', () => {
         // @TODO: Fix this test
         xit('should render the roles list and open the side panel with the clicked namespace value', () => {
             clickOnSingleEntity('roles', 'namespace');
-        });
-
-        it('should click on the cluster entity widget in the side panel and match the header ', () => {
-            renderListAndSidePanel('roles');
-            clickOnEntityWidget('cluster', 'side-panel');
         });
 
         it('should take you to a roles single when the "navigate away" button is clicked', () => {

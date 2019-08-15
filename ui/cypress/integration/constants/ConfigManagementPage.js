@@ -30,6 +30,11 @@ export const url = {
     }
 };
 
+export const controlStatus = {
+    pass: 'Pass',
+    fail: 'Fail'
+};
+
 export const dashboardSelectors = {
     widgets: "[data-test-id='widget']",
     tileLinks: "[data-test-id='tile-link']",
@@ -76,7 +81,8 @@ export const entitySelectors = {
     relatedEntityWidgets: '[data-test-id="related-entity"]',
     relatedEntityWidgetTitle: '[data-test-id="related-entity-title"]',
     relatedEntityWidgetValue: '[data-test-id="related-entity-value"]',
-    groupedTabs: '[data-test-id="grouped-tab"] [data-test-id="tab"]'
+    groupedTabs: '[data-test-id="grouped-tab"] [data-test-id="tab"]',
+    failingNodes: '[data-test-id="widget"] .rt-tr-group > .rt-tr'
 };
 
 export const selectors = {
