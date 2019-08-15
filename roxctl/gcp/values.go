@@ -16,7 +16,9 @@ type Values struct {
 	ScannerImage    string `yaml:"scanner-image"`
 	MonitoringImage string `yaml:"monitoring-image"`
 
-	License string `yaml:"license"`
+	License            string `yaml:"license"`
+	StackroxIOUsername string `yaml:"stackrox-io-username"`
+	StackroxIOPassword string `yaml:"stackrox-io-password"`
 
 	Network string `yaml:"network"`
 

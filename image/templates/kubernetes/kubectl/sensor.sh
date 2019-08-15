@@ -47,6 +47,7 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
+{{- end}}
 
 {{if ne .CollectionMethod "NO_COLLECTION"}}
 if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox > /dev/null; then
@@ -63,7 +64,6 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
-{{- end}}
 {{- end}}
 
 function print_rbac_instructions {

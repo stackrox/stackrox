@@ -51,6 +51,19 @@ properties:
     title: (OPTIONAL) Enter your StackRox license key
     description: This is the full license key given to you by StackRox
 
+  ############################
+  #  Stackrox.io Properties  #
+  ############################
+  stackrox-io-username:
+    type: string
+    title: (OPTIONAL) Enter your stackrox.io username
+    description: Used to download artifacts from stackrox.io
+
+  stackrox-io-password:
+    type: string
+    title: (OPTIONAL) Enter your stackrox.io password
+    description: Used to download artifacts from stackrox.io
+
   ###########################
   #  Networking Properties  #
   ###########################

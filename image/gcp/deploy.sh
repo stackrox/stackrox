@@ -126,6 +126,16 @@ try_install_sensor() {
         return 0
     fi
 
+    collection_method="none"
+    collector_image=""
+    if [[ -n "$(cat /data/values/stackrox-io-username)" ]] && [[ -n "$(cat /data/values/stackrox-io-password)" ]]; then
+        echo "Deploying collector from stackrox.io."
+        export REGISTRY_USERNAME="$(cat /data/values/stackrox-io-username)"
+        export REGISTRY_PASSWORD="$(cat /data/values/stackrox-io-password)"
+        collection_method="kernel-module"
+        collector_image="collector.stackrox.io/collector"
+    fi
+
     # Get cluster name, if possible.
     cluster_name="$(get_cluster_name)"
 
@@ -134,7 +144,8 @@ try_install_sensor() {
 
     roxctl --endpoint central.stackrox:443 --password "$(cat /tmp/stackrox/password)" sensor generate k8s \
     --central central.stackrox:443 \
-    --collection-method none \
+    --collection-method "$collection_method" \
+    --collector-image "$collector_image" \
     --image "$(cat /data/values/main-image | sed 's/[:@].*//')" \
     --name "$cluster_name"
 
