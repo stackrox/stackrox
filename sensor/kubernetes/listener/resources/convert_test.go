@@ -499,8 +499,9 @@ func TestConvert(t *testing.T) {
 							Args:    []string{"lorem", "ipsum"},
 							Env: []*storage.ContainerConfig_EnvironmentConfig{
 								{
-									Key:   "envName",
-									Value: "envValue",
+									Key:          "envName",
+									Value:        "envValue",
+									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
 								},
 							},
 						},
@@ -567,12 +568,14 @@ func TestConvert(t *testing.T) {
 							Args: []string{"--flag"},
 							Env: []*storage.ContainerConfig_EnvironmentConfig{
 								{
-									Key:   "ROX_ENV_VAR",
-									Value: "rox",
+									Key:          "ROX_ENV_VAR",
+									Value:        "rox",
+									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
 								},
 								{
-									Key:   "ROX_VERSION",
-									Value: "1.0",
+									Key:          "ROX_VERSION",
+									Value:        "1.0",
+									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
 								},
 							},
 							Uid: 0,
