@@ -169,7 +169,6 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneDeletedRuntimeAfter > 0 && pruneAllRuntimeAfter != pruneDeletedRuntimeAfter {
 		q := search.NewQueryBuilder().
-			AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
 			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
 			AddDays(search.ViolationTime, int64(pruneDeletedRuntimeAfter)).
 			AddBools(search.Inactive, true).

@@ -258,10 +258,10 @@ func TestAlertPruning(t *testing.T) {
 	}
 
 	var cases = []struct {
-		name        string
-		alerts      []*storage.Alert
-		expectedIDs []string
-		deployments []*storage.Deployment
+		name                 string
+		alerts               []*storage.Alert
+		expectedIDsRemaining []string
+		deployments          []*storage.Deployment
 	}{
 		{
 			name: "No pruning",
@@ -269,7 +269,7 @@ func TestAlertPruning(t *testing.T) {
 				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
 				newAlertInstance("id2", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
-			expectedIDs: []string{"id1", "id2"},
+			expectedIDsRemaining: []string{"id1", "id2"},
 		},
 		{
 			name: "One old alert, and one new alert",
@@ -277,7 +277,7 @@ func TestAlertPruning(t *testing.T) {
 				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
 				newAlertInstance("id2", testRetentionAllRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
-			expectedIDs: []string{"id1"},
+			expectedIDsRemaining: []string{"id1"},
 		},
 		{
 			name: "One old runtime alert, and one old deploy time unresolved alert",
@@ -285,14 +285,14 @@ func TestAlertPruning(t *testing.T) {
 				newAlertInstance("id1", testRetentionAllRuntime+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
 				newAlertInstance("id2", testRetentionAllRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
 			},
-			expectedIDs: []string{"id1"},
+			expectedIDsRemaining: []string{"id1"},
 		},
 		{
 			name: "one old deploy time alert resolved",
 			alerts: []*storage.Alert{
 				newAlertInstance("id1", testRetentionResolvedDeploy+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
 			},
-			expectedIDs: []string{},
+			expectedIDsRemaining: []string{},
 		},
 		{
 			name: "two old-ish runtime alerts, one with no deployment",
@@ -300,10 +300,17 @@ func TestAlertPruning(t *testing.T) {
 				newAlertInstanceWithDeployment("id1", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED, nil),
 				newAlertInstanceWithDeployment("id2", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED, existsDeployment),
 			},
-			expectedIDs: []string{"id2"},
+			expectedIDsRemaining: []string{"id2"},
 			deployments: []*storage.Deployment{
 				existsDeployment,
 			},
+		},
+		{
+			name: "expired runtime alert with no deployment",
+			alerts: []*storage.Alert{
+				newAlertInstanceWithDeployment("id1", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE, nil),
+			},
+			expectedIDsRemaining: []string{},
 		},
 	}
 	scc := sac.OneStepSCC{
@@ -354,7 +361,7 @@ func TestAlertPruning(t *testing.T) {
 				ids = append(ids, i.GetId())
 			}
 
-			assert.ElementsMatch(t, c.expectedIDs, ids)
+			assert.ElementsMatch(t, c.expectedIDsRemaining, ids)
 		})
 	}
 }
