@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator/service"
-	"github.com/stackrox/rox/central/secret/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -215,38 +214,22 @@ func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, q 
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
-	field, exists := mappings.OptionsMap.Get(search.SecretName.String())
-	if !exists {
-		return nil, errors.Errorf("secret name not searchable")
-	}
-
 	deployment := resolver.data
-
-	// Find all the secret names referenced by the deployment
-	secretsForDeploymentQuery := search.NewQueryBuilder().MarkHighlighted(search.SecretName).
-		AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
-
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, search.NewConjunctionQuery(
-		secretsForDeploymentQuery, q))
-	if len(results) == 0 || err != nil {
-		return nil, err
+	secretSet := set.NewStringSet()
+	for _, container := range deployment.GetContainers() {
+		for _, secret := range container.GetSecrets() {
+			secretSet.Add(secret.GetName())
+		}
 	}
-
-	secrets := results[0].Matches[field.FieldPath]
-	// For each secret name referenced by the deployment
+	if secretSet.Cardinality() == 0 {
+		return []*secretResolver{}, nil
+	}
 	psr := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 		AddExactMatches(search.Namespace, deployment.GetNamespace()).
-		AddStrings(search.SecretName, secrets...).
-		AddStrings(search.SecretType, search.NegateQueryString(storage.SecretType_IMAGE_PULL_SECRET.String())).
+		AddStrings(search.SecretName, secretSet.AsSlice()...).
 		ProtoQuery()
-
-	secretResults, err := resolver.root.SecretsDataStore.SearchRawSecrets(ctx, psr)
-	if err != nil {
-		return nil, err
-	}
-
-	return resolver.root.wrapSecrets(secretResults, nil)
+	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, search.NewConjunctionQuery(psr, q)))
 }
 
 func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage.Deployment {
