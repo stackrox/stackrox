@@ -62,6 +62,7 @@ func V2Command() *cobra.Command {
 
 	c.Flags().StringVar(&file, "file", "", "file to restore the DB from (deprecated; use positional argument)")
 	c.Flags().Bool("interrupt", false, "interrupt ongoing restore process (if any) to allow resuming")
+	flags.AddForce(c)
 
 	return c
 }

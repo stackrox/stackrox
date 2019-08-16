@@ -2,11 +2,16 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+const (
+	hardQuitSigIntThreshold = 3
 )
 
 var (
@@ -22,8 +27,16 @@ func Context() context.Context {
 		signal.Notify(ch, syscall.SIGINT)
 		ctx, cancelFunc := context.WithCancel(context.Background())
 		go func() {
-			<-ch
-			cancelFunc()
+			numSigInts := 0
+			for range ch {
+				cancelFunc() // ok to be called multiple times
+				numSigInts++
+				if numSigInts >= hardQuitSigIntThreshold {
+					fmt.Fprintf(os.Stderr, "Received %d interrupt signals. Exiting immediately...\n", hardQuitSigIntThreshold)
+					os.Exit(1)
+				}
+				fmt.Fprintf(os.Stderr, "Received %d interrupt signal(s)\n", numSigInts)
+			}
 		}()
 		intCtx = ctx
 	})

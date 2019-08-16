@@ -9,5 +9,7 @@ if [ -d "/var/lib/stackrox/.restore" ]; then
 	mv /var/lib/stackrox/.restore/* /var/lib/stackrox/
 	rmdir /var/lib/stackrox/.restore
 else
-	echo "No database restore directory found."
+	echo "No database restore directory found (this is not an error)."
 fi
+
+rm -rf /var/lib/stackrox/.restore-* 2>/dev/null || true

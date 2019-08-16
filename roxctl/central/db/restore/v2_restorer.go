@@ -144,6 +144,12 @@ func (r *v2Restorer) transferStatus() string {
 
 func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, error) {
 	subCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	nextReq, err := r.init(subCtx, file)
+	if err != nil {
+		return nil, err
+	}
 
 	r.statusLine.SetSpinner(waitingSpinner)
 	r.statusLine.SetTextStatic("Initiating restore ...")
@@ -156,9 +162,10 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 
 		progressBarContainer := mpb.NewWithContext(subCtx, mpb.WithOutput(os.Stderr), mpb.WithWidth(termWidth))
 		defer progressBarContainer.Wait()
+		defer cancel() // canceling twice doesn't hurt, but we need to ensure this gets called before Wait() above.
 
 		r.transferProgressBar = progressBarContainer.AddBar(
-			0,
+			r.headerSize+r.totalDataSize,
 			mpb.PrependDecorators(decor.CountersKibiByte("% 10.1f / % 10.1f")),
 			mpb.AppendDecorators(
 				decor.Percentage(),
@@ -169,17 +176,14 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 
 		progressBarContainer.Add(0, &r.errorLine)
 		progressBarContainer.Add(0, &r.statusLine)
-	}
 
-	defer cancel()
-
-	nextReq, err := r.init(subCtx, file)
-	if err != nil {
-		return nil, err
-	}
-
-	if r.transferProgressBar != nil {
-		r.transferProgressBar.SetTotal(r.headerSize+r.totalDataSize, false)
+		// In case we resumed, initialized the transfer progress bar with the refill.
+		pos, err := r.dataReader.Seek(0, io.SeekCurrent)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not seek in stream")
+		}
+		r.transferProgressBar.IncrInt64(r.headerSize + pos)
+		r.transferProgressBar.SetRefill(r.headerSize + pos)
 	}
 
 	for ctx.Err() == nil {

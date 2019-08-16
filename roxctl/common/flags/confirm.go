@@ -8,10 +8,16 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
 	forceFlag = "force"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // AddForce adds a parameter for bypassing interactive confirmation
@@ -23,7 +29,9 @@ func AddForce(c *cobra.Command) {
 func CheckConfirmation(c *cobra.Command) error {
 	f, err := c.Flags().GetBool(forceFlag)
 	if err != nil {
-		return err
+		log.Errorf("Error checking value of --force flag: %v", err)
+		errorhelpers.PanicOnDevelopment(err)
+		f = false
 	}
 	if f {
 		return nil

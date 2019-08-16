@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -53,7 +54,10 @@ func (s *service) handleRestore(req *http.Request) error {
 		return status.Errorf(codes.InvalidArgument, "could not parse restore request header: %v", err)
 	}
 
-	attemptDone, err := s.mgr.LaunchRestoreProcess(req.Context(), id, &header, ioutil.NopCloser(req.Body))
+	body, interrupt := ioutils.NewInterruptibleReader(req.Body)
+	defer interrupt()
+
+	attemptDone, err := s.mgr.LaunchRestoreProcess(req.Context(), id, &header, ioutil.NopCloser(body))
 	if err != nil {
 		return status.Errorf(codes.Internal, "Could not create a restore process: %v", err)
 	}
@@ -63,7 +67,7 @@ func (s *service) handleRestore(req *http.Request) error {
 		return status.Errorf(codes.Canceled, "context canceled before restore could complete: %v", req.Context().Err())
 	}
 	if restoreErr != nil {
-		return status.Errorf(codes.Internal, "database restore failed: %v", err)
+		return status.Errorf(codes.Internal, "database restore failed: %v", restoreErr)
 	}
 
 	return nil
@@ -104,7 +108,10 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 		return status.Errorf(codes.InvalidArgument, "specified process ID %s does not match ID of currently active restore process", processID)
 	}
 
-	attemptDone, err := activeProcess.Resume(req.Context(), attemptID, req.Body, pos, binenc.BigEndian.EncodeUint32(crc32))
+	body, interrupt := ioutils.NewInterruptibleReader(req.Body)
+	defer interrupt()
+
+	attemptDone, err := activeProcess.Resume(req.Context(), attemptID, ioutil.NopCloser(body), pos, binenc.BigEndian.EncodeUint32(crc32))
 	if err != nil {
 		return status.Errorf(codes.Internal, "could not resume restore process %s: %v", processID, err)
 	}
@@ -114,7 +121,7 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 		return status.Errorf(codes.Canceled, "context canceled before restore could complete: %v", req.Context().Err())
 	}
 	if attemptErr != nil {
-		return status.Errorf(codes.Internal, "database restore failed: %v", err)
+		return status.Errorf(codes.Internal, "database restore failed: %v", attemptErr)
 	}
 
 	return nil

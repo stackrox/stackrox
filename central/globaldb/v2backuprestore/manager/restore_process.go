@@ -350,17 +350,8 @@ func (p *restoreProcess) onReaderDetached(event ioutils.ReaderDetachmentEvent) {
 }
 
 func (p *restoreProcess) resumeCtrl() {
-	for {
-		select {
-		case event, ok := <-p.detachEvents:
-			if !ok {
-				return
-			}
-			p.onReaderDetached(event)
-		case <-p.cancelSig.Done():
-			p.currentAttemptSig.SignalWithError(errors.New(""))
-			return
-		}
+	for event := range p.detachEvents {
+		p.onReaderDetached(event)
 	}
 }
 

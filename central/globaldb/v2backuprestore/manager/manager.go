@@ -110,6 +110,8 @@ func (m *manager) finalOutputDir() string {
 }
 
 func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHeader *v1.DBRestoreRequestHeader, data io.Reader) (concurrency.ErrorWaitable, error) {
+	log.Infof("Attempting to launch restore process %s", id)
+
 	format := m.formatRegistry.GetFormat(requestHeader.GetFormatName())
 	if format == nil {
 		return nil, errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
