@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	pruneInterval = 24 * time.Hour
+	pruneInterval = 1 * time.Hour
 )
 
 var (
@@ -71,10 +71,13 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 		log.Error(err)
 		return
 	}
+	log.Info("[Pruning] Starting a garbage collection cycle")
 	pvtConfig := config.GetPrivateConfig()
 	// Run collection initially then run on a ticker
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
+	log.Info("[Pruning] Finished garbage collection cycle")
+
 }
 
 func (g *garbageCollectorImpl) runGC() {
