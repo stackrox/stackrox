@@ -41,6 +41,8 @@ func (c *queryConverter) convertHelper(ctx bleveContext, q *v1.Query) (query.Que
 		return c.conjunctionQueryToBleve(ctx, typedQ.Conjunction)
 	case *v1.Query_Disjunction:
 		return c.disjunctionQueryToBleve(ctx, typedQ.Disjunction)
+	case *v1.Query_BooleanQuery:
+		return c.booleanQueryToBleve(ctx, typedQ.BooleanQuery)
 	default:
 		panic(fmt.Sprintf("Unhandled query type: %T", typedQ))
 	}
@@ -110,6 +112,23 @@ func (c *queryConverter) matchLinkedFieldsQueryToBleve(ctx bleveContext, mfqs []
 		c.highlightCtx.Merge(highlightCtx)
 	}
 	return
+}
+
+func (c *queryConverter) booleanQueryToBleve(ctx bleveContext, bq *v1.BooleanQuery) (query.Query, error) {
+	cq, err := c.conjunctionQueryToBleve(ctx, bq.Must)
+	if err != nil {
+		return nil, err
+	}
+	dq, err := c.disjunctionQueryToBleve(ctx, bq.MustNot)
+	if err != nil {
+		return nil, err
+	}
+	boolQuery := bleve.NewBooleanQuery()
+	boolQuery.AddMust(typeQuery(c.category))
+	boolQuery.AddMust(cq.(*query.ConjunctionQuery).Conjuncts...)
+
+	boolQuery.MustNot = dq
+	return boolQuery, nil
 }
 
 func (c *queryConverter) conjunctionQueryToBleve(ctx bleveContext, cq *v1.ConjunctionQuery) (query.Query, error) {

@@ -189,14 +189,23 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(ctx context.Co
 	} else if !ok {
 		return errors.New("permission denied")
 	}
-	queries := make([]*v1.Query, 0, len(currentContainerIDs)+1)
-	queries = append(queries, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery())
 
-	for _, containerID := range currentContainerIDs {
-		queries = append(queries, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ContainerID, pkgSearch.NegateQueryString(containerID)).ProtoQuery())
+	mustConjunction := &v1.ConjunctionQuery{
+		Queries: []*v1.Query{pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()},
 	}
 
-	results, err := ds.Search(ctx, pkgSearch.ConjunctionQuery(queries...))
+	queries := make([]*v1.Query, 0, len(currentContainerIDs))
+	for _, containerID := range currentContainerIDs {
+		queries = append(queries, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ContainerID, pkgSearch.ExactMatchString(containerID)).ProtoQuery())
+	}
+
+	mustNotDisjunction := &v1.DisjunctionQuery{
+		Queries: queries,
+	}
+
+	booleanQuery := pkgSearch.NewBooleanQuery(mustConjunction, mustNotDisjunction)
+
+	results, err := ds.Search(ctx, booleanQuery)
 	if err != nil {
 		return err
 	}

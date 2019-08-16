@@ -86,11 +86,17 @@ message SearchOptions {
     map<int32, IDSlice> category_to_ids = 1;
 }
 
+message BooleanQuery {
+    ConjunctionQuery must     = 1;
+    DisjunctionQuery must_not = 2;
+}
+
 message Query {
     oneof query {
-        ConjunctionQuery conjunction = 1;
-        DisjunctionQuery disjunction = 2;
-        BaseQuery        base_query  = 3;
+        ConjunctionQuery conjunction   = 1;
+        DisjunctionQuery disjunction   = 2;
+        BaseQuery        base_query    = 3;
+        BooleanQuery     boolean_query = 6;
     }
     QueryPagination pagination       = 4;
     SearchOptions options            = 5;

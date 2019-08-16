@@ -356,3 +356,15 @@ func NewDisjunctionQuery(q ...*v1.Query) *v1.Query {
 		},
 	}
 }
+
+// NewBooleanQuery takes in a must conjunction query and a must not disjunction query
+func NewBooleanQuery(must *v1.ConjunctionQuery, mustNot *v1.DisjunctionQuery) *v1.Query {
+	return &v1.Query{
+		Query: &v1.Query_BooleanQuery{
+			BooleanQuery: &v1.BooleanQuery{
+				Must:    must,
+				MustNot: mustNot,
+			},
+		},
+	}
+}
