@@ -1,4 +1,4 @@
-import { lifecycleStageLabels, portExposureLabels } from 'messages/common';
+import { lifecycleStageLabels, portExposureLabels, envVarSrcLabels } from 'messages/common';
 
 const equalityOptions = [
     { label: 'Is greater than', value: 'GREATER_THAN' },
@@ -364,6 +364,15 @@ const policyConfigurationDescriptor = [
                 jsonpath: 'fields.env.value',
                 type: 'text',
                 placeholder: 'Value'
+            },
+            {
+                jsonpath: 'fields.env.envVarSource',
+                type: 'select',
+                options: Object.keys(envVarSrcLabels).map(key => ({
+                    label: envVarSrcLabels[key],
+                    value: key
+                })),
+                placeholder: 'Value From'
             }
         ],
         required: false,

@@ -329,7 +329,9 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                         .setEnv(KeyValuePolicy.newBuilder()
                         .setKey("CLUSTER_NAME")
-                        .setValue("main").build()))
+                        .setValue("main")
+                        .setEnvVarSource(DeploymentOuterClass.ContainerConfig.EnvironmentConfig.EnvVarSource.RAW)
+                        .build()))
                         .build()            | DEPLOYMENTNGINX
 
         "Container Port"           |

@@ -395,13 +395,26 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		Containers: []*storage.Container{
 			{Config: &storage.ContainerConfig{
 				Env: []*storage.ContainerConfig_EnvironmentConfig{
-					{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode"},
+					{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW},
 					{Key: "HOME", Value: "/home/stackrox"},
 				},
 			}},
 		},
 	}
 	suite.mustIndexDepAndImages(secretEnvDep)
+
+	secretKeyRefDep := &storage.Deployment{
+		Id: "SECRETKEYREFDEP",
+		Containers: []*storage.Container{
+			{Config: &storage.ContainerConfig{
+				Env: []*storage.ContainerConfig_EnvironmentConfig{
+					{Key: "THIS_IS_SECRET_VAR", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_SECRET_KEY},
+					{Key: "HOME", Value: "/home/stackrox"},
+				},
+			}},
+		},
+	}
+	suite.mustIndexDepAndImages(secretKeyRefDep)
 
 	// Fake deployment that shouldn't match anything, just to make sure
 	// that none of our queries will accidentally match it.
@@ -736,6 +749,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				containerPort22Dep.GetId():                        {},
 				dockerSockDep.GetId():                             {},
 				secretEnvDep.GetId():                              {},
+				secretKeyRefDep.GetId():                           {},
 				depWithOwnerAnnotation.GetId():                    {},
 				depWithGoodEmailAnnotation.GetId():                {},
 				depWithBadEmailAnnotation.GetId():                 {},
@@ -837,7 +851,18 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				secretEnvDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "Container Environment (key='THIS_IS_SECRET_VAR', value='stealthmode') matched environment policy (key = '.*SECRET.*|.*PASSWORD.*')",
+						Message: "Container Environment (key='THIS_IS_SECRET_VAR', value='stealthmode') matched environment policy (key = '.*SECRET.*|.*PASSWORD.*', value from = 'RAW')",
+					},
+				},
+				},
+			},
+		},
+		{
+			policyName: "Secret Mounted as Environment Variable",
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				secretKeyRefDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
+					{
+						Message: "Container Environment (key='THIS_IS_SECRET_VAR', value='') matched environment policy (value from = 'SECRET_KEY')",
 					},
 				},
 				},

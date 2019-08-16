@@ -63,6 +63,7 @@ var (
 	DropCapabilities       = newFieldLabel("Drop Capabilities")
 	EnvironmentKey         = newFieldLabel("Environment Key")
 	EnvironmentValue       = newFieldLabel("Environment Value")
+	EnvironmentVarSrc      = newFieldLabel("Environment Variable Source")
 	ExposedNodePort        = newFieldLabel("Exposed Node Port")
 	ExposingService        = newFieldLabel("Exposing Service")
 	ExposingServicePort    = newFieldLabel("Exposing Service Port")

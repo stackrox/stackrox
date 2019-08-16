@@ -72,12 +72,18 @@ func printKeyValuePolicy(kvp *storage.KeyValuePolicy) string {
 	sb := strings.Builder{}
 	if kvp.GetKey() != "" {
 		_, _ = sb.WriteString(fmt.Sprintf("key = '%s'", kvp.GetKey()))
-		if kvp.GetValue() != "" {
+		if kvp.GetValue() != "" || kvp.GetEnvVarSource() != storage.ContainerConfig_EnvironmentConfig_UNSET {
 			_, _ = sb.WriteString(", ")
 		}
 	}
 	if kvp.GetValue() != "" {
 		_, _ = sb.WriteString(fmt.Sprintf("value = '%s'", kvp.GetValue()))
+		if kvp.GetEnvVarSource() != storage.ContainerConfig_EnvironmentConfig_UNSET {
+			_, _ = sb.WriteString(", ")
+		}
+	}
+	if kvp.GetEnvVarSource() != storage.ContainerConfig_EnvironmentConfig_UNSET {
+		_, _ = sb.WriteString(fmt.Sprintf("value from = '%s'", kvp.GetEnvVarSource()))
 	}
 	return sb.String()
 }

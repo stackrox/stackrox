@@ -134,6 +134,7 @@ message DockerfileLineRuleField {
 message KeyValuePolicy {
     string key   = 1;
     string value = 2;
+    ContainerConfig.EnvironmentConfig.EnvVarSource env_var_source = 3;
 }
 
 message VolumePolicy {

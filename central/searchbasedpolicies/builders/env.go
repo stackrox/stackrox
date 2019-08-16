@@ -17,7 +17,8 @@ type EnvQueryBuilder struct {
 
 // Query implements the PolicyQueryBuilder interface.
 func (e EnvQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
-	if fields.GetEnv().GetKey() == "" && fields.GetEnv().GetValue() == "" {
+	if fields.GetEnv().GetKey() == "" && fields.GetEnv().GetValue() == "" &&
+		fields.GetEnv().GetEnvVarSource() == storage.ContainerConfig_EnvironmentConfig_UNSET {
 		return
 	}
 
@@ -32,23 +33,32 @@ func (e EnvQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		return
 	}
 
-	keyQuery := regexOrWildcard(fields.GetEnv().GetKey())
-	valueQuery := regexOrWildcard(fields.GetEnv().GetValue())
-	q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(
-		[]search.FieldLabel{search.EnvironmentKey, search.EnvironmentValue},
-		[]string{keyQuery, valueQuery}).ProtoQuery()
+	envVarSrcSearchField, err := getSearchField(search.EnvironmentVarSrc, optionsMap)
+	if err != nil {
+		err = errors.Wrapf(err, "%s", e.Name())
+		return
+	}
 
+	fieldLabels := []search.FieldLabel{search.EnvironmentKey, search.EnvironmentValue}
+	queryStrings := []string{regexOrWildcard(fields.GetEnv().GetKey()), regexOrWildcard(fields.GetEnv().GetValue())}
+	if fields.GetEnv().GetEnvVarSource() != storage.ContainerConfig_EnvironmentConfig_UNSET {
+		fieldLabels = append(fieldLabels, search.EnvironmentVarSrc)
+		queryStrings = append(queryStrings, fields.GetEnv().GetEnvVarSource().String())
+	}
+
+	q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(fieldLabels, queryStrings).ProtoQuery()
 	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		keyMatches := result.Matches[keySearchField.GetFieldPath()]
 		valueMatches := result.Matches[valueSearchField.GetFieldPath()]
-		if len(keyMatches) == 0 || len(valueMatches) == 0 {
+		envVarSrcMatches := result.Matches[envVarSrcSearchField.GetFieldPath()]
+		if len(keyMatches) == 0 || len(valueMatches) == 0 || len(envVarSrcMatches) == 0 {
 			return searchbasedpolicies.Violations{}
 		}
 		violations := searchbasedpolicies.Violations{
 			AlertViolations: make([]*storage.Alert_Violation, 0, len(keyMatches)),
 		}
 		for i, keyMatch := range keyMatches {
-			if i >= len(valueMatches) {
+			if i >= len(valueMatches) || i >= len(envVarSrcMatches) {
 				log.Errorf("Mismatched number of key and value matches: %+v; %+v", keyMatches, valueMatches)
 				return violations
 			}

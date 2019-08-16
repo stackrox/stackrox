@@ -150,6 +150,18 @@ message ContainerConfig {
     message EnvironmentConfig {
         string key      = 1 [(gogoproto.moretags) = "search:\"Environment Key,store\""];
         string value    = 2 [(gogoproto.moretags) = "search:\"Environment Value,store\""];
+        EnvVarSource env_var_source = 3 [(gogoproto.moretags) = "search:\"Environment Variable Source,store\""];
+
+        // For any update to EnvVarSource, please also update 'ui/src/messages/common.js'
+        enum EnvVarSource {
+            UNSET           = 0;
+            RAW             = 1;
+            SECRET_KEY      = 2;
+            CONFIG_MAP_KEY  = 3;
+            FIELD           = 4;
+            RESOURCE_FIELD  = 5;
+            UNKNOWN         = 6;
+        }
     }
     repeated EnvironmentConfig env  = 1;
     repeated string command         = 2;

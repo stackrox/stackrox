@@ -2,7 +2,8 @@ import {
     enforcementActionLabels,
     lifecycleStageLabels,
     portExposureLabels,
-    rbacPermissionLabels
+    rbacPermissionLabels,
+    envVarSrcLabels
 } from 'messages/common';
 
 const comparatorOp = {
@@ -186,7 +187,10 @@ const fieldsMap = {
         formatValue: d => {
             const key = d.key ? `${d.key}` : '';
             const value = d.value ? d.value : '';
-            return `${key}=${value}`;
+            const valueFrom = !d.envVarSource
+                ? ''
+                : ` Value From: ${envVarSrcLabels[d.envVarSource]}`;
+            return `${key}=${value};${valueFrom}`;
         }
     },
     disallowedAnnotation: {

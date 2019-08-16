@@ -236,30 +236,38 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 		for i, env := range c.Env {
 			if env.ValueFrom == nil {
 				envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
-					Key:   env.Name,
-					Value: env.Value,
+					Key:          env.Name,
+					Value:        env.Value,
+					EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
 				}
 			} else {
 				var value string
+				var envVarSrc storage.ContainerConfig_EnvironmentConfig_EnvVarSource
 				switch {
 				case env.ValueFrom.SecretKeyRef != nil:
+					envVarSrc = storage.ContainerConfig_EnvironmentConfig_SECRET_KEY
 					ref := env.ValueFrom.SecretKeyRef
 					value = fmt.Sprintf("Refers to secret %q with key %q", ref.Name, ref.Key)
 				case env.ValueFrom.ConfigMapKeyRef != nil:
+					envVarSrc = storage.ContainerConfig_EnvironmentConfig_CONFIG_MAP_KEY
 					ref := env.ValueFrom.ConfigMapKeyRef
 					value = fmt.Sprintf("Refers to config map %q with key %q", ref.Key, ref.Name)
 				case env.ValueFrom.FieldRef != nil:
+					envVarSrc = storage.ContainerConfig_EnvironmentConfig_FIELD
 					ref := env.ValueFrom.FieldRef
 					value = fmt.Sprintf("Refers to field %q", ref.FieldPath)
 				case env.ValueFrom.ResourceFieldRef != nil:
+					envVarSrc = storage.ContainerConfig_EnvironmentConfig_RESOURCE_FIELD
 					ref := env.ValueFrom.ResourceFieldRef
 					value = fmt.Sprintf("Refers to resource %q from container %q", ref.Resource, ref.ContainerName)
 				default:
+					envVarSrc = storage.ContainerConfig_EnvironmentConfig_UNKNOWN
 					value = "Unknown environment value reference"
 				}
 				envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
-					Key:   env.Name,
-					Value: value,
+					Key:          env.Name,
+					Value:        value,
+					EnvVarSource: envVarSrc,
 				}
 			}
 		}

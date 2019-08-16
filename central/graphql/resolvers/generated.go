@@ -273,9 +273,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"user: String!",
 	}))
 	utils.Must(builder.AddType("ContainerConfig_EnvironmentConfig", []string{
+		"envVarSource: ContainerConfig_EnvironmentConfig_EnvVarSource!",
 		"key: String!",
 		"value: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerConfig_EnvironmentConfig_EnvVarSource(0)))
 	utils.Must(builder.AddType("ContainerImage", []string{
 		"id: ID!",
 		"name: ImageName",
@@ -453,6 +455,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"value: String!",
 	}))
 	utils.Must(builder.AddType("KeyValuePolicy", []string{
+		"envVarSource: ContainerConfig_EnvironmentConfig_EnvVarSource!",
 		"key: String!",
 		"value: String!",
 	}))
@@ -2877,6 +2880,11 @@ func (resolver *Resolver) wrapContainerConfig_EnvironmentConfigs(values []*stora
 	return output, nil
 }
 
+func (resolver *containerConfig_EnvironmentConfigResolver) EnvVarSource(ctx context.Context) string {
+	value := resolver.data.GetEnvVarSource()
+	return value.String()
+}
+
 func (resolver *containerConfig_EnvironmentConfigResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
@@ -2885,6 +2893,24 @@ func (resolver *containerConfig_EnvironmentConfigResolver) Key(ctx context.Conte
 func (resolver *containerConfig_EnvironmentConfigResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
+}
+
+func toContainerConfig_EnvironmentConfig_EnvVarSource(value *string) storage.ContainerConfig_EnvironmentConfig_EnvVarSource {
+	if value != nil {
+		return storage.ContainerConfig_EnvironmentConfig_EnvVarSource(storage.ContainerConfig_EnvironmentConfig_EnvVarSource_value[*value])
+	}
+	return storage.ContainerConfig_EnvironmentConfig_EnvVarSource(0)
+}
+
+func toContainerConfig_EnvironmentConfig_EnvVarSources(values *[]string) []storage.ContainerConfig_EnvironmentConfig_EnvVarSource {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ContainerConfig_EnvironmentConfig_EnvVarSource, len(*values))
+	for i, v := range *values {
+		output[i] = toContainerConfig_EnvironmentConfig_EnvVarSource(&v)
+	}
+	return output
 }
 
 type containerImageResolver struct {
@@ -4260,6 +4286,11 @@ func (resolver *Resolver) wrapKeyValuePolicies(values []*storage.KeyValuePolicy,
 		output[i] = &keyValuePolicyResolver{resolver, v}
 	}
 	return output, nil
+}
+
+func (resolver *keyValuePolicyResolver) EnvVarSource(ctx context.Context) string {
+	value := resolver.data.GetEnvVarSource()
+	return value.String()
 }
 
 func (resolver *keyValuePolicyResolver) Key(ctx context.Context) string {

@@ -66,6 +66,14 @@ const common = Object.freeze({
         ELEVATED_IN_NAMESPACE: 'Elevated Access in Namespace',
         ELEVATED_CLUSTER_WIDE: 'Elevated Access Cluster Wide',
         CLUSTER_ADMIN: 'Cluster Admin Access'
+    },
+    // For any update to envVarSrcLabels, please also update deployment.proto
+    envVarSrcLabels: {
+        RAW: 'NoObjectRef (Raw Value)',
+        SECRET_KEY: 'SecretKeyRef',
+        CONFIG_MAP_KEY: 'ConfigMapRef',
+        FIELD: 'FieldRef',
+        RESOURCE_FIELD: 'ResourceFieldRef'
     }
 });
 
