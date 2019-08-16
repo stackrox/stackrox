@@ -24,10 +24,18 @@ class Buttons extends Component {
         reassessPolicies: PropTypes.func.isRequired,
 
         wizardOpen: PropTypes.bool.isRequired,
+        wizardPolicy: PropTypes.shape({
+            id: PropTypes.string,
+            name: PropTypes.string
+        }),
         openWizard: PropTypes.func.isRequired,
         setWizardStage: PropTypes.func.isRequired,
         setWizardPolicy: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired
+    };
+
+    static defaultProps = {
+        wizardPolicy: null
     };
 
     addPolicy = () => {
@@ -78,7 +86,12 @@ class Buttons extends Component {
                             </div>
                         }
                         options={bulkOperationOptions}
-                        disabled={buttonsDisabled}
+                        disabled={
+                            buttonsDisabled &&
+                            this.props.selectedPolicyIds.find(
+                                id => id === this.props.wizardPolicy.id
+                            ) !== undefined
+                        }
                     />
                 )}
                 {selectionCount === 0 && (
@@ -107,7 +120,8 @@ class Buttons extends Component {
 
 const mapStateToProps = createStructuredSelector({
     selectedPolicyIds: selectors.getSelectedPolicyIds,
-    wizardOpen: selectors.getWizardOpen
+    wizardOpen: selectors.getWizardOpen,
+    wizardPolicy: selectors.getWizardPolicy
 });
 
 const mapDispatchToProps = {

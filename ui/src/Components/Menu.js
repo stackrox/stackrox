@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 const optionsClass =
     'flex items-center relative text-left px-2 py-3 border-b border-base-300 hover:bg-base-200 capitalize';
 
-const Menu = ({ buttonClass, buttonContent, className, options }) => {
+const Menu = ({ buttonClass, buttonContent, className, options, disabled }) => {
     const [isMenuOpen, setMenuState] = useState(false);
 
     const hideMenu = () => {
@@ -56,6 +56,7 @@ const Menu = ({ buttonClass, buttonContent, className, options }) => {
                 className={`flex h-full w-full ${buttonClass}`}
                 type="button"
                 onClick={onClickHandler()}
+                disabled={disabled}
             >
                 {buttonContent}
             </button>
@@ -78,16 +79,18 @@ Menu.propTypes = {
     options: PropTypes.arrayOf(
         PropTypes.shape({
             className: PropTypes.string,
-            icon: PropTypes.func,
+            icon: PropTypes.object,
             label: PropTypes.string.isRequired,
             link: PropTypes.string,
             onClick: PropTypes.func
         })
-    ).isRequired
+    ).isRequired,
+    disabled: PropTypes.bool
 };
 
 Menu.defaultProps = {
-    buttonClass: ''
+    buttonClass: '',
+    disabled: false
 };
 
 export default Menu;

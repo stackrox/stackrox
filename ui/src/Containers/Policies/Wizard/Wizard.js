@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/policies/page';
 import { actions as tableActions } from 'reducers/policies/table';
+import { actions as wizardActions } from 'reducers/policies/wizard';
 import { createStructuredSelector } from 'reselect';
 
 import Panel from 'Components/Panel';
@@ -18,8 +19,8 @@ class Wizard extends Component {
             name: PropTypes.string
         }),
         wizardOpen: PropTypes.bool.isRequired,
-
         closeWizard: PropTypes.func.isRequired,
+        setWizardPolicy: PropTypes.func.isRequired,
         selectPolicyId: PropTypes.func.isRequired
     };
 
@@ -29,6 +30,7 @@ class Wizard extends Component {
 
     onClose = () => {
         this.props.closeWizard();
+        this.props.setWizardPolicy({ name: '' });
         this.props.selectPolicyId('');
     };
 
@@ -60,7 +62,8 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     closeWizard: pageActions.closeWizard,
-    selectPolicyId: tableActions.selectPolicyId
+    selectPolicyId: tableActions.selectPolicyId,
+    setWizardPolicy: wizardActions.setWizardPolicy
 };
 
 export default connect(
