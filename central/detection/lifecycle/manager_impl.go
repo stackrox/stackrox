@@ -10,6 +10,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/detection/lifecycle/metrics"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -25,9 +26,11 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -58,6 +61,7 @@ type managerImpl struct {
 	whitelists              whitelistDataStore.DataStore
 	imageDataStore          imageDatastore.DataStore
 	deletedDeploymentsCache expiringcache.Cache
+	processFilter           filter.Filter
 
 	queuedIndicators map[string]indicatorWithInjector
 
@@ -79,6 +83,26 @@ func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorWithInjec
 	m.queuedIndicators = make(map[string]indicatorWithInjector)
 
 	return copiedMap
+}
+
+func (m *managerImpl) buildIndicatorFilter() {
+	ctx := sac.WithAllAccess(context.Background())
+	var processesToRemove []string
+	err := m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
+		if !m.processFilter.Add(pi) {
+			processesToRemove = append(processesToRemove, pi.GetId())
+		}
+		return nil
+	})
+	if err != nil {
+		errorhelpers.PanicOnDevelopmentf("error building indicator filter: %v", err)
+	}
+
+	log.Infof("Cleaning up %d processes as a part of building process filter", len(processesToRemove))
+	if err := m.processesDataStore.RemoveProcessIndicators(ctx, processesToRemove); err != nil {
+		errorhelpers.PanicOnDevelopmentf("error removing process indicators: %v", err)
+	}
+	log.Infof("Successfully cleaned up those %d processes", len(processesToRemove))
 }
 
 func (m *managerImpl) flushQueuePeriodically() {
@@ -104,9 +128,15 @@ func (m *managerImpl) flushIndicatorQueue() {
 	// Map copiedQueue to slice
 	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
 	for _, i := range copiedQueue {
-		if m.deletedDeploymentsCache.Get(i.indicator.GetDeploymentId()) == nil {
-			indicatorSlice = append(indicatorSlice, i.indicator)
+		if deleted, _ := m.deletedDeploymentsCache.Get(i.indicator.GetDeploymentId()).(bool); deleted {
+			continue
 		}
+		if !m.processFilter.Add(i.indicator) {
+			metrics.ProcessFilterCounterInc("NotAdded")
+			continue
+		}
+		metrics.ProcessFilterCounterInc("Added")
+		indicatorSlice = append(indicatorSlice, i.indicator)
 	}
 
 	// Index the process indicators in batch

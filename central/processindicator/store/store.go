@@ -17,4 +17,6 @@ type Store interface {
 	RemoveProcessIndicators(id []string) error
 	GetTxnCount() (txNum uint64, err error)
 	IncTxnCount() error
+
+	WalkAll(func(pi *storage.ProcessIndicator) error) error
 }

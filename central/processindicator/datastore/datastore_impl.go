@@ -23,6 +23,10 @@ import (
 	"github.com/stackrox/rox/pkg/txn"
 )
 
+const (
+	maxBatchSize = 5000
+)
+
 var (
 	indicatorSAC = sac.ForResource(resources.Indicator)
 )
@@ -125,6 +129,26 @@ func (ds *datastoreImpl) AddProcessIndicator(ctx context.Context, i *storage.Pro
 	}
 
 	return nil
+}
+
+func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
+	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	return ds.storage.WalkAll(fn)
+}
+
+func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []string) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	return ds.removeIndicators(ids)
 }
 
 func (ds *datastoreImpl) removeMatchingIndicators(results []pkgSearch.Result) error {
@@ -266,13 +290,28 @@ func (ds *datastoreImpl) buildIndex() error {
 		return err
 	}
 
-	indicators, err := ds.storage.GetProcessIndicators()
+	processes := make([]*storage.ProcessIndicator, 0, maxBatchSize)
+	err = ds.storage.WalkAll(func(pi *storage.ProcessIndicator) error {
+		processes = append(processes, pi)
+		if len(processes) == maxBatchSize {
+			if err := ds.indexer.AddProcessIndicators(processes); err != nil {
+				return err
+			}
+			processes = processes[:0]
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
-	if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
-		return err
+
+	// This implies that we didn't have a multiple of batch size so be sure to index the final bits
+	if len(processes) != 0 {
+		if err := ds.indexer.AddProcessIndicators(processes); err != nil {
+			return err
+		}
 	}
+
 	if err := ds.storage.IncTxnCount(); err != nil {
 		return err
 	}

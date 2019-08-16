@@ -112,7 +112,7 @@ func TestLabelsMap(t *testing.T) {
 			bleveIndex, err := globalindex.MemOnlyIndex()
 			require.NoError(t, err)
 
-			deploymentsDS, err := datastore.NewBadger(badgerDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil)
+			deploymentsDS, err := datastore.NewBadger(badgerDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, nil)
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {

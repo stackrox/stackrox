@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/txn"
@@ -43,13 +44,14 @@ type datastoreImpl struct {
 	whitelists             pwDS.DataStore
 	risks                  riskDS.DataStore
 	deletedDeploymentCache expiringcache.Cache
+	processFilter          filter.Filter
 
 	keyedMutex *concurrency.KeyedMutex
 
 	ranker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache) (*datastoreImpl, error) {
+func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		deploymentStore:        storage,
 		deploymentIndexer:      indexer,
@@ -61,6 +63,7 @@ func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Ind
 		risks:                  risks,
 		keyedMutex:             concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		deletedDeploymentCache: deletedDeploymentCache,
+		processFilter:          processFilter,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -246,7 +249,8 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	if ds.deletedDeploymentCache.Get(id) != nil {
 		return nil
 	}
-	ds.deletedDeploymentCache.Add(id, struct{}{})
+	ds.deletedDeploymentCache.Add(id, true)
+	ds.processFilter.Delete(id)
 
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)

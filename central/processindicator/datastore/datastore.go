@@ -25,6 +25,9 @@ type DataStore interface {
 	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
 	RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error
 	RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deploymentID string, currentContainerIDs []string) error
+	RemoveProcessIndicators(ctx context.Context, ids []string) error
+
+	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
 
 	// Stop signals all goroutines associated with this object to terminate.
 	Stop() bool

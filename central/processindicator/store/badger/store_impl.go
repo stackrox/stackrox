@@ -6,6 +6,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -37,6 +38,9 @@ func keyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *badger.DB) store.Store {
+	globaldb.RegisterBucket(processIndicatorBucket, "ProcessIndicator")
+	globaldb.RegisterBucket(uniqueProcessesBucket, "ProcessIndicator")
+
 	wrapper, err := badgerhelper.NewTxnHelper(db, processIndicatorBucket)
 	utils.Must(err)
 	return &storeImpl{
@@ -117,7 +121,6 @@ func (b *storeImpl) GetProcessInfoToArgs() (map[processindicator.ProcessWithCont
 		},
 	}
 	err := b.View(func(tx *badger.Txn) error {
-		// func ForEachWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k, v []byte) error) error {
 		return badgerhelper.BucketForEach(tx, uniqueProcessesBucket, forEachOpts, func(k, v []byte) error {
 			uniqueKey := new(storage.ProcessIndicatorUniqueKey)
 			if err := proto.Unmarshal(k, uniqueKey); err != nil {
@@ -345,4 +348,21 @@ func (b *storeImpl) GetTxnCount() (uint64, error) {
 
 func (b *storeImpl) IncTxnCount() error {
 	return b.crud.IncTxnCount()
+}
+
+func (b *storeImpl) WalkAll(fn func(pi *storage.ProcessIndicator) error) error {
+	badgerOpts := badger.DefaultIteratorOptions
+
+	opts := badgerhelper.ForEachOptions{
+		IteratorOptions: &badgerOpts,
+	}
+	return b.DB.View(func(tx *badger.Txn) error {
+		return badgerhelper.BucketForEach(tx, processIndicatorBucket, opts, func(k, v []byte) error {
+			var processIndicator storage.ProcessIndicator
+			if err := proto.Unmarshal(v, &processIndicator); err != nil {
+				return err
+			}
+			return fn(&processIndicator)
+		})
+	})
 }

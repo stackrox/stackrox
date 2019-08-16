@@ -273,3 +273,16 @@ func (b *storeImpl) IncTxnCount() error {
 		return nil
 	})
 }
+
+func (b *storeImpl) WalkAll(fn func(pi *storage.ProcessIndicator) error) error {
+	return b.DB.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(processIndicatorBucket)
+		return bucket.ForEach(func(k, v []byte) error {
+			var processIndicator storage.ProcessIndicator
+			if err := proto.Unmarshal(v, &processIndicator); err != nil {
+				return err
+			}
+			return fn(&processIndicator)
+		})
+	})
+}

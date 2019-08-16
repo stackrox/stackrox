@@ -65,7 +65,5 @@ func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id s
 		return errors.New("permission denied")
 	}
 
-	fds.deletedDeploymentsCache.Add(id, true)
-
 	return fds.storage.RemoveFlowsForDeployment(id)
 }

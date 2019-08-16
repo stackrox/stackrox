@@ -101,6 +101,14 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 
 	suite.verifyIndicatorsAre(indicators...)
 
+	var walkedIndicators []*storage.ProcessIndicator
+	err := suite.store.WalkAll(func(pi *storage.ProcessIndicator) error {
+		walkedIndicators = append(walkedIndicators, pi)
+		return nil
+	})
+	suite.NoError(err)
+	suite.verifyIndicatorsAre(walkedIndicators...)
+
 	// Adding an indicator with the same secondary key should replace the original one.
 	tx, err := suite.store.GetTxnCount()
 	suite.NoError(err)

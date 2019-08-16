@@ -20,6 +20,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/process/filter"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -49,7 +50,7 @@ type DataStore interface {
 	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)
 }
 
-func newDataStore(storage store.Store, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache) (DataStore, error) {
+func newDataStore(storage store.Store, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
 	indexer := index.New(bleveIndex)
 	searcher := search.New(storage, indexer)
 
@@ -62,7 +63,8 @@ func newDataStore(storage store.Store, bleveIndex bleve.Index, images imageDS.Da
 		whitelists,
 		networkFlows,
 		risks,
-		deletedDeploymentCache)
+		deletedDeploymentCache,
+		processFilter)
 
 	if err != nil {
 		return nil, err
@@ -76,19 +78,19 @@ func newDataStore(storage store.Store, bleveIndex bleve.Index, images imageDS.Da
 }
 
 // NewBadger creates a deployment datastore based on BadgerDB
-func NewBadger(db *badger.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache) (DataStore, error) {
+func NewBadger(db *badger.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
 	store, err := badgerStore.New(db)
 	if err != nil {
 		return nil, err
 	}
-	return newDataStore(store, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache)
+	return newDataStore(store, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter)
 }
 
 // NewBolt creates a deployment datastore based on BoltDB
-func NewBolt(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache) (DataStore, error) {
+func NewBolt(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
 	store, err := boltStore.New(db)
 	if err != nil {
 		return nil, err
 	}
-	return newDataStore(store, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache)
+	return newDataStore(store, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter)
 }

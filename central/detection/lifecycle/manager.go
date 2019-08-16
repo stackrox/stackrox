@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"golang.org/x/time/rate"
 )
 
@@ -44,11 +45,11 @@ type Manager interface {
 	RemovePolicy(policyID string) error
 }
 
-// NewManager returns a new manager with the injected dependencies.
-func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
+// newManager returns a new manager with the injected dependencies.
+func newManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
 	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, whitelists whitelistDataStore.DataStore,
 	imageDataStore imageDataStore.DataStore, alertManager alertmanager.AlertManager, riskManager riskManager.Manager,
-	reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache) Manager {
+	reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache, filter filter.Filter) *managerImpl {
 	m := &managerImpl{
 		enricher:                enricher,
 		riskManager:             riskManager,
@@ -61,6 +62,7 @@ func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Dete
 		imageDataStore:          imageDataStore,
 		reprocessor:             reprocessor,
 		deletedDeploymentsCache: deletedDeploymentsCache,
+		processFilter:           filter,
 
 		queuedIndicators: make(map[string]indicatorWithInjector),
 
