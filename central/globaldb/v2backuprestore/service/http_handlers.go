@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -54,8 +55,18 @@ func (s *service) handleRestore(req *http.Request) error {
 		return status.Errorf(codes.InvalidArgument, "could not parse restore request header: %v", err)
 	}
 
+	// Make sure we perform a clean cut when reading from the stream. Returning from a handler while a concurrent call
+	// to read is ongoing might result in corrupted data being reported (this could happen if we launch a restore
+	// operation with the `--interrupt` flag while another one is active).
 	body, interrupt := ioutils.NewInterruptibleReader(req.Body)
 	defer interrupt()
+
+	// Make sure calls to `Read` will return an error once the handler returns. We have observed cases where a
+	// connection interruption caused a call to `Read` to hang indefinitely, so even though the handler was exited, the
+	// process could neither be interrupted nor canceled nor resumed, since the reader would never detach.
+	readCtx, cancel := context.WithCancel(req.Context())
+	defer cancel()
+	body = ioutils.NewContextBoundReader(readCtx, body)
 
 	attemptDone, err := s.mgr.LaunchRestoreProcess(req.Context(), id, &header, ioutil.NopCloser(body))
 	if err != nil {
@@ -108,8 +119,18 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 		return status.Errorf(codes.InvalidArgument, "specified process ID %s does not match ID of currently active restore process", processID)
 	}
 
+	// Make sure we perform a clean cut when reading from the stream. Returning from a handler while a concurrent call
+	// to read is ongoing might result in corrupted data being reported (this could happen if we launch a restore
+	// operation with the `--interrupt` flag while another one is active).
 	body, interrupt := ioutils.NewInterruptibleReader(req.Body)
 	defer interrupt()
+
+	// Make sure calls to `Read` will return an error once the handler returns. We have observed cases where a
+	// connection interruption caused a call to `Read` to hang indefinitely, so even though the handler was exited, the
+	// process could neither be interrupted nor canceled nor resumed, since the reader would never detach.
+	readCtx, cancel := context.WithCancel(req.Context())
+	defer cancel()
+	body = ioutils.NewContextBoundReader(readCtx, body)
 
 	attemptDone, err := activeProcess.Resume(req.Context(), attemptID, ioutil.NopCloser(body), pos, binenc.BigEndian.EncodeUint32(crc32))
 	if err != nil {

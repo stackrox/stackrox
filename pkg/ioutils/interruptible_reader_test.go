@@ -35,7 +35,7 @@ func (r *chunkReader) Read(buf []byte) (int, error) {
 		n = len(buf)
 	}
 	copy(buf, r.currChunk[:n])
-	r.currChunk = r.currChunk[:n]
+	r.currChunk = r.currChunk[n:]
 	return n, nil
 }
 
