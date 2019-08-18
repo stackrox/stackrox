@@ -1,0 +1,44 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: analyzer
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+      - name: api
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+      - name: catalog
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      - name: policy
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      - name: policy
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"

@@ -156,6 +156,8 @@ function launch_central {
         echo "Deploying Scanner V2"
         launch_service $unzip_dir scannerv2
         echo
+        ${ORCH_CMD} -n stackrox patch deployment scanner-v2 --patch "$(cat $k8s_dir/scanner-v2-resources-patch.yaml)"
+        ${ORCH_CMD} -n stackrox patch deployment scanner-v2-db --patch "$(cat $k8s_dir/scanner-v2-db-resources-patch.yaml)"
     elif [[ "$SCANNER_SUPPORT" == "true" ]]; then
         echo "Deploying Scanning..."
         $unzip_dir/scanner/scripts/setup.sh

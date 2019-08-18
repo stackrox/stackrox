@@ -1,0 +1,12 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: scanner-v2-db
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
