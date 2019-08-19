@@ -1,10 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { format, distanceInWordsToNow } from 'date-fns';
+import { format, distanceInWordsStrict } from 'date-fns';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { createExpirationMessageWithoutLink } from 'Containers/License/helpers';
+import {
+    createExpirationMessageWithoutLink,
+    getExpirationMessageType
+} from 'Containers/License/helpers';
 
 import * as Icon from 'react-feather';
 import Widget from 'Components/Widget';
@@ -15,6 +18,8 @@ const LicenseExpiration = ({ expirationDate, shouldHaveReadWritePermission }) =>
     const canUploadLicense = shouldHaveReadWritePermission('Licenses');
     const expirationMessage = createExpirationMessageWithoutLink(expirationDate);
 
+    const showTopTimeRemaining = getExpirationMessageType(expirationDate) === 'info';
+
     return (
         <Widget header="License Expiration">
             <div className="py-4 px-6 w-full">
@@ -23,9 +28,11 @@ const LicenseExpiration = ({ expirationDate, shouldHaveReadWritePermission }) =>
                     <div className="text-primary-800 font-400 text-4xl">
                         {format(expirationDate, 'MM/DD/YY')}
                     </div>
-                    <div className="flex flex-1 justify-end text-base-500">
-                        ({distanceInWordsToNow(expirationDate)} from now)
-                    </div>
+                    {showTopTimeRemaining && (
+                        <div className="flex flex-1 justify-end text-base-500">
+                            ({distanceInWordsStrict(expirationDate, new Date())} from now)
+                        </div>
+                    )}
                 </div>
                 <div className="text-center">
                     {expirationMessage && (

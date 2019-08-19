@@ -48,7 +48,7 @@ export const getLicenseStatusMessage = (status, message) => {
     return result;
 };
 
-const getExpirationMessageType = expirationDate => {
+export const getExpirationMessageType = expirationDate => {
     const daysLeft = differenceInDays(expirationDate, new Date());
     if (daysLeft > 14) return 'info';
     if (daysLeft > 3) return 'warn';
@@ -85,9 +85,15 @@ export const createExpirationMessageWithoutLink = expirationDate => {
     if (!type) {
         return null;
     }
-    const message = `Your license will expire in ${distanceInWordsStrict(
-        expirationDate,
-        new Date()
-    )}. Upload a new license key to renew your account.`;
+
+    const baseMessage = 'Upload a new license key to renew your account.';
+    const message =
+        type !== 'info'
+            ? `Your license will expire in ${distanceInWordsStrict(
+                  expirationDate,
+                  new Date()
+              )}. ${baseMessage}`
+            : baseMessage;
+
     return createExpirationMessage(message, type);
 };
