@@ -133,6 +133,7 @@ func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args ra
 		return nil, err
 	}
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
+		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
 
 	q, err := resolver.getConjunctionQuery(args, q)
