@@ -639,7 +639,7 @@ const NetworkGraph = ({
 
     useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
-    useEffect(runLayout, [allowedNodes]);
+    useEffect(runLayout, [activeNodes, allowedNodes, networkEdgeMap, filterState]);
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
 
