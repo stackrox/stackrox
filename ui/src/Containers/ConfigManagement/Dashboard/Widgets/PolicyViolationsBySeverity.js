@@ -8,7 +8,9 @@ import Loader from 'Components/Loader';
 import networkStatuses from 'constants/networkStatuses';
 import { Link, withRouter } from 'react-router-dom';
 import gql from 'graphql-tag';
-import { max, sum, uniqBy } from 'lodash';
+import max from 'lodash/max';
+import sum from 'lodash/sum';
+import uniqBy from 'lodash/uniqBy';
 import pluralize from 'pluralize';
 import { severityValues, severities } from 'constants/severities';
 import policyStatus from 'constants/policyStatus';
@@ -96,7 +98,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
             const newItems = { ...categories };
             policyCategories.forEach((category, idx) => {
                 if (!newItems[category]) newItems[category] = [];
-                const color = policy.alerts.length ? severityColorMap[severity] : passingChartColor;
+                const color = policy.alertCount ? severityColorMap[severity] : passingChartColor;
                 const link = URLService.getURL(match, location)
                     .base(entityTypes.POLICY, policy.id)
                     .url();
@@ -107,10 +109,11 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
 
                 newItems[category].push({
                     severity,
-                    passing: !policy.alerts.length,
+                    passing: !policy.alertCount,
                     color,
                     textColor: passingLinkColor,
                     value: 0,
+                    labelColor: color,
                     labelValue:
                         deploymentsWithAlerts > 0
                             ? `violated on ${deploymentsWithAlerts} ${pluralize(
@@ -118,7 +121,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                                   deploymentsWithAlerts
                               )}`
                             : null,
-                    labelColor: color,
                     name: idx > 0 ? `${idx}. ${policyName}` : policyName,
                     link
                 });
@@ -152,7 +154,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
     }
 
     function getSummaryData(data) {
-        const policiesInViolation = data.filter(policy => policy.alerts.length);
+        const policiesInViolation = data.filter(policy => policy.alertCount);
 
         function getCount(severity) {
             return sum(
@@ -303,7 +305,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                         className="s-2 pdf-page"
                         header="Policy Violations by Severity"
                         headerComponents={viewAllLink}
-                        bodyClassName="graph-bottom-border pr-4 py-1"
                     >
                         {contents}
                     </Widget>

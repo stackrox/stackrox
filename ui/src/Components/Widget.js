@@ -81,7 +81,7 @@ function Widget({
                         className="flex flex-1 text-sm text-base-600 uppercase items-center tracking-wide px-3 leading-normal font-700"
                         data-test-id="widget-header"
                     >
-                        <div className="flex-grow">{headerContent}</div>
+                        <div className="">{headerContent}</div>
                         {pagerControls ? pagerControls.arrows : null}
                     </div>
                     {headerComponents && (

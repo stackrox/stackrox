@@ -107,7 +107,13 @@ const buildTableColumns = (match, location) => {
                     .push(id)
                     .push(entityTypes.IMAGE)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${imageCount} image(s)`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${imageCount} ${pluralize('image', imageCount)}`}
+                    />
+                );
             },
             accessor: 'imageCount'
         },
@@ -123,7 +129,13 @@ const buildTableColumns = (match, location) => {
                     .push(id)
                     .push(entityTypes.SECRET)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={`${secretCount} secret(s)`} />;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${secretCount} ${pluralize('secret', secretCount)}`}
+                    />
+                );
             },
             accessor: 'secretCount'
         },

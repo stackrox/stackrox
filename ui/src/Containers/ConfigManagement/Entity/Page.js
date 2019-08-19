@@ -3,6 +3,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
+import { useTheme } from 'Containers/ThemeProvider';
 
 import pluralize from 'pluralize';
 import ExportButton from 'Components/ExportButton';
@@ -14,6 +15,7 @@ import SidePanel from '../SidePanel/SidePanel';
 import Entity from '../Entity';
 
 const EntityPage = ({ match, location }) => {
+    const { isDarkMode } = useTheme();
     const params = URLService.getParams(match, location);
     const {
         pageEntityType,
@@ -56,7 +58,11 @@ const EntityPage = ({ match, location }) => {
                 entityListType={entityListType1}
                 disabled={!!overlay}
             />
-            <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-auto">
+            <div
+                className={`flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-auto ${
+                    entityListType1 || isDarkMode ? '' : 'bg-side-panel-wave'
+                }`}
+            >
                 <div className={`${overlay ? 'overlay' : ''} h-full w-full`}>
                     <Entity
                         entityType={pageEntityType}

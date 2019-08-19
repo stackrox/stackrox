@@ -23,7 +23,7 @@ import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
 const SecretDataMetadata = ({ metadata }) => {
     if (!metadata) return null;
-    const { startDate, endDate, issuer = {}, sans, subject = {} } = metadata;
+    const { startDate, endDate, issuer = {}, sans = [], subject = {} } = metadata;
     const {
         commonName: issuerCommonName = 'N/A',
         names: issuerNames,
@@ -78,12 +78,18 @@ const SecretDataMetadata = ({ metadata }) => {
                     <span>{subjectNames ? subjectNames.join(', ') : 'None'}</span>
                 </div>
             </Widget>
-            <Widget header="Sans" className="m-4" bodyClassName="flex flex-col p-4 leading-normal">
-                <div>
-                    <span className="font-700 mr-4">Sans:</span>
-                    <span>{sans ? sans.join(', ') : 'None'}</span>
-                </div>
-            </Widget>
+            {!!sans.length && (
+                <Widget
+                    header="SANS"
+                    className="m-4"
+                    bodyClassName="flex flex-col p-4 leading-normal"
+                >
+                    <div>
+                        <span className="font-700 mr-4">SANS:</span>
+                        <span>{sans.join(', ')}</span>
+                    </div>
+                </Widget>
+            )}
         </div>
     );
 };

@@ -42,9 +42,9 @@ const LeftNavigation = ({ location, metadata }) => {
             : 'bg-primary-700 hover:bg-primary-700 text-base-100';
 
         if (
-            (pathname.includes('policies') ||
-                pathname.includes('integrations') ||
-                pathname.includes('access')) &&
+            (pathname.includes('main/policies') ||
+                pathname.includes('main/integrations') ||
+                pathname.includes('main/access')) &&
             navText === 'configure'
         ) {
             return baseActiveClass;

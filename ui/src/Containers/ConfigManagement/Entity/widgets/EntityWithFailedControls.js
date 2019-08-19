@@ -13,10 +13,13 @@ export const getRelatedEntities = (data, entityType) => {
     results[0].aggregationKeys.forEach(({ scope }, idx) => {
         if (scope === entityTypes[entityType]) entityKey = idx;
     });
-    results.forEach(({ keys, numFailing }) => {
+    results.forEach(({ keys, numPassing, numFailing }) => {
         const { id } = keys[entityKey];
         if (!relatedEntities[id]) {
-            relatedEntities[id] = { ...keys[entityKey] };
+            relatedEntities[id] = {
+                ...keys[entityKey],
+                passing: numFailing === 0 && numPassing !== 0
+            };
         } else if (numFailing) relatedEntities[id].passing = false;
     });
 

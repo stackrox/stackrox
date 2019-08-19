@@ -33,11 +33,7 @@ class Header extends Component {
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <PageHeader
-                header="Network Graph"
-                subHeader={subHeader}
-                classes="w-2/3 bg-primary-200 z-10"
-            >
+            <PageHeader header="Network Graph" subHeader={subHeader} classes="w-2/3 bg-primary-100">
                 <ClusterSelect />
                 <SearchInput
                     id="network"

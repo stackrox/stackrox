@@ -32,7 +32,7 @@ class Select extends Component {
     render() {
         const { className, options, placeholder, value } = this.props;
         return (
-            <div className="relative">
+            <div className="flex relative">
                 <select
                     className={`${className} cursor-pointer`}
                     onChange={this.onClick}
@@ -50,7 +50,7 @@ class Select extends Component {
                         </option>
                     ))}
                 </select>
-                <div className="absolute pin-y pin-r flex items-center px-2 cursor-pointer z-0 pointer-events-none">
+                <div className="flex items-center px-2 cursor-pointer z-0 pointer-events-none">
                     <Icon.ChevronDown className="h-4 w-4" />
                 </div>
             </div>

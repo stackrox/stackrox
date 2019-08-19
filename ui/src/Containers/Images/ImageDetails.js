@@ -152,7 +152,7 @@ const ImageDetails = ({
         <Panel
             header={header}
             onClose={unselectImage}
-            className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
+            className="bg-primary-200 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
         >
             {content}
         </Panel>

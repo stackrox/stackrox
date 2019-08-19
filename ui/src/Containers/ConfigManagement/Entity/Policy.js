@@ -4,6 +4,7 @@ import entityTypes from 'constants/entityTypes';
 import { entityViolationsColumns } from 'constants/listColumns';
 import { Link } from 'react-router-dom';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
+import pluralize from 'pluralize';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -40,7 +41,7 @@ const DeploymentViolations = ({ className, alerts }) => {
     const columns = entityViolationsColumns[entityTypes.DEPLOYMENT];
     return (
         <TableWidget
-            header={`${rows.length} Deployments in Violation`}
+            header={`${rows.length} ${pluralize('Deployment', rows.length)} in Violation`}
             entityType={entityTypes.DEPLOYMENT}
             columns={columns}
             rows={rows}
@@ -70,9 +71,7 @@ const Policy = ({ id, entityListType, query }) => {
     };
 
     const QUERY = gql`
-    query getPolicy($id: ID!${
-        entityListType === entityTypes.DEPLOYMENT ? ', $query: String' : ''
-    }) {
+    query getPolicy($id: ID!${entityListType ? ', $query: String' : ''}) {
         policy(id: $id) {
             id
             description
@@ -131,7 +130,6 @@ const Policy = ({ id, entityListType, query }) => {
                 }
 
                 const {
-                    id: policyId,
                     lifecycleStages = [],
                     categories = [],
                     severity,
@@ -146,10 +144,6 @@ const Policy = ({ id, entityListType, query }) => {
                 } = entity;
 
                 const metadataKeyValuePairs = [
-                    {
-                        key: 'ID',
-                        value: policyId
-                    },
                     {
                         key: 'Life Cycle',
                         value: lifecycleStages.map(lifecycleStage => (

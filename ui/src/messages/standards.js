@@ -1,7 +1,4 @@
 import { standardTypes } from 'constants/entityTypes';
-import entityLabels from 'messages/entity';
-import pluralize from 'pluralize';
-import capitalize from 'lodash/capitalize';
 
 export const standardLabels = {
     [standardTypes.PCI_DSS_3_2]: 'PCI DSS 3.2.1',
@@ -14,17 +11,6 @@ export const standardLabels = {
 export const standardShortLabels = {
     ...standardLabels,
     [standardTypes.CIS_Kubernetes_v1_2_0]: 'CIS K8s v1.2.0'
-};
-
-export const getStandardAcrossEntityLabel = (
-    standardType,
-    entityType,
-    grammaticalNumberCategory
-) => {
-    return `${standardLabels[standardType]} Across ${pluralize(
-        capitalize(entityLabels[entityType]),
-        grammaticalNumberCategory === 'plural'
-    )}`;
 };
 
 export default standardLabels;

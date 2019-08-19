@@ -121,7 +121,7 @@ const RiskPage = ({
         return (
             <Panel
                 header={selectedDeployment.deployment.name}
-                className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
+                className="bg-primary-200 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
                 onClose={updateSelectedDeployment}
             >
                 {content}

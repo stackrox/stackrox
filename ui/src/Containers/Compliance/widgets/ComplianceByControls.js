@@ -4,7 +4,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import entityTypes, { standardEntityTypes, standardBaseTypes } from 'constants/entityTypes';
-import { standardLabels, getStandardAcrossEntityLabel } from 'messages/standards';
+import { standardLabels } from 'messages/standards';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import searchContext from 'Containers/searchContext';
@@ -200,7 +200,7 @@ const ComplianceByControls = ({
 }) => {
     const searchParam = useContext(searchContext);
     const options = standardOptions.map(standard => ({
-        label: `${getStandardAcrossEntityLabel(standard, entityTypes.CLUSTER, 'plural')}`,
+        label: standardLabels[standard],
         jsonpath: standardLabels[standard],
         value: standardLabels[standard],
         standard
@@ -222,7 +222,7 @@ const ComplianceByControls = ({
             {({ data, networkStatus }) => {
                 const titleComponents = (
                     <Select
-                        className="bg-base-100 w-full focus:outline-none"
+                        className="bg-base-100 w-full focus:outline-none text-sm text-base-600 uppercase tracking-wide leading-normal font-700"
                         value={selectedStandard.value}
                         onChange={onChange}
                         options={options}

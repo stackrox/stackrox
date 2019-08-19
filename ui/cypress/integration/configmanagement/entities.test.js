@@ -394,8 +394,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        // @TODO: Fix this test
-        xit('should have the same number of Policies in the count widget as in the Policies table', () => {
+        it('should have the same number of Policies in the count widget as in the Policies table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');

@@ -83,7 +83,7 @@ const Cluster = ({ id, entityListType, query }) => {
                 ${
                     entityListType === entityTypes.POLICY
                         ? 'policies(query: $query) { ...policyFields }'
-                        : 'policyCount'
+                        : 'policyCount(query: "Lifecycle Stage:DEPLOY")'
                 }
                 ${
                     entityListType === entityTypes.SERVICE_ACCOUNT

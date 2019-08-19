@@ -54,17 +54,26 @@ const BreadCrumbLinks = props => {
         const icon = i !== length - 1 ? Icon : null;
         const link = getLink(match, location, i, length);
         const content = link ? (
-            <Link className="text-primary-700" to={link}>
+            <Link className="text-primary-700 truncate" to={link}>
                 {state}
             </Link>
         ) : (
-            state
+            <span className="w-full">
+                <span className="truncate">{state}</span>
+            </span>
         );
         if (!state) return null;
         return (
-            <span className="flex items-center" key={i} data-test-id="breadcrumb-link-text">
-                {content} {icon}
-            </span>
+            <>
+                <span
+                    className="flex items-center max-w-64"
+                    key={i}
+                    data-test-id="breadcrumb-link-text"
+                >
+                    {content}
+                </span>
+                <span className="flex items-center">{icon}</span>
+            </>
         );
     });
     return (

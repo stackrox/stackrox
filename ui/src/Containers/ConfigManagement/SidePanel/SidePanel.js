@@ -108,7 +108,7 @@ const SidePanel = ({
         <div className={className}>
             <Panel
                 id="side-panel"
-                headerClassName={`flex w-full h-12 ${
+                headerClassName={`flex w-full h-12 overflow-y-hidden ${
                     !isDarkMode
                         ? 'bg-side-panel-wave border-b border-base-100'
                         : 'border-b border-base-400'

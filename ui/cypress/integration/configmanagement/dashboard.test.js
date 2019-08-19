@@ -268,7 +268,7 @@ describe('Config Management Dashboard Page', () => {
             .should('have.value', 'CIS Docker v1.1.0');
         cy.get(selectors.getWidget('CIS'))
             .find('select')
-            .select('CIS Kubernetes v1.2.0 Across Clusters');
+            .select('CIS Kubernetes v1.2.0');
         cy.get(selectors.getWidget('CIS'))
             .find('select')
             .should('have.value', 'CIS Kubernetes v1.2.0');
