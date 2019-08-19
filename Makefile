@@ -317,7 +317,7 @@ endif
 .PHONY: scale-build
 scale-build: build-prep
 	@echo "+ $@"
-	$(GOBUILD) scale/mocksensor scale/mockcollector scale/profiler
+	$(GOBUILD) scale/mocksensor scale/mockcollector scale/profiler scale/flightreplay
 
 .PHONY: webhookserver-build
 webhookserver-build: build-prep
@@ -465,6 +465,7 @@ scale-image: scale-build clean-image
 	cp bin/linux/mocksensor scale/image/bin/mocksensor
 	cp bin/linux/mockcollector scale/image/bin/mockcollector
 	cp bin/linux/profiler scale/image/bin/profiler
+	cp bin/linux/flightreplay scale/image/bin/flightreplay
 	chmod +w scale/image/bin/*
 	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
 

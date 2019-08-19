@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: replay
+  namespace: stackrox
+  labels:
+    app: replay
+spec:
+  selector:
+    matchLabels:
+      app: replay
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: replay
+    spec:
+      imagePullSecrets:
+        - name: stackrox
+      containers:
+      - image: stackrox/scale:${MAIN_IMAGE_TAG}
+        name: replay
+        command:
+          - /docker-entrypoint.sh
+        env:
+        - name: DB_URL
+          value: "gs://stackrox-ci-db-recorder/recorder.db"
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/run/secrets/stackrox.io/creds/serviceaccount.json"
+        volumeMounts:
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: db-serviceaccount
+          mountPath: /run/secrets/stackrox.io/creds/
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: sensor-tls
+          items:
+          - key: sensor-cert.pem
+            path: cert.pem
+          - key: sensor-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      - name: db-serviceaccount
+        secret:
+          secretName: db-serviceaccount

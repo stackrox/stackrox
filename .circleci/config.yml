@@ -1438,7 +1438,6 @@ jobs:
     environment:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - STORAGE: pvc
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
@@ -1467,22 +1466,21 @@ jobs:
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
+            cci-export ROX_RECORDER_DB_CREDS /tmp/gcp.json
 
-      - *setupCIMonitoring
       - *waitForAPI
 
       - run:
-          name: Launch Mock Sensors
+          name: Launch Replay
           command: |
-            ./scale/mocksensor/launch_multiple_mock_sensors.sh -instances=10 -max-deployments=200 -max-indicators=4000 -max-network-flows=20 -max-updates=2000
+            ./scale/flightreplay/launch_replay.sh
             mkdir /tmp/pprof
-            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 6
+            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 5
       - *storeProfilingResults
       - *collectK8sLogs
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
       - teardown-gke
-
 
   provision-openshift:
     machine: true

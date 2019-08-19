@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/recorder"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -81,7 +82,8 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	queue.push(msg)
 }
 
-func (c *sensorConnection) runRecv(ctx context.Context, server central.SensorService_CommunicateServer) {
+func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.SensorService_CommunicateServer) {
+	server := recorder.WrapStream(grpcServer)
 	for !c.stopSig.IsDone() {
 		msg, err := server.Recv()
 		if err != nil {
