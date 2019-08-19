@@ -65,15 +65,11 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { policyStatus, id } = original;
-                const { failingPolicies } = policyStatus;
-                if (!failingPolicies.length) return 'No Violations';
+                const { failingPolicyCount, id } = original;
+                if (!failingPolicyCount) return 'No Violations';
                 const labelLink = (
                     <LabelChip
-                        text={`${failingPolicies.length} ${pluralize(
-                            'Policies',
-                            failingPolicies.length
-                        )}`}
+                        text={`${failingPolicyCount} ${pluralize('Policies', failingPolicyCount)}`}
                         type="alert"
                     />
                 );
@@ -84,7 +80,7 @@ const buildTableColumns = (match, location) => {
                 return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
             },
             id: 'failingPolicies',
-            accessor: d => d.policyStatus.failingPolicies,
+            accessor: 'failingPolicyCount',
             sortMethod: sortValueByLength
         },
         {
@@ -93,12 +89,11 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const { policyStatus } = original;
-                const { length } = policyStatus.failingPolicies;
-                return !length ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+                const { failingPolicyCount } = original;
+                return !failingPolicyCount ? 'Pass' : <LabelChip text="Fail" type="alert" />;
             },
             id: 'status',
-            accessor: d => d.policyStatus.status
+            accessor: 'failingPolicyCount'
         },
         {
             Header: `Images`,

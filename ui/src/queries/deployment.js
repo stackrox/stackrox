@@ -89,13 +89,7 @@ export const DEPLOYMENTS_QUERY = gql`
             deployAlertCount
             serviceAccount
             serviceAccountID
-            policyStatus {
-                status
-                failingPolicies {
-                    id
-                    name
-                }
-            }
+            failingPolicyCount
             secretCount
             imageCount
         }
