@@ -22,6 +22,10 @@ class Select extends Component {
         const selectedOption = this.props.options.find(
             option => option.value === event.target.value
         );
+        if (!selectedOption) {
+            throw new Error('Selected ID does not match any known option in Select control.');
+        }
+
         this.props.onChange(selectedOption);
     };
 
@@ -33,6 +37,7 @@ class Select extends Component {
                     className={`${className} cursor-pointer`}
                     onChange={this.onClick}
                     value={value}
+                    aria-label={placeholder}
                 >
                     {placeholder && (
                         <option value="" disabled>

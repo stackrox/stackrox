@@ -123,6 +123,7 @@ class AuthProvider extends Component {
                 header={headerText}
                 headerClassName={panelHeaderClassName}
                 headerComponents={headerComponents}
+                id="auth-provider-panel"
             >
                 <div className="w-full h-full bg-base-300 flex">
                     {isEmptyState ? this.displayEmptyState() : this.displayContent()}

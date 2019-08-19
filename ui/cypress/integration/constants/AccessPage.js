@@ -11,6 +11,12 @@ export const selectors = {
         roleName: 'div[data-test-id="role-name"] input'
     },
     tabs: {
+        authProviders: '[data-test-id="tab"]:contains("Auth Provider Rules")',
         roles: '[data-test-id="tab"]:contains("Roles and Permissions")'
+    },
+    authProviders: {
+        addProvider: 'select:contains("Add an Auth Provider")',
+        newAuth0: 'auth0',
+        newAuthProviderPanel: '[data-test-id="auth-provider-panel"]'
     }
 };
