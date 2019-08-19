@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 import { withRouter } from 'react-router-dom';
 
-const TablePaginationV2 = ({ pageCount, page, setPage, searchOptions, location }) => {
+const TablePaginationV2 = ({ pageCount, page, setPage, searchOptions }) => {
     function onChange(e) {
         let { value } = e.target;
         value = Number(value);
@@ -29,7 +28,7 @@ const TablePaginationV2 = ({ pageCount, page, setPage, searchOptions, location }
 
     const curPage = `${page + 1}`;
 
-    useEffect(resetPage, [searchOptions, location]);
+    useEffect(resetPage, [searchOptions]);
 
     return (
         <div
@@ -78,8 +77,7 @@ TablePaginationV2.propTypes = {
     pageCount: PropTypes.number.isRequired,
     page: PropTypes.number.isRequired,
     setPage: PropTypes.func.isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.shape({})),
-    location: ReactRouterPropTypes.location.isRequired
+    searchOptions: PropTypes.arrayOf(PropTypes.shape({}))
 };
 
 TablePaginationV2.defaultProps = {

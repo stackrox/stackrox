@@ -36,7 +36,7 @@ function loadImage(selectedImageId, setSelectedImage, setIsFetchingSelectedImage
 }
 
 function ImageSidePanel({ selectedImageId, setSelectedImageId }) {
-    const [selectedImage, setSelectedImage] = useState(undefined);
+    const [selectedImage, setSelectedImage] = useState(null);
     const [isFetchingSelectedImage, setIsFetchingSelectedImage] = useState(false);
 
     useEffect(
@@ -51,7 +51,7 @@ function ImageSidePanel({ selectedImageId, setSelectedImageId }) {
     );
 
     // Only render if we have image data to render.
-    if (!selectedImageId) return null;
+    if (!selectedImageId || !selectedImage) return null;
     return (
         <ImageDetails
             image={selectedImage}
