@@ -13,6 +13,7 @@ RUN apk update && \
         ca-certificates=20190108-r0 \
         procps=3.3.15-r0 \
         su-exec=0.2-r0 \
+        musl=1.1.20-r5 \
         && \
     apk --purge del apk-tools \
     ;
