@@ -21,7 +21,7 @@ function processData(data) {
 
 const ClusterPage = ({
     entityId,
-    listEntityType,
+    listEntityType1,
     entityId1,
     entityType2,
     entityListType2,
@@ -40,9 +40,10 @@ const ClusterPage = ({
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
-                if (listEntityType && !sidePanelMode) {
+                if (listEntityType1 && !sidePanelMode) {
                     const listQuery = {
-                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        groupBy:
+                            listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
                         'Cluster Id': entityId,
                         ...query[searchParam]
                     };
@@ -52,7 +53,7 @@ const ClusterPage = ({
                             className="flex flex-col flex-1 overflow-y-auto h-full"
                         >
                             <ComplianceList
-                                entityType={listEntityType}
+                                entityType={listEntityType1}
                                 query={listQuery}
                                 selectedRowId={entityId1}
                                 entityType2={entityType2}
@@ -168,13 +169,14 @@ const ClusterPage = ({
                             <>
                                 <Header
                                     entityType={entityTypes.CLUSTER}
-                                    listEntityType={listEntityType}
+                                    listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
                                     entityType={entityTypes.CLUSTER}
+                                    selectedType={listEntityType1}
                                     resourceTabs={[
                                         entityTypes.CONTROL,
                                         entityTypes.NAMESPACE,

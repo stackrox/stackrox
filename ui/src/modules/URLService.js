@@ -97,8 +97,9 @@ function getPath(urlParams) {
     params.pageEntityListType = urlEntityListTypes[params.pageEntityListType];
     params.entityType2 =
         urlEntityTypes[params.entityType2] || urlEntityListTypes[params.entityListType2];
+    params.entityType1 =
+        urlEntityTypes[params.entityType1] || urlEntityListTypes[params.entityListType1];
     params.pageEntityType = urlEntityTypes[params.pageEntityType];
-    params.entityListType1 = urlEntityListTypes[params.entityListType1];
 
     return generatePath(path, params);
 }
@@ -120,11 +121,18 @@ function getParams(match, location) {
             newParams.entityType2 = getTypeKeyFromParamValue(newParams.entityType2);
         }
     }
-
+    if (newParams.entityListType1) {
+        newParams.entityListType1 = getTypeKeyFromParamValue(newParams.entityListType1);
+    } else if (newParams.entityType1) {
+        if (isListType(newParams.entityType1)) {
+            newParams.entityListType1 = getTypeKeyFromParamValue(newParams.entityType1, true);
+            delete newParams.entityType1;
+        } else {
+            newParams.entityType1 = getTypeKeyFromParamValue(newParams.entityType1);
+        }
+    }
     if (newParams.pageEntityType)
         newParams.pageEntityType = getTypeKeyFromParamValue(newParams.pageEntityType);
-    if (newParams.entityListType1)
-        newParams.entityListType1 = getTypeKeyFromParamValue(newParams.entityListType1);
 
     return {
         ...newParams,
@@ -153,31 +161,10 @@ function getLinkTo(params) {
     };
 }
 
-function isIdParam(paramName) {
-    if (!paramName) return false;
-    return paramName.toLowerCase().includes('entityid');
-}
-
 const pageTypesToParamNames = {
     [pageTypes.ENTITY]: entityParamNames,
     [pageTypes.LIST]: listParamNames
 };
-
-function getNextEmptyParamName(urlParams) {
-    const propNames = Object.values(pageTypesToParamNames[getPageType(urlParams)]);
-    if (urlParams.entityListType2) {
-        propNames[propNames.indexOf('entityType2')] = 'entityListType2';
-    }
-    let i = 0;
-    for (; i < propNames.length; i += 1) {
-        const propName = propNames[i];
-        if (!urlParams[propName]) {
-            return propName;
-        }
-    }
-
-    return null;
-}
 
 function getLastUsedParamName(urlParams) {
     const pageType = getPageType(urlParams);
@@ -188,11 +175,24 @@ function getLastUsedParamName(urlParams) {
     if (urlParams.entityListType2) {
         propNames[propNames.indexOf('entityType2')] = 'entityListType2';
     }
+    if (urlParams.entityListType1) {
+        propNames[propNames.indexOf('entityType1')] = 'entityListType1';
+    }
+
     for (let i = 0; i < propNames.length; i += 1) {
         const propName = propNames[i];
         if (urlParams[propName]) return propName;
     }
     return null;
+}
+
+function isIdParamName(param) {
+    if (!param) return false;
+    return param.toLowerCase().includes('entityid');
+}
+
+function isType(input) {
+    return !!entityTypes[input];
 }
 
 class URL {
@@ -218,61 +218,97 @@ class URL {
     }
 
     push(val, val2) {
-        const { urlParams } = this;
-        let newParams;
-
-        const isType = !!entityTypes[val];
-
+        const { urlParams, q } = this;
+        let newParams = { ...urlParams };
+        let newQuery = { ...q };
+        const lastUsedParamName = getLastUsedParamName(urlParams);
+        const lastUsedParamIsId = isIdParamName(lastUsedParamName);
+        const pageType = urlParams.pageEntityListType || urlParams.pageEntityType;
+        const entityType1 = urlParams.entityType1 || urlParams.entityListType1;
+        const entityType2 = urlParams.entityType2 || urlParams.entityListType2;
+        const isListPath = !!urlParams.pageEntityListType;
+        const tabs = getTabsPerEntity(entityType2, urlParams.context);
         // Not pushing a value, return
         if (!val) {
             return this;
         }
 
         // Pushing initial values, use base instead
-        if (!urlParams.pageEntityListType && !urlParams.pageEntityType) {
+        if (!pageType) {
             return this.base(val, val2);
         }
 
-        let emptyParamName = getNextEmptyParamName(urlParams);
-        emptyParamName =
-            emptyParamName === 'entityType2' && !val2 ? 'entityListType2' : emptyParamName;
-        const replaceParamName = getLastUsedParamName(urlParams);
+        // replacement: if pushing type or id onto a stack the ends in type or id, replace instead of push
+        if (isType(urlParams[lastUsedParamName]) === isType(val)) {
+            newParams[lastUsedParamName] = val;
+        }
 
-        if (emptyParamName) {
-            newParams = { ...urlParams };
-            if (isIdParam(emptyParamName) === !isType) {
-                // Next empty param type matches the val type, push it.
-                newParams[emptyParamName] = val;
-                if (emptyParamName === 'entityType2') {
-                    newParams.entityId2 = val2;
-                }
-            } else {
-                // next empty param type is different than input type, replace last used param instead of push
-                newParams[replaceParamName] = val;
+        // Entity push: if pushing both a type and id at the same time, then entity <> entity
+        else if (val && val2) {
+            if (!lastUsedParamIsId) {
+                throw new Error({
+                    message: `Can't push an entity type and id onto a list. Use push(id) instead of push(type,id)`
+                });
             }
-        } else if (isType) {
-            const expectedNewPageType = urlParams.entityType2 || urlParams.entityListType2;
-            const tabs = getTabsPerEntity(expectedNewPageType, urlParams.context);
-            if (tabs.includes(val)) {
-                newParams = {
-                    context: urlParams.context,
-                    pageEntityType: urlParams.entityType2 || urlParams.entityListType2,
-                    pageEntityId: urlParams.entityId2,
-                    entityListType1: val
-                };
-                if (val2) newParams.entityId1 = val2;
+            if (!isListPath && !urlParams.entityId1) {
+                newParams.entityType1 = val;
+                newParams.entityId1 = val2;
+            } else if (!urlParams.entityType2 && !urlParams.entityListType2) {
+                newParams.entityType2 = val;
+                newParams.entityId2 = val2;
             } else {
-                newParams = {
-                    context: urlParams.context,
-                    pageEntityType: val,
-                    pageEntityId: val2
-                };
+                newParams = tabs.includes(val)
+                    ? {
+                          context: urlParams.context,
+                          pageEntityType: entityType2,
+                          pageEntityId: urlParams.entityId2,
+                          entityListType1: val,
+                          entityId1: val2
+                      }
+                    : (newParams = {
+                          context: urlParams.context,
+                          pageEntityType: val,
+                          pageEntityId: val2
+                      });
+                newQuery = null;
             }
+        }
+
+        // Id push: pushing an id value alone
+        else if (!isType(val)) {
+            if (!urlParams.entityId1) {
+                newParams.entityId1 = val;
+            } else if (!urlParams.entityId2) {
+                newParams.entityId2 = val;
+            } else {
+                // overflow:
+                throw new Error(`can't push id onto UI ${this.url()}`);
+            }
+        }
+
+        // Type push: pushing a type value alone
+        else if (!isListPath && !entityType1) {
+            newParams.entityListType1 = val;
+        } else if (!entityType2) {
+            newParams.entityListType2 = val;
         } else {
-            return this;
+            // overflow, preserve last entity context
+            newParams = tabs.includes(val)
+                ? {
+                      context: urlParams.context,
+                      pageEntityType: entityType2,
+                      pageEntityId: urlParams.entityId2,
+                      entityListType1: val
+                  }
+                : {
+                      context: urlParams.context,
+                      pageEntityListType: val
+                  };
+            newQuery = null;
         }
 
         this.urlParams = newParams;
+        this.q = newQuery;
         return this;
     }
 

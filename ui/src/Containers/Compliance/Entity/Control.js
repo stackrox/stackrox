@@ -17,7 +17,7 @@ import Header from './Header';
 
 const ControlPage = ({
     entityId,
-    listEntityType,
+    listEntityType1,
     entityId1,
     entityType2,
     entityListType2,
@@ -41,7 +41,7 @@ const ControlPage = ({
                 const standardName = standard ? standard.name : '';
                 let contents;
 
-                if (listEntityType && !sidePanelMode) {
+                if (listEntityType1 && !sidePanelMode) {
                     const listQuery = {
                         control: name,
                         ...query[searchParam]
@@ -53,7 +53,7 @@ const ControlPage = ({
                             className="flex flex-col flex-1 overflow-y-auto h-full"
                         >
                             <ComplianceList
-                                entityType={listEntityType}
+                                entityType={listEntityType1}
                                 query={listQuery}
                                 selectedRowId={entityId1}
                                 entityType2={entityType2}
@@ -97,28 +97,28 @@ const ControlPage = ({
                                 {sidePanelMode && (
                                     <>
                                         <ControlRelatedResourceList
-                                            listEntityType={entityTypes.CLUSTER}
+                                            listEntityType1={entityTypes.CLUSTER}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType={entityTypes.NAMESPACE}
+                                            listEntityType1={entityTypes.NAMESPACE}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType={entityTypes.NODE}
+                                            listEntityType1={entityTypes.NODE}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType={entityTypes.DEPLOYMENT}
+                                            listEntityType1={entityTypes.DEPLOYMENT}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
@@ -137,7 +137,7 @@ const ControlPage = ({
                             <>
                                 <Header
                                     entityType={entityTypes.CONTROL}
-                                    listEntityType={listEntityType}
+                                    listEntityType={listEntityType1}
                                     entity={control}
                                     headerText={`${standardLabels[standardId]} ${name}`}
                                     entityName={`${standardLabels[standardId]} ${name}`}
@@ -145,6 +145,7 @@ const ControlPage = ({
                                 <ResourceTabs
                                     entityId={entityId}
                                     entityType={entityTypes.CONTROL}
+                                    selectedType={listEntityType1}
                                     standardId={standardId}
                                     resourceTabs={[
                                         entityTypes.NODE,

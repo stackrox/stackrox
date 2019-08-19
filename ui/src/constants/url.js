@@ -1,7 +1,7 @@
 export const entityParamNames = {
     pageEntityType: 'pageEntityType',
     pageEntityId: 'pageEntityId',
-    entityListType1: 'entityListType1',
+    entityType1: 'entityType1',
     entityId1: 'entityId1',
     entityType2: 'entityType2',
     entityId2: 'entityId2'

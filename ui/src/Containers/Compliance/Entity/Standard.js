@@ -11,7 +11,7 @@ import Header from '../List/Header';
 
 const StandardPage = ({
     entityId,
-    listEntityType,
+    listEntityType1,
     entityId1,
     entityType2,
     entityListType2,
@@ -33,7 +33,7 @@ const StandardPage = ({
                 <ControlsMostFailed entityType={entityTypes.CONTROL} query={listQuery} showEmpty />
             </CollapsibleBanner>
             <ComplianceList
-                entityType={listEntityType}
+                entityType={listEntityType1}
                 query={listQuery}
                 selectedRowId={entityId1}
                 entityType2={entityType2}

@@ -17,7 +17,8 @@ const ComplianceEntityPage = ({ match, location }) => {
 
     const pageProps = {
         entityId: params.pageEntityId,
-        listEntityType: params.entityListType1,
+        listEntityType1: params.entityListType1,
+        entityType1: params.entityType1,
         entityId1: params.entityId1,
         entityType2: params.entityType2,
         entityListType2: params.entityListType2,

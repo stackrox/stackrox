@@ -39,7 +39,7 @@ function processData(data, entityId) {
 
 const NamespacePage = ({
     entityId,
-    listEntityType,
+    listEntityType1,
     entityId1,
     entityType2,
     entityListType2,
@@ -58,9 +58,10 @@ const NamespacePage = ({
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
-                if (listEntityType && !sidePanelMode) {
+                if (listEntityType1 && !sidePanelMode) {
                     const listQuery = {
-                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        groupBy:
+                            listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
                         Namespace: namespace.name,
                         ...query[searchParam]
                     };
@@ -70,7 +71,7 @@ const NamespacePage = ({
                             className="flex flex-col flex-1 overflow-y-auto h-full"
                         >
                             <ComplianceList
-                                entityType={listEntityType}
+                                entityType={listEntityType1}
                                 query={listQuery}
                                 selectedRowId={entityId1}
                                 entityType2={entityType2}
@@ -184,13 +185,14 @@ const NamespacePage = ({
                             <>
                                 <Header
                                     entityType={entityTypes.NAMESPACE}
-                                    listEntityType={listEntityType}
+                                    listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
                                 />
                                 <ResourceTabs
                                     entityId={id}
                                     entityType={entityTypes.NAMESPACE}
+                                    selectedType={listEntityType1}
                                     resourceTabs={[entityTypes.CONTROL, entityTypes.DEPLOYMENT]}
                                 />
                             </>

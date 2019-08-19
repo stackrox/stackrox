@@ -2,8 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Link, withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import URLService from 'modules/URLService';
 import { resourceLabels } from 'messages/common';
+import URLService from 'modules/URLService';
 import pluralize from 'pluralize';
 import Query from 'Components/ThrowingQuery';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
@@ -14,9 +14,7 @@ import {
 } from 'modules/complianceUtils';
 import entityTypes from 'constants/entityTypes';
 
-const ResourceTabs = ({ entityType, entityId, resourceTabs, match, location }) => {
-    const { pageEntityType: pageType } = URLService.getParams(match, location);
-
+const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match, location }) => {
     function getLinkToListType(listEntityType) {
         return URLService.getURL(match, location)
             .base(entityType, entityId)
@@ -37,7 +35,7 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, match, location }) =
         if (resourceTabs.length && data) {
             resourceTabs.forEach(type => {
                 let count;
-                if (pageType === entityTypes.CONTROL) {
+                if (entityType === entityTypes.CONTROL) {
                     count = getResourceCountFromComplianceResults(type, data);
                 } else {
                     count = getResourceCountFromAggregatedResults(type, data);
@@ -61,10 +59,8 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, match, location }) =
         };
     }
 
-    const variables = getVariables();
-    const tabEntity = URLService.getParams(match, location).entityListType1;
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={QUERY} variables={getVariables()}>
             {({ loading, data }) => {
                 if (loading) return null;
                 const tabData = processData(data);
@@ -77,7 +73,7 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, match, location }) =
                             const style = {
                                 borderColor: 'hsla(225, 44%, 87%, 1)'
                             };
-                            if (datum.type === tabEntity || (!tabEntity && !datum.type)) {
+                            if (datum.type === selectedType || (!selectedType && !datum.type)) {
                                 bgColor = 'bg-base-100';
                                 textColor = 'text-primary-600';
                                 style.borderTopColor = 'hsla(225, 90%, 67%, 1)';
@@ -112,11 +108,13 @@ ResourceTabs.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
+    selectedType: PropTypes.string,
     resourceTabs: PropTypes.arrayOf(PropTypes.string)
 };
 
 ResourceTabs.defaultProps = {
-    resourceTabs: PropTypes.arrayOf(PropTypes.string)
+    resourceTabs: PropTypes.arrayOf(PropTypes.string),
+    selectedType: null
 };
 
 export default withRouter(ResourceTabs);

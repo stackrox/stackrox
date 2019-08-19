@@ -3,7 +3,8 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 
 export const entityPagePropTypes = {
     entityId: PropTypes.string.isRequired,
-    listEntityType: PropTypes.string,
+    listEntityType1: PropTypes.string,
+    entityType1: PropTypes.string,
     entityId1: PropTypes.string,
     entityType2: PropTypes.string,
     entityListType2: PropTypes.string,
@@ -18,7 +19,8 @@ export const entityPagePropTypes = {
 export const entityPageDefaultProps = {
     match: null,
     location: null,
-    listEntityType: null,
+    listEntityType1: null,
+    entityType1: null,
     entityId1: null,
     entityType2: null,
     entityListType2: null,

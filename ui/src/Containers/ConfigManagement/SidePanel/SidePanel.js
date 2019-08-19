@@ -40,6 +40,7 @@ const SidePanel = ({
     className,
     contextEntityType,
     contextEntityId,
+    entityListType1,
     entityType1,
     entityId1,
     entityType2,
@@ -49,15 +50,20 @@ const SidePanel = ({
 }) => {
     const { isDarkMode } = useTheme();
     const searchParam = useContext(searchContext);
-    const isList = !entityId1 || ((entityType2 || entityListType2) && !entityId2);
+    const isList = !entityId1 || (entityListType2 && !entityId2);
 
     function getCurrentEntityId() {
         return entityId2 || entityId1;
     }
 
     function getCurrentEntityType() {
-        if (isList) return entityType1;
-        return entityType2 || entityListType2 || entityType1;
+        return (
+            entityType2 ||
+            (entityId2 && entityListType2) ||
+            entityType1 ||
+            entityListType1 ||
+            contextEntityType
+        );
     }
 
     function getListType() {
@@ -96,7 +102,7 @@ const SidePanel = ({
 
     const entityContext = {};
     if (contextEntityType) entityContext[contextEntityType] = contextEntityId;
-    if (entityId2) entityContext[entityType1] = entityId1;
+    if (entityId2) entityContext[entityType1 || entityListType1] = entityId1;
 
     return (
         <div className={className}>
@@ -107,15 +113,11 @@ const SidePanel = ({
                         ? 'bg-side-panel-wave border-b border-base-100'
                         : 'border-b border-base-400'
                 }`}
-                bodyClassName={`${
-                    (entityListType2 && !entityId2) || isDarkMode
-                        ? 'bg-base-100'
-                        : 'bg-side-panel-wave'
-                }`}
+                bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : 'bg-side-panel-wave'}`}
                 headerTextComponent={
                     <BreadCrumbs
                         className="font-700 leading-normal text-base-600 uppercase tracking-wide"
-                        entityType1={entityType1}
+                        entityType1={entityType1 || entityListType1}
                         entityId1={entityId1}
                         entityType2={entityType2}
                         entityListType2={entityListType2}
@@ -148,6 +150,7 @@ SidePanel.propTypes = {
     contextEntityType: PropTypes.string,
     contextEntityId: PropTypes.string,
     entityType1: PropTypes.string,
+    entityListType1: PropTypes.string,
     entityId1: PropTypes.string,
     entityType2: PropTypes.string,
     entityListType2: PropTypes.string,
@@ -160,6 +163,7 @@ SidePanel.defaultProps = {
     contextEntityType: null,
     contextEntityId: null,
     entityType1: null,
+    entityListType1: null,
     entityId1: null,
     entityType2: null,
     entityListType2: null,

@@ -19,6 +19,7 @@ const EntityPage = ({ match, location }) => {
         pageEntityType,
         pageEntityId,
         entityListType1,
+        entityType1,
         entityId1,
         entityType2,
         entityListType2,
@@ -70,7 +71,8 @@ const EntityPage = ({ match, location }) => {
                             className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel"
                             contextEntityId={pageEntityId}
                             contextEntityType={pageEntityType}
-                            entityType1={entityListType1}
+                            entityListType1={entityListType1}
+                            entityType1={entityType1}
                             entityId1={entityId1}
                             entityType2={entityType2}
                             entityListType2={entityListType2}

@@ -73,5 +73,5 @@ const entityTypeMatcher = `(${Object.values(urlEntityTypes).join('|')})`;
 export const nestedPaths = {
     DASHBOARD: `${mainPath}/:context`,
     LIST: `${mainPath}/:context/:pageEntityListType${entityListTypeMatcher}/:entityId1?/:entityType2?/:entityId2?`,
-    ENTITY: `${mainPath}/:context/:pageEntityType${entityTypeMatcher}/:pageEntityId?/:entityListType1${entityListTypeMatcher}?/:entityId1?/:entityType2?/:entityId2?`
+    ENTITY: `${mainPath}/:context/:pageEntityType${entityTypeMatcher}/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`
 };
