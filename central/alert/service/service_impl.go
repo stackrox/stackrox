@@ -127,8 +127,21 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 	return &v1.CountAlertsResponse{Count: int32(len(alerts))}, nil
 }
 
+func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest {
+	if req == nil {
+		req = &v1.ListAlertsRequest{}
+	}
+	if req.GetPagination() == nil {
+		req.Pagination = &v1.Pagination{}
+	}
+	req.Pagination.Offset = 0
+	req.Pagination.Limit = math.MaxInt32
+	return req
+}
+
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.
 func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
+	request = ensureAllAlertsAreFetched(request)
 	alerts, err := s.dataStore.ListAlerts(ctx, request)
 	if err != nil {
 		log.Error(err)
@@ -142,6 +155,10 @@ func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlerts
 // GetAlertsCounts returns alert counts by severity according to the request.
 // Counts can be grouped by policy category or cluster.
 func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlertsCountsRequest) (*v1.GetAlertsCountsResponse, error) {
+	if request == nil {
+		request = &v1.GetAlertsCountsRequest{}
+	}
+	request.Request = ensureAllAlertsAreFetched(request.GetRequest())
 	alerts, err := s.dataStore.ListAlerts(ctx, request.GetRequest())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -156,6 +173,7 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
 func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
+	ensureAllAlertsAreFetched(req)
 	alerts, err := s.dataStore.ListAlerts(ctx, req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

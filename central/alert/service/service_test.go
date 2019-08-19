@@ -25,6 +25,10 @@ import (
 
 var (
 	errFake = errors.New("fake error")
+
+	maxPagination = &v1.Pagination{
+		Limit: math.MaxInt32,
+	}
 )
 
 func TestAlertService(t *testing.T) {
@@ -347,6 +351,9 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 	fakeContext := context.Background()
 	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
+		Pagination: &v1.Pagination{
+			Limit: math.MaxInt32,
+		},
 	}).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
@@ -361,6 +368,9 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
+		Pagination: &v1.Pagination{
+			Limit: math.MaxInt32,
+		},
 	}).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
@@ -684,7 +694,8 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*storage.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
 	fakeContext := context.Background()
 	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
-		Query: "",
+		Query:      "",
+		Pagination: maxPagination,
 	}).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
@@ -775,7 +786,8 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 
 	fakeContext := context.Background()
 	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
-		Query: "",
+		Query:      "",
+		Pagination: maxPagination,
 	}).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
@@ -789,7 +801,8 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
-		Query: "",
+		Query:      "",
+		Pagination: maxPagination,
 	}).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
@@ -908,7 +921,8 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	}
 	fakeContext := context.Background()
 	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
-		Query: "",
+		Query:      "",
+		Pagination: maxPagination,
 	}).Return(alerts, nil)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
@@ -922,7 +936,8 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	s.datastoreMock.EXPECT().ListAlerts(fakeContext, &v1.ListAlertsRequest{
-		Query: "",
+		Query:      "",
+		Pagination: maxPagination,
 	}).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{

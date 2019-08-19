@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
@@ -72,7 +73,7 @@ func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsR
 		}
 	}
 
-	paginated.FillPagination(q, request.GetPagination(), alertBatchSize)
+	paginated.FillPagination(q, request.GetPagination(), math.MaxInt32)
 
 	alerts, err := ds.SearchListAlerts(ctx, q)
 	if err != nil {
