@@ -149,6 +149,7 @@ func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context) (in
 		return 0, err
 	}
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
+		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
 
 	results, err := resolver.root.DeploymentDataStore.Search(ctx, q)
