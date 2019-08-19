@@ -28,4 +28,7 @@ var (
 
 	// BadgerDB is used to enable BadgerDB as opposed to BoltDB for write heavy objects
 	BadgerDB = registerFeature("Enable BadgerDB as opposed to BoltDB for write heavy objects", "ROX_BADGER_DB", false)
+
+	// SensorAutoUpgrade controls the sensor autoupgrade feature.
+	SensorAutoUpgrade = registerFeature("Enable Sensor Autoupgrades", "ROX_SENSOR_AUTOUPGRADE", false)
 )
