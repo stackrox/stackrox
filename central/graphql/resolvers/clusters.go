@@ -511,7 +511,14 @@ func (resolver *clusterResolver) Secrets(ctx context.Context, args rawQuery) ([]
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, query))
+	secrets, err := resolver.root.SecretsDataStore.SearchRawSecrets(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	for _, secret := range secrets {
+		resolver.root.getDeploymentRelationships(ctx, secret)
+	}
+	return resolver.root.wrapSecrets(secrets, nil)
 }
 
 func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error) {
