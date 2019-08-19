@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import merge from 'lodash/merge';
+
 import { selectors } from 'reducers';
 import { actions } from 'reducers/systemConfig';
 
@@ -25,6 +27,19 @@ const defaultPublicConfig = {
     loginNotice: null
 };
 
+const defaultPrivateConfig = {
+    alertConfig: {
+        allRuntimeRetentionDurationDays: 30,
+        deletedRuntimeRetentionDurationDays: 7,
+        resolvedDeployRetentionDurationDays: 7
+    },
+    imageRetentionDurationDays: 7
+};
+
+function getPrivateConfig(privateConfig = {}) {
+    return merge(defaultPrivateConfig, privateConfig);
+}
+
 const Page = ({ systemConfig, saveSystemConfig }) => {
     const [isEditing, setIsEditing] = useState(false);
 
@@ -36,12 +51,16 @@ const Page = ({ systemConfig, saveSystemConfig }) => {
     function getContent() {
         const modifiedSystemConfig = { ...systemConfig };
         if (!systemConfig.publicConfig) modifiedSystemConfig.publicConfig = defaultPublicConfig;
+
         if (isEditing) {
+            const safePrivateConfig = getPrivateConfig(systemConfig.privateConfig);
+            const safeEditConfig = { ...modifiedSystemConfig, privateConfig: safePrivateConfig };
+
             return (
                 <Form
-                    initialValues={modifiedSystemConfig}
+                    initialValues={safeEditConfig}
                     onSubmit={saveHandler}
-                    config={modifiedSystemConfig}
+                    config={safeEditConfig}
                 />
             );
         }

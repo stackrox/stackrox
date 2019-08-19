@@ -9,7 +9,8 @@ const NumberBox = ({ label, value, suffix }) => (
                 <span>{label}</span>
             </div>
             <div className="flex flex-col justify-center flex-grow font-600 text-primary-700 text-5xl">
-                {`${value || '-'} ${pluralize(suffix, value)}`}
+                {!value && `Never deleted`}
+                {value > 0 && `${value} ${pluralize(suffix, value)}`}
             </div>
         </div>
     </div>
