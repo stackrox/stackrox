@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-33-g93b1db25b0
+    - image: docker.io/stackrox/apollo-ci:0.1.11-34-gd4c412a947
       auth:
         username: $DOCKER_IO_PULL_USERNAME
         password: $DOCKER_IO_PULL_PASSWORD
@@ -745,6 +745,15 @@ jobs:
           name: Build the CLI
           command: make cli
 
+      - run:
+          name: Validate expected Go version
+          command: |
+            roxctl_go_version="$(roxctl version --json | jq '.GoVersion' -r)"
+            expected_go_version="$(cat EXPECTED_GO_VERSION)"
+            if [[ "${roxctl_go_version}" != "${expected_go_version}" ]]; then
+              echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
+              exit 1
+            fi
       - *saveGoModCache
 
       - *saveGoBuildCache
