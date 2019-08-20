@@ -66,7 +66,7 @@ func (suite *QuayIntegrationSuite) TestGetScan() {
 	},
 		retry.Tries(10),
 		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(30 * time.Second)
+			time.Sleep(2 * time.Second)
 		}),
 	)
 	suite.NoError(err)

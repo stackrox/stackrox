@@ -370,7 +370,7 @@ test: go-unit-tests ui-test
 
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep
-	 go test -tags=integration $(shell go list ./... | grep  "registries\|scanners\|notifiers")
+	 go test -tags=integration -count=1 $(shell go list ./... | grep  "registries\|scanners\|notifiers")
 
 upload-coverage:
 	goveralls -coverprofile="test-output/coverage.out" -ignore 'central/graphql/resolvers/generated.go,generated/storage/*,generated/*/*/*' -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
