@@ -72,7 +72,7 @@ const TablePagination = ({ dataLength, setPage, page, searchOptions }) => {
                     type="button"
                     className="flex items-center rounded-full text-base-600 hover:bg-primary-200 hover:text-primary-600 p-1"
                     onClick={nextPage}
-                    disabled={page === totalPages - 1}
+                    disabled={page === totalPages - 1 || totalPages === 0}
                     data-test-id="next-page-button"
                 >
                     <Icon.ChevronRight className="h-6 w-6" />
