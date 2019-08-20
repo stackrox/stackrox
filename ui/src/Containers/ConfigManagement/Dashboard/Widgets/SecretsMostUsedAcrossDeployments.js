@@ -49,15 +49,16 @@ const getCertificateStatus = files => {
             const { startDate, endDate } = file.metadata;
             if (!startDate && !endDate) return;
 
-            const isUpcoming = dateFns.isAfter(new Date(startDate), new Date());
-            const hasExpired = dateFns.isAfter(new Date(endDate), new Date());
+            const today = new Date().toISOString();
+            const isUpcoming = dateFns.isAfter(startDate, today);
+            const hasExpired = dateFns.isAfter(today, endDate);
 
             if (isUpcoming) {
                 status = 'upcoming';
-            }
-
-            if (hasExpired) {
+            } else if (hasExpired) {
                 status = 'expired';
+            } else {
+                status = 'valid';
             }
         }
     });
