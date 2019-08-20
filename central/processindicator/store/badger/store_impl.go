@@ -263,8 +263,29 @@ func (b *storeImpl) batchAddProcessIndicators(start, end int, indicators []*stor
 
 func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator) ([]string, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
+
+	var deletedIndicators []string
+	uniqueProcesses := make(map[string]struct{})
+	var filteredIndicators []*storage.ProcessIndicator
+
+	// Run in reverse for newest to oldest
+	for i := len(indicators) - 1; i > -1; i-- {
+		indicator := indicators[i]
+		secondaryKey, err := getSecondaryKey(indicator)
+		if err != nil {
+			return nil, err
+		}
+		secondaryString := string(secondaryKey)
+		if _, ok := uniqueProcesses[secondaryString]; !ok {
+			uniqueProcesses[secondaryString] = struct{}{}
+			filteredIndicators = append(filteredIndicators, indicator)
+		} else {
+			deletedIndicators = append(deletedIndicators, indicator.GetId())
+		}
+	}
+
 	dataBytes := make([][]byte, 0, len(indicators))
-	for _, i := range indicators {
+	for _, i := range filteredIndicators {
 		data, err := proto.Marshal(i)
 		if err != nil {
 			return nil, err
@@ -272,10 +293,9 @@ func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator
 		dataBytes = append(dataBytes, data)
 	}
 
-	var deletedIndicators []string
-	batch := batcher.New(len(indicators), 1000)
+	batch := batcher.New(len(filteredIndicators), 1000)
 	for start, end, valid := batch.Next(); valid; start, end, valid = batch.Next() {
-		batchedIndicators, err := b.batchAddProcessIndicators(start, end, indicators, dataBytes)
+		batchedIndicators, err := b.batchAddProcessIndicators(start, end, filteredIndicators, dataBytes)
 		if err != nil {
 			return nil, err
 		}
