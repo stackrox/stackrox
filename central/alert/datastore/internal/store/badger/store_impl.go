@@ -45,7 +45,7 @@ func alertConverter(msg proto.Message) proto.Message {
 	return convert.AlertToListAlert(msg.(*storage.Alert))
 }
 
-// New returns a new Store instance using the provided bolt DB instance.
+// New returns a new Store instance using the provided badger DB instance.
 func New(db *badger.DB) store.Store {
 	globaldb.RegisterBucket(alertBucket, "Alert")
 	globaldb.RegisterBucket(alertListBucket, "Alert")
@@ -57,7 +57,7 @@ func New(db *badger.DB) store.Store {
 
 // GetAlert returns an alert with given id.
 func (b *storeImpl) ListAlert(id string) (alert *storage.ListAlert, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListAlert")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "ListAlert")
 
 	msg, exists, err := b.alertCRUD.ReadPartial(id)
 	if err != nil || !exists {
@@ -69,7 +69,7 @@ func (b *storeImpl) ListAlert(id string) (alert *storage.ListAlert, exists bool,
 
 // ListAlerts returns a minimal form of the Alert struct for faster marshalling
 func (b *storeImpl) ListAlerts() ([]*storage.ListAlert, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
 
 	msgs, err := b.alertCRUD.ReadAllPartial()
 	if err != nil {
@@ -84,7 +84,7 @@ func (b *storeImpl) ListAlerts() ([]*storage.ListAlert, error) {
 
 // GetAlert returns an alert with given id.
 func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Alert")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "Alert")
 
 	msg, exists, err := b.alertCRUD.Read(id)
 	if err != nil || !exists {
@@ -95,7 +95,7 @@ func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err 
 }
 
 func (b *storeImpl) GetAlertIDs() ([]string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "AlertIDs")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "AlertIDs")
 
 	var keys []string
 	err := b.db.View(func(tx *badger.Txn) error {
@@ -108,7 +108,7 @@ func (b *storeImpl) GetAlertIDs() ([]string, error) {
 }
 
 func (b *storeImpl) GetListAlerts(ids []string) ([]*storage.ListAlert, []int, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
 
 	msgs, indices, err := b.alertCRUD.ReadBatchPartial(ids)
 	if err != nil {
@@ -135,13 +135,13 @@ func (b *storeImpl) GetAlerts(ids []string) ([]*storage.Alert, []int, error) {
 	return alerts, missingIndices, nil
 }
 
-// AddAlert adds an alert into Bolt
+// AddAlert adds an alert into Badger
 func (b *storeImpl) AddAlert(alert *storage.Alert) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Add, "Alert")
 	return b.alertCRUD.Upsert(alert)
 }
 
-// UpdateAlert upserts an alert into Bolt
+// UpdateAlert upserts an alert into Badger
 func (b *storeImpl) UpdateAlert(alert *storage.Alert) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Update, "Alert")
 	return b.alertCRUD.Upsert(alert)
