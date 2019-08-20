@@ -36,7 +36,7 @@ func init() {
 		schema.AddExtraResolver("Deployment", `imageCount: Int!`),
 		schema.AddExtraResolver("Deployment", "secrets(query: String): [Secret!]!"),
 		schema.AddExtraResolver("Deployment", "secretCount: Int!"),
-		schema.AddExtraResolver("Deployment", "policyStatus(query: String) : String!"),
+		schema.AddExtraResolver("Deployment", "policyStatus(query: String) : PolicyStatus!"),
 	)
 }
 
@@ -305,17 +305,31 @@ func (resolver *deploymentResolver) ImageCount(ctx context.Context) (int32, erro
 	return int32(len(imageShas)), nil
 }
 
-func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args rawQuery) (string, error) {
+func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args rawQuery) (*policyStatusResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PolicyStatus")
 
-	alertExists, err := resolver.unresolvedAlertsExists(ctx, args)
+	alerts, err := resolver.getAlerts(ctx, args)
+
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if alertExists {
-		return "fail", nil
+
+	if len(alerts) == 0 {
+		return &policyStatusResolver{"pass", nil}, nil
 	}
-	return "pass", nil
+
+	policyIDs := set.NewStringSet()
+	for _, alert := range alerts {
+		policyIDs.Add(alert.GetPolicy().GetId())
+	}
+
+	policies, err := resolver.root.wrapPolicies(resolver.root.PolicyDataStore.SearchRawPolicies(ctx, search.NewQueryBuilder().AddDocIDs(policyIDs.AsSlice()...).ProtoQuery()))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &policyStatusResolver{"fail", policies}, nil
 }
 
 func (resolver *deploymentResolver) getImageShas(ctx context.Context) []string {
@@ -335,20 +349,15 @@ func (resolver *deploymentResolver) getImageShas(ctx context.Context) []string {
 	return imageShas.AsSlice()
 }
 
-func (resolver *deploymentResolver) unresolvedAlertsExists(ctx context.Context, args rawQuery) (bool, error) {
+func (resolver *deploymentResolver) getAlerts(ctx context.Context, args rawQuery) ([]*storage.ListAlert, error) {
 	if err := readAlerts(ctx); err != nil {
-		return false, err
+		return nil, err
 	}
 	q, err := resolver.getFailingAlertsQuery(args)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	q.Pagination = &v1.QueryPagination{Limit: 1}
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
-	if err != nil {
-		return false, err
-	}
-	return len(results) > 0, nil
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
 }
 
 func (resolver *deploymentResolver) getQuery() *v1.Query {
