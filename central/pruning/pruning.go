@@ -71,6 +71,10 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 		log.Error(err)
 		return
 	}
+	if config == nil {
+		log.Error("UNEXPECTED: Got nil config")
+		return
+	}
 	log.Info("[Pruning] Starting a garbage collection cycle")
 	pvtConfig := config.GetPrivateConfig()
 	// Run collection initially then run on a ticker

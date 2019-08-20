@@ -18,7 +18,7 @@ func TestStore(t *testing.T) {
 	config, err := store.GetConfig()
 	require.NoError(t, err)
 
-	assert.NotNil(t, config)
+	assert.Nil(t, config)
 
 	newConfig := &storage.Config{
 		PublicConfig: &storage.PublicConfig{

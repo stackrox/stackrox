@@ -89,6 +89,9 @@ func (s *serviceImpl) GetPrivateConfig(ctx context.Context, _ *v1.Empty) (*stora
 	if err != nil {
 		return nil, err
 	}
+	if config.GetPrivateConfig() == nil {
+		return &storage.PrivateConfig{}, nil
+	}
 	return config.GetPrivateConfig(), nil
 }
 
@@ -97,6 +100,9 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Conf
 	config, err := s.datastore.GetConfig(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if config == nil {
+		return &storage.Config{}, nil
 	}
 	return config, nil
 }

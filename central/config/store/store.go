@@ -38,16 +38,17 @@ type storeImpl struct {
 // GetConfig returns Central's config
 func (b *storeImpl) GetConfig() (*storage.Config, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Config")
-	var config storage.Config
+	var config *storage.Config
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(configBucket)
 		val := bucket.Get(configKey)
 		if val == nil {
 			return nil
 		}
-		return proto.Unmarshal(val, &config)
+		config = new(storage.Config)
+		return proto.Unmarshal(val, config)
 	})
-	return &config, err
+	return config, err
 }
 
 // UpdateConfig updates Central config
