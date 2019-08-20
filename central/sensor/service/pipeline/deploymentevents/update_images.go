@@ -5,6 +5,7 @@ import (
 
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -21,7 +22,6 @@ type updateImagesImpl struct {
 
 func (s *updateImagesImpl) do(ctx context.Context, deployment *storage.Deployment) {
 	clusterNSScope := sac.ClusterNSScopeStringFromObject(deployment)
-
 	for _, c := range deployment.GetContainers() {
 		image := c.GetImage()
 		if image.GetId() == "" {
@@ -31,11 +31,14 @@ func (s *updateImagesImpl) do(ctx context.Context, deployment *storage.Deploymen
 
 		fullImage := types.ToImage(c.GetImage())
 
-		if fullImage.ClusternsScopes == nil {
-			fullImage.ClusternsScopes = make(map[string]string)
-		}
-		fullImage.ClusternsScopes[deployment.GetId()] = clusterNSScope
+		if env.ImageClusterNSScopes.Setting() == "true" {
 
+			if fullImage.ClusternsScopes == nil {
+				fullImage.ClusternsScopes = make(map[string]string)
+			}
+			fullImage.ClusternsScopes[deployment.GetId()] = clusterNSScope
+
+		}
 		err := s.images.UpsertImage(ctx, fullImage)
 		if err != nil {
 			log.Error(err)
