@@ -111,7 +111,7 @@ class AuthProvider extends Component {
         } else {
             headerText = selectedAuthProvider.name
                 ? `"${selectedAuthProvider.name}" Auth Provider`
-                : `Create New Auth ${selectedAuthProvider.type} Provider`;
+                : `Create New ${selectedAuthProvider.type} Auth Provider`;
             headerComponents = (
                 <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel} />
             );

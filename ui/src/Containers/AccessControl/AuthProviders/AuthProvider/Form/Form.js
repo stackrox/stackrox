@@ -73,23 +73,30 @@ class Form extends Component {
                     </CollapsibleCard>
                     <div className="mt-4">
                         <CollapsibleCard
-                            title={`2. Assign StackRox Roles to your ${initialValues.name} users`}
+                            // Use the "type" here becuase the user usually hasn't typed a name yet.
+                            title={`2. Assign StackRox roles to your ${initialValues.type} users`}
                             titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                         >
                             <div className="p-2">
                                 <div className="w-full p-2">
                                     <Field
-                                        label="Default Role"
+                                        label="Minimum access role"
                                         type="select"
                                         jsonPath="defaultRole"
                                         options={roles}
                                     />
                                     <p className="pb-2">
-                                        The default role is granted when a user signs in with{' '}
-                                        {initialValues.name}, but doesn&lsquo;t match any rules.
+                                        The minimum access role is granted to all users who sign in
+                                        with this authentication provider.
                                     </p>
                                     <p className="pb-2">
-                                        To give users different roles, add rules.
+                                        To give users different roles, add rules. Users are granted
+                                        all matching roles.
+                                    </p>
+                                    <p className="pb-2">
+                                        Set the minimum access role to <em>No Access</em> if you
+                                        want to define permissions completely using specific rules
+                                        below.
                                     </p>
                                 </div>
                                 <FieldArray

@@ -13,7 +13,7 @@ describe('Access Control Page', () => {
         it('should open the new auth provider panel', () => {
             cy.get(selectors.authProviders.addProvider).select(selectors.authProviders.newAuth0);
             cy.get(selectors.authProviders.newAuthProviderPanel).contains(
-                'Create New Auth auth0 Provider'
+                'Create New auth0 Auth Provider'
             );
         });
     });

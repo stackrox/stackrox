@@ -42,7 +42,7 @@ func Command() *cobra.Command {
 	}
 	c.Flags().StringSliceVarP(&flagPEMFiles, "cert", "c", nil, "Root CA certificate PEM files (can supply multiple)")
 	utils.Must(c.MarkFlagRequired("cert"))
-	c.Flags().StringVarP(&flagRoleName, "role", "r", "", "Default role for provider")
+	c.Flags().StringVarP(&flagRoleName, "role", "r", "", "Minimum access role for users of this provider")
 	utils.Must(c.MarkFlagRequired("role"))
 	return c
 }

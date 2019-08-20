@@ -80,7 +80,7 @@ func PrintProviderDetails(p *storage.AuthProvider, defaultRoles map[string]strin
 	fmt.Printf("  ID: %s\n", p.GetId())
 	fmt.Printf("  Enabled: %t\n", p.GetEnabled())
 	if len(defaultRoles) > 0 {
-		fmt.Printf("  Default role: %q\n", defaultRoles[p.GetId()])
+		fmt.Printf("  Minimum access role: %q\n", defaultRoles[p.GetId()])
 	}
 	pem := p.GetConfig()[userpki.ConfigKeys]
 	certs, err := helpers.ParseCertificatesPEM([]byte(pem))
