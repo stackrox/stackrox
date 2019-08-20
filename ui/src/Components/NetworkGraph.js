@@ -12,7 +12,7 @@ import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
 import popper from 'cytoscape-popper';
 import Tippy from 'tippy.js';
-import { uniq, throttle } from 'lodash';
+import { uniq, throttle, flatMap } from 'lodash';
 
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import { filterModes } from 'Containers/Network/Graph/filterModes';
@@ -30,6 +30,34 @@ function getClasses(map) {
 Cytoscape.use(popper);
 Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
 Cytoscape.use(edgeGridLayout);
+
+function getNodesForFilterState(activeNodes, allowedNodes, filterState) {
+    if (filterState !== filterModes.active) {
+        return allowedNodes;
+    }
+
+    // return as is
+    if (!allowedNodes || !activeNodes) {
+        return activeNodes;
+    }
+
+    const activeNodesWithNetPol = activeNodes.map(activeNode => {
+        const node = { ...activeNode };
+        const matchedNode = allowedNodes
+            .map(n => n)
+            .find(
+                allowedNode =>
+                    allowedNode.entity && node.entity && allowedNode.entity.id === node.entity.id
+            );
+        if (!matchedNode) {
+            return node;
+        }
+        node.policyIds = flatMap(matchedNode.policyIds);
+        return node;
+    });
+
+    return activeNodesWithNetPol;
+}
 
 const NetworkGraph = ({
     activeNodes,
@@ -57,7 +85,7 @@ const NetworkGraph = ({
     const tippy = useRef();
     const namespacesWithDeployments = {};
 
-    const nodes = filterState === filterModes.active ? activeNodes : allowedNodes;
+    const nodes = getNodesForFilterState(activeNodes, allowedNodes, filterState);
     const data = nodes.map(datum => ({
         ...datum,
         isActive: filterState !== filterModes.active && datum.internetAccess
