@@ -290,22 +290,23 @@ func (c *crudImpl) DeleteBatch(ids []string) error {
 		partialKeys = append(partialKeys, badgerhelper.GetBucketKey(c.partialPrefix, []byte(i)))
 	}
 
+	batch := c.db.NewWriteBatch()
+	defer batch.Cancel()
+
 	for i := 0; i < len(keys); i++ {
-		err := c.db.Update(func(tx *badger.Txn) error {
-			if err := tx.Delete(keys[i]); err != nil {
-				return err
+		if err := batch.Delete(keys[i]); err != nil {
+			return errors.Wrapf(err, "error deleting keys in %s", c.prefixString)
+		}
+		if c.hasPartial {
+			if err := batch.Delete(partialKeys[i]); err != nil {
+				return errors.Wrapf(err, "error deleting partial keys in %s", c.prefixString)
 			}
-			if c.hasPartial {
-				if err := tx.Delete(partialKeys[i]); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			return errors.Wrapf(err, "error deleting many in %s", c.prefixString)
 		}
 	}
+	if err := batch.Flush(); err != nil {
+		return errors.Wrapf(err, "error flushing batch in %s", c.prefixString)
+	}
+
 	return c.IncTxnCount()
 }
 
