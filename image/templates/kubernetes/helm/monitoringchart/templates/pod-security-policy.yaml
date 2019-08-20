@@ -43,7 +43,7 @@ spec:
     - 'hostPath'
   {{if eq .Values.persistence.type "hostpath" -}}
   allowedHostPaths:
-    - {{.Values.persistence.value.hostPath.path}}
+    - pathPrefix: {{.Values.persistence.value.hostPath.path}}
   {{- end}}
   hostNetwork: false
   hostIPC: false
