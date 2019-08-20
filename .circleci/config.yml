@@ -1965,8 +1965,12 @@ jobs:
             for release in "${MAIN_TAG}" latest; do
               for platform in Linux Darwin Windows; do
                 platform_lower="$(echo "$platform" | tr A-Z a-z)"
-                gsutil cp "${platform_lower}/roxctl" "gs://sr-roxc/${release}/bin/${platform}/roxctl"
-                gsutil cp "${platform_lower}/roxctl" "gs://sr-roxc/${release}/bin/${platform_lower}/roxctl"
+                roxctl_bin="roxctl"
+                if [[ "${platform}" == "Windows" ]]; then
+                  roxctl_bin="roxctl.exe"
+                fi
+                gsutil cp "${platform_lower}/${roxctl_bin}" "gs://sr-roxc/${release}/bin/${platform}/${roxctl_bin}"
+                gsutil cp "${platform_lower}/${roxctl_bin}" "gs://sr-roxc/${release}/bin/${platform_lower}/${roxctl_bin}"
               done
             done
 
