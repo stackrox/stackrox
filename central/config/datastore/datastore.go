@@ -14,7 +14,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetConfig(context.Context) (*storage.Config, error)
-	UpdateConfig(context.Context, *storage.Config) error
+	UpsertConfig(context.Context, *storage.Config) error
 }
 
 // New returns an instance of DataStore.
@@ -43,13 +43,13 @@ func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.Config, error) 
 	return d.store.GetConfig()
 }
 
-// UpdateConfig updates Central's config
-func (d *datastoreImpl) UpdateConfig(ctx context.Context, config *storage.Config) error {
+// UpsertConfig updates Central's config
+func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config) error {
 	if ok, err := configSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
 	}
 
-	return d.store.UpdateConfig(config)
+	return d.store.UpsertConfig(config)
 }

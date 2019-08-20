@@ -13,15 +13,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestGroupDataStore(t *testing.T) {
+func TestConfigDataStore(t *testing.T) {
 	t.Parallel()
 	if !features.ScopedAccessControl.Enabled() {
 		t.Skip()
 	}
-	suite.Run(t, new(groupDataStoreTestSuite))
+	suite.Run(t, new(configDataStoreTestSuite))
 }
 
-type groupDataStoreTestSuite struct {
+type configDataStoreTestSuite struct {
 	suite.Suite
 
 	hasNoneCtx  context.Context
@@ -34,7 +34,7 @@ type groupDataStoreTestSuite struct {
 	mockCtrl *gomock.Controller
 }
 
-func (s *groupDataStoreTestSuite) SetupTest() {
+func (s *configDataStoreTestSuite) SetupTest() {
 	s.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -50,11 +50,11 @@ func (s *groupDataStoreTestSuite) SetupTest() {
 	s.dataStore = New(s.storage)
 }
 
-func (s *groupDataStoreTestSuite) TearDownTest() {
+func (s *configDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *groupDataStoreTestSuite) TestEnforcesGet() {
+func (s *configDataStoreTestSuite) TestEnforcesGet() {
 	s.storage.EXPECT().GetConfig().Times(0)
 
 	config, err := s.dataStore.GetConfig(s.hasNoneCtx)
@@ -62,7 +62,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 	s.Nil(config, "expected return value to be nil")
 }
 
-func (s *groupDataStoreTestSuite) TestAllowsGet() {
+func (s *configDataStoreTestSuite) TestAllowsGet() {
 	s.storage.EXPECT().GetConfig().Return(nil, nil)
 
 	_, err := s.dataStore.GetConfig(s.hasReadCtx)
@@ -74,19 +74,19 @@ func (s *groupDataStoreTestSuite) TestAllowsGet() {
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
-func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
-	s.storage.EXPECT().UpdateConfig(gomock.Any()).Times(0)
+func (s *configDataStoreTestSuite) TestEnforcesUpdate() {
+	s.storage.EXPECT().UpsertConfig(gomock.Any()).Times(0)
 
-	err := s.dataStore.UpdateConfig(s.hasNoneCtx, &storage.Config{})
+	err := s.dataStore.UpsertConfig(s.hasNoneCtx, &storage.Config{})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.UpdateConfig(s.hasReadCtx, &storage.Config{})
+	err = s.dataStore.UpsertConfig(s.hasReadCtx, &storage.Config{})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
-func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().UpdateConfig(gomock.Any()).Return(nil)
+func (s *configDataStoreTestSuite) TestAllowsUpdate() {
+	s.storage.EXPECT().UpsertConfig(gomock.Any()).Return(nil)
 
-	err := s.dataStore.UpdateConfig(s.hasWriteCtx, &storage.Config{})
+	err := s.dataStore.UpsertConfig(s.hasWriteCtx, &storage.Config{})
 	s.NoError(err, "expected no error trying to write with permissions")
 }

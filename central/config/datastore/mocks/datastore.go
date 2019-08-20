@@ -49,16 +49,16 @@ func (mr *MockDataStoreMockRecorder) GetConfig(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDataStore)(nil).GetConfig), arg0)
 }
 
-// UpdateConfig mocks base method
-func (m *MockDataStore) UpdateConfig(arg0 context.Context, arg1 *storage.Config) error {
+// UpsertConfig mocks base method
+func (m *MockDataStore) UpsertConfig(arg0 context.Context, arg1 *storage.Config) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateConfig", arg0, arg1)
+	ret := m.ctrl.Call(m, "UpsertConfig", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateConfig indicates an expected call of UpdateConfig
-func (mr *MockDataStoreMockRecorder) UpdateConfig(arg0, arg1 interface{}) *gomock.Call {
+// UpsertConfig indicates an expected call of UpsertConfig
+func (mr *MockDataStoreMockRecorder) UpsertConfig(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfig", reflect.TypeOf((*MockDataStore)(nil).UpdateConfig), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertConfig), arg0, arg1)
 }

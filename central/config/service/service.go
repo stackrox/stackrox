@@ -112,7 +112,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	if req.GetConfig() == nil {
 		return nil, status.Error(codes.InvalidArgument, "config must be specified")
 	}
-	if err := s.datastore.UpdateConfig(ctx, req.GetConfig()); err != nil {
+	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
 	return req.GetConfig(), nil

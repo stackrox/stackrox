@@ -2,7 +2,7 @@ package operations
 
 import (
 	. "github.com/dave/jennifer/jen"
-	"github.com/stackrox/rox/tools/generate-helpers/blevebindings/packagenames"
+	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 )
 
 func renderSearchFunctionSignature(statement *Statement) *Statement {

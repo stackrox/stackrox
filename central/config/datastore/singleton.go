@@ -60,7 +60,7 @@ func initialize() {
 	}
 
 	if config.GetPrivateConfig() == nil {
-		utils.Must(d.UpdateConfig(ctx, &storage.Config{
+		utils.Must(d.UpsertConfig(ctx, &storage.Config{
 			PublicConfig:  config.GetPublicConfig(),
 			PrivateConfig: &defaultPrivateConfig,
 		}))

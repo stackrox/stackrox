@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	. "github.com/dave/jennifer/jen"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
 func renderGetFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
@@ -33,8 +34,8 @@ func generateGet(props *GeneratorProperties) (Code, Code) {
 	nilReturns = append(nilReturns, Nil())
 	errReturns = append(errReturns, Err())
 
-	implementation := renderGetFunctionSignature(renderFuncSStarStore(), props).Block(
-		metricLine("Get", props.Singular),
+	implementation := renderGetFunctionSignature(common.RenderFuncSStarStore(), props).Block(
+		common.RenderBoltMetricLine("Get", props.Singular),
 		List(Id("msg"), Err()).Op(":=").Id("s").Dot("crud").Dot("Read").Call(Id("id")),
 		If(Err().Op("!=").Nil()).Block(
 			Return(errReturns...),

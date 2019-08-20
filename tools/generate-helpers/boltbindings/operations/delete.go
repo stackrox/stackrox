@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	. "github.com/dave/jennifer/jen"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
 func renderDeleteFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
@@ -14,8 +15,8 @@ func renderDeleteFunctionSignature(statement *Statement, props *GeneratorPropert
 func generateDelete(props *GeneratorProperties) (Code, Code) {
 	interfaceMethod := renderDeleteFunctionSignature(&Statement{}, props)
 
-	implementation := renderDeleteFunctionSignature(renderFuncSStarStore(), props).Block(
-		metricLine("Remove", props.Singular),
+	implementation := renderDeleteFunctionSignature(common.RenderFuncSStarStore(), props).Block(
+		common.RenderBoltMetricLine("Remove", props.Singular),
 		Return(Id("s").Dot("crud").Dot("Delete").Call(Id("id"))),
 	)
 	return interfaceMethod, implementation

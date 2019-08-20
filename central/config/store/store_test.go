@@ -27,7 +27,7 @@ func TestStore(t *testing.T) {
 			},
 		},
 	}
-	assert.NoError(t, store.UpdateConfig(newConfig))
+	assert.NoError(t, store.UpsertConfig(newConfig))
 
 	config, err = store.GetConfig()
 	assert.NoError(t, err)

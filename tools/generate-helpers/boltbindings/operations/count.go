@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	. "github.com/dave/jennifer/jen"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
 func renderCountFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
@@ -14,8 +15,8 @@ func renderCountFunctionSignature(statement *Statement, props *GeneratorProperti
 func generateCount(props *GeneratorProperties) (Code, Code) {
 	interfaceMethod := renderCountFunctionSignature(&Statement{}, props)
 
-	implementation := renderCountFunctionSignature(renderFuncSStarStore(), props).Block(
-		metricLine("Count", props.Singular),
+	implementation := renderCountFunctionSignature(common.RenderFuncSStarStore(), props).Block(
+		common.RenderBoltMetricLine("Count", props.Singular),
 		Return(Id("s").Dot("crud").Dot("Count").Call()),
 	)
 	return interfaceMethod, implementation

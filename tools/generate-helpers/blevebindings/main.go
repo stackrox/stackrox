@@ -13,7 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/generate-helpers/blevebindings/operations"
-	"github.com/stackrox/rox/tools/generate-helpers/blevebindings/packagenames"
+	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 )
 
 const (
@@ -158,7 +158,7 @@ func main() {
 	utils.Must(c.MarkFlagRequired("search-category"))
 
 	c.Flags().BoolVar(&props.WriteOptions, "write-options", true, "enable writing out the options map")
-	c.Flags().StringVar(&props.OptionsPath, "options-path", packagenames.RoxMappingSubPath, "path to write out the options to")
+	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.ObjectPathName, "object-path-name", "", "overwrite the object path underneath Central")
 	c.Flags().StringVar(&props.Tag, "tag", "", "use the specified json tag")
 

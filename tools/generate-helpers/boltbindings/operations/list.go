@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	. "github.com/dave/jennifer/jen"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
 func renderListFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
@@ -17,8 +18,8 @@ func renderListFunctionSignature(statement *Statement, props *GeneratorPropertie
 func generateList(props *GeneratorProperties) (Code, Code) {
 	interfaceMethod := renderListFunctionSignature(&Statement{}, props)
 
-	implementation := renderListFunctionSignature(renderFuncSStarStore(), props).Block(
-		metricLine("GetAll", props.Singular),
+	implementation := renderListFunctionSignature(common.RenderFuncSStarStore(), props).Block(
+		common.RenderBoltMetricLine("GetAll", props.Singular),
 		List(Id("msgs"), Err()).Op(":=").Id("s").Dot("crud").Dot("ReadAll").Call(),
 		renderIfErrReturnNilErr(),
 		Id("storedKeys").Op(":=").Make(Index().Op("*").Qual(props.Pkg, props.Object), Len(Id("msgs"))),

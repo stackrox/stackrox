@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/generate-helpers/boltbindings/operations"
-	"github.com/stackrox/rox/tools/generate-helpers/boltbindings/packagenames"
+	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 )
 
 func generateFunctions(props *operations.GeneratorProperties, methods []string) (interfaceMethods []Code, implementations []Code) {

@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	. "github.com/dave/jennifer/jen"
-	"github.com/stackrox/rox/tools/generate-helpers/boltbindings/packagenames"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
+	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 )
 
 func renderAddFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
@@ -24,7 +25,7 @@ func generateAdd(props *GeneratorProperties) (Code, Code) {
 
 	var blockContents []Code
 	var returnContents []Code
-	blockContents = append(blockContents, metricLine("Add", props.Singular))
+	blockContents = append(blockContents, common.RenderBoltMetricLine("Add", props.Singular))
 	if props.IDField != "" {
 		blockContents = append(blockContents, Id("newId").Op(":=").Qual(packagenames.UUID, "NewV4").Call().Dot("String").Call())
 		blockContents = append(blockContents, Id(strings.ToLower(props.Singular)).Dot(props.IDField).Op("=").Id("newId"))
@@ -32,7 +33,7 @@ func generateAdd(props *GeneratorProperties) (Code, Code) {
 	}
 	returnContents = append(returnContents, Id("s").Dot("crud").Dot("Create").Call(Id(strings.ToLower(props.Singular))))
 	blockContents = append(blockContents, Return(returnContents...))
-	implementation := renderAddFunctionSignature(renderFuncSStarStore(), props).Block(
+	implementation := renderAddFunctionSignature(common.RenderFuncSStarStore(), props).Block(
 		blockContents...,
 	)
 

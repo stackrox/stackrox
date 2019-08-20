@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	. "github.com/dave/jennifer/jen"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
 func renderDeleteManyFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
@@ -14,8 +15,8 @@ func renderDeleteManyFunctionSignature(statement *Statement, props *GeneratorPro
 func generateDeleteMany(props *GeneratorProperties) (Code, Code) {
 	interfaceMethod := renderDeleteManyFunctionSignature(&Statement{}, props)
 
-	implementation := renderDeleteManyFunctionSignature(renderFuncSStarStore(), props).Block(
-		metricLine("RemoveMany", props.Singular),
+	implementation := renderDeleteManyFunctionSignature(common.RenderFuncSStarStore(), props).Block(
+		common.RenderBoltMetricLine("RemoveMany", props.Singular),
 		Return(Id("s").Dot("crud").Dot("DeleteBatch").Call(Id("ids"))),
 	)
 

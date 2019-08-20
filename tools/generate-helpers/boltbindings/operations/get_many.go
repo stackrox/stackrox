@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	. "github.com/dave/jennifer/jen"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
 func renderGetManyFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
@@ -18,11 +19,11 @@ func renderGetManyFunctionSignature(statement *Statement, props *GeneratorProper
 func generateGetMany(props *GeneratorProperties) (Code, Code) {
 	interfaceMethod := renderGetManyFunctionSignature(&Statement{}, props)
 
-	implementation := renderGetManyFunctionSignature(renderFuncSStarStore(), props).Block(
+	implementation := renderGetManyFunctionSignature(common.RenderFuncSStarStore(), props).Block(
 		If(Len(Id("ids")).Op("==").Lit(0)).Block(
 			Return(Nil(), Nil(), Nil()),
 		),
-		metricLine("GetMany", props.Singular),
+		common.RenderBoltMetricLine("GetMany", props.Singular),
 		List(Id("msgs"), Id("missingIndices"), Id("err")).Op(":=").Id("s").Dot("crud").Dot("ReadBatch").Call(Id("ids")),
 		renderIfErrReturnNilErr(Nil()),
 		Id("storedKeys").Op(":=").Make(Index().Op("*").Qual(props.Pkg, props.Object), Len(Id("msgs"))),

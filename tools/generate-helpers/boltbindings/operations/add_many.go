@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	. "github.com/dave/jennifer/jen"
-	"github.com/stackrox/rox/tools/generate-helpers/boltbindings/packagenames"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
+	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 )
 
 func renderAddManyFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {
@@ -27,7 +28,7 @@ func generateAddMany(props *GeneratorProperties) (Code, Code) {
 	var outerBlock []Code
 	var innerBlock []Code
 	var returnBlock []Code
-	outerBlock = append(outerBlock, metricLine("AddMany", props.Singular))
+	outerBlock = append(outerBlock, common.RenderBoltMetricLine("AddMany", props.Singular))
 	if props.IDField != "" {
 		outerBlock = append(outerBlock, Id("newIds").Op(":=").Make(Index().String(), Len(Id(strings.ToLower(props.Plural)))))
 		innerBlock = append(innerBlock, Id("newId").Op(":=").Qual(packagenames.UUID, "NewV4").Call().Dot("String").Call())
@@ -45,7 +46,7 @@ func generateAddMany(props *GeneratorProperties) (Code, Code) {
 	))
 	outerBlock = append(outerBlock, Return(returnBlock...))
 
-	implementation := renderAddManyFunctionSignature(renderFuncSStarStore(), props).Block(
+	implementation := renderAddManyFunctionSignature(common.RenderFuncSStarStore(), props).Block(
 		outerBlock...,
 	)
 	return interfaceMethod, implementation
