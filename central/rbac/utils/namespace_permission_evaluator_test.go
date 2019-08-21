@@ -113,6 +113,8 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 	namespaceScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
+		AddExactMatches(search.SubjectName, "subject").
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, false).ProtoQuery()
 
 	for _, c := range cases {

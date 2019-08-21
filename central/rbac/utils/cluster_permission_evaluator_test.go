@@ -36,7 +36,7 @@ func TestIsClusterAdmin(t *testing.T) {
 					Subjects: []*storage.Subject{
 						{
 							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-							Name: "admin",
+							Name: "foo",
 						},
 					},
 					ClusterRole: true,
@@ -44,12 +44,11 @@ func TestIsClusterAdmin(t *testing.T) {
 				},
 			},
 			inputSubject: &storage.Subject{
-				Name: "admin",
+				Name: "foo",
 				Kind: storage.SubjectKind_SERVICE_ACCOUNT,
 			},
 			expected: true,
 		},
-
 		{
 			name: "Cluster admin false",
 			inputRoles: []*storage.K8SRole{
@@ -80,14 +79,14 @@ func TestIsClusterAdmin(t *testing.T) {
 					Subjects: []*storage.Subject{
 						{
 							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-							Name: "not-admin",
+							Name: "foo",
 						},
 					},
 					ClusterRole: true,
 				},
 			},
 			inputSubject: &storage.Subject{
-				Name: "not-admin",
+				Name: "foo",
 				Kind: storage.SubjectKind_SERVICE_ACCOUNT,
 			},
 			expected: false,
@@ -95,22 +94,24 @@ func TestIsClusterAdmin(t *testing.T) {
 	}
 
 	mockCtrl := gomock.NewController(t)
-	mockBindingDatastore := bindingMocks.NewMockDataStore(mockCtrl)
-	mockRoleDatastore := roleMocks.NewMockDataStore(mockCtrl)
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
+		AddExactMatches(search.SubjectName, "foo").
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, true).ProtoQuery()
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := context.Background()
+			mockBindingDatastore := bindingMocks.NewMockDataStore(mockCtrl)
+			mockRoleDatastore := roleMocks.NewMockDataStore(mockCtrl)
 
 			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
 			mockRoleDatastore.EXPECT().GetRole(ctx, "role1").Return(c.inputRoles[0], true, nil).AnyTimes()
 
 			evaluator := NewClusterPermissionEvaluator("cluster", mockRoleDatastore, mockBindingDatastore)
-			assert.Equal(t, evaluator.IsClusterAdmin(ctx, c.inputSubject), c.expected)
+			assert.Equal(t, c.expected, evaluator.IsClusterAdmin(ctx, c.inputSubject))
 		})
 	}
 
@@ -155,7 +156,7 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 					Subjects: []*storage.Subject{
 						{
 							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-							Name: "subject",
+							Name: "foo",
 						},
 					},
 					ClusterRole: true,
@@ -166,14 +167,14 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 					Subjects: []*storage.Subject{
 						{
 							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-							Name: "not-admin",
+							Name: "foo",
 						},
 					},
 					ClusterRole: true,
 				},
 			},
 			inputSubject: &storage.Subject{
-				Name: "subject",
+				Name: "foo",
 				Kind: storage.SubjectKind_SERVICE_ACCOUNT,
 			},
 			expected: []*storage.PolicyRule{
@@ -192,6 +193,8 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
+		AddExactMatches(search.SubjectName, "foo").
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, true).ProtoQuery()
 
 	for _, c := range cases {

@@ -192,6 +192,8 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
+		AddExactMatches(search.SubjectName, expectedSA.Name).
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, true).ProtoQuery()
 	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).AnyTimes().
 		Return([]*storage.K8SRoleBinding{clusterRoleBinding}, nil)
@@ -199,6 +201,8 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 	namespaceScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
+		AddExactMatches(search.SubjectName, expectedSA.Name).
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 		AddBools(search.ClusterRole, false).ProtoQuery()
 	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), namespaceScopeQuery).AnyTimes().
 		Return([]*storage.K8SRoleBinding{rolebinding}, nil)

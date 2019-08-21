@@ -226,6 +226,8 @@ func TestPermissionScore(t *testing.T) {
 
 			clusterScopeQuery := search.NewQueryBuilder().
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
+				AddExactMatches(search.SubjectName, c.sa.Name).
+				AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 				AddBools(search.ClusterRole, true).ProtoQuery()
 
 			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, clusterScopeQuery).Return(c.bindings, nil).AnyTimes()
@@ -233,6 +235,8 @@ func TestPermissionScore(t *testing.T) {
 			namespaceScopeQuery := search.NewQueryBuilder().
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 				AddExactMatches(search.Namespace, deployment.GetNamespace()).
+				AddExactMatches(search.SubjectName, c.sa.Name).
+				AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
 				AddBools(search.ClusterRole, false).ProtoQuery()
 
 			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, namespaceScopeQuery).Return([]*storage.K8SRoleBinding{}, nil).AnyTimes()

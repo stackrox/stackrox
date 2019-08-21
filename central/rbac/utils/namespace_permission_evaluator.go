@@ -28,7 +28,7 @@ func NewNamespacePermissionEvaluator(clusterID string, namespace string, roleSto
 }
 
 func (c *namespacePermissionEvaluator) ForSubject(ctx context.Context, subject *storage.Subject) k8srbac.PolicyRuleSet {
-	roleBindings, roles := c.getBindingsAndRoles(ctx)
+	roleBindings, roles := c.getBindingsAndRoles(ctx, subject)
 	evaluator := k8srbac.NewEvaluator(roles, roleBindings)
 	return evaluator.ForSubject(subject)
 }
@@ -40,16 +40,19 @@ func (c *namespacePermissionEvaluator) IsClusterAdmin(_ context.Context, _ *stor
 
 // RolesForSubject returns the roles assigned to the subject based on the evaluator's bindings
 func (c *namespacePermissionEvaluator) RolesForSubject(ctx context.Context, subject *storage.Subject) []*storage.K8SRole {
-	clusterRoleBindings, roles := c.getBindingsAndRoles(ctx)
+	clusterRoleBindings, roles := c.getBindingsAndRoles(ctx, subject)
 	evaluator := k8srbac.NewEvaluator(roles, clusterRoleBindings)
 	return evaluator.RolesForSubject(subject)
 }
 
-func (c *namespacePermissionEvaluator) getBindingsAndRoles(ctx context.Context) ([]*storage.K8SRoleBinding, []*storage.K8SRole) {
+func (c *namespacePermissionEvaluator) getBindingsAndRoles(ctx context.Context, subject *storage.Subject) ([]*storage.K8SRoleBinding, []*storage.K8SRole) {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, c.clusterID).
 		AddExactMatches(search.Namespace, c.namespace).
-		AddBools(search.ClusterRole, false).ProtoQuery()
+		AddBools(search.ClusterRole, false).
+		AddExactMatches(search.SubjectName, subject.GetName()).
+		AddExactMatches(search.SubjectKind, subject.GetKind().String()).
+		ProtoQuery()
 	rolebindings, err := c.bindingsStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
