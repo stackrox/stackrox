@@ -1,117 +1,65 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
-import * as Icon from 'react-feather';
-import find from 'lodash/find';
-import { Tooltip } from 'react-tippy';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table from 'Components/Table';
+import Table from 'Components/TableV2';
 
-import { sortValue, sortDate } from 'sorters/sorters';
-import dateFns from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
+import columns from './tableColumnDescriptor';
 
-const RiskTable = ({ history, location, rows, selectedDeployment, page }) => {
-    function updateSelectedDeployment({ deployment }) {
-        const urlSuffix = deployment && deployment.id ? `/${deployment.id}` : '';
-        history.push({
-            pathname: `/main/risk${urlSuffix}`,
-            search: location.search
-        });
+function sortOptionFromTableState(state) {
+    let sortOption;
+    if (state.sorted.length && state.sorted[0].id) {
+        const column = columns.find(col => col.accessor === state.sorted[0].id);
+        sortOption = {
+            field: column.searchField,
+            reversed: state.sorted[0].desc
+        };
+    } else {
+        sortOption = {
+            field: 'Priority',
+            reversed: false
+        };
+    }
+    return sortOption;
+}
+
+function RiskTable({
+    currentDeployments,
+    setSelectedDeploymentId,
+    selectedDeploymentId,
+    setSortOption
+}) {
+    function onFetchData(state) {
+        setSortOption(sortOptionFromTableState(state));
     }
 
-    const columns = [
-        {
-            Header: 'Name',
-            accessor: 'deployment.name',
-            // eslint-disable-next-line react/prop-types
-            Cell: ({ original }) => {
-                const isSuspicious = find(original.whitelistStatuses, {
-                    anomalousProcessesExecuted: true
-                });
-                return (
-                    <div className="flex">
-                        <span className="pr-1">
-                            {isSuspicious && (
-                                <Tooltip
-                                    useContext
-                                    position="top"
-                                    trigger="mouseenter"
-                                    arrow
-                                    html={
-                                        <span className="text-sm">
-                                            Abnormal processes discovered
-                                        </span>
-                                    }
-                                    unmountHTMLWhenHide
-                                >
-                                    <Icon.Circle
-                                        className="h-2 w-2 text-alert-400"
-                                        fill="#ffebf1"
-                                    />
-                                </Tooltip>
-                            )}
-                            {!isSuspicious && <Icon.Circle className="h-2 w-2" />}
-                        </span>
-                        {original.deployment.name}
-                    </div>
-                );
-            }
-        },
-        {
-            id: 'updated',
-            Header: 'Updated',
-            accessor: 'deployment.updatedAt',
-            // eslint-disable-next-line react/prop-types
-            Cell: ({ value }) => <span>{dateFns.format(value, dateTimeFormat)}</span>,
-            sortMethod: sortDate
-        },
-        {
-            Header: 'Cluster',
-            accessor: 'deployment.cluster'
-        },
-        {
-            Header: 'Namespace',
-            accessor: 'deployment.namespace'
-        },
-        {
-            Header: 'Priority',
-            accessor: 'deployment.priority',
-            sortMethod: sortValue
-        }
-    ];
+    function updateSelectedDeployment({ deployment }) {
+        setSelectedDeploymentId(deployment.id);
+    }
 
-    const id = selectedDeployment && selectedDeployment.deployment.id;
-    if (!rows.length)
+    if (!currentDeployments.length)
         return <NoResultsMessage message="No results found. Please refine your search." />;
     return (
         <Table
-            rows={rows}
+            rows={currentDeployments}
             columns={columns}
             onRowClick={updateSelectedDeployment}
-            selectedRowId={id}
+            selectedRowId={selectedDeploymentId}
+            onFetchData={onFetchData}
             noDataText="No results found. Please refine your search."
-            page={page}
         />
     );
-};
+}
 
 RiskTable.propTypes = {
-    rows: PropTypes.arrayOf(PropTypes.object).isRequired,
-    selectedDeployment: PropTypes.shape({
-        deployment: PropTypes.shape({ id: PropTypes.string.isRequired })
-    }),
-    processGroup: PropTypes.shape({}),
-    page: PropTypes.number.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    currentDeployments: PropTypes.arrayOf(PropTypes.object).isRequired,
+    selectedDeploymentId: PropTypes.string,
+    setSelectedDeploymentId: PropTypes.func.isRequired,
+    setSortOption: PropTypes.func.isRequired
 };
 
 RiskTable.defaultProps = {
-    selectedDeployment: null,
-    processGroup: {}
+    selectedDeploymentId: undefined
 };
 
-export default withRouter(RiskTable);
+export default RiskTable;

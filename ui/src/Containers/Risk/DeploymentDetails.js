@@ -46,7 +46,10 @@ const containerSecurityContextMap = {
 
 class DeploymentDetails extends Component {
     static propTypes = {
-        deployment: PropTypes.shape({ id: PropTypes.string.isRequired }).isRequired
+        deployment: PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            containers: PropTypes.arrayOf(PropTypes.object)
+        }).isRequired
     };
 
     getContainerConfigurations = container => {

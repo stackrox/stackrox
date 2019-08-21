@@ -1,11 +1,14 @@
 import { all, takeLatest, call, fork, put, select } from 'redux-saga/effects';
 
-import { riskPath, dashboardPath, policiesPath } from 'routePaths';
-import { fetchDeployments, fetchDeployment } from 'services/DeploymentsService';
-import { actions, types } from 'reducers/deployments';
+import { dashboardPath, policiesPath } from 'routePaths';
+import {
+    fetchDeploymentsLegacy as fetchDeployments,
+    fetchDeploymentLegacy as fetchDeployment
+} from 'services/DeploymentsService';
+import { actions } from 'reducers/deployments';
 import { types as dashboardTypes } from 'reducers/dashboard';
 import { selectors } from 'reducers';
-import { takeEveryLocation, takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
+import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 export function* getDeployments({ options = [] }) {
     try {
@@ -41,26 +44,6 @@ function* filterPoliciesPageBySearch() {
     yield fork(getDeployments, { options });
 }
 
-export function* filterRiskPageBySearch() {
-    const options = yield select(selectors.getDeploymentsSearchOptions);
-    if (options.length && options[options.length - 1].type) {
-        return;
-    }
-    yield fork(getDeployments, { options });
-}
-
-function* getSelectedDeployment({ match }) {
-    const { deploymentId } = match.params;
-    if (deploymentId) {
-        yield put(actions.fetchDeployment.request());
-        yield call(getDeployment, deploymentId);
-    }
-}
-
-function* watchDeploymentsSearchOptions() {
-    yield takeLatest(types.SET_SEARCH_OPTIONS, filterRiskPageBySearch);
-}
-
 function* watchDashboardSearchOptions() {
     yield takeLatest(dashboardTypes.SET_SEARCH_OPTIONS, filterDashboardPageBySearch);
 }
@@ -69,9 +52,6 @@ export default function* deployments() {
     yield all([
         takeEveryNewlyMatchedLocation(dashboardPath, filterDashboardPageBySearch),
         takeEveryNewlyMatchedLocation(policiesPath, filterPoliciesPageBySearch),
-        takeEveryNewlyMatchedLocation(riskPath, filterRiskPageBySearch),
-        takeEveryLocation(riskPath, getSelectedDeployment),
-        fork(watchDeploymentsSearchOptions),
         fork(watchDashboardSearchOptions)
     ]);
 }

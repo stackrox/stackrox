@@ -29,13 +29,13 @@ message Deployment {
     map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label,store\""];
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"Pod Label,store\""];
     LabelSelector label_selector               = 20;
-    google.protobuf.Timestamp updated_at       = 8 [(gogoproto.moretags) = "search:\"Last Updated,hidden\",hash:\"ignore\""];
+    google.protobuf.Timestamp updated_at       = 8 [(gogoproto.moretags) = "search:\"Updated At,store,hidden\" hash:\"ignore\""];
     string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
     string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     repeated Container containers              = 11;
     reserved 12;
     map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
-    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority\",hash:\"ignore\""];
+    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority\" hash:\"ignore\""];
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = "search:\"Image Pull Secret\""];
     string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];

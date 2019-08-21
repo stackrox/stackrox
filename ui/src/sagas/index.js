@@ -10,7 +10,6 @@ import policies from './policiesSagas';
 import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
 import featureFlags from './featureFlagSagas';
-import risks from './riskSagas';
 import roles from './roleSagas';
 import searches from './searchSagas';
 import searchAutoComplete from './searchAutocompleteSagas';
@@ -39,7 +38,6 @@ export default function* root() {
         fork(integrations),
         fork(featureFlags),
         fork(globalSearch),
-        fork(risks),
         fork(roles),
         fork(searches),
         fork(searchAutoComplete),

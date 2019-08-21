@@ -13,7 +13,8 @@ export const clusters = {
 export const risks = {
     // The * at the end exists because sometimes we add ?query= at the end.
     riskyDeployments: 'v1/deploymentswithprocessinfo*',
-    getRisk: '/v1/risks/deployment/*'
+    getDeployment: 'v1/deployments/*',
+    getRisk: 'v1/risks/deployment/*'
 };
 
 export const search = {

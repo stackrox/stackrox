@@ -1,158 +1,74 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
 
-import { selectors } from 'reducers';
-import { actions as deploymentsActions } from 'reducers/deployments';
-
-import PageHeader, { PageHeaderComponent } from 'Components/PageHeader';
-import SearchInput from 'Components/SearchInput';
-import Panel from 'Components/Panel';
-import Tabs from 'Components/Tabs';
-import Loader from 'Components/Loader';
-import TabContent from 'Components/TabContent';
-import TablePagination from 'Components/TablePagination';
-
-import RiskDetails from './RiskDetails';
-import DeploymentDetails from './DeploymentDetails';
-import ProcessDetails from './ProcessDetails';
-import RiskTable from './RiskTable';
+import RiskPageHeader from './RiskPageHeader';
+import RiskSidePanel from './RiskSidePanel';
+import RiskTablePanel from './RiskTablePanel';
 
 const RiskPage = ({
     history,
-    location,
-    deployments,
-    selectedDeployment,
-    searchOptions,
-    deploymentRisk,
-    processGroup,
-    isViewFiltered,
-    searchModifiers,
-    searchSuggestions,
-    setSearchOptions,
-    setSearchModifiers,
-    setSearchSuggestions
+    location: { search },
+    match: {
+        params: { deploymentId }
+    }
 }) => {
-    const [page, setPage] = useState(0);
+    // Handle changes to applied search options.
+    const [isViewFiltered, setIsViewFiltered] = useState(false);
 
-    function onSearch(options) {
-        if (options.length && !options[options.length - 1].type) {
-            history.push('/main/risk');
-        }
-    }
+    // Handle changes to the currently selected deployment.
+    const [selectedDeploymentId, setSelectedDeploymentId] = useState(deploymentId);
 
-    function updateSelectedDeployment({ deployment }) {
-        const urlSuffix = deployment && deployment.id ? `/${deployment.id}` : '';
-        history.push({
-            pathname: `/main/risk${urlSuffix}`,
-            search: location.search
-        });
-    }
+    // Page changes.
+    const [currentPage, setCurrentPage] = useState(0);
 
-    function renderPanel() {
-        const { length } = deployments;
-        const paginationComponent = (
-            <TablePagination page={page} dataLength={length} setPage={setPage} />
-        );
-        const isFiltering = !!searchOptions.length;
+    // The currently loaded deployments, and the sort option.
+    const [currentDeployments, setCurrentDeployments] = useState([]);
+    const [sortOption, setSortOption] = useState({ field: 'Priority', reversed: false });
 
-        const headerComponent = (
-            <PageHeaderComponent length={length} type="Deployment" isViewFiltered={isFiltering} />
-        );
-        return (
-            <Panel headerTextComponent={headerComponent} headerComponents={paginationComponent}>
-                <div className="w-full">
-                    <RiskTable
-                        rows={deployments}
-                        selectedDeployment={selectedDeployment}
-                        processGroup={processGroup}
-                        page={page}
-                    />
-                </div>
-            </Panel>
-        );
-    }
+    // The current number of deployments that match the query.
+    const [deploymentsCount, setDeploymentsCount] = useState(0);
 
-    function renderSidePanel() {
-        if (!selectedDeployment) return null;
+    // When the selected deployment changes, update the URL.
+    useEffect(
+        () => {
+            const urlSuffix = selectedDeploymentId ? `/${selectedDeploymentId}` : '';
+            history.push({
+                pathname: `/main/risk${urlSuffix}`,
+                search
+            });
+        },
+        [selectedDeploymentId, history, search]
+    );
 
-        const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
-        if (processGroup.groups !== undefined && processGroup.groups.length !== 0) {
-            riskPanelTabs.push({ text: 'Process Discovery' });
-        }
-        const content =
-            selectedDeployment && Object.entries(deploymentRisk).length === 0 ? (
-                <Loader />
-            ) : (
-                <Tabs headers={riskPanelTabs}>
-                    <TabContent>
-                        <div className="flex flex-col pb-5">
-                            <Link
-                                className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
-                                to={`/main/network/${selectedDeployment.deployment.id}`}
-                                data-test-id="network-node-link"
-                            >
-                                View Deployment in Network Graph
-                            </Link>
-                            <RiskDetails risk={deploymentRisk} />
-                        </div>
-                    </TabContent>
-                    <TabContent>
-                        <div className="flex flex-1 flex-col relative">
-                            <div className="absolute w-full">
-                                <DeploymentDetails deployment={selectedDeployment.deployment} />
-                            </div>
-                        </div>
-                    </TabContent>
-                    <TabContent>
-                        <div className="flex flex-1 flex-col relative">
-                            <ProcessDetails
-                                processGroup={processGroup}
-                                deploymentId={selectedDeployment.deployment.id}
-                            />
-                        </div>
-                    </TabContent>
-                </Tabs>
-            );
-
-        return (
-            <Panel
-                header={selectedDeployment.deployment.name}
-                className="bg-primary-200 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
-                onClose={updateSelectedDeployment}
-            >
-                {content}
-            </Panel>
-        );
-    }
-
-    const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
-    const defaultOption = searchModifiers.find(x => x.value === 'Deployment:');
     return (
         <section className="flex flex-1 flex-col h-full">
             <div className="flex flex-1 flex-col">
-                <PageHeader header="Risk" subHeader={subHeader}>
-                    <SearchInput
-                        className="w-full"
-                        searchOptions={searchOptions}
-                        searchModifiers={searchModifiers}
-                        searchSuggestions={searchSuggestions}
-                        setSearchOptions={setSearchOptions}
-                        setSearchModifiers={setSearchModifiers}
-                        setSearchSuggestions={setSearchSuggestions}
-                        onSearch={onSearch}
-                        defaultOption={defaultOption}
-                        autoCompleteCategories={['DEPLOYMENTS']}
-                    />
-                </PageHeader>
+                <RiskPageHeader
+                    currentPage={currentPage}
+                    setCurrentDeployments={setCurrentDeployments}
+                    setDeploymentsCount={setDeploymentsCount}
+                    setSelectedDeploymentId={setSelectedDeploymentId}
+                    isViewFiltered={isViewFiltered}
+                    setIsViewFiltered={setIsViewFiltered}
+                    sortOption={sortOption}
+                />
                 <div className="flex flex-1 relative">
                     <div className="shadow border-primary-300 bg-base-100 w-full overflow-hidden">
-                        {renderPanel()}
+                        <RiskTablePanel
+                            currentDeployments={currentDeployments}
+                            currentPage={currentPage}
+                            setCurrentPage={setCurrentPage}
+                            deploymentCount={deploymentsCount}
+                            selectedDeploymentId={selectedDeploymentId}
+                            setSelectedDeploymentId={setSelectedDeploymentId}
+                            setSortOption={setSortOption}
+                            isViewFiltered={isViewFiltered}
+                        />
                     </div>
-                    {renderSidePanel()}
+                    <RiskSidePanel
+                        selectedDeploymentId={selectedDeploymentId}
+                        setSelectedDeploymentId={setSelectedDeploymentId}
+                    />
                 </div>
             </div>
         </section>
@@ -160,65 +76,9 @@ const RiskPage = ({
 };
 
 RiskPage.propTypes = {
-    deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
-    selectedDeployment: PropTypes.shape({}),
-    deploymentRisk: PropTypes.shape({}),
-    processGroup: PropTypes.shape({}),
-    searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
-    searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    setSearchOptions: PropTypes.func.isRequired,
-    setSearchModifiers: PropTypes.func.isRequired,
-    setSearchSuggestions: PropTypes.func.isRequired,
-    isViewFiltered: PropTypes.bool.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    location: ReactRouterPropTypes.location.isRequired,
+    match: ReactRouterPropTypes.match.isRequired
 };
 
-RiskPage.defaultProps = {
-    selectedDeployment: null,
-    deploymentRisk: {},
-    processGroup: {}
-};
-
-const isViewFiltered = createSelector(
-    [selectors.getDeploymentsSearchOptions],
-    searchOptions => searchOptions.length !== 0
-);
-
-const getSelectedDeployment = (state, props) => {
-    const { deploymentId } = props.match.params;
-    return deploymentId ? selectors.getSelectedDeployment(state, deploymentId) : null;
-};
-
-const getProcessesForDeployment = (state, props) => {
-    const { deploymentId } = props.match.params;
-    return deploymentId ? selectors.getProcessesByDeployment(state, deploymentId) : {};
-};
-
-const getRiskForDeployment = (state, props) => {
-    const { deploymentId } = props.match.params;
-    return deploymentId ? selectors.getRiskByDeployment(state, deploymentId) : {};
-};
-
-const mapStateToProps = createStructuredSelector({
-    deployments: selectors.getFilteredDeployments,
-    selectedDeployment: getSelectedDeployment,
-    processGroup: getProcessesForDeployment,
-    deploymentRisk: getRiskForDeployment,
-    searchOptions: selectors.getDeploymentsSearchOptions,
-    searchModifiers: selectors.getDeploymentsSearchModifiers,
-    searchSuggestions: selectors.getDeploymentsSearchSuggestions,
-    isViewFiltered
-});
-
-const mapDispatchToProps = {
-    setSearchOptions: deploymentsActions.setDeploymentsSearchOptions,
-    setSearchModifiers: deploymentsActions.setDeploymentsSearchModifiers,
-    setSearchSuggestions: deploymentsActions.setDeploymentsSearchSuggestions
-};
-
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(RiskPage);
+export default RiskPage;

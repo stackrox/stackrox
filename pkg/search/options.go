@@ -83,6 +83,7 @@ var (
 	SecretName             = newFieldLabel("Secret")
 	SecretPath             = newFieldLabel("Secret Path")
 	ServiceAccountName     = newFieldLabel("Service Account")
+	UpdatedAt              = newFieldLabel("Updated At")
 	VolumeName             = newFieldLabel("Volume Name")
 	VolumeSource           = newFieldLabel("Volume Source")
 	VolumeDestination      = newFieldLabel("Volume Destination")

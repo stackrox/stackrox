@@ -1,0 +1,38 @@
+{
+  "groups": [
+    {
+      "name": "/bin/bash",
+      "containerName": "app",
+      "timesExecuted": 1,
+      "groups": [
+        {
+          "args": "/docker-entrypoint.sh ansible-tower",
+          "signals": [
+            {
+              "id": "ad0dede6-76d6-405f-8c5d-717d0b7c6933",
+              "deploymentId": "4ee952d6-b869-11e9-987a-42010a8a0055",
+              "containerName": "app",
+              "podId": "ansible-tower-app-6d79b8fdcb-wlv6v",
+              "emitTimestamp": null,
+              "signal": {
+                "id": "20becdf4-b897-11e9-b07a-ae31e7669cf3",
+                "containerId": "5ea4c8a4f1ae",
+                "time": "2019-08-06T16:44:30.431172589Z",
+                "name": "docker-entrypoi",
+                "args": "/docker-entrypoint.sh ansible-tower",
+                "execFilePath": "/bin/bash",
+                "pid": 13631,
+                "uid": 0,
+                "gid": 0,
+                "lineage": []
+              },
+              "clusterId": "730a90c2-0c92-49c9-9e3b-e8c54e894664",
+              "namespace": "default"
+            }
+          ]
+        }
+      ],
+      "suspicious": false
+    }
+  ]
+}

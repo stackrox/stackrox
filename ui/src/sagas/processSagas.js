@@ -1,6 +1,5 @@
 import { all, call, fork, put, takeLatest } from 'redux-saga/effects';
 import { riskPath } from 'routePaths';
-import { filterRiskPageBySearch } from 'sagas/deploymentSagas';
 import {
     fetchProcesses,
     fetchProcessesWhiteList,
@@ -42,16 +41,6 @@ export function* getProcesses(id) {
     }
 }
 
-export function* getProcessesWhitelist(query) {
-    try {
-        const result = yield call(fetchProcessesWhiteList, query);
-        yield put(actions.fetchProcessesWhiteList.success(result.response));
-    } catch (error) {
-        yield put(actions.fetchProcessesWhiteList.failure(error));
-        Raven.captureException(error);
-    }
-}
-
 function* getProcessesByDeployment({ match }) {
     const { deploymentId } = match.params;
     if (deploymentId) {
@@ -69,7 +58,6 @@ function* addDeleteProcessesWhitelist(action) {
         const { deploymentId } = action.processes.keys[0];
         yield call(addDeleteProcesses, action.processes);
         yield call(getProcesses, deploymentId);
-        yield call(filterRiskPageBySearch);
     } catch (error) {
         Raven.captureException(error);
     }
@@ -80,7 +68,6 @@ function* lockUnlockProcessesWhitelist(action) {
         const { deploymentId } = action.processes.keys[0];
         yield call(lockUnlockProcesses, action.processes);
         yield call(getProcesses, deploymentId);
-        yield call(filterRiskPageBySearch);
     } catch (error) {
         Raven.captureException(error);
     }
