@@ -24,6 +24,7 @@ export const POLICY_FRAGMENT = gql`
             namespace
         }
         severity
+        policyStatus
         whitelists {
             expiration
         }

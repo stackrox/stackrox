@@ -106,8 +106,9 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
+                if (!data || !data.deployment)
+                    return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
                 const { deployment: entity } = data;
-                if (!entity) return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
 
                 if (entityListType) {
                     const listData =
@@ -132,7 +133,6 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                     serviceAccount,
                     serviceAccountID,
                     imageCount,
-                    failingPolicyCount,
                     secretCount
                 } = entity;
 
@@ -193,12 +193,6 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                     name="Secrets"
                                     value={secretCount}
                                     entityType={entityTypes.SECRET}
-                                />
-                                <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    name="Failing Policies"
-                                    value={failingPolicyCount}
-                                    entityType={entityTypes.POLICY}
                                 />
                             </div>
                         </CollapsibleSection>

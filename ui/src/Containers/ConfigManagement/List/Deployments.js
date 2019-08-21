@@ -64,19 +64,14 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { failingPolicyCount, id } = original;
+                const { failingPolicyCount } = original;
                 if (!failingPolicyCount) return 'No Violations';
-                const labelLink = (
+                return (
                     <LabelChip
                         text={`${failingPolicyCount} ${pluralize('Policies', failingPolicyCount)}`}
                         type="alert"
                     />
                 );
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.POLICY)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
             },
             id: 'failingPolicyCounts',
             accessor: 'failingPolicyCount'

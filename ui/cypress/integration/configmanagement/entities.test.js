@@ -394,7 +394,8 @@ describe('Config Management Entities', () => {
             });
         });
 
-        it('should have the same number of Policies in the count widget as in the Policies table', () => {
+        // Disabling test since we are no longer showing policies count widget if we plan to add it later, will enable
+        xit('should have the same number of Policies in the count widget as in the Policies table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -470,7 +471,7 @@ describe('Config Management Entities', () => {
         it('should have the correct count widgets for a single entity view', () => {
             renderListAndSidePanel('namespaces');
             navigateToSingleEntityPage('namespace');
-            hasCountWidgetsFor(['Deployments', 'Secrets', 'Images', 'Policies']);
+            hasCountWidgetsFor(['Deployments', 'Secrets', 'Images']);
         });
 
         it('should click on the secrets count widget in the entity page and show the secrets tab', () => {
@@ -511,7 +512,8 @@ describe('Config Management Entities', () => {
             });
         });
 
-        it('should have the same number of Policies in the count widget as in the Policies table', () => {
+        // Disabling test since we are no longer showing policies count widget if we plan to add it later, will enable
+        xit('should have the same number of Policies in the count widget as in the Policies table', () => {
             context('Page', () => {
                 renderListAndSidePanel('namespaces');
                 navigateToSingleEntityPage('namespace');
@@ -641,7 +643,7 @@ describe('Config Management Entities', () => {
         it('should have the correct count widgets for a single entity view', () => {
             renderListAndSidePanel('deployments');
             navigateToSingleEntityPage('deployment');
-            hasCountWidgetsFor(['Images', 'Policies', 'Secrets']);
+            hasCountWidgetsFor(['Images', 'Secrets']);
         });
 
         it('should have the correct tabs for a single entity view', () => {
@@ -682,7 +684,8 @@ describe('Config Management Entities', () => {
             });
         });
 
-        it('should have the same number of Policies in the count widget as in the Policies table', () => {
+        // Disabling test since we are no longer showing policies count widget if we plan to add it later, will enable
+        xit('should have the same number of Policies in the count widget as in the Policies table', () => {
             context('Page', () => {
                 renderListAndSidePanel('deployments');
                 navigateToSingleEntityPage('deployment');

@@ -41,7 +41,7 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { policyStatus, id } = original;
+                const { policyStatus } = original;
                 const { failingPolicies } = policyStatus;
                 if (failingPolicies.length)
                     return (
@@ -53,11 +53,7 @@ const buildTableColumns = (match, location) => {
                             type="alert"
                         />
                     );
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.POLICY)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text="View Policies" />;
+                if (!failingPolicies.length) return 'No Violations';
             },
             id: 'failingPolicies',
             accessor: d => d.policyStatus.failingPolicies,

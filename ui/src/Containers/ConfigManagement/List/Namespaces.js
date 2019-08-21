@@ -53,8 +53,9 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { policyStatus, metadata } = original;
+                const { policyStatus } = original;
                 const { failingPolicies } = policyStatus;
+                if (!failingPolicies.length) return 'No Violations';
                 if (failingPolicies.length)
                     return (
                         <LabelChip
@@ -65,12 +66,6 @@ const buildTableColumns = (match, location) => {
                             type="alert"
                         />
                     );
-                const { id } = metadata;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.POLICY)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text="View Policies" />;
             },
             id: 'failingPolicies',
             accessor: d => d.policyStatus.failingPolicies,

@@ -136,7 +136,6 @@ const Cluster = ({ id, entityListType, query }) => {
                     k8sroleCount,
                     secretCount,
                     imageCount,
-                    policyCount,
                     status: { orchestratorMetadata = null }
                 } = entity;
 
@@ -204,12 +203,6 @@ const Cluster = ({ id, entityListType, query }) => {
                                     name="Roles"
                                     value={k8sroleCount}
                                     entityType={entityTypes.ROLE}
-                                />
-                                <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    name="Policies"
-                                    value={policyCount}
-                                    entityType={entityTypes.POLICY}
                                 />
                             </div>
                         </CollapsibleSection>

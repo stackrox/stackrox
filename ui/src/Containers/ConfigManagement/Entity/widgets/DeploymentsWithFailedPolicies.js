@@ -94,7 +94,9 @@ const DeploymentsWithFailedPolicies = ({ query }) => {
                 const groups = getDeploymentsGroupedByPolicies(data);
                 const numDeployments = uniq(data.violations.map(violation => violation.deployment))
                     .length;
-                const header = `${numDeployments} deployments with failed policies`;
+                const header = `${numDeployments} deployments failed across ${
+                    groups.length
+                } policies`;
                 const columns = [
                     {
                         Header: `Policy`,

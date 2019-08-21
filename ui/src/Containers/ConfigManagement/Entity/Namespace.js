@@ -114,14 +114,7 @@ const Namespace = ({ id, entityListType, query }) => {
                     );
                 }
 
-                const {
-                    metadata = {},
-                    cluster,
-                    deploymentCount,
-                    secretCount,
-                    policyCount,
-                    imageCount
-                } = entity;
+                const { metadata = {}, cluster, deploymentCount, secretCount, imageCount } = entity;
 
                 const { name, creationTime, labels = [] } = metadata;
 
@@ -159,12 +152,6 @@ const Namespace = ({ id, entityListType, query }) => {
                                     name="Secrets"
                                     value={secretCount}
                                     entityType={entityTypes.SECRET}
-                                />
-                                <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    name="Policies"
-                                    value={policyCount}
-                                    entityType={entityTypes.POLICY}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
