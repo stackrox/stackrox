@@ -4,6 +4,7 @@ metadata:
   name: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 webhooks:
   - name: policyeval.stackrox.io
     rules:

@@ -5,6 +5,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 spec:
   ingress:
   - from:
@@ -37,6 +38,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 spec:
   podSelector:
     matchLabels:
@@ -51,6 +53,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 spec:
   podSelector:
     matchLabels:

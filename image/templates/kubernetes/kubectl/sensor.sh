@@ -99,23 +99,28 @@ ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
 {{if .MonitoringEndpoint}}
 echo "Creating secrets for monitoring..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"
+${KUBE_COMMAND} -n "stackrox" label secret monitoring-client 'auto-upgrade.stackrox.io/component=sensor'
 ${KUBE_COMMAND} create cm -n "stackrox" telegraf --from-file="$DIR/telegraf.conf"
+${KUBE_COMMAND} -n "stackrox" label cm telegraf 'auto-upgrade.stackrox.io/component=sensor'
 {{- end}}
 
 
 echo "Creating secrets for sensor..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
+${KUBE_COMMAND} -n "stackrox" label secret sensor-tls 'auto-upgrade.stackrox.io/component=sensor'
 ${KUBE_COMMAND} create secret -n "stackrox" generic benchmark-tls --from-file="$DIR/benchmark-cert.pem" --from-file="$DIR/benchmark-key.pem" --from-file="$DIR/ca.pem"
+${KUBE_COMMAND} -n "stackrox" label secret benchmark-tls 'auto-upgrade.stackrox.io/component=sensor'
 
 {{if ne .CollectionMethod "NO_COLLECTION"}}
 echo "Creating secrets for collector..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
+${KUBE_COMMAND} -n "stackrox" label secret collector-tls 'auto-upgrade.stackrox.io/component=sensor'
 {{- end}}
 
 if [[ -d "$DIR/additional-cas" ]]; then
 	echo "Creating secret for additional CAs for sensor..."
 	${KUBE_COMMAND} -n stackrox create secret generic additional-ca-sensor --from-file="$DIR/additional-cas/"
-	${KUBE_COMMAND} -n stackrox label secret/additional-ca-sensor app.kubernetes.io/name=stackrox
+	${KUBE_COMMAND} -n stackrox label secret/additional-ca-sensor app.kubernetes.io/name=stackrox  # no auto upgrade
 fi
 
 echo "Creating deployment..."

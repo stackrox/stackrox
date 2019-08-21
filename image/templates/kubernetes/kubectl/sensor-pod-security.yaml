@@ -2,6 +2,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox-sensor-psp
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - apiGroups:
       - extensions
@@ -17,6 +19,8 @@ kind: RoleBinding
 metadata:
   name: stackrox-sensor-psp
   namespace: stackrox
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -30,6 +34,8 @@ apiVersion: extensions/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: stackrox-sensor
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 spec:
   privileged: false
   allowPrivilegeEscalation: false
@@ -63,6 +69,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox-benchmark-psp
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - apiGroups:
       - extensions
@@ -78,6 +86,8 @@ kind: RoleBinding
 metadata:
   name: stackrox-benchmark-psp
   namespace: stackrox
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -91,6 +101,8 @@ apiVersion: extensions/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: stackrox-benchmark
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 spec:
   privileged: false
   allowPrivilegeEscalation: false
@@ -126,6 +138,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox-collector-psp
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - apiGroups:
       - extensions
@@ -141,6 +155,8 @@ kind: RoleBinding
 metadata:
   name: stackrox-collector-psp
   namespace: stackrox
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -154,6 +170,8 @@ apiVersion: extensions/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: stackrox-collector
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
 spec:
   privileged: true
   allowPrivilegeEscalation: true

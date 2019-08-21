@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: stackrox
     app: sensor
+    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     owner: stackrox
     email: support@stackrox.com
@@ -176,6 +177,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 spec:
   ports:
   - name: https
@@ -192,6 +194,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 spec:
   ports:
   - name: https
@@ -209,6 +212,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 imagePullSecrets:
 - name: stackrox
 - name: collector-stackrox
@@ -220,6 +224,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     service: collector
     app: collector
+    auto-upgrade.stackrox.io/component: "sensor"
   name: collector
   namespace: stackrox
 spec:

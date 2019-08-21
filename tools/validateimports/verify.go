@@ -29,6 +29,7 @@ var (
 		"scale",
 		"sensor/common",
 		"sensor/kubernetes",
+		"sensor/upgrader",
 		"tools",
 		"webhookserver",
 	}

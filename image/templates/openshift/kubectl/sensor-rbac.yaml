@@ -5,6 +5,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 imagePullSecrets:
 - name: stackrox
 ---
@@ -15,6 +16,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 imagePullSecrets:
 - name: stackrox
 ---
@@ -26,6 +28,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 imagePullSecrets:
 - name: stackrox
 - name: stackrox-collector
@@ -37,6 +40,7 @@ metadata:
   name: stackrox:monitor-deployments
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - resources:
     - cronjobs
@@ -64,6 +68,7 @@ metadata:
   name: stackrox:monitor-deployments-binding
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -79,6 +84,7 @@ metadata:
   name: stackrox:enforce-policies
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - resources:
     - cronjobs
@@ -105,6 +111,7 @@ metadata:
   name: stackrox:enforce-policies-binding
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -121,6 +128,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - resources:
     - daemonsets
@@ -140,6 +148,7 @@ metadata:
   namespace: stackrox
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -155,6 +164,7 @@ metadata:
   name: stackrox:network-policies
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - resources:
     - networkpolicies
@@ -175,6 +185,7 @@ metadata:
   name: stackrox:network-policies-binding
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -190,6 +201,7 @@ metadata:
   name: stackrox:view-nodes
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
 - resources:
   - nodes
@@ -205,6 +217,7 @@ metadata:
   name: stackrox:view-nodes-binding
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -220,6 +233,7 @@ metadata:
   name: stackrox:create-events
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
 - resources:
   - events
@@ -234,6 +248,7 @@ metadata:
   name: stackrox:create-events-binding
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 subjects:
 - kind: ServiceAccount
   name: sensor
@@ -249,6 +264,7 @@ metadata:
   name: stackrox:update-namespaces
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - resources:
       - namespaces
@@ -262,6 +278,7 @@ metadata:
   name: stackrox:update-namespaces-binding
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 subjects:
   - kind: ServiceAccount
     name: sensor
@@ -277,6 +294,7 @@ metadata:
   name: stackrox:view-rbac
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - resources:
       - roles
@@ -298,6 +316,7 @@ metadata:
   name: stackrox:view-rbac-binding
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 subjects:
   - kind: ServiceAccount
     name: sensor
@@ -315,6 +334,7 @@ metadata:
   name: sensor
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 users:
 - system:serviceaccount:stackrox:sensor
 priority: 100
@@ -333,6 +353,7 @@ metadata:
   name: benchmark
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 users:
 - system:serviceaccount:stackrox:benchmark
 priority: 100
@@ -356,6 +377,7 @@ metadata:
   name: collector
   labels:
     app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
 users:
 - system:serviceaccount:stackrox:collector
 allowHostDirVolumePlugin: true
