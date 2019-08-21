@@ -40,13 +40,8 @@ export const DEPLOYMENT_FRAGMENT = gql`
         replicas
         serviceAccount
         serviceAccountID
-        policyStatus {
-            status
-            failingPolicies {
-                id
-                name
-            }
-        }
+        failingPolicyCount(query: $query)
+        policyStatus(query: $query)
         tolerations {
             key
             operator
@@ -92,6 +87,7 @@ export const DEPLOYMENTS_QUERY = gql`
             failingPolicyCount
             secretCount
             imageCount
+            policyStatus
         }
     }
 `;

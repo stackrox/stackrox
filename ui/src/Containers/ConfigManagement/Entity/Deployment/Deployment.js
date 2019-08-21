@@ -77,9 +77,6 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                         ? 'failingPolicies(query: $query) { ...policyFields }'
                         : 'failingPolicyCount(query: $query)'
                 }
-                policyStatus {
-                    status
-                }
                 tolerations {
                     key
                     operator

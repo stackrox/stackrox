@@ -67,7 +67,10 @@ const Policy = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        query: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause({
+            ...query[searchParam],
+            'Policy Id': id
+        })
     };
 
     const QUERY = gql`

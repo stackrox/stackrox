@@ -79,7 +79,7 @@ const buildTableColumns = (match, location) => {
                     .url();
                 return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
             },
-            id: 'failingPolicies',
+            id: 'failingPolicyCounts',
             accessor: 'failingPolicyCount',
             sortMethod: sortValueByLength
         },
@@ -89,11 +89,11 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const { failingPolicyCount } = original;
-                return !failingPolicyCount ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+                const { policyStatus } = original;
+                return policyStatus === 'pass' ? 'Pass' : <LabelChip text="Fail" type="alert" />;
             },
-            id: 'status',
-            accessor: 'failingPolicyCount'
+            id: 'policyStatus',
+            accessor: 'policyStatus'
         },
         {
             Header: `Images`,
