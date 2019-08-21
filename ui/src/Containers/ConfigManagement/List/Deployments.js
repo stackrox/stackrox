@@ -3,7 +3,6 @@ import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
 import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import { sortValueByLength } from 'sorters/sorters';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
 import queryService from 'modules/queryService';
@@ -80,8 +79,7 @@ const buildTableColumns = (match, location) => {
                 return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
             },
             id: 'failingPolicyCounts',
-            accessor: 'failingPolicyCount',
-            sortMethod: sortValueByLength
+            accessor: 'failingPolicyCount'
         },
         {
             Header: `Policy Status`,
