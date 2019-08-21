@@ -1,14 +1,26 @@
 import React, { Component } from 'react';
 import { NavLink as Link, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { createStructuredSelector } from 'reselect';
+import { connect } from 'react-redux';
+
+import { selectors } from 'reducers';
 import {
+    clustersPath,
     policiesListPath,
     integrationsPath,
     accessControlPath,
     systemConfigPath
 } from 'routePaths';
+import { knownBackendFlags } from 'utils/featureFlags';
+import { filterLinksByFeatureFlag } from './navHelpers';
 
 const navLinks = [
+    {
+        text: 'Clusters',
+        to: clustersPath,
+        featureFlag: knownBackendFlags.ROX_SENSOR_AUTOUPGRADE
+    },
     {
         text: 'System Policies',
         to: policiesListPath
@@ -31,7 +43,13 @@ const navLinks = [
 class NavigationPanel extends Component {
     static propTypes = {
         panelType: PropTypes.string.isRequired,
-        onClose: PropTypes.func.isRequired
+        onClose: PropTypes.func.isRequired,
+        featureFlags: PropTypes.arrayOf(
+            PropTypes.shape({
+                envVar: PropTypes.string.isRequired,
+                enabled: PropTypes.bool.isRequired
+            })
+        ).isRequired
     };
 
     constructor(props) {
@@ -41,14 +59,12 @@ class NavigationPanel extends Component {
         };
     }
 
-    handleKeyDown = () => {};
-
     renderConfigurePanel = () => (
         <ul className="flex flex-col overflow-auto list-reset uppercase tracking-wide bg-primary-800 border-r border-l border-primary-900">
             <li className="border-b-2 border-primary-500 px-1 py-5 pl-2 pr-2 text-base-100 font-700">
                 Configure StackRox Settings
             </li>
-            {navLinks.map(navLink => (
+            {filterLinksByFeatureFlag(this.props.featureFlags, navLinks).map(navLink => (
                 <li key={navLink.text} className="text-sm">
                     <Link
                         to={navLink.to}
@@ -70,16 +86,19 @@ class NavigationPanel extends Component {
                 data-test-id="configure-subnav"
             >
                 {this.panels[this.props.panelType]()}
-                <div
-                    role="button"
-                    tabIndex="0"
+                <button
+                    aria-label="Close Configure sub-navigation menu"
+                    type="button"
                     className="flex-1 opacity-50 bg-primary-700"
                     onClick={this.props.onClose(true)}
-                    onKeyDown={this.handleKeyDown}
                 />
             </div>
         );
     }
 }
 
-export default withRouter(NavigationPanel);
+const mapStateToProps = createStructuredSelector({
+    featureFlags: selectors.getFeatureFlags
+});
+
+export default withRouter(connect(mapStateToProps)(NavigationPanel));

@@ -1,11 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
-
 import * as Icon from 'react-feather';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { connect } from 'react-redux';
+
+import { knownBackendFlags } from 'utils/featureFlags';
+import { filterLinksByFeatureFlag } from './navHelpers';
 
 const iconClassName = 'h-4 w-4 mb-1';
 
@@ -60,15 +61,9 @@ export const navLinks = [
     }
 ];
 
-const getFilteredNavLinks = backendFeatureFlags =>
-    navLinks.filter(navLink => {
-        if (!navLink.featureFlag) return true;
-        return isBackendFeatureFlagEnabled(backendFeatureFlags, navLink.featureFlag, false);
-    });
-
 const LeftSideNavLinks = ({ renderLink, featureFlags }) => (
     <ul className="flex flex-col list-reset uppercase text-sm tracking-wide">
-        {getFilteredNavLinks(featureFlags).map(navLink => (
+        {filterLinksByFeatureFlag(featureFlags, navLinks).map(navLink => (
             <li key={navLink.text}>{renderLink(navLink)}</li>
         ))}
     </ul>

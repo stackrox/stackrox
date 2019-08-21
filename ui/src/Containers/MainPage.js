@@ -12,6 +12,7 @@ import {
     networkPath,
     violationsPath,
     compliancePath,
+    clustersPath,
     integrationsPath,
     policiesPath,
     riskPath,
@@ -46,6 +47,7 @@ import AppWrapper from './AppWrapper';
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
+const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncIntegrationsPage = asyncComponent(() =>
     import('Containers/Integrations/IntegrationsPage')
 );
@@ -140,6 +142,15 @@ class MainPage extends Component {
                         featureFlagEnabled={isBackendFeatureFlagEnabled(
                             this.props.featureFlags,
                             knownBackendFlags.ROX_CONFIG_MGMT_UI,
+                            false
+                        )}
+                    />
+                    <ProtectedRoute
+                        path={clustersPath}
+                        component={AsyncClustersPage}
+                        featureFlagEnabled={isBackendFeatureFlagEnabled(
+                            this.props.featureFlags,
+                            knownBackendFlags.ROX_SENSOR_AUTOUPGRADE,
                             false
                         )}
                     />
