@@ -41,6 +41,7 @@ var (
 	Risk                  = newResourceMetadata("Risk", permissions.NamespaceScope)
 	ScannerDefinitions    = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
 	Secret                = newResourceMetadata("Secret", permissions.NamespaceScope)
+	SensorUpgradeConfig   = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
 	ServiceAccount        = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
 	ServiceIdentity       = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
 	User                  = newResourceMetadata("User", permissions.GlobalScope)

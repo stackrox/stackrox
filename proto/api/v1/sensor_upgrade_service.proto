@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "storage/sensor_upgrade.proto";
+
+package v1;
+
+message UpdateSensorUpgradeConfigRequest {
+    storage.SensorUpgradeConfig config = 1;
+}
+
+message GetSensorUpgradeConfigResponse {
+    storage.SensorUpgradeConfig config = 1;
+}
+
+service SensorUpgradeService {
+
+    rpc GetSensorUpgradeConfig(Empty) returns (GetSensorUpgradeConfigResponse) {
+        option (google.api.http) = {
+            get: "/v1/sensorupgrades/config"
+        };
+    }
+
+    rpc UpdateSensorUpgradeConfig(UpdateSensorUpgradeConfigRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/sensorupgrades/config"
+            body: "*"
+        };
+    }
+}

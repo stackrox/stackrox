@@ -81,6 +81,7 @@ import (
 	sensorService "github.com/stackrox/rox/central/sensor/service"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
+	sensorUpgradeService "github.com/stackrox/rox/central/sensorupgrade/service"
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
@@ -303,6 +304,10 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 
 	if features.DBBackupRestoreV2.Enabled() {
 		servicesToRegister = append(servicesToRegister, backupRestoreService.Singleton())
+	}
+
+	if features.SensorAutoUpgrade.Enabled() {
+		servicesToRegister = append(servicesToRegister, sensorUpgradeService.Singleton())
 	}
 
 	return servicesToRegister
