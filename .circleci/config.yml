@@ -1125,7 +1125,6 @@ jobs:
       - ROX_PLAINTEXT_ENDPOINTS: "http@8080,grpc@8081"
       - ROX_CONFIG_MGMT_UI: true
       - ROX_BADGER_DB: true
-      - ROX_IMAGE_SAC: true
 
     steps:
       - checkout

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
@@ -81,10 +82,11 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 		return nil, false, err
 	}
 
-	if ok, err := imagesSAC.ReadAllowedForClusterNSScopes(ctx, img.GetClusternsScopes()); err != nil || !ok {
-		return nil, false, err
+	if env.ImageClusterNSScopes.Setting() == "true" {
+		if ok, err := imagesSAC.ReadAllowedForClusterNSScopes(ctx, img.GetClusternsScopes()); err != nil || !ok {
+			return nil, false, err
+		}
 	}
-
 	scrubClusterNSScopesFromListImages(img)
 	return img, true, nil
 }
@@ -112,10 +114,11 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 		return nil, false, err
 	}
 
-	if ok, err := imagesSAC.ReadAllowedForClusterNSScopes(ctx, img.GetClusternsScopes()); err != nil || !ok {
-		return nil, false, err
+	if env.ImageClusterNSScopes.Setting() == "true" {
+		if ok, err := imagesSAC.ReadAllowedForClusterNSScopes(ctx, img.GetClusternsScopes()); err != nil || !ok {
+			return nil, false, err
+		}
 	}
-
 	scrubClusterNSScopes(img)
 	return img, true, nil
 }
