@@ -51,6 +51,7 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
