@@ -82,21 +82,15 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { deployments, id } = original;
                 if (!deployments.length) return 'No Deployments';
-                if (deployments.length === 1) return deployments[0].name;
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.DEPLOYMENT)
                     .url();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${deployments.length} ${pluralize(
-                            'Deployments',
-                            deployments.length
-                        )}`}
-                    />
-                );
+                const text =
+                    deployments.length === 1
+                        ? deployments[0].name
+                        : `${deployments.length} ${pluralize('Deployment', deployments.length)}`;
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
             sortMethod: sortValueByLength
         }

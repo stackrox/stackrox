@@ -59,7 +59,7 @@ const Control = ({ id, entityListType, query, match, location }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (loading || !data) return <Loader transparent />;
                 const { results: entity, entities } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.CONTROL} />;
 

@@ -3,62 +3,77 @@ import entityTypes from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
+import URLService from 'modules/URLService';
 import { sortVersion, sortValueByLength } from 'sorters/sorters';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
+import pluralize from 'pluralize';
 import List from './List';
+import TableCellLink from './Link';
 
 const COMPLIANCE_STATES = {
     Pass: 'Pass',
     Fail: 'Fail'
 };
 
-const tableColumns = [
-    {
-        Header: 'Id',
-        headerClassName: 'hidden',
-        className: 'hidden',
-        accessor: 'id'
-    },
-    {
-        Header: `Standard`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'standard'
-    },
-    {
-        Header: `Control`,
-        headerClassName: `w-1/2 ${defaultHeaderClassName}`,
-        className: `w-1/2 ${defaultColumnClassName}`,
-        accessor: 'control',
-        sortMethod: sortVersion
-    },
-    {
-        Header: `Control Status`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        // eslint-disable-next-line
-        Cell: ({ original }) => {
-            return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
+const buildTableColumns = (match, location) => {
+    const tableColumns = [
+        {
+            Header: 'Id',
+            headerClassName: 'hidden',
+            className: 'hidden',
+            accessor: 'id'
         },
-        accessor: 'passing'
-    },
-    {
-        Header: `Nodes`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        Cell: ({ original }) => {
-            const { length } = original.nodes;
-            if (length > 1) return `${length} Nodes`;
-            return original.nodes[0];
+        {
+            Header: `Standard`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'standard'
         },
-        accessor: 'nodes',
-        sortMethod: sortValueByLength
-    }
-];
+        {
+            Header: `Control`,
+            headerClassName: `w-1/2 ${defaultHeaderClassName}`,
+            className: `w-1/2 ${defaultColumnClassName}`,
+            accessor: 'control',
+            sortMethod: sortVersion
+        },
+        {
+            Header: `Control Status`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+        Cell: ({ original }) => {
+                return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
+            },
+            accessor: 'passing'
+        },
+        {
+            Header: `Nodes`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+        Cell: ({ original, pdf }) => {
+                if (!original) return null;
+                const { nodes, id } = original;
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.NODE)
+                    .url();
+                const text =
+                    nodes.length === 1
+                        ? nodes[0]
+                        : `${nodes.length} ${pluralize('Node', nodes.length)}`;
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
+            },
+            accessor: 'nodes',
+            sortMethod: sortValueByLength
+        }
+    ];
+    return tableColumns;
+};
 
 const filterByComplianceState = (rows, state) => {
     if (!state || !rows) return rows;
@@ -98,7 +113,7 @@ const createTableRows = data => {
     return Object.values(controls);
 };
 
-const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
+const CISControls = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
     const queryText = queryService.objectToWhereClause({ Standard: 'CIS', ...query });
     const variables = {
         where: queryText,
@@ -112,6 +127,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
         const filteredTableRows = filterByComplianceState(tableRows, complianceState);
         return filteredTableRows;
     }
+    const tableColumns = buildTableColumns(match, location);
 
     return (
         <List

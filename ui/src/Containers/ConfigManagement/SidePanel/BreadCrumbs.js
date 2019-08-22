@@ -22,15 +22,21 @@ const getBreadCrumbStates = ({
     entityType1,
     entityId1,
     entityListType2,
-    entityId2
+    entityId2,
+    entityType2
 }) => {
     const breadCrumbStates = [];
     if (entityType1 && entityId1) {
-        breadCrumbStates.push(entityName);
+        breadCrumbStates.push({ name: entityName, type: entityType1 });
     }
-    if (entityListType2) breadCrumbStates.push(pluralize(entityLabels[entityListType2]));
+    if (entityListType2) {
+        breadCrumbStates.push({
+            name: pluralize(entityLabels[entityListType2]),
+            type: 'entity list'
+        });
+    }
     if (entityId2) {
-        breadCrumbStates.push(relatedEntityName);
+        breadCrumbStates.push({ name: relatedEntityName, type: entityType2 || entityListType2 });
     }
     return breadCrumbStates;
 };
@@ -54,23 +60,24 @@ const BreadCrumbLinks = props => {
         const icon = i !== length - 1 ? Icon : null;
         const link = getLink(match, location, i, length);
         const content = link ? (
-            <Link className="text-primary-700 truncate" to={link}>
-                {state}
+            <Link className="text-primary-700 truncate uppercase" to={link}>
+                {state.name}
             </Link>
         ) : (
             <span className="w-full">
-                <span className="truncate">{state}</span>
+                <span className="truncate uppercase">{state.name}</span>
             </span>
         );
         if (!state) return null;
         return (
             <>
                 <span
-                    className="flex items-center max-w-64"
+                    className="flex flex-col max-w-64"
                     key={i}
                     data-test-id="breadcrumb-link-text"
                 >
                     {content}
+                    <span className="capitalize italic font-600">{state.type.toLowerCase()}</span>
                 </span>
                 <span className="flex items-center">{icon}</span>
             </>

@@ -29,7 +29,7 @@ const CollapsibleSection = ({ title, children, headerComponents }) => {
         <div className="border-b border-base-300">
             <header className="flex flex-1 w-full py-4">
                 <div className="flex flex-1">
-                    <div className="flex px-4 py-1 text-base-600 rounded-r-sm font-700 items-center">
+                    <div className="flex px-4 py-1 text-base-600 rounded-r-sm font-700 text-xl items-center">
                         <Button icon={Icon} onClick={toggleOpen} />
                         <span className="ml-2">{title}</span>
                     </div>

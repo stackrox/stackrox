@@ -66,7 +66,7 @@ const EntityPage = ({ match, location }) => {
                     />
                 </div>
                 <searchContext.Provider value={searchContexts.sidePanel}>
-                    <SidePanelAnimation className="w-3/4" condition={!!entityId1}>
+                    <SidePanelAnimation condition={!!entityId1}>
                         <SidePanel
                             className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel"
                             contextEntityId={pageEntityId}
