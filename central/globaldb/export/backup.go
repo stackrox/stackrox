@@ -134,7 +134,10 @@ func backupBadger(ctx context.Context, db *badger.DB, out io.Writer) error {
 		return errors.Wrapf(err, "error writing version to output")
 	}
 
-	_, err := db.Backup(out, 0)
+	stream := db.NewStream()
+	stream.NumGo = 8
+
+	_, err := stream.LegacyBackup(out, 0)
 	if err != nil {
 		return errors.Wrap(err, "could not create badger backup")
 	}

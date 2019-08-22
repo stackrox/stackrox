@@ -41,7 +41,7 @@ func testLoad(t *testing.T, backupfile, key, value string) {
 }
 
 func TestNewFormat(t *testing.T) {
-	testLoad(t, "newbackup", "backup", "new")
+	testLoad(t, "backupwithmagic", "backup", "old")
 }
 
 func TestOldFormat(t *testing.T) {

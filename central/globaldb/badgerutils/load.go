@@ -11,8 +11,6 @@ import (
 )
 
 const (
-	badgerMaxPendingWrites = 10
-
 	// MagicNumber is the value of the magic at the beginning of the new backups
 	MagicNumber uint32 = 0x42444752
 )
@@ -40,13 +38,9 @@ func Load(r io.Reader, db *badger.DB) error {
 	}
 
 	switch backupVersion {
-	case 1:
-		if err := db.LoadLegacyBackup(bufferedReader); err != nil {
+	case 1, 2:
+		if err := db.LoadLegacySerialBackup(bufferedReader); err != nil {
 			return errors.Wrap(err, "could not load badger DB backup with legacy Load")
-		}
-	case 2:
-		if err := db.Load(bufferedReader, badgerMaxPendingWrites); err != nil {
-			return errors.Wrap(err, "could not load badger DB backup with current Load")
 		}
 	default:
 		return fmt.Errorf("backup version of %q not currently supported by this Central version", backupVersion)
