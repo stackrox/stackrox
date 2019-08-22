@@ -32,8 +32,5 @@ combined_coverage.dat
 # Vim swap files
 *.swp
 
-# Integration configs used in development
-/*.json
-
 # Openshift automation workspace artifacts
 /openshift/
