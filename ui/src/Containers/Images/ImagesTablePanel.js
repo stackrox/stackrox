@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { PageHeaderComponent } from 'Components/PageHeader';
 import Panel from 'Components/Panel';
+import TableHeader from 'Components/TableHeader';
 import TablePagination from 'Components/TablePaginationV2';
 import { pageSize } from 'Components/Table';
 import ImagesTable from './ImagesTable';
@@ -22,7 +22,7 @@ function ImagesTablePanel({
         <TablePagination pageCount={pageCount} page={currentPage} setPage={setCurrentPage} />
     );
     const headerComponent = (
-        <PageHeaderComponent length={imagesCount} type="Image" isViewFiltered={isViewFiltered} />
+        <TableHeader length={imagesCount} type="Image" isViewFiltered={isViewFiltered} />
     );
 
     return (

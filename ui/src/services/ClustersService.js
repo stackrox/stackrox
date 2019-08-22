@@ -6,6 +6,9 @@ import { cluster as clusterSchema } from './schemas';
 
 const clustersUrl = '/v1/clusters';
 
+// @TODO, We may not need this API function after we migrate to a standalone Clusters page
+//        Check to see if fetchClusters and fletchClustersByArray can be collapsed
+//        into one function
 /**
  * Fetches list of registered clusters.
  *
@@ -15,6 +18,17 @@ export function fetchClusters() {
     return axios.get(clustersUrl).then(response => ({
         response: normalize(response.data, { clusters: [clusterSchema] })
     }));
+}
+
+/**
+ * Fetches list of registered clusters as an Array.
+ *
+ * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
+ */
+export function fetchClusterAsArray() {
+    return axios.get(clustersUrl).then(response => {
+        return (response.data && response.data.clusters) || [];
+    });
 }
 
 /**

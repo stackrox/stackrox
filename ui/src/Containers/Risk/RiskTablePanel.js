@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { PageHeaderComponent } from 'Components/PageHeader';
+import TableHeader from 'Components/TableHeader';
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePaginationV2';
 import { pageSize } from 'Components/Table';
@@ -24,11 +24,7 @@ function RiskTablePanel({
     );
 
     const headerComponent = (
-        <PageHeaderComponent
-            length={deploymentCount}
-            type="Deployment"
-            isViewFiltered={isViewFiltered}
-        />
+        <TableHeader length={deploymentCount} type="Deployment" isViewFiltered={isViewFiltered} />
     );
     return (
         <Panel headerTextComponent={headerComponent} headerComponents={paginationComponent}>

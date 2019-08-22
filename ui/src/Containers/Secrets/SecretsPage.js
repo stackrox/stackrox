@@ -13,8 +13,9 @@ import Table, {
 } from 'Components/Table';
 
 import Panel from 'Components/Panel';
-import PageHeader, { PageHeaderComponent } from 'Components/PageHeader';
+import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
+import TableHeader from 'Components/TableHeader';
 import TablePagination from 'Components/TablePagination';
 
 import { selectors } from 'reducers';
@@ -80,11 +81,7 @@ class SecretPage extends Component {
         );
 
         const headerComponent = (
-            <PageHeaderComponent
-                length={length}
-                type="Secret"
-                isViewFiltered={this.props.isViewFiltered}
-            />
+            <TableHeader length={length} type="Secret" isViewFiltered={this.props.isViewFiltered} />
         );
         return (
             <Panel headerTextComponent={headerComponent} headerComponents={paginationComponent}>

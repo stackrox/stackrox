@@ -23,10 +23,11 @@ import {
 } from 'Components/Table';
 import CheckboxTable from 'Components/CheckboxTable';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
-import PageHeader, { PageHeaderComponent } from 'Components/PageHeader';
+import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
+import TableHeader from 'Components/TableHeader';
 import TablePagination from 'Components/TablePagination';
 import Dialog from 'Components/Dialog';
 import ViolationsPanel from './ViolationsPanel';
@@ -94,7 +95,7 @@ class ViolationsPage extends Component {
         const { length: rowCount } = Object.keys(violations);
 
         return (
-            <PageHeaderComponent
+            <TableHeader
                 length={rowCount}
                 selectionCount={selectionCount}
                 type="Violation"
