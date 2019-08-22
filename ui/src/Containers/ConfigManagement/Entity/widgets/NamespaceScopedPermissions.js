@@ -56,7 +56,7 @@ const NamespaceScopedPermissions = ({ scopedPermissions, ...rest }) => {
     const header = `Permissions across ${namespaceGroups.length} namespaces`;
     return (
         <Widget header={header} {...rest}>
-            <div className="w-full mx-4">{content}</div>
+            <div className="w-full">{content}</div>
         </Widget>
     );
 };

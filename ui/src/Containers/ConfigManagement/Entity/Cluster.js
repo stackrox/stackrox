@@ -153,7 +153,7 @@ const Cluster = ({ id, entityListType, query }) => {
                         <CollapsibleSection title="Cluster Details">
                             <div className="flex flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 min-w-48 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                 />
                                 <RelatedEntityListCount

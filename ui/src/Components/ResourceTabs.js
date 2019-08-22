@@ -82,10 +82,7 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
 
                             return (
                                 // eslint-disable-next-line
-                                <li
-                                    key={datum.title}
-                                    className="inline-block"
-                                >
+                                <li key={datum.title} className="inline-block">
                                     <Link
                                         style={style}
                                         className={`no-underline ${textColor} ${borderLeft} ${bgColor} border-r min-w-32 px-3 text-center pt-3 pb-3 uppercase tracking-widest inline-block`}

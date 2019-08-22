@@ -42,6 +42,7 @@ const defaultComponents = { Control, Menu, MultiValue };
 export const defaultSelectStyles = {
     option: (styles, { isFocused }) => ({
         ...styles,
+        color: 'var(--base-600)',
         backgroundColor: isFocused ? 'var(--base-300)' : ''
     })
 };

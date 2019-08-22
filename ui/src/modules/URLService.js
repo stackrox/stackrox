@@ -340,6 +340,12 @@ class URL {
 
     clearSidePanelParams() {
         const p = this.urlParams;
+
+        // if in an entity page overview, reset url to overview on sidepanel close
+        if (p.pageEntityType && !p.entityListType1) {
+            delete p.entityType1;
+        }
+
         delete p.entityId1;
         delete p.entityType2;
         delete p.entityListType2;

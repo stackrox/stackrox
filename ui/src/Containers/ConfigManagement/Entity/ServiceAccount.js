@@ -165,11 +165,11 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                             <div className="flex mb-4 pdf-page pdf-stretch">
                                 <ClusterScopedPermissions
                                     scopedPermissions={scopedPermissions}
-                                    className="mx-4 bg-base-100"
+                                    className="mx-4 bg-base-100 w-full"
                                 />
                                 <NamespaceScopedPermissions
                                     scopedPermissions={scopedPermissions}
-                                    className="flex-grow mx-4 bg-base-100"
+                                    className="flex-grow mx-4 bg-base-100 w-full"
                                 />
                             </div>
                         </CollapsibleSection>

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 
 const Loader = ({ message, transparent }) => (
     <div
-        className={`flex flex-col items-center justify-center h-full w-full ${
+        className={`flex flex-col items-center justify-center min-h-full w-full ${
             transparent ? '' : 'bg-base-100'
         }`}
     >

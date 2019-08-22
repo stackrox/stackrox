@@ -115,7 +115,7 @@ const Panel = props => (
                 </div>
             </div>
         </div>
-        <div className={`flex h-full overflow-y-auto ${props.bodyClassName}`}>{props.children}</div>
+        <div className={`h-full overflow-y-auto ${props.bodyClassName}`}>{props.children}</div>
     </div>
 );
 

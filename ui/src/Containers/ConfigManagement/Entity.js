@@ -1,6 +1,7 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import PropTypes from 'prop-types';
+import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
 import ServiceAccount from './Entity/ServiceAccount';
@@ -30,19 +31,30 @@ const entityComponentMap = {
     [entityTypes.SUBJECT]: Subject
 };
 
-const Entity = ({ entityType, entityId, ...rest }) => {
+const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
+    const { isDarkMode } = useTheme();
     const Component = entityComponentMap[entityType];
     if (!Component) return <PageNotFound resourceType={entityType} />;
-    return <Component id={entityId} {...rest} />;
+    return (
+        <div
+            className={`w-full flex ${
+                !isDarkMode && !entityListType ? 'bg-side-panel-wave min-h-full' : 'h-full'
+            }`}
+        >
+            <Component id={entityId} entityListType={entityListType} {...rest} />
+        </div>
+    );
 };
 
 Entity.propTypes = {
     entityType: PropTypes.string.isRequired,
+    entityListType: PropTypes.string,
     entityId: PropTypes.string.isRequired,
     query: PropTypes.shape({})
 };
 Entity.defaultProps = {
-    query: null
+    query: null,
+    entityListType: undefined
 };
 
 export default Entity;

@@ -25,13 +25,13 @@ const ScopedPermissions = ({ permissions }) => {
     if (length) {
         content = permissions.map(datum => {
             const colorClass = getLabelColor(datum.key);
-            const permissionKeyClass = `rounded bg-${colorClass}-200 text-${colorClass}-700 border border-${colorClass}-300 px-2`;
+            const permissionKeyClass = `rounded bg-${colorClass}-200 text-${colorClass}-700 border border-${colorClass}-300 px-2 py-1 self-center`;
             return (
                 <div className="flex border-b border-base-300" key={datum.key}>
-                    <div className="min-w-48 border-r border-base-300 p-4 text-sm capitalize">
-                        <span className={permissionKeyClass}>{datum.key}:</span>
+                    <div className="w-43 border-r border-base-300 px-3 text-sm capitalize flex">
+                        <div className={permissionKeyClass}>{datum.key}:</div>
                     </div>
-                    <div className="font-500 p-4 text-primary-800 text-sm">
+                    <div className="w-full font-500 p-3 text-primary-800 text-sm leading-normal">
                         {datum.values.join(', ')}
                     </div>
                 </div>

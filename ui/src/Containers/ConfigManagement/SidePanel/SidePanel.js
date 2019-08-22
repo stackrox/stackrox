@@ -20,8 +20,8 @@ const ExternalLink = ({ onClick }) => {
             <Button
                 dataTestId="external-link"
                 className={`${
-                    !isDarkMode ? 'border-l border-base-100' : 'border-l border-base-400'
-                } h-full px-4`}
+                    !isDarkMode ? 'border-base-100' : 'border-base-400'
+                } border-l h-full px-4`}
                 icon={<ExternalLinkIcon className="h-6 w-6 text-base-600" />}
                 onClick={onClick}
             />
@@ -103,17 +103,14 @@ const SidePanel = ({
     const entityContext = {};
     if (contextEntityType) entityContext[contextEntityType] = contextEntityId;
     if (entityId2) entityContext[entityType1 || entityListType1] = entityId1;
-
     return (
         <div className={className}>
             <Panel
                 id="side-panel"
-                headerClassName={`flex w-full h-12 overflow-y-hidden ${
-                    !isDarkMode
-                        ? 'bg-side-panel-wave border-b border-base-100'
-                        : 'border-b border-base-400'
+                headerClassName={`flex w-full h-12 overflow-y-hidden border-b ${
+                    !isDarkMode ? 'bg-side-panel-wave border-base-100' : 'border-base-400'
                 }`}
-                bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : 'bg-side-panel-wave'}`}
+                bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : ''}`}
                 headerTextComponent={
                     <BreadCrumbs
                         className="font-700 leading-normal text-base-600 uppercase tracking-wide"
