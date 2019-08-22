@@ -1082,6 +1082,11 @@ jobs:
           command: |
             .circleci/check-pr-fixes.sh
 
+      - run:
+          name: Ensure that there are no TODO references that the developer has marked as blocking a merge
+          command: |
+            # Matches comments of the form TODO(x), where x can be "DO NOT MERGE/don't-merge"/"dont-merge"/similar
+            ./scripts/check-todos.sh 'do\s?n.*merge'
 
   integration-unit-tests:
     <<: *defaults
