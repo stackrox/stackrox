@@ -7,7 +7,6 @@ import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPag
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import queryService from 'modules/queryService';
 import pluralize from 'pluralize';
-import PermissionCounts from 'Containers/ConfigManagement/Entity/widgets/PermissionCounts';
 
 import List from './List';
 import TableCellLink from './Link';
@@ -27,19 +26,6 @@ const buildTableColumns = (match, location) => {
             accessor: 'name'
         },
         {
-            Header: `Permissions`,
-            headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-            className: `w-1/4 text-sm ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({ original }) => {
-                const { scopedPermissions } = original;
-                return <PermissionCounts scopedPermissions={scopedPermissions} />;
-            },
-            id: 'permissions',
-            accessor: 'scopedPermissions[0].permissions',
-            sortMethod: sortValueByLength
-        },
-        {
             Header: `Cluster Admin Role`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
@@ -48,22 +34,6 @@ const buildTableColumns = (match, location) => {
                 return clusterAdmin ? 'Enabled' : 'Disabled';
             },
             accessor: 'clusterAdmin'
-        },
-        {
-            Header: `Permissions Scope`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { scopedPermissions } = original;
-                if (!scopedPermissions.length) return 'No Permissions';
-                const result = scopedPermissions
-                    .map(({ scope, permissions }) => `${scope} (${permissions.length})`)
-                    .join(', ');
-                return result;
-            },
-            id: 'permissionsScope',
-            accessor: 'scopedPermissions[0].permissions',
-            sortMethod: sortValueByLength
         },
         {
             Header: `Cluster`,
