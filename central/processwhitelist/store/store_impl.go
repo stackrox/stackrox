@@ -4,11 +4,10 @@ package store
 
 import (
 	bbolt "github.com/etcd-io/bbolt"
-	proto1 "github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
-	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
-	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"time"
 )
@@ -18,22 +17,23 @@ var (
 )
 
 type store struct {
-	crud proto.MessageCrud
+	crud protoCrud.MessageCrud
 }
 
-func key(msg proto1.Message) []byte {
+func key(msg proto.Message) []byte {
 	return []byte(msg.(*storage.ProcessWhitelist).GetId())
 }
 
-func alloc() proto1.Message {
+func alloc() proto.Message {
 	return new(storage.ProcessWhitelist)
 }
 
 func newStore(db *bbolt.DB) (*store, error) {
-	if err := bolthelper.RegisterBucket(db, bucketName); err != nil {
+	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
+	if err != nil {
 		return nil, err
 	}
-	return &store{crud: proto.NewMessageCrud(db, bucketName, key, alloc)}, nil
+	return &store{crud: newCrud}, nil
 }
 
 func (s *store) AddWhitelist(whitelist *storage.ProcessWhitelist) error {
@@ -55,8 +55,8 @@ func (s *store) GetWhitelist(id string) (*storage.ProcessWhitelist, error) {
 	if msg == nil {
 		return nil, nil
 	}
-	storedKey := msg.(*storage.ProcessWhitelist)
-	return storedKey, nil
+	whitelist := msg.(*storage.ProcessWhitelist)
+	return whitelist, nil
 }
 
 func (s *store) GetWhitelists(ids []string) ([]*storage.ProcessWhitelist, []int, error) {
@@ -68,9 +68,9 @@ func (s *store) GetWhitelists(ids []string) ([]*storage.ProcessWhitelist, []int,
 	if err != nil {
 		return nil, nil, err
 	}
-	storedKeys := make([]*storage.ProcessWhitelist, len(msgs))
-	for i, msg := range msgs {
-		storedKeys[i] = msg.(*storage.ProcessWhitelist)
+	storedKeys := make([]*storage.ProcessWhitelist, 0, len(msgs))
+	for _, msg := range msgs {
+		storedKeys = append(storedKeys, msg.(*storage.ProcessWhitelist))
 	}
 	return storedKeys, missingIndices, nil
 }

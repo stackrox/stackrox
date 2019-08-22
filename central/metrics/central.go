@@ -98,6 +98,13 @@ var (
 		Help:      "Histogram of how long risk processing takes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	})
+
+	totalCacheOperationsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "total_db_cache_operations_counter",
+		Help:      "A counter of the total number of DB cache operations performed on Central",
+	}, []string{"Operation", "Type"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -157,4 +164,9 @@ func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows i
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
 func ObserveRiskProcessingDuration(startTime time.Time) {
 	riskProcessingHistogram.Observe(startTimeToMS(startTime))
+}
+
+// IncrementDBCacheCounter is a counter for how many times a DB cache hits and misses
+func IncrementDBCacheCounter(op string, t string) {
+	totalCacheOperationsCounter.With(prometheus.Labels{"Operation": op, "Type": t}).Inc()
 }

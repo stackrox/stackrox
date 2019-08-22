@@ -18,6 +18,7 @@ type GeneratorProperties struct {
 	BucketName   string
 	GetExists    bool
 	DeleteExists bool
+	Cache        bool
 }
 
 // methodGenerator generates an interface and implementation for a specific kind of DB operation.

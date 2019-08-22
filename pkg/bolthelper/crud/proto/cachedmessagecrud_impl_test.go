@@ -3,30 +3,35 @@ package proto
 import (
 	"os"
 	"testing"
+	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
-func TestMessageCrud(t *testing.T) {
+func TestCachedMessageCrud(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, new(MessageCrudTestSuite))
+	suite.Run(t, new(cachedMessageCrudTestSuite))
 }
 
-type MessageCrudTestSuite struct {
+type cachedMessageCrudTestSuite struct {
 	suite.Suite
 
 	db *bolt.DB
 
-	crud MessageCrud
+	crud  MessageCrud
+	cache expiringcache.Cache
 }
 
-func (s *MessageCrudTestSuite) SetupSuite() {
-	db, err := bolthelper.NewTemp(s.T().Name() + ".db")
-	s.Require().NoError(err, "Failed to make BoltDB: %s", err)
+func fakeMetricFunc(a, b string) {}
+
+func (s *cachedMessageCrudTestSuite) SetupSuite() {
+	db := testutils.DBForSuite(s) //bolthelper.NewTemp(s.T().Name() + ".db")
 
 	testBucket := []byte("testBucket")
 	bolthelper.RegisterBucketOrPanic(db, testBucket)
@@ -41,18 +46,20 @@ func (s *MessageCrudTestSuite) SetupSuite() {
 	allocFunc := func() proto.Message {
 		return &storage.Alert{}
 	}
-	s.crud, err = NewMessageCrud(db, []byte("testBucket"), keyFunc, allocFunc)
+	s.cache = expiringcache.NewExpiringCache(time.Hour)
+	crud, err := NewCachedMessageCrud(db, []byte("testBucket"), keyFunc, allocFunc, s.cache, "testMetrifc", fakeMetricFunc)
 	s.NoError(err)
+	s.crud = crud
 }
 
-func (s *MessageCrudTestSuite) TearDownSuite() {
+func (s *cachedMessageCrudTestSuite) TearDownSuite() {
 	if s.db != nil {
 		_ = s.db.Close()
 		_ = os.Remove(s.db.Path())
 	}
 }
 
-func (s *MessageCrudTestSuite) TestCreate() {
+func (s *cachedMessageCrudTestSuite) TestCreate() {
 	alerts := []*storage.Alert{
 		{
 			Id:             "createId1",
@@ -91,7 +98,7 @@ func (s *MessageCrudTestSuite) TestCreate() {
 	s.ElementsMatch(alerts, retrievedAlerts)
 }
 
-func (s *MessageCrudTestSuite) TestUpdate() {
+func (s *cachedMessageCrudTestSuite) TestUpdate() {
 	alerts := []*storage.Alert{
 		{
 			Id:             "updateId1",
@@ -149,7 +156,7 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 	s.ElementsMatch(updatedAlerts, retrievedAlerts)
 }
 
-func (s *MessageCrudTestSuite) TestUpsert() {
+func (s *cachedMessageCrudTestSuite) TestUpsert() {
 	alerts := []*storage.Alert{
 		{
 			Id:             "upsertId1",
@@ -206,7 +213,7 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 	s.ElementsMatch(updatedAlerts, retrievedAlerts)
 }
 
-func (s *MessageCrudTestSuite) TestDelete() {
+func (s *cachedMessageCrudTestSuite) TestDelete() {
 	alerts := []*storage.Alert{
 		{
 			Id:             "deleteId1",
@@ -239,7 +246,7 @@ func (s *MessageCrudTestSuite) TestDelete() {
 	s.Empty(retrievedAlerts)
 }
 
-func (s *MessageCrudTestSuite) TestDeleteBatch() {
+func (s *cachedMessageCrudTestSuite) TestDeleteBatch() {
 	alerts := []*storage.Alert{
 		{
 			Id:             "deleteBatchId1",

@@ -5,6 +5,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/bolthelper/crud/generic"
+	"github.com/stackrox/rox/pkg/expiringcache"
 )
 
 // MessageCrud provides a simple crud layer on top of bolt DB for protobuf messages with a string Id field.
@@ -29,8 +30,41 @@ type MessageCrud interface {
 func NewMessageCrud(db *bolt.DB,
 	bucketName []byte,
 	keyFunc func(proto.Message) []byte,
+	allocFunc func() proto.Message) (MessageCrud, error) {
+	if err := bolthelper.RegisterBucket(db, bucketName); err != nil {
+		return nil, err
+	}
+	return NewMessageCrudForBucket(bolthelper.TopLevelRef(db, bucketName), keyFunc, allocFunc), nil
+}
+
+// NewMessageCrudOrPanic returns a new MessageCrud instance for the given db and bucket or panics if the bucket can not be registered
+func NewMessageCrudOrPanic(db *bolt.DB,
+	bucketName []byte,
+	keyFunc func(proto.Message) []byte,
 	allocFunc func() proto.Message) MessageCrud {
+	bolthelper.RegisterBucketOrPanic(db, bucketName)
 	return NewMessageCrudForBucket(bolthelper.TopLevelRef(db, bucketName), keyFunc, allocFunc)
+}
+
+// NewCachedMessageCrud returns a new MessageCrud instance for the given db and bucket using the provided cache.
+func NewCachedMessageCrud(db *bolt.DB,
+	bucketName []byte,
+	keyFunc func(proto.Message) []byte,
+	allocFunc func() proto.Message,
+	cache expiringcache.Cache,
+	metricType string,
+	metricFunc func(string, string)) (MessageCrud, error) {
+	wrappedCrud, err := NewMessageCrud(db, bucketName, keyFunc, allocFunc)
+	if err != nil {
+		return nil, err
+	}
+	return &cachedMessageCrudImpl{
+		messageCrud: wrappedCrud,
+		metricType:  metricType,
+		metricFunc:  metricFunc,
+		keyFunc:     keyFunc,
+		cache:       cache,
+	}, nil
 }
 
 // NewMessageCrudForBucket returns a new MessageCrud instance for the given bucket ref.

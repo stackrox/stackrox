@@ -4,11 +4,10 @@ package store
 
 import (
 	bbolt "github.com/etcd-io/bbolt"
-	proto1 "github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
-	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
-	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"time"
 )
@@ -18,22 +17,23 @@ var (
 )
 
 type store struct {
-	crud proto.MessageCrud
+	crud protoCrud.MessageCrud
 }
 
-func key(msg proto1.Message) []byte {
+func key(msg proto.Message) []byte {
 	return []byte(msg.(*storage.ServiceAccount).GetId())
 }
 
-func alloc() proto1.Message {
+func alloc() proto.Message {
 	return new(storage.ServiceAccount)
 }
 
 func newStore(db *bbolt.DB) (*store, error) {
-	if err := bolthelper.RegisterBucket(db, bucketName); err != nil {
+	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
+	if err != nil {
 		return nil, err
 	}
-	return &store{crud: proto.NewMessageCrud(db, bucketName, key, alloc)}, nil
+	return &store{crud: newCrud}, nil
 }
 
 func (s *store) DeleteServiceAccount(id string) error {
@@ -50,8 +50,8 @@ func (s *store) GetServiceAccount(id string) (*storage.ServiceAccount, bool, err
 	if msg == nil {
 		return nil, false, nil
 	}
-	storedKey := msg.(*storage.ServiceAccount)
-	return storedKey, true, nil
+	serviceaccount := msg.(*storage.ServiceAccount)
+	return serviceaccount, true, nil
 }
 
 func (s *store) GetServiceAccounts(ids []string) ([]*storage.ServiceAccount, []int, error) {
@@ -63,9 +63,9 @@ func (s *store) GetServiceAccounts(ids []string) ([]*storage.ServiceAccount, []i
 	if err != nil {
 		return nil, nil, err
 	}
-	storedKeys := make([]*storage.ServiceAccount, len(msgs))
-	for i, msg := range msgs {
-		storedKeys[i] = msg.(*storage.ServiceAccount)
+	storedKeys := make([]*storage.ServiceAccount, 0, len(msgs))
+	for _, msg := range msgs {
+		storedKeys = append(storedKeys, msg.(*storage.ServiceAccount))
 	}
 	return storedKeys, missingIndices, nil
 }

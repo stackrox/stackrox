@@ -2,6 +2,7 @@ package operations
 
 import (
 	"fmt"
+	"strings"
 
 	. "github.com/dave/jennifer/jen"
 	"github.com/stackrox/rox/tools/generate-helpers/common"
@@ -22,29 +23,17 @@ func renderGetFunctionSignature(statement *Statement, props *GeneratorProperties
 func generateGet(props *GeneratorProperties) (Code, Code) {
 	interfaceMethod := renderGetFunctionSignature(&Statement{}, props)
 
-	existsReturns := []Code{Id("storedKey")}
-	nilReturns := []Code{Nil()}
-	errReturns := []Code{Nil()}
-	if props.GetExists {
-		existsReturns = append(existsReturns, True())
-		nilReturns = append(nilReturns, False())
-		errReturns = append(errReturns, Id("msg").Op("==").Nil())
-	}
-	existsReturns = append(existsReturns, Nil())
-	nilReturns = append(nilReturns, Nil())
-	errReturns = append(errReturns, Err())
-
 	implementation := renderGetFunctionSignature(common.RenderFuncSStarStore(), props).Block(
 		common.RenderBoltMetricLine("Get", props.Singular),
 		List(Id("msg"), Err()).Op(":=").Id("s").Dot("crud").Dot("Read").Call(Id("id")),
 		If(Err().Op("!=").Nil()).Block(
-			Return(errReturns...),
+			Return(CBlock(CCode(true, Nil()), CCode(props.GetExists, Id("msg").Op("==").Nil()), CCode(true, Err()))...),
 		),
 		If(Id("msg").Op("==").Nil()).Block(
-			Return(nilReturns...),
+			Return(CBlock(CCode(true, Nil()), CCode(props.GetExists, False()), CCode(true, Nil()))...),
 		),
-		Id("storedKey").Op(":=").Id("msg").Assert(Op("*").Qual(props.Pkg, props.Object)),
-		Return(existsReturns...),
+		cast(props, Id(strings.ToLower(props.Singular)).Op(":=").Id("msg")),
+		Return(CBlock(CCode(true, Id(strings.ToLower(props.Singular))), CCode(props.GetExists, True()), CCode(true, Nil()))...),
 	)
 
 	return interfaceMethod, implementation

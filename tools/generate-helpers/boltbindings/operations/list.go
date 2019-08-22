@@ -24,7 +24,7 @@ func generateList(props *GeneratorProperties) (Code, Code) {
 		renderIfErrReturnNilErr(),
 		Id("storedKeys").Op(":=").Make(Index().Op("*").Qual(props.Pkg, props.Object), Len(Id("msgs"))),
 		For(List(Id("i"), Id("msg")).Op(":=").Range().Id("msgs")).Block(
-			Id("storedKeys").Index(Id("i")).Op("=").Id("msg").Assert(Op("*").Qual(props.Pkg, props.Object)),
+			cast(props, Id("storedKeys").Index(Id("i")).Op("=").Id("msg")),
 		),
 		Return(Id("storedKeys"), Nil()),
 	)

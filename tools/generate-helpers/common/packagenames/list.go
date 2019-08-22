@@ -21,4 +21,6 @@ var (
 	RoxCentral      = PrefixRox("central")
 	RoxBleveHelper  = PrefixRoxPkg("blevehelper")
 	SingletonStore  = PrefixRoxPkg("bolthelper/singletonstore")
+	Sync            = PrefixRoxPkg("sync")
+	ExpiringCache   = PrefixRoxPkg("expiringcache")
 )

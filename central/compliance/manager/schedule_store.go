@@ -4,7 +4,6 @@ import (
 	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 )
 
@@ -35,17 +34,11 @@ func alloc() proto.Message {
 }
 
 func newScheduleStore(db *bbolt.DB) (*scheduleStoreImpl, error) {
-	err := bolthelper.RegisterBucket(db, schedulesBucket)
+	crud, err := protoCrud.NewMessageCrud(db, schedulesBucket, key, alloc)
 	if err != nil {
 		return nil, err
 	}
-	return &scheduleStoreImpl{
-		crud: protoCrud.NewMessageCrud(
-			db,
-			schedulesBucket,
-			key,
-			alloc),
-	}, nil
+	return &scheduleStoreImpl{crud: crud}, nil
 }
 
 func (s *scheduleStoreImpl) ListSchedules() ([]*storage.ComplianceRunSchedule, error) {

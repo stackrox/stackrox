@@ -4,11 +4,10 @@ package store
 
 import (
 	bbolt "github.com/etcd-io/bbolt"
-	proto1 "github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
-	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
-	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"time"
 )
@@ -18,22 +17,23 @@ var (
 )
 
 type store struct {
-	crud proto.MessageCrud
+	crud protoCrud.MessageCrud
 }
 
-func key(msg proto1.Message) []byte {
+func key(msg proto.Message) []byte {
 	return []byte(msg.(*storage.StoredLicenseKey).GetLicenseId())
 }
 
-func alloc() proto1.Message {
+func alloc() proto.Message {
 	return new(storage.StoredLicenseKey)
 }
 
 func newStore(db *bbolt.DB) (*store, error) {
-	if err := bolthelper.RegisterBucket(db, bucketName); err != nil {
+	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
+	if err != nil {
 		return nil, err
 	}
-	return &store{crud: proto.NewMessageCrud(db, bucketName, key, alloc)}, nil
+	return &store{crud: newCrud}, nil
 }
 
 func (s *store) DeleteLicenseKey(id string) error {
@@ -55,7 +55,7 @@ func (s *store) ListLicenseKeys() ([]*storage.StoredLicenseKey, error) {
 }
 
 func (s *store) UpsertLicenseKeys(licensekeys []*storage.StoredLicenseKey) error {
-	msgs := make([]proto1.Message, len(licensekeys))
+	msgs := make([]proto.Message, len(licensekeys))
 	for i, key := range licensekeys {
 		msgs[i] = key
 	}

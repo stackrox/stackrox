@@ -34,47 +34,30 @@ func newFile() *File {
 	return f
 }
 
-func generateInterfaceFile(interfaceMethods []Code) error {
+func generateInterfaceFile(interfaceMethods []Code, props *operations.GeneratorProperties) error {
 	f := newFile()
 	f.Type().Id("Store").Interface(interfaceMethods...)
 
-	f.Func().Id("New").Params(Id("db").Op("*").Qual(packagenames.BBolt, "DB")).
+	f.Func().Id("New").Params(
+		operations.CBlock(
+			operations.CCode(true, Id("db").Op("*").Qual(packagenames.BBolt, "DB")),
+			operations.CCode(props.Cache, Id("cache").Qual(packagenames.ExpiringCache, "Cache")),
+		)...,
+	).
 		Parens(List(Id("Store"), Error())).
-		Block(Return(Id("newStore").Call(Id("db"))))
+		Block(Return(Id("newStore").Call(
+			operations.CBlock(operations.CCode(true, Id("db")), operations.CCode(props.Cache, Id("cache")))...,
+		)))
 	return f.Save("store.go")
-}
-
-func generateSingletonFile() error {
-	f := newFile()
-
-	f.Var().Defs(
-		Id("singleton").Id("Store"),
-		Id("singletonInit").Qual(packagenames.PrefixRoxPkg("sync"), "Once"),
-	)
-
-	f.Func().Id("Singleton").Params().Id("Store").Block(
-		Id("singletonInit").Dot("Do").Call(
-			Func().Params().Block(
-				List(Id("store"), Err()).
-					Op(":=").
-					Id("New").Call(Qual(packagenames.PrefixRox("central/globaldb"), "GetGlobalDB").Call()),
-				Qual(packagenames.PrefixRoxPkg("utils"), "Must").Call(Err()),
-				Id("singleton").Op("=").Id("store"),
-			),
-		),
-		Return(Id("singleton")),
-	)
-	return f.Save("singleton.go")
 }
 
 func generateStoreImplFile(implementations []Code, props *operations.GeneratorProperties) error {
 	f := newFile()
 	f.ImportAlias(packagenames.Ops, "ops")
+	f.ImportAlias(packagenames.BoltHelperProto, "protoCrud")
 	f.Var().Defs(Id(bucketNameVariable).Op("=").Index().Byte().Parens(Lit(props.BucketName)))
 
-	f.Type().Id("store").Struct(
-		Id("crud").Qual(packagenames.BoltHelperProto, "MessageCrud"),
-	)
+	f.Type().Id("store").Struct(Id("crud").Qual(packagenames.BoltHelperProto, "MessageCrud"))
 	f.Func().Id("key").
 		Params(Id("msg").Qual(packagenames.GogoProto, "Message")).Index().Byte().
 		Block(
@@ -87,17 +70,7 @@ func generateStoreImplFile(implementations []Code, props *operations.GeneratorPr
 	)
 	f.Line()
 
-	f.Func().Id("newStore").Params(Id("db").Op("*").Qual(packagenames.BBolt, "DB")).
-		Parens(List(Op("*").Id("store"), Error())).Block(
-		If(Err().Op(":=").Qual(packagenames.PrefixRoxPkg("bolthelper"), "RegisterBucket").
-			Call(Id("db"), Id(bucketNameVariable)),
-			Err().Op("!=").Nil(),
-		).Block(Return(Nil(), Err())),
-		Return(Op("&").Id("store").Values(Dict{
-			Id("crud"): Qual(packagenames.BoltHelperProto, "NewMessageCrud").Call(Id("db"), Id(bucketNameVariable),
-				Id("key"), Id("alloc")),
-		}), Nil()),
-	)
+	f.Add(generateNewFunc(props))
 	f.Line()
 
 	for _, implementation := range implementations {
@@ -110,16 +83,43 @@ func generateStoreImplFile(implementations []Code, props *operations.GeneratorPr
 	return f.Save("store_impl.go")
 }
 
+func generateNewFunc(props *operations.GeneratorProperties) Code {
+	newStoreArgs := Dict{
+		Id("crud"): Id("newCrud"),
+	}
+	methodArgs := []Code{Id("db").Op("*").Qual(packagenames.BBolt, "DB")}
+	newCrud := "NewMessageCrud"
+	crudArgs := []Code{Id("db"), Id(bucketNameVariable),
+		Id("key"), Id("alloc")}
+	if props.Cache {
+		methodArgs = append(methodArgs,
+			Id("cache").Qual(packagenames.ExpiringCache, "Cache"),
+		)
+		newCrud = "NewCachedMessageCrud"
+		crudArgs = append(crudArgs,
+			Id("cache"),
+			Lit(props.Singular),
+			Qual(packagenames.Metrics, "IncrementDBCacheCounter"),
+		)
+	}
+
+	return Func().Id("newStore").Params(methodArgs...).
+		Parens(List(Op("*").Id("store"), Error())).Block(
+		List(Id("newCrud"), Err()).Op(":=").Qual(packagenames.BoltHelperProto, newCrud).Call(crudArgs...),
+		If(Err().Op("!=").Nil()).Block(
+			Return(Nil(), Err()),
+		),
+		Return(Op("&").Id("store").Values(newStoreArgs), Nil()),
+	)
+}
+
 func generate(props *operations.GeneratorProperties, methods []string, interfaces []string) error {
 	methodsSet := set.NewStringSet(methods...)
 	interfaceSet := set.NewStringSet(interfaces...).Difference(methodsSet)
 	interfaceMethods, implementations := generateFunctions(props, methodsSet.AsSlice())
 	interfaceOnly, _ := generateFunctions(props, interfaceSet.AsSlice())
 
-	if err := generateInterfaceFile(append(interfaceMethods, interfaceOnly...)); err != nil {
-		return err
-	}
-	if err := generateSingletonFile(); err != nil {
+	if err := generateInterfaceFile(append(interfaceMethods, interfaceOnly...), props); err != nil {
 		return err
 	}
 	if err := generateStoreImplFile(implementations, props); err != nil {
@@ -168,6 +168,8 @@ func main() {
 
 	//props.GetExists determines whether get methods will return an "exists" boolean
 	c.Flags().BoolVar(&props.GetExists, "get-return-exists", false, "return 'exists' boolean from get calls")
+
+	c.Flags().BoolVar(&props.Cache, "cache", false, "generate an LRU expiring cache")
 
 	//props.DeleteExists determines whether delete methods will return an "exists" boolean
 	//commented out as this hasn't been implemented yet

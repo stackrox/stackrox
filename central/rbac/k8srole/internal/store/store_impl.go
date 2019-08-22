@@ -4,11 +4,11 @@ package store
 
 import (
 	bbolt "github.com/etcd-io/bbolt"
-	proto1 "github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
-	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
-	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	expiringcache "github.com/stackrox/rox/pkg/expiringcache"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"time"
 )
@@ -18,22 +18,23 @@ var (
 )
 
 type store struct {
-	crud proto.MessageCrud
+	crud protoCrud.MessageCrud
 }
 
-func key(msg proto1.Message) []byte {
+func key(msg proto.Message) []byte {
 	return []byte(msg.(*storage.K8SRole).GetId())
 }
 
-func alloc() proto1.Message {
+func alloc() proto.Message {
 	return new(storage.K8SRole)
 }
 
-func newStore(db *bbolt.DB) (*store, error) {
-	if err := bolthelper.RegisterBucket(db, bucketName); err != nil {
+func newStore(db *bbolt.DB, cache expiringcache.Cache) (*store, error) {
+	newCrud, err := protoCrud.NewCachedMessageCrud(db, bucketName, key, alloc, cache, "Role", metrics.IncrementDBCacheCounter)
+	if err != nil {
 		return nil, err
 	}
-	return &store{crud: proto.NewMessageCrud(db, bucketName, key, alloc)}, nil
+	return &store{crud: newCrud}, nil
 }
 
 func (s *store) DeleteRole(id string) error {
@@ -50,8 +51,8 @@ func (s *store) GetRole(id string) (*storage.K8SRole, bool, error) {
 	if msg == nil {
 		return nil, false, nil
 	}
-	storedKey := msg.(*storage.K8SRole)
-	return storedKey, true, nil
+	role := msg.(*storage.K8SRole)
+	return role, true, nil
 }
 
 func (s *store) GetRoles(ids []string) ([]*storage.K8SRole, []int, error) {
@@ -63,9 +64,9 @@ func (s *store) GetRoles(ids []string) ([]*storage.K8SRole, []int, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	storedKeys := make([]*storage.K8SRole, len(msgs))
-	for i, msg := range msgs {
-		storedKeys[i] = msg.(*storage.K8SRole)
+	storedKeys := make([]*storage.K8SRole, 0, len(msgs))
+	for _, msg := range msgs {
+		storedKeys = append(storedKeys, msg.(*storage.K8SRole))
 	}
 	return storedKeys, missingIndices, nil
 }

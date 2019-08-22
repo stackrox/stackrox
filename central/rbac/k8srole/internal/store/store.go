@@ -5,6 +5,7 @@ package store
 import (
 	bbolt "github.com/etcd-io/bbolt"
 	storage "github.com/stackrox/rox/generated/storage"
+	expiringcache "github.com/stackrox/rox/pkg/expiringcache"
 )
 
 type Store interface {
@@ -15,6 +16,6 @@ type Store interface {
 	UpsertRole(role *storage.K8SRole) error
 }
 
-func New(db *bbolt.DB) (Store, error) {
-	return newStore(db)
+func New(db *bbolt.DB, cache expiringcache.Cache) (Store, error) {
+	return newStore(db, cache)
 }

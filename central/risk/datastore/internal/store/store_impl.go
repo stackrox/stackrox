@@ -4,11 +4,10 @@ package store
 
 import (
 	bbolt "github.com/etcd-io/bbolt"
-	proto1 "github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
-	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
-	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"time"
 )
@@ -18,22 +17,23 @@ var (
 )
 
 type store struct {
-	crud proto.MessageCrud
+	crud protoCrud.MessageCrud
 }
 
-func key(msg proto1.Message) []byte {
+func key(msg proto.Message) []byte {
 	return []byte(msg.(*storage.Risk).GetId())
 }
 
-func alloc() proto1.Message {
+func alloc() proto.Message {
 	return new(storage.Risk)
 }
 
 func newStore(db *bbolt.DB) (*store, error) {
-	if err := bolthelper.RegisterBucket(db, bucketName); err != nil {
+	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
+	if err != nil {
 		return nil, err
 	}
-	return &store{crud: proto.NewMessageCrud(db, bucketName, key, alloc)}, nil
+	return &store{crud: newCrud}, nil
 }
 
 func (s *store) DeleteRisk(id string) error {
@@ -50,8 +50,8 @@ func (s *store) GetRisk(id string) (*storage.Risk, error) {
 	if msg == nil {
 		return nil, nil
 	}
-	storedKey := msg.(*storage.Risk)
-	return storedKey, nil
+	risk := msg.(*storage.Risk)
+	return risk, nil
 }
 
 func (s *store) GetRisks(ids []string) ([]*storage.Risk, []int, error) {
@@ -63,9 +63,9 @@ func (s *store) GetRisks(ids []string) ([]*storage.Risk, []int, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	storedKeys := make([]*storage.Risk, len(msgs))
-	for i, msg := range msgs {
-		storedKeys[i] = msg.(*storage.Risk)
+	storedKeys := make([]*storage.Risk, 0, len(msgs))
+	for _, msg := range msgs {
+		storedKeys = append(storedKeys, msg.(*storage.Risk))
 	}
 	return storedKeys, missingIndices, nil
 }

@@ -4,11 +4,10 @@ package store
 
 import (
 	bbolt "github.com/etcd-io/bbolt"
-	proto1 "github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
-	bolthelper "github.com/stackrox/rox/pkg/bolthelper"
-	proto "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"time"
 )
@@ -18,22 +17,23 @@ var (
 )
 
 type store struct {
-	crud proto.MessageCrud
+	crud protoCrud.MessageCrud
 }
 
-func key(msg proto1.Message) []byte {
+func key(msg proto.Message) []byte {
 	return []byte(msg.(*storage.ProcessWhitelistResults).GetDeploymentId())
 }
 
-func alloc() proto1.Message {
+func alloc() proto.Message {
 	return new(storage.ProcessWhitelistResults)
 }
 
 func newStore(db *bbolt.DB) (*store, error) {
-	if err := bolthelper.RegisterBucket(db, bucketName); err != nil {
+	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
+	if err != nil {
 		return nil, err
 	}
-	return &store{crud: proto.NewMessageCrud(db, bucketName, key, alloc)}, nil
+	return &store{crud: newCrud}, nil
 }
 
 func (s *store) DeleteWhitelistResults(id string) error {
@@ -50,8 +50,8 @@ func (s *store) GetWhitelistResults(id string) (*storage.ProcessWhitelistResults
 	if msg == nil {
 		return nil, nil
 	}
-	storedKey := msg.(*storage.ProcessWhitelistResults)
-	return storedKey, nil
+	whitelistresults := msg.(*storage.ProcessWhitelistResults)
+	return whitelistresults, nil
 }
 
 func (s *store) UpsertWhitelistResults(whitelistresults *storage.ProcessWhitelistResults) error {
