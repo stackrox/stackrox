@@ -109,20 +109,6 @@ setupLicense: &setupLicense
       fi
       cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
-# See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
-# This step requires the GCP IAM permission "Kubernetes Engine Admin".
-deployGKE: &deployGKE
-  run:
-    name: Deploy to remote cluster
-    command: |
-      kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-rox@stackrox-ci.iam.gserviceaccount.com
-      ./deploy/k8s/deploy.sh
-      kubectl delete clusterrolebinding temporary-admin
-
-      source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-      cci-export ROX_USERNAME "$ROX_USERNAME"
-      cci-export ROX_PASSWORD "$ROX_PASSWORD"
-
 setupCIMonitoring: &setupCIMonitoring
   run:
     name: Set up CI monitoring
@@ -642,13 +628,10 @@ commands:
 
       - *setupDefaultTLSCerts
 
-      - *deployGKE
-      - *setupCIMonitoring
-
-      - *setupClientTLSCerts
-
-      - *waitForAPI
-      - *waitForSensorK8s
+      - deploy-stackrox:
+          post-central-deploy-steps:
+            - *setupCIMonitoring
+            - *setupClientTLSCerts
 
       - deploy-default-psp
       - deploy-webhook-server
@@ -697,6 +680,87 @@ commands:
       - *storeK8sLogs
 
       - teardown-gke
+
+
+  deploy-stackrox:
+    parameters:
+      orchestrator-flavor:
+        type: string
+        default: k8s
+      require-cluster-admin:
+        type: boolean
+        default: false
+      validate-autoupgrade-label:
+        type: boolean
+        default: false
+      post-central-deploy-steps:
+        type: steps
+        default: []
+
+    steps:
+      - run:
+          name: Deploy central to remote cluster
+          command: |
+            deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
+            "${deploy_dir}/central.sh"
+
+            source scripts/k8s/export-basic-auth-creds.sh "$deploy_dir"
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
+
+      - steps: << parameters.post-central-deploy-steps >>
+
+      - *waitForAPI
+
+      - run:
+          name: Snapshot Kubernetes Resources
+          command: |
+            <<# parameters.validate-autoupgrade-label >>
+            scripts/ci/sensorbundle-label/list-resources.sh >/tmp/k8s-resources-pre-sensor
+            <</ parameters.validate-autoupgrade-label >>
+            exit 0
+
+      - run:
+          name: Deploy Sensor
+          command: |
+            <<# parameters.require-cluster-admin >>
+            kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-rox@stackrox-ci.iam.gserviceaccount.com
+            <</ parameters.require-cluster-admin >>
+
+            deploy/<< parameters.orchestrator-flavor >>/sensor.sh
+            <<# parameters.require-cluster-admin >>
+            kubectl delete clusterrolebinding temporary-admin
+            <</ parameters.require-cluster-admin >>
+
+      - *waitForSensorK8s
+
+      - run:
+          name: Verify all new resources have the auto-upgrade label
+          command: |
+            <<# parameters.validate-autoupgrade-label >>
+            {
+              scripts/ci/sensorbundle-label/list-resources.sh
+              cat /tmp/k8s-resources-pre-sensor
+            } | sort | uniq -u >/tmp/k8s-new-resources-post-sensor
+
+            scripts/ci/sensorbundle-label/list-resources.sh 'auto-upgrade.stackrox.io/component=sensor' \
+                >/tmp/k8s-sensor-labeled-resources
+
+            {
+              cat /tmp/k8s-new-resources-post-sensor
+              cat /tmp/k8s-sensor-labeled-resources
+              cat /tmp/k8s-sensor-labeled-resources
+              cat scripts/ci/sensorbundle-label/whitelist 2>/dev/null
+              cat scripts/ci/sensorbundle-label/whitelist 2>/dev/null
+            } | sort | uniq -u >/tmp/k8s-new-resources-unlabeled
+
+            if [[ -s /tmp/k8s-new-resources-unlabeled ]]; then
+              echo >&2 "The following resources were created by the sensor bundle, but don't carry the sensor bundle label:"
+              cat >&2 /tmp/k8s-new-resources-unlabeled
+              exit 1
+            fi
+            <</ parameters.validate-autoupgrade-label >>
+            exit 0
 
 jobs:
 
@@ -1162,13 +1226,12 @@ jobs:
 
       - *setupDefaultTLSCerts
 
-      - *deployGKE
-      - *setupCIMonitoring
-
-      - *setupClientTLSCerts
-
-      - *waitForAPI
-      - *waitForSensorK8s
+      - deploy-stackrox:
+          require-cluster-admin: true
+          validate-autoupgrade-label: true
+          post-central-deploy-steps:
+            - *setupCIMonitoring
+            - *setupClientTLSCerts
 
       - run:
           name: Set up client CA auth provider
@@ -1629,19 +1692,12 @@ jobs:
 
       - *setupDefaultTLSCerts
 
-      - run:
-          name: Deploy to remote cluster
-          command: |
-            ./deploy/openshift/deploy.sh
-            oc -n stackrox get all
-            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/openshift/
-            cci-export ROX_USERNAME "$ROX_USERNAME"
-            cci-export ROX_PASSWORD "$ROX_PASSWORD"
-
-      - *setupCIMonitoring
-      - *setupClientTLSCerts
-      - *waitForAPI
-      - *waitForSensorK8s
+      - deploy-stackrox:
+          orchestrator-flavor: openshift
+          validate-autoupgrade-label: true
+          post-central-deploy-steps:
+            - *setupCIMonitoring
+            - *setupClientTLSCerts
 
       - deploy-webhook-server
       - deploy-authz-plugin
@@ -1825,20 +1881,10 @@ jobs:
 
       - *setupDefaultTLSCerts
 
-      - run:
-          name: Deploy to remote cluster
-          command: |
-            ./deploy/k8s/deploy.sh
-            kubectl -n stackrox get all
-
-            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cci-export ROX_USERNAME "$ROX_USERNAME"
-            cci-export ROX_PASSWORD "$ROX_PASSWORD"
-
-      - *setupCIMonitoring
-      - *setupClientTLSCerts
-      - *waitForAPI
-      - *waitForSensorK8s
+      - deploy-stackrox:
+          post-central-deploy-steps:
+            - *setupCIMonitoring
+            - *setupClientTLSCerts
 
       - deploy-webhook-server
       - deploy-authz-plugin

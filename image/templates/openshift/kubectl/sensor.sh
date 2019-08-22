@@ -55,16 +55,16 @@ fi
 
 echo "Creating secrets for collector..."
 oc create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
-oc -n "stackrox" label secret collector-tls 'auto-upgrade.stackrox.io/component=sensor'
+oc -n "stackrox" label secret/collector-tls 'auto-upgrade.stackrox.io/component=sensor'
 
 {{- end}}
 
 {{if .MonitoringEndpoint}}
 echo "Creating secrets for monitoring..."
 oc create secret -n "stackrox" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"
-oc -n "stackrox" label secret monitoring-client 'auto-upgrade.stackrox.io/component=sensor'
+oc -n "stackrox" label secret/monitoring-client 'auto-upgrade.stackrox.io/component=sensor'
 oc create cm -n "stackrox" telegraf --from-file="$DIR/telegraf.conf"
-oc -n "stackrox" label cm telegraf 'auto-upgrade.stackrox.io/component=sensor'
+oc -n "stackrox" label cm/telegraf 'auto-upgrade.stackrox.io/component=sensor'
 {{- end}}
 
 if [[ -d "$DIR/additional-cas" ]]; then
