@@ -49,7 +49,7 @@ const ViolationsAcrossThisDeployment = ({ deploymentID, policyID }) => {
                 if (policyViolation) {
                     content = (
                         <>
-                            <div className="">
+                            <div>
                                 <Widget
                                     header="Time of Violation"
                                     className="m-4"

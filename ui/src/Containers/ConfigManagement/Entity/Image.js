@@ -7,6 +7,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { format } from 'date-fns';
 import gql from 'graphql-tag';
 import Query from 'Components/ThrowingQuery';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
@@ -159,15 +160,23 @@ const Image = ({ id, entityListType, query }) => {
                         </CollapsibleSection>
                         <CollapsibleSection title="Dockerfile">
                             <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                                <TableWidget
-                                    header={`${layers.length} layers accross this image`}
-                                    rows={layers}
-                                    noDataText="No Layers"
-                                    className="bg-base-100"
-                                    columns={entityToColumns[entityTypes.IMAGE]}
-                                    SubComponent={renderCVEsTable}
-                                    idAttribute="id"
-                                />
+                                {layers.length === 0 && (
+                                    <NoResultsMessage
+                                        message="No layers available in this image"
+                                        className="p-6"
+                                    />
+                                )}
+                                {layers.length > 0 && (
+                                    <TableWidget
+                                        header={`${layers.length} layers accross this image`}
+                                        rows={layers}
+                                        noDataText="No Layers"
+                                        className="bg-base-100"
+                                        columns={entityToColumns[entityTypes.IMAGE]}
+                                        SubComponent={renderCVEsTable}
+                                        idAttribute="id"
+                                    />
+                                )}
                             </div>
                         </CollapsibleSection>
                     </div>

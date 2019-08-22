@@ -1,6 +1,7 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import { NODES_WITH_CONTROL } from 'queries/controls';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -14,7 +15,12 @@ const NodesWithFailedControls = props => {
         <Query query={NODES_WITH_CONTROL} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader />;
+                if (!data) return null;
                 const { entities = [] } = data;
+                if (entities.length === 0)
+                    return (
+                        <NoResultsMessage message="No nodes with failed controls" className="p-6" />
+                    );
                 return (
                     <EntityWithFailedControls
                         entityType={entityTypes.NODE}

@@ -31,7 +31,9 @@ const ViolationsByClusterChart = ({ history, violationsByCluster }) => {
         };
     }
     if (!violationsByCluster || !violationsByCluster.length) {
-        return <NoResultsMessage />;
+        return (
+            <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
+        );
     }
 
     return (

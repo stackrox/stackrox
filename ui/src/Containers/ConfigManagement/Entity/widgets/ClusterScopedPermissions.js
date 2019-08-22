@@ -1,6 +1,6 @@
 import React from 'react';
 import Widget from 'Components/Widget';
-
+import NoResultsMessage from 'Components/NoResultsMessage';
 import ScopedPermissions from './ScopedPermissions';
 
 const ClusterScopedPermissionsWidget = ({ scopedPermissions, ...rest }) => {
@@ -10,7 +10,9 @@ const ClusterScopedPermissionsWidget = ({ scopedPermissions, ...rest }) => {
         return [...acc, ...curr.permissions];
     }, []);
     content = <ScopedPermissions permissions={permissions} />;
-    const header = `${permissions.length} Permissions across ${
+    if (permissions.length === 0)
+        content = <NoResultsMessage message="No permissions available" className="p-6 shadow" />;
+    const header = `${permissions.length > 0 ? permissions.length : ''} Permissions across ${
         clusterScopePermissions.length
     } cluster`;
     return (

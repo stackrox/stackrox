@@ -8,6 +8,7 @@ import pluralize from 'pluralize';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import SeverityLabel from 'Components/SeverityLabel';
@@ -37,6 +38,14 @@ PolicyEditButton.propTypes = {
 };
 
 const DeploymentViolations = ({ className, alerts }) => {
+    if (!alerts || !alerts.length)
+        return (
+            <NoResultsMessage
+                message="No deployments violatiing this policy"
+                className="p-6 shadow"
+                icon="info"
+            />
+        );
     const rows = alerts;
     const columns = entityViolationsColumns[entityTypes.DEPLOYMENT];
     return (
@@ -217,16 +226,14 @@ const Policy = ({ id, entityListType, query }) => {
                                 </Widget>
                             </div>
                         </CollapsibleSection>
-                        {!!alerts.length && (
-                            <CollapsibleSection title="Policy Findings">
-                                <div className="flex mb-4 pdf-page pdf-stretch p-4">
-                                    <DeploymentViolations
-                                        className="mx-4 w-full bg-base-100"
-                                        alerts={alerts}
-                                    />
-                                </div>
-                            </CollapsibleSection>
-                        )}
+                        <CollapsibleSection title="Policy Findings">
+                            <div className="flex mb-4 pdf-page pdf-stretch p-4">
+                                <DeploymentViolations
+                                    className="mx-4 w-full bg-base-100"
+                                    alerts={alerts}
+                                />
+                            </div>
+                        </CollapsibleSection>
                     </div>
                 );
             }}

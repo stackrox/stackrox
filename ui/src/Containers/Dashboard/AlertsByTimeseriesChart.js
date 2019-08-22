@@ -79,7 +79,9 @@ const formatTimeseriesData = clusterData => {
 
 const AlertsByTimeseriesChart = ({ alertsByTimeseries }) => {
     if (!alertsByTimeseries || !alertsByTimeseries.length) {
-        return <NoResultsMessage />;
+        return (
+            <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
+        );
     }
     return (
         <div className="p-0 h-64 w-full overflow-hidden">

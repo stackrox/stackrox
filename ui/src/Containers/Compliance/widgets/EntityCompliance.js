@@ -68,7 +68,9 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
                 if (!loading && data && data.results) {
                     const { results } = data.results;
                     if (!results.length) {
-                        contents = <NoResultsMessage />;
+                        contents = (
+                            <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
+                        );
                     } else {
                         const barData = getBarData(results);
                         const totals = getTotals(results);

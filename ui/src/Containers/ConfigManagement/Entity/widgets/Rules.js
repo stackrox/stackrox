@@ -1,9 +1,10 @@
 import React from 'react';
 import Widget from 'Components/Widget';
 import { ArrowRight } from 'react-feather';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const Rules = ({ rules, ...rest }) => {
-    const header = `${rules.length} Rules`;
+    const header = `${rules.length > 0 ? rules.length : ''} Rules`;
     const verbs = rules.map((rule, i) => {
         return (
             <li className="flex items-center" key={i}>
@@ -24,8 +25,9 @@ const Rules = ({ rules, ...rest }) => {
             </li>
         );
     });
-    return (
-        <Widget header={header} {...rest}>
+    let content = <NoResultsMessage message="No rules" className="p-6" />;
+    if (rules.length) {
+        content = (
             <div className="flex">
                 <div>
                     <h1 className="font-600 border-b border-base-300 text-sm justify-left flex p-2 px-3">
@@ -40,6 +42,11 @@ const Rules = ({ rules, ...rest }) => {
                     <ul className="list-reset p-3">{resourcesAndNonResourcesURL}</ul>
                 </div>
             </div>
+        );
+    }
+    return (
+        <Widget header={header} {...rest}>
+            {content}
         </Widget>
     );
 };

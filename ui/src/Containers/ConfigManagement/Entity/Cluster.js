@@ -217,6 +217,7 @@ const Cluster = ({ id, entityListType, query }) => {
                                             query={queryService.objectToWhereClause({
                                                 Cluster: name
                                             })}
+                                            message="No deployments violating policies in this cluster"
                                         />
                                     </TabContent>
                                     <TabContent>

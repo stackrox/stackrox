@@ -7,6 +7,7 @@ import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import { sortSeverity } from 'sorters/sorters';
 
+import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import SeverityLabel from 'Components/SeverityLabel';
@@ -48,6 +49,13 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                 if (loading) return <Loader />;
                 if (!data) return null;
                 const rows = createTableRows(data);
+                if (rows.length === 0)
+                    return (
+                        <NoResultsMessage
+                            message="No policies failed across this deployment"
+                            className="p-6 shadow"
+                        />
+                    );
                 const header = `${rows.length} policies failed across this deployment`;
                 const columns = [
                     {

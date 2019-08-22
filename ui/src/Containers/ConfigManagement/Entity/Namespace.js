@@ -165,6 +165,7 @@ const Namespace = ({ id, entityListType, query }) => {
                             <div className="flex pdf-page pdf-stretch rounded relative rounded mb-4 ml-4 mr-4">
                                 <DeploymentsWithFailedPolicies
                                     query={queryService.objectToWhereClause({ Namespace: name })}
+                                    message="No deployments violating policies in this namespace"
                                 />
                             </div>
                         </CollapsibleSection>

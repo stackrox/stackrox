@@ -9,6 +9,7 @@ import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import uniq from 'lodash/uniq';
 import CollapsibleRow from 'Components/CollapsibleRow';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -85,7 +86,7 @@ Deployments.propTypes = {
 
 const DeploymentsWithRouter = withRouter(Deployments);
 
-const DeploymentsWithFailedPolicies = ({ query }) => {
+const DeploymentsWithFailedPolicies = ({ query, message }) => {
     return (
         <Query query={VIOLATIONS} variables={{ query }}>
             {({ loading, data }) => {
@@ -94,6 +95,10 @@ const DeploymentsWithFailedPolicies = ({ query }) => {
                 const groups = getDeploymentsGroupedByPolicies(data);
                 const numDeployments = uniq(data.violations.map(violation => violation.deployment))
                     .length;
+                if (numDeployments === 0)
+                    return (
+                        <NoResultsMessage message={message} className="p-6 shadow" icon="info" />
+                    );
                 const header = `${numDeployments} deployments failed across ${
                     groups.length
                 } policies`;
@@ -150,11 +155,13 @@ const DeploymentsWithFailedPolicies = ({ query }) => {
 };
 
 DeploymentsWithFailedPolicies.propTypes = {
-    query: PropTypes.string
+    query: PropTypes.string,
+    message: PropTypes.string
 };
 
 DeploymentsWithFailedPolicies.defaultProps = {
-    query: ''
+    query: '',
+    message: ''
 };
 
 export default DeploymentsWithFailedPolicies;

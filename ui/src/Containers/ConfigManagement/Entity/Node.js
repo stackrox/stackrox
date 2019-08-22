@@ -4,6 +4,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 import { entityToColumns } from 'constants/listColumns';
 
+import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -93,9 +94,9 @@ const Node = ({ id, entityListType, query }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
+                if (!data || !data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
                 if (loading) return <Loader transparent />;
                 const { node } = data;
-                if (!node) return <PageNotFound resourceType={entityTypes.NODE} />;
 
                 const {
                     kernelVersion,
@@ -202,17 +203,25 @@ const Node = ({ id, entityListType, query }) => {
                         </CollapsibleSection>
                         <CollapsibleSection title="Node Findings">
                             <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                                <TableWidget
-                                    entityType={entityTypes.CONTROL}
-                                    header={`${
-                                        failedComplianceResults.length
-                                    } controls failed across this node`}
-                                    rows={failedComplianceResults}
-                                    noDataText="No Controls"
-                                    className="bg-base-100"
-                                    columns={entityToColumns[entityTypes.CONTROL]}
-                                    idAttribute="control.id"
-                                />
+                                {failedComplianceResults.length === 0 && (
+                                    <NoResultsMessage
+                                        message="No controls across this node"
+                                        className="p-6 shadow"
+                                    />
+                                )}
+                                {failedComplianceResults.length > 0 && (
+                                    <TableWidget
+                                        entityType={entityTypes.CONTROL}
+                                        header={`${
+                                            failedComplianceResults.length
+                                        } controls failed across this node`}
+                                        rows={failedComplianceResults}
+                                        noDataText="No Controls"
+                                        className="bg-base-100"
+                                        columns={entityToColumns[entityTypes.CONTROL]}
+                                        idAttribute="control.id"
+                                    />
+                                )}
                             </div>
                         </CollapsibleSection>
                     </div>

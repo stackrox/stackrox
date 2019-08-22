@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { entityAcrossControlsColumns } from 'constants/listColumns';
 
+import NoResultsMessage from 'Components/NoResultsMessage';
 import TableWidget from './TableWidget';
 
 export const getRelatedEntities = (data, entityType) => {
@@ -29,6 +30,14 @@ export const getRelatedEntities = (data, entityType) => {
 const EntityWithFailedControls = ({ entityType, entities }) => {
     const relatedEntities = getRelatedEntities(entities, entityType);
     const failingRelatedEntities = relatedEntities.filter(relatedEntity => !relatedEntity.passing);
+    if (failingRelatedEntities.length === 0)
+        return (
+            <NoResultsMessage
+                message="No nodes failing this control"
+                className="p-6 shadow"
+                icon="info"
+            />
+        );
     const tableHeader = `${failingRelatedEntities.length} nodes have failed across this control`;
     return (
         <TableWidget
