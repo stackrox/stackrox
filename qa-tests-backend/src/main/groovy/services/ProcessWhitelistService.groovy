@@ -19,7 +19,7 @@ class ProcessWhitelistService extends BaseService {
         String cName = containerName ?: deployment.getName()
         ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request = ProcessWhitelistServiceOuterClass.
                 GetProcessWhitelistRequest.newBuilder().
-                setKey(ProcessWhitelistOuterClass.ProcessWhitelistKey.newBuilder()
+                setKey(ProcessWhitelistKey.newBuilder()
                         .setClusterId(clusterId)
                         .setNamespace(namespace)
                         .setDeploymentId(deploymentId)
@@ -27,11 +27,12 @@ class ProcessWhitelistService extends BaseService {
                 .build()
         Timer t = new Timer(iterations, interval)
         while (t.IsValid()) {
-            if (getWhitelistProcesses(request)) {
+            def whitelist = getWhitelistProcesses(request)
+            if (whitelist) {
                 println "SR found whitelisted process for the key - " +
                         "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
                             " within ${t.SecondsSince()}s"
-                return getProcessWhitelistService().getProcessWhitelist(request)
+                return whitelist
                 }
             println "SR has not found whitelisted  process for the key - " +
                     "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} yet"
@@ -49,7 +50,7 @@ class ProcessWhitelistService extends BaseService {
             ProcessWhitelistServiceOuterClass.LockProcessWhitelistsRequest lockRequest =
                      ProcessWhitelistServiceOuterClass
                     .LockProcessWhitelistsRequest.newBuilder()
-                    .addKeys(ProcessWhitelistOuterClass.ProcessWhitelistKey
+                    .addKeys(ProcessWhitelistKey
                     .newBuilder().setClusterId(clusterId)
                             .setNamespace(deployment.getNamespace())
                             .setDeploymentId(deployment.getDeploymentUid())
@@ -91,15 +92,15 @@ class ProcessWhitelistService extends BaseService {
             println "Error updating process whitelists: ${e}"
     }
     }
-    static boolean getWhitelistProcesses(ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request) {
+    static ProcessWhitelistOuterClass.ProcessWhitelist getWhitelistProcesses(
+        ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request) {
         try {
-            getProcessWhitelistService().getProcessWhitelist(request)
+            return getProcessWhitelistService().getProcessWhitelist(request)
         }
         catch (Exception e) {
             println "Error getting  process whitelists: ${e}"
-            return false
         }
-        return true
+        return null
     }
 
     static boolean waitForDeploymentWhitelistsCreated(String clusterId, Deployment deployment, String containerName) {
@@ -115,7 +116,7 @@ class ProcessWhitelistService extends BaseService {
             println("Did not find whitelists for deployment ${deployment.getDeploymentUid()}")
         }
         catch (Exception e) {
-            println "Error waiting for deployment whitelists to be created"
+            println "Error waiting for deployment whitelists to be created ${e}"
         }
         return false
     }
@@ -133,7 +134,7 @@ class ProcessWhitelistService extends BaseService {
             println("Whitelists still exist for deployment ${deployment.getDeploymentUid()}")
         }
         catch (Exception e) {
-            println "Error waiting for deployment whitelists to be deleted"
+            println "Error waiting for deployment whitelists to be deleted ${e}"
         }
         return false
     }
