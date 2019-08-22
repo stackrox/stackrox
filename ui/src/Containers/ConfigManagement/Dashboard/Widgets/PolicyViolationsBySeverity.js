@@ -10,8 +10,6 @@ import { Link, withRouter } from 'react-router-dom';
 import gql from 'graphql-tag';
 import max from 'lodash/max';
 import sum from 'lodash/sum';
-import uniqBy from 'lodash/uniqBy';
-import pluralize from 'pluralize';
 import { severityValues, severities } from 'constants/severities';
 import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
@@ -56,15 +54,7 @@ const QUERY = gql`
             disabled
             description
             lifecycleStages
-            alerts {
-                id
-                state
-                deployment {
-                    id
-                    name
-                }
-            }
-            alertCount
+            policyStatus
         }
     }
 `;
@@ -95,33 +85,33 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
     function getSunburstData(policies) {
         const violationsByCategory = policies.reduce((categories, policy) => {
             const { categories: policyCategories, severity, name: policyName } = policy;
+            const isPassing = policy.policyStatus.toLowerCase() === policyStatus.PASS.toLowerCase();
             const newItems = { ...categories };
             policyCategories.forEach((category, idx) => {
                 if (!newItems[category]) newItems[category] = [];
-                const color = policy.alertCount ? severityColorMap[severity] : passingChartColor;
+                const color = !isPassing ? severityColorMap[severity] : passingChartColor;
+                const queryObj = !isPassing
+                    ? {
+                          [searchParam]: {
+                              [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                          }
+                      }
+                    : null;
                 const link = URLService.getURL(match, location)
                     .base(entityTypes.POLICY, policy.id)
+                    .push(entityTypes.DEPLOYMENT)
+                    .query(queryObj)
                     .url();
-                let deploymentsWithAlerts = 0;
-                if (policy.alerts.length) {
-                    deploymentsWithAlerts = uniqBy(policy.alerts, 'deployment.id').length;
-                }
 
+                const fullPolicyName = idx > 0 ? `${idx}. ${policyName}` : policyName;
                 newItems[category].push({
                     severity,
-                    passing: !policy.alertCount,
+                    passing: isPassing,
                     color,
                     textColor: passingLinkColor,
                     value: 0,
                     labelColor: color,
-                    labelValue:
-                        deploymentsWithAlerts > 0
-                            ? `violated on ${deploymentsWithAlerts} ${pluralize(
-                                  'deployments',
-                                  deploymentsWithAlerts
-                              )}`
-                            : null,
-                    name: idx > 0 ? `${idx}. ${policyName}` : policyName,
+                    name: `${isPassing ? '' : 'View deployments violating'} "${fullPolicyName}"`,
                     link
                 });
             });
@@ -154,7 +144,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
     }
 
     function getSummaryData(data) {
-        const policiesInViolation = data.filter(policy => policy.alertCount);
+        const policiesInViolation = data.filter(policy => policy.policyStatus === 'fail');
 
         function getCount(severity) {
             return sum(
