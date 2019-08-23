@@ -11,7 +11,7 @@ const PageNotFound = ({ match, location, resourceType }) => {
 
     const resourceTypeName = (resourceType || 'resource').toLowerCase();
     return (
-        <div className="text-center flex w-full justify-center items-center py-32 px-3 h-full bg-primary-200">
+        <div className="text-center flex w-full justify-center items-center py-32 px-3 min-h-full bg-primary-200">
             <div>
                 <h2 className="text-tertiary-800 mb-2">
                     {`Unfortunately, the ${resourceTypeName} you are looking for cannot be found.`}

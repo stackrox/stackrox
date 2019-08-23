@@ -94,8 +94,8 @@ const Node = ({ id, entityListType, query }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (!data || !data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
                 if (loading) return <Loader transparent />;
+                if (!data || !data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
                 const { node } = data;
 
                 const {

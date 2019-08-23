@@ -81,7 +81,6 @@ export const DEPLOYMENTS_QUERY = gql`
             clusterId
             namespace
             namespaceId
-            deployAlertCount
             serviceAccount
             serviceAccountID
             failingPolicyCount

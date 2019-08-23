@@ -56,8 +56,8 @@ const EntityPage = ({ match, location }) => {
                 entityListType={entityListType1}
                 disabled={!!overlay}
             />
-            <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-auto">
-                <div className={`${overlay ? 'overlay' : ''} h-full w-full`}>
+            <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-hidden">
+                <div className={`${overlay ? 'overlay' : ''} h-full w-full overflow-auto`}>
                     <Entity
                         entityType={pageEntityType}
                         entityId={pageEntityId}

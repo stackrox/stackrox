@@ -178,8 +178,12 @@ const Deployments = ({ match, location, className, selectedRowId, onRowClick, qu
             idAttribute="id"
             defaultSorted={[
                 {
-                    id: 'deployAlertCount',
-                    desc: true
+                    id: 'policyStatus',
+                    desc: false
+                },
+                {
+                    id: 'name',
+                    desc: false
                 }
             ]}
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
