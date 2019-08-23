@@ -230,7 +230,14 @@ func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, q 
 		AddExactMatches(search.Namespace, deployment.GetNamespace()).
 		AddStrings(search.SecretName, secretSet.AsSlice()...).
 		ProtoQuery()
-	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, search.NewConjunctionQuery(psr, q)))
+	secrets, err := resolver.root.SecretsDataStore.SearchRawSecrets(ctx, psr)
+	if err != nil {
+		return nil, err
+	}
+	for _, secret := range secrets {
+		resolver.root.getDeploymentRelationships(ctx, secret)
+	}
+	return resolver.root.wrapSecrets(secrets, nil)
 }
 
 func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage.Deployment {
