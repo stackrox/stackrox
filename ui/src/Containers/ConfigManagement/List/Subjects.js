@@ -3,7 +3,6 @@ import entityTypes from 'constants/entityTypes';
 import { SUBJECTS_QUERY } from 'queries/subject';
 import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import PermissionCounts from 'Containers/ConfigManagement/Entity/widgets/PermissionCounts';
 
 import { sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
@@ -33,19 +32,6 @@ const buildTableColumns = (match, location) => {
             accessor: 'type'
         },
         {
-            Header: `Permissions`,
-            headerClassName: `w-1/3 ${defaultHeaderClassName}`,
-            className: `w-1/3 text-sm ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({ original }) => {
-                const { scopedPermissions } = original;
-                return <PermissionCounts scopedPermissions={scopedPermissions} />;
-            },
-            id: 'permissions',
-            accessor: 'scopedPermissions[0].permissions',
-            sortMethod: sortValueByLength
-        },
-        {
             Header: `Cluster Admin Role`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
@@ -56,25 +42,10 @@ const buildTableColumns = (match, location) => {
             accessor: 'clusterAdmin'
         },
         {
-            Header: `Permissions Scope`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { scopedPermissions } = original;
-                if (!scopedPermissions.length) return 'No Permissions';
-                const result = scopedPermissions
-                    .map(({ scope, permissions }) => `${scope} (${permissions.length})`)
-                    .join(', ');
-                return result;
-            },
-            id: 'permissionsScope',
-            accessor: 'scopedPermissions[0].permissions',
-            sortMethod: sortValueByLength
-        },
-        {
             Header: `Roles`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { id, roles } = original;
                 const { length } = roles;
@@ -83,15 +54,11 @@ const buildTableColumns = (match, location) => {
                     .push(id)
                     .push(entityTypes.ROLE)
                     .url();
-                if (length > 1)
-                    return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${length} ${pluralize('Roles', length)}`}
-                        />
-                    );
-                return original.roles[0].name;
+                const text =
+                    length === 1
+                        ? original.roles[0].name
+                        : `${length} ${pluralize('Role', length)}`;
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
             accessor: 'roles',
             sortMethod: sortValueByLength
