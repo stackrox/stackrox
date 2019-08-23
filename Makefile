@@ -379,9 +379,9 @@ upload-coverage:
 ## Image ##
 ###########
 
-# Exists for compatibility reasons. Please consider migrating to using `make main-image`.
+# image is an alias for main-image
 .PHONY: image
-image: main-image monitoring-image deployer-image
+image: main-image
 
 .PHONY: monitoring-image
 monitoring-image:
