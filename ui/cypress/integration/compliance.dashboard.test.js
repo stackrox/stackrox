@@ -39,7 +39,8 @@ describe('Compliance dashboard page', () => {
             });
     });
 
-    it('should show the same amount of nodes between the Dashboard and List Page', () => {
+    // TODO(ROX-3109)
+    xit('should show the same amount of nodes between the Dashboard and List Page', () => {
         cy.get(selectors.dashboard.tileLinks.node.value)
             .invoke('text')
             .then(text => {

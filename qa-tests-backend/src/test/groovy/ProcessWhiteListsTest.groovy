@@ -94,6 +94,8 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         //need to  delete whitelists for the container deployed after each test
     }
+
+    /* TODO(ROX-3108)
     @Unroll
     @Category(BAT)
     def "Verify  whitelist processes for the given key before and after locking "() {
@@ -129,6 +131,8 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         DEPLOYMENTNGINX    | "/usr/sbin/nginx"
     }
+    */
+
     @Unroll
     @Category(BAT)
     def "Verify whitelist process violation after resolve whitelist "() {
