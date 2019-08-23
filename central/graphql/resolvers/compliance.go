@@ -36,7 +36,7 @@ func InitCompliance() {
 		schema := getBuilder()
 		utils.Must(
 			schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata"),
-			schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!"),
+			schema.AddQuery("complianceStandards(query: String): [ComplianceStandardMetadata!]!"),
 			schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!"),
 			schema.AddQuery("complianceControl(id:ID!): ComplianceControl"),
 			schema.AddQuery("complianceControlGroup(id:ID!): ComplianceControlGroup"),
@@ -59,13 +59,28 @@ func InitCompliance() {
 }
 
 // ComplianceStandards returns graphql resolvers for all compliance standards
-func (resolver *Resolver) ComplianceStandards(ctx context.Context) ([]*complianceStandardMetadataResolver, error) {
+func (resolver *Resolver) ComplianceStandards(ctx context.Context, query rawQuery) ([]*complianceStandardMetadataResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceStandards")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapComplianceStandardMetadatas(
-		resolver.ComplianceStandardStore.Standards())
+	q, err := query.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	results, err := resolver.ComplianceStandardStore.SearchStandards(q)
+	if err != nil {
+		return nil, err
+	}
+	var standards []*v1.ComplianceStandardMetadata
+	for _, result := range results {
+		standard, ok, err := resolver.ComplianceStandardStore.Standard(result.ID)
+		if !ok || err != nil {
+			continue
+		}
+		standards = append(standards, standard.GetMetadata())
+	}
+	return resolver.wrapComplianceStandardMetadatas(standards, nil)
 }
 
 // ComplianceStandard returns a graphql resolver for a named compliance standard
