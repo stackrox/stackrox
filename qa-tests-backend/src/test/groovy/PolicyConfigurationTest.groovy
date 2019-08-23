@@ -220,19 +220,20 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setInstruction("RUN")
                         .build()))
                         .build()            | DEPLOYMENTNGINX
-
-        "Image is NOT Scanned"     |
-                Policy.newBuilder()
-                        .setName("TestImageNotScannedPolicy")
-                        .setDescription("TestImageNotScanned")
-                        .setRationale("TestImageNotScanned")
-                        .addLifecycleStages(LifecycleStage.DEPLOY)
-                        .addCategories("DevOps Best Practices")
-                        .setDisabled(false)
-                        .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                        .setNoScanExists(true))
-                        .build()            | DEPLOYMENTNGINX
+//
+//        TODO(ROX-3102)
+//        "Image is NOT Scanned"     |
+//                Policy.newBuilder()
+//                        .setName("TestImageNotScannedPolicy")
+//                        .setDescription("TestImageNotScanned")
+//                        .setRationale("TestImageNotScanned")
+//                        .addLifecycleStages(LifecycleStage.DEPLOY)
+//                        .addCategories("DevOps Best Practices")
+//                        .setDisabled(false)
+//                        .setSeverityValue(2)
+//                        .setFields(PolicyFields.newBuilder()
+//                        .setNoScanExists(true))
+//                        .build()            | DEPLOYMENTNGINX
 
         "CVE is available"         |
                 Policy.newBuilder()

@@ -110,9 +110,10 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/docker-entrypoint.sh", "/usr/bin/cut", "/usr/bin/id",
          "/docker-java-home/jre/bin/java", "/usr/bin/dirname"] as Set | ELASTICDEPLOYMENT
 
+        /*
+        TODO(ROX-3103)
         ["/usr/bin/id", "/usr/bin/find", "/usr/local/bin/docker-entrypoint.sh",
          "/usr/local/bin/gosu", "/usr/local/bin/redis-server"] as Set | REDISDEPLOYMENT
-
         /*
            Commenting the mongo based tests out due to ROX-2996
         ["/bin/true", "/bin/chown", "/usr/local/bin/docker-entrypoint.sh",

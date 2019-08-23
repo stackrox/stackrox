@@ -599,7 +599,8 @@ describe('Config Management Entities', () => {
             clickOnCountWidget('controls', 'entityList');
         });
 
-        it('should have the same number of Controls in the count widget as in the Controls table', () => {
+        // TODO(ROX-3105)
+        xit('should have the same number of Controls in the count widget as in the Controls table', () => {
             context('Page', () => {
                 renderListAndSidePanel('nodes');
                 navigateToSingleEntityPage('node');

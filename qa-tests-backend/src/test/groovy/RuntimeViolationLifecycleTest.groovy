@@ -59,6 +59,8 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         return true
     }
 
+/*
+    TODO(ROX-3101)
     @Category(BAT)
     def "Verify runtime resolution lifecycle"() {
         setup:
@@ -104,6 +106,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
             orchestrator.deleteDeployment(DEPLOYMENT)
         }
     }
+*/
 
     @Category(BAT)
     def "Verify runtime whitelist lifecycle"() {

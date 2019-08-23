@@ -98,7 +98,8 @@ describe('Violations page', () => {
             .should('not.be.visible');
     });
 
-    it('should have 4 tabs in the sidepanel', () => {
+    // TODO(ROX-3106)
+    xit('should have 4 tabs in the sidepanel', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
