@@ -8,7 +8,7 @@ RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-${INFLUXDB_VERSION
 
 RUN wget https://github.com/connorgorman/telegraf/releases/download/1.8.3.1%2B179-slim/telegraf -O /telegraf && chmod +x /telegraf
 
-FROM grafana/grafana:6.2.2
+FROM grafana/grafana:6.3.3
 
 COPY --from=0 /influx /influx
 COPY --from=0 /influxd /influxd

@@ -109,21 +109,6 @@ setupLicense: &setupLicense
       fi
       cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
-setupCIMonitoring: &setupCIMonitoring
-  run:
-    name: Set up CI monitoring
-    command: |
-      [[ -n "$INFLUXDB_URL" ]] || exit 0
-      cd ci-monitoring
-      export CIRCLE_PR_NUMBER="${CIRCLE_PR_NUMBER:-none}"
-      envsubst <telegraf.conf.template >telegraf.conf
-      envsubst <monitoring.yaml.template >monitoring.yaml
-      kubectl -n stackrox create secret generic influxdb-ci-proxy-config --from-file=./telegraf.conf
-      kubectl -n stackrox replace --force -f ./monitoring.yaml
-
-      echo "Set up CI monitoring to write to ${INFLUXDB_URL}."
-
-
 setupDefaultTLSCerts: &setupDefaultTLSCerts
   run:
     name: Setup default TLS certificates
@@ -276,6 +261,30 @@ collectK8sLogs: &collectK8sLogs
       ./scripts/ci/collect-service-logs.sh kube-system
       ./scripts/ci/collect-infrastructure-logs.sh
     when: always
+
+connectToMonitoring: &connectToMonitoring
+  run:
+    name: Connect to monitoring via port-forward on 9443
+
+    command: |
+      set +e
+      nohup kubectl port-forward -n 'stackrox' svc/monitoring "9443:8443" 1>/dev/null 2>&1 &
+      sleep 5
+    when: always
+
+collectMonitoringImages: &collectMonitoringImages
+  run:
+    name: Collect monitoring images
+
+    command: |
+      set +e
+      ./monitoring/grafana/fetch-core-images.sh
+    when: always
+
+storeMonitoringImages: &storeMonitoringImages
+  store_artifacts:
+    path: monitoring/grafana/captures
+    destination: monitoring-images
 
 verifyNoStackRoxRestarts: &verifyNoStackRoxRestarts
   run:
@@ -630,7 +639,6 @@ commands:
 
       - deploy-stackrox:
           post-central-deploy-steps:
-            - *setupCIMonitoring
             - *setupClientTLSCerts
 
       - deploy-default-psp
@@ -678,6 +686,9 @@ commands:
       - *storeDBBackupArtifact
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
+      - *connectToMonitoring
+      - *collectMonitoringImages
+      - *storeMonitoringImages
 
       - teardown-gke
 
@@ -1230,7 +1241,6 @@ jobs:
           require-cluster-admin: true
           validate-autoupgrade-label: true
           post-central-deploy-steps:
-            - *setupCIMonitoring
             - *setupClientTLSCerts
 
       - run:
@@ -1696,7 +1706,6 @@ jobs:
           orchestrator-flavor: openshift
           validate-autoupgrade-label: true
           post-central-deploy-steps:
-            - *setupCIMonitoring
             - *setupClientTLSCerts
 
       - deploy-webhook-server
@@ -1883,7 +1892,6 @@ jobs:
 
       - deploy-stackrox:
           post-central-deploy-steps:
-            - *setupCIMonitoring
             - *setupClientTLSCerts
 
       - deploy-webhook-server

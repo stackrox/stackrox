@@ -135,7 +135,9 @@ function launch_central {
         launch_service $unzip_dir monitoring
         echo
 
-        ${ORCH_CMD} -n stackrox patch deployment monitoring --patch "$(cat $k8s_dir/monitoring-resources-patch.yaml)"
+        if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
+            ${ORCH_CMD} -n stackrox patch deployment monitoring --patch "$(cat $k8s_dir/monitoring-resources-patch.yaml)"
+        fi
     fi
 
 	if [[ -f "${unzip_dir}/password" ]]; then

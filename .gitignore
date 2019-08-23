@@ -2,6 +2,9 @@
 sensor*.zip
 tmp
 
+# Grafana captures
+monitoring/grafana/captures
+
 # Generated packr sources
 *-packr.go
 

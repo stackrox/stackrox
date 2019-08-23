@@ -13,6 +13,9 @@ spec:
   - name: metrics
     port: 9090
     targetPort: 9090
+  - name: grafana
+    port: 8443
+    targetPort: 8443
   selector:
     app: monitoring
   type: ClusterIP
