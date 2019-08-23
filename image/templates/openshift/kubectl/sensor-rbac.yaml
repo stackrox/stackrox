@@ -43,11 +43,12 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - resources:
+    - configmaps
     - cronjobs
-    - jobs
     - daemonsets
     - deployments
     - deploymentconfigs
+    - jobs
     - namespaces
     - pods
     - replicasets
@@ -55,6 +56,7 @@ rules:
     - services
     - statefulsets
     - secrets
+    - securitycontextconstraints
     apiGroups:
     - '*'
     verbs:
@@ -76,6 +78,51 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: stackrox:monitor-deployments
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: stackrox:view-bundle-resources
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+rules:
+  - resources:
+      - clusterroles
+      - clusterrolebindings
+      - configmaps
+      - daemonsets
+      - deployments
+      - networkpolicies
+      - podsecuritypolicies
+      - roles
+      - rolebindings
+      - secrets
+      - securitycontextconstraints
+      - services
+      - serviceaccounts
+      - validatingwebhookconfigurations
+    apiGroups:
+      - '*'
+    verbs:
+      - get
+      - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: stackrox:view-bundle-resources-binding
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: stackrox
+roleRef:
+  kind: ClusterRole
+  name: stackrox:view-bundle-resources
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
@@ -133,8 +180,10 @@ rules:
   - resources:
     - daemonsets
     - deployments
+    - secrets
     apiGroups:
     - extensions
+    - ""
     verbs:
     - create
     - get
