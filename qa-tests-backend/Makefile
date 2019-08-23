@@ -76,6 +76,11 @@ upgrade-test: proto-generated-srcs
 	@echo "+ $@"
 	gradle test -Dgroups=Upgrade
 
+.PHONY: graphql-test
+graphql-test: proto-generated-srcs
+	@echo "+ $@"
+	gradle test -Dgroups=GraphQL
+
 .PHONY: sensor-bounce-test
 sensor-bounce-test: proto-generated-srcs
 	@echo "+ $@"

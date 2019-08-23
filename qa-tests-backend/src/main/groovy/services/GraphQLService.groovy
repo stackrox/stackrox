@@ -1,0 +1,154 @@
+package services
+
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.net.HttpClients
+import java.net.SSLContext
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLContext
+import org.apache.http.HttpResponse
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.conn.ssl.NoopHostnameVerifier
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory
+import org.apache.http.conn.ssl.TrustAllStrategy
+import org.apache.http.entity.StringEntity
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.ssl.SSLContextBuilder
+import util.Env
+
+class GraphQLService {
+    // Top level service object functionality
+    /////////////////////////////////////////
+
+    private final AuthorizedPoster aPoster
+
+    GraphQLService() {
+        String username = System.getenv("ROX_USERNAME") ?: ""
+        String password = System.getenv("ROX_PASSWORD") ?: ""
+        this.aPoster = new AuthorizedPoster(username, password, new Poster(getAddr()))
+    }
+
+    GraphQLService(String apiToken) {
+        this.aPoster = new AuthorizedPoster(apiToken, new Poster(getAddr()))
+    }
+
+    Response Call(String query, Map variables) {
+        def sampleMap = ["query": query, "variables": variables]
+        return this.aPoster.CallPost(sampleMap)
+    }
+
+    // Response value type for GQL requests. Since the return is not tied to any data structure,
+    // we return a Map generated from the JSON returned as the response.
+    static class Response {
+        private final int code
+        private final Object value
+
+        Response() {
+            this.code = 0
+            this.value = new Object()
+        }
+
+        Response(int code, Object value) {
+            this.code = code
+            this.value = value
+        }
+
+        int getCode() {
+            return this.code
+        }
+
+        Object getValue() {
+            return this.value
+        }
+    }
+
+    // Class that knows how to provide authentication information when making POST requests.
+    static private class AuthorizedPoster {
+        private final Tuple2<String, String> authHeaderContents
+        private final Poster poster
+
+        AuthorizedPoster(String username, String password, Poster poster) {
+            this.authHeaderContents = new Tuple2<String, String>(
+                "Authorization",
+                String.format("Basic %s", Base64
+                    .getEncoder()
+                    .encodeToString((username + ":" + password).getBytes("UTF-8")))
+            )
+            this.poster = poster
+        }
+
+        AuthorizedPoster(String apiToken, Poster poster) {
+            this.authHeaderContents = new Tuple2<String, String>("Authorization", "Bearer " + apiToken)
+            this.poster = poster
+        }
+
+        Response CallPost(Map content) {
+            return this.poster.CallPost([authHeaderContents], content)
+        }
+    }
+
+    // Class that knows how to create a GQL POST request.
+    static private class Poster {
+        private final List<Tuple2<String, String>> defaultHeaders
+        private final String addr
+
+        Poster(String addr) {
+            this.addr = addr
+            this.defaultHeaders = [new Tuple2<String, String>("Content-Type", "application/json")]
+        }
+
+        Response CallPost(List<Tuple2<String, String>> headers, Map content)  {
+            CloseableHttpClient client = buildClient()
+            HttpPost httpPost = buildRequest(headers, content)
+
+            try {
+                HttpResponse response = client.execute(httpPost)
+                return parseResponse(response)
+            } catch (Exception e) {
+                e.toString()
+            }
+            return new Response()
+        }
+
+        private Response parseResponse(HttpResponse response)  {
+            def bsa = new ByteArrayOutputStream()
+            response.getEntity().writeTo(bsa)
+            def returnedValue = new JsonSlurper().parseText(bsa.toString())
+            return new Response(response.getStatusLine().getStatusCode(), returnedValue.data)
+        }
+
+        private CloseableHttpClient buildClient()  {
+            // Create connection with SSL information.
+            SSLContext sslContext = SSLContextBuilder
+                .create()
+                .loadTrustMaterial(new TrustAllStrategy())
+                .build()
+            HostnameVerifier allowAllHosts = new NoopHostnameVerifier()
+            SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts)
+            CloseableHttpClient client = HttpClients
+                    .custom()
+                    .setSSLSocketFactory(connectionFactory)
+                    .build()
+            return client
+        }
+
+        private HttpPost buildRequest(List<Tuple2<String, String>> headers, Map content)  {
+            HttpPost httpPost = new HttpPost(addr)
+            for (Tuple2<String, String> header : headers) {
+                httpPost.addHeader(header.getFirst(), header.getSecond())
+            }
+            for (Tuple2<String, String> header : this.defaultHeaders) {
+                httpPost.addHeader(header.getFirst(), header.getSecond())
+            }
+            def jsonContent = new JsonOutput().toJson(content)
+            httpPost.setEntity(new StringEntity(jsonContent))
+            return httpPost
+        }
+    }
+
+    // Helper function that retreives the address.
+    static private String getAddr() {
+        return String.format("https://%s:%d%s", Env.mustGetHostname(), Env.mustGetPort(), "/api/graphql")
+    }
+}

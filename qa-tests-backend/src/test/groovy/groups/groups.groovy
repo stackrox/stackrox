@@ -9,3 +9,4 @@ package groups
 @interface NetworkFlowVisualization { }
 @interface Upgrade { }
 @interface SensorBounce { }
+@interface GraphQL { }
