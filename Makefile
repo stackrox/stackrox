@@ -542,3 +542,14 @@ install-dev-tools:
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v -e 'stackrox/rox/image')
+
+##########
+## Misc ##
+##########
+.PHONY: clean-offline-bundle
+clean-offline-bundle:
+	@find scripts/offline-bundle -name '*.img' -delete -o -name '*.tgz' -delete -o -name 'bin' -type d -exec rm -r "{}" \;
+
+.PHONY: offline-bundle
+offline-bundle: clean-offline-bundle
+	@./scripts/offline-bundle/create.sh

@@ -2052,6 +2052,18 @@ jobs:
             docker tag  stackrox.io/scanner:$SCANNER_TAG gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG
             docker push gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG | cat
 
+      - run:
+          name: Push offline image bundles to stackrox.io
+          command: |
+            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
+            gcloud auth list
+
+            make offline-bundle
+
+            for release in "$(make tag)" latest; do
+              gsutil cp scripts/offline-bundle/image-bundle.tgz           gs://sr-roxc/${release}/image-bundle.tgz
+              gsutil cp scripts/offline-bundle/image-collector-bundle.tgz gs://sr-roxc/${release}/image-collector-bundle.tgz
+            done
 
   regenerate-dev-license:
     <<: *defaults
