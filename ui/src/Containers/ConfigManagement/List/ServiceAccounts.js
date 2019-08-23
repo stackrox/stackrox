@@ -126,8 +126,12 @@ const ServiceAccounts = ({
             idAttribute="id"
             defaultSorted={[
                 {
-                    id: 'scopedPermissions[0].permissions',
+                    id: 'clusterAdmin',
                     desc: true
+                },
+                {
+                    id: 'name',
+                    desc: false
                 }
             ]}
             data={data}

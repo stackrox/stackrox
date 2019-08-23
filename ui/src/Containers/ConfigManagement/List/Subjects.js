@@ -91,8 +91,8 @@ const Subjects = ({ match, location, selectedRowId, onRowClick, query, className
                     desc: true
                 },
                 {
-                    id: 'scopedPermissions[0].permissions',
-                    desc: true
+                    id: 'name',
+                    desc: false
                 }
             ]}
             data={data}

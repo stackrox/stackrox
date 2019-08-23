@@ -24,22 +24,31 @@ export const SUBJECT_WITH_CLUSTER_FRAGMENT = gql`
     }
 `;
 
-export const SUBJECT_FRAGMENT = gql`
-    fragment subjectFields on Subject {
-        subjectWithClusterID {
-            ...subjectWithClusterFields
-        }
-    }
-    ${SUBJECT_WITH_CLUSTER_FRAGMENT}
-`;
-
 export const SUBJECTS_QUERY = gql`
     query subjects($query: String) {
         subjects(query: $query) {
             ...subjectFields
         }
     }
-    ${SUBJECT_FRAGMENT}
+    fragment subjectFields on Subject {
+        subjectWithClusterID {
+            ...subjectWithClusterFields
+        }
+    }
+    fragment subjectWithClusterFields on SubjectWithClusterID {
+        id: name
+        subject {
+            name
+            kind
+            namespace
+        }
+        type
+        clusterAdmin
+        roles {
+            id
+            name
+        }
+    }
 `;
 
 export const SUBJECT_NAME = gql`

@@ -46,13 +46,6 @@ export const SERVICE_ACCOUNTS = gql`
         results: serviceAccounts(query: $query) {
             id
             name
-            scopedPermissions {
-                scope
-                permissions {
-                    key
-                    values
-                }
-            }
             clusterAdmin
             namespace
             saNamespace {
