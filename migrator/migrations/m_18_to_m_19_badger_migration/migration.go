@@ -3,9 +3,9 @@ package m18to19
 import (
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/features"
@@ -21,6 +21,10 @@ var migration = types.Migration{
 		return rewriteData(db, badgerDB)
 	},
 }
+
+const (
+	batchSize = 2000
+)
 
 var (
 	deploymentBucket     = []byte("deployments")
@@ -40,112 +44,90 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func rewriteResource(v []byte, msg proto.Message) ([]byte, error) {
-	if err := proto.Unmarshal(v, msg); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(msg)
-}
-
-func rewriteAlert(v []byte) ([]byte, error) {
-	var alert storage.Alert
-	if err := proto.Unmarshal(v, &alert); err != nil {
-		return nil, err
-	}
-	if len(alert.GetProcessViolation().GetProcesses()) > 40 {
-		alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:40]
-	}
-	return proto.Marshal(&alert)
-}
-
-func rewriteDeployment(v []byte) ([]byte, error) {
-	var deployment storage.Deployment
-	return rewriteResource(v, &deployment)
-}
-
-func rewriteImage(v []byte) ([]byte, error) {
-	var image storage.Image
-	return rewriteResource(v, &image)
-}
-
 func rewriteData(db *bolt.DB, badgerDB *badger.DB) error {
 	// Alert
-	if err := rewrite(db, badgerDB, alertBucket, rewriteAlert); err != nil {
+	if err := rewrite(db, badgerDB, alertBucket); err != nil {
 		return err
 	}
-	if err := rewrite(db, badgerDB, listAlertBucketName, nil); err != nil {
+	if err := rewrite(db, badgerDB, listAlertBucketName); err != nil {
 		return err
 	}
 
 	// Deployment
-	if err := rewrite(db, badgerDB, deploymentBucket, rewriteDeployment); err != nil {
+	if err := rewrite(db, badgerDB, deploymentBucket); err != nil {
 		return err
 	}
-	if err := rewrite(db, badgerDB, listDeploymentBucket, nil); err != nil {
+	if err := rewrite(db, badgerDB, listDeploymentBucket); err != nil {
 		return err
 	}
 
 	// Image
-	if err := rewrite(db, badgerDB, imageBucket, rewriteImage); err != nil {
+	if err := rewrite(db, badgerDB, imageBucket); err != nil {
 		return err
 	}
-	if err := rewrite(db, badgerDB, listImageBucket, nil); err != nil {
+	if err := rewrite(db, badgerDB, listImageBucket); err != nil {
 		return err
 	}
 
 	// Process Indicators
-	if err := rewrite(db, badgerDB, processIndicatorBucket, nil); err != nil {
+	if err := rewrite(db, badgerDB, processIndicatorBucket); err != nil {
 		return err
 	}
-	if err := rewrite(db, badgerDB, uniqueProcessesBucket, nil); err != nil {
+	if err := rewrite(db, badgerDB, uniqueProcessesBucket); err != nil {
 		return err
 	}
 	return nil
 }
 
-func rewrite(db *bolt.DB, badgerDB *badger.DB, bucketName []byte, fn func(v []byte) ([]byte, error)) error {
+func rewrite(db *bolt.DB, badgerDB *badger.DB, bucketName []byte) error {
+	log.WriteToStderr("Rewriting Bucket %q", string(bucketName))
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
 		if bucket == nil {
 			return nil
 		}
+		totalKeys := bucket.Stats().KeyN
+		log.WriteToStderr("Total keys in bucket: %d", totalKeys)
 
-		badgerTxn := badgerDB.NewTransaction(true)
+		keysWritten := 0
+		batch := badgerDB.NewWriteBatch()
 		err := bucket.ForEach(func(k, v []byte) error {
-			if fn != nil {
-				var err error
-				if v, err = fn(v); err != nil {
-					return errors.Wrap(err, "error executing fn in rewrite")
-				}
+			if batch.Error() != nil {
+				return batch.Error()
 			}
-
-			key := append(bucketName, ':')
+			key := make([]byte, 0, len(bucketName)+len(k)+1)
+			key = append(key, bucketName...)
+			// The separator is a null char
+			key = append(key, []byte("\x00")...)
 			key = append(key, k...)
 
-			if err := badgerTxn.Set(key, v); err != nil && err != badger.ErrTxnTooBig {
-				badgerTxn.Discard()
-				return errors.Wrapf(err, "error setting key/value for bucket %q", string(bucketName))
-			} else if err == badger.ErrTxnTooBig {
-				if err := badgerTxn.Commit(); err != nil {
-					badgerTxn.Discard()
-					return errors.Wrapf(err, "error committing badger txn for bucket %q", string(bucketName))
-				}
-				badgerTxn.Discard()
+			if err := batch.Set(key, v); err != nil {
+				return errors.Wrapf(err, "error setting key/value in Badger for bucket %q", string(bucketName))
+			}
 
-				badgerTxn = badgerDB.NewTransaction(true)
-				if err := badgerTxn.Set(key, v); err != nil {
-					badgerTxn.Discard()
-					return errors.Wrapf(err, "error setting key/value for bucket %q", string(bucketName))
+			keysWritten++
+			if keysWritten%batchSize == 0 {
+				if err := batch.Flush(); err != nil {
+					return err
 				}
+				log.WriteToStderr("Written %d/%d keys for bucket %q", keysWritten, totalKeys, string(bucketName))
+				batch = badgerDB.NewWriteBatch()
 			}
 			return nil
 		})
+		defer batch.Cancel()
 		if err != nil {
 			return err
 		}
-		if err := badgerTxn.Commit(); err != nil {
-			return err
+		log.WriteToStderr("Running final flush for %s into BadgerDB", string(bucketName))
+		if err := batch.Flush(); err != nil {
+			return errors.Wrapf(err, "error flushing BadgerDB for bucket %q", string(bucketName))
 		}
-		return tx.DeleteBucket(bucketName)
+		log.WriteToStderr("Wrote %s into BadgerDB. Deleting Bucket from Bolt", string(bucketName))
+		if err := tx.DeleteBucket(bucketName); err != nil {
+			return errors.Wrapf(err, "error deleting bucket %q from Bolt", string(bucketName))
+		}
+		log.WriteToStderr("Successfully deleted bucket %q", string(bucketName))
+		return nil
 	})
 }

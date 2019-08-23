@@ -76,10 +76,10 @@ func (suite *MigrationTestSuite) TestSmall() {
 	suite.NoError(err)
 
 	// Rewrite into badger
-	suite.NoError(rewrite(suite.boltDB, suite.badgerDB, bucketName, nil))
+	suite.NoError(rewrite(suite.boltDB, suite.badgerDB, bucketName))
 
 	// check badger for result
-	suite.checkBadger(kv{key: "bucket:key", value: "value"})
+	suite.checkBadger(kv{key: "bucket\x00key", value: "value"})
 }
 
 func (suite *MigrationTestSuite) TestLargerThanCount() {
@@ -93,7 +93,7 @@ func (suite *MigrationTestSuite) TestLargerThanCount() {
 
 		for i := 0; i < int(maxTxnCount)+1; i++ {
 			v := strconv.Itoa(i)
-			keypairs = append(keypairs, kv{key: "bucket:" + v, value: "1"})
+			keypairs = append(keypairs, kv{key: "bucket\x00" + v, value: "1"})
 			if err := bucket.Put([]byte(v), []byte("1")); err != nil {
 				return err
 			}
@@ -103,50 +103,7 @@ func (suite *MigrationTestSuite) TestLargerThanCount() {
 	suite.NoError(err)
 
 	// Rewrite into badger
-	suite.NoError(rewrite(suite.boltDB, suite.badgerDB, bucketName, nil))
-
-	// check badger for result
-	suite.checkBadger(keypairs...)
-}
-
-func (suite *MigrationTestSuite) TestLargerThanSize() {
-	// Test the case where the size is greater than the max size
-	var keypairs []kv
-
-	var keyPrefix string
-	for i := 0; i < 512; i++ {
-		keyPrefix += "1"
-	}
-
-	numIterations := (maxTxnSize / 512) + 1
-
-	for i := 0; i < int(numIterations); i++ {
-		err := suite.boltDB.Update(func(tx *bbolt.Tx) error {
-			bucket, err := tx.CreateBucketIfNotExists(bucketName)
-			if err != nil {
-				return err
-			}
-
-			v := strconv.Itoa(i)
-			key := keyPrefix + v
-			keypairs = append(keypairs, kv{
-				key: "bucket:" + key, value: v,
-			})
-
-			if err := bucket.Put([]byte(key), []byte(v)); err != nil {
-				return err
-			}
-			return nil
-		})
-		suite.NoError(err)
-	}
-
-	// Rewrite into badger
-	err := rewrite(suite.boltDB, suite.badgerDB, bucketName, nil)
-	if err != nil {
-		suite.NoError(err)
-		return
-	}
+	suite.NoError(rewrite(suite.boltDB, suite.badgerDB, bucketName))
 
 	// check badger for result
 	suite.checkBadger(keypairs...)

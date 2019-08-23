@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/pkg/errors"
@@ -9,13 +10,28 @@ import (
 	"github.com/stackrox/rox/migrator/compact"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/runner"
+	"github.com/stackrox/rox/pkg/grpc/routes"
 )
 
 func main() {
+	startProfilingServer()
 	if err := run(); err != nil {
 		log.WriteToStderr("Migrator failed: %s", err)
 		os.Exit(1)
 	}
+}
+
+func startProfilingServer() {
+	handler := http.NewServeMux()
+	for path, debugHandler := range routes.DebugRoutes {
+		handler.Handle(path, debugHandler)
+	}
+	srv := &http.Server{Addr: ":6060", Handler: handler}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.WriteToStderr("Closing profiling server: %v", err)
+		}
+	}()
 }
 
 func run() error {

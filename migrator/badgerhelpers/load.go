@@ -29,7 +29,11 @@ func New(path string) (*badger.DB, error) {
 		return nil, fmt.Errorf("badger path %s is not a directory", path)
 	}
 
-	options := badger.DefaultOptions(path).WithDir(path).WithTruncate(true)
+	options := badger.DefaultOptions(path).
+		WithDir(path).
+		WithTruncate(true).
+		WithNumLevelZeroTables(2).
+		WithNumLevelZeroTablesStall(5)
 	return badger.Open(options)
 }
 

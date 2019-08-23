@@ -38,8 +38,10 @@ func New(path string) (*badger.DB, error) {
 		WithDir(path).
 		WithLogger(nullLogger{}).
 		WithTruncate(true).
+		// These options keep the DB size small at the cost of during more aggressive compaction
+		// They are an adjustment on this issue and the related comments: https://github.com/dgraph-io/badger/issues/718
 		WithNumLevelZeroTables(2).
-		WithNumLevelZeroTables(5)
+		WithNumLevelZeroTablesStall(5)
 	return badger.Open(options)
 }
 
