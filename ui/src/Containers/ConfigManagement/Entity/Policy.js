@@ -71,14 +71,14 @@ DeploymentViolations.defaultProps = {
     alerts: []
 };
 
-const Policy = ({ id, entityListType, query }) => {
+const Policy = ({ id, entityListType, query, entityContext }) => {
     const searchParam = useContext(searchContext);
-
     const variables = {
         id,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
-            'Policy Id': id
+            'Policy Id': id,
+            'Lifecycle Stage': 'DEPLOY'
         })
     };
 
@@ -137,6 +137,7 @@ const Policy = ({ id, entityListType, query }) => {
                             entityListType={entityListType}
                             data={getSubListFromEntity(entity, entityListType)}
                             query={query}
+                            entityContext={{ ...entityContext, [entityTypes.POLICY]: id }}
                         />
                     );
                 }

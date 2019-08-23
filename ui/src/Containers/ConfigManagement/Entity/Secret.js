@@ -4,7 +4,6 @@ import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 
-import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -103,16 +102,14 @@ SecretDataMetadata.defaultProps = {
     metadata: null
 };
 
-const SecretValues = ({ files, deployments }) => {
-    if (!files.length)
-        return <NoResultsMessage message="No files in this secret" className="p-6 shadow" />;
+const SecretValues = ({ files, deploymentCount }) => {
     const filesWithoutImagePullSecrets = files.filter(
         // eslint-disable-next-line
         file => !file.metadata || (file.metadata && file.metadata.__typename !== 'ImagePullSecret')
     );
-    const widgetHeader = `${filesWithoutImagePullSecrets.length} files across ${
-        deployments.length
-    } deployment(s)`;
+    const widgetHeader = `${
+        filesWithoutImagePullSecrets.length
+    } files across ${deploymentCount} deployment(s)`;
     const secretValues = filesWithoutImagePullSecrets.map((file, i) => {
         const { name, type, metadata } = file;
         const { algorithm } = metadata || {};
@@ -142,7 +139,7 @@ const SecretValues = ({ files, deployments }) => {
 
 SecretValues.propTypes = {
     files: PropTypes.arrayOf(PropTypes.shape).isRequired,
-    deployments: PropTypes.arrayOf(PropTypes.shape).isRequired
+    deploymentCount: PropTypes.number.isRequired
 };
 
 const Secret = ({ id, entityListType, query }) => {
@@ -150,11 +147,14 @@ const Secret = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        query: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause({
+            ...query[searchParam],
+            'Lifecycle Stage': 'DEPLOY'
+        })
     };
 
     const QUERY = gql`
-        query secret($id: ID!, $query: String) {
+        query getSecret($id: ID!, $query: String) {
             secret(id: $id) {
                 id
                 name
@@ -188,7 +188,7 @@ const Secret = ({ id, entityListType, query }) => {
                 }
                 namespace
                 deployments(query: $query) {
-                    ...deploymentFields
+                    ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}   
                 }
                 labels {
                     key
@@ -202,7 +202,7 @@ const Secret = ({ id, entityListType, query }) => {
                 clusterId
             }
         }
-        ${DEPLOYMENT_FRAGMENT}
+        ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
     `;
     return (
         <Query query={QUERY} variables={variables}>
@@ -211,6 +211,18 @@ const Secret = ({ id, entityListType, query }) => {
                 if (!data || !data.secret)
                     return <PageNotFound resourceType={entityTypes.SECRET} />;
                 const { secret } = data;
+                if (!secret) return <PageNotFound resourceType={entityTypes.SECRET} />;
+
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getSubListFromEntity(secret, entityListType)}
+                            query={query}
+                        />
+                    );
+                }
+
                 const {
                     createdAt,
                     labels = [],
@@ -228,15 +240,6 @@ const Secret = ({ id, entityListType, query }) => {
                     }
                 ];
 
-                if (entityListType) {
-                    return (
-                        <EntityList
-                            entityListType={entityListType}
-                            data={getSubListFromEntity(secret, entityListType)}
-                            query={query}
-                        />
-                    );
-                }
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Secret Details">
@@ -264,7 +267,7 @@ const Secret = ({ id, entityListType, query }) => {
                         </CollapsibleSection>
                         <CollapsibleSection title="Secret Values">
                             <div className="flex pdf-page pdf-stretch mb-4 ml-4 mr-4">
-                                <SecretValues files={files} deployments={deployments} />
+                                <SecretValues files={files} deploymentCount={deployments.length} />
                             </div>
                         </CollapsibleSection>
                     </div>
