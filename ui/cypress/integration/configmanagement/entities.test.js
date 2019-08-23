@@ -447,11 +447,6 @@ describe('Config Management Entities', () => {
             clickOnSingleEntity('namespaces', 'cluster');
         });
 
-        // @TODO: Fix this test
-        xit('should click on the service accounts link in the namespaces list and open the side panel with the service accounts list', () => {
-            clickOnRowEntity('namespaces', 'Service Accounts', true);
-        });
-
         it('should click on the cluster entity widget in the side panel and match the header ', () => {
             renderListAndSidePanel('namespaces');
             clickOnEntityWidget('cluster', 'side-panel');
@@ -539,11 +534,6 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
-            cy.visit(url.list.namespaces);
-            entityListCountMatchesTableLinkCount('Users & Groups');
-        });
-
         it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
             cy.visit(url.list.namespaces);
             entityListCountMatchesTableLinkCount('Service Accounts');
@@ -574,11 +564,10 @@ describe('Config Management Entities', () => {
             navigateToSingleEntityPage('node');
         });
 
-        // @TODO: Fix this test
-        xit('should show the related cluster widget', () => {
+        it('should show the related cluster widget', () => {
             renderListAndSidePanel('nodes');
             navigateToSingleEntityPage('node');
-            hasRelatedEntityFor('cluster');
+            hasRelatedEntityFor('Cluster');
         });
 
         it('should have the correct count widgets for a single entity view', () => {
@@ -599,8 +588,7 @@ describe('Config Management Entities', () => {
             clickOnCountWidget('controls', 'entityList');
         });
 
-        // TODO(ROX-3105)
-        xit('should have the same number of Controls in the count widget as in the Controls table', () => {
+        it('should have the same number of Controls in the count widget as in the Controls table', () => {
             context('Page', () => {
                 renderListAndSidePanel('nodes');
                 navigateToSingleEntityPage('node');
@@ -807,16 +795,6 @@ describe('Config Management Entities', () => {
     context('Role', () => {
         it('should render the roles list and open the side panel when a row is clicked', () => {
             renderListAndSidePanel('roles');
-        });
-
-        // @TODO: Fix this test
-        xit('should click on the users & groups link in the roles list and open the side panel with the users & groups list', () => {
-            clickOnRowEntity('roles', 'Users & Groups', true);
-        });
-
-        // @TODO: Fix this test
-        xit('should render the roles list and open the side panel with the clicked namespace value', () => {
-            clickOnSingleEntity('roles', 'namespace');
         });
 
         it('should take you to a roles single when the "navigate away" button is clicked', () => {

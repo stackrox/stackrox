@@ -6,6 +6,22 @@ import policies from '../../fixtures/policies/policies.json';
 import controls from '../../fixtures/controls/aggregatedResultsWithControls.json';
 import subjects from '../../fixtures/subjects/subjects.json';
 
+const policyViolationsBySeverityLinkShouldMatchList = linkSelector => {
+    cy.visit(url.dashboard);
+    cy.get(linkSelector)
+        .invoke('text')
+        .then(linkText => {
+            const numPolicies = parseInt(linkText, 10);
+            cy.get(linkSelector).click();
+            cy.get(selectors.tablePanelHeader)
+                .invoke('text')
+                .then(panelHeaderText => {
+                    const numRows = parseInt(panelHeaderText, 10);
+                    expect(numPolicies).to.equal(numRows);
+                });
+        });
+};
+
 describe('Config Management Dashboard Page', () => {
     withAuth();
 
@@ -231,7 +247,24 @@ describe('Config Management Dashboard Page', () => {
         cy.get(selectors.policyViolationsBySeverity.link.policiesWithoutViolations).click();
         cy.url().should('contain', url.list.policies);
         cy.url().should('contain', '[Policy%20Status]=Pass');
-        cy.url().should('contain', '[Disabled]=False');
+    });
+
+    it('should show the same number of high severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
+        policyViolationsBySeverityLinkShouldMatchList(
+            selectors.policyViolationsBySeverity.link.ratedAsHigh
+        );
+    });
+
+    it('should show the same number of low severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
+        policyViolationsBySeverityLinkShouldMatchList(
+            selectors.policyViolationsBySeverity.link.ratedAsLow
+        );
+    });
+
+    it('should show the same number of policies without violations in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
+        policyViolationsBySeverityLinkShouldMatchList(
+            selectors.policyViolationsBySeverity.link.policiesWithoutViolations
+        );
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {

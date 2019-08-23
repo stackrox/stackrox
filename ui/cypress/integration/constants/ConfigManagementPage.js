@@ -69,7 +69,8 @@ export const dashboardSelectors = {
 export const listSelectors = {
     tableRows: '.rt-tr-group > .rt-tr',
     tableCells: '.rt-td',
-    tableLinks: '.rt-tr-group > .rt-tr > .rt-td > a'
+    tableLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
+    tablePanelHeader: '[data-test-id="panel"] [data-test-id="panel-header"]'
 };
 
 export const entitySelectors = {

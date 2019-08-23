@@ -9,7 +9,6 @@ import networkStatuses from 'constants/networkStatuses';
 import { Link, withRouter } from 'react-router-dom';
 import gql from 'graphql-tag';
 import max from 'lodash/max';
-import sum from 'lodash/sum';
 import { severityValues, severities } from 'constants/severities';
 import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
@@ -147,11 +146,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         const policiesInViolation = data.filter(policy => policy.policyStatus === 'fail');
 
         function getCount(severity) {
-            return sum(
-                policiesInViolation
-                    .filter(policy => policy.severity === severity)
-                    .map(policy => policy.categories.length)
-            );
+            return policiesInViolation.filter(policy => policy.severity === severity).length;
         }
 
         const criticalCount = getCount(severities.CRITICAL_SEVERITY);
@@ -235,8 +230,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                 link: url
                     .query({
                         [searchParam]: {
-                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.PASS,
-                            Disabled: 'False'
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.PASS
                         }
                     })
                     .url()
@@ -249,7 +243,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         <Query
             query={QUERY}
             fetchPolicy="network-only"
-            variables={{ query: 'disabled:false+LifeCycle Stage:DEPLOY' }}
+            variables={{ query: 'LifeCycle Stage:DEPLOY' }}
         >
             {({ loading, data, networkStatus }) => {
                 let contents = <Loader />;
