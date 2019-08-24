@@ -5,6 +5,7 @@ import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
 
 const clustersUrl = '/v1/clusters';
+const autoUpgradeConfigUrl = '/v1/sensorupgrades/config';
 
 // @TODO, We may not need this API function after we migrate to a standalone Clusters page
 //        Check to see if fetchClusters and fletchClustersByArray can be collapsed
@@ -29,6 +30,27 @@ export function fetchClusterAsArray() {
     return axios.get(clustersUrl).then(response => {
         return (response.data && response.data.clusters) || [];
     });
+}
+
+/**
+ * Gets the cluster autoupgrade config.
+ *
+ * @returns {Promise<Object, Error>} fulfilled with autoupgrade config object
+ */
+export function getAutoUpgradeConfig() {
+    return axios.get(autoUpgradeConfigUrl).then(response => {
+        return (response.data && response.data.config) || {};
+    });
+}
+
+/**
+ * Saves the cluster autoupgrade config.
+ *
+ * @returns {Promise<Object, Error>} whose only value is resolved or rejected
+ */
+export function saveAutoUpgradeConfig(config) {
+    const wrappedObject = { config };
+    return axios.post(autoUpgradeConfigUrl, wrappedObject);
 }
 
 /**

@@ -1066,6 +1066,45 @@ h6 {
     @apply pin-r;
 }
 
+/* TOGGLE SWITCH */
+/* rounded */
+/* for the difference between this switch, and the form-switch above,
+   see: https://uxplanet.org/checkbox-vs-toggle-switch-7fc6e83f10b8 */
+.toggle-switch {
+    @apply relative select-none w-12 leading-normal;
+}
+.toggle-switch-checkbox {
+    /* we cannot hide with @apply, or toggle switch will not be keyboard-focusable */
+    left: -9999px;
+    position: absolute;
+}
+.toggle-switch-label {
+    @apply block overflow-hidden cursor-pointer bg-transparent border rounded-full h-6  shadow-inner;
+
+    transition: background-color 0.2s ease-in;
+}
+.toggle-switch-label:before {
+    @apply absolute block bg-base-100 pin-y w-6 border rounded-full -ml-1;
+
+    content: "";
+    right: 50%;
+    transition: all 0.2s ease-in;
+}
+.toggle-switch-checkbox:checked + .toggle-switch-label,
+.toggle-switch-checkbox:checked + .toggle-switch-label:before {
+
+}
+.toggle-switch-checkbox:checked + .toggle-switch-label {
+    @apply bg-success-500;
+}
+.toggle-switch-alert .toggle-switch-checkbox:checked + .toggle-switch-label {
+    @apply bg-alert-600 ;
+}
+.toggle-switch-checkbox:checked + .toggle-switch-label:before {
+    @apply pin-r;
+}
+
+
 /* React-vis */
 @import "../node_modules/react-vis/dist/style.css";
 

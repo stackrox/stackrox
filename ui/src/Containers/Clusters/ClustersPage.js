@@ -4,10 +4,15 @@ import Tooltip from 'rc-tooltip';
 
 import PageHeader from 'Components/PageHeader';
 import Panel from 'Components/Panel';
+import ToggleSwitch from 'Components/ToggleSwitch';
 import CheckboxTable from 'Components/CheckboxTable';
 import { defaultColumnClassName, wrapClassName, rtTrActionsClassName } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
-import { fetchClusterAsArray } from 'services/ClustersService';
+import {
+    fetchClusterAsArray,
+    getAutoUpgradeConfig,
+    saveAutoUpgradeConfig
+} from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
 import {
@@ -21,6 +26,7 @@ import {
 
 const ClustersPage = () => {
     const [currentClusters, setCurrentClusters] = useState([]);
+    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState({});
     const [selectedClusters, setSelectedClusters] = useState([]);
     const [tableRef, setTableRef] = useState(null);
 
@@ -65,6 +71,33 @@ const ClustersPage = () => {
             setCurrentClusters(clusters);
         });
     }, []);
+
+    function fetchConfig() {
+        getAutoUpgradeConfig().then(config => {
+            setAutoUpgradeConfig(config);
+        });
+    }
+
+    useEffect(() => {
+        fetchConfig();
+    }, []);
+
+    function toggleAutoUpgrade() {
+        // @TODO, wrap this settings change in a confirmation prompt of some sort
+        const previousValue = autoUpgradeConfig.enableAutoUpgrade;
+        const newConfig = { ...autoUpgradeConfig, enableAutoUpgrade: !previousValue };
+
+        setAutoUpgradeConfig(newConfig); // optimistically set value before API call
+
+        saveAutoUpgradeConfig(newConfig).catch(() => {
+            // reverse the optimistic update of the control in the UI
+            const rollbackConfig = { ...autoUpgradeConfig, enableAutoUpgrade: previousValue };
+            setAutoUpgradeConfig(rollbackConfig);
+
+            // also, re-fetch the data from the server, just in case it did update but we didn't get the network response
+            fetchConfig();
+        });
+    }
 
     // @TODO: flesh out the new Clusters page layout, placeholders for now
     const paginationComponent = <div>Buttons and Pagination here</div>;
@@ -111,10 +144,28 @@ const ClustersPage = () => {
 
     const selectedClusterId = '';
 
+    const headerText = 'Clusters';
+    const subHeaderText = 'Resource list';
+
+    const pageHeader = (
+        <PageHeader header={headerText} subHeader={subHeaderText}>
+            <div className="flex flex-1 justify-end">
+                <div className="flex items-center">
+                    <ToggleSwitch
+                        id="enableAutoUpgrade"
+                        toggleHandler={toggleAutoUpgrade}
+                        label="Automatically upgrade secured clusters"
+                        enabled={autoUpgradeConfig.enableAutoUpgrade}
+                    />
+                </div>
+            </div>
+        </PageHeader>
+    );
+
     return (
         <section className="flex flex-1 flex-col h-full">
             <div className="flex flex-1 flex-col">
-                <PageHeader header="Clusters" />
+                {pageHeader}
                 <div className="flex flex-1 relative">
                     <div className="shadow border-primary-300 bg-base-100 w-full overflow-hidden">
                         <Panel
