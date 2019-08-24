@@ -27,10 +27,7 @@ const ServiceAccount = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        query: queryService.objectToWhereClause({
-            ...query[searchParam],
-            'Lifecycle Stage': 'DEPLOY'
-        })
+        query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`

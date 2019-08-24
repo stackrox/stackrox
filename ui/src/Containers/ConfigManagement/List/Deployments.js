@@ -14,7 +14,7 @@ import TableCellLink from './Link';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
-const buildTableColumns = (match, location, entityContext) => {
+const buildTableColumns = (match, location) => {
     const tableColumns = [
         {
             Header: 'Id',
@@ -58,46 +58,32 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <TableCellLink pdf={pdf} url={url} text={namespace} />;
             }
         },
-        entityContext && entityContext[entityTypes.POLICY]
-            ? null
-            : {
-                  Header: `Policies Violated`,
-                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                  className: `w-1/8 ${defaultColumnClassName}`,
-                  // eslint-disable-next-line
+        {
+            Header: `Policies Violated`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                      const { failingPolicies, failingPolicyCount: policyCount, id } = original;
-                      const failingPolicyCount = failingPolicies
-                          ? failingPolicies.length
-                          : policyCount;
-                      if (!failingPolicyCount) return 'No Violations';
-                      const labelLink = (
-                          <LabelChip
-                              text={`${failingPolicyCount} ${pluralize(
-                                  'Policies',
-                                  failingPolicyCount
-                              )}`}
-                              type="alert"
-                          />
-                      );
-                      const url = URLService.getURL(match, location)
-                          .push(id)
-                          .push(entityTypes.POLICY)
-                          .url();
-                      return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
-                  },
-                  id: 'failingPolicies',
-                  accessor: 'failingPolicyCount'
-              },
+                const { failingPolicyCount } = original;
+                if (!failingPolicyCount) return 'No Violations';
+                return (
+                    <LabelChip
+                        text={`${failingPolicyCount} ${pluralize('Policies', failingPolicyCount)}`}
+                        type="alert"
+                    />
+                );
+            },
+            id: 'failingPolicyCounts',
+            accessor: 'failingPolicyCount'
+        },
         {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const { failingPolicies, failingPolicyCount: policyCount } = original;
-                const failingPolicyCount = failingPolicies ? failingPolicies.length : policyCount;
-                return !failingPolicyCount ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+                const { policyStatus } = original;
+                return policyStatus === 'pass' ? 'Pass' : <LabelChip text="Fail" type="alert" />;
             },
             id: 'policyStatus',
             accessor: 'policyStatus'
@@ -162,22 +148,13 @@ const buildTableColumns = (match, location, entityContext) => {
             }
         }
     ];
-    return tableColumns.filter(col => !!col);
+    return tableColumns;
 };
 
 const createTableRows = data => data.results;
 
-const Deployments = ({
-    match,
-    location,
-    className,
-    selectedRowId,
-    onRowClick,
-    query,
-    data,
-    entityContext
-}) => {
-    const tableColumns = buildTableColumns(match, location, entityContext);
+const Deployments = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
+    const tableColumns = buildTableColumns(match, location);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
     const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;

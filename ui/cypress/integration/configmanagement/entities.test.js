@@ -741,17 +741,7 @@ describe('Config Management Entities', () => {
         });
 
         it('should render the deployments link and open the side panel when a row is clicked', () => {
-            cy.visit(url.list.secrets);
-            cy.get(selectors.tableRows)
-                .find(`${selectors.tableCells} a[data-test-id='deployment']`)
-                .eq(0)
-                .click({ force: true })
-                .invoke('text')
-                .then(expectedText => {
-                    cy.get('[data-test-id="side-panel"]')
-                        .find('[data-test-id="breadcrumb-link-text"]')
-                        .contains(expectedText);
-                });
+            clickOnRowEntity('secrets', 'deployments');
         });
 
         it('should click on the cluster entity widget in the side panel and match the header ', () => {

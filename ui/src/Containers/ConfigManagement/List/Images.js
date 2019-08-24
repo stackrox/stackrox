@@ -48,6 +48,15 @@ const buildTableColumns = (match, location) => [
             const text = `${num} ${pluralize('deployment', num)}`;
             if (num === 0) return text;
 
+            if (num === 1 && !pdf) {
+                const deployment = deployments[0];
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.DEPLOYMENT)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} text={deployment.name} />;
+            }
+
             const url = URLService.getURL(match, location)
                 .push(id)
                 .push(entityTypes.DEPLOYMENT)

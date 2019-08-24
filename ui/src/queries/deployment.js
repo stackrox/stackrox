@@ -40,10 +40,8 @@ export const DEPLOYMENT_FRAGMENT = gql`
         replicas
         serviceAccount
         serviceAccountID
-        failingPolicies(query: $query) {
-            id
-            name
-        }
+        failingPolicyCount(query: $query)
+        policyStatus(query: $query)
         tolerations {
             key
             operator
