@@ -3,6 +3,7 @@ package builders
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -22,6 +23,14 @@ var (
 	rbacReadingCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		sac.ResourceScopeKeys(resources.Cluster, resources.K8sRole, resources.K8sRoleBinding, resources.ServiceAccount)))
+
+	// Ensure rbacPermissionLabels keys with PermissionLevel in 'policy.proto'.
+	rbacPermissionLabels = map[storage.PermissionLevel]string{
+		storage.PermissionLevel_DEFAULT:               "default permissions",
+		storage.PermissionLevel_ELEVATED_IN_NAMESPACE: "elevated permissions in namespace",
+		storage.PermissionLevel_ELEVATED_CLUSTER_WIDE: "elevated cluster wide permissions",
+		storage.PermissionLevel_CLUSTER_ADMIN:         "cluster admin permissions",
+	}
 )
 
 // K8sRBACQueryBuilder builds queries for K8s RBAC permission level.
@@ -40,7 +49,8 @@ func (p K8sRBACQueryBuilder) Name() string {
 // Query takes in the fields of a policy and produces a query that will find indexed violators of the policy.s
 func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	// Check that a permission level is set in the policy.
-	if fields.GetPermissionPolicy().GetPermissionLevel() == storage.PermissionLevel_UNSET {
+	if fields.GetPermissionPolicy().GetPermissionLevel() == storage.PermissionLevel_UNSET ||
+		fields.GetPermissionPolicy().GetPermissionLevel() == storage.PermissionLevel_NONE {
 		return
 	}
 	disallowedPermission := fields.GetPermissionPolicy().GetPermissionLevel()
@@ -56,7 +66,7 @@ func (p K8sRBACQueryBuilder) Query(fields *storage.PolicyFields, _ map[search.Fi
 		violations := searchbasedpolicies.Violations{
 			AlertViolations: []*storage.Alert_Violation{
 				{
-					Message: fmt.Sprintf("Deployment uses a service account with permissions greater than or equal to %s", disallowedPermission),
+					Message: fmt.Sprintf("Deployment uses a service account with at least %s", strings.ToLower(rbacPermissionLabels[disallowedPermission])),
 				},
 			},
 		}
@@ -113,7 +123,7 @@ func (p K8sRBACQueryBuilder) clusterQuery(ctx context.Context, clusterID string,
 		return nil, err
 	}
 
-	// Find all of the service accounts that have permissions above the bucket level specified.
+	// Find all of the service accounts that have permissions equal to or above the bucket level specified.
 	bucketEval := newBucketEvaluator(roles, bindings)
 	var subjectsThatViolateBucket []*storage.Subject
 	for _, subject := range collectServiceAccounts(serviceAccounts) {

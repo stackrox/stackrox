@@ -1,4 +1,9 @@
-import { lifecycleStageLabels, portExposureLabels, envVarSrcLabels } from 'messages/common';
+import {
+    lifecycleStageLabels,
+    portExposureLabels,
+    envVarSrcLabels,
+    rbacPermissionLabels
+} from 'messages/common';
 
 const equalityOptions = [
     { label: 'Is greater than', value: 'GREATER_THAN' },
@@ -595,16 +600,13 @@ const policyConfigurationDescriptor = [
         reverse: false
     },
     {
-        label: 'RBAC Permissions',
+        label: 'Minimum RBAC Permissions',
         jsonpath: 'fields.permissionPolicy.permissionLevel',
         type: 'select',
-        options: [
-            { value: 'NONE', label: 'No Access' },
-            { value: 'DEFAULT', label: 'Default Access' },
-            { value: 'ELEVATED_IN_NAMESPACE', label: 'Elevated Access in Namespace' },
-            { value: 'ELEVATED_CLUSTER_WIDE', label: 'Elevated Access Cluster Wide' },
-            { value: 'CLUSTER_ADMIN', label: 'Cluster Admin Access' }
-        ],
+        options: Object.keys(rbacPermissionLabels).map(key => ({
+            label: rbacPermissionLabels[key],
+            value: key
+        })),
         required: false,
         default: false
     }

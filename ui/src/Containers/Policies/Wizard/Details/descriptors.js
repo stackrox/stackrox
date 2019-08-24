@@ -291,7 +291,7 @@ const fieldsMap = {
         formatValue: d => (d ? 'Yes' : 'No')
     },
     permissionPolicy: {
-        label: 'RBAC Permissions',
+        label: 'Minimum RBAC Permissions',
         formatValue: d => rbacPermissionLabels[d.permissionLevel]
     }
 };

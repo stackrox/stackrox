@@ -60,8 +60,8 @@ const common = Object.freeze({
         HOST: 'HostPort',
         INTERNAL: 'ClusterIP'
     },
+    // For any update to rbacPermissionLabels, please also update policy.proto
     rbacPermissionLabels: {
-        NONE: 'No Access',
         DEFAULT: 'Default Access',
         ELEVATED_IN_NAMESPACE: 'Elevated Access in Namespace',
         ELEVATED_CLUSTER_WIDE: 'Elevated Access Cluster Wide',

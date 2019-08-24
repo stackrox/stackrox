@@ -190,6 +190,9 @@ message PermissionPolicy {
     PermissionLevel permission_level = 1;
 }
 
+// For any update to PermissionLevel, also update:
+// - central/searchbasedpolicies/builders/k8s_rbac.go
+// - ui/src/messages/common.js
 enum PermissionLevel {
     UNSET = 0;
     NONE = 1;

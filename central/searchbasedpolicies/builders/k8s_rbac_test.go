@@ -452,3 +452,13 @@ func (suite *PipelineTestSuite) TestServiceAccountBucketing() {
 		Namespace: "n1",
 	}))
 }
+
+func (suite *PipelineTestSuite) TestPermissionLevelInSync() {
+	for k, v := range storage.PermissionLevel_value {
+		if k == storage.PermissionLevel_UNSET.String() || k == storage.PermissionLevel_NONE.String() {
+			continue
+		}
+		_, ok := rbacPermissionLabels[storage.PermissionLevel(v)]
+		suite.True(ok, "PermissionLevel %s missing from 'rbacPermissionLabels'", k)
+	}
+}
