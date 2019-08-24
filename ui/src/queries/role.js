@@ -66,6 +66,7 @@ export const ROLE_NAME = gql`
         clusters {
             id
             k8srole(role: $id) {
+                id
                 name
             }
         }
