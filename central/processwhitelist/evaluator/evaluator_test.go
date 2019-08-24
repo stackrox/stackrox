@@ -86,8 +86,8 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			indicators: []*storage.ProcessIndicator{
 				{
 					Signal: &storage.ProcessSignal{
-						Name: "apt-get",
-						Args: "install nmap",
+						ExecFilePath: "apt-get",
+						Args:         "install nmap",
 					},
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
@@ -104,15 +104,15 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			indicators: []*storage.ProcessIndicator{
 				{
 					Signal: &storage.ProcessSignal{
-						Name: "apt-get",
-						Args: "install nmap",
+						ExecFilePath: "apt-get",
+						Args:         "install nmap",
 					},
 					ContainerName: deployment.GetContainers()[1].GetName(),
 				},
 				{
 					Signal: &storage.ProcessSignal{
-						Name: "curl",
-						Args: "badssl.com",
+						ExecFilePath: "curl",
+						Args:         "badssl.com",
 					},
 					ContainerName: deployment.GetContainers()[1].GetName(),
 				},
@@ -130,7 +130,6 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			indicators: []*storage.ProcessIndicator{
 				{
 					Signal: &storage.ProcessSignal{
-						Name:         "not-apt-get",
 						ExecFilePath: "/bin/not-apt-get",
 						Args:         "install nmap",
 					},
@@ -138,7 +137,6 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 				},
 				{
 					Signal: &storage.ProcessSignal{
-						Name:         "apt-get",
 						ExecFilePath: "/bin/apt-get",
 						Args:         "install nmap",
 					},
@@ -146,7 +144,6 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 				},
 				{
 					Signal: &storage.ProcessSignal{
-						Name:         "curl",
 						ExecFilePath: "/bin/curl",
 						Args:         "badssl.com",
 					},

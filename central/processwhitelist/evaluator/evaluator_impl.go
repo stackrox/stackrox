@@ -91,6 +91,10 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 		if !exists {
 			continue
 		}
+		whitelistItem := processwhitelist.WhitelistItemFromProcess(process)
+		if whitelistItem == "" {
+			continue
+		}
 		if !processSet.Contains(processwhitelist.WhitelistItemFromProcess(process)) {
 			violatingProcesses = append(violatingProcesses, process)
 			containerNameToWhitelistResults[process.GetContainerName()].AnomalousProcessesExecuted = true

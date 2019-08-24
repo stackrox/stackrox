@@ -29,3 +29,13 @@ func AtLeastOneEmpty(strs ...string) bool {
 	}
 	return false
 }
+
+// FirstNonEmpty returns the first string that is non empty in the variadic or returns an empty string
+func FirstNonEmpty(strs ...string) string {
+	for _, s := range strs {
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}

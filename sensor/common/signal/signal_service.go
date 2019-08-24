@@ -10,6 +10,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 )
 
@@ -81,6 +82,11 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 			processSignal := signal.GetProcessSignal()
 			if processSignal == nil {
 				log.Error("Empty process signal")
+				continue
+			}
+
+			processSignal.ExecFilePath = stringutils.OrDefault(processSignal.GetExecFilePath(), processSignal.GetName())
+			if processSignal.GetExecFilePath() == "" {
 				continue
 			}
 

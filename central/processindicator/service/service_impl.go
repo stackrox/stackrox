@@ -136,9 +136,12 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 	processGroups := make(map[groupKey]map[string][]*storage.ProcessIndicator)
 	processNameToContainers := make(map[groupKey]set.StringSet)
 	for _, i := range indicators {
-		fullProcessName := i.GetSignal().GetExecFilePath()
+		name := processwhitelist.WhitelistItemFromProcess(i)
+		if name == "" {
+			continue
+		}
 		containerName := i.ContainerName
-		groupKey := groupKey{fullProcessName, containerName}
+		groupKey := groupKey{name, containerName}
 		groupMap, ok := processGroups[groupKey]
 		if !ok {
 			groupMap = make(map[string][]*storage.ProcessIndicator)
