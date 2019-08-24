@@ -5,18 +5,43 @@ import (
 	"testing"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+func centralIsReleaseBuild(conn *grpc.ClientConn, t *testing.T) bool {
+	client := v1.NewMetadataServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	metadata, err := client.GetMetadata(ctx, &v1.Empty{})
+	require.NoError(t, err)
+	return metadata.ReleaseBuild
+}
 
 func TestCASetup(t *testing.T) {
 	t.Parallel()
 
 	conn := testutils.GRPCConnectionToCentral(t)
-
 	service := central.NewDevelopmentServiceClient(conn)
+
+	isReleaseBuild := centralIsReleaseBuild(conn, t)
+	// Can't run these tests on a release build. But also let's assert
+	// that the development service is not available.
+	if isReleaseBuild {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		resp, err := service.URLHasValidCert(ctx, &central.URLHasValidCertRequest{})
+		require.Nil(t, resp)
+		require.Error(t, err)
+		require.Equal(t, codes.Unimplemented, status.Code(err))
+		return
+	}
 
 	cases := []struct {
 		url               string
