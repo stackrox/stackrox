@@ -41,6 +41,7 @@ function RiskTable({
         return <NoResultsMessage message="No results found. Please refine your search." />;
     return (
         <Table
+            idAttribute="deployment.id"
             rows={currentDeployments}
             columns={columns}
             onRowClick={updateSelectedDeployment}

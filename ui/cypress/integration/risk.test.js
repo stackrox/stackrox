@@ -35,6 +35,12 @@ describe('Risk page', () => {
         cy.get(RiskPageSelectors.table.row.firstRow).should('contain', '3');
     });
 
+    it('should highlight selected deployment row', () => {
+        cy.get(RiskPageSelectors.table.row.firstRow)
+            .click({ force: true })
+            .should('have.class', 'row-active');
+    });
+
     it('should open the panel to view risk indicators', () => {
         mockGetRisk();
         mockGetDeployment();
