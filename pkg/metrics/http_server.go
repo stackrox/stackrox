@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultAddress = "localhost:9090"
+	defaultAddress = ":9090"
 	metricsURLPath = "/metrics"
 )
 

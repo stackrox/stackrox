@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [28.0]
+### Changed
+- The Prometheus scrape endpoint has been moved from localhost:9090 to :9090 so users can use their own Prometheus installations and pull StackRox metrics.
+
 ## [27.0]
 ### Changed
 - Reprocessing of deployments and images has been moved to an interval of 4 hours
