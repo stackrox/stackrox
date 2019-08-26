@@ -5,6 +5,7 @@ import {
     YAxis,
     VerticalGridLines,
     HorizontalBarSeries,
+    MarkSeries,
     LabelSeries,
     GradientDefs
 } from 'react-vis';
@@ -34,6 +35,8 @@ const Lollipop = ({ data, history }) => {
     function getLabelData() {
         return data.map((item, index) => {
             const val = {
+                link: item.link,
+                x: -2,
                 y: item.y,
                 yOffset: -25,
                 xOffset: 10,
@@ -48,6 +51,8 @@ const Lollipop = ({ data, history }) => {
     }
 
     const labelData = getLabelData();
+    const endcapData = [...data];
+
     return (
         <div className="relative chart-container w-full horizontal-bar-responsive">
             <FlexibleWidthXYPlot
@@ -79,19 +84,26 @@ const Lollipop = ({ data, history }) => {
                     }}
                     color="url(#horizontalGradient)"
                     onValueClick={onValueClickHandler}
+                    stack
+                />
+                <MarkSeries
+                    data={endcapData}
+                    marginTop="17"
+                    color="#BDF3FF"
+                    onValueClick={onValueClickHandler}
                 />
                 <LabelSeries
                     data={labelData}
-                    className="text-xs pointer-events-none theme-light"
+                    className="text-xs theme-light"
                     labelAnchorX="start-alignment"
                     labelAnchorY="baseline"
+                    onValueClick={onValueClickHandler}
                     style={{
                         fill: 'var(--primary-800)',
                         cursor: 'pointer',
-                        transform: 'translate(15px,35px)'
+                        transform: 'translate(400px,35px)'
                     }}
                 />
-                {/* Todo: create label series for the lollipip head */}
 
                 <YAxis tickSize={0} top={26} className="text-xs" />
             </FlexibleWidthXYPlot>
