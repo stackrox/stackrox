@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import Table from 'Components/Table';
 import CollapsibleCard from 'Components/CollapsibleCard';
+import pluralize from 'pluralize';
 
 class Violations extends Component {
     static propTypes = {
@@ -25,7 +26,25 @@ class Violations extends Component {
             },
             {
                 accessor: 'violations',
-                Header: 'Violations'
+                Header: 'Violations',
+                Cell: ({ original }) => {
+                    let { violations } = original;
+                    const numExtraViolations = violations.length - 5;
+                    violations = violations.slice(0, 5);
+                    return (
+                        <div>
+                            {violations.map(violation => (
+                                <div>- {violation}</div>
+                            ))}
+                            {numExtraViolations > 0 && (
+                                <div>
+                                    + {numExtraViolations} more{' '}
+                                    {pluralize('violation', numExtraViolations)}
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
             }
         ];
         const rows = this.props.dryrun.alerts;
