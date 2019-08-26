@@ -36,7 +36,7 @@ const clickOnCountWidget = (entity, type) => {
 
     if (type === 'entityList') {
         cy.get(`${selectors.groupedTabs}:contains('${entity}')`);
-        cy.get('li.bg-primary-200').contains(entity);
+        cy.get('li.bg-base-100').contains(entity);
     }
 };
 

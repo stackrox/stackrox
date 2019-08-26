@@ -3,12 +3,18 @@ import PropTypes from 'prop-types';
 
 const Tab = ({ text, index, active, onClick }) => (
     <li
-        className={`hover:bg-primary-200 ${active ? 'bg-primary-200' : ''} ${
-            index !== 0 ? 'border-l border-base-400' : ''
-        }`}
+        className={`hover:bg-primary-200 flex-grow ${
+            active ? 'bg-base-100 text-primary-700' : ''
+        } ${index !== 0 ? 'border-l border-base-400' : ''}`}
     >
-        <button type="button" onClick={onClick} data-test-id="tab">
-            <div className="cursor-pointer capitalize p-3">{text}</div>
+        <button type="button" onClick={onClick} data-test-id="tab" className="w-full">
+            <div
+                className={`${
+                    active ? 'text-primary-700' : 'text-base-500 hover:text-base-600'
+                } cursor-pointer uppercase tracking-wide font-700 p-3 flex justify-center`}
+            >
+                {text}
+            </div>
         </button>
     </li>
 );
@@ -30,33 +36,53 @@ const GroupedTabs = ({ groups, tabs, activeTab, onClick }) => {
     }, {});
     const result = groups
         .filter(group => groupMapping[group])
-        .map(group => {
+        .map((group, idx) => {
             const grouppedTabs = groupMapping[group];
+            // not showing groups when it's the first (overview) or when there is only one tab child
+            const showGroupTab = idx !== 0 && grouppedTabs.length !== 1;
             return (
-                <ul
+                <li
                     data-test-id="grouped-tab"
-                    className="list-reset flex ml-4 border-l border-base-400 border-r relative"
+                    className={`${
+                        idx !== 0 ? 'ml-4' : ''
+                    } list-reset flex flex-col relative justify-end`}
                     key={group}
                 >
-                    {grouppedTabs.map((datum, i) => (
-                        <Tab
-                            key={datum.value}
-                            index={i}
-                            text={datum.text}
-                            active={activeTab === datum.value}
-                            onClick={onClickHandler(datum)}
-                        />
-                    ))}
-                </ul>
+                    {showGroupTab && (
+                        <span
+                            className="truncate absolute pin-t z-10 border-l border-t border-r border-base-400 text-2xs tracking-wide py-1 px-2 rounded-t-lg text-base-500 w-full"
+                            style={{ transform: 'translateY(-100%)' }}
+                        >
+                            {group}
+                        </span>
+                    )}
+                    <ul
+                        className={`${
+                            showGroupTab ? `flex-1` : ''
+                        } flex list-reset border-l border-base-400 border-r`}
+                    >
+                        {grouppedTabs.map((datum, i) => (
+                            <Tab
+                                key={datum.value}
+                                index={i}
+                                text={datum.text}
+                                active={activeTab === datum.value}
+                                onClick={onClickHandler(datum)}
+                            />
+                        ))}
+                    </ul>
+                </li>
             );
         });
     return (
-        <ul
-            data-test-id="grouped-tabs"
-            className="list-reset flex border-b border-base-400 px-4 bg-primary-100 uppercase text-sm"
-        >
-            {result}
-        </ul>
+        <div className="relative">
+            <ul
+                data-test-id="grouped-tabs"
+                className="list-reset flex border-b border-base-400 px-4 bg-primary-100 uppercase text-sm"
+            >
+                {result}
+            </ul>
+        </div>
     );
 };
 

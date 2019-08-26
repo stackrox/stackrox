@@ -6,18 +6,16 @@ const renderSubHeader = subHeader => {
     return <div className="mt-1 italic capitalize opacity-75">{subHeader}</div>;
 };
 
-const PageHeader = props => (
+const PageHeader = ({ header, subHeader, classes, bgStyle, children }) => (
     <div
-        className={`flex h-18 px-4 bg-base-100 border-b border-base-400 w-full flex-no-shrink z-10 ${
-            props.classes
-        }`}
-        style={props.bgStyle}
+        className={`flex h-18 px-4 bg-base-100 w-full flex-no-shrink z-10 border-b border-base-400 ${classes}`}
+        style={bgStyle}
     >
         <div className="min-w-max pr-4 self-center">
-            <div className="uppercase text-lg tracking-widest font-700 pt-1">{props.header}</div>
-            {renderSubHeader(props.subHeader)}
+            <div className="uppercase text-lg tracking-widest font-700 pt-1">{header}</div>
+            {renderSubHeader(subHeader)}
         </div>
-        <div className="flex w-full items-center">{props.children}</div>
+        <div className="flex w-full items-center">{children}</div>
     </div>
 );
 

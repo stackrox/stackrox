@@ -11,10 +11,10 @@ import entityTabsMap from '../entityTabRelationships';
 
 const TAB_GROUPS = {
     OVERVIEW: 'Overview',
+    POLICIES: 'Policies & CIS Controls',
     VIOLATIONS_AND_FINDINGS: 'Violations & Findings',
     APPLICATION_RESOURCES: 'Application & Infrastructure Resources',
-    RBAC_CONFIG: 'RBAC Visibility & Configurations',
-    POLICIES: 'Policies & CIS Controls'
+    RBAC_CONFIG: 'RBAC Visibility & Configurations'
 };
 
 const ENTITY_TO_TAB = {
@@ -73,7 +73,6 @@ const EntityTabs = ({
     const groups = Object.values(TAB_GROUPS);
 
     const tabs = [{ group: TAB_GROUPS.OVERVIEW, value: '', text: 'Overview' }, ...entityTabs];
-    // TODO: disabled style for tabs
     return (
         <GroupedTabs
             groups={groups}
