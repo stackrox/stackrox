@@ -18,10 +18,9 @@ const getTriggerRunIds = data => {
 
 const areRunsFinished = data => {
     let runsFinished = true;
-    if (data && data.complianceRunStatuses && data.complianceRunStatuses.runs.length) {
-        runsFinished = !data.complianceRunStatuses.runs
-            .map(run => run.state)
-            .includes('WAIT_FOR_DATA');
+    if (data && data.complianceRunStatuses && data.complianceRunStatuses.runs) {
+        const incompleteRuns = data.complianceRunStatuses.runs.filter(x => x.state !== 'FINISHED');
+        runsFinished = incompleteRuns.length === 0;
     }
     return runsFinished;
 };
