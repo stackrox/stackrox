@@ -431,7 +431,7 @@ class Services extends BaseService {
                                     Env.mustGetPort())
                             .setJira(NotifierOuterClass.Jira.newBuilder()
                                     .setUsername("k+automation@stackrox.com")
-                                    .setPassword("D7wU97n9CFYuesHt")
+                                    .setPassword("xvOOtL7nCOANMbD7ed0522B5")
                                     .setUrl("https://stack-rox.atlassian.net")
                                     .setIssueType("Task")
                             )
