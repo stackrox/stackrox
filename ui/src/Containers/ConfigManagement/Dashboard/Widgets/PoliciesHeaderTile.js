@@ -13,13 +13,7 @@ const policiesQuery = gql`
         policies(query: $query) {
             id
             lifecycleStages
-            alerts {
-                state
-                id
-                violations {
-                    message
-                }
-            }
+            policyStatus
         }
     }
 `;
@@ -28,9 +22,7 @@ function processPoliciesData(data) {
     if (!data || !data.policies) return { totalPolicies: 0, hasViolations: false };
 
     const totalPolicies = data.policies.length;
-    const hasViolations = !!data.policies.find(policy => {
-        return policy.alerts.length > 0 && policy.alerts.find(alert => alert.state === 'ACTIVE');
-    });
+    const hasViolations = !!data.policies.find(policy => policy.policyStatus === 'fail');
     return { totalPolicies, hasViolations };
 }
 
