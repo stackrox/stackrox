@@ -32,8 +32,9 @@ var log = logging.LoggerForModule()
 func (c *crudImpl) Count() (int, error) {
 	var count int
 	err := c.db.View(func(tx *badger.Txn) error {
-		count = badgerhelper.BucketKeyCount(tx, c.prefix)
-		return nil
+		var err error
+		count, err = badgerhelper.BucketKeyCount(tx, c.prefix)
+		return err
 	})
 	return count, errors.Wrapf(err, "error getting count in %s", c.prefixString)
 }

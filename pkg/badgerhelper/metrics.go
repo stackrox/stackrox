@@ -23,10 +23,13 @@ var (
 
 // UpdateBadgerPrefixSizeMetric sets the badger metric for number of objects with a specific prefix
 func UpdateBadgerPrefixSizeMetric(db *badger.DB, prefix []byte, metricPrefix, objType string) {
-	var count int
+	var (
+		count int
+	)
 	err := db.View(func(txn *badger.Txn) error {
-		count = Count(txn, prefix)
-		return nil
+		var err error
+		count, err = Count(txn, prefix)
+		return err
 	})
 	if err != nil {
 		return

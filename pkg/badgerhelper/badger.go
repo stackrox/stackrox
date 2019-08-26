@@ -60,40 +60,19 @@ func NewTemp(name string) (*badger.DB, string, error) {
 	return db, tmpDir, err
 }
 
-// DeletePrefixRange deletes all keys with a matching prefix from the DB.
-func DeletePrefixRange(txn *badger.Txn, keyPrefix []byte) error {
-	itOpts := badger.DefaultIteratorOptions
-	itOpts.PrefetchValues = false
-	itOpts.Prefix = keyPrefix
-
-	it := txn.NewIterator(itOpts)
-	defer it.Close()
-	for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
-		if err := txn.Delete(it.Item().Key()); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // BucketKeyCount returns the number of objects in a "Bucket"
-func BucketKeyCount(txn *badger.Txn, keyPrefix []byte) int {
+func BucketKeyCount(txn *badger.Txn, keyPrefix []byte) (int, error) {
 	return Count(txn, GetBucketKey(keyPrefix, nil))
 }
 
 // Count gets the number of keys with a specific prefix
-func Count(txn *badger.Txn, keyPrefix []byte) int {
-	itOpts := badger.DefaultIteratorOptions
-	itOpts.PrefetchValues = false
-	itOpts.Prefix = keyPrefix
-
+func Count(txn *badger.Txn, keyPrefix []byte) (int, error) {
 	var count int
-	it := txn.NewIterator(itOpts)
-	defer it.Close()
-	for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
+	err := ForEachOverKeySet(txn, keyPrefix, ForEachOptions{}, func(_ []byte) error {
 		count++
-	}
-	return count
+		return nil
+	})
+	return count, err
 }
 
 // GetBucketKey returns a key which combines the prefix and the id with a separator

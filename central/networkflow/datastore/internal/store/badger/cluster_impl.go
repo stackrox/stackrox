@@ -5,7 +5,6 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 )
 
 const (
@@ -48,7 +47,6 @@ func (s *clusterStoreImpl) CreateFlowStore(clusterID string) (store.FlowStore, e
 // RemoveFlowStore deletes the bucket holding the flow information for the graph in that cluster.
 func (s *clusterStoreImpl) RemoveFlowStore(clusterID string) error {
 	keyPrefix := flowStoreKeyPrefix(clusterID)
-	return badgerhelper.RetryableUpdate(s.db, func(txn *badger.Txn) error {
-		return badgerhelper.DeletePrefixRange(txn, keyPrefix)
-	})
+
+	return s.db.DropPrefix(keyPrefix)
 }
