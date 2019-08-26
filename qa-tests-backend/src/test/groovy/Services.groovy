@@ -33,6 +33,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.ListPolicy
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.Whitelist
 import io.stackrox.proto.storage.ScopeOuterClass
+import services.ImageService
 import services.NetworkPolicyService
 import util.Env
 import util.Timer
@@ -598,6 +599,20 @@ class Services extends BaseService {
             println "SR has not found deployment ${deployment.name} yet"
         }
         println "SR did not detect the deployment ${deployment.name} in ${iterations * interval} seconds"
+        return false
+    }
+
+    static waitForImage(objects.Deployment deployment, int iterations = 30, int interval = 2) {
+        def imageName = deployment.image.contains(":") ? deployment.image : deployment.image + ":latest"
+        Timer t = new Timer(iterations, interval)
+        while (t.IsValid()) {
+            if (ImageService.getImages().find { it.name.endsWith(imageName) }) {
+                println "SR found image ${imageName} within ${t.SecondsSince()}s"
+                return true
+            }
+            println "SR has not found image ${imageName} yet"
+        }
+        println "SR did not detect the image ${imageName} in ${iterations * interval} seconds"
         return false
     }
 

@@ -64,6 +64,7 @@ class PaginationTest extends BaseSpecification {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
+            assert Services.waitForImage(deployment)
         }
     }
 
