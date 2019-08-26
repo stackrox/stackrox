@@ -24,8 +24,8 @@ const imageDetailsMap = {
         formatValue: timestamp =>
             timestamp ? dateFns.format(timestamp, dateTimeFormat) : 'not available'
     },
-    sha: {
-        label: 'SHA',
+    id: {
+        label: 'Digest',
         className: 'word-break'
     },
     totalComponents: {
@@ -134,7 +134,7 @@ const ImageDetails = ({
     const content = loading ? (
         <Loader />
     ) : (
-        <div className="flex flex-col w-full bg-base-200 overflow-auto pb-5">
+        <div className="h-full flex flex-col w-full bg-base-200 overflow-auto pb-5">
             {renderOverview()}
             <div className="px-3 pt-5">
                 <div className="alert-preview bg-base-100 shadow text-primary-600">
