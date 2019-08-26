@@ -19,6 +19,9 @@ const (
 
 var (
 	separator = []byte("\x00")
+
+	// DefaultBadgerPath is the default path for the DB. Exported for metrics
+	DefaultBadgerPath = filepath.Join(migrations.DBMountPath, BadgerDBDirName)
 )
 
 // New returns an instance of the persistent BadgerDB store
@@ -47,7 +50,7 @@ func New(path string) (*badger.DB, error) {
 
 // NewWithDefaults returns an instance of the persistent BadgerDB store instantiated at the default filesystem location.
 func NewWithDefaults() (*badger.DB, error) {
-	return New(filepath.Join(migrations.DBMountPath, BadgerDBDirName))
+	return New(DefaultBadgerPath)
 }
 
 // NewTemp creates a new DB, but places it in the host temporary directory.

@@ -1,6 +1,7 @@
 package globaldb
 
 import (
+	"os"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -29,7 +30,6 @@ func gatherBucketStats(name string, stats bolt.BucketStats) {
 }
 
 func gather(db *bolt.DB) {
-
 	topLevelStats := db.Stats()
 
 	metrics.SetGaugeInt(metrics.FreePageN, topLevelStats.FreePageN)
@@ -67,6 +67,13 @@ func gather(db *bolt.DB) {
 			return nil
 		})
 	})
+
+	fi, err := os.Stat(db.Path())
+	if err != nil {
+		log.Errorf("error getting Bolt file size: %v", err)
+		return
+	}
+	metrics.BoltDBSize.Set(float64(fi.Size()))
 }
 
 func startMonitoring(db *bolt.DB) {

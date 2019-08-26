@@ -1,12 +1,11 @@
 package globalindex
 
 import (
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -40,24 +39,6 @@ func newGauge(name string) prometheus.Gauge {
 	})
 }
 
-func directorySize(path string) int64 {
-	var size int64
-	err := filepath.Walk(path, func(subpath string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		size += info.Size()
-		return err
-	})
-	if err != nil && !os.IsNotExist(err) {
-		log.Error(err)
-	}
-	return size
-}
-
 func walkStatsMap(parentPrefix string, m map[string]interface{}) {
 	for k, v := range m {
 		currPrefix := parentPrefix + "_" + k
@@ -87,7 +68,12 @@ func walkStatsMap(parentPrefix string, m map[string]interface{}) {
 func startMonitoring(index bleve.Index, path string) {
 	ticker := time.NewTicker(diskUsageScrapeRate)
 	for range ticker.C {
-		bleveDiskUsage.Set(float64(directorySize(path)))
 		walkStatsMap(metricPrefix, index.StatsMap())
+		size, err := fileutils.DirectorySize(path)
+		if err != nil {
+			log.Errorf("error getting index directory size: %v", err)
+			continue
+		}
+		bleveDiskUsage.Set(float64(size))
 	}
 }

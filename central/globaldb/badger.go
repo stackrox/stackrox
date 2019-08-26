@@ -4,7 +4,9 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
+	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -56,5 +58,12 @@ func startMonitoringBadger(db *badger.DB) {
 		for _, bucket := range registeredBuckets {
 			badgerhelper.UpdateBadgerPrefixSizeMetric(db, bucket.badgerPrefix, bucket.prefixString, bucket.objType)
 		}
+
+		size, err := fileutils.DirectorySize(badgerhelper.DefaultBadgerPath)
+		if err != nil {
+			log.Errorf("error getting badger directory size: %v", err)
+			return
+		}
+		metrics.BadgerDBSize.Set(float64(size))
 	}
 }
