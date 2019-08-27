@@ -50,7 +50,10 @@ const List = ({
     const categories = [searchCategoryTypes[entityType]];
 
     function getRenderComponents(headerComponents, tableRows) {
-        const header = `${tableRows.length} ${pluralize(headerText || entityLabels[entityType])}`;
+        const header = `${tableRows.length} ${pluralize(
+            headerText || entityLabels[entityType],
+            tableRows.length
+        )}`;
 
         return (
             <section id="capture-list" className="h-full w-full bg-base-100">

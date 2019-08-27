@@ -86,11 +86,8 @@ const buildTableColumns = (match, location) => {
                     .push(id)
                     .push(entityTypes.DEPLOYMENT)
                     .url();
-                const text =
-                    deployments.length === 1
-                        ? deployments[0].name
-                        : `${deployments.length} ${pluralize('Deployment', deployments.length)}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
+                const text = `${deployments.length} ${pluralize('Deployment', deployments.length)}`;
+                return <TableCellLink dataTestId="deployment" pdf={pdf} url={url} text={text} />;
             },
             sortMethod: sortValueByLength
         }

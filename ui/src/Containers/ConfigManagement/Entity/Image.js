@@ -26,7 +26,10 @@ const Image = ({ id, entityListType, query }) => {
 
     const variables = {
         id,
-        query: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause({
+            ...query[searchParam],
+            'Lifecycle Stage': 'DEPLOY'
+        })
     };
 
     const QUERY = gql`
