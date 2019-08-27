@@ -15,13 +15,13 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddQuery("violations(query: String): [Alert!]!"),
+		schema.AddQuery("violations(query: String, pagination: Pagination): [Alert!]!"),
 		schema.AddQuery("violation(id: ID!): Alert"),
 	)
 }
 
 // Violations returns a list of all violations, or those that match the requested query
-func (resolver *Resolver) Violations(ctx context.Context, args rawQuery) ([]*alertResolver, error) {
+func (resolver *Resolver) Violations(ctx context.Context, args paginatedQuery) ([]*alertResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Violations")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err

@@ -19,7 +19,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("secret(id:ID!): Secret"),
-		schema.AddQuery("secrets(query: String): [Secret!]!"),
+		schema.AddQuery("secrets(query: String, pagination: Pagination): [Secret!]!"),
 		schema.AddExtraResolver("Secret", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Secret", "deploymentCount: Int!"),
 	)
@@ -40,7 +40,7 @@ func (resolver *Resolver) Secret(ctx context.Context, arg struct{ graphql.ID }) 
 }
 
 // Secrets gets a list of all secrets
-func (resolver *Resolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+func (resolver *Resolver) Secrets(ctx context.Context, args paginatedQuery) ([]*secretResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Secrets")
 	if err := readSecrets(ctx); err != nil {
 		return nil, err

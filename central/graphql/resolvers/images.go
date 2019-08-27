@@ -15,7 +15,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddQuery("images(query:String): [Image!]!"),
+		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
 		schema.AddQuery("image(sha:ID!): Image"),
 		schema.AddExtraResolver("Image", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Image", "deploymentCount: Int!"),
@@ -24,7 +24,7 @@ func init() {
 }
 
 // Images returns GraphQL resolvers for all images
-func (resolver *Resolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+func (resolver *Resolver) Images(ctx context.Context, args paginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Images")
 
 	if err := readImages(ctx); err != nil {

@@ -2,11 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"math"
 
 	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -16,7 +18,100 @@ func init() {
 		schema.AddQuery("searchOptions(categories: [SearchCategory!]): [String!]!"),
 		schema.AddQuery("globalSearch(categories: [SearchCategory!], query: String!): [SearchResult!]!"),
 		schema.AddQuery("searchAutocomplete(categories: [SearchCategory!], query: String!): [String!]!"),
+		schema.AddInput("SortOption", []string{"field: String", "reversed: Boolean"}),
+		schema.AddInput("Pagination", []string{"offset: Int", "limit: Int", "sortOption: SortOption"}),
 	)
+}
+
+type sortOption struct {
+	Field    *string
+	Reversed *bool
+}
+
+func (s *sortOption) AsV1SortOption() *v1.SortOption {
+	if s == nil {
+		return nil
+	}
+	return &v1.SortOption{
+		Field: func() string {
+			if s.Field == nil {
+				return ""
+			}
+			return *s.Field
+		}(),
+		Reversed: func() bool {
+			if s.Reversed == nil {
+				return false
+			}
+			return *s.Reversed
+		}(),
+	}
+}
+
+type pagination struct {
+	Offset     *int32
+	Limit      *int32
+	SortOption *sortOption
+}
+
+func (r *pagination) AsV1Pagination() *v1.Pagination {
+	if r == nil {
+		return nil
+	}
+	return &v1.Pagination{
+		Offset: func() int32 {
+			if r.Offset == nil {
+				return 0
+			}
+			return *r.Offset
+		}(),
+		Limit: func() int32 {
+			if r.Limit == nil {
+				return 0
+			}
+			return *r.Limit
+		}(),
+		SortOption: r.SortOption.AsV1SortOption(),
+	}
+}
+
+type paginatedQuery struct {
+	Query      *string
+	Pagination *pagination
+}
+
+func (r *paginatedQuery) AsV1Query() (*v1.Query, error) {
+	if r == nil || r.Query == nil {
+		return nil, nil
+	}
+	q, err := search.ParseRawQuery(*r.Query)
+	if err != nil {
+		return nil, err
+	}
+	paginated.FillPagination(q, r.Pagination.AsV1Pagination(), math.MaxInt32)
+	return q, nil
+}
+
+func (r *paginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
+	var q *v1.Query
+	if r == nil || r.Query == nil {
+		q := search.EmptyQuery()
+		paginated.FillPagination(q, r.Pagination.AsV1Pagination(), math.MaxInt32)
+		return q, nil
+	}
+	q, err := search.ParseRawQueryOrEmpty(*r.Query)
+	if err != nil {
+		return nil, err
+	}
+	paginated.FillPagination(q, r.Pagination.AsV1Pagination(), math.MaxInt32)
+	return q, nil
+}
+
+func (r *paginatedQuery) String() string {
+	if r == nil || r.Query == nil {
+		return ""
+	}
+	return *r.Query
 }
 
 type rawQuery struct {

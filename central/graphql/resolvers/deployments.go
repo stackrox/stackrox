@@ -21,7 +21,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("deployment(id: ID): Deployment"),
-		schema.AddQuery("deployments(query: String): [Deployment!]!"),
+		schema.AddQuery("deployments(query: String, pagination: Pagination): [Deployment!]!"),
 		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
 		schema.AddExtraResolver("Deployment", `namespaceObject: Namespace`),
 		schema.AddExtraResolver("Deployment", `serviceAccountObject: ServiceAccount`),
@@ -50,7 +50,7 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 }
 
 // Deployments returns GraphQL resolvers all deployments
-func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+func (resolver *Resolver) Deployments(ctx context.Context, args paginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
