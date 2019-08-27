@@ -37,10 +37,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                     key
                     value
                 }
-                cluster {
-                    id
-                    name
-                }
+                ${entityContext[entityTypes.CLUSTER] ? '' : 'cluster { id name}'}
                 hostNetwork: id
                 imagePullSecrets
                 inactive
@@ -49,8 +46,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                     value
                 }
                 name
-                namespace
-                namespaceId
+                ${entityContext[entityTypes.NAMESPACE] ? '' : 'namespace namespaceId'}
                 ports {
                     containerPort
                     exposedPort
@@ -117,7 +113,12 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                             : getSubListFromEntity(entity, entityListType);
 
                     return (
-                        <EntityList entityListType={entityListType} data={listData} query={query} />
+                        <EntityList
+                            entityListType={entityListType}
+                            data={listData}
+                            query={query}
+                            entityContext={{ ...entityContext, [entityTypes.DEPLOYMENT]: id }}
+                        />
                     );
                 }
 
@@ -161,20 +162,24 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                     labels={labels}
                                     annotations={annotations}
                                 />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.CLUSTER}
-                                    entityId={cluster.id}
-                                    name="Cluster"
-                                    value={cluster.name}
-                                />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.NAMESPACE}
-                                    entityId={namespaceId}
-                                    name="Namespace"
-                                    value={namespace}
-                                />
+                                {cluster && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.CLUSTER}
+                                        entityId={cluster.id}
+                                        name="Cluster"
+                                        value={cluster.name}
+                                    />
+                                )}
+                                {namespace && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.NAMESPACE}
+                                        entityId={namespaceId}
+                                        name="Namespace"
+                                        value={namespace}
+                                    />
+                                )}
                                 <RelatedEntity
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     entityType={entityTypes.SERVICE_ACCOUNT}

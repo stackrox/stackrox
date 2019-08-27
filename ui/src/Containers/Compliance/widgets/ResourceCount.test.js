@@ -36,5 +36,5 @@ it('renders without error', () => {
 
     const queryProps = element.find(Query).props();
     const queryVars = queryProps.variables;
-    expect(queryVars.query === `Cluster ID:${id}`).toBe(true);
+    expect(queryVars.query === `Cluster ID:"${id}"`).toBe(true);
 });

@@ -20,7 +20,7 @@ import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import EntityList from '../List/EntityList';
 
-const Role = ({ id, entityListType, query }) => {
+const Role = ({ id, entityListType, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -38,12 +38,17 @@ const Role = ({ id, entityListType, query }) => {
                     type
                     verbs
                     createdAt
-                    roleNamespace {
+                    ${
+                        entityContext[entityTypes.NAMESPACE]
+                            ? ''
+                            : `roleNamespace {
                         metadata {
                             id
                             name
                         }
+                    }`
                     }
+                    
                     ${
                         entityListType === entityTypes.SERVICE_ACCOUNT
                             ? 'serviceAccounts(query: $query) {...serviceAccountFields}'
@@ -61,8 +66,7 @@ const Role = ({ id, entityListType, query }) => {
                         resources
                         verbs
                     }
-                    clusterName
-                    clusterId
+                    ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
                 }
             }
         }
@@ -87,6 +91,7 @@ const Role = ({ id, entityListType, query }) => {
                         <EntityList
                             entityListType={entityListType}
                             data={getSubListFromEntity(entity, entityListType)}
+                            entityContext={{ ...entityContext, [entityTypes.ROLE]: id }}
                             query={query}
                         />
                     );
@@ -104,9 +109,13 @@ const Role = ({ id, entityListType, query }) => {
                     clusterName,
                     clusterId
                 } = entity;
-                const { name: namespaceName, id: namespaceId } = roleNamespace
-                    ? roleNamespace.metadata
-                    : {};
+
+                let namespaceName;
+                let namespaceId;
+                if (roleNamespace) {
+                    namespaceName = roleNamespace.metadata.name;
+                    namespaceId = roleNamespace.metadata.id;
+                }
 
                 const metadataKeyValuePairs = [
                     { key: 'Role Type', value: type },
@@ -126,13 +135,15 @@ const Role = ({ id, entityListType, query }) => {
                                     labels={labels}
                                     annotations={annotations}
                                 />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.CLUSTER}
-                                    name="Cluster"
-                                    value={clusterName}
-                                    entityId={clusterId}
-                                />
+                                {clusterName && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.CLUSTER}
+                                        name="Cluster"
+                                        value={clusterName}
+                                        entityId={clusterId}
+                                    />
+                                )}
                                 {roleNamespace && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 h-48 mb-4"

@@ -21,7 +21,7 @@ import EntityList from '../List/EntityList';
 import TableWidget from './widgets/TableWidget';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
-const Image = ({ id, entityListType, query }) => {
+const Image = ({ id, entityListType, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -32,16 +32,18 @@ const Image = ({ id, entityListType, query }) => {
         })
     };
 
+    const deploymentsQuery = `${
+        entityListType === entityTypes.DEPLOYMENT
+            ? 'deployments(query: $query) {...deploymentFields}'
+            : 'deploymentCount'
+    }`;
+
     const QUERY = gql`
         query image($id: ID!${entityListType ? ', $query: String' : ''}) {
             image(sha: $id) {
                 id
                 lastUpdated
-                ${
-                    entityListType === entityTypes.DEPLOYMENT
-                        ? 'deployments(query: $query) {...deploymentFields}'
-                        : 'deploymentCount'
-                }
+                ${entityContext[entityTypes.DEPLOYMENT] ? '' : deploymentsQuery}
                 metadata {
                     layerShas
                     v1 {
@@ -97,6 +99,7 @@ const Image = ({ id, entityListType, query }) => {
                         <EntityList
                             entityListType={entityListType}
                             data={getSubListFromEntity(entity, entityListType)}
+                            entityContext={{ ...entityContext, [entityTypes.IMAGE]: id }}
                             query={query}
                         />
                     );
@@ -153,12 +156,14 @@ const Image = ({ id, entityListType, query }) => {
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                 />
-                                <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    name="Deployments"
-                                    value={deploymentCount}
-                                    entityType={entityTypes.DEPLOYMENT}
-                                />
+                                {deploymentCount && (
+                                    <RelatedEntityListCount
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        name="Deployments"
+                                        value={deploymentCount}
+                                        entityType={entityTypes.DEPLOYMENT}
+                                    />
+                                )}
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Dockerfile">

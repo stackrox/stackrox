@@ -44,7 +44,7 @@ const QUERY = gql`
     }
 `;
 
-const Control = ({ id, entityListType, query, match, location }) => {
+const Control = ({ id, entityListType, query, match, location, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -75,7 +75,14 @@ const Control = ({ id, entityListType, query, match, location }) => {
                     const nodeIds = nodes.map(node => node.id).join();
                     const whereVars = { ...query[searchParam], 'Node Id': nodeIds };
                     if (nodeIds.length) whereVars.id = nodeIds;
-                    return <Nodes match={match} location={location} query={whereVars} />;
+                    return (
+                        <Nodes
+                            match={match}
+                            location={location}
+                            query={whereVars}
+                            entityContext={{ ...entityContext, [entityTypes.CONTROL]: id }}
+                        />
+                    );
                 }
 
                 return (
@@ -98,6 +105,7 @@ const Control = ({ id, entityListType, query, match, location }) => {
                                         </div>
                                     </Widget>
                                 )}
+                                {}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Nodes"

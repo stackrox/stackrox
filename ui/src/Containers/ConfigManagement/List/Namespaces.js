@@ -16,7 +16,7 @@ import TableCellLink from './Link';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
-const buildTableColumns = (match, location) => {
+const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
         {
             Header: 'Id',
@@ -30,23 +30,25 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'metadata.name'
         },
-        {
-            Header: `Cluster`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'metadata.clusterName',
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { metadata } = original;
-                if (!metadata) return '-';
-                const { clusterName, clusterId, id } = metadata;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.CLUSTER, clusterId)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-            }
-        },
+        entityContext && entityContext[entityTypes.CLUSTER]
+            ? null
+            : {
+                  Header: `Cluster`,
+                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'metadata.clusterName',
+                  // eslint-disable-next-line
+                Cell: ({ original, pdf }) => {
+                      const { metadata } = original;
+                      if (!metadata) return '-';
+                      const { clusterName, clusterId, id } = metadata;
+                      const url = URLService.getURL(match, location)
+                          .push(id)
+                          .push(entityTypes.CLUSTER, clusterId)
+                          .url();
+                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                  }
+              },
         {
             Header: `Policies Violated`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
@@ -182,13 +184,22 @@ const buildTableColumns = (match, location) => {
             accessor: 'k8sroleCount'
         }
     ];
-    return tableColumns;
+    return tableColumns.filter(col => col);
 };
 
 const createTableRows = data => data.results;
 
-const Namespaces = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
-    const tableColumns = buildTableColumns(match, location);
+const Namespaces = ({
+    match,
+    location,
+    className,
+    selectedRowId,
+    onRowClick,
+    query,
+    data,
+    entityContext
+}) => {
+    const tableColumns = buildTableColumns(match, location, entityContext);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
     const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;

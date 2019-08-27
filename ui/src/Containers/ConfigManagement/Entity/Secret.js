@@ -142,7 +142,7 @@ SecretValues.propTypes = {
     deploymentCount: PropTypes.number.isRequired
 };
 
-const Secret = ({ id, entityListType, query }) => {
+const Secret = ({ id, entityListType, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -198,8 +198,7 @@ const Secret = ({ id, entityListType, query }) => {
                     key
                     value
                 }
-                clusterName
-                clusterId
+                ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
             }
         }
         ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
@@ -250,13 +249,15 @@ const Secret = ({ id, entityListType, query }) => {
                                     labels={labels}
                                     annotations={annotations}
                                 />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.CLUSTER}
-                                    name="Cluster"
-                                    value={clusterName}
-                                    entityId={clusterId}
-                                />
+                                {clusterName && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.CLUSTER}
+                                        name="Cluster"
+                                        value={clusterName}
+                                        entityId={clusterId}
+                                    />
+                                )}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"

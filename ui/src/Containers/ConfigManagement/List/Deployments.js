@@ -28,67 +28,64 @@ const buildTableColumns = (match, location, entityContext) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'name'
         },
-        {
-            Header: `Cluster`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'clusterName',
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { clusterName, clusterId, id } = original;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.CLUSTER, clusterId)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-            }
-        },
-        {
-            Header: `Namespace`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'namespace',
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { namespace, namespaceId, id } = original;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.NAMESPACE, namespaceId)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text={namespace} />;
-            }
-        },
-        entityContext && entityContext[entityTypes.POLICY]
+        entityContext && entityContext[entityTypes.CLUSTER]
             ? null
             : {
-                  Header: `Policies Violated`,
+                  Header: `Cluster`,
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'clusterName',
                   // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                      const { failingPolicies, failingPolicyCount: policyCount, id } = original;
-                      const failingPolicyCount = failingPolicies
-                          ? failingPolicies.length
-                          : policyCount;
-                      if (!failingPolicyCount) return 'No Violations';
-                      const labelLink = (
-                          <LabelChip
-                              text={`${failingPolicyCount} ${pluralize(
-                                  'Policies',
-                                  failingPolicyCount
-                              )}`}
-                              type="alert"
-                          />
-                      );
+                      const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.POLICY)
+                          .push(entityTypes.CLUSTER, clusterId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
-                  },
-                  id: 'failingPolicies',
-                  accessor: 'failingPolicyCount'
+                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                  }
               },
+        entityContext && entityContext[entityTypes.NAMESPACE]
+            ? null
+            : {
+                  Header: `Namespace`,
+                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'namespace',
+                  // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                      const { namespace, namespaceId, id } = original;
+                      const url = URLService.getURL(match, location)
+                          .push(id)
+                          .push(entityTypes.NAMESPACE, namespaceId)
+                          .url();
+                      return <TableCellLink pdf={pdf} url={url} text={namespace} />;
+                  }
+              },
+        {
+            Header: `Policies Violated`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { failingPolicies, failingPolicyCount: policyCount, id } = original;
+                const failingPolicyCount = failingPolicies ? failingPolicies.length : policyCount;
+                if (!failingPolicyCount) return 'No Violations';
+                const labelLink = (
+                    <LabelChip
+                        text={`${failingPolicyCount} ${pluralize('Policies', failingPolicyCount)}`}
+                        type="alert"
+                    />
+                );
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.POLICY)
+                    .url();
+                return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
+            },
+            id: 'failingPolicies',
+            accessor: 'failingPolicyCount'
+        },
         {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
@@ -162,7 +159,7 @@ const buildTableColumns = (match, location, entityContext) => {
             }
         }
     ];
-    return tableColumns.filter(col => !!col);
+    return tableColumns.filter(col => col);
 };
 
 const createTableRows = data => data.results;

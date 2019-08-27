@@ -25,7 +25,7 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import EntityList from '../List/EntityList';
 
-const Namespace = ({ id, entityListType, query }) => {
+const Namespace = ({ id, entityListType, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -48,10 +48,7 @@ const Namespace = ({ id, entityListType, query }) => {
                 }
                 creationTime
             }
-            cluster {
-                id
-                name
-            }
+            ${entityContext[entityTypes.CLUSTER] ? '' : 'cluster { id name}'}
             ${
                 entityListType === entityTypes.IMAGE
                     ? 'images(query: $query) {...imageFields}'
@@ -110,6 +107,7 @@ const Namespace = ({ id, entityListType, query }) => {
                         <EntityList
                             entityListType={entityListType}
                             data={getSubListFromEntity(entity, entityListType)}
+                            entityContext={{ ...entityContext, [entityTypes.NAMESPACE]: id }}
                         />
                     );
                 }
@@ -134,13 +132,15 @@ const Namespace = ({ id, entityListType, query }) => {
                                     keyValuePairs={metadataKeyValuePairs}
                                     labels={labels}
                                 />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.CLUSTER}
-                                    name="Cluster"
-                                    value={cluster.name}
-                                    entityId={cluster.id}
-                                />
+                                {cluster && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.CLUSTER}
+                                        name="Cluster"
+                                        value={cluster.name}
+                                        entityId={cluster.id}
+                                    />
+                                )}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"

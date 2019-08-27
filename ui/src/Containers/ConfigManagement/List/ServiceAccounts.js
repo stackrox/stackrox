@@ -11,7 +11,7 @@ import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
 
-const buildTableColumns = (match, location) => {
+const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
         {
             Header: 'Id',
@@ -35,41 +35,45 @@ const buildTableColumns = (match, location) => {
             },
             accessor: 'clusterAdmin'
         },
-        {
-            Header: `Cluster`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'clusterName',
-            // eslint-disable-next-line
+        entityContext && entityContext[entityTypes.CLUSTER]
+            ? null
+            : {
+                  Header: `Cluster`,
+                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'clusterName',
+                  // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { clusterName, clusterId, id } = original;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.CLUSTER, clusterId)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-            }
-        },
-        {
-            Header: `Namespace`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'namespace',
-            // eslint-disable-next-line
+                      const { clusterName, clusterId, id } = original;
+                      const url = URLService.getURL(match, location)
+                          .push(id)
+                          .push(entityTypes.CLUSTER, clusterId)
+                          .url();
+                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                  }
+              },
+        entityContext && entityContext[entityTypes.NAMESPACE]
+            ? null
+            : {
+                  Header: `Namespace`,
+                  headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                  className: `w-1/10 ${defaultColumnClassName}`,
+                  accessor: 'namespace',
+                  // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const {
-                    id,
-                    saNamespace: { metadata }
-                } = original;
-                if (!metadata) return 'No Namespaces';
-                const { name, id: namespaceId } = metadata;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.NAMESPACE, namespaceId)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text={name} />;
-            }
-        },
+                      const {
+                          id,
+                          saNamespace: { metadata }
+                      } = original;
+                      if (!metadata) return 'No Matches';
+                      const { name, id: namespaceId } = metadata;
+                      const url = URLService.getURL(match, location)
+                          .push(id)
+                          .push(entityTypes.NAMESPACE, namespaceId)
+                          .url();
+                      return <TableCellLink pdf={pdf} url={url} text={name} />;
+                  }
+              },
         {
             Header: `Roles`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
@@ -96,7 +100,7 @@ const buildTableColumns = (match, location) => {
             sortMethod: sortValueByLength
         }
     ];
-    return tableColumns;
+    return tableColumns.filter(col => col);
 };
 
 const createTableRows = data => data.results;
@@ -108,9 +112,10 @@ const ServiceAccounts = ({
     selectedRowId,
     onRowClick,
     query,
-    data
+    data,
+    entityContext
 }) => {
-    const tableColumns = buildTableColumns(match, location);
+    const tableColumns = buildTableColumns(match, location, entityContext);
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
     return (

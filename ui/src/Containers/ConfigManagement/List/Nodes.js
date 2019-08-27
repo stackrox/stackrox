@@ -15,7 +15,7 @@ import { withRouter } from 'react-router-dom';
 import List from './List';
 import TableCellLink from './Link';
 
-const buildTableColumns = (match, location) => {
+const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
         {
             Header: 'Id',
@@ -53,21 +53,23 @@ const buildTableColumns = (match, location) => {
             accessor: 'joinedAt',
             sortMethod: sortDate
         },
-        {
-            Header: `Cluster`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'clusterName',
-            // eslint-disable-next-line
+        entityContext && entityContext[entityTypes.CLUSTER]
+            ? null
+            : {
+                  Header: `Cluster`,
+                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'clusterName',
+                  // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { clusterName, clusterId, id } = original;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.CLUSTER, clusterId)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-            }
-        },
+                      const { clusterName, clusterId, id } = original;
+                      const url = URLService.getURL(match, location)
+                          .push(id)
+                          .push(entityTypes.CLUSTER, clusterId)
+                          .url();
+                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                  }
+              },
         {
             Header: `CIS Controls`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
@@ -98,13 +100,22 @@ const buildTableColumns = (match, location) => {
             }
         }
     ];
-    return tableColumns;
+    return tableColumns.filter(col => col);
 };
 
 const createTableRows = data => data.results;
 
-const Nodes = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
-    const tableColumns = buildTableColumns(match, location);
+const Nodes = ({
+    match,
+    location,
+    className,
+    selectedRowId,
+    onRowClick,
+    query,
+    data,
+    entityContext
+}) => {
+    const tableColumns = buildTableColumns(match, location, entityContext);
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
     return (

@@ -22,7 +22,7 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import EntityList from '../List/EntityList';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
-const ServiceAccount = ({ id, entityListType, query }) => {
+const ServiceAccount = ({ id, entityListType, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -38,15 +38,18 @@ const ServiceAccount = ({ id, entityListType, query }) => {
             serviceAccount(id: $id) {
                 id
                 name
-                namespace
-                saNamespace {
+                ${
+                    entityContext[entityTypes.NAMESPACE]
+                        ? ''
+                        : `saNamespace {
                     metadata {
                         id
                         name
                     }
+                }`
                 }
-                clusterName
-                clusterId
+                
+                ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
                 ${
                     entityListType === entityTypes.DEPLOYMENT
                         ? 'deployments(query: $query) { ...deploymentFields }'
@@ -95,6 +98,7 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityContext={{ ...entityContext, [entityTypes.SERVICE_ACCOUNT]: id }}
                             data={getSubListFromEntity(entity, entityListType)}
                             query={query}
                         />
@@ -108,14 +112,20 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                     secrets = [],
                     deploymentCount,
                     roleCount,
-                    saNamespace: { metadata = {} },
+                    saNamespace,
                     scopedPermissions = [],
                     annotations,
                     clusterName,
                     clusterId
                 } = entity;
 
-                const { name: namespaceName, id: namespaceId } = metadata;
+                let namespaceName;
+                let namespaceId;
+                if (saNamespace) {
+                    const { metadata } = saNamespace;
+                    namespaceName = metadata.name;
+                    namespaceId = metadata.id;
+                }
 
                 const metadataKeyValuePairs = [
                     { key: 'Automounted', value: automountToken.toString() },
@@ -136,20 +146,24 @@ const ServiceAccount = ({ id, entityListType, query }) => {
                                     annotations={annotations}
                                     secrets={secrets}
                                 />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.CLUSTER}
-                                    name="Cluster"
-                                    value={clusterName}
-                                    entityId={clusterId}
-                                />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.NAMESPACE}
-                                    name="Namespace"
-                                    value={namespaceName}
-                                    entityId={namespaceId}
-                                />
+                                {clusterName && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.CLUSTER}
+                                        name="Cluster"
+                                        value={clusterName}
+                                        entityId={clusterId}
+                                    />
+                                )}
+                                {saNamespace && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.NAMESPACE}
+                                        name="Namespace"
+                                        value={namespaceName}
+                                        entityId={namespaceId}
+                                    />
+                                )}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"

@@ -20,12 +20,11 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import { standardLabels } from 'messages/standards';
 import EntityList from '../List/EntityList';
 
-const Node = ({ id, entityListType, query }) => {
+const Node = ({ id, entityListType, query, entityContext }) => {
     const searchParam = useContext(searchContext);
-
     const variables = {
         id,
-        query: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.getEntityWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
@@ -49,7 +48,7 @@ const Node = ({ id, entityListType, query }) => {
                     key
                     value
                 }
-                complianceResults {
+                complianceResults(query: $query) {
                     resource {
                         __typename
                     }
@@ -75,7 +74,6 @@ const Node = ({ id, entityListType, query }) => {
             }
         }
     `;
-
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
@@ -114,7 +112,6 @@ const Node = ({ id, entityListType, query }) => {
                         value: joinedAt ? format(joinedAt, dateTimeFormat) : 'N/A'
                     }
                 ];
-
                 const failedComplianceResults = complianceResults
                     .filter(cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
                     .map(cr => ({
@@ -138,6 +135,7 @@ const Node = ({ id, entityListType, query }) => {
                             entityListType={entityListType}
                             data={processedControls}
                             query={query}
+                            entityContext={{ ...entityContext, [entityTypes.NODE]: id }}
                         />
                     );
                 }
@@ -152,13 +150,15 @@ const Node = ({ id, entityListType, query }) => {
                                     labels={labels}
                                     annotations={annotations}
                                 />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    name="Cluster"
-                                    entityType={entityTypes.CLUSTER}
-                                    value={clusterName}
-                                    entityId={clusterId}
-                                />
+                                {!entityContext.CLUSTER && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        name="Cluster"
+                                        entityType={entityTypes.CLUSTER}
+                                        value={clusterName}
+                                        entityId={clusterId}
+                                    />
+                                )}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="CIS Controls"
