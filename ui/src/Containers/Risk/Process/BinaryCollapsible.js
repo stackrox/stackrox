@@ -8,10 +8,10 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 
 const titleClassName =
     'border-b border-base-300 leading-normal cursor-pointer justify-between items-center hover:border-primary-300';
-function BinaryCollapsible({ comandLineArgs, children }) {
+function BinaryCollapsible({ commandLineArgs, children }) {
     function renderHeader(backgroundClass, icon) {
-        let displayArgs = comandLineArgs;
-        if (comandLineArgs === '') displayArgs = 'No Arguments';
+        let displayArgs = commandLineArgs;
+        if (commandLineArgs === '') displayArgs = 'No Arguments';
         return (
             <div className={`${titleClassName} ${backgroundClass}`}>
                 <div className="flex items-center">
@@ -42,7 +42,7 @@ function BinaryCollapsible({ comandLineArgs, children }) {
 
     return (
         <CollapsibleCard
-            title={comandLineArgs}
+            title={commandLineArgs}
             open
             renderWhenOpened={renderWhenOpened}
             renderWhenClosed={renderWhenClosed}
@@ -54,7 +54,7 @@ function BinaryCollapsible({ comandLineArgs, children }) {
 }
 
 BinaryCollapsible.propTypes = {
-    comandLineArgs: PropTypes.string.isRequired,
+    commandLineArgs: PropTypes.string.isRequired,
     children: PropTypes.node.isRequired
 };
 

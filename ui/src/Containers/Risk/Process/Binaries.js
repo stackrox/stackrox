@@ -2,13 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import ProcessSignal from './Signal';
-import ProcessBinaryCollapsible from './BinaryCollapsible';
+import BinaryCollapsible from './BinaryCollapsible';
 
 function Binaries({ processes }) {
-    return processes.map(({ comandLineArgs, signals }) => (
-        <ProcessBinaryCollapsible comandLineArgs={comandLineArgs} key={comandLineArgs}>
+    return processes.map(({ args, signals }) => (
+        <BinaryCollapsible commandLineArgs={args} key={args}>
             <ProcessSignal signals={signals} />
-        </ProcessBinaryCollapsible>
+        </BinaryCollapsible>
     ));
 }
 
