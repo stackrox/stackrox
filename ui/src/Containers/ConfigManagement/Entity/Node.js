@@ -75,21 +75,6 @@ const Node = ({ id, entityListType, query }) => {
             }
         }
     `;
-    // TODO: use passingControls and failingControls
-    const NODES_QUERY = gql`
-        query getNodesForControls($id: ID!, $clusterId: ID!) {
-            node(id: $id) {
-                id
-                controls {
-                    id
-                    complianceControlNodes(clusterID: $clusterId) {
-                        id
-                        name
-                    }
-                }
-            }
-        }
-    `;
 
     return (
         <Query query={QUERY} variables={variables}>
@@ -141,38 +126,19 @@ const Node = ({ id, entityListType, query }) => {
                     }));
 
                 if (entityListType) {
-                    return (
-                        <Query query={NODES_QUERY} variables={{ id, clusterId }}>
-                            {({ loading: nodesLoading, data: nodesData }) => {
-                                if (nodesLoading) return <Loader />;
-                                const { node: currentNode } = nodesData;
-                                const { controls: controlList } = currentNode;
-                                const controlMap = controlList.reduce(
-                                    (acc, curr) => ({
-                                        ...acc,
-                                        [curr.id]: curr.complianceControlNodes.map(c => c.name)
-                                    }),
-                                    {}
-                                );
-                                const processedControls = controls.map(control => ({
-                                    ...control,
-                                    nodes: controlMap[control.id] || [],
-                                    standard: standardLabels[control.standardId],
-                                    control: `${control.name} - ${control.description}`,
-                                    passing: !failedComplianceResults.find(
-                                        cr => cr.control.id === control.id
-                                    )
-                                }));
+                    const processedControls = controls.map(control => ({
+                        ...control,
+                        standard: standardLabels[control.standardId],
+                        control: `${control.name} - ${control.description}`,
+                        passing: !failedComplianceResults.find(cr => cr.control.id === control.id)
+                    }));
 
-                                return (
-                                    <EntityList
-                                        entityListType={entityListType}
-                                        data={processedControls}
-                                        query={query}
-                                    />
-                                );
-                            }}
-                        </Query>
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={processedControls}
+                            query={query}
+                        />
                     );
                 }
 
