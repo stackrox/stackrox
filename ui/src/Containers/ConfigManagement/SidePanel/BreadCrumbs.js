@@ -27,7 +27,7 @@ const getBreadCrumbStates = ({
 }) => {
     const breadCrumbStates = [];
     if (entityType1 && entityId1) {
-        breadCrumbStates.push({ name: entityName, type: entityType1 });
+        breadCrumbStates.push({ name: entityName, type: entityLabels[entityType1] });
     }
     if (entityListType2) {
         breadCrumbStates.push({
@@ -36,7 +36,10 @@ const getBreadCrumbStates = ({
         });
     }
     if (entityId2) {
-        breadCrumbStates.push({ name: relatedEntityName, type: entityType2 || entityListType2 });
+        breadCrumbStates.push({
+            name: relatedEntityName,
+            type: entityLabels[entityType2] || entityLabels[entityListType2]
+        });
     }
     return breadCrumbStates;
 };
