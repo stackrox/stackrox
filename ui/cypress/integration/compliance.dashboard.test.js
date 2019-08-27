@@ -9,7 +9,9 @@ describe('Compliance dashboard page', () => {
     });
 
     it('should scan for compliance data from the Dashboard page', () => {
-        cy.get(selectors.scanButton).click();
+        cy.get(selectors.scanButton)
+            .click()
+            .should('have.attr', 'disabled');
         cy.wait(5000);
     });
 

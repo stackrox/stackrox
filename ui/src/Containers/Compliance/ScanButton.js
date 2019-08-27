@@ -82,6 +82,7 @@ class ScanButton extends React.Component {
                                         }
                                         onClick={this.onClick(triggerScan)}
                                         isLoading={polling}
+                                        disabled={polling}
                                         loaderSize={loaderSize}
                                     />
                                 );
