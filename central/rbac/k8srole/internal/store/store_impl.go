@@ -8,6 +8,7 @@ import (
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	expiringcache "github.com/stackrox/rox/pkg/expiringcache"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"time"
 )
@@ -28,8 +29,8 @@ func alloc() proto.Message {
 	return new(storage.K8SRole)
 }
 
-func newStore(db *bbolt.DB) (*store, error) {
-	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
+func newStore(db *bbolt.DB, cache expiringcache.Cache) (*store, error) {
+	newCrud, err := protoCrud.NewCachedMessageCrud(db, bucketName, key, alloc, cache, "Role", metrics.IncrementDBCacheCounter)
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/tools/go/ast/astutil"
 )
 
@@ -39,8 +40,17 @@ var (
 		"tests",
 	}
 
-	forbiddenImports = map[string]string{
-		"sync": "github.com/stackrox/rox/pkg/sync",
+	forbiddenImports = map[string]struct {
+		replacement string
+		whitelist   set.StringSet
+	}{
+		"sync": {
+			replacement: "github.com/stackrox/rox/pkg/sync",
+			whitelist: set.NewStringSet(
+				"github.com/stackrox/rox/pkg/bolthelper/" +
+					"crud/proto",
+			),
+		},
 	}
 )
 
@@ -100,8 +110,8 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 		return err
 	}
 
-	if replacement, ok := forbiddenImports[impPath]; ok && replacement != packageName {
-		return fmt.Errorf("import is illegal; use %q instead", replacement)
+	if err := checkForbidden(impPath, packageName); err != nil {
+		return err
 	}
 
 	if !strings.HasPrefix(impPath, roxPrefix) {
@@ -116,6 +126,24 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 		}
 	}
 	return fmt.Errorf("import %s is illegal", spec.Path.Value)
+}
+
+// checkForbidden returns an error if an import has been forbidden and the importing package isn't on the whitelist
+func checkForbidden(impPath, packageName string) error {
+	forbiddenDetails, ok := forbiddenImports[impPath]
+	if !ok {
+		return nil
+	}
+
+	if forbiddenDetails.replacement == packageName {
+		return nil
+	}
+
+	if forbiddenDetails.whitelist.Contains(packageName) {
+		return nil
+	}
+
+	return fmt.Errorf("import is illegal; use %q instead", forbiddenDetails.replacement)
 }
 
 // verifyImportsFromAllowedPackagesOnly verifies that all Go files in (subdirectories of) root

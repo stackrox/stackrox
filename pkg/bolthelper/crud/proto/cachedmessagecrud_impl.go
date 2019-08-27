@@ -1,9 +1,10 @@
 package proto
 
 import (
+	"sync"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 type cachedMessageCrudImpl struct {
