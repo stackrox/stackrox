@@ -73,6 +73,10 @@ const columns = [
         Header: 'Priority',
         searchField: 'Priority',
         accessor: 'deployment.priority',
+        Cell: ({ value }) => {
+            const asInt = parseInt(value, 10);
+            return Number.isNaN(asInt) || asInt < 1 ? '-' : value;
+        },
         sortMethod: sortValue
     }
 ];
