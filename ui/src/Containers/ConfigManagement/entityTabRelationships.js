@@ -12,20 +12,14 @@ const entityTabsMap = {
         entityTypes.DEPLOYMENT,
         entityTypes.SUBJECT,
         entityTypes.SERVICE_ACCOUNT,
-        entityTypes.ROLE,
-        entityTypes.POLICY
+        entityTypes.ROLE
     ],
-    [entityTypes.NAMESPACE]: [
-        entityTypes.DEPLOYMENT,
-        entityTypes.SECRET,
-        entityTypes.IMAGE,
-        entityTypes.POLICY
-    ],
+    [entityTypes.NAMESPACE]: [entityTypes.DEPLOYMENT, entityTypes.SECRET, entityTypes.IMAGE],
     [entityTypes.NODE]: [entityTypes.CONTROL],
     [entityTypes.IMAGE]: [entityTypes.DEPLOYMENT],
     [entityTypes.CONTROL]: [entityTypes.NODE],
     [entityTypes.SUBJECT]: [entityTypes.ROLE],
-    [entityTypes.DEPLOYMENT]: [entityTypes.IMAGE, entityTypes.SECRET, entityTypes.POLICY],
+    [entityTypes.DEPLOYMENT]: [entityTypes.IMAGE, entityTypes.SECRET],
     [entityTypes.POLICY]: [entityTypes.DEPLOYMENT]
 };
 

@@ -19,7 +19,11 @@ const NodesWithFailedControls = props => {
                 const { entities = [] } = data;
                 if (entities.length === 0)
                     return (
-                        <NoResultsMessage message="No nodes with failed controls" className="p-6" />
+                        <NoResultsMessage
+                            message="No nodes failing any controls"
+                            className="p-6"
+                            icon="info"
+                        />
                     );
                 return (
                     <EntityWithFailedControls

@@ -108,7 +108,7 @@ const buildTableColumns = (match, location) => {
                     return <LabelChip text="No Users & Groups" type="alert" />;
                 }
                 if (!subjectsLength) {
-                    return 'No Matches';
+                    return 'No Users & Groups';
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)

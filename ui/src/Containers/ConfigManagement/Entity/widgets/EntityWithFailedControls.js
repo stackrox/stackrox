@@ -38,7 +38,7 @@ const EntityWithFailedControls = ({ entityType, entities }) => {
                 icon="info"
             />
         );
-    const tableHeader = `${failingRelatedEntities.length} nodes have failed across this control`;
+    const tableHeader = `${failingRelatedEntities.length} nodes have failing any controls`;
     return (
         <TableWidget
             entityType={entityType}

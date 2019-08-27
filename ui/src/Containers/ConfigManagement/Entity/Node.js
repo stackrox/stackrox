@@ -205,8 +205,9 @@ const Node = ({ id, entityListType, query }) => {
                             <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                 {failedComplianceResults.length === 0 && (
                                     <NoResultsMessage
-                                        message="No controls across this node"
+                                        message="No nodes failing controls in this cluster"
                                         className="p-6 shadow"
+                                        icon="info"
                                     />
                                 )}
                                 {failedComplianceResults.length > 0 && (

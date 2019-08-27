@@ -54,6 +54,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                         <NoResultsMessage
                             message="No policies failed across this deployment"
                             className="p-6 shadow"
+                            icon="info"
                         />
                     );
                 const header = `${rows.length} policies failed across this deployment`;

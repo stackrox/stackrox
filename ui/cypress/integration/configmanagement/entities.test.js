@@ -106,6 +106,7 @@ const entityCountMatchesTableRows = (listEntity, context) => {
         .find(selectors.countWidgetValue)
         .invoke('text')
         .then(count => {
+            if (count === '0') return;
             cy.get(`${selectors.countWidgets}:contains('${listEntity}')`).click();
             cy.get(
                 `[data-test-id="${
@@ -280,7 +281,6 @@ describe('Config Management Entities', () => {
                 'Users & Groups',
                 'Service Accounts',
                 'Roles',
-                'Policies',
                 'Controls'
             ]);
         });
@@ -298,7 +298,6 @@ describe('Config Management Entities', () => {
                 'users and groups',
                 'service accounts',
                 'roles',
-                'policies',
                 'controls'
             ]);
         });
@@ -394,20 +393,6 @@ describe('Config Management Entities', () => {
             });
         });
 
-        // Disabling test since we are no longer showing policies count widget if we plan to add it later, will enable
-        xit('should have the same number of Policies in the count widget as in the Policies table', () => {
-            context('Page', () => {
-                renderListAndSidePanel('clusters');
-                navigateToSingleEntityPage('cluster');
-                pageEntityCountMatchesTableRows('Policies');
-            });
-
-            context('Side Panel', () => {
-                renderListAndSidePanel('clusters');
-                sidePanelEntityCountMatchesTableRows('Policies');
-            });
-        });
-
         // @TODO: Fix this test
         xit('should have the same number of Controls in the count widget as in the Controls table', () => {
             context('Page', () => {
@@ -478,7 +463,7 @@ describe('Config Management Entities', () => {
         it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('namespaces');
             navigateToSingleEntityPage('namespace');
-            hasTabsFor(['deployments', 'secrets', 'images', 'policies']);
+            hasTabsFor(['deployments', 'secrets', 'images']);
         });
 
         it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
@@ -504,20 +489,6 @@ describe('Config Management Entities', () => {
             context('Side Panel', () => {
                 renderListAndSidePanel('namespaces');
                 sidePanelEntityCountMatchesTableRows('Secrets');
-            });
-        });
-
-        // Disabling test since we are no longer showing policies count widget if we plan to add it later, will enable
-        xit('should have the same number of Policies in the count widget as in the Policies table', () => {
-            context('Page', () => {
-                renderListAndSidePanel('namespaces');
-                navigateToSingleEntityPage('namespace');
-                pageEntityCountMatchesTableRows('Policies');
-            });
-
-            context('Side Panel', () => {
-                renderListAndSidePanel('namespaces');
-                sidePanelEntityCountMatchesTableRows('Policies');
             });
         });
 
@@ -638,7 +609,7 @@ describe('Config Management Entities', () => {
         it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('deployments');
             navigateToSingleEntityPage('deployment');
-            hasTabsFor(['images', 'policies', 'secrets']);
+            hasTabsFor(['images', 'secrets']);
         });
 
         it('should click on the images count widget in the entity page and show the images tab', () => {
@@ -670,20 +641,6 @@ describe('Config Management Entities', () => {
             context('Side Panel', () => {
                 renderListAndSidePanel('deployments');
                 sidePanelEntityCountMatchesTableRows('Secrets');
-            });
-        });
-
-        // Disabling test since we are no longer showing policies count widget if we plan to add it later, will enable
-        xit('should have the same number of Policies in the count widget as in the Policies table', () => {
-            context('Page', () => {
-                renderListAndSidePanel('deployments');
-                navigateToSingleEntityPage('deployment');
-                pageEntityCountMatchesTableRows('Policies');
-            });
-
-            context('Side Panel', () => {
-                renderListAndSidePanel('deployments');
-                sidePanelEntityCountMatchesTableRows('Policies');
             });
         });
     });

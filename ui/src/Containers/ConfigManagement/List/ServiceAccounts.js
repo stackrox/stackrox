@@ -61,7 +61,7 @@ const buildTableColumns = (match, location) => {
                     id,
                     saNamespace: { metadata }
                 } = original;
-                if (!metadata) return 'No Matches';
+                if (!metadata) return 'No Namespaces';
                 const { name, id: namespaceId } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
@@ -77,7 +77,7 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { id, roles } = original;
                 const { length } = roles;
-                if (!length) return 'No Matches';
+                if (!length) return 'No Roles';
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.ROLE)

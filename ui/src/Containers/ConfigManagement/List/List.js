@@ -5,6 +5,7 @@ import pluralize from 'pluralize';
 import createPDFTable from 'utils/pdfUtils';
 import resolvePath from 'object-resolve-path';
 
+import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -36,6 +37,7 @@ const List = ({
     history
 }) => {
     const [page, setPage] = useState(0);
+    const message = `No ${pluralize(entityType.toLowerCase())} were found for this entity`;
 
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
@@ -95,6 +97,7 @@ const List = ({
     }
 
     if (data) {
+        if (data.length === 0 && !variables) return <NoResultsMessage message={message} />;
         const headerComponents = getHeaderComponents(data.length);
         createPDFTable(data, entityType, query, 'capture-list', tableColumns);
         return getRenderComponents(headerComponents, data);
@@ -106,6 +109,9 @@ const List = ({
                 if (loading) return <Loader />;
                 if (!queryData) return <PageNotFound resourceType={entityType} />;
                 const tableRows = createTableRows(queryData) || [];
+
+                if (tableRows.length === 0 && !variables)
+                    return <NoResultsMessage message={message} />;
                 const headerComponents = getHeaderComponents(tableRows.length);
 
                 if (tableRows.length) {

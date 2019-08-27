@@ -49,7 +49,7 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { id, roles } = original;
                 const { length } = roles;
-                if (!length) return 'No Matches';
+                if (!length) return 'No Roles';
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.ROLE)
