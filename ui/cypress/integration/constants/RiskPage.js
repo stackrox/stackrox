@@ -1,7 +1,13 @@
 export const url = '/main/risk';
 
+export const errorMessages = {
+    deploymentNotFound: 'Deployment not found',
+    riskNotFound: 'Risk not found'
+};
+
 export const selectors = {
     risk: 'nav.left-navigation li:contains("Risk") a',
+    errMgBox: 'div.error-message',
     panelTabs: {
         riskIndicators: 'button[data-test-id="tab"]:contains("Risk Indicators")',
         deploymentDetails: 'button[data-test-id="tab"]:contains("Deployment Details")'

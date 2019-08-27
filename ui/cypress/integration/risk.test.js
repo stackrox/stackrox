@@ -1,4 +1,4 @@
-import { selectors as RiskPageSelectors, url } from './constants/RiskPage';
+import { selectors as RiskPageSelectors, url, errorMessages } from './constants/RiskPage';
 import selectors from './constants/SearchPage';
 import * as api from './constants/apiEndpoints';
 import withAuth from './helpers/basicAuth';
@@ -39,6 +39,11 @@ describe('Risk page', () => {
         cy.get(RiskPageSelectors.table.row.firstRow)
             .click({ force: true })
             .should('have.class', 'row-active');
+    });
+
+    it('should display deployment error message in panel', () => {
+        cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
+        cy.get(RiskPageSelectors.errMgBox).contains(errorMessages.deploymentNotFound);
     });
 
     it('should open the panel to view risk indicators', () => {

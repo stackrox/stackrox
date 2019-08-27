@@ -5,14 +5,39 @@ import { Link } from 'react-router-dom';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
+import Message from 'Components/Message';
 
 import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './Process/Details';
 
+function getRiskSidePanelErrorMsg(deployment, risk) {
+    if (!deployment) {
+        return <div>Deployment not found. The selected deployment may have been removed.</div>;
+    }
+
+    if (!risk) {
+        return <div>Risk not found. Risk for selected deployment may not have been processed.</div>;
+    }
+    return null;
+}
+
+const RiskSidePanelErrorContent = ({ deployment, risk }) => {
+    const message = getRiskSidePanelErrorMsg(deployment, risk);
+    return (
+        <div className="h-full flex-1 bg-base-200 border-r border-l border-b border-base-400 p-3">
+            <Message message={message} type="error" />
+        </div>
+    );
+};
+
 function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, processGroup }) {
     if (isFetching) {
         return <Loader />;
+    }
+
+    if (!selectedDeployment || !processGroup) {
+        return <RiskSidePanelErrorContent deployment={selectedDeployment} risk={deploymentRisk} />;
     }
 
     const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
@@ -30,7 +55,14 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                     >
                         View Deployment in Network Graph
                     </Link>
-                    <RiskDetails risk={deploymentRisk} />
+                    {!deploymentRisk ? (
+                        <RiskSidePanelErrorContent
+                            deployment={selectedDeployment}
+                            risk={deploymentRisk}
+                        />
+                    ) : (
+                        <RiskDetails risk={deploymentRisk} />
+                    )}
                 </div>
             </TabContent>
             <TabContent>
@@ -51,6 +83,16 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
         </Tabs>
     );
 }
+
+RiskSidePanelErrorContent.propTypes = {
+    deployment: PropTypes.shape({}),
+    risk: PropTypes.shape({})
+};
+
+RiskSidePanelErrorContent.defaultProps = {
+    deployment: undefined,
+    risk: undefined
+};
 
 RiskSidePanelContent.propTypes = {
     isFetching: PropTypes.bool.isRequired,
