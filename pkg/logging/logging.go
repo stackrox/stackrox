@@ -39,8 +39,8 @@ const (
 	// Our project prefix. For all subpackages of this, we strip this prefix.
 	projectPrefix = "github.com/stackrox/rox"
 
-	// The common log file so we can export it
-	loggingPath = "/var/log/stackrox/log.txt"
+	// LoggingPath is the common log file so we can export it
+	LoggingPath = "/var/log/stackrox/log.txt"
 )
 
 var (
@@ -163,7 +163,7 @@ func init() {
 		thisModuleLogger.Warnf("Invalid LOGLEVEL value '%s', defaulting to %s", initLevel, LabelForLevelOrInvalid(defaultLevel))
 	}
 
-	logFile, err := os.OpenFile(loggingPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+	logFile, err := os.OpenFile(LoggingPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err == nil {
 		defaultDestination = io.MultiWriter(defaultDestination, logFile)
 	}

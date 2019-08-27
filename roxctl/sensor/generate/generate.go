@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -118,5 +119,12 @@ func getBundle(id string, timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
-	return zipdownload.GetZip(path, body, timeout, "sensor")
+	return zipdownload.GetZip(zipdownload.GetZipOptions{
+		Path:       path,
+		Method:     http.MethodPost,
+		Body:       body,
+		Timeout:    timeout,
+		BundleType: "sensor",
+		ExpandZip:  true,
+	})
 }

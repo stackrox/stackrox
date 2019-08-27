@@ -66,10 +66,18 @@ func printf(val string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, val, args...)
 }
 
+// GetZipOptions specifies a request to download a zip file
+type GetZipOptions struct {
+	Path, Method, BundleType string
+	Body                     []byte
+	Timeout                  time.Duration
+	ExpandZip                bool
+}
+
 // GetZip downloads a zip from the given endpoint.
 // bundleType is used for logging.
-func GetZip(path string, requestBody []byte, timeout time.Duration, bundleType string) error {
-	resp, err := common.DoHTTPRequestAndCheck200(path, timeout, "POST", bytes.NewBuffer(requestBody))
+func GetZip(opts GetZipOptions) error {
+	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body))
 	if err != nil {
 		return err
 	}
@@ -84,7 +92,7 @@ func GetZip(path string, requestBody []byte, timeout time.Duration, bundleType s
 		if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
 			return errors.Wrap(err, "Error writing out zip file")
 		}
-		printf("Successfully wrote %s zip file\n", bundleType)
+		printf("Successfully wrote %s zip file\n", opts.BundleType)
 	} else {
 		file, err := os.Create(outputFilename)
 		if err != nil {
@@ -97,8 +105,12 @@ func GetZip(path string, requestBody []byte, timeout time.Duration, bundleType s
 		if err := file.Close(); err != nil {
 			return errors.Wrap(err, "Error closing file")
 		}
-		if err := writeZipToFolder(outputFilename, bundleType); err != nil {
-			return err
+		if opts.ExpandZip {
+			if err := writeZipToFolder(outputFilename, opts.BundleType); err != nil {
+				return err
+			}
+		} else {
+			printf("Successfully wrote %s folder %q\n", opts.BundleType, outputFilename)
 		}
 	}
 	return nil

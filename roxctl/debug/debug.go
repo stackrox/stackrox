@@ -30,6 +30,7 @@ func Command() *cobra.Command {
 		},
 	}
 	c.AddCommand(LogLevelCommand())
+	c.AddCommand(DumpCommand())
 	flags.AddTimeout(c)
 	return c
 }

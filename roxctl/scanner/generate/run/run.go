@@ -2,6 +2,7 @@ package run
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/apiparams"
@@ -25,5 +26,12 @@ func Run(c *cobra.Command, params *apiparams.Scanner) error {
 		return err
 	}
 	timeout := flags.Timeout(c)
-	return zipdownload.GetZip("/api/extensions/scanner/zip", body, timeout, getBundleType(params))
+	return zipdownload.GetZip(zipdownload.GetZipOptions{
+		Path:       "/api/extensions/scanner/zip",
+		Method:     http.MethodPost,
+		Body:       body,
+		Timeout:    timeout,
+		BundleType: getBundleType(params),
+		ExpandZip:  true,
+	})
 }
