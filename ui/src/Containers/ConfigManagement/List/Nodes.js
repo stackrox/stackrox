@@ -1,7 +1,7 @@
 import React from 'react';
+import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
-import { NODES_QUERY as QUERY } from 'queries/node';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import queryService from 'modules/queryService';
@@ -14,6 +14,28 @@ import pluralize from 'pluralize';
 import { withRouter } from 'react-router-dom';
 import List from './List';
 import TableCellLink from './Link';
+
+const QUERY = gql`
+    query nodes($query: String) {
+        results: nodes(query: $query) {
+            id
+            name
+            clusterName
+            clusterId
+            osImage
+            containerRuntimeVersion
+            joinedAt
+            complianceResults(query: "Standard: CIS") {
+                resource {
+                    __typename
+                }
+                control {
+                    id
+                }
+            }
+        }
+    }
+`;
 
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
@@ -61,7 +83,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
                   // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)

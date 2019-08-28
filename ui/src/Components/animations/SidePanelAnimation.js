@@ -29,9 +29,13 @@ const SidePanelAnimation = ({ className, condition, children }) => {
 };
 
 SidePanelAnimation.propTypes = {
-    className: PropTypes.string.isRequired,
+    className: PropTypes.string,
     condition: PropTypes.bool.isRequired,
     children: PropTypes.element.isRequired
+};
+
+SidePanelAnimation.defaultProps = {
+    className: ''
 };
 
 export default SidePanelAnimation;

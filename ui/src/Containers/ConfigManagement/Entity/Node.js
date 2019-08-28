@@ -22,9 +22,13 @@ import EntityList from '../List/EntityList';
 
 const Node = ({ id, entityListType, query, entityContext }) => {
     const searchParam = useContext(searchContext);
+
+    const queryObject = { ...query[searchParam] };
+    if (!queryObject.Standard) queryObject.Standard = 'CIS';
+
     const variables = {
         id,
-        query: queryService.getEntityWhereClause(query[searchParam])
+        query: queryService.getEntityWhereClause(queryObject)
     };
 
     const QUERY = gql`

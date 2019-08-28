@@ -73,17 +73,13 @@ const BreadCrumbLinks = props => {
         );
         if (!state) return null;
         return (
-            <>
-                <span
-                    className="flex flex-col max-w-64"
-                    key={i}
-                    data-test-id="breadcrumb-link-text"
-                >
+            <div key={`${state.name}--${state.type}`} className="flex">
+                <span className="flex flex-col max-w-64" data-test-id="breadcrumb-link-text">
                     {content}
                     <span className="capitalize italic font-600">{state.type.toLowerCase()}</span>
                 </span>
                 <span className="flex items-center">{icon}</span>
-            </>
+            </div>
         );
     });
     return (
