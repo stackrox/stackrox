@@ -110,9 +110,7 @@ const buildTableColumns = (match, location, entityContext) => {
 };
 
 const createTableRows = data => {
-    return data.secrets.filter(secret =>
-        secret.files.find(file => file.type !== 'IMAGE_PULL_SECRET')
-    );
+    return data.secrets;
 };
 
 const Secrets = ({
