@@ -41,7 +41,7 @@ const tableColumns = [
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         // eslint-disable-next-line
-    Cell: ({ original }) => {
+        Cell: ({ original }) => {
             return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
         },
         accessor: 'passing'

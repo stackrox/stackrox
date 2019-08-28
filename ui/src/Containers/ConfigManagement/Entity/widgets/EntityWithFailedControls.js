@@ -30,7 +30,8 @@ export const getRelatedEntities = (data, entityType) => {
 const EntityWithFailedControls = ({ entityType, entities }) => {
     const relatedEntities = getRelatedEntities(entities, entityType);
     const failingRelatedEntities = relatedEntities.filter(relatedEntity => !relatedEntity.passing);
-    if (failingRelatedEntities.length === 0)
+    const count = failingRelatedEntities.length;
+    if (count === 0)
         return (
             <NoResultsMessage
                 message="No nodes failing this control"
@@ -38,7 +39,7 @@ const EntityWithFailedControls = ({ entityType, entities }) => {
                 icon="info"
             />
         );
-    const tableHeader = `${failingRelatedEntities.length} nodes have failing any controls`;
+    const tableHeader = `${count} ${count === 1 ? 'node has' : 'nodes have'} failing controls`;
     return (
         <TableWidget
             entityType={entityType}

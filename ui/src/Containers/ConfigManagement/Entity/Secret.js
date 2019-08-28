@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
+import pluralize from 'pluralize';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -102,14 +103,13 @@ SecretDataMetadata.defaultProps = {
     metadata: null
 };
 
-const SecretValues = ({ files, deploymentCount }) => {
+const SecretValues = ({ files }) => {
     const filesWithoutImagePullSecrets = files.filter(
         // eslint-disable-next-line
         file => !file.metadata || (file.metadata && file.metadata.__typename !== 'ImagePullSecret')
     );
-    const widgetHeader = `${
-        filesWithoutImagePullSecrets.length
-    } files across ${deploymentCount} deployment(s)`;
+    const filesCount = filesWithoutImagePullSecrets.length;
+    const widgetHeader = `${filesCount} ${pluralize('file', filesCount)}`;
     const secretValues = filesWithoutImagePullSecrets.map((file, i) => {
         const { name, type, metadata } = file;
         const { algorithm } = metadata || {};
@@ -138,8 +138,7 @@ const SecretValues = ({ files, deploymentCount }) => {
 };
 
 SecretValues.propTypes = {
-    files: PropTypes.arrayOf(PropTypes.shape).isRequired,
-    deploymentCount: PropTypes.number.isRequired
+    files: PropTypes.arrayOf(PropTypes.shape).isRequired
 };
 
 const Secret = ({ id, entityListType, query, entityContext }) => {
@@ -268,7 +267,7 @@ const Secret = ({ id, entityListType, query, entityContext }) => {
                         </CollapsibleSection>
                         <CollapsibleSection title="Secret Values">
                             <div className="flex pdf-page pdf-stretch mb-4 ml-4 mr-4">
-                                <SecretValues files={files} deploymentCount={deployments.length} />
+                                <SecretValues files={files} />
                             </div>
                         </CollapsibleSection>
                     </div>

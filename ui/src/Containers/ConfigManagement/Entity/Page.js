@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
@@ -34,8 +34,24 @@ const EntityPage = ({ match, location }) => {
         pdfId = 'capture-list';
     }
     const overlay = !!entityId1;
+    const [fadeIn, setFadeIn] = useState(false);
+
+    useEffect(() => setFadeIn(false), [pageEntityId]);
+
+    // manually adding the styles to fade back in
+    if (!fadeIn) setTimeout(() => setFadeIn(true), 50);
+
+    const style = fadeIn
+        ? {
+              opacity: 1,
+              transition: '.15s opacity ease-in',
+              transitionDelay: '.25s'
+          }
+        : {
+              opacity: 0
+          };
     return (
-        <div className="flex flex-1 flex-col bg-base-200">
+        <div className="flex flex-1 flex-col bg-base-200" style={style}>
             <PageHeader entityType={pageEntityType} entityId={pageEntityId}>
                 <div className="flex flex-1 justify-end">
                     <div className="flex">

@@ -185,3 +185,29 @@ export const NODES_WITH_CONTROL = gql`
         }
     }
 `;
+
+export const CONTROL_FRAGMENT = gql`
+    fragment controlFields on ControlResult {
+        resource {
+            __typename
+        }
+        control {
+            id
+            standardId
+            name
+            description
+        }
+        value {
+            overallState
+        }
+    }
+`;
+
+export const CONTROLS_FRAGMENT = gql`
+    fragment controlsListFields on ComplianceControl {
+        id
+        standardId
+        name
+        description
+    }
+`;

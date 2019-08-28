@@ -18,9 +18,11 @@ import { SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
 import { ROLE_FRAGMENT } from 'queries/role';
 import { SECRET_FRAGMENT } from 'queries/secret';
 import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
+import { CONTROL_FRAGMENT, CONTROLS_FRAGMENT } from 'queries/controls';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
+import { standardLabels } from 'messages/standards';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
@@ -32,6 +34,7 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
     const queryObject = { ...query[searchParam] };
 
     if (entityListType === entityTypes.POLICY) queryObject['Lifecycle Stage'] = 'DEPLOY';
+    if (!queryObject.Standard) queryObject.Standard = 'CIS';
 
     const variables = {
         id,
@@ -90,6 +93,11 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                         ? 'serviceAccounts(query: $query) { ...serviceAccountFields }'
                         : 'serviceAccountCount'
                 }
+                ${
+                    entityListType === entityTypes.CONTROL
+                        ? 'complianceResults(query: $query) { ...controlFields } controls(query: $query) { ...controlsListFields}'
+                        : 'controls(query: "Standard:CIS") { ...controlsListFields}'
+                }
                 status {
                     orchestratorMetadata {
                         version
@@ -107,6 +115,8 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
         ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
         ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
         ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
+        ${entityListType === entityTypes.CONTROL ? CONTROL_FRAGMENT : ''}
+        ${CONTROLS_FRAGMENT}
     `;
 
     return (
@@ -116,11 +126,33 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                 const { cluster: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.CLUSTER} />;
 
+                const { complianceResults = [], controls } = entity;
+
                 if (entityListType) {
+                    let listData = getSubListFromEntity(entity, entityListType);
+                    if (entityListType === entityTypes.CONTROL) {
+                        const failedComplianceResults = complianceResults
+                            .filter(cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
+                            .map(cr => ({
+                                ...cr,
+                                control: {
+                                    ...cr.control,
+                                    standard: standardLabels[cr.control.standardId]
+                                }
+                            }));
+                        listData = controls.map(control => ({
+                            ...control,
+                            standard: standardLabels[control.standardId],
+                            control: `${control.name} - ${control.description}`,
+                            passing: !failedComplianceResults.find(
+                                cr => cr.control.id === control.id
+                            )
+                        }));
+                    }
                     return (
                         <EntityList
                             entityListType={entityListType}
-                            data={getSubListFromEntity(entity, entityListType)}
+                            data={listData}
                             entityContext={{ ...entityContext, [entityTypes.CLUSTER]: id }}
                             query={query}
                         />
@@ -204,6 +236,12 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                                     name="Roles"
                                     value={k8sroleCount}
                                     entityType={entityTypes.ROLE}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="CIS Controls"
+                                    value={controls.length}
+                                    entityType={entityTypes.CONTROL}
                                 />
                             </div>
                         </CollapsibleSection>

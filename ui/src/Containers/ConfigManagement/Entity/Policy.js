@@ -50,12 +50,12 @@ const DeploymentViolations = ({ className, alerts }) => {
     const columns = entityViolationsColumns[entityTypes.DEPLOYMENT];
     return (
         <TableWidget
-            header={`${rows.length} ${pluralize('Deployment', rows.length)} in Violation`}
+            header={`${rows.length} ${pluralize('Deployment', rows.length)} with Violation(s)`}
             entityType={entityTypes.DEPLOYMENT}
             columns={columns}
             rows={rows}
             idAttribute="deployment.id"
-            noDataText="No Deployments in Violation"
+            noDataText="No Deployments with Violation(s)"
             className={className}
         />
     );

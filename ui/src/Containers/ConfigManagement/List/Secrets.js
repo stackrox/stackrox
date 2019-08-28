@@ -13,6 +13,21 @@ import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
 
+const secretTypeEnumMapping = {
+    UNDETERMINED: 'Undetermined',
+    PUBLIC_CERTIFICATE: 'Public Certificate',
+    CERTIFICATE_REQUEST: 'Certificate Request',
+    PRIVACY_ENHANCED_MESSAGE: 'Privacy Enhanced Message',
+    OPENSSH_PRIVATE_KEY: 'OpenSSH Private Key',
+    PGP_PRIVATE_KEY: 'PGP Private Key',
+    EC_PRIVATE_KEY: 'EC Private Key',
+    RSA_PRIVATE_KEY: 'RSA Private Key',
+    DSA_PRIVATE_KEY: 'DSA Private Key',
+    CERT_PRIVATE_KEY: 'Certificate Private Key',
+    ENCRYPTED_PRIVATE_KEY: 'Encrypted Private Key',
+    IMAGE_PULL_SECRET: 'Image Pull Secret'
+};
+
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
         {
@@ -48,11 +63,8 @@ const buildTableColumns = (match, location, entityContext) => {
                 const { files } = original;
                 if (!files.length) return 'No File Types';
                 return (
-                    <span className="capitalize">
-                        {uniq(files.map(file => file.type))
-                            .join(', ')
-                            .replace(/_/g, ' ')
-                            .toLowerCase()}
+                    <span>
+                        {uniq(files.map(file => secretTypeEnumMapping[file.type])).join(', ')}
                     </span>
                 );
             },
@@ -66,7 +78,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
                   // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)

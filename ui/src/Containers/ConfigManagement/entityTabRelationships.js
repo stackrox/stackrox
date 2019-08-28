@@ -5,6 +5,7 @@ const entityTabsMap = {
     [entityTypes.ROLE]: [entityTypes.SUBJECT, entityTypes.SERVICE_ACCOUNT],
     [entityTypes.SECRET]: [entityTypes.DEPLOYMENT],
     [entityTypes.CLUSTER]: [
+        entityTypes.CONTROL,
         entityTypes.NODE,
         entityTypes.SECRET,
         entityTypes.IMAGE,
