@@ -14,7 +14,12 @@ const entityTabsMap = {
         entityTypes.SERVICE_ACCOUNT,
         entityTypes.ROLE
     ],
-    [entityTypes.NAMESPACE]: [entityTypes.DEPLOYMENT, entityTypes.SECRET, entityTypes.IMAGE],
+    [entityTypes.NAMESPACE]: [
+        entityTypes.DEPLOYMENT,
+        entityTypes.SECRET,
+        entityTypes.IMAGE,
+        entityTypes.SERVICE_ACCOUNT
+    ],
     [entityTypes.NODE]: [entityTypes.CONTROL],
     [entityTypes.IMAGE]: [entityTypes.DEPLOYMENT],
     [entityTypes.CONTROL]: [entityTypes.NODE],
