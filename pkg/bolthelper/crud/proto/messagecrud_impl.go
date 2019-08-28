@@ -7,6 +7,7 @@ import (
 
 type messageCrudImpl struct {
 	genericCrud generic.Crud
+	keyFunc     func(message proto.Message) []byte
 }
 
 // Read reads and returns a single proto message from bolt.
@@ -113,4 +114,8 @@ func (crud *messageCrudImpl) Delete(id string) error {
 // DeleteBatch deletes the messages associated with all of the input ids in bolt.
 func (crud *messageCrudImpl) DeleteBatch(ids []string) error {
 	return crud.genericCrud.DeleteBatch(idsToKeyPaths(ids)...)
+}
+
+func (crud *messageCrudImpl) KeyFunc(message proto.Message) []byte {
+	return crud.keyFunc(message)
 }

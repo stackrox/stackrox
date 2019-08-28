@@ -47,8 +47,9 @@ func (s *cachedMessageCrudTestSuite) SetupSuite() {
 		return &storage.Alert{}
 	}
 	s.cache = expiringcache.NewExpiringCache(time.Hour)
-	crud, err := NewCachedMessageCrud(db, []byte("testBucket"), keyFunc, allocFunc, s.cache, "testMetrifc", fakeMetricFunc)
+	wrappedCrud, err := NewMessageCrud(db, []byte("testBucket"), keyFunc, allocFunc)
 	s.NoError(err)
+	crud := NewCachedMessageCrud(wrappedCrud, s.cache, "testMetric", fakeMetricFunc)
 	s.crud = crud
 }
 

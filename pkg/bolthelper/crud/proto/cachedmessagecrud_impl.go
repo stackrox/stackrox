@@ -12,14 +12,13 @@ type cachedMessageCrudImpl struct {
 
 	metricType string
 	metricFunc func(string, string)
-	keyFunc    func(proto.Message) []byte
 
 	cacheLock sync.Mutex
 	cache     expiringcache.Cache
 }
 
 func (c *cachedMessageCrudImpl) stringKey(msg proto.Message) string {
-	return string(c.keyFunc(msg))
+	return string(c.KeyFunc(msg))
 }
 
 func (c *cachedMessageCrudImpl) Read(id string) (proto.Message, error) {
@@ -156,4 +155,8 @@ func (c *cachedMessageCrudImpl) CreateBatch(msgs []proto.Message) error {
 
 func (c *cachedMessageCrudImpl) ReadAll() ([]proto.Message, error) {
 	return c.messageCrud.ReadAll()
+}
+
+func (c *cachedMessageCrudImpl) KeyFunc(message proto.Message) []byte {
+	return c.messageCrud.KeyFunc(message)
 }

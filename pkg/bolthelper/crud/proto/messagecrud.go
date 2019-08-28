@@ -24,6 +24,8 @@ type MessageCrud interface {
 
 	Delete(id string) error
 	DeleteBatch(ids []string) error
+
+	KeyFunc(msg proto.Message) []byte
 }
 
 // NewMessageCrud returns a new MessageCrud instance for the given db and bucket.
@@ -47,24 +49,16 @@ func NewMessageCrudOrPanic(db *bolt.DB,
 }
 
 // NewCachedMessageCrud returns a new MessageCrud instance for the given db and bucket using the provided cache.
-func NewCachedMessageCrud(db *bolt.DB,
-	bucketName []byte,
-	keyFunc func(proto.Message) []byte,
-	allocFunc func() proto.Message,
+func NewCachedMessageCrud(messageCrud MessageCrud,
 	cache expiringcache.Cache,
 	metricType string,
-	metricFunc func(string, string)) (MessageCrud, error) {
-	wrappedCrud, err := NewMessageCrud(db, bucketName, keyFunc, allocFunc)
-	if err != nil {
-		return nil, err
-	}
+	metricFunc func(string, string)) MessageCrud {
 	return &cachedMessageCrudImpl{
-		messageCrud: wrappedCrud,
+		messageCrud: messageCrud,
 		metricType:  metricType,
 		metricFunc:  metricFunc,
-		keyFunc:     keyFunc,
 		cache:       cache,
-	}, nil
+	}
 }
 
 // NewMessageCrudForBucket returns a new MessageCrud instance for the given bucket ref.
@@ -90,5 +84,6 @@ func NewMessageCrudForBucket(
 	genericCrud := generic.NewCrud(bucketRef, deserializeFunc, serializeFunc)
 	return &messageCrudImpl{
 		genericCrud: genericCrud,
+		keyFunc:     keyFunc,
 	}
 }

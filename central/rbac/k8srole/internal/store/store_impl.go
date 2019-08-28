@@ -30,10 +30,11 @@ func alloc() proto.Message {
 }
 
 func newStore(db *bbolt.DB, cache expiringcache.Cache) (*store, error) {
-	newCrud, err := protoCrud.NewCachedMessageCrud(db, bucketName, key, alloc, cache, "Role", metrics.IncrementDBCacheCounter)
+	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
 	if err != nil {
 		return nil, err
 	}
+	newCrud = protoCrud.NewCachedMessageCrud(newCrud, cache, "Role", metrics.IncrementDBCacheCounter)
 	return &store{crud: newCrud}, nil
 }
 

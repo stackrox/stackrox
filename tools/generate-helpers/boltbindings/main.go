@@ -87,29 +87,33 @@ func generateNewFunc(props *operations.GeneratorProperties) Code {
 	newStoreArgs := Dict{
 		Id("crud"): Id("newCrud"),
 	}
-	methodArgs := []Code{Id("db").Op("*").Qual(packagenames.BBolt, "DB")}
-	newCrud := "NewMessageCrud"
-	crudArgs := []Code{Id("db"), Id(bucketNameVariable),
-		Id("key"), Id("alloc")}
-	if props.Cache {
-		methodArgs = append(methodArgs,
-			Id("cache").Qual(packagenames.ExpiringCache, "Cache"),
-		)
-		newCrud = "NewCachedMessageCrud"
-		crudArgs = append(crudArgs,
-			Id("cache"),
-			Lit(props.Singular),
-			Qual(packagenames.Metrics, "IncrementDBCacheCounter"),
-		)
-	}
 
-	return Func().Id("newStore").Params(methodArgs...).
-		Parens(List(Op("*").Id("store"), Error())).Block(
-		List(Id("newCrud"), Err()).Op(":=").Qual(packagenames.BoltHelperProto, newCrud).Call(crudArgs...),
-		If(Err().Op("!=").Nil()).Block(
-			Return(Nil(), Err()),
-		),
-		Return(Op("&").Id("store").Values(newStoreArgs), Nil()),
+	return Func().Id("newStore").Params(
+		operations.CBlock(
+			operations.CCode(true, Id("db").Op("*").Qual(packagenames.BBolt, "DB")),
+			operations.CCode(props.Cache, Id("cache").Qual(packagenames.ExpiringCache, "Cache")),
+		)...,
+	).Parens(List(Op("*").Id("store"), Error())).Block(
+		operations.CBlock(
+			operations.CCode(true,
+				List(Id("newCrud"), Err()).Op(":=").Qual(packagenames.BoltHelperProto, "NewMessageCrud").Call(
+					Id("db"), Id(bucketNameVariable),
+					Id("key"), Id("alloc"),
+				),
+				If(Err().Op("!=").Nil()).Block(
+					Return(Nil(), Err()),
+				),
+			),
+			operations.CCode(props.Cache,
+				Id("newCrud").Op("=").Qual(packagenames.BoltHelperProto, "NewCachedMessageCrud").Call(
+					Id("newCrud"),
+					Id("cache"),
+					Lit(props.Singular),
+					Qual(packagenames.Metrics, "IncrementDBCacheCounter"),
+				),
+			),
+			operations.CCode(true, Return(Op("&").Id("store").Values(newStoreArgs), Nil())),
+		)...,
 	)
 }
 
