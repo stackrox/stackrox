@@ -14,6 +14,7 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -26,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/tlsutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
@@ -44,6 +46,99 @@ var (
 
 type server interface {
 	Serve(l net.Listener) error
+}
+
+type endpointServersConfig struct {
+	httpHandler http.Handler
+	grpcServer  *grpc.Server
+
+	endpoint string
+	tlsConf  *tls.Config
+}
+
+func (c *endpointServersConfig) Kind() string {
+	var sb strings.Builder
+	if c.tlsConf == nil {
+		sb.WriteString("Plaintext")
+	} else {
+		sb.WriteString("TLS-enabled")
+	}
+	sb.WriteRune(' ')
+	if c.httpHandler != nil && c.grpcServer != nil {
+		sb.WriteString("multiplexed HTTP/gRPC")
+	} else if c.httpHandler != nil {
+		sb.WriteString("HTTP")
+	} else if c.grpcServer != nil {
+		sb.WriteString("gRPC")
+	} else {
+		sb.WriteString("dummy")
+	}
+	return sb.String()
+}
+
+// Instantiate returns `serverAndListener`s for the given servers at the respective endpoint.
+func (c *endpointServersConfig) Instantiate() (net.Addr, []serverAndListener, error) {
+	lis, err := net.Listen("tcp", c.endpoint)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var httpLis, grpcLis net.Listener
+
+	var result []serverAndListener
+
+	tlsConf := c.tlsConf
+	if tlsConf != nil {
+		if c.grpcServer != nil {
+			tlsConf = ApplyPureGRPCALPNConfig(tlsConf)
+		}
+		lis = tls.NewListener(lis, tlsConf)
+
+		if c.grpcServer != nil && c.httpHandler != nil {
+			protoMap := map[string]*net.Listener{
+				PureGRPCALPNString: &grpcLis,
+				"":                 &httpLis,
+			}
+			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{})
+		}
+	}
+
+	// Default to listen on the main listener, HTTP first
+	if c.httpHandler != nil && httpLis == nil {
+		httpLis = lis
+	} else if c.grpcServer != nil && grpcLis == nil {
+		grpcLis = lis
+	}
+
+	kind := c.Kind()
+
+	if httpLis != nil {
+		httpHandler := c.httpHandler
+		if c.grpcServer != nil {
+			httpHandler = wireOrJSONMuxer(c.grpcServer, httpHandler)
+		}
+
+		httpSrv := &http.Server{
+			Handler:   httpHandler,
+			TLSConfig: tlsConf,
+			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
+		}
+		result = append(result, serverAndListener{
+			srv:      httpSrv,
+			listener: httpLis,
+			kind:     kind,
+		})
+	}
+	if grpcLis != nil {
+		result = append(result, serverAndListener{
+			srv:      c.grpcServer,
+			listener: grpcLis,
+			kind:     kind,
+		})
+
+	}
+
+	return lis.Addr(), result, nil
 }
 
 type serverAndListener struct {
@@ -231,6 +326,7 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	}
 
 	grpcServer := grpc.NewServer(
+		grpc.Creds(credsFromConn{}),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
 		),
@@ -262,78 +358,59 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		}
 	}
 
-	listener, err := tls.Listen("tcp", a.config.PublicEndpoint, tlsConf)
-	if err != nil {
-		log.Panicf("Could not listen on public API endpoint: %v", err)
-	}
-
 	httpHandler := a.muxer(localConn)
 
-	muxedSrv := &http.Server{
-		Handler:   wireOrJSONMuxer(grpcServer, httpHandler),
-		ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
-		TLSConfig: tlsConf,
-	}
-
-	serverAndListeners := []serverAndListener{
+	endpointSrvCfgs := []endpointServersConfig{
 		{
-			srv:      muxedSrv,
-			listener: listener,
-			kind:     "TLS-enabled HTTP/gRPC",
+			httpHandler: httpHandler,
+			grpcServer:  grpcServer,
+			endpoint:    a.config.PublicEndpoint,
+			tlsConf:     tlsConf,
 		},
 	}
 
 	for _, plaintextEndpoint := range a.config.PlaintextEndpoints.MultiplexedEndpoints {
-		plaintextListener, err := net.Listen("tcp", plaintextEndpoint)
-		if err != nil {
-			log.Panicf("Could not listen on plaintext API endpoint %q: %v", plaintextEndpoint, err)
-		}
-		serverAndListeners = append(serverAndListeners, serverAndListener{
-			srv:      muxedSrv,
-			listener: plaintextListener,
-			kind:     "Plaintext multiplexed HTTP/gRPC",
+		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
+			httpHandler: httpHandler,
+			grpcServer:  grpcServer,
+			endpoint:    plaintextEndpoint,
 		})
 	}
 
 	if len(a.config.PlaintextEndpoints.HTTPEndpoints) > 0 {
-		httpSrv := &http.Server{
-			Handler:  httpHandler,
-			ErrorLog: golog.New(httpErrorLogger{}, "", golog.LstdFlags),
-		}
 		for _, plaintextEndpoint := range a.config.PlaintextEndpoints.HTTPEndpoints {
-			plaintextListener, err := net.Listen("tcp", plaintextEndpoint)
-			if err != nil {
-				log.Panicf("Could not listen on plaintext HTTP API endpoint %q: %v", plaintextEndpoint, err)
-			}
-			serverAndListeners = append(serverAndListeners, serverAndListener{
-				srv:      httpSrv,
-				listener: plaintextListener,
-				kind:     "Plaintext HTTP",
+			endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
+				httpHandler: httpHandler,
+				endpoint:    plaintextEndpoint,
 			})
 		}
 	}
 
 	for _, plaintextEndpoint := range a.config.PlaintextEndpoints.GRPCEndpoints {
-		plaintextListener, err := net.Listen("tcp", plaintextEndpoint)
-		if err != nil {
-			log.Panicf("Could not listen on plaintext GRPC endpoint %q: %v", plaintextEndpoint, err)
-		}
-		serverAndListeners = append(serverAndListeners, serverAndListener{
-			srv:      grpcServer,
-			listener: plaintextListener,
-			kind:     "Plaintext gRPC",
+		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
+			grpcServer: grpcServer,
+			endpoint:   plaintextEndpoint,
 		})
+	}
+
+	var allSrvAndLiss []serverAndListener
+	for _, endpointCfg := range endpointSrvCfgs {
+		addr, srvAndLiss, err := endpointCfg.Instantiate()
+		if err != nil {
+			log.Panicf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)
+		}
+		log.Infof("%s server listening on %s", endpointCfg.Kind(), addr.String())
+		allSrvAndLiss = append(allSrvAndLiss, srvAndLiss...)
+	}
+
+	errC := make(chan error, len(allSrvAndLiss))
+
+	for _, srvAndLis := range allSrvAndLiss {
+		go serveBlocking(srvAndLis, errC)
 	}
 
 	if startedSig != nil {
 		startedSig.Signal()
-	}
-
-	errC := make(chan error, len(serverAndListeners))
-
-	for _, srvAndListener := range serverAndListeners {
-		log.Infof("%s server listening on %s", srvAndListener.kind, srvAndListener.listener.Addr())
-		go serveAsync(srvAndListener.srv, srvAndListener.listener, errC)
 	}
 
 	if err := <-errC; err != nil {
@@ -351,8 +428,8 @@ func wireOrJSONMuxer(grpcServer *grpc.Server, httpHandler http.Handler) http.Han
 	})
 }
 
-func serveAsync(srv server, listener net.Listener, errC chan<- error) {
-	if err := srv.Serve(listener); err != nil {
-		errC <- err
+func serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
+	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
+		errC <- errors.Wrapf(err, "error serving %s", srvAndLis.kind)
 	}
 }

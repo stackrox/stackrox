@@ -3,7 +3,7 @@ module github.com/stackrox/rox
 go 1.12
 
 require (
-	cloud.google.com/go v0.34.0
+	cloud.google.com/go v0.38.0
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f // indirect
@@ -64,15 +64,14 @@ require (
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/google/uuid v1.1.1 // indirect
-	github.com/googleapis/gax-go v1.0.1 // indirect
 	github.com/googleapis/gnostic v0.2.0
 	github.com/gorilla/mux v1.7.2 // indirect
 	github.com/graph-gophers/graphql-go v0.0.0-20190513003547-158e7b876106
-	github.com/grpc-ecosystem/go-grpc-middleware v0.0.0-20190222133341-cfaf5686ec79
+	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190723091251-e0797f438f94
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.7.0
+	github.com/grpc-ecosystem/grpc-gateway v1.9.6
 	github.com/hako/durafmt v0.0.0-20180520121703-7b7ae1e72ead
-	github.com/hashicorp/golang-lru v0.5.0
+	github.com/hashicorp/golang-lru v0.5.1
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c // indirect
 	github.com/huandu/xstrings v1.2.0 // indirect
@@ -126,16 +125,15 @@ require (
 	github.com/vbauerster/mpb/v4 v4.9.0
 	go.etcd.io/bbolt v1.3.3 // indirect
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3
+	golang.org/x/lint v0.0.0-20190409202823-959b441ac422
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
-	golang.org/x/oauth2 v0.0.0-20190523182746-aaccbc9213b0
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	golang.org/x/tools v0.0.0-20190802220118-1d1727260058
-	google.golang.org/api v0.1.0
+	google.golang.org/api v0.9.0
 	google.golang.org/appengine v1.6.0 // indirect
-	google.golang.org/genproto v0.0.0-20181202183823-bd91e49a0898
-	google.golang.org/grpc v1.18.1
+	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873
+	google.golang.org/grpc v1.23.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.3.1

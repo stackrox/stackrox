@@ -55,4 +55,17 @@ func ConcatElemTypeSlices(slices ...[]ElemType) []ElemType {
 	return result
 }
 
+// ElemTypeUnique returns a new slice that contains only the first occurrence of each element in slice.
+func ElemTypeUnique(slice []ElemType) []ElemType {
+	result := make([]ElemType, 0, len(slice))
+	seen := make(map[ElemType]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 //go:generate genny -in=$GOFILE -out=gen-builtins-$GOFILE gen "ElemType=BUILTINS"

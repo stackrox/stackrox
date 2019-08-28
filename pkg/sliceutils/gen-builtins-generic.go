@@ -55,6 +55,19 @@ func ConcatBoolSlices(slices ...[]bool) []bool {
 	return result
 }
 
+// BoolUnique returns a new slice that contains only the first occurrence of each element in slice.
+func BoolUnique(slice []bool) []bool {
+	result := make([]bool, 0, len(slice))
+	seen := make(map[bool]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // ByteDiff returns, given two sorted byte slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) {
@@ -101,6 +114,19 @@ func ConcatByteSlices(slices ...[]byte) []byte {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// ByteUnique returns a new slice that contains only the first occurrence of each element in slice.
+func ByteUnique(slice []byte) []byte {
+	result := make([]byte, 0, len(slice))
+	seen := make(map[byte]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -155,6 +181,19 @@ func ConcatComplex128Slices(slices ...[]complex128) []complex128 {
 	return result
 }
 
+// Complex128Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Complex128Unique(slice []complex128) []complex128 {
+	result := make([]complex128, 0, len(slice))
+	seen := make(map[complex128]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // Complex64Diff returns, given two sorted complex64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly, bOnly []complex64) {
@@ -201,6 +240,19 @@ func ConcatComplex64Slices(slices ...[]complex64) []complex64 {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// Complex64Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Complex64Unique(slice []complex64) []complex64 {
+	result := make([]complex64, 0, len(slice))
+	seen := make(map[complex64]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -255,6 +307,19 @@ func ConcatErrorSlices(slices ...[]error) []error {
 	return result
 }
 
+// ErrorUnique returns a new slice that contains only the first occurrence of each element in slice.
+func ErrorUnique(slice []error) []error {
+	result := make([]error, 0, len(slice))
+	seen := make(map[error]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // Float32Diff returns, given two sorted float32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly []float32) {
@@ -301,6 +366,19 @@ func ConcatFloat32Slices(slices ...[]float32) []float32 {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// Float32Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Float32Unique(slice []float32) []float32 {
+	result := make([]float32, 0, len(slice))
+	seen := make(map[float32]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -355,6 +433,19 @@ func ConcatFloat64Slices(slices ...[]float64) []float64 {
 	return result
 }
 
+// Float64Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Float64Unique(slice []float64) []float64 {
+	result := make([]float64, 0, len(slice))
+	seen := make(map[float64]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // IntDiff returns, given two sorted int slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
@@ -401,6 +492,19 @@ func ConcatIntSlices(slices ...[]int) []int {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// IntUnique returns a new slice that contains only the first occurrence of each element in slice.
+func IntUnique(slice []int) []int {
+	result := make([]int, 0, len(slice))
+	seen := make(map[int]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -455,6 +559,19 @@ func ConcatInt16Slices(slices ...[]int16) []int16 {
 	return result
 }
 
+// Int16Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Int16Unique(slice []int16) []int16 {
+	result := make([]int16, 0, len(slice))
+	seen := make(map[int16]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // Int32Diff returns, given two sorted int32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int32) {
@@ -501,6 +618,19 @@ func ConcatInt32Slices(slices ...[]int32) []int32 {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// Int32Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Int32Unique(slice []int32) []int32 {
+	result := make([]int32, 0, len(slice))
+	seen := make(map[int32]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -555,6 +685,19 @@ func ConcatInt64Slices(slices ...[]int64) []int64 {
 	return result
 }
 
+// Int64Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Int64Unique(slice []int64) []int64 {
+	result := make([]int64, 0, len(slice))
+	seen := make(map[int64]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // Int8Diff returns, given two sorted int8 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) {
@@ -601,6 +744,19 @@ func ConcatInt8Slices(slices ...[]int8) []int8 {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// Int8Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Int8Unique(slice []int8) []int8 {
+	result := make([]int8, 0, len(slice))
+	seen := make(map[int8]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -655,6 +811,19 @@ func ConcatRuneSlices(slices ...[]rune) []rune {
 	return result
 }
 
+// RuneUnique returns a new slice that contains only the first occurrence of each element in slice.
+func RuneUnique(slice []rune) []rune {
+	result := make([]rune, 0, len(slice))
+	seen := make(map[rune]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // StringDiff returns, given two sorted string slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []string) {
@@ -701,6 +870,19 @@ func ConcatStringSlices(slices ...[]string) []string {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// StringUnique returns a new slice that contains only the first occurrence of each element in slice.
+func StringUnique(slice []string) []string {
+	result := make([]string, 0, len(slice))
+	seen := make(map[string]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -755,6 +937,19 @@ func ConcatUintSlices(slices ...[]uint) []uint {
 	return result
 }
 
+// UintUnique returns a new slice that contains only the first occurrence of each element in slice.
+func UintUnique(slice []uint) []uint {
+	result := make([]uint, 0, len(slice))
+	seen := make(map[uint]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // Uint16Diff returns, given two sorted uint16 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []uint16) {
@@ -801,6 +996,19 @@ func ConcatUint16Slices(slices ...[]uint16) []uint16 {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// Uint16Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Uint16Unique(slice []uint16) []uint16 {
+	result := make([]uint16, 0, len(slice))
+	seen := make(map[uint16]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -855,6 +1063,19 @@ func ConcatUint32Slices(slices ...[]uint32) []uint32 {
 	return result
 }
 
+// Uint32Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Uint32Unique(slice []uint32) []uint32 {
+	result := make([]uint32, 0, len(slice))
+	seen := make(map[uint32]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // Uint64Diff returns, given two sorted uint64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []uint64) {
@@ -901,6 +1122,19 @@ func ConcatUint64Slices(slices ...[]uint64) []uint64 {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// Uint64Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Uint64Unique(slice []uint64) []uint64 {
+	result := make([]uint64, 0, len(slice))
+	seen := make(map[uint64]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }
@@ -955,6 +1189,19 @@ func ConcatUint8Slices(slices ...[]uint8) []uint8 {
 	return result
 }
 
+// Uint8Unique returns a new slice that contains only the first occurrence of each element in slice.
+func Uint8Unique(slice []uint8) []uint8 {
+	result := make([]uint8, 0, len(slice))
+	seen := make(map[uint8]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
+	}
+	return result
+}
+
 // UintptrDiff returns, given two sorted uintptr slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly []uintptr) {
@@ -1001,6 +1248,19 @@ func ConcatUintptrSlices(slices ...[]uintptr) []uintptr {
 		nextI := i + len(slice)
 		copy(result[i:nextI], slice)
 		i = nextI
+	}
+	return result
+}
+
+// UintptrUnique returns a new slice that contains only the first occurrence of each element in slice.
+func UintptrUnique(slice []uintptr) []uintptr {
+	result := make([]uintptr, 0, len(slice))
+	seen := make(map[uintptr]struct{}, len(slice))
+	for _, elem := range slice {
+		if _, ok := seen[elem]; !ok {
+			result = append(result, elem)
+			seen[elem] = struct{}{}
+		}
 	}
 	return result
 }

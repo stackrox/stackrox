@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
@@ -16,6 +17,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+)
+
+var (
+	nextProtos = []string{pkgGRPC.PureGRPCALPNString, "h2"}
 )
 
 // TLSConfigOptions are options that modify the behavior of `TLSConfig`.
@@ -93,6 +98,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 	conf := &tls.Config{
 		ServerName: serverName,
 		RootCAs:    serviceCA,
+		NextProtos: nextProtos,
 	}
 
 	if opts.UseClientCert {
@@ -203,6 +209,7 @@ func grpcConnectionWithPerRPCCreds(endpoint string, serverName string, perRPCCre
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
 		ServerName:         serverName,
+		NextProtos:         nextProtos,
 	}
 	creds := credentials.NewTLS(tlsConfig)
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(perRPCCreds))
