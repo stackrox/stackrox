@@ -42,7 +42,7 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
-	github.com/etcd-io/bbolt v1.3.2
+	github.com/etcd-io/bbolt v1.3.3
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/facebookgo/ensure v0.0.0-20160127193407-b4ab57deab51 // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
