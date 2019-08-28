@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -24,6 +24,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -44,7 +45,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -75,9 +78,12 @@
               "type": "fill"
             }
           ],
+          "hide": false,
           "measurement": "process_cpu_seconds_total",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT difference(mean(\"counter\")) FROM \"process_cpu_seconds_total\" WHERE $timeFilter GROUP BY time(1s), \"service\" fill(linear)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -148,6 +154,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -168,7 +175,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -202,6 +211,8 @@
           "measurement": "go_memstats_heap_alloc_bytes",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_alloc_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"service\" fill(linear)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -244,6 +255,8 @@
           "measurement": "go_memstats_heap_inuse_bytes",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_inuse_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"service\" fill(linear)",
+          "rawQuery": false,
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
@@ -286,6 +299,8 @@
           "measurement": "go_memstats_heap_idle_bytes",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_idle_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"service\" fill(linear)",
+          "rawQuery": false,
           "refId": "C",
           "resultFormat": "time_series",
           "select": [
@@ -352,6 +367,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -372,7 +388,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -406,6 +424,8 @@
           "measurement": "rox_central_bolt_bucket_key_n",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"gauge\") FROM \"rox_central_bolt_bucket_key_n\" WHERE $timeFilter GROUP BY time($__interval), \"Bucket\" fill(linear)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -472,6 +492,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -492,7 +513,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -526,6 +549,8 @@
           "measurement": "rox_central_badger_prefix_size",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"gauge\") FROM \"rox_central_badger_prefix_size\" WHERE $timeFilter GROUP BY time($__interval), \"Prefix\" fill(linear)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -592,6 +617,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
@@ -612,7 +638,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -652,6 +680,8 @@
           "measurement": "rox_central_bolt_op_duration",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"count\") FROM \"rox_central_bolt_op_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Type\", \"Operation\" fill(linear)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -718,6 +748,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
@@ -738,7 +769,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -778,6 +811,8 @@
           "measurement": "rox_central_badger_op_duration",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"count\") FROM \"rox_central_badger_op_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -844,6 +879,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -864,7 +900,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -972,6 +1010,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 11,
@@ -992,7 +1031,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -1100,6 +1141,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
@@ -1120,7 +1162,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -1228,6 +1272,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
@@ -1248,7 +1293,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -1288,6 +1335,8 @@
           "measurement": "rox_central_sensor_event_queue",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"counter\") FROM \"rox_central_sensor_event_queue\" WHERE $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1354,6 +1403,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
@@ -1374,7 +1424,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -1482,6 +1534,7 @@
       "dashLength": 10,
       "dashes": false,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -1502,7 +1555,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {},
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -1530,6 +1585,8 @@
           "measurement": "rox_central_badger_db_size",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"gauge\") FROM \"rox_central_badger_db_size\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1566,6 +1623,8 @@
           "measurement": "rox_central_bolt_db_size",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"gauge\") FROM \"rox_central_bolt_db_size\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+          "rawQuery": false,
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
@@ -1602,6 +1661,8 @@
           "measurement": "rox_central_bleve_index_CurOnDiskBytes",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT mean(\"gauge\") FROM \"rox_central_bleve_index_CurOnDiskBytes\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
+          "rawQuery": false,
           "refId": "C",
           "resultFormat": "time_series",
           "select": [
@@ -1663,7 +1724,7 @@
       }
     }
   ],
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "style": "dark",
   "tags": [],
   "templating": {

@@ -4,6 +4,7 @@ tmp
 
 # Grafana captures
 monitoring/grafana/captures
+monitoring/grafana/rawcaptures
 
 # Generated packr sources
 *-packr.go

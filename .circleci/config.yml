@@ -287,6 +287,11 @@ storeMonitoringImages: &storeMonitoringImages
     path: monitoring/grafana/captures
     destination: monitoring-images
 
+storeMonitoringMetrics: &storeMonitoringMetrics
+  store_artifacts:
+    path: monitoring/grafana/rawmetrics.zip
+    destination: monitoring-metrics.zip
+
 verifyNoStackRoxRestarts: &verifyNoStackRoxRestarts
   run:
     name: Verify that StackRox services did not restart during the runs
@@ -691,6 +696,7 @@ commands:
       - *connectToMonitoring
       - *collectMonitoringImages
       - *storeMonitoringImages
+      - *storeMonitoringMetrics
 
       - teardown-gke
 
