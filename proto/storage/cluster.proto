@@ -93,4 +93,25 @@ message ClusterStatus {
     google.protobuf.Timestamp last_contact          = 2;
     ProviderMetadata          provider_metadata     = 3;
     OrchestratorMetadata      orchestrator_metadata = 4;
+    ClusterUpgradeStatus      upgrade_status        = 5;
+}
+
+message ClusterUpgradeStatus {
+    enum Upgradability {
+        UNSET                   = 0;
+        UP_TO_DATE              = 1;
+        MANUAL_UPGRADE_REQUIRED = 2;
+        AUTO_UPGRADE_POSSIBLE   = 3;
+        // SENSOR_VERSION_HIGHER occurs when we detect that the sensor
+        // is running a newer version than this Central. This is unexpected,
+        // but can occur depending on the patches a customer does.
+        // In this case, we will NOT automatically "upgrade" the sensor,
+        // since that would be a downgrade, even if the autoupgrade setting is
+        // on. The user will be allowed to manually trigger the upgrade, but they are
+        // strongly discouraged from doing so without upgrading Central first, since this
+        // is an unsupported configuration.
+        SENSOR_VERSION_HIGHER   = 4;
+    }
+
+    Upgradability upgradability = 1;
 }

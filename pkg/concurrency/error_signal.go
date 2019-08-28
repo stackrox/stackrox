@@ -273,3 +273,35 @@ func (s *ErrorSignal) Err() error {
 func (s *ErrorSignal) Snapshot() ReadOnlyErrorSignal {
 	return s.getStateOrDefault()
 }
+
+// SignalWhen triggers this signal when the given trigger condition is satisfied. It returns as soon as either this
+// signal is triggered (either by this function or another goroutine), or cancelCond is triggered (in which case the
+// signal will not be triggered).
+// CAREFUL: This function blocks; if you do not want this, invoke it in a goroutine.
+func (s *ErrorSignal) SignalWhen(triggerCond Waitable, cancelCond Waitable) bool {
+	select {
+	case <-triggerCond.Done():
+		if triggerCondErr, ok := triggerCond.(ErrorWaitable); ok {
+			return s.SignalWithError(triggerCondErr.Err())
+		}
+		return s.Signal()
+	case <-cancelCond.Done():
+		return false
+	case <-s.Done():
+		return false
+	}
+}
+
+// SignalWhenNoCancel is a variant of SignalWhen that doesn't take a cancelCond.
+// In effect, the cancellation only happens when the signal is triggered by another goroutine.
+func (s *ErrorSignal) SignalWhenNoCancel(triggerCond Waitable) bool {
+	select {
+	case <-triggerCond.Done():
+		if triggerCondErr, ok := triggerCond.(ErrorWaitable); ok {
+			return s.SignalWithError(triggerCondErr.Err())
+		}
+		return s.Signal()
+	case <-s.Done():
+		return false
+	}
+}

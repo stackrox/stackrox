@@ -57,6 +57,20 @@ func (mr *MockClusterManagerMockRecorder) UpdateClusterContactTimes(ctx, time in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterContactTimes", reflect.TypeOf((*MockClusterManager)(nil).UpdateClusterContactTimes), varargs...)
 }
 
+// UpdateClusterUpgradeStatus mocks base method
+func (m *MockClusterManager) UpdateClusterUpgradeStatus(ctx context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateClusterUpgradeStatus", ctx, clusterID, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateClusterUpgradeStatus indicates an expected call of UpdateClusterUpgradeStatus
+func (mr *MockClusterManagerMockRecorder) UpdateClusterUpgradeStatus(ctx, clusterID, status interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterUpgradeStatus", reflect.TypeOf((*MockClusterManager)(nil).UpdateClusterUpgradeStatus), ctx, clusterID, status)
+}
+
 // GetCluster mocks base method
 func (m *MockClusterManager) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
 	m.ctrl.T.Helper()

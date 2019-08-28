@@ -7,8 +7,8 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,24 +25,22 @@ type ClusterStoreTestSuite struct {
 	store Store
 }
 
-func (suite *ClusterStoreTestSuite) SetupSuite() {
-	db, err := bolthelper.NewTemp("cluster_test.db")
-	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
-	}
-
-	suite.db = db
-	suite.store = New(db)
+func (suite *ClusterStoreTestSuite) SetupTest() {
+	suite.db = testutils.DBForSuite(suite)
+	suite.store = New(suite.db)
 }
 
-func (suite *ClusterStoreTestSuite) TearDownSuite() {
+func (suite *ClusterStoreTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 }
 
-func hydratedCluster(cluster *storage.Cluster, status *storage.ClusterStatus) *storage.Cluster {
-	cloned := protoutils.CloneStorageCluster(cluster)
-	cloned.Status = status
-	return cloned
+func (suite *ClusterStoreTestSuite) hydratedCluster(cluster *storage.Cluster, status *storage.ClusterStatus, upgradeStatus *storage.ClusterUpgradeStatus) *storage.Cluster {
+	clonedCluster := protoutils.CloneStorageCluster(cluster)
+	suite.Nil(status.GetUpgradeStatus())
+	clonedStatus := protoutils.CloneStorageClusterStatus(status)
+	clonedStatus.UpgradeStatus = upgradeStatus
+	clonedCluster.Status = clonedStatus
+	return clonedCluster
 }
 
 func (suite *ClusterStoreTestSuite) TestClusters() {
@@ -75,6 +73,15 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		},
 	}
 
+	upgradeStatuses := []*storage.ClusterUpgradeStatus{
+		{
+			Upgradability: storage.ClusterUpgradeStatus_UP_TO_DATE,
+		},
+		{
+			Upgradability: storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE,
+		},
+	}
+
 	// Test Add
 	for _, b := range clusters {
 		id, err := suite.store.AddCluster(b)
@@ -95,13 +102,14 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		suite.NoError(err)
 		err = suite.store.UpdateClusterContactTimes(t, b.GetId())
 		suite.NoError(err)
+		suite.NoError(suite.store.UpdateClusterUpgradeStatus(b.GetId(), upgradeStatuses[i]))
 	}
 
 	for i, b := range clusters {
 		got, exists, err := suite.store.GetCluster(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(got, hydratedCluster(b, statuses[i]))
+		suite.Equal(got, suite.hydratedCluster(b, statuses[i], upgradeStatuses[i]))
 	}
 
 	gotClusters, err := suite.store.GetClusters()
@@ -113,7 +121,7 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 				continue
 			}
 			found = true
-			suite.Equal(gotCluster, hydratedCluster(actualCluster, statuses[i]))
+			suite.Equal(gotCluster, suite.hydratedCluster(actualCluster, statuses[i], upgradeStatuses[i]))
 		}
 		suite.True(found)
 	}
@@ -128,10 +136,19 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 	}
 
 	for i, b := range clusters {
+		t, err := ptypes.TimestampFromProto(statuses[i].GetLastContact())
+		suite.NoError(err)
+		err = suite.store.UpdateClusterContactTimes(t, b.GetId())
+		suite.NoError(err)
+		suite.NoError(suite.store.UpdateClusterUpgradeStatus(b.GetId(), upgradeStatuses[i]))
+		suite.NoError(suite.store.UpdateClusterStatus(b.GetId(), statuses[i]))
+	}
+
+	for i, b := range clusters {
 		got, exists, err := suite.store.GetCluster(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(got, hydratedCluster(b, statuses[i]))
+		suite.Equal(got, suite.hydratedCluster(b, statuses[i], upgradeStatuses[i]))
 	}
 
 	// Test Count
@@ -149,4 +166,34 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		suite.NoError(err)
 		suite.False(exists)
 	}
+}
+
+func (suite *ClusterStoreTestSuite) TestClusterStatusUpdatesNoRace() {
+	id, err := suite.store.AddCluster(&storage.Cluster{Name: "blah"})
+	suite.NoError(err)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		suite.NoError(suite.store.UpdateClusterStatus(id, &storage.ClusterStatus{SensorVersion: "BLAH"}))
+	}()
+	go func() {
+		defer wg.Done()
+		suite.NoError(suite.store.UpdateClusterUpgradeStatus(id, &storage.ClusterUpgradeStatus{Upgradability: storage.ClusterUpgradeStatus_UP_TO_DATE}))
+	}()
+	wg.Wait()
+
+	got, exists, err := suite.store.GetCluster(id)
+	suite.NoError(err)
+	suite.True(exists)
+	suite.Equal(&storage.Cluster{
+		Id:   id,
+		Name: "blah",
+		Status: &storage.ClusterStatus{
+			SensorVersion: "BLAH",
+			UpgradeStatus: &storage.ClusterUpgradeStatus{
+				Upgradability: storage.ClusterUpgradeStatus_UP_TO_DATE,
+			},
+		},
+	}, got)
 }

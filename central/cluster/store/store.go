@@ -25,6 +25,7 @@ type Store interface {
 	RemoveCluster(id string) error
 	UpdateClusterContactTimes(t time.Time, ids ...string) error
 	UpdateClusterStatus(id string, status *storage.ClusterStatus) error
+	UpdateClusterUpgradeStatus(id string, status *storage.ClusterUpgradeStatus) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.

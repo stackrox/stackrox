@@ -1,9 +1,11 @@
 package concurrency
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/sync"
@@ -177,4 +179,73 @@ func TestErrorSignal_SignalAndResetAreAtomic(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, triggeredErrs, resetErrs)
+}
+
+func TestErrorSignalWhenIsTriggered(t *testing.T) {
+	firstSig := NewErrorSignal()
+	secondSig := NewErrorSignal()
+
+	var retVal bool
+	var signalWhenReturned Flag
+	go func() {
+		retVal = firstSig.SignalWhenNoCancel(&secondSig)
+		signalWhenReturned.Set(true)
+	}()
+
+	fakeErr := errors.New("FakeErr")
+
+	assert.False(t, firstSig.IsDone())
+
+	secondSig.SignalWithError(fakeErr)
+
+	assert.True(t, WaitWithTimeout(&firstSig, time.Second))
+	poller := NewPoller(signalWhenReturned.Get, 10*time.Millisecond)
+	assert.True(t, WaitWithTimeout(poller, time.Second))
+	assert.Equal(t, firstSig.Err(), fakeErr)
+	assert.Equal(t, true, retVal)
+}
+
+func TestErrorSignalWhenSignalItselfIsTriggered(t *testing.T) {
+	firstSig := NewErrorSignal()
+	secondSig := NewErrorSignal()
+
+	var retVal bool
+	var signalWhenReturned Flag
+	go func() {
+		retVal = firstSig.SignalWhenNoCancel(&secondSig)
+		signalWhenReturned.Set(true)
+	}()
+
+	assert.False(t, firstSig.IsDone())
+	firstSig.Signal()
+	assert.True(t, firstSig.IsDone())
+
+	poller := NewPoller(signalWhenReturned.Get, 10*time.Millisecond)
+	assert.True(t, WaitWithTimeout(poller, time.Second))
+
+	assert.False(t, secondSig.IsDone())
+	assert.Equal(t, false, retVal)
+}
+
+func TestErrorSignalWhenWithCancel(t *testing.T) {
+	firstSig := NewErrorSignal()
+	secondSig := NewErrorSignal()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	var retVal bool
+	var signalWhenReturned Flag
+	go func() {
+		retVal = firstSig.SignalWhen(&secondSig, ctx)
+		signalWhenReturned.Set(true)
+	}()
+	assert.False(t, firstSig.IsDone())
+	cancel()
+	assert.False(t, firstSig.IsDone())
+	assert.False(t, secondSig.IsDone())
+
+	poller := NewPoller(signalWhenReturned.Get, 10*time.Millisecond)
+	assert.True(t, WaitWithTimeout(poller, time.Second))
+
+	assert.Equal(t, false, retVal)
 }

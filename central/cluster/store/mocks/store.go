@@ -155,3 +155,17 @@ func (mr *MockStoreMockRecorder) UpdateClusterStatus(id, status interface{}) *go
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockStore)(nil).UpdateClusterStatus), id, status)
 }
+
+// UpdateClusterUpgradeStatus mocks base method
+func (m *MockStore) UpdateClusterUpgradeStatus(id string, status *storage.ClusterUpgradeStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateClusterUpgradeStatus", id, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateClusterUpgradeStatus indicates an expected call of UpdateClusterUpgradeStatus
+func (mr *MockStoreMockRecorder) UpdateClusterUpgradeStatus(id, status interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterUpgradeStatus", reflect.TypeOf((*MockStore)(nil).UpdateClusterUpgradeStatus), id, status)
+}

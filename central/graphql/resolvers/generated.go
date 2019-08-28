@@ -124,8 +124,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"orchestratorMetadata: OrchestratorMetadata",
 		"providerMetadata: ProviderMetadata",
 		"sensorVersion: String!",
+		"upgradeStatus: ClusterUpgradeStatus",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
+	utils.Must(builder.AddType("ClusterUpgradeStatus", []string{
+		"upgradability: ClusterUpgradeStatus_Upgradability!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_Upgradability(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
 	utils.Must(builder.AddType("ComplianceAggregation_AggregationKey", []string{
@@ -1745,6 +1750,11 @@ func (resolver *clusterStatusResolver) SensorVersion(ctx context.Context) string
 	return value
 }
 
+func (resolver *clusterStatusResolver) UpgradeStatus(ctx context.Context) (*clusterUpgradeStatusResolver, error) {
+	value := resolver.data.GetUpgradeStatus()
+	return resolver.root.wrapClusterUpgradeStatus(value, true, nil)
+}
+
 func toClusterType(value *string) storage.ClusterType {
 	if value != nil {
 		return storage.ClusterType(storage.ClusterType_value[*value])
@@ -1759,6 +1769,52 @@ func toClusterTypes(values *[]string) []storage.ClusterType {
 	output := make([]storage.ClusterType, len(*values))
 	for i, v := range *values {
 		output[i] = toClusterType(&v)
+	}
+	return output
+}
+
+type clusterUpgradeStatusResolver struct {
+	root *Resolver
+	data *storage.ClusterUpgradeStatus
+}
+
+func (resolver *Resolver) wrapClusterUpgradeStatus(value *storage.ClusterUpgradeStatus, ok bool, err error) (*clusterUpgradeStatusResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterUpgradeStatusResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapClusterUpgradeStatuses(values []*storage.ClusterUpgradeStatus, err error) ([]*clusterUpgradeStatusResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterUpgradeStatusResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterUpgradeStatusResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterUpgradeStatusResolver) Upgradability(ctx context.Context) string {
+	value := resolver.data.GetUpgradability()
+	return value.String()
+}
+
+func toClusterUpgradeStatus_Upgradability(value *string) storage.ClusterUpgradeStatus_Upgradability {
+	if value != nil {
+		return storage.ClusterUpgradeStatus_Upgradability(storage.ClusterUpgradeStatus_Upgradability_value[*value])
+	}
+	return storage.ClusterUpgradeStatus_Upgradability(0)
+}
+
+func toClusterUpgradeStatus_Upgradabilities(values *[]string) []storage.ClusterUpgradeStatus_Upgradability {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ClusterUpgradeStatus_Upgradability, len(*values))
+	for i, v := range *values {
+		output[i] = toClusterUpgradeStatus_Upgradability(&v)
 	}
 	return output
 }

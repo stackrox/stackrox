@@ -47,11 +47,16 @@ type datastoreImpl struct {
 	cm  connection.Manager
 }
 
-func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
-	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(id)); err != nil {
+func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
+	if err := checkWriteSac(ctx, id); err != nil {
 		return err
-	} else if !ok {
-		return errors.New("permission denied")
+	}
+	return ds.storage.UpdateClusterUpgradeStatus(id, upgradeStatus)
+}
+
+func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
+	if err := checkWriteSac(ctx, id); err != nil {
+		return err
 	}
 
 	return ds.storage.UpdateClusterStatus(id, status)
@@ -65,7 +70,6 @@ func (ds *datastoreImpl) buildIndex() error {
 	return ds.indexer.AddClusters(clusters)
 }
 
-// Search searches through the clusters
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return clusterSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
 }
@@ -90,7 +94,6 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 	return clusters, nil
 }
 
-// GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
 		return nil, false, err
@@ -99,7 +102,6 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 	return ds.storage.GetCluster(id)
 }
 
-// GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -117,7 +119,6 @@ func (ds *datastoreImpl) SearchRawClusters(ctx context.Context, q *v1.Query) ([]
 	return ds.searchRawClusters(ctx, q)
 }
 
-// GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
@@ -132,12 +133,18 @@ func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
 	return len(visible), nil
 }
 
-// GetCluster is a pass through function to the underlying storage.
-func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error) {
-	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(cluster.GetId())); err != nil {
-		return "", err
+func checkWriteSac(ctx context.Context, clusterID string) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
+		return err
 	} else if !ok {
-		return "", errors.New("permission denied")
+		return sac.ErrPermissionDenied
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error) {
+	if err := checkWriteSac(ctx, cluster.GetId()); err != nil {
+		return "", err
 	}
 
 	id, err := ds.storage.AddCluster(cluster)
@@ -147,12 +154,9 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	return id, ds.indexer.AddCluster(cluster)
 }
 
-// GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Cluster) error {
-	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(cluster.GetId())); err != nil {
+	if err := checkWriteSac(ctx, cluster.GetId()); err != nil {
 		return err
-	} else if !ok {
-		return errors.New("permission denied")
 	}
 
 	if err := ds.storage.UpdateCluster(cluster); err != nil {
@@ -179,7 +183,6 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 	return nil
 }
 
-// GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) UpdateClusterContactTimes(ctx context.Context, t time.Time, ids ...string) error {
 	if ok, err := clusterSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -190,12 +193,9 @@ func (ds *datastoreImpl) UpdateClusterContactTimes(ctx context.Context, t time.T
 	return ds.storage.UpdateClusterContactTimes(t, ids...)
 }
 
-// RemoveCluster removes a cluster from the storage and the indexer
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
-	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(id)); err != nil {
+	if err := checkWriteSac(ctx, id); err != nil {
 		return err
-	} else if !ok {
-		return errors.New("permission denied")
 	}
 
 	// Fetch the cluster an confirm it exists.
@@ -272,13 +272,11 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	}
 }
 
-// RemoveCluster removes an cluster from the storage and the indexer
 func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListSecret, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()
 	return ds.ss.SearchListSecrets(ctx, q)
 }
 
-// RemoveCluster removes an cluster from the storage and the indexer
 func (ds *datastoreImpl) getDeployments(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListDeployment, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()
 	deployments, err := ds.dds.SearchListDeployments(ctx, q)

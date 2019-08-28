@@ -12,6 +12,7 @@ import (
 // ClusterManager envelopes functions that interact with clusters
 type ClusterManager interface {
 	UpdateClusterContactTimes(ctx context.Context, time time.Time, clusterID ...string) error
+	UpdateClusterUpgradeStatus(ctx context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
 }
 

@@ -51,3 +51,10 @@ func CloneStorageCluster(val *storage.Cluster) *storage.Cluster {
 func CloneStorageImageIntegration(val *storage.ImageIntegration) *storage.ImageIntegration {
 	return protoCloneWrapper(val).(*storage.ImageIntegration)
 }
+
+// *storage.ClusterStatus represents a generic proto type that we clone.
+
+// CloneStorageClusterStatus is a (generic) wrapper around proto.Clone that is strongly typed.
+func CloneStorageClusterStatus(val *storage.ClusterStatus) *storage.ClusterStatus {
+	return protoCloneWrapper(val).(*storage.ClusterStatus)
+}

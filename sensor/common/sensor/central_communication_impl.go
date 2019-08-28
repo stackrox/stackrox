@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/config"
 	"google.golang.org/grpc"
@@ -40,7 +41,12 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	// Start the stream client.
 	///////////////////////////
-	stream, err := client.Communicate(context.Background())
+	ctx, err := centralsensor.AppendSensorVersionInfoToContext(context.Background())
+	if err != nil {
+		s.stopC.SignalWithError(err)
+		return
+	}
+	stream, err := client.Communicate(ctx)
 	if err != nil {
 		s.stopC.SignalWithError(errors.Wrap(err, "opening stream"))
 		return

@@ -246,11 +246,42 @@ func (b *storeImpl) getClusterStatus(tx *bolt.Tx, id string) (*storage.ClusterSt
 
 func (b *storeImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ClusterStatus")
-	bytes, err := proto.Marshal(status)
-	if err != nil {
-		return errors.Wrap(err, "marshaling cluster status")
-	}
 	return b.Update(func(tx *bolt.Tx) error {
+		existingStatus, err := b.getClusterStatus(tx, id)
+		if err != nil {
+			return err
+		}
+		if existingStatus != nil {
+			// Since all we're doing is setting status.UpgradeStatus, a shallow copy suffices.
+			shallowClonedStatus := *status
+			status = &shallowClonedStatus
+			status.UpgradeStatus = existingStatus.UpgradeStatus
+		}
+
+		bytes, err := proto.Marshal(status)
+		if err != nil {
+			return errors.Wrap(err, "marshaling cluster status")
+		}
+		bucket := tx.Bucket(clusterStatusBucket)
+		return bucket.Put([]byte(id), bytes)
+	})
+}
+
+func (b *storeImpl) UpdateClusterUpgradeStatus(id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ClusterUpgradeStatus")
+	return b.Update(func(tx *bolt.Tx) error {
+		existingStatus, err := b.getClusterStatus(tx, id)
+		if err != nil {
+			return err
+		}
+		if existingStatus == nil {
+			existingStatus = new(storage.ClusterStatus)
+		}
+		existingStatus.UpgradeStatus = upgradeStatus
+		bytes, err := proto.Marshal(existingStatus)
+		if err != nil {
+			return errors.Wrap(err, "marshaling cluster status")
+		}
 		bucket := tx.Bucket(clusterStatusBucket)
 		return bucket.Put([]byte(id), bytes)
 	})
