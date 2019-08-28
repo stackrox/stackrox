@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
 import CollapsibleRow from 'Components/CollapsibleRow';
+import pluralize from 'pluralize';
 import ScopedPermissions from './ScopedPermissions';
 
 const PermissionsCounts = ({ permissions }) => {
@@ -53,7 +54,9 @@ const NamespaceScopedPermissions = ({ scopedPermissions, ...rest }) => {
             <div className="flex h-full items-center justify-center">No permissions available</div>
         );
     else content = namespaceGroups;
-    const header = `Permissions across ${namespaceGroups.length} namespaces`;
+    const header = `Permissions across ${
+        namespaceGroups.length > 0 ? namespaceGroups.length : ''
+    } ${pluralize('namespaces', namespaceGroups.length)}`;
     return (
         <Widget header={header} {...rest}>
             <div className="w-full">{content}</div>
