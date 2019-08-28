@@ -13,19 +13,20 @@ const (
 )
 
 var (
-	defaultFillFraction    = 0.5
-	defaultCompactionState = true
+	defaultBucketFillFraction = 0.5
+	defaultCompactionState    = true
 )
 
 // Compaction defines the compaction configuration
 type Compaction struct {
-	Enabled      *bool    `yaml:"enabled"`
-	FillFraction *float64 `yaml:"fillFraction"`
+	Enabled               *bool    `yaml:"enabled"`
+	BucketFillFraction    *float64 `yaml:"bucketFillFraction"`
+	FreeFractionThreshold *float64 `yaml:"freeFractionThreshold"`
 }
 
 func (c *Compaction) applyDefaults() {
-	if c.FillFraction == nil {
-		c.FillFraction = &defaultFillFraction
+	if c.BucketFillFraction == nil {
+		c.BucketFillFraction = &defaultBucketFillFraction
 	}
 	if c.Enabled == nil {
 		c.Enabled = &defaultCompactionState
@@ -35,8 +36,11 @@ func (c *Compaction) applyDefaults() {
 // validate must be called after apply defaults
 func (c *Compaction) validate() error {
 	errorList := errorhelpers.NewErrorList("validating compaction")
-	if *c.FillFraction <= 0 || *c.FillFraction > 1.0 {
+	if *c.BucketFillFraction <= 0 || *c.BucketFillFraction > 1.0 {
 		errorList.AddStringf("fill fraction must be greater than 0 and less than or equal to 1")
+	}
+	if c.FreeFractionThreshold != nil && (*c.FreeFractionThreshold <= 0 || *c.FreeFractionThreshold > 1.0) {
+		errorList.AddStringf("compaction threshold fraction must be greater than 0 and less than or equal to 1")
 	}
 	return errorList.ToError()
 }

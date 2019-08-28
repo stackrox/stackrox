@@ -96,6 +96,23 @@ func transferFromScratchToDevice(dst, src string) error {
 	return nil
 }
 
+func checkCompactionThreshold(config *config.Config, dbSize uint64, db *bolt.DB) bool {
+	threshold := config.Maintenance.Compaction.FreeFractionThreshold
+	if threshold == nil {
+		log.WriteToStderr("no compaction threshold is set. Will compact on every startup with enabled:true")
+		return true
+	}
+	// Instead of using oldDB.Stats().FreeAlloc which requires one write txn, just compute
+	dbFreeAllocBytes := os.Getpagesize() * db.Stats().FreePageN
+	freeFraction := float64(dbFreeAllocBytes) / float64(dbSize)
+	if freeFraction > *threshold {
+		log.WriteToStderr("Free fraction of %0.4f (%d/%d) is > %0.4f. Continuing with compaction", freeFraction, dbFreeAllocBytes, dbSize, *threshold)
+		return true
+	}
+	log.WriteToStderr("Free fraction of %0.4f (%d/%d) is < %0.4f. Will not compact", freeFraction, dbFreeAllocBytes, dbSize, *threshold)
+	return false
+}
+
 // Compact attempts to compact the DB
 func Compact() error {
 	config, err := checkIfCompactionIsNeeded()
@@ -125,8 +142,12 @@ func Compact() error {
 	if err != nil {
 		return err
 	}
-
 	originalBoltDBFileSize := uint64(fi.Size())
+
+	// Check threshold for compaction
+	if needsCompaction := checkCompactionThreshold(config, originalBoltDBFileSize, oldDB); !needsCompaction {
+		return nil
+	}
 
 	// Check to see if the PVC can hold another BoltDB. If not, then write it to scratch
 	// we prefer the PVC because then we can do an atomic rename because it is the same device
@@ -147,7 +168,7 @@ func Compact() error {
 	compactedDB.NoFreelistSync = true
 	compactedDB.FreelistType = bolt.FreelistMapType
 
-	if err := compact(compactedDB, oldDB, *config.Maintenance.Compaction.FillFraction); err != nil {
+	if err := compact(compactedDB, oldDB, *config.Maintenance.Compaction.BucketFillFraction); err != nil {
 		if err := compactedDB.Close(); err != nil {
 			log.WriteToStderr("error closing compacted DB: %v", err)
 		}

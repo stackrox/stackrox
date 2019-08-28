@@ -3,8 +3,9 @@ data:
   central-config.yaml: |-
     maintenance:
       compaction:
-        enabled: false
-        fillFraction: .5
+        enabled: true
+        bucketFillFraction: .5 # This controls how densely to compact the buckets. Usually not advised to modify
+        freeFractionThreshold: 0.75 # This is the threshold for free bytes / total bytes after which compaction will occur
 kind: ConfigMap
 metadata:
   name: central-config
