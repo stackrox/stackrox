@@ -796,6 +796,7 @@ commands:
       - run:
           name: Check if there were any backend changes
           command: |
+            set -x
             if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" || "$CIRCLE_BRANCH" =~ ^release/.* ]]; then
               exit 0  # Always run on master, tags, or release branches
             fi
