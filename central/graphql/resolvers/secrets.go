@@ -20,6 +20,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("secret(id:ID!): Secret"),
 		schema.AddQuery("secrets(query: String, pagination: Pagination): [Secret!]!"),
+		schema.AddQuery("secretCount(query: String): Int!"),
 		schema.AddExtraResolver("Secret", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Secret", "deploymentCount: Int!"),
 	)
@@ -58,6 +59,23 @@ func (resolver *Resolver) Secrets(ctx context.Context, args paginatedQuery) ([]*
 		resolver.getDeploymentRelationships(ctx, secret)
 	}
 	return resolver.wrapSecrets(secrets, nil)
+}
+
+// SecretCount gets count of all secrets
+func (resolver *Resolver) SecretCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "SecretCount")
+	if err := readSecrets(ctx); err != nil {
+		return 0, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.SecretsDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 func (resolver *secretResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
