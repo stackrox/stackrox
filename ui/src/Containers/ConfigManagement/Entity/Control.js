@@ -74,7 +74,6 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                 if (entityListType) {
                     const nodeIds = nodes.map(node => node.id).join();
                     const whereVars = { ...query[searchParam], 'Node Id': nodeIds };
-                    if (nodeIds.length) whereVars.id = nodeIds;
                     return (
                         <Nodes
                             match={match}

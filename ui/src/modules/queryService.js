@@ -6,7 +6,8 @@ function objectToWhereClause(query) {
             const [key, value] = entry;
             if (typeof value === 'undefined' || value === '') return acc;
             const flatValue = Array.isArray(value) ? value.join() : value;
-            const needsExactMatch = key.toLowerCase().indexOf(' id') !== -1;
+            const needsExactMatch =
+                key.toLowerCase().indexOf(' id') !== -1 && value.indexOf(',') === -1;
             const queryValue = needsExactMatch ? `"${flatValue}"` : flatValue;
             return `${acc}${key}:${queryValue}+`;
         }, '')
