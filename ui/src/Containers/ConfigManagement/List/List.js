@@ -112,7 +112,6 @@ const List = ({
                 if (loading) return <Loader />;
                 if (!queryData) return <PageNotFound resourceType={entityType} />;
                 const tableRows = createTableRows(queryData) || [];
-
                 if (tableRows.length === 0 && !variables)
                     return <NoResultsMessage message={message} />;
                 const headerComponents = getHeaderComponents(tableRows.length);

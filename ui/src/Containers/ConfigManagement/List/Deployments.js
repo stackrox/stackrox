@@ -63,30 +63,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   }
               },
         {
-            Header: `Policies Violated`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { failingPolicies, failingPolicyCount: policyCount, id } = original;
-                const failingPolicyCount = failingPolicies ? failingPolicies.length : policyCount;
-                if (!failingPolicyCount) return 'No Violations';
-                const labelLink = (
-                    <LabelChip
-                        text={`${failingPolicyCount} ${pluralize('Policies', failingPolicyCount)}`}
-                        type="alert"
-                    />
-                );
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.POLICY)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} component={labelLink} />;
-            },
-            id: 'failingPolicies',
-            accessor: 'failingPolicyCount'
-        },
-        {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,

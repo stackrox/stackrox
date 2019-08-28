@@ -41,7 +41,7 @@ const DeploymentViolations = ({ className, alerts }) => {
     if (!alerts || !alerts.length)
         return (
             <NoResultsMessage
-                message="No deployments violatiing this policy"
+                message="No deployments violating this policy"
                 className="p-6 shadow"
                 icon="info"
             />

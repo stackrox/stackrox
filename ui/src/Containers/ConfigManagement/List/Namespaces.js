@@ -50,30 +50,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   }
               },
         {
-            Header: `Policies Violated`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { policyStatus } = original;
-                const { failingPolicies } = policyStatus;
-                if (!failingPolicies.length) return 'No Violations';
-                if (failingPolicies.length)
-                    return (
-                        <LabelChip
-                            text={`${failingPolicies.length} ${pluralize(
-                                'Policies',
-                                failingPolicies.length
-                            )}`}
-                            type="alert"
-                        />
-                    );
-            },
-            id: 'failingPolicies',
-            accessor: d => d.policyStatus.failingPolicies,
-            sortMethod: sortValueByLength
-        },
-        {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,

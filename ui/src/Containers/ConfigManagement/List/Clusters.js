@@ -36,30 +36,6 @@ const buildTableColumns = (match, location) => {
             accessor: 'status.orchestratorMetadata.version'
         },
         {
-            Header: `Policies Violated`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { policyStatus } = original;
-                const { failingPolicies } = policyStatus;
-                if (failingPolicies.length)
-                    return (
-                        <LabelChip
-                            text={`${failingPolicies.length} ${pluralize(
-                                'Policies',
-                                failingPolicies.length
-                            )}`}
-                            type="alert"
-                        />
-                    );
-                if (!failingPolicies.length) return 'No Violations';
-            },
-            id: 'failingPolicies',
-            accessor: d => d.policyStatus.failingPolicies,
-            sortMethod: sortValueByLength
-        },
-        {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,

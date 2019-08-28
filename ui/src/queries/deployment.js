@@ -85,7 +85,6 @@ export const DEPLOYMENTS_QUERY = gql`
             namespaceId
             serviceAccount
             serviceAccountID
-            failingPolicyCount
             secretCount
             imageCount
             policyStatus
