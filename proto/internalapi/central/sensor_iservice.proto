@@ -6,6 +6,7 @@ import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_status.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/sensor_events.proto";
+import "internalapi/central/sensor_upgrade_iservice.proto";
 
 package central;
 
@@ -27,6 +28,7 @@ message MsgToSensor {
         ScrapeCommand                scrape_command                 = 2;
         NetworkPoliciesCommand       network_policies_command       = 3;
         ClusterConfig                cluster_config                 = 4;
+        SensorUpgradeTrigger         sensor_upgrade_trigger         = 5;
     }
 }
 

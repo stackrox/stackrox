@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "google/protobuf/empty.proto";
+import "storage/cluster.proto";
+
+package central;
+
+message SensorUpgradeTrigger {
+    // A UUID that identifies this specific upgrade process.
+    string upgrade_process_id = 1;
+}
+
+message RecordUpgradeProgressRequest {
+    string                  upgrade_process_id = 1;
+    storage.UpgradeProgress upgrade_progress   = 2;
+}
+
+
+service SensorUpgradeProgressReportService {
+    rpc RecordUpgradeProgress (RecordUpgradeProgressRequest) returns (google.protobuf.Empty);
+}
