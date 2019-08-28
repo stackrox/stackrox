@@ -55,12 +55,13 @@ restoreGradle: &restoreGradle
       - *gradleCacheKey
       - v1-rox-gradle
 
-uiCacheKey: &uiCacheKey 'v1-rox-ui-deps-{{ checksum "ui/yarn.lock" }}'
+uiCacheKey: &uiCacheKey 'v3-rox-ui-deps-{{ checksum "ui/package.json" }}-{{ checksum "ui/yarn.lock" }}'
 restoreUI: &restoreUI
   restore_cache:
     keys:
       - *uiCacheKey
-      - v1-rox-ui-deps
+      - v3-rox-ui-deps-{{ checksum "ui/package.json" }}-
+      - v3-rox-ui-deps-
 
 setupHelm: &setupHelm
   run:
@@ -813,13 +814,47 @@ jobs:
       - checkout
       - *restoreUI
       - run:
+          name: Fetch dependencies
+          command: |
+            if [[ -d ui/node_modules && -f ui/yarn.lock.sha256 && "$(cat ui/yarn.lock.sha256)" == "$(openssl dgst -r -sha256 ui/yarn.lock)" ]]; then
+              exit 0  # cache is complete if the above condition matches
+            fi
+            make -C ui deps
+
+      - run:
+          name: Prepare UI tree state file
+          command: |
+            git log -n 1 --pretty=format:%H -- ui/ >/tmp/ui-tree-state
+
+      - restore_cache:
+          name: Restoring UI build cache
+          key: ui-build-cache-v1-{{ checksum "/tmp/ui-tree-state" }}
+
+      - run:
           name: Build UI
-          command: make -C ui build
+          command: |
+            if [[ -d ui/build ]]; then
+              exit 0  # build cache is always complete
+            fi
+            make -C ui build
+
+      - save_cache:
+          name: Saving UI build cache
+          key: ui-build-cache-v1-{{ checksum "/tmp/ui-tree-state" }}
+          paths:
+            - ui/build
+
+      - run:
+          name: Preparing UI cache
+          command: |
+            openssl dgst -r -sha256 ui/yarn.lock >ui/yarn.lock.sha256
 
       - save_cache:
           key: *uiCacheKey
           paths:
             - ui/node_modules
+            - ui/yarn.lock.sha256
+            - ui/deps
             - ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
 
       - persist_to_workspace:
