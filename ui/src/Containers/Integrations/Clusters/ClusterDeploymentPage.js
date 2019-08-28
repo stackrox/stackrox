@@ -11,10 +11,9 @@ const YamlDownloadSection = ({ onFileDownload, editing, clusterCheckedIn }) => (
             <div className="pt-3 font-700">Dynamic configuration has been synced to Sensor</div>
         )}
         <div className={baseClass}>
-            1){' '}
             {editing
-                ? 'If static configuration was updated, download the new configuration files'
-                : 'Download the required configuration files'}
+                ? '1) If static configuration was updated, download the new configuration files'
+                : '1) Download the required configuration files'}
             <div className="flex justify-center p-3">
                 <button
                     type="button"

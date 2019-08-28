@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import * as Icon from 'react-feather';
 import Tooltip from 'rc-tooltip';
+import { generatePath } from 'react-router-dom';
 
 import PageHeader from 'Components/PageHeader';
 import Panel from 'Components/Panel';
@@ -9,12 +11,17 @@ import CheckboxTable from 'Components/CheckboxTable';
 import { defaultColumnClassName, wrapClassName, rtTrActionsClassName } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import {
-    fetchClusterAsArray,
+    fetchClustersAsArray,
     getAutoUpgradeConfig,
     saveAutoUpgradeConfig
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
+import { clustersPath } from 'routePaths';
 
+import ClustersSidePanel from './ClustersSidePanel';
+
+// @TODO, refactor these helper utilities to this folder,
+//        when retiring clusters in Integrations section
 import {
     checkInLabel,
     formatCollectionMethod,
@@ -24,11 +31,18 @@ import {
     sensorVersionLabel
 } from '../Integrations/Clusters/ClusterDetails';
 
-const ClustersPage = () => {
+const ClustersPage = ({
+    history,
+    location: { search },
+    match: {
+        params: { clusterId }
+    }
+}) => {
     const [currentClusters, setCurrentClusters] = useState([]);
     const [autoUpgradeConfig, setAutoUpgradeConfig] = useState({});
     const [selectedClusters, setSelectedClusters] = useState([]);
     const [tableRef, setTableRef] = useState(null);
+    const [selectedClusterId, setSelectedClusterId] = useState(clusterId);
 
     // @TODO, implement actual delete logic into this stub function
     const onDeleteHandler = cluster => e => {
@@ -64,10 +78,14 @@ const ClustersPage = () => {
         setSelectedClusters(selection);
     }
 
-    function editCluster() {}
+    // @TODO: Change table component to use href for accessibility and better UX here, instead of an onclick
+    function handleRowClick(cluster) {
+        const newClusterId = (cluster && cluster.id) || '';
+        setSelectedClusterId(newClusterId);
+    }
 
     useEffect(() => {
-        fetchClusterAsArray().then(clusters => {
+        fetchClustersAsArray().then(clusters => {
             setCurrentClusters(clusters);
         });
     }, []);
@@ -81,6 +99,20 @@ const ClustersPage = () => {
     useEffect(() => {
         fetchConfig();
     }, []);
+
+    // When the selected cluster changes, update the URL.
+    useEffect(
+        () => {
+            const newPath = selectedClusterId
+                ? generatePath(clustersPath, { clusterId: selectedClusterId })
+                : clustersPath.replace('/:clusterId?', '');
+            history.push({
+                pathname: newPath,
+                search
+            });
+        },
+        [history, search, selectedClusterId]
+    );
 
     function toggleAutoUpgrade() {
         // @TODO, wrap this settings change in a confirmation prompt of some sort
@@ -142,8 +174,6 @@ const ClustersPage = () => {
         }
     ];
 
-    const selectedClusterId = '';
-
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
 
@@ -179,7 +209,7 @@ const ClustersPage = () => {
                                     }}
                                     rows={currentClusters}
                                     columns={clusterColumns}
-                                    onRowClick={editCluster}
+                                    onRowClick={handleRowClick}
                                     toggleRow={toggleCluster}
                                     toggleSelectAll={toggleAllClusters}
                                     selection={selectedClusters}
@@ -190,10 +220,20 @@ const ClustersPage = () => {
                             </div>
                         </Panel>
                     </div>
+                    <ClustersSidePanel
+                        selectedClusterId={selectedClusterId}
+                        setSelectedClusterId={setSelectedClusterId}
+                    />
                 </div>
             </div>
         </section>
     );
+};
+
+ClustersPage.propTypes = {
+    history: ReactRouterPropTypes.history.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
+    match: ReactRouterPropTypes.match.isRequired
 };
 
 export default ClustersPage;

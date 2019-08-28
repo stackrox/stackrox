@@ -18,7 +18,7 @@ import { filterLinksByFeatureFlag } from './navHelpers';
 const navLinks = [
     {
         text: 'Clusters',
-        to: clustersPath,
+        to: clustersPath.replace('/:clusterId', ''),
         featureFlag: knownBackendFlags.ROX_SENSOR_AUTOUPGRADE
     },
     {

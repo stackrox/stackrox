@@ -26,9 +26,20 @@ export function fetchClusters() {
  *
  * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
-export function fetchClusterAsArray() {
+export function fetchClustersAsArray() {
     return axios.get(clustersUrl).then(response => {
         return (response.data && response.data.clusters) || [];
+    });
+}
+
+/**
+ * Fetches unwrapped cluster object by ID.
+ *
+ * @returns {Promise<Object, Error>} fulfilled with single cluster object
+ */
+export function getClusterById(id) {
+    return axios.get(`${clustersUrl}/${id}`).then(response => {
+        return (response && response.data && response.data.cluster) || null;
     });
 }
 
