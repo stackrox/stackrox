@@ -270,7 +270,7 @@ func matchesOwnerName(name, topLevelType string, p *v1.Pod) bool {
 		}
 	} else if len(p.GetName()) < labelMaxLength {
 		// We should have been able to parse the name normally as it was < max length, but we were not
-		log.Warnf("Could not parse pod %q with top level owner type %q", p.GetName(), topLevelType)
+		log.Debugf("Could not parse pod %q with top level owner type %q", p.GetName(), topLevelType)
 		return false
 	}
 
@@ -282,7 +282,7 @@ func matchesOwnerName(name, topLevelType string, p *v1.Pod) bool {
 		return true
 	}
 
-	log.Warnf("Could not parse pod %q with owner type %q", p.GetName(), topLevelType)
+	log.Debugf("Could not parse pod %q with owner type %q", p.GetName(), topLevelType)
 	return false
 }
 
