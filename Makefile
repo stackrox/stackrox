@@ -281,9 +281,9 @@ clean-deps:
 ## Build ##
 ###########
 
-HOST_OS=linux
+HOST_OS:=linux
 ifeq ($(UNAME_S),Darwin)
-    HOST_OS=darwin
+    HOST_OS:=darwin
 endif
 
 .PHONY: build-prep
@@ -301,6 +301,11 @@ endif
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
+
+upgrader: bin/$(HOST_OS)/upgrader
+
+bin/%/upgrader: build-prep
+	GOOS=$* $(GOBUILD) ./sensor/upgrader
 
 .PHONY: main-build
 main-build: build-prep

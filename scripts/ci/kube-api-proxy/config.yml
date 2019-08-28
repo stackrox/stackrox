@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Config
+clusters:
+  - cluster:
+      server: http://localhost:28001
+    name: proxy
+contexts:
+  - context:
+      cluster: proxy
+    name: proxy
+current-context: proxy

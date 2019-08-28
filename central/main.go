@@ -488,7 +488,7 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		uiRoute(ui.Mux()),
 		{
 			Route:         "/api/extensions/clusters/zip",
-			Authorizer:    user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
+			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},

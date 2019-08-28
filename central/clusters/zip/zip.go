@@ -18,6 +18,7 @@ import (
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -105,6 +106,19 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
 		return
+	}
+
+	identity := authn.IdentityFromContext(r.Context())
+	if identity == nil {
+		httputil.WriteGRPCStyleError(w, codes.Unauthenticated, errors.New("no identity in context"))
+		return
+	}
+
+	if identity.Service().GetType() == storage.ServiceType_SENSOR_SERVICE {
+		if identity.Service().GetId() != clusterID.GetId() {
+			httputil.WriteGRPCStyleError(w, codes.PermissionDenied, errors.New("sensors may only download their own bundle"))
+			return
+		}
 	}
 
 	wrapper := zip.NewWrapper()

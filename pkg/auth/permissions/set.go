@@ -57,6 +57,28 @@ func (k ResourceSet) Remove(i Resource) {
 	}
 }
 
+// RemoveAll removes the given elements.
+func (k ResourceSet) RemoveAll(is ...Resource) {
+	if k.underlying == nil {
+		return
+	}
+	for _, i := range is {
+		k.underlying.Remove(i)
+	}
+}
+
+// RemoveMatching removes all elements that match a given predicate.
+func (k ResourceSet) RemoveMatching(pred func(Resource) bool) {
+	if k.underlying == nil {
+		return
+	}
+	for _, elem := range k.AsSlice() {
+		if pred(elem) {
+			k.underlying.Remove(elem)
+		}
+	}
+}
+
 // Contains returns whether the set contains an element of type Resource.
 func (k ResourceSet) Contains(i Resource) bool {
 	if k.underlying != nil {

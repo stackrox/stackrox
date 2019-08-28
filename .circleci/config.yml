@@ -743,6 +743,16 @@ commands:
             kubectl delete clusterrolebinding temporary-admin
             <</ parameters.require-cluster-admin >>
 
+      - run:
+          name: Validate Sensor bundle (upgrader)
+          command: |
+            kubectl proxy --port 28001 &
+            proxy_pid=$!
+            sleep 5
+            KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
+              bin/linux/upgrader -kube-config kubectl -validate-bundle deploy/<< parameters.orchestrator-flavor >>/sensor-deploy
+            kill "$proxy_pid"
+
       - *waitForSensorK8s
 
       - run:

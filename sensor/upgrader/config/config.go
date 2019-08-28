@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/uuid"
 	"k8s.io/client-go/rest"
 )
@@ -23,14 +24,15 @@ type UpgraderConfig struct {
 // in this config actually work in practice.
 func (c *UpgraderConfig) Validate() error {
 	errs := errorhelpers.NewErrorList("validating upgrader config")
-	if c.ClusterID == "" {
-		errs.AddString("cluster ID must be specified")
+	if c.ProcessID != "" {
+		if _, err := uuid.FromString(c.ProcessID); err != nil {
+			errs.AddWrap(err, "upgrade process ID must be a valid UUID")
+		}
 	}
-	if _, err := uuid.FromString(c.ProcessID); err != nil {
-		errs.AddWrap(err, "upgrade process ID must be a valid UUID")
-	}
-	if c.CentralEndpoint == "" {
-		errs.AddString("central endpoint must be specified")
+	if c.CentralEndpoint != "" {
+		if _, _, _, err := netutil.ParseEndpoint(c.CentralEndpoint); err != nil {
+			errs.AddWrapf(err, "central endpoint %q is invalid", c.CentralEndpoint)
+		}
 	}
 	if c.K8sRESTConfig == nil {
 		errs.AddString("kubernetes REST config not present")
@@ -40,7 +42,7 @@ func (c *UpgraderConfig) Validate() error {
 
 // Create instantiates a new upgrader config using environment variables and well-known config files.
 func Create() (*UpgraderConfig, error) {
-	restConfig, err := rest.InClusterConfig()
+	restConfig, err := loadKubeConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining Kubernetes API config")
 	}
@@ -48,7 +50,7 @@ func Create() (*UpgraderConfig, error) {
 	cfg := &UpgraderConfig{
 		ClusterID:       env.ClusterID.Setting(),
 		ProcessID:       os.Getenv(upgradeProcessIDEnvVar),
-		CentralEndpoint: env.CentralEndpoint.Setting(),
+		CentralEndpoint: os.Getenv(env.CentralEndpoint.EnvVar()),
 		K8sRESTConfig:   restConfig,
 	}
 

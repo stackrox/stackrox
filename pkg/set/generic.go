@@ -59,6 +59,28 @@ func (k KeyTypeSet) Remove(i KeyType) {
 	}
 }
 
+// RemoveAll removes the given elements.
+func (k KeyTypeSet) RemoveAll(is ...KeyType) {
+	if k.underlying == nil {
+		return
+	}
+	for _, i := range is {
+		k.underlying.Remove(i)
+	}
+}
+
+// RemoveMatching removes all elements that match a given predicate.
+func (k KeyTypeSet) RemoveMatching(pred func(KeyType) bool) {
+	if k.underlying == nil {
+		return
+	}
+	for _, elem := range k.AsSlice() {
+		if pred(elem) {
+			k.underlying.Remove(elem)
+		}
+	}
+}
+
 // Contains returns whether the set contains an element of type KeyType.
 func (k KeyTypeSet) Contains(i KeyType) bool {
 	if k.underlying != nil {

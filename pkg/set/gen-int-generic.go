@@ -57,6 +57,28 @@ func (k IntSet) Remove(i int) {
 	}
 }
 
+// RemoveAll removes the given elements.
+func (k IntSet) RemoveAll(is ...int) {
+	if k.underlying == nil {
+		return
+	}
+	for _, i := range is {
+		k.underlying.Remove(i)
+	}
+}
+
+// RemoveMatching removes all elements that match a given predicate.
+func (k IntSet) RemoveMatching(pred func(int) bool) {
+	if k.underlying == nil {
+		return
+	}
+	for _, elem := range k.AsSlice() {
+		if pred(elem) {
+			k.underlying.Remove(elem)
+		}
+	}
+}
+
 // Contains returns whether the set contains an element of type int.
 func (k IntSet) Contains(i int) bool {
 	if k.underlying != nil {

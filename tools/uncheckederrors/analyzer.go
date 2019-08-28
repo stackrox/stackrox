@@ -36,6 +36,10 @@ var (
 			"Fprintf",
 			"Fprintln",
 		),
+		"strings": set.NewFrozenStringSet(
+			"(*Builder).WriteString",
+			"(*Builder).WriteRune",
+		),
 		"github.com/stackrox/rox/pkg/errorhelpers": set.NewFrozenStringSet(
 			"PanicOnDevelopment",
 			"PanicOnDevelopmentf",
@@ -133,7 +137,18 @@ func doesFuncReturnError(pass *analysis.Pass, fun ast.Expr) (name string, return
 
 func isWhitelisted(fun *types.Func) bool {
 	if whitelistSet, ok := whitelist[fun.Pkg().Path()]; ok {
-		if whitelistSet.Contains(fun.Name()) {
+		name := fun.Name()
+		sig := fun.Type().(*types.Signature)
+		if sig != nil && sig.Recv() != nil {
+			recvTy := sig.Recv().Type()
+			qf := types.RelativeTo(fun.Pkg())
+			if ptrTy, _ := recvTy.(*types.Pointer); ptrTy != nil {
+				name = fmt.Sprintf("(*%s).%s", types.TypeString(ptrTy.Elem(), qf), name)
+			} else {
+				name = fmt.Sprintf("%s.%s", types.TypeString(recvTy, qf), name)
+			}
+		}
+		if whitelistSet.Contains(name) {
 			return true
 		}
 	}

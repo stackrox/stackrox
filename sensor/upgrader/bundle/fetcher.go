@@ -1,0 +1,50 @@
+package bundle
+
+import (
+	"bytes"
+	"io/ioutil"
+	"net/http"
+
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+)
+
+type fetcher struct {
+	ctx *upgradectx.UpgradeContext
+}
+
+func (f *fetcher) FetchBundle() (Contents, error) {
+	resByID := &v1.ResourceByID{
+		Id: f.ctx.ClusterID(),
+	}
+	var buf bytes.Buffer
+	if err := new(jsonpb.Marshaler).Marshal(&buf, resByID); err != nil {
+		return nil, errorhelpers.PanicOnDevelopment(err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "/api/extensions/clusters/zip", &buf)
+	if err != nil {
+		return nil, errorhelpers.PanicOnDevelopment(err)
+	}
+
+	resp, err := f.ctx.DoHTTPRequest(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "making HTTP request to central for cluster bundle download")
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+	if err := httputil.ResponseToError(resp); err != nil {
+		return nil, errors.Wrap(err, "making HTTP request to central for cluster bundle download")
+	}
+
+	bundleContents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading cluster bundle HTTP response body")
+	}
+
+	return ContentsFromZIPData(bytes.NewReader(bundleContents), int64(len(bundleContents)))
+}

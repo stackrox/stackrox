@@ -57,6 +57,28 @@ func (k StringSet) Remove(i string) {
 	}
 }
 
+// RemoveAll removes the given elements.
+func (k StringSet) RemoveAll(is ...string) {
+	if k.underlying == nil {
+		return
+	}
+	for _, i := range is {
+		k.underlying.Remove(i)
+	}
+}
+
+// RemoveMatching removes all elements that match a given predicate.
+func (k StringSet) RemoveMatching(pred func(string) bool) {
+	if k.underlying == nil {
+		return
+	}
+	for _, elem := range k.AsSlice() {
+		if pred(elem) {
+			k.underlying.Remove(elem)
+		}
+	}
+}
+
 // Contains returns whether the set contains an element of type string.
 func (k StringSet) Contains(i string) bool {
 	if k.underlying != nil {

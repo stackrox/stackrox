@@ -58,6 +58,28 @@ func (k V1SearchCategorySet) Remove(i v1.SearchCategory) {
 	}
 }
 
+// RemoveAll removes the given elements.
+func (k V1SearchCategorySet) RemoveAll(is ...v1.SearchCategory) {
+	if k.underlying == nil {
+		return
+	}
+	for _, i := range is {
+		k.underlying.Remove(i)
+	}
+}
+
+// RemoveMatching removes all elements that match a given predicate.
+func (k V1SearchCategorySet) RemoveMatching(pred func(v1.SearchCategory) bool) {
+	if k.underlying == nil {
+		return
+	}
+	for _, elem := range k.AsSlice() {
+		if pred(elem) {
+			k.underlying.Remove(elem)
+		}
+	}
+}
+
 // Contains returns whether the set contains an element of type v1.SearchCategory.
 func (k V1SearchCategorySet) Contains(i v1.SearchCategory) bool {
 	if k.underlying != nil {

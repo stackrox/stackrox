@@ -1,10 +1,15 @@
 package upgradectx
 
 import (
+	"net/http"
+
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/config"
+	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -14,6 +19,9 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/kubernetes/pkg/kubectl/cmd/util/openapi"
+	openAPIValidation "k8s.io/kubernetes/pkg/kubectl/cmd/util/openapi/validation"
+	"k8s.io/kubernetes/pkg/kubectl/validation"
 )
 
 var (
@@ -30,6 +38,9 @@ type UpgradeContext struct {
 	resources         map[schema.GroupVersionKind]*resources.Metadata
 	clientSet         *kubernetes.Clientset
 	dynamicClientPool dynamic.ClientPool
+	schemaValidator   validation.Schema
+
+	httpClient *http.Client
 }
 
 // Create creates a new upgrader context from the given config.
@@ -54,6 +65,19 @@ func Create(config *config.UpgraderConfig) (*UpgradeContext, error) {
 		}
 	}
 
+	openAPIDoc, err := k8sClientSet.Discovery().OpenAPISchema()
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving OpenAPI schema document from server")
+	}
+	if err := common.PatchOpenAPISchema(openAPIDoc); err != nil {
+		return nil, errors.Wrap(err, "patching OpenAPI schema")
+	}
+	openAPIResources, err := openapi.NewOpenAPIData(openAPIDoc)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing OpenAPI schema document into resources")
+	}
+	schemaValidator := openAPIValidation.NewSchemaValidation(openAPIResources)
+
 	schm := scheme.Scheme
 
 	ctx := &UpgradeContext{
@@ -63,6 +87,24 @@ func Create(config *config.UpgraderConfig) (*UpgradeContext, error) {
 		resources:         resourceMap,
 		clientSet:         k8sClientSet,
 		dynamicClientPool: dynamicClientPool,
+		schemaValidator: validation.ConjunctiveSchema{
+			schemaValidator,
+			yamlValidator{jsonValidator: validation.NoDoubleKeySchema{}},
+		},
+	}
+
+	if config.CentralEndpoint != "" {
+		tlsConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
+			UseClientCert: true,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "instantiating TLS config")
+		}
+		ctx.httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: tlsConf,
+			},
+		}
 	}
 
 	return ctx, nil
@@ -116,7 +158,7 @@ func (c *UpgradeContext) Codecs() *serializer.CodecFactory {
 
 // UniversalDecoder is a decoder that can be used to decode any object.
 func (c *UpgradeContext) UniversalDecoder() runtime.Decoder {
-	return fallbackDecoder{c.codecs.UniversalDeserializer(), unstructured.UnstructuredJSONScheme}
+	return fallbackDecoder{c.codecs.UniversalDeserializer(), yamlDecoder{jsonDecoder: unstructured.UnstructuredJSONScheme}}
 }
 
 // AnnotateProcessStateObject enriches the given object with labels and annotations that allow identifying it as an
@@ -127,4 +169,42 @@ func (c *UpgradeContext) AnnotateProcessStateObject(obj metav1.Object) {
 		obj.SetLabels(make(map[string]string))
 	}
 	obj.GetLabels()[common.UpgradeProcessIDLabelKey] = c.config.ProcessID
+}
+
+// ClusterID returns the ID of this cluster.
+func (c *UpgradeContext) ClusterID() string {
+	return c.config.ClusterID
+}
+
+// DoHTTPRequest performs an HTTP request. If the URL in req is relative, the central endpoint is filled in as the host,
+// using the HTTPS scheme by default.
+func (c *UpgradeContext) DoHTTPRequest(req *http.Request) (*http.Response, error) {
+	if c.httpClient == nil {
+		return nil, errors.New("no HTTP client configured")
+	}
+
+	if req.URL.Scheme == "" {
+		req.URL.Scheme = "https"
+	}
+	if req.URL.Host == "" {
+		req.URL.Host = c.config.CentralEndpoint
+	}
+
+	return c.httpClient.Do(req)
+}
+
+// ParseAndValidateObject parses and validates (against the server's OpenAPI schema) a serialized Kubernetes object.
+func (c *UpgradeContext) ParseAndValidateObject(data []byte) (k8sobjects.Object, error) {
+	obj, _, err := c.UniversalDecoder().Decode(data, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.schemaValidator.ValidateBytes(data); err != nil {
+		return nil, errors.Wrap(err, "schema validation failed")
+	}
+	k8sObj, _ := obj.(k8sobjects.Object)
+	if k8sObj == nil {
+		return nil, errors.Errorf("object of kind %v is not a Kubernetes API object", obj.GetObjectKind().GroupVersionKind())
+	}
+	return k8sObj, nil
 }

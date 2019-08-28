@@ -14,7 +14,6 @@ var BundleResourceTypes = []schema.GroupVersionKind{
 	{Version: "v1", Kind: "ServiceAccount"},
 	{Version: "v1", Kind: "Secret"},
 	{Version: "v1", Kind: "ConfigMap"},
-	{Version: "v1", Kind: "SecurityContextConstraints"},
 	{Group: "apps", Version: "v1beta2", Kind: "DaemonSet"},
 	{Group: "extensions", Version: "v1beta1", Kind: "Deployment"},
 	{Group: "extensions", Version: "v1beta1", Kind: "PodSecurityPolicy"},

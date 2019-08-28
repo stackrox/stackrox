@@ -28,8 +28,11 @@ spec:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 25
               preference:
-                matchLabels:
-                  node-role.kubernetes.io/compute: "true"
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: In
+                    values:
+                    - "true"
             - weight: 75
               preference:
                 matchExpressions:
