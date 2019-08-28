@@ -138,13 +138,14 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
     }
 
     function getCenterValue(data) {
-        const policiesInViolation = data.filter(policy => policy.alertCount).length;
+        const policiesInViolation = data.filter(
+            policy => policy.policyStatus.toLowerCase() === 'fail'
+        ).length;
         return policiesInViolation;
     }
 
     function getSummaryData(data) {
         const policiesInViolation = data.filter(policy => policy.policyStatus === 'fail');
-
         function getCount(severity) {
             return policiesInViolation.filter(policy => policy.severity === severity).length;
         }
