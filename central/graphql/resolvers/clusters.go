@@ -56,7 +56,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", "controls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Cluster", "failingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Cluster", "passingControls(query: String): [ComplianceControl!]!"),
-		schema.AddExtraResolver("Cluster", "complianceControlCount: ComplianceControlCount!"),
+		schema.AddExtraResolver("Cluster", "complianceControlCount(query: String): ComplianceControlCount!"),
 	)
 }
 
@@ -599,22 +599,19 @@ func (resolver *clusterResolver) FailingControls(ctx context.Context, args rawQu
 	return resolvers, nil
 }
 
-func (resolver *clusterResolver) ComplianceControlCount(ctx context.Context) (*complianceControlCountResolver, error) {
+func (resolver *clusterResolver) ComplianceControlCount(ctx context.Context, args rawQuery) (*complianceControlCountResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComplianceControlCount")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}, rawQuery{})
+	results, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}, args)
 	if err != nil {
 		return nil, err
 	}
-	if r == nil {
+	if results == nil {
 		return &complianceControlCountResolver{}, nil
 	}
-	if len(r) != 1 {
-		return &complianceControlCountResolver{}, errors.Errorf("unexpected number of results: expected: 1, actual: %d", len(r))
-	}
-	return &complianceControlCountResolver{failingCount: r[0].GetNumFailing(), passingCount: r[0].GetNumPassing()}, nil
+	return getComplianceControlCountFromAggregationResults(results), nil
 }
 
 func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope, args rawQuery) ([]*v1.ComplianceAggregation_Result, error) {

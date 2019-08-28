@@ -24,8 +24,8 @@ func init() {
 		schema.AddQuery("node(id:ID!): Node"),
 		schema.AddQuery("nodes(query: String): [Node!]!"),
 		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddType("ComplianceControlCount", []string{"failingCount: Int!", "passingCount: Int!"}),
-		schema.AddExtraResolver("Node", "nodeComplianceControlCount: ComplianceControlCount!"),
+		schema.AddType("ComplianceControlCount", []string{"failingCount: Int!", "passingCount: Int!", "unknownCount: Int!"}),
+		schema.AddExtraResolver("Node", "nodeComplianceControlCount(query: String) : ComplianceControlCount!"),
 		schema.AddExtraResolver("Node", "controlStatus: Boolean!"),
 		schema.AddExtraResolver("Node", "failingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
@@ -115,22 +115,20 @@ func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args rawQue
 	return *output, nil
 }
 
-func (resolver *nodeResolver) NodeComplianceControlCount(ctx context.Context) (*complianceControlCountResolver, error) {
+func (resolver *nodeResolver) NodeComplianceControlCount(ctx context.Context, args rawQuery) (*complianceControlCountResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComplianceControlCount")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	r, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE}, rawQuery{})
+	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE, v1.ComplianceAggregation_CONTROL}
+	results, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, scope, args)
 	if err != nil {
 		return nil, err
 	}
-	if r == nil {
+	if results == nil {
 		return &complianceControlCountResolver{}, nil
 	}
-	if len(r) != 1 {
-		return &complianceControlCountResolver{}, errors.Errorf("unexpected node aggregation results length: expected: 1, actual: %d", len(r))
-	}
-	return &complianceControlCountResolver{failingCount: r[0].GetNumFailing(), passingCount: r[0].GetNumPassing()}, nil
+	return getComplianceControlCountFromAggregationResults(results), nil
 }
 
 func (resolver *nodeResolver) ControlStatus(ctx context.Context) (bool, error) {
@@ -248,9 +246,24 @@ func getComplianceControlsFromAggregationResults(results []*v1.ComplianceAggrega
 	return controls, nil
 }
 
+func getComplianceControlCountFromAggregationResults(results []*v1.ComplianceAggregation_Result) *complianceControlCountResolver {
+	ret := &complianceControlCountResolver{}
+	for _, r := range results {
+		if r.GetNumFailing() != 0 {
+			ret.failingCount++
+		} else if r.GetNumPassing() != 0 {
+			ret.passingCount++
+		} else {
+			ret.unknownCount++
+		}
+	}
+	return ret
+}
+
 type complianceControlCountResolver struct {
 	failingCount int32
 	passingCount int32
+	unknownCount int32
 }
 
 func (resolver *complianceControlCountResolver) FailingCount() int32 {
@@ -259,4 +272,8 @@ func (resolver *complianceControlCountResolver) FailingCount() int32 {
 
 func (resolver *complianceControlCountResolver) PassingCount() int32 {
 	return resolver.passingCount
+}
+
+func (resolver *complianceControlCountResolver) UnknownCount() int32 {
+	return resolver.unknownCount
 }
