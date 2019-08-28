@@ -57,7 +57,7 @@ const Details = props => {
                                     matching roles.
                                 </p>
                                 <p className="pb-2">
-                                    Set the minimum access role to <em>No Access</em> if you want to
+                                    Set the minimum access role to <em>None</em> if you want to
                                     define permissions completely using specific rules.
                                 </p>
                             </div>

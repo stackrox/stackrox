@@ -94,9 +94,8 @@ class Form extends Component {
                                         all matching roles.
                                     </p>
                                     <p className="pb-2">
-                                        Set the minimum access role to <em>No Access</em> if you
-                                        want to define permissions completely using specific rules
-                                        below.
+                                        Set the minimum access role to <em>None</em> if you want to
+                                        define permissions completely using specific rules below.
                                     </p>
                                 </div>
                                 <FieldArray
