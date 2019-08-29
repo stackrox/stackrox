@@ -195,6 +195,11 @@ func (c *UpgradeContext) DoHTTPRequest(req *http.Request) (*http.Response, error
 	return c.httpClient.Do(req)
 }
 
+// Validator returns the schema validator to be used.
+func (c *UpgradeContext) Validator() validation.Schema {
+	return c.schemaValidator
+}
+
 // ParseAndValidateObject parses and validates (against the server's OpenAPI schema) a serialized Kubernetes object.
 func (c *UpgradeContext) ParseAndValidateObject(data []byte) (k8sobjects.Object, error) {
 	obj, _, err := c.UniversalDecoder().Decode(data, nil, nil)

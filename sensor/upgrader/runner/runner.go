@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
+	"github.com/stackrox/rox/sensor/upgrader/preflight"
 	"github.com/stackrox/rox/sensor/upgrader/snapshot"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -68,6 +69,10 @@ func (r *runner) Run() error {
 	fmt.Println("DELETIONS")
 	for _, objRef := range executionPlan.Deletions {
 		fmt.Println(objRef)
+	}
+
+	if err := preflight.PerformChecks(r.ctx, executionPlan); err != nil {
+		return err
 	}
 
 	return nil
