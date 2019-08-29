@@ -29,6 +29,7 @@ const RelatedEntityListCount = ({
     const result = (
         <button
             type="button"
+            disabled={value === 0}
             className="h-full w-full no-underline text-primary-700 hover:bg-primary-100 bg-counts-widget"
             onClick={onClick}
             data-test-id="related-entity-list-count-value"

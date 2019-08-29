@@ -2,10 +2,10 @@ import capitalize from 'lodash/capitalize';
 import { url, selectors, controlStatus } from '../constants/ConfigManagementPage';
 import withAuth from '../helpers/basicAuth';
 
-const renderListAndSidePanel = entity => {
+// specifying an "entityName" will try to select that row in the table
+const renderListAndSidePanel = (entity, entityName = null) => {
     cy.visit(url.list[entity]);
-    cy.get(selectors.tableRows)
-        .eq(0)
+    cy.get(`${selectors.tableRows}${entityName ? `:contains(${entityName})` : ''}`)
         .find(selectors.tableCells)
         .eq(1)
         .click({ force: true });
@@ -107,7 +107,10 @@ const entityCountMatchesTableRows = (listEntity, context) => {
         .invoke('text')
         .then(count => {
             if (count === '0') return;
-            cy.get(`${selectors.countWidgets}:contains('${listEntity}')`).click();
+            cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
+                .find('button')
+                .invoke('attr', 'disabled', false)
+                .click();
             cy.get(
                 `[data-test-id="${
                     context === 'Page' ? 'panel' : 'side-panel'
@@ -455,7 +458,7 @@ describe('Config Management Entities', () => {
         });
 
         it('should click on the secrets count widget in the entity page and show the secrets tab', () => {
-            renderListAndSidePanel('namespaces');
+            renderListAndSidePanel('namespaces', 'stackrox');
             navigateToSingleEntityPage('namespace');
             clickOnCountWidget('secrets', 'entityList');
         });
@@ -613,7 +616,7 @@ describe('Config Management Entities', () => {
         });
 
         it('should click on the images count widget in the entity page and show the images tab', () => {
-            renderListAndSidePanel('deployments');
+            renderListAndSidePanel('deployments', 'collector');
             navigateToSingleEntityPage('deployment');
             clickOnCountWidget('images', 'entityList');
         });
@@ -906,12 +909,6 @@ describe('Config Management Entities', () => {
             renderListAndSidePanel('serviceAccounts');
             navigateToSingleEntityPage('serviceAccount');
             hasTabsFor(['deployments', 'roles']);
-        });
-
-        it('should click on the deployments count widget in the entity page and show the deployments tab', () => {
-            renderListAndSidePanel('serviceAccounts');
-            navigateToSingleEntityPage('serviceAccount');
-            clickOnCountWidget('deployments', 'entityList');
         });
 
         it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
