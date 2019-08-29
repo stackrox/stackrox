@@ -626,7 +626,6 @@ commands:
 
     steps:
       - checkout
-      - check-backend-changes
 
       - steps: << parameters.determine-whether-to-run >>
 
@@ -790,18 +789,6 @@ commands:
             fi
             <</ parameters.validate-autoupgrade-label >>
             exit 0
-
-  check-backend-changes:
-    steps:
-      - run:
-          name: Check if there were any backend changes
-          command: |
-            set -x
-            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" || "$CIRCLE_BRANCH" =~ ^release/.* ]]; then
-              exit 0  # Always run on master, tags, or release branches
-            fi
-            fork_point="$(git merge-base --fork-point origin/master)"
-            git diff --name-only "$fork_point" | egrep -qv '^ui/' || circleci step halt
 
 jobs:
 
@@ -1273,6 +1260,7 @@ jobs:
 
     steps:
       - checkout
+
       - check-label-to-skip-tests:
           label: ci-no-k8s-tests
 
@@ -1383,7 +1371,6 @@ jobs:
       - POD_SECURITY_POLICIES: "true"
     steps:
       - checkout
-      - check-backend-changes
       - check-label-to-skip-tests:
           label: ci-no-qa-tests
 
@@ -1421,7 +1408,6 @@ jobs:
 
     steps:
       - checkout
-      - check-backend-changes
       - *check-qa-tests-kernel-module-label
       - provision-gke-cluster:
           cluster-id: qa-tests-kernel-module
@@ -1452,7 +1438,6 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - check-backend-changes
       - provision-gke-cluster:
           cluster-id: upgrade-test
 
@@ -1465,7 +1450,6 @@ jobs:
 
     steps:
       - checkout
-      - check-backend-changes
       - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -1586,7 +1570,6 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - check-backend-changes
       - *checkScaleLabel
       - provision-gke-cluster:
           cluster-id: scale-test
@@ -1602,7 +1585,6 @@ jobs:
 
     steps:
       - checkout
-      - check-backend-changes
       - *checkScaleLabel
       - setup_remote_docker
       - attach_workspace:
@@ -1647,7 +1629,6 @@ jobs:
       - OPENSHIFT_AUTOMATION_VERSION: snapshot-0.4.2-7-g6255c49
     steps:
       - checkout
-      - check-backend-changes
       - *checkOpenshiftLabel
 
       - run:
@@ -1731,7 +1712,6 @@ jobs:
 
     steps:
       - checkout
-      - check-backend-changes
       - *checkOpenshiftLabel
       - setup_remote_docker
 
