@@ -5,8 +5,14 @@ import { setContext } from 'apollo-link-context';
 import { getAccessToken } from 'services/AuthService';
 import introspectionQueryResultData from './fragmentTypes.json';
 
+// I was able to get the browser into a state where graphql usage would fail with the error
+// Network error: Failed to execute 'fetch' on 'Window': Request cannot be constructed from a URL that includes credentials: /api/graphql
+// It turns out that axios always canonicalizes relative URLs but apollo doesn't.
+// We never noticed this before because graphql was silently eating errors.
+const uri = `${window.location.protocol}//${window.location.host}/api/graphql`;
+
 const httpLink = createHttpLink({
-    uri: '/api/graphql'
+    uri
 });
 
 const fragmentMatcher = new IntrospectionFragmentMatcher({
