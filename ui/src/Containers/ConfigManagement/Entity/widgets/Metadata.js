@@ -4,12 +4,13 @@ import Widget from 'Components/Widget';
 import Popper from 'Components/Popper';
 import pluralize from 'pluralize';
 
-const ResourceCountPopper = ({ data, label, renderContent }) => {
+const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName }) => {
     const { length } = data;
     return (
         <Popper
             disabled={!length}
             placement="bottom"
+            reactOutsideClassName={reactOutsideClassName}
             buttonClass={`rounded border border-base-400 p-1 px-4 text-center text-sm ${length &&
                 'hover:bg-base-200'}`}
             buttonContent={
@@ -29,7 +30,12 @@ const ResourceCountPopper = ({ data, label, renderContent }) => {
 ResourceCountPopper.propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
     label: PropTypes.string.isRequired,
+    reactOutsideClassName: PropTypes.string,
     renderContent: PropTypes.func.isRequired
+};
+
+ResourceCountPopper.defaultProps = {
+    reactOutsideClassName: null
 };
 
 const renderKeyValuePairs = data => {
@@ -63,6 +69,7 @@ const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...
                         <li className="m-4">
                             <ResourceCountPopper
                                 data={labels}
+                                reactOutsideClassName="ignore-label-onclickoutside"
                                 label="Label"
                                 renderContent={renderKeyValuePairs}
                             />
@@ -72,6 +79,7 @@ const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...
                         <li className="m-4">
                             <ResourceCountPopper
                                 data={annotations}
+                                reactOutsideClassName="ignore-annotation-onclickoutside"
                                 label="Annotation"
                                 renderContent={renderKeyValuePairs}
                             />
@@ -81,6 +89,7 @@ const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...
                         <li className="m-4">
                             <ResourceCountPopper
                                 data={whitelists}
+                                reactOutsideClassName="ignore-whitelist-onclickoutside"
                                 label="Whitelist"
                                 renderContent={renderName}
                             />
@@ -90,6 +99,7 @@ const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...
                         <li className="m-4">
                             <ResourceCountPopper
                                 data={secrets}
+                                reactOutsideClassName="ignore-secret-onclickoutside"
                                 label="Image Pull Secret"
                                 renderContent={renderName}
                             />

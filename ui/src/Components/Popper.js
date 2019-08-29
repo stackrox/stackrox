@@ -13,7 +13,6 @@ class CustomPopper extends Component {
         };
 
         this.onClick = this.onClick.bind(this);
-        this.handleClickOutside = this.handleClickOutside.bind(this);
     }
 
     onClick() {
@@ -26,16 +25,23 @@ class CustomPopper extends Component {
 
     render() {
         const { isOpen } = this.state;
-        const { disabled, placement, buttonClass, buttonContent, popperContent } = this.props;
+        const {
+            disabled,
+            placement,
+            buttonClass,
+            buttonContent,
+            popperContent,
+            reactOutsideClassName
+        } = this.props;
 
         return (
             <Manager>
                 <Target>
                     <button
                         type="button"
-                        data-test-id="color-picker"
+                        data-test-id="popper-button"
                         onClick={this.onClick}
-                        className={`ignore-react-onclickoutside ${buttonClass} ${
+                        className={`${reactOutsideClassName} ${buttonClass} ${
                             disabled ? 'pointer-events-none' : ''
                         }`}
                     >
@@ -53,6 +59,7 @@ class CustomPopper extends Component {
 CustomPopper.propTypes = {
     disabled: PropTypes.bool,
     placement: PropTypes.string,
+    reactOutsideClassName: PropTypes.string,
     buttonClass: PropTypes.string,
     buttonContent: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired,
     popperContent: PropTypes.element.isRequired
@@ -60,12 +67,16 @@ CustomPopper.propTypes = {
 
 CustomPopper.defaultProps = {
     disabled: false,
+    reactOutsideClassName: 'ignore-react-onclickoutside',
     placement: 'right',
     buttonClass: ''
 };
 
-const clickOutsideConfig = {
-    handleClickOutside: CustomPopper.handleClickOutside
+const CustomPopperContainer = props => {
+    const EnhancedCustomPopper = onClickOutside(CustomPopper);
+    return (
+        <EnhancedCustomPopper outsideClickIgnoreClass={props.reactOutsideClassName} {...props} />
+    );
 };
 
-export default onClickOutside(CustomPopper, clickOutsideConfig);
+export default CustomPopperContainer;
