@@ -6,9 +6,9 @@ import WaveBackground2 from 'images/wave-bg-2.svg';
 import { standardTypes } from 'constants/entityTypes';
 import ComplianceByControls from 'Containers/Compliance/widgets/ComplianceByControls';
 import DashboardHeader from './Header';
-import PolicyViolationsBySeverity from './Widgets/PolicyViolationsBySeverity';
-import UsersWithMostClusterAdminRoles from './Widgets/UsersWithMostClusterAdminRoles';
-import SecretsMostUsedAcrossDeployments from './Widgets/SecretsMostUsedAcrossDeployments';
+import PolicyViolationsBySeverity from './widgets/PolicyViolationsBySeverity';
+import UsersWithMostClusterAdminRoles from './widgets/UsersWithMostClusterAdminRoles';
+import SecretsMostUsedAcrossDeployments from './widgets/SecretsMostUsedAcrossDeployments';
 
 const ConfigManagementDashboardPage = () => {
     const { isDarkMode } = useTheme();

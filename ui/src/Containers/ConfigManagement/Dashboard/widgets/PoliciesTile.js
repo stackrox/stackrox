@@ -9,7 +9,7 @@ import TileLink from 'Components/TileLink';
 import queryService from 'modules/queryService';
 
 const policiesQuery = gql`
-    query policiesHeaderTile($query: String) {
+    query numPolicies($query: String) {
         policies(query: $query) {
             id
             lifecycleStages
@@ -18,15 +18,13 @@ const policiesQuery = gql`
     }
 `;
 
-function processPoliciesData(data) {
-    if (!data || !data.policies) return { totalPolicies: 0, hasViolations: false };
-
+function getTotalNumPolicies(data) {
+    if (!data || !data.policies) return 0;
     const totalPolicies = data.policies.length;
-    const hasViolations = !!data.policies.find(policy => policy.policyStatus === 'fail');
-    return { totalPolicies, hasViolations };
+    return totalPolicies;
 }
 
-const policiesHeaderTile = ({ match, location }) => {
+const PoliciesTile = ({ match, location }) => {
     const policiesLink = URLService.getURL(match, location)
         .base(entityTypes.POLICY)
         .url();
@@ -38,11 +36,10 @@ const policiesHeaderTile = ({ match, location }) => {
             }}
         >
             {({ loading, data }) => {
-                const { totalPolicies, hasViolations } = processPoliciesData(data);
+                const totalNumPolicies = getTotalNumPolicies(data);
                 return (
                     <TileLink
-                        value={totalPolicies}
-                        isError={hasViolations}
+                        value={totalNumPolicies}
                         caption="Policies"
                         to={policiesLink}
                         loading={loading}
@@ -54,9 +51,9 @@ const policiesHeaderTile = ({ match, location }) => {
     );
 };
 
-policiesHeaderTile.propTypes = {
+PoliciesTile.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired
 };
 
-export default withRouter(policiesHeaderTile);
+export default withRouter(PoliciesTile);

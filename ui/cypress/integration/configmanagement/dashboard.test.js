@@ -2,8 +2,6 @@ import { url, selectors } from '../constants/ConfigManagementPage';
 import withAuth from '../helpers/basicAuth';
 import mockGraphQL from '../helpers/mockGraphQL';
 
-import policies from '../../fixtures/policies/policies.json';
-import controls from '../../fixtures/controls/aggregatedResultsWithControls.json';
 import subjects from '../../fixtures/subjects/subjects.json';
 
 const policyViolationsBySeverityLinkShouldMatchList = linkSelector => {
@@ -25,27 +23,6 @@ const policyViolationsBySeverityLinkShouldMatchList = linkSelector => {
 describe('Config Management Dashboard Page', () => {
     withAuth();
 
-    it('should show a red tile for # of policies when at least one policy has alerts', () => {
-        mockGraphQL('policiesHeaderTile', policies);
-        cy.visit(url.dashboard);
-        cy.get(selectors.tileLinks)
-            .eq(0)
-            .find('.bg-alert-200');
-    });
-
-    it('should show a clear tile for # of policies when no policy has alerts', () => {
-        const policiesWithoutAlerts = { ...policies };
-        policiesWithoutAlerts.data.policies = policies.data.policies.map(
-            policy => policy.alerts.length === 0
-        );
-        mockGraphQL('policiesHeaderTile', policiesWithoutAlerts);
-        cy.visit(url.dashboard);
-        cy.get(selectors.tileLinks)
-            .eq(0)
-            .find('.bg-alert-200')
-            .should('not.exist');
-    });
-
     it('should show same number of policies between the tile and the policies list', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.tileLinks)
@@ -63,27 +40,6 @@ describe('Config Management Dashboard Page', () => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numPolicies, 10));
                     });
             });
-    });
-
-    it("should show a red tile for # of cis controls when at least one control isn't passing", () => {
-        mockGraphQL('getAggregatedResults', controls);
-        cy.visit(url.dashboard);
-        cy.get(selectors.tileLinks)
-            .eq(1)
-            .find('.bg-alert-200');
-    });
-
-    it('should show a clear tile for # of cis controls when all controls are passing', () => {
-        const passingControls = { ...controls };
-        passingControls.data.results.results = controls.data.results.results.map(
-            control => control.numFailing === 0
-        );
-        mockGraphQL('getAggregatedResults', passingControls);
-        cy.visit(url.dashboard);
-        cy.get(selectors.tileLinks)
-            .eq(1)
-            .find('.bg-alert-200')
-            .should('not.exist');
     });
 
     it('should show same number of controls between the tile and the controls list', () => {
