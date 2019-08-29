@@ -61,10 +61,11 @@ const EntityTabs = ({
     function onClick({ value }) {
         if (disabled) return;
 
-        const builder = URLService.getURL(match, location);
-        if (value) builder.push(value);
-        else builder.base(entityType, pageEntityId);
-        history.push(builder.url());
+        const url = URLService.getURL(match, location)
+            .base(entityType, pageEntityId)
+            .push(value)
+            .url();
+        history.push(url);
     }
 
     const relationships = entityTabsMap[entityType];
