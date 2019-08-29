@@ -30,9 +30,13 @@ message ClustersList {
     repeated storage.Cluster clusters = 1;
 }
 
+message GetClustersRequest {
+    string query = 1;
+}
+
 service ClustersService {
 
-    rpc GetClusters (Empty) returns (ClustersList) {
+    rpc GetClusters (GetClustersRequest) returns (ClustersList) {
         option (google.api.http) = {
             get: "/v1/clusters"
         };

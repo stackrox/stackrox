@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 	"google.golang.org/grpc/codes"
@@ -48,7 +49,7 @@ func fullClusterCreation(timeout time.Duration) error {
 			// Need to get the clusters and get the one with the name
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
-			clusterResponse, err := service.GetClusters(ctx, &v1.Empty{})
+			clusterResponse, err := service.GetClusters(ctx, &v1.GetClustersRequest{Query: search.NewQueryBuilder().AddExactMatches(search.Cluster, cluster.GetName()).Query()})
 			if err != nil {
 				return errors.Wrap(err, "error getting clusters")
 			}

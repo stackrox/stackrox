@@ -30,7 +30,7 @@ func TestStackroxNetworkFlows(t *testing.T) {
 
 	clustersService := v1.NewClustersServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	clusters, err := clustersService.GetClusters(ctx, &v1.Empty{})
+	clusters, err := clustersService.GetClusters(ctx, &v1.GetClustersRequest{})
 	cancel()
 
 	require.NoError(t, err)

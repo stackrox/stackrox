@@ -1,12 +1,11 @@
 package services
 
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
+import io.stackrox.proto.api.v1.ClusterService.GetClustersRequest
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
-
-import java.util.stream.Collectors
 
 class ClusterService extends BaseService {
     static getClusterServiceClient() {
@@ -19,12 +18,14 @@ class ClusterService extends BaseService {
 
     static Cluster getCluster() {
         String clusterId = getClusterId()
-        return getClusters().stream().filter { x -> x.id == clusterId }.collect(Collectors.toList()).first()
+        return getClusterServiceClient().getCluster(Common.ResourceByID.newBuilder().setId(clusterId).build()).cluster
     }
 
     static getClusterId(String name = "remote") {
         try {
-            return getClusterServiceClient().getClusters().clustersList.find { it.name == name }?.id
+            return getClusterServiceClient().getClusters(
+                GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
+            ).clustersList.find { it.name == name }?.id
         } catch (Exception e) {
             println "Error getting cluster ID: ${e}"
             return e

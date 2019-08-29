@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/search"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -177,8 +178,13 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 }
 
 // GetClusters returns the currently defined clusters.
-func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.ClustersList, error) {
-	clusters, err := s.datastore.GetClusters(ctx)
+func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
+	q, err := search.ParseRawQueryOrEmpty(req.GetQuery())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid query %q: %v", req.GetQuery(), err)
+	}
+
+	clusters, err := s.datastore.SearchRawClusters(ctx, q)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

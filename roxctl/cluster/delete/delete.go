@@ -37,7 +37,7 @@ func Command() *cobra.Command {
 func getClusters(svc v1.ClustersServiceClient) ([]*storage.Cluster, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
 	defer cancel()
-	clusterResponse, err := svc.GetClusters(ctx, &v1.Empty{})
+	clusterResponse, err := svc.GetClusters(ctx, &v1.GetClustersRequest{})
 	if err != nil {
 		return nil, err
 	}
