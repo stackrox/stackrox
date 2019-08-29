@@ -5,17 +5,9 @@ export const CLUSTERS_QUERY = gql`
         results: clusters(query: $query) {
             id
             name
-            serviceAccounts {
-                id
-                name
-            }
-            k8sroles {
-                id
-                name
-            }
-            subjects {
-                id: name
-            }
+            serviceAccountCount
+            k8sroleCount
+            subjectCount
             status {
                 orchestratorMetadata {
                     version

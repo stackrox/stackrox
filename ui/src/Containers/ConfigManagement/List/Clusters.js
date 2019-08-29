@@ -1,7 +1,6 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
-import { sortValueByLength } from 'sorters/sorters';
 import { CLUSTERS_QUERY as QUERY } from 'queries/cluster';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -85,79 +84,75 @@ const buildTableColumns = (match, location) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { length } = original.subjects;
-                if (!length) {
+                const { subjectCount } = original;
+                if (!subjectCount) {
                     return <LabelChip text="No Users & Groups" type="alert" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.SUBJECT)
                     .url();
-                if (length > 1)
-                    return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${length} ${pluralize('Users & Groups', length)}`}
-                        />
-                    );
-                return original.subjects[0].id;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${subjectCount} ${pluralize('Users & Groups', subjectCount)}`}
+                    />
+                );
             },
-            id: 'subjects',
-            accessor: d => d.subjects,
-            sortMethod: sortValueByLength
+            id: 'subjectCount',
+            accessor: d => d.subjectCount
         },
         {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { length } = original.serviceAccounts;
-                if (!length) {
+                const { serviceAccountCount } = original;
+                if (!serviceAccountCount) {
                     return <LabelChip text="No Service Accounts" type="alert" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
-                if (length > 1)
-                    return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${length} ${pluralize('Service Accounts', length)}`}
-                        />
-                    );
-                return original.serviceAccounts[0].name;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${serviceAccountCount} ${pluralize(
+                            'Service Accounts',
+                            serviceAccountCount
+                        )}`}
+                    />
+                );
             },
-            id: 'serviceAccounts',
-            accessor: d => d.serviceAccounts,
-            sortMethod: sortValueByLength
+            id: 'serviceAccountCount',
+            accessor: d => d.serviceAccountCount
         },
         {
             Header: `Roles`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { length } = original.k8sroles;
-                if (!length) return <LabelChip text="No Roles" type="alert" />;
+                const { k8sroleCount } = original;
+                if (!k8sroleCount) return <LabelChip text="No Roles" type="alert" />;
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.ROLE)
                     .url();
-                if (length > 1)
-                    return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${length} ${pluralize('Roles', length)}`}
-                        />
-                    );
-                return original.k8sroles[0].name;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${k8sroleCount} ${pluralize('Roles', k8sroleCount)}`}
+                    />
+                );
             },
-            id: 'k8sroles',
-            accessor: d => d.k8sroles,
-            sortMethod: sortValueByLength
+            id: 'k8sroleCount',
+            accessor: d => d.k8sroleCount
         }
     ];
     return tableColumns;
