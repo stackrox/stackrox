@@ -44,7 +44,7 @@ const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
                     <div className="flex items-center">
                         <ExportButton
                             className={`flex items-center border-2 border-primary-400 rounded p-2 uppercase h-10 ${darkModeClasses}`}
-                            fileName="Compliance Dashboard"
+                            fileName="Compliance Dashboard Report"
                             textClass="hidden lg:block"
                             type="ALL"
                             pdfId="capture-dashboard"

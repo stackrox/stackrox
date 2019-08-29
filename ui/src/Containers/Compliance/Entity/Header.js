@@ -19,9 +19,10 @@ const EntityHeader = ({
 }) => {
     const header = headerText || (entityName || 'Loading...');
     const subHeader = toLower(entityType);
-    const exportFilename = listEntityType
+    let exportFilename = listEntityType
         ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entityName.toUpperCase()}"`
         : `${entityType} "${entityId}"`;
+    exportFilename = `${exportFilename} Report`;
     const pdfId = listEntityType ? 'capture-list' : 'capture-dashboard';
 
     const scanCluster = entityType === entityTypes.CLUSTER ? entityId : '*';

@@ -3,6 +3,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 import URLService from 'modules/URLService';
+import capitalize from 'lodash/capitalize';
 
 import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
 
@@ -31,7 +32,7 @@ const ListPage = ({ match, location, history }) => {
     }
 
     const header = pluralize(entityLabels[pageEntityListType]);
-    const exportFilename = `${pluralize(pageEntityListType)}`;
+    const exportFilename = `${pluralize(capitalize(pageEntityListType.toLowerCase()))} Report`;
     return (
         <>
             <PageHeader header={header} subHeader="Entity List">

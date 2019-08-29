@@ -169,7 +169,7 @@ const ConfigManagementHeader = ({ match, location, history, classes, bgStyle }) 
                 />
                 <div className="self-center">
                     <ExportButton
-                        fileName="Config Mangement Dashboard"
+                        fileName="Config Mangement Dashboard Report"
                         type={null}
                         page="configManagement"
                         pdfId="capture-dashboard"

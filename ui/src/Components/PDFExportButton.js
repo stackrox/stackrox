@@ -62,7 +62,7 @@ class PDFExportButton extends Component {
         const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
             <img alt="stackrox-logo" src=${StackroxLogo} class="h-24" />
             <div class="pr-4 text-right">
-                <div class="text-2xl">${this.props.pdfTitle} Report</div>
+                <div class="text-2xl">${this.props.pdfTitle}</div>
                 <div class="pt-2 text-xl">${dateFns.format(new Date(), 'MM/DD/YYYY')}</div>
             </div>
         </div>`;

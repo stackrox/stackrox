@@ -37,7 +37,7 @@ const ListHeader = ({ entityType, searchComponent }) => {
                         <div className="flex">
                             {standardId && <ScanButton text="Scan" standardId={standardId} />}
                             <ExportButton
-                                fileName={`${headerText} Compliance`}
+                                fileName={`${headerText} Compliance Report`}
                                 id={entityType || standardId}
                                 type={standardId ? 'STANDARD' : ''}
                                 pdfId="capture-list"

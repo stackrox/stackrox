@@ -4,8 +4,6 @@ import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
 
-import pluralize from 'pluralize';
-import ExportButton from 'Components/ExportButton';
 import searchContext from 'Containers/searchContext';
 import searchContexts from 'constants/searchContexts';
 import PageHeader from './EntityPageHeader';
@@ -15,6 +13,7 @@ import Entity from '../Entity';
 
 const EntityPage = ({ match, location }) => {
     const params = URLService.getParams(match, location);
+    const { urlParams } = URLService.getURL(match, location);
     const {
         pageEntityType,
         pageEntityId,
@@ -26,13 +25,6 @@ const EntityPage = ({ match, location }) => {
         entityId2,
         query
     } = params;
-
-    const exportFilename = `${pluralize(pageEntityType)}`;
-    const { urlParams } = URLService.getURL(match, location);
-    let pdfId = 'capture-dashboard-stretch';
-    if (urlParams.entityListType1) {
-        pdfId = 'capture-list';
-    }
     const overlay = !!entityId1;
     const [fadeIn, setFadeIn] = useState(false);
 
@@ -52,20 +44,7 @@ const EntityPage = ({ match, location }) => {
           };
     return (
         <div className="flex flex-1 flex-col bg-base-200" style={style}>
-            <PageHeader entityType={pageEntityType} entityId={pageEntityId}>
-                <div className="flex flex-1 justify-end">
-                    <div className="flex">
-                        <div className="flex items-center">
-                            <ExportButton
-                                fileName={exportFilename}
-                                type={pageEntityType}
-                                page="configManagement"
-                                pdfId={pdfId}
-                            />
-                        </div>
-                    </div>
-                </div>
-            </PageHeader>
+            <PageHeader entityType={pageEntityType} entityId={pageEntityId} urlParams={urlParams} />
             <Tabs
                 pageEntityId={pageEntityId}
                 entityType={pageEntityType}
