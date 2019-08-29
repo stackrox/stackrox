@@ -164,6 +164,7 @@ describe('Config Management Dashboard Page', () => {
         cy.url().should('contain', url.list.subjects);
     });
 
+    // @TODO: Fix this test
     xit('clicking a specific user in the "Users with most Cluster Admin Roles" widget should take you to a single subject page', () => {
         mockGraphQL('usersWithClusterAdminRoles', subjects);
         cy.visit(url.dashboard);

@@ -57,7 +57,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
     };
 
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={QUERY} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 if (!data || !data.results)
