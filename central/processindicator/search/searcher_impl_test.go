@@ -90,6 +90,7 @@ func (suite *IndicatorSearchTestSuite) TestEnforcesSearchRaw() {
 		suite.T().Skip()
 	}
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
+	suite.storage.EXPECT().GetBatchProcessIndicators(gomock.Any()).Return([]*storage.ProcessIndicator{}, []int{}, nil)
 
 	processIndicators, err := suite.searcher.SearchRawProcessIndicators(suite.hasNoneCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -100,15 +101,15 @@ func (suite *IndicatorSearchTestSuite) TestAllowsSearchRaw() {
 	if !features.ScopedAccessControl.Enabled() {
 		suite.T().Skip()
 	}
-	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
-	suite.storage.EXPECT().GetProcessIndicator(gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
+	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: ""}}, nil)
+	suite.storage.EXPECT().GetBatchProcessIndicators(gomock.Any()).Return([]*storage.ProcessIndicator{{}}, []int{}, nil)
 
 	processIndicators, err := suite.searcher.SearchRawProcessIndicators(suite.hasReadCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.NotEmpty(processIndicators)
 
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
-	suite.storage.EXPECT().GetProcessIndicator(gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
+	suite.storage.EXPECT().GetBatchProcessIndicators(gomock.Any()).Return([]*storage.ProcessIndicator{{}}, []int{}, nil)
 
 	processIndicators, err = suite.searcher.SearchRawProcessIndicators(suite.hasWriteCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error trying to read with permissions")

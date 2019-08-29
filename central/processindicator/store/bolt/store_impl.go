@@ -85,6 +85,31 @@ func (b *storeImpl) GetProcessIndicators() ([]*storage.ProcessIndicator, error) 
 	return indicators, err
 }
 
+func (b *storeImpl) GetBatchProcessIndicators(ids []string) ([]*storage.ProcessIndicator, []int, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Alert")
+
+	processes := make([]*storage.ProcessIndicator, 0, len(ids))
+	var missingIndices []int
+	err := b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(processIndicatorBucket)
+		for i, id := range ids {
+			v := b.Get([]byte(id))
+			if v == nil {
+				missingIndices = append(missingIndices, i)
+				continue
+			}
+			var process storage.ProcessIndicator
+			if err := proto.Unmarshal(v, &process); err != nil {
+				return err
+			}
+			processes = append(processes, &process)
+		}
+		return nil
+	})
+
+	return processes, missingIndices, err
+}
+
 func (b *storeImpl) GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetGrouped, "ProcessIndicator")
 	processNamesToArgs := make(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)

@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/mappings"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -30,19 +29,8 @@ func (s *searcherImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Que
 	if err != nil {
 		return nil, err
 	}
-	indicators := make([]*storage.ProcessIndicator, 0, len(results))
-	for _, result := range results {
-		indicator, exists, err := s.storage.GetProcessIndicator(result.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "retrieving indicator with id '%s'", result.ID)
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		indicators = append(indicators, indicator)
-	}
-	return indicators, nil
+	processes, _, err := s.storage.GetBatchProcessIndicators(search.ResultsToIDs(results))
+	return processes, err
 }
 
 func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {

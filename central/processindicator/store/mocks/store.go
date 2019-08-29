@@ -65,6 +65,22 @@ func (mr *MockStoreMockRecorder) GetProcessIndicators() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockStore)(nil).GetProcessIndicators))
 }
 
+// GetBatchProcessIndicators mocks base method
+func (m *MockStore) GetBatchProcessIndicators(ids []string) ([]*storage.ProcessIndicator, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBatchProcessIndicators", ids)
+	ret0, _ := ret[0].([]*storage.ProcessIndicator)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetBatchProcessIndicators indicates an expected call of GetBatchProcessIndicators
+func (mr *MockStoreMockRecorder) GetBatchProcessIndicators(ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatchProcessIndicators", reflect.TypeOf((*MockStore)(nil).GetBatchProcessIndicators), ids)
+}
+
 // GetProcessInfoToArgs mocks base method
 func (m *MockStore) GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
 	m.ctrl.T.Helper()

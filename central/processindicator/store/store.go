@@ -10,6 +10,7 @@ import (
 type Store interface {
 	GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error)
 	GetProcessIndicators() ([]*storage.ProcessIndicator, error)
+	GetBatchProcessIndicators(ids []string) ([]*storage.ProcessIndicator, []int, error)
 	GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error)
 	AddProcessIndicator(*storage.ProcessIndicator) (string, error)
 	AddProcessIndicators(...*storage.ProcessIndicator) ([]string, error)

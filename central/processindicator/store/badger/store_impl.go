@@ -95,6 +95,20 @@ func (b *storeImpl) GetProcessIndicator(id string) (indicator *storage.ProcessIn
 	return
 }
 
+func (b *storeImpl) GetBatchProcessIndicators(ids []string) ([]*storage.ProcessIndicator, []int, error) {
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "Alert")
+
+	msgs, missingIndices, err := b.crud.ReadBatch(ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	processes := make([]*storage.ProcessIndicator, 0, len(msgs))
+	for _, m := range msgs {
+		processes = append(processes, m.(*storage.ProcessIndicator))
+	}
+	return processes, missingIndices, nil
+}
+
 func (b *storeImpl) GetProcessIndicators() ([]*storage.ProcessIndicator, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "ProcessIndicator")
 
