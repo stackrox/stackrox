@@ -370,8 +370,8 @@ github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnIn
 github.com/spf13/viper v1.3.2/go.mod h1:ZiWeW+zYFKm7srdB9IoDzzZXaJaI5eL9QjNiN/DMA2s=
 github.com/stackrox/anchore-client v0.0.0-20190307200411-608e0af2c0b4 h1:HlrLAlOOG6l6JYiijVnbFmNqRTDZVTdsQYevpH7n9wU=
 github.com/stackrox/anchore-client v0.0.0-20190307200411-608e0af2c0b4/go.mod h1:IQ+la5xoJ8ximpsg3wcYFqcD70Hvsai1TX8uZx6VewM=
-github.com/stackrox/badger v1.6.1-0.20190822181828-27b1cc019a03 h1:uEsZeJ12cYajt7vemmEu9/WBJJqH7p0sYwU8IreWwVs=
-github.com/stackrox/badger v1.6.1-0.20190822181828-27b1cc019a03/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
+github.com/stackrox/badger v1.6.1-0.20190829031724-646f38352358 h1:seCIaJw0LTLhGxfbWwTrUW8o3eGw1j6KDxuw3Ky5qHY=
+github.com/stackrox/badger v1.6.1-0.20190829031724-646f38352358/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/stackrox/bleve v0.0.0-20190801223638-6a34917e4f76 h1:3U61e6E00awsrgj0rbWZJ7lu8FglLNOEhKZwFU8iawU=
 github.com/stackrox/bleve v0.0.0-20190801223638-6a34917e4f76/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
 github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5 h1:rxb7uVQNtqO6D9s6cz7Il6dZ32tQDDjzg5d9qnnInhk=
