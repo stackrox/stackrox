@@ -56,21 +56,19 @@ const List = ({
         )}`;
 
         return (
-            <section id="capture-list" className="h-full w-full bg-base-100">
-                <Panel className={className} header={header} headerComponents={headerComponents}>
-                    <Table
-                        rows={tableRows}
-                        columns={tableColumns}
-                        onRowClick={onRowClickHandler}
-                        idAttribute={idAttribute}
-                        id="capture-list"
-                        selectedRowId={selectedRowId}
-                        noDataText="No results found. Please refine your search."
-                        page={page}
-                        defaultSorted={defaultSorted}
-                    />
-                </Panel>
-            </section>
+            <Panel className={className} header={header} headerComponents={headerComponents}>
+                <Table
+                    rows={tableRows}
+                    columns={tableColumns}
+                    onRowClick={onRowClickHandler}
+                    idAttribute={idAttribute}
+                    id="capture-list"
+                    selectedRowId={selectedRowId}
+                    noDataText="No results found. Please refine your search."
+                    page={page}
+                    defaultSorted={defaultSorted}
+                />
+            </Panel>
         );
     }
 
@@ -102,26 +100,30 @@ const List = ({
     if (data) {
         if (data.length === 0 && !variables) return <NoResultsMessage message={message} />;
         const headerComponents = getHeaderComponents(data.length);
-        createPDFTable(data, entityType, query, 'capture-list', tableColumns);
+        if (data.length) {
+            createPDFTable(data, entityType, query, 'capture-list', tableColumns);
+        }
         return getRenderComponents(headerComponents, data);
     }
 
     return (
-        <Query query={query} variables={variables}>
-            {({ loading, data: queryData }) => {
-                if (loading) return <Loader />;
-                if (!queryData) return <PageNotFound resourceType={entityType} />;
-                const tableRows = createTableRows(queryData) || [];
-                if (tableRows.length === 0 && !variables)
-                    return <NoResultsMessage message={message} />;
-                const headerComponents = getHeaderComponents(tableRows.length);
+        <section className="h-full w-full bg-base-100" id="capture-list">
+            <Query query={query} variables={variables}>
+                {({ loading, data: queryData }) => {
+                    if (loading) return <Loader />;
+                    if (!queryData) return <PageNotFound resourceType={entityType} />;
+                    const tableRows = createTableRows(queryData) || [];
+                    if (tableRows.length === 0 && !variables)
+                        return <NoResultsMessage message={message} />;
+                    const headerComponents = getHeaderComponents(tableRows.length);
 
-                if (tableRows.length) {
-                    createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
-                }
-                return getRenderComponents(headerComponents, tableRows);
-            }}
-        </Query>
+                    if (tableRows.length) {
+                        createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
+                    }
+                    return getRenderComponents(headerComponents, tableRows);
+                }}
+            </Query>
+        </section>
     );
 };
 

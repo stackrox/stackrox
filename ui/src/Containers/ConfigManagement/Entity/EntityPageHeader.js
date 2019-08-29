@@ -6,7 +6,7 @@ import entityLabels from 'messages/entity';
 
 import Query from 'Components/ThrowingQuery';
 import PageHeader from 'Components/PageHeader';
-import capitalize from 'lodash/capitalize';
+import startCase from 'lodash/startCase';
 import ExportButton from 'Components/ExportButton';
 
 const getQueryAndVariables = (entityType, entityId) => {
@@ -28,9 +28,7 @@ const EntityPageHeader = ({ entityType, entityId, urlParams }) => {
             {({ data }) => {
                 const header = getEntityName(entityType, data) || '-';
                 const subHeader = entityLabels[entityType];
-                const exportFilename = `${capitalize(
-                    entityType.toLowerCase()
-                )} Report: "${header}"`;
+                const exportFilename = `${startCase(subHeader)} Report: "${header}"`;
 
                 let pdfId = 'capture-dashboard-stretch';
                 if (urlParams && urlParams.entityListType1) {
