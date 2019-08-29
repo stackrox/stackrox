@@ -15,4 +15,11 @@ const (
 	UpgradeResourceLabelKey = `auto-upgrade.stackrox.io/component`
 	// UpgradeResourceLabelValue is the label value for the above key that identifies resources from the sensor bundle.
 	UpgradeResourceLabelValue = `sensor`
+
+	// LastUpgradeIDAnnotationKey is an annotation key for storing the ID of the last upgrade process that has modified
+	// an object. This is used to inform the upgrader that an object no longer needs to be considered, even if it
+	// appears different from the desired post-upgrade state.
+	// The upgrader sets this on created or updated objects just before making a live change to the state of the
+	// Kubernetes cluster, it is not part of any "have/want" state computation for the above reasons.
+	LastUpgradeIDAnnotationKey = `sensor-upgrader.stackrox.io/last-upgrade-id`
 )

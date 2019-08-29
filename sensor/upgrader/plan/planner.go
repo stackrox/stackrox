@@ -1,0 +1,64 @@
+package plan
+
+import (
+	"reflect"
+
+	"github.com/stackrox/rox/sensor/upgrader/common"
+	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+)
+
+type planner struct {
+	ctx *upgradectx.UpgradeContext
+}
+
+func (p *planner) objectsAreEqual(a, b k8sobjects.Object) bool {
+	var ua, ub unstructured.Unstructured
+	if err := p.ctx.Scheme().Convert(a, &ua, nil); err != nil {
+		return false
+	}
+	if err := p.ctx.Scheme().Convert(b, &ub, nil); err != nil {
+		return false
+	}
+
+	normalizeObject(&ua)
+	normalizeObject(&ub)
+
+	return reflect.DeepEqual(ua.Object, ub.Object)
+}
+
+func (p *planner) GenerateExecutionPlan(desired []k8sobjects.Object) (*ExecutionPlan, error) {
+	currObjs, err := p.ctx.ListCurrentObjects()
+	if err != nil {
+		return nil, err
+	}
+
+	currObjMap := k8sobjects.BuildObjectMap(currObjs)
+
+	var plan ExecutionPlan
+
+	for _, desiredObj := range desired {
+		ref := k8sobjects.RefOf(desiredObj)
+		currObj := currObjMap[ref]
+		if currObj == nil {
+			plan.Creations = append(plan.Creations, desiredObj)
+		} else if !p.objectsAreEqual(currObj, desiredObj) && currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] != p.ctx.ProcessID() {
+			plan.Updates = append(plan.Updates, desiredObj)
+		} else {
+			log.Infof("Skipping update of object %v as it is unchanged or was already updated", ref)
+		}
+		delete(currObjMap, ref)
+	}
+
+	for remainingObjRef := range currObjMap {
+		plan.Deletions = append(plan.Deletions, remainingObjRef)
+	}
+
+	// sort objects such that dependency constraints are respected.
+	sortObjects(plan.Creations, false)
+	sortObjects(plan.Updates, false)
+	sortObjectRefs(plan.Deletions, true)
+
+	return &plan, nil
+}

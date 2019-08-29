@@ -8,7 +8,6 @@ import (
 
 var (
 	metadataTransferKeyBlacklist = set.NewFrozenStringSet(
-		"app.kubernetes.io/name",
 		"app",
 		"service",
 	)

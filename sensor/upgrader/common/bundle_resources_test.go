@@ -12,7 +12,7 @@ import (
 func TestEnsureBundleResourcesTypesAreCorrect(t *testing.T) {
 	t.Parallel()
 
-	assert.ElementsMatch(t, BundleResourceTypes, []schema.GroupVersionKind{
+	assert.ElementsMatch(t, OrderedBundleResourceTypes, []schema.GroupVersionKind{
 		{Version: "v1", Kind: "Service"},
 		{Version: "v1", Kind: "ServiceAccount"},
 		{Version: "v1", Kind: "Secret"},

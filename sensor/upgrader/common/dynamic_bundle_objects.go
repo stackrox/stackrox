@@ -28,7 +28,7 @@ var (
 	DynamicBundleObjects = []DynamicBundleObjectDesc{
 		{
 			Kind:     OpaqueSecret,
-			Name:     "monitoring-cient",
+			Name:     "monitoring-client",
 			Optional: true,
 			Files:    []string{"monitoring-client-cert.pem", "monitoring-client-key.pem", "monitoring-ca.pem"},
 		},

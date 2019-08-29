@@ -1,6 +1,7 @@
 package upgradectx
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -51,13 +52,13 @@ func Create(config *config.UpgraderConfig) (*UpgradeContext, error) {
 	}
 	dynamicClientPool := dynamic.NewDynamicClientPool(config.K8sRESTConfig)
 
-	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery(), common.BundleResourceTypes)
+	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery(), common.OrderedBundleResourceTypes)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving Kubernetes resources from server")
 	}
 
-	log.Infof("Server supports %d out of %d relevant resource types", len(resourceMap), len(common.BundleResourceTypes))
-	for _, gvk := range common.BundleResourceTypes {
+	log.Infof("Server supports %d out of %d relevant resource types", len(resourceMap), len(common.OrderedBundleResourceTypes))
+	for _, gvk := range common.OrderedBundleResourceTypes {
 		if _, ok := resourceMap[gvk]; ok {
 			log.Infof("Resource type %s is SUPPORTED", gvk)
 		} else {
@@ -97,6 +98,7 @@ func Create(config *config.UpgraderConfig) (*UpgradeContext, error) {
 		tlsConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
 			UseClientCert: true,
 		})
+		tlsConf.NextProtos = nil // no HTTP/2 or pure GRPC!
 		if err != nil {
 			return nil, errors.Wrap(err, "instantiating TLS config")
 		}
@@ -207,4 +209,52 @@ func (c *UpgradeContext) ParseAndValidateObject(data []byte) (k8sobjects.Object,
 		return nil, errors.Errorf("object of kind %v is not a Kubernetes API object", obj.GetObjectKind().GroupVersionKind())
 	}
 	return k8sObj, nil
+}
+
+func (c *UpgradeContext) unpackList(listObj runtime.Object) ([]k8sobjects.Object, error) {
+	objs, ok := unpackListReflect(listObj)
+	if ok {
+		return objs, nil
+	}
+
+	log.Infof("Could not unpack list of kind %v using reflection", listObj.GetObjectKind().GroupVersionKind())
+
+	var list unstructured.UnstructuredList
+	if err := c.scheme.Convert(listObj, &list, nil); err != nil {
+		return nil, errors.Wrapf(err, "converting object of kind %v to a generic list", listObj.GetObjectKind().GroupVersionKind())
+	}
+
+	objs = make([]k8sobjects.Object, 0, len(list.Items))
+	for _, item := range list.Items {
+		objs = append(objs, &item)
+	}
+	return objs, nil
+}
+
+// ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process.
+func (c *UpgradeContext) ListCurrentObjects() ([]k8sobjects.Object, error) {
+	listOpts := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", common.UpgradeResourceLabelKey, common.UpgradeResourceLabelValue),
+	}
+
+	var result []k8sobjects.Object
+
+	for _, resourceType := range c.resources {
+		resourceClient, err := c.DynamicClientForResource(resourceType, common.Namespace)
+		if err != nil {
+			return nil, errors.Wrapf(err, "obtaining dynamic client for resource %v", resourceType)
+		}
+		listObj, err := resourceClient.List(listOpts)
+		if err != nil {
+			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceType)
+		}
+
+		objs, err := c.unpackList(listObj)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unpacking list of objects of type %v", resourceType)
+		}
+		result = append(result, objs...)
+	}
+
+	return result, nil
 }

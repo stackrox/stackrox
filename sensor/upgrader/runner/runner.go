@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
+	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/snapshot"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -30,6 +31,7 @@ func (r *runner) Run() error {
 	if err != nil {
 		return err
 	}
+
 	postUpgradeObjs, err := bundle.InstantiateBundle(r.ctx, bundleContents)
 	if err != nil {
 		return err
@@ -38,13 +40,34 @@ func (r *runner) Run() error {
 
 	r.postUpgradeWantState = k8sobjects.BuildObjectMap(postUpgradeObjs)
 
-	fmt.Println("Desired state after upgrade")
+	executionPlan, err := plan.GenerateExecutionPlan(r.ctx, postUpgradeObjs)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Desired execution plan:")
 	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
-	for _, obj := range postUpgradeObjs {
+	fmt.Println("CREATIONS")
+	for _, obj := range executionPlan.Creations {
 		var strW strings.Builder
 		utils.Must(encoder.Encode(obj, &strW))
 		fmt.Println(strW.String())
 		fmt.Println("---")
+	}
+
+	fmt.Println()
+	fmt.Println("UPDATES")
+	for _, obj := range executionPlan.Updates {
+		var strW strings.Builder
+		utils.Must(encoder.Encode(obj, &strW))
+		fmt.Println(strW.String())
+		fmt.Println("---")
+	}
+
+	fmt.Println()
+	fmt.Println("DELETIONS")
+	for _, objRef := range executionPlan.Deletions {
+		fmt.Println(objRef)
 	}
 
 	return nil

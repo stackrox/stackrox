@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"path"
 
 	"github.com/stackrox/rox/pkg/set"
@@ -30,7 +29,6 @@ func IsWhitelistedBundleFile(file string) bool {
 
 	dir := path.Dir(file)
 	for dir != "" && dir != "." {
-		fmt.Println("dir is", dir)
 		if bundleFileWhitelist.Contains(dir + "/") {
 			return true
 		}

@@ -84,6 +84,9 @@ func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents 
 		return nil, errors.Errorf("unknown dynamic bundle object kind %v", objDesc.Kind)
 	}
 
+	obj.SetName(objDesc.Name)
+	obj.SetNamespace(common.Namespace)
+
 	if obj.GetLabels() == nil {
 		obj.SetLabels(make(map[string]string))
 	}
@@ -98,8 +101,11 @@ func createDynamicObjects(bundleContents Contents) ([]k8sobjects.Object, error) 
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not instantiate dynamic bundle object %s", objDesc.Name)
 		}
+
 		if obj != nil {
 			allObjects = append(allObjects, obj)
+		} else {
+			log.Infof("Skipped creation of dynamic object %s as files are not present in bundle", objDesc.Name)
 		}
 	}
 	return allObjects, nil

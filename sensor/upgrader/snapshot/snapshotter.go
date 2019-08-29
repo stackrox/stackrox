@@ -3,7 +3,6 @@ package snapshot
 import (
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/pkg/errors"
@@ -16,8 +15,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
@@ -102,7 +99,7 @@ func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]k8sobjects.Object, e
 }
 
 func (s *snapshotter) createStateSnapshot() ([]k8sobjects.Object, *v1.Secret, error) {
-	objs, err := s.listResources()
+	objs, err := s.ctx.ListCurrentObjects()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -142,51 +139,4 @@ func (s *snapshotter) createStateSnapshot() ([]k8sobjects.Object, *v1.Secret, er
 	s.ctx.AnnotateProcessStateObject(secret)
 
 	return objs, secret, nil
-}
-
-func (s *snapshotter) unpackList(listObj runtime.Object) ([]k8sobjects.Object, error) {
-	objs, ok := unpackListReflect(listObj)
-	if ok {
-		return objs, nil
-	}
-
-	log.Infof("Could not unpack list of kind %v using reflection", listObj.GetObjectKind().GroupVersionKind())
-
-	var list unstructured.UnstructuredList
-	if err := s.ctx.Scheme().Convert(listObj, &list, nil); err != nil {
-		return nil, errors.Wrapf(err, "converting object of kind %v to a generic list", listObj.GetObjectKind().GroupVersionKind())
-	}
-
-	objs = make([]k8sobjects.Object, 0, len(list.Items))
-	for _, item := range list.Items {
-		objs = append(objs, &item)
-	}
-	return objs, nil
-}
-
-func (s *snapshotter) listResources() ([]k8sobjects.Object, error) {
-	listOpts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", common.UpgradeResourceLabelKey, common.UpgradeResourceLabelValue),
-	}
-
-	var result []k8sobjects.Object
-
-	for _, resourceType := range s.ctx.Resources() {
-		resourceClient, err := s.ctx.DynamicClientForResource(resourceType, common.Namespace)
-		if err != nil {
-			return nil, errors.Wrapf(err, "obtaining dynamic client for resource %v", resourceType)
-		}
-		listObj, err := resourceClient.List(listOpts)
-		if err != nil {
-			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceType)
-		}
-
-		objs, err := s.unpackList(listObj)
-		if err != nil {
-			return nil, errors.Wrapf(err, "unpacking list of objects of type %v", resourceType)
-		}
-		result = append(result, objs...)
-	}
-
-	return result, nil
 }

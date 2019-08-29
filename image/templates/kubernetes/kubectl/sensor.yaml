@@ -186,9 +186,11 @@ spec:
   - name: https
     port: 443
     targetPort: api
+    protocol: TCP
   selector:
     app: sensor
   type: ClusterIP
+  sessionAffinity: None
 ---
 apiVersion: v1
 kind: Service
@@ -203,9 +205,11 @@ spec:
   - name: https
     port: 443
     targetPort: webhook
+    protocol: TCP
   selector:
     app: sensor
   type: ClusterIP
+  sessionAffinity: None
 {{if ne .CollectionMethod "NO_COLLECTION" -}}
 ---
 apiVersion: v1
