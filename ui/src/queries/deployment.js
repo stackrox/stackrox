@@ -87,7 +87,6 @@ export const DEPLOYMENTS_QUERY = gql`
             serviceAccountID
             secretCount
             imageCount
-            policyStatus
         }
     }
 `;

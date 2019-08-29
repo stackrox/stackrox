@@ -7,6 +7,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { sortValueByLength } from 'sorters/sorters';
 import LabelChip from 'Components/LabelChip';
 import pluralize from 'pluralize';
 import List from './List';
@@ -72,8 +73,9 @@ const buildTableColumns = (match, location, entityContext) => {
                 const failingPolicyCount = failingPolicies ? failingPolicies.length : policyCount;
                 return !failingPolicyCount ? 'Pass' : <LabelChip text="Fail" type="alert" />;
             },
-            id: 'policyStatus',
-            accessor: 'policyStatus'
+            id: 'failingPolicies',
+            accessor: 'failingPolicies',
+            sortMethod: sortValueByLength
         },
         {
             Header: `Images`,
@@ -174,8 +176,8 @@ const Deployments = ({
             idAttribute="id"
             defaultSorted={[
                 {
-                    id: 'policyStatus',
-                    desc: false
+                    id: 'failingPolicies',
+                    desc: true
                 },
                 {
                     id: 'name',
