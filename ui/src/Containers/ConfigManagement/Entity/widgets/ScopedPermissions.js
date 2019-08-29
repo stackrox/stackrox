@@ -28,11 +28,18 @@ const ScopedPermissions = ({ permissions }) => {
             const permissionKeyClass = `rounded bg-${colorClass}-200 text-${colorClass}-700 border border-${colorClass}-300 px-2 py-1 self-center`;
             return (
                 <div className="flex border-b border-base-300" key={datum.key}>
-                    <div className="w-43 border-r border-base-300 px-3 text-sm capitalize flex">
-                        <div className={permissionKeyClass}>{datum.key}:</div>
+                    <div className="w-43 border-r border-base-300 px-3 text-sm flex">
+                        <div className={permissionKeyClass}>
+                            {datum.key === '*' ? (
+                                '* (All verbs)'
+                            ) : (
+                                <span className="capitalize">{datum.key}</span>
+                            )}
+                            :
+                        </div>
                     </div>
                     <div className="w-full font-500 p-3 text-primary-800 text-sm leading-normal">
-                        {datum.values.join(', ')}
+                        {datum.values.includes('*') ? '* (All resources)' : datum.values.join(', ')}
                     </div>
                 </div>
             );

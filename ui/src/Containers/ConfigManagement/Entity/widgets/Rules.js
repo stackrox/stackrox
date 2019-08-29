@@ -9,7 +9,7 @@ const Rules = ({ rules, ...rest }) => {
         return (
             <li className="flex items-center" key={i}>
                 <div className="min-w-48 text-sm bg-base-200 border border-base-400 my-3 p-3 rounded w-full leading-normal">
-                    {rule.verbs.join(', ')}
+                    {rule.verbs.includes('*') ? '* (All verbs)' : rule.verbs.join(', ')}
                 </div>
                 <ArrowRight className="h-4 w-4 text-base-500 mx-4" />
             </li>
@@ -17,10 +17,11 @@ const Rules = ({ rules, ...rest }) => {
     });
     const resourcesAndNonResourcesURL = rules.map((rule, i) => {
         const { nonResourceUrls, resources } = rule;
+        const urls = [...resources, ...nonResourceUrls];
         return (
             <li className="flex items-center" key={i}>
                 <div className="text-sm bg-base-200 border border-base-400 my-3 p-3 rounded leading-normal">
-                    {[...resources, ...nonResourceUrls].join(', ')}
+                    {urls.includes('*') ? '* (All resources)' : urls.join(', ')}
                 </div>
             </li>
         );
