@@ -75,7 +75,7 @@ export const listSelectors = {
 
 export const entitySelectors = {
     metadataWidget: '[data-test-id="widget"]:contains("Metadata")',
-    externalLink: '[data-test-id="side-panel"] button[data-test-id="external-link"]',
+    externalLink: '[data-test-id="side-panel"] [data-test-id="external-link"]',
     countWidgets: '[data-test-id="related-entity-list-count"]',
     countWidgetTitle: '[data-test-id="related-entity-list-count-title"]',
     countWidgetValue: '[data-test-id="related-entity-list-count-value"]',

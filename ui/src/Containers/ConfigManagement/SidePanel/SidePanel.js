@@ -1,37 +1,16 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
+import { withRouter, Link } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import onClickOutside from 'react-onclickoutside';
 import { useTheme } from 'Containers/ThemeProvider';
 
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
-import Button from 'Components/Button';
 import Panel from 'Components/Panel';
 import searchContext from 'Containers/searchContext';
 import EntityPage from 'Containers/ConfigManagement/Entity';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import BreadCrumbs from './BreadCrumbs';
-
-const ExternalLink = ({ onClick }) => {
-    const { isDarkMode } = useTheme();
-    return (
-        <div className="flex items-center h-full hover:bg-base-300">
-            <Button
-                dataTestId="external-link"
-                className={`${
-                    !isDarkMode ? 'border-base-100' : 'border-base-400'
-                } border-l h-full px-4`}
-                icon={<ExternalLinkIcon className="h-6 w-6 text-base-600" />}
-                onClick={onClick}
-            />
-        </div>
-    );
-};
-
-ExternalLink.propTypes = {
-    onClick: PropTypes.func.isRequired
-};
 
 const SidePanel = ({
     match,
@@ -75,15 +54,6 @@ const SidePanel = ({
         return query[searchParam];
     }
 
-    function onExternalLinkClick() {
-        const url = URLService.getURL(match, location)
-            .base(getCurrentEntityType(), getCurrentEntityId())
-            .query()
-            .query(getSearchParams())
-            .url();
-        history.push(url);
-    }
-
     function onClose() {
         history.push(
             URLService.getURL(match, location)
@@ -99,6 +69,25 @@ const SidePanel = ({
     const entityId = getCurrentEntityId();
     const entityType = getCurrentEntityType();
     const listType = getListType();
+    const externalURL = URLService.getURL(match, location)
+        .base(entityType, entityId)
+        .push(listType)
+        .query()
+        .query(getSearchParams())
+        .url();
+    const externalLink = (
+        <div className="flex items-center h-full hover:bg-base-300">
+            <Link
+                to={externalURL}
+                data-test-id="external-link"
+                className={`${
+                    !isDarkMode ? 'border-base-100' : 'border-base-400'
+                } border-l h-full p-4`}
+            >
+                <ExternalLinkIcon className="h-6 w-6 text-base-600" />
+            </Link>
+        </div>
+    );
 
     const entityContext = {};
     if (contextEntityType) entityContext[contextEntityType] = contextEntityId;
@@ -121,7 +110,7 @@ const SidePanel = ({
                         entityId2={entityId2}
                     />
                 }
-                headerComponents={<ExternalLink onClick={onExternalLinkClick} />}
+                headerComponents={externalLink}
                 onClose={onClose}
                 closeButtonClassName={
                     isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
