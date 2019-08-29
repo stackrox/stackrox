@@ -43,7 +43,10 @@ const tableColumns = [
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { enforcementActions } = original;
-            return enforcementActions ? 'Yes' : 'No';
+            return enforcementActions.length === 0 ||
+                enforcementActions.includes('UNSET_ENFORCEMENT')
+                ? 'No'
+                : 'Yes';
         },
         accessor: 'enforcementActions'
     },
