@@ -6,6 +6,7 @@ import { generatePath } from 'react-router-dom';
 
 import PageHeader from 'Components/PageHeader';
 import Panel from 'Components/Panel';
+import StatusField from 'Components/StatusField';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import CheckboxTable from 'Components/CheckboxTable';
 import { defaultColumnClassName, wrapClassName, rtTrActionsClassName } from 'Components/Table';
@@ -23,13 +24,13 @@ import ClustersSidePanel from './ClustersSidePanel';
 // @TODO, refactor these helper utilities to this folder,
 //        when retiring clusters in Integrations section
 import {
-    checkInLabel,
+    formatClusterType,
     formatCollectionMethod,
-    formatAdmissionController,
+    formatEnabledDisabledField,
     formatLastCheckIn,
     formatSensorVersion,
-    sensorVersionLabel
-} from '../Integrations/Clusters/ClusterDetails';
+    parseUpgradeStatus
+} from './cluster.helpers';
 
 const ClustersPage = ({
     history,
@@ -131,6 +132,11 @@ const ClustersPage = ({
         });
     }
 
+    function getUpgradeStatusField(original) {
+        const status = parseUpgradeStatus(original);
+        return <StatusField displayValue={status.displayValue} type={status.type} />;
+    }
+
     // @TODO: flesh out the new Clusters page layout, placeholders for now
     const paginationComponent = <div>Buttons and Pagination here</div>;
 
@@ -145,24 +151,28 @@ const ClustersPage = ({
             className: `${wrapClassName} ${defaultColumnClassName}`
         },
         {
-            accessor: 'type',
-            Header: 'Type'
+            Header: 'Type',
+            Cell: ({ original }) => formatClusterType(original.type)
         },
         {
             Header: 'Runtime Support',
-            Cell: ({ original }) => formatCollectionMethod(original)
+            Cell: ({ original }) => formatCollectionMethod(original.collectionMethod)
         },
         {
             Header: 'Admission Controller Webhook',
-            Cell: ({ original }) => formatAdmissionController(original)
+            Cell: ({ original }) => formatEnabledDisabledField(original.admissionController)
         },
         {
-            Header: checkInLabel,
-            Cell: ({ original }) => formatLastCheckIn(original)
+            Header: 'Last Check-In',
+            Cell: ({ original }) => formatLastCheckIn(original.status)
         },
         {
-            Header: sensorVersionLabel,
-            Cell: ({ original }) => formatSensorVersion(original),
+            Header: 'Upgrade status',
+            Cell: ({ original }) => getUpgradeStatusField(original)
+        },
+        {
+            Header: 'Current Sensor Version',
+            Cell: ({ original }) => formatSensorVersion(original.status),
             className: `${wrapClassName} ${defaultColumnClassName} word-break`
         },
         {
