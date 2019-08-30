@@ -153,10 +153,12 @@ const Subject = ({ id, entityListType, query, entityContext }) => {
                             <div className="flex mb-4 pdf-page pdf-stretch">
                                 <ClusterScopedPermissions
                                     scopedPermissions={scopedPermissionsAcrossAllClusters}
+                                    clusterName={clusterName}
                                     className="mx-4 bg-base-100"
                                 />
                                 <NamespaceScopedPermissions
                                     scopedPermissions={scopedPermissionsAcrossAllClusters}
+                                    namespace={entity.namespace}
                                     className="flex-grow mx-4 bg-base-100"
                                 />
                             </div>

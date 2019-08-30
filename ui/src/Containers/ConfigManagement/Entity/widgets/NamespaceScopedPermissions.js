@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
 import CollapsibleRow from 'Components/CollapsibleRow';
-import pluralize from 'pluralize';
 import ScopedPermissions from './ScopedPermissions';
 
 const PermissionsCounts = ({ permissions }) => {
@@ -30,7 +29,7 @@ PermissionsCounts.propTypes = {
     ).isRequired
 };
 
-const NamespaceScopedPermissions = ({ scopedPermissions, ...rest }) => {
+const NamespaceScopedPermissions = ({ scopedPermissions, namespace, ...rest }) => {
     const namespaceScopePermissions = scopedPermissions.filter(datum => datum.scope !== 'Cluster');
     const namespaceGroups = namespaceScopePermissions.map(({ scope, permissions }) => {
         const groupHeader = (
@@ -54,9 +53,14 @@ const NamespaceScopedPermissions = ({ scopedPermissions, ...rest }) => {
             <div className="flex h-full items-center justify-center">No permissions available</div>
         );
     else content = namespaceGroups;
-    const header = `Permissions across ${
-        namespaceGroups.length > 0 ? namespaceGroups.length : ''
-    } ${pluralize('namespaces', namespaceGroups.length)}`;
+    let namespaceText = 'namespaces';
+    if (namespaceGroups.length === 1) {
+        namespaceText = `"${namespace}" namespace`;
+    }
+    if (namespaceGroups.length > 1) {
+        namespaceText = `${namespaceGroups.length} ${namespaceText}`;
+    }
+    const header = `Permissions across ${namespaceText}`;
     return (
         <Widget header={header} {...rest}>
             <div className="w-full">{content}</div>
