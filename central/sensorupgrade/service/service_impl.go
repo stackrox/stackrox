@@ -24,6 +24,9 @@ var (
 		user.With(permissions.Modify(resources.SensorUpgradeConfig)): {
 			"/v1.SensorUpgradeService/UpdateSensorUpgradeConfig",
 		},
+		user.With(permissions.Modify(resources.Cluster)): {
+			"/v1.SensorUpgradeService/TriggerSensorUpgrade",
+		},
 	})
 )
 
@@ -62,4 +65,8 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &v1.Empty{}, nil
+}
+
+func (s *service) TriggerSensorUpgrade(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "not yet implemented")
 }
