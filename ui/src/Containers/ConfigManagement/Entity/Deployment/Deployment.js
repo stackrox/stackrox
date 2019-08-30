@@ -80,7 +80,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                     value
                 }
                 type
-                updatedAt
+                created
                 ${
                     entityListType === entityTypes.SECRET
                         ? 'secrets(query: $query) { ...secretFields }'
@@ -124,7 +124,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
 
                 const {
                     cluster,
-                    updatedAt,
+                    created,
                     type,
                     replicas,
                     labels = [],
@@ -139,8 +139,8 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
 
                 const metadataKeyValuePairs = [
                     {
-                        key: 'Updated',
-                        value: updatedAt ? format(updatedAt, dateTimeFormat) : 'N/A'
+                        key: 'Created',
+                        value: created ? format(created, dateTimeFormat) : 'N/A'
                     },
                     {
                         key: 'Deployment Type',

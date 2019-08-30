@@ -11,7 +11,7 @@ func ToListDeployment(d *storage.Deployment) *storage.ListDeployment {
 		Cluster:   d.GetClusterName(),
 		ClusterId: d.GetClusterId(),
 		Namespace: d.GetNamespace(),
-		UpdatedAt: d.GetUpdatedAt(),
+		Created:   d.GetCreated(),
 		Priority:  d.GetPriority(),
 	}
 }

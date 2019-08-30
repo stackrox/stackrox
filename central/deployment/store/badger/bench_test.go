@@ -73,7 +73,7 @@ func BenchmarkListDeployments(b *testing.B) {
 		Name:      "quizzical_cat",
 		Cluster:   "Production k8s",
 		Namespace: "stackrox",
-		UpdatedAt: types.TimestampNow(),
+		Created:   types.TimestampNow(),
 		Priority:  10,
 	}
 

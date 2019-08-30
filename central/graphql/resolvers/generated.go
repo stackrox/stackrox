@@ -307,6 +307,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterId: String!",
 		"clusterName: String!",
 		"containers: [Container]!",
+		"created: Time",
 		"hostNetwork: Boolean!",
 		"id: ID!",
 		"imagePullSecrets: [String!]!",
@@ -323,7 +324,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"serviceAccount: String!",
 		"tolerations: [Toleration]!",
 		"type: String!",
-		"updatedAt: Time",
 	}))
 	utils.Must(builder.AddType("DockerfileLineRuleField", []string{
 		"instruction: String!",
@@ -3193,6 +3193,14 @@ func (resolver *deploymentResolver) Containers(ctx context.Context) ([]*containe
 	return resolver.root.wrapContainers(value, nil)
 }
 
+func (resolver *deploymentResolver) Created(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCreated()
+	if resolver.data == nil {
+		value = resolver.list.GetCreated()
+	}
+	return timestamp(value)
+}
+
 func (resolver *deploymentResolver) HostNetwork(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetHostNetwork()
@@ -3295,14 +3303,6 @@ func (resolver *deploymentResolver) Type(ctx context.Context) string {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetType()
 	return value
-}
-
-func (resolver *deploymentResolver) UpdatedAt(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetUpdatedAt()
-	if resolver.data == nil {
-		value = resolver.list.GetUpdatedAt()
-	}
-	return timestamp(value)
 }
 
 type dockerfileLineRuleFieldResolver struct {

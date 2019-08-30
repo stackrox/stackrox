@@ -52,9 +52,9 @@ const columns = [
         Cell: DeploymentNameColumn
     },
     {
-        Header: 'Updated',
-        accessor: 'deployment.updatedAt',
-        searchField: 'Updated At',
+        Header: 'Created',
+        accessor: 'deployment.created',
+        searchField: 'Created',
         // eslint-disable-next-line react/prop-types
         Cell: ({ value }) => <span>{dateFns.format(value, dateTimeFormat)}</span>,
         sortMethod: sortDate

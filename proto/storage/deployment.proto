@@ -29,7 +29,7 @@ message Deployment {
     map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label,store\""];
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"Pod Label,store\""];
     LabelSelector label_selector               = 20;
-    google.protobuf.Timestamp updated_at       = 8 [(gogoproto.moretags) = "search:\"Updated At,store,hidden\" hash:\"ignore\""];
+    google.protobuf.Timestamp created          = 8 [(gogoproto.moretags) = "search:\"Created,store,hidden\" hash:\"ignore\""];
     string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
     string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     repeated Container containers              = 11;
@@ -194,6 +194,6 @@ message ListDeployment {
     string                    cluster    = 3;
     string                    cluster_id = 4;
     string                    namespace  = 5;
-    google.protobuf.Timestamp updated_at = 6;
+    google.protobuf.Timestamp created    = 6;
     int64                     priority   = 7;
 }

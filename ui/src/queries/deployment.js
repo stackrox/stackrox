@@ -51,7 +51,7 @@ export const DEPLOYMENT_FRAGMENT = gql`
             value
         }
         type
-        updatedAt
+        created
         secretCount
         imageCount
     }

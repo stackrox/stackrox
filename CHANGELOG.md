@@ -4,6 +4,7 @@ All notable changes to this project that require documentation updates will be d
 ## [28.0]
 ### Changed
 - The Prometheus scrape endpoint has been moved from localhost:9090 to :9090 so users can use their own Prometheus installations and pull StackRox metrics.
+- UpdatedAt in the deployment object has been corrected to Created
 
 ## [27.0]
 ### Changed

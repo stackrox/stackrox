@@ -116,7 +116,7 @@ func convertDeploymentToDeploymentList(d *storage.Deployment) *storage.ListDeplo
 		Cluster:   d.GetClusterName(),
 		ClusterId: d.GetClusterId(),
 		Namespace: d.GetNamespace(),
-		UpdatedAt: d.GetUpdatedAt(),
+		Created:   d.GetCreated(),
 		Priority:  d.GetPriority(),
 	}
 }

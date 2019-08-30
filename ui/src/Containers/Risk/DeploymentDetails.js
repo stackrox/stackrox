@@ -15,8 +15,8 @@ const deploymentDetailsMap = {
     clusterName: { label: 'Cluster' },
     namespace: { label: 'Namespace' },
     replicas: { label: 'Replicas' },
-    updatedAt: {
-        label: 'Updated',
+    created: {
+        label: 'Created',
         formatValue: timestamp =>
             timestamp ? dateFns.format(timestamp, dateTimeFormat) : 'not available'
     },

@@ -54,9 +54,9 @@ func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store store.Store, d
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(&storage.ListDeployment{
-			Id:        d.GetId(),
-			Name:      d.GetName(),
-			UpdatedAt: d.GetUpdatedAt(),
+			Id:      d.GetId(),
+			Name:    d.GetName(),
+			Created: d.GetCreated(),
 		}, gotList)
 	}
 
@@ -69,16 +69,16 @@ func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store store.Store, d
 func (suite *DeploymentStoreTestSuite) TestDeployments() {
 	deployments := []*storage.Deployment{
 		{
-			Id:        "fooID",
-			Name:      "foo",
-			Type:      "Replicated",
-			UpdatedAt: ptypes.TimestampNow(),
+			Id:      "fooID",
+			Name:    "foo",
+			Type:    "Replicated",
+			Created: ptypes.TimestampNow(),
 		},
 		{
-			Id:        "barID",
-			Name:      "bar",
-			Type:      "Global",
-			UpdatedAt: ptypes.TimestampNow(),
+			Id:      "barID",
+			Name:    "bar",
+			Type:    "Global",
+			Created: ptypes.TimestampNow(),
 		},
 	}
 
@@ -96,7 +96,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 
 	// Test Update
 	for _, d := range deployments {
-		d.UpdatedAt = ptypes.TimestampNow()
+		d.Created = ptypes.TimestampNow()
 		d.Name += "-ext"
 		suite.NoError(suite.store.UpdateDeployment(d))
 	}

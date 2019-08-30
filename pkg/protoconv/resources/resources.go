@@ -96,7 +96,7 @@ func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, str
 }
 
 func newWrap(meta metav1.Object, kind string) *DeploymentWrap {
-	updatedTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
+	createdTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
 	if err != nil {
 		log.Error(err)
 	}
@@ -108,7 +108,7 @@ func newWrap(meta metav1.Object, kind string) *DeploymentWrap {
 			Namespace:   meta.GetNamespace(),
 			Labels:      meta.GetLabels(),
 			Annotations: meta.GetAnnotations(),
-			UpdatedAt:   updatedTime,
+			Created:     createdTime,
 		},
 	}
 }

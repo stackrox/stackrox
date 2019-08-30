@@ -109,7 +109,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				LabelSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{},
 				},
-				UpdatedAt:                    &timestamp.Timestamp{Seconds: 1000},
+				Created:                      &timestamp.Timestamp{Seconds: 1000},
 				ImagePullSecrets:             []string{},
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",

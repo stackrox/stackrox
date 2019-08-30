@@ -12,7 +12,7 @@
           "com.docker.stack.image": "stackrox/main:latest",
           "com.docker.stack.namespace": "main"
         },
-        "updatedAt": "2018-03-29T20:38:01.064862691Z",
+        "created": "2018-03-29T20:38:01.064862691Z",
         "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
         "clusterName": "remote",
         "containers": [
@@ -110,7 +110,7 @@
           "com.docker.stack.image": "stackrox/main:latest",
           "com.docker.stack.namespace": "main"
         },
-        "updatedAt": "2018-03-29T20:37:43.865525758Z",
+        "created": "2018-03-29T20:37:43.865525758Z",
         "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
         "clusterName": "remote",
         "containers": [
@@ -177,7 +177,7 @@
           "com.docker.stack.image": "stackrox/main:latest",
           "com.docker.stack.namespace": "main"
         },
-        "updatedAt": "2018-03-29T20:38:01.064862691Z",
+        "created": "2018-03-29T20:38:01.064862691Z",
         "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
         "clusterName": "remote",
         "containers": [
@@ -275,7 +275,7 @@
           "com.docker.stack.image": "stackrox/main:latest",
           "com.docker.stack.namespace": "main"
         },
-        "updatedAt": "2018-03-29T20:38:01.064862691Z",
+        "created": "2018-03-29T20:38:01.064862691Z",
         "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
         "clusterName": "remote",
         "containers": [
@@ -373,7 +373,7 @@
           "com.docker.stack.image": "stackrox/main:latest",
           "com.docker.stack.namespace": "main"
         },
-        "updatedAt": "2018-03-29T20:38:01.064862691Z",
+        "created": "2018-03-29T20:38:01.064862691Z",
         "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
         "clusterName": "remote",
         "containers": [
@@ -471,7 +471,7 @@
           "com.docker.stack.image": "stackrox/main:latest",
           "com.docker.stack.namespace": "main"
         },
-        "updatedAt": "2018-03-29T20:38:01.064862691Z",
+        "created": "2018-03-29T20:38:01.064862691Z",
         "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
         "clusterName": "remote",
         "containers": [
