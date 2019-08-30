@@ -115,6 +115,11 @@ func Reference(img *storage.Image) string {
 	return "latest"
 }
 
+// IsPullable returns whether or not Kubernetes things the image is pullable
+func IsPullable(imageStr string) bool {
+	return strings.HasPrefix(imageStr, "docker-pullable://")
+}
+
 // ExtractImageDigest returns the image sha if it exists within the string.
 func ExtractImageDigest(imageStr string) string {
 	if idx := strings.Index(imageStr, "sha256:"); idx != -1 {

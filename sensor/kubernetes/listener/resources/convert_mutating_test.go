@@ -151,6 +151,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 								Tag:      "1.3",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
 							},
+							Pullable: true,
 						},
 						Config: &storage.ContainerConfig{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},

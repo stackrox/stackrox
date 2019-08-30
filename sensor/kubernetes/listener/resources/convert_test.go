@@ -588,6 +588,7 @@ func TestConvert(t *testing.T) {
 								Tag:      "1.3",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
 							},
+							Pullable: true,
 						},
 						Secrets: []*storage.EmbeddedSecret{
 							{

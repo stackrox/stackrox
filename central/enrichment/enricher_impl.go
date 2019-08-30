@@ -40,6 +40,11 @@ func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployme
 			imgToProcess = types.ToImage(c.GetImage())
 		}
 		images = append(images, imgToProcess)
+		// If an ID was found and the image is not pullable, then don't try to get metadata because it won't
+		// be available
+		if imgToProcess.GetId() != "" && !imgToProcess.GetPullable() {
+			continue
+		}
 		enrichmentResult := e.imageEnricher.EnrichImage(ctx, imgToProcess)
 		if enrichmentResult.ImageUpdated && imgToProcess.GetId() != "" {
 			updatedIndices = append(updatedIndices, i)

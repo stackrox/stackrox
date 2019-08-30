@@ -288,6 +288,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ContainerImage", []string{
 		"id: ID!",
 		"name: ImageName",
+		"pullable: Boolean!",
 	}))
 	utils.Must(builder.AddType("ContainerInstance", []string{
 		"containerIps: [String!]!",
@@ -384,6 +385,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lastUpdated: Time",
 		"metadata: ImageMetadata",
 		"name: ImageName",
+		"pullable: Boolean!",
 		"scan: ImageScan",
 	}))
 	utils.Must(builder.AddType("ImageLayer", []string{
@@ -3019,6 +3021,11 @@ func (resolver *containerImageResolver) Name(ctx context.Context) (*imageNameRes
 	return resolver.root.wrapImageName(value, true, nil)
 }
 
+func (resolver *containerImageResolver) Pullable(ctx context.Context) bool {
+	value := resolver.data.GetPullable()
+	return value
+}
+
 type containerInstanceResolver struct {
 	root *Resolver
 	data *storage.ContainerInstance
@@ -3799,6 +3806,12 @@ func (resolver *imageResolver) Name(ctx context.Context) (*imageNameResolver, er
 	resolver.ensureData(ctx)
 	value := resolver.data.GetName()
 	return resolver.root.wrapImageName(value, true, nil)
+}
+
+func (resolver *imageResolver) Pullable(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetPullable()
+	return value
 }
 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {

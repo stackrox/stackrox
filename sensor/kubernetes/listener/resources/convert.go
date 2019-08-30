@@ -382,6 +382,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
 				w.Deployment.Containers[i].Image.Id = digest
+				w.Deployment.Containers[i].Image.Pullable = imageUtils.IsPullable(c.ImageID)
 			}
 		}
 	}

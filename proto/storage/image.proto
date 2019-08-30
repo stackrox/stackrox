@@ -29,6 +29,7 @@ message Image {
     google.protobuf.Timestamp last_updated = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
 
     map<string,string> clusterns_scopes = 6 [(gogoproto.moretags) = "search:\"ClusterNS Scopes,store,hidden\""];
+    bool pullable                       = 10;
 }
 
 message ImageScan {
