@@ -1633,11 +1633,17 @@ jobs:
           command: |
             ./scale/flightreplay/launch_replay.sh
             mkdir /tmp/pprof
-            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 5
+            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 60
       - *storeProfilingResults
       - *collectK8sLogs
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
+
+      - *connectToMonitoring
+      - *collectMonitoringImages
+      - *storeMonitoringImages
+      - *storeMonitoringMetrics
+
       - teardown-gke
 
   provision-openshift:

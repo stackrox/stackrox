@@ -24,7 +24,7 @@ spec:
           - /docker-entrypoint.sh
         env:
         - name: DB_URL
-          value: "gs://stackrox-ci-db-recorder/recorder.db"
+          value: "gs://stackrox-ci-db-recorder/100-node-recording.db"
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: "/run/secrets/stackrox.io/creds/serviceaccount.json"
         volumeMounts:
