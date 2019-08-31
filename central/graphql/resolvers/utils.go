@@ -182,3 +182,15 @@ func (resolver *namespaceResolver) getSubjects(ctx context.Context, baseQuery *v
 	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 	return subjects, nil
 }
+
+func (resolver *complianceControlResolver) getClusterIDs(ctx context.Context) ([]string, error) {
+	clusters, err := resolver.root.ClusterDataStore.GetClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var clusterIDs []string
+	for _, cluster := range clusters {
+		clusterIDs = append(clusterIDs, cluster.GetId())
+	}
+	return clusterIDs, nil
+}

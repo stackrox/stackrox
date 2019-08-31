@@ -50,10 +50,10 @@ func InitCompliance() {
 			schema.AddExtraResolver("ComplianceControl", "complianceResults(query: String): [ControlResult!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlEntities(clusterID: ID!): [Node!]!"),
 			schema.AddType("ComplianceControlNodeCount", []string{"failingCount: Int!", "passingCount: Int!"}),
-			schema.AddExtraResolver("ComplianceControl", "complianceControlNodeCount(clusterID: ID!, query: String): ComplianceControlNodeCount"),
-			schema.AddExtraResolver("ComplianceControl", "complianceControlNodes(clusterID: ID!, query: String): [Node!]!"),
-			schema.AddExtraResolver("ComplianceControl", "complianceControlFailingNodes(clusterID: ID!, query: String): [Node!]!"),
-			schema.AddExtraResolver("ComplianceControl", "complianceControlPassingNodes(clusterID: ID!, query: String): [Node!]!"),
+			schema.AddExtraResolver("ComplianceControl", "complianceControlNodeCount(query: String): ComplianceControlNodeCount"),
+			schema.AddExtraResolver("ComplianceControl", "complianceControlNodes(query: String): [Node!]!"),
+			schema.AddExtraResolver("ComplianceControl", "complianceControlFailingNodes(query: String): [Node!]!"),
+			schema.AddExtraResolver("ComplianceControl", "complianceControlPassingNodes(query: String): [Node!]!"),
 		)
 	})
 }
@@ -454,164 +454,156 @@ func (resolver *complianceControlResolver) ComplianceControlEntities(ctx context
 	return resolver.root.wrapNodes(store.ListNodes())
 }
 
-func (resolver *complianceControlResolver) ComplianceControlNodeCount(
-	ctx context.Context,
-	args struct {
-		ClusterID graphql.ID
-		Query     *string
-	}) (*complianceControlNodeCountResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlNodeCount(ctx context.Context, args rawQuery) (*complianceControlNodeCountResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	clusterID := string(args.ClusterID)
+	nr := complianceControlNodeCountResolver{failingCount: 0, passingCount: 0}
 	standardIDs, err := getStandardIDs(ctx, resolver.root.ComplianceStandardStore)
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
-	if err != nil || !hasComplianceSuccessfullyRun {
-		return nil, err
-	}
-	query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
-		AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
+	clusterIDs, err := resolver.getClusterIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if args.Query != nil {
-		query = strings.Join([]string{query, *(args.Query)}, "+")
+	for _, clusterID := range clusterIDs {
+		hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
+		if err != nil || !hasComplianceSuccessfullyRun {
+			return nil, err
+		}
+		query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
+			AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
+		if err != nil {
+			return nil, err
+		}
+		if args.Query != nil {
+			query = strings.Join([]string{query, *(args.Query)}, "+")
+		}
+		r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL}, v1.ComplianceAggregation_NODE)
+		if err != nil {
+			return nil, err
+		}
+		if len(r) != 1 {
+			return nil, errors.Wrapf(errors.New("unexpected control-node aggregation results length"), "length of aggregated results expected: 1, actual : %d", len(r))
+		}
+		nr.failingCount += r[0].GetNumFailing()
+		nr.passingCount += r[0].GetNumPassing()
 	}
-	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL}, v1.ComplianceAggregation_NODE)
-	if err != nil {
-		return nil, err
-	}
-	if len(r) != 1 {
-		return nil, errors.Wrapf(errors.New("unexpected control-node aggregation results length"), "length of aggregated results expected: 1, actual : %d", len(r))
-	}
-	nr := complianceControlNodeCountResolver{failingCount: r[0].GetNumFailing(), passingCount: r[0].GetNumPassing()}
 	return &nr, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceControlNodes(
-	ctx context.Context,
-	args struct {
-		ClusterID graphql.ID
-		Query     *string
-	}) ([]*nodeResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlNodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	clusterID := string(args.ClusterID)
+	var ret []*nodeResolver
 	standardIDs, err := getStandardIDs(ctx, resolver.root.ComplianceStandardStore)
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
-	if err != nil || !hasComplianceSuccessfullyRun {
-		return nil, err
-	}
-	ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
+	clusterIDs, err := resolver.getClusterIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
-		AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
-	if err != nil {
-		return nil, err
+	for _, clusterID := range clusterIDs {
+		rs, ok, err := resolver.getNodeControlAggregationResults(ctx, clusterID, standardIDs, args)
+		if !ok || err != nil {
+			return nil, err
+		}
+		ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
+		if err != nil {
+			return nil, err
+		}
+		resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, any, ds))
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, resolvers...)
 	}
-	if args.Query != nil {
-		query = strings.Join([]string{query, *(args.Query)}, "+")
-	}
-	rs, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE}, v1.ComplianceAggregation_NODE)
-	if err != nil {
-		return nil, err
-	}
-	resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, any, ds))
-	if err != nil {
-		return nil, err
-	}
-	return resolvers, nil
+	return ret, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceControlFailingNodes(
-	ctx context.Context,
-	args struct {
-		ClusterID graphql.ID
-		Query     *string
-	}) ([]*nodeResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	clusterID := string(args.ClusterID)
+	var ret []*nodeResolver
 	standardIDs, err := getStandardIDs(ctx, resolver.root.ComplianceStandardStore)
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
-	if err != nil || !hasComplianceSuccessfullyRun {
-		return nil, err
-	}
-	ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
+	clusterIDs, err := resolver.getClusterIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
-		AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
-	if err != nil {
-		return nil, err
+	for _, clusterID := range clusterIDs {
+		rs, ok, err := resolver.getNodeControlAggregationResults(ctx, clusterID, standardIDs, args)
+		if !ok || err != nil {
+			return nil, err
+		}
+		ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
+		if err != nil {
+			return nil, err
+		}
+		resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, failing, ds))
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, resolvers...)
 	}
-	if args.Query != nil {
-		query = strings.Join([]string{query, *(args.Query)}, "+")
-	}
-	rs, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE}, v1.ComplianceAggregation_NODE)
-	if err != nil {
-		return nil, err
-	}
-	resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, failing, ds))
-	if err != nil {
-		return nil, err
-	}
-	return resolvers, nil
+	return ret, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceControlPassingNodes(
-	ctx context.Context,
-	args struct {
-		ClusterID graphql.ID
-		Query     *string
-	}) ([]*nodeResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	clusterID := string(args.ClusterID)
 	standardIDs, err := getStandardIDs(ctx, resolver.root.ComplianceStandardStore)
 	if err != nil {
 		return nil, err
 	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
-	if err != nil || !hasComplianceSuccessfullyRun {
-		return nil, err
-	}
-	ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
+	var ret []*nodeResolver
+	clusterIDs, err := resolver.getClusterIDs(ctx)
 	if err != nil {
 		return nil, err
+	}
+	for _, clusterID := range clusterIDs {
+		rs, ok, err := resolver.getNodeControlAggregationResults(ctx, clusterID, standardIDs, args)
+		if !ok || err != nil {
+			return nil, err
+		}
+		ds, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, clusterID, false)
+		if err != nil {
+			return nil, err
+		}
+		resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, passing, ds))
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, resolvers...)
+	}
+	return ret, nil
+}
+
+func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx context.Context, clusterID string, standardIDs []string, args rawQuery) ([]*v1.ComplianceAggregation_Result, bool, error) {
+	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
+	if err != nil || !hasComplianceSuccessfullyRun {
+		return nil, false, err
 	}
 	query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
 		AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if args.Query != nil {
 		query = strings.Join([]string{query, *(args.Query)}, "+")
 	}
 	rs, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE}, v1.ComplianceAggregation_NODE)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	resolvers, err := resolver.root.wrapNodes(getResultNodesFromAggregationResults(rs, passing, ds))
-	if err != nil {
-		return nil, err
-	}
-	return resolvers, nil
+	return rs, true, nil
 }
 
 func getResultNodesFromAggregationResults(results []*v1.ComplianceAggregation_Result, nodeType resultType, ds datastore.DataStore) ([]*storage.Node, error) {
