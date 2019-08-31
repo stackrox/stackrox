@@ -4,8 +4,10 @@ import * as Icon from 'react-feather';
 import Tooltip from 'rc-tooltip';
 import { generatePath } from 'react-router-dom';
 
+import Dialog from 'Components/Dialog';
 import PageHeader from 'Components/PageHeader';
 import Panel from 'Components/Panel';
+import PanelButton from 'Components/PanelButton';
 import StatusField from 'Components/StatusField';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import CheckboxTable from 'Components/CheckboxTable';
@@ -14,6 +16,8 @@ import TableHeader from 'Components/TableHeader';
 import {
     fetchClustersAsArray,
     getAutoUpgradeConfig,
+    deleteClusters,
+    upgradeClusters,
     saveAutoUpgradeConfig
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
@@ -40,6 +44,7 @@ const ClustersPage = ({
     }
 }) => {
     const [currentClusters, setCurrentClusters] = useState([]);
+    const [showDialog, setShowDialog] = useState(false);
     const [autoUpgradeConfig, setAutoUpgradeConfig] = useState({});
     const [selectedClusters, setSelectedClusters] = useState([]);
     const [tableRef, setTableRef] = useState(null);
@@ -49,6 +54,7 @@ const ClustersPage = ({
     const onDeleteHandler = cluster => e => {
         e.stopPropagation();
         setSelectedClusters([cluster.id]);
+        setShowDialog(true);
     };
 
     function renderRowActionButtons(cluster) {
@@ -57,7 +63,7 @@ const ClustersPage = ({
                 <Tooltip placement="top" overlay={<div>Delete cluster</div>} mouseLeaveDelay={0}>
                     <button
                         type="button"
-                        className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                        className="p-1 px-4 hover:bg-alert-200 text-alert-600 hover:text-alert-700"
                         onClick={onDeleteHandler(cluster)}
                     >
                         <Icon.Trash2 className="mt-1 h-4 w-4" />
@@ -94,6 +100,40 @@ const ClustersPage = ({
     function fetchConfig() {
         getAutoUpgradeConfig().then(config => {
             setAutoUpgradeConfig(config);
+        });
+    }
+
+    function onAddCluster() {}
+
+    function upgradeSelectedClusters() {
+        upgradeClusters(selectedClusters).then(() => {
+            setSelectedClusters([]);
+
+            fetchClustersAsArray().then(clusters => {
+                setCurrentClusters(clusters);
+            });
+        });
+    }
+
+    function deleteSelectedClusters() {
+        setShowDialog(true);
+    }
+
+    function hideDialog() {
+        setShowDialog(false);
+    }
+
+    function makeDeleteRequest() {
+        deleteClusters(selectedClusters).then(() => {
+            setSelectedClusters([]);
+
+            fetchClustersAsArray()
+                .then(clusters => {
+                    setCurrentClusters(clusters);
+                })
+                .finally(() => {
+                    setShowDialog(false);
+                });
         });
     }
 
@@ -138,7 +178,31 @@ const ClustersPage = ({
     }
 
     // @TODO: flesh out the new Clusters page layout, placeholders for now
-    const paginationComponent = <div>Buttons and Pagination here</div>;
+    const headerActions = (
+        <React.Fragment>
+            <PanelButton
+                icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
+                text={`Upgrade (${selectedClusters.length})`}
+                className="btn btn-tertiary ml-2"
+                onClick={upgradeSelectedClusters}
+                disabled={selectedClusters.length === 0 || selectedClusterId}
+            />
+            <PanelButton
+                icon={<Icon.DownloadCloud className="h-4 w-4 ml-1" />}
+                text={`Delete (${selectedClusters.length})`}
+                className="btn btn-alert ml-2"
+                onClick={deleteSelectedClusters}
+                disabled={selectedClusters.length === 0 || selectedClusterId}
+            />
+            <PanelButton
+                icon={<Icon.Plus className="h-4 w-4 ml-1" />}
+                text="New Cluster"
+                className="btn btn-base ml-2"
+                onClick={onAddCluster}
+                disabled={selectedClusterId}
+            />
+        </React.Fragment>
+    );
 
     const headerComponent = (
         <TableHeader length={currentClusters.length} type="Cluster" isViewFiltered={false} />
@@ -210,7 +274,7 @@ const ClustersPage = ({
                     <div className="shadow border-primary-300 bg-base-100 w-full overflow-hidden">
                         <Panel
                             headerTextComponent={headerComponent}
-                            headerComponents={paginationComponent}
+                            headerComponents={headerActions}
                         >
                             <div className="w-full">
                                 <CheckboxTable
@@ -236,6 +300,15 @@ const ClustersPage = ({
                     />
                 </div>
             </div>
+            <Dialog
+                className="w-1/3"
+                isOpen={showDialog}
+                text="Are you sure you want to delete?"
+                onConfirm={makeDeleteRequest}
+                confirmText="Delete"
+                onCancel={hideDialog}
+                isDestructive
+            />
         </section>
     );
 };

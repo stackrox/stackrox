@@ -30,7 +30,9 @@ const Dialog = props => (
                     {props.onConfirm && (
                         <button
                             type="button"
-                            className="btn btn-success ml-4"
+                            className={`btn btn-success ml-4 ${
+                                props.isDestructive ? 'btn-alert' : 'btn-success'
+                            }`}
                             onClick={props.onConfirm}
                         >
                             {props.confirmText}
@@ -50,6 +52,7 @@ Dialog.propTypes = {
     cancelText: PropTypes.string,
     onConfirm: PropTypes.func,
     confirmText: PropTypes.string,
+    isDestructive: PropTypes.bool,
     isLoading: PropTypes.bool,
     loadingText: PropTypes.string
 };
@@ -60,6 +63,7 @@ Dialog.defaultProps = {
     cancelText: 'Cancel',
     onConfirm: null,
     confirmText: 'Confirm',
+    isDestructive: false,
     isLoading: false,
     loadingText: null
 };

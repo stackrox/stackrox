@@ -682,6 +682,14 @@ h6 {
     @apply .btn-primary .bg-primary-100 .bg-base-200 border-primary-400 !important;
 }
 
+.btn-tertiary {
+    @apply border-tertiary-700 text-tertiary-700 !important;
+}
+
+.btn-tertiary:hover {
+    @apply .btn-tertiary .bg-tertiary-700 .bg-base-200 border-tertiary-600 !important;
+}
+
 .btn-base {
     @apply .text-base-600 .border-base-300 .bg-base-100 text-base-600 !important;
 }
