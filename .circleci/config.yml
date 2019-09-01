@@ -1633,7 +1633,8 @@ jobs:
           command: |
             ./scale/flightreplay/launch_replay.sh
             mkdir /tmp/pprof
-            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 60
+            # 65 min run so that we are confident that the run has completely finished
+            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 65
       - *storeProfilingResults
       - *collectK8sLogs
       - *verifyNoStackRoxRestarts

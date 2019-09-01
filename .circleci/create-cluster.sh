@@ -10,7 +10,7 @@ CLUSTER_NAME="${CLUSTER_NAME:-prevent-ci-${CIRCLE_BUILD_NUM}}"
 
 create-cluster() {
   REGION=us-central1
-  NUM_NODES="${NUM_NODES:-4}"
+  NUM_NODES="${NUM_NODES:-3}"
   GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU}"
   POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
 
@@ -30,7 +30,7 @@ create-cluster() {
       echo "Trying zone $zone"
       gcloud config set compute/zone "${zone}"
       timeout 420 gcloud beta container clusters create \
-          --machine-type n1-standard-2 \
+          --machine-type n1-standard-4 \
           --num-nodes "${NUM_NODES}" \
           --create-subnetwork range=/28 \
           --cluster-ipv4-cidr=/20 \
