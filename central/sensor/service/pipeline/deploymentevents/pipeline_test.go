@@ -46,60 +46,6 @@ func (suite *PipelineTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
-	events := fakeDeploymentEvents()
-	events[0].Action = central.ResourceAction_CREATE_RESOURCE
-	ctx := context.Background()
-
-	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().UpsertDeployment(ctx, events[0].GetDeployment()).Return(nil)
-
-	// Call function.
-	tested := &persistDeploymentImpl{
-		deployments: suite.deployments,
-	}
-	err := tested.do(ctx, events[0].Action, events[0].GetDeployment(), true)
-
-	// Pull one more time to get nil
-	suite.NoError(err, "persistence should have succeeded")
-}
-
-func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
-	events := fakeDeploymentEvents()
-	events[0].Action = central.ResourceAction_UPDATE_RESOURCE
-	ctx := context.Background()
-
-	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().UpsertDeployment(ctx, events[0].GetDeployment()).Return(nil)
-
-	// Call function.
-	tested := &persistDeploymentImpl{
-		deployments: suite.deployments,
-	}
-	err := tested.do(ctx, events[0].Action, events[0].GetDeployment(), true)
-
-	// Pull one more time to get nil
-	suite.NoError(err, "persistence should have succeeded")
-}
-
-func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
-	events := fakeDeploymentEvents()
-	events[0].Action = central.ResourceAction_REMOVE_RESOURCE
-	ctx := context.Background()
-
-	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().RemoveDeployment(ctx, "", events[0].GetDeployment().GetId()).Return(nil)
-
-	// Call function.
-	tested := &persistDeploymentImpl{
-		deployments: suite.deployments,
-	}
-	err := tested.do(ctx, events[0].GetAction(), events[0].GetDeployment(), true)
-
-	// Pull one more time to get nil
-	suite.NoError(err, "persistence should have succeeded")
-}
-
 func (suite *PipelineTestSuite) TestUpdateImages() {
 	suite.NoError(os.Setenv(env.ImageClusterNSScopes.EnvVar(), "true"))
 	events := fakeDeploymentEvents()

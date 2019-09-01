@@ -88,6 +88,10 @@ message SimulateNetworkGraphResponse {
     NetworkGraphDiff removed = 4;
 }
 
+message GetNetworkGraphEpochRequest {
+    string cluster_id = 1;
+}
+
 message NetworkGraphEpoch {
     uint32 epoch = 1;
 }
@@ -133,7 +137,7 @@ service NetworkPolicyService {
         };
     }
 
-    rpc GetNetworkGraphEpoch (Empty) returns (NetworkGraphEpoch) {
+    rpc GetNetworkGraphEpoch (GetNetworkGraphEpochRequest) returns (NetworkGraphEpoch) {
         option (google.api.http) = {
             get: "/v1/networkpolicies/graph/epoch"
         };

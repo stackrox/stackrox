@@ -35,17 +35,17 @@ func (m *MockEvaluator) EXPECT() *MockEvaluatorMockRecorder {
 }
 
 // GetGraph mocks base method
-func (m *MockEvaluator) GetGraph(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) *v1.NetworkGraph {
+func (m *MockEvaluator) GetGraph(clusterID string, deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) *v1.NetworkGraph {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGraph", deployments, networkPolicies)
+	ret := m.ctrl.Call(m, "GetGraph", clusterID, deployments, networkPolicies)
 	ret0, _ := ret[0].(*v1.NetworkGraph)
 	return ret0
 }
 
 // GetGraph indicates an expected call of GetGraph
-func (mr *MockEvaluatorMockRecorder) GetGraph(deployments, networkPolicies interface{}) *gomock.Call {
+func (mr *MockEvaluatorMockRecorder) GetGraph(clusterID, deployments, networkPolicies interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGraph", reflect.TypeOf((*MockEvaluator)(nil).GetGraph), deployments, networkPolicies)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGraph", reflect.TypeOf((*MockEvaluator)(nil).GetGraph), clusterID, deployments, networkPolicies)
 }
 
 // GetAppliedPolicies mocks base method
@@ -63,29 +63,29 @@ func (mr *MockEvaluatorMockRecorder) GetAppliedPolicies(deployments, networkPoli
 }
 
 // IncrementEpoch mocks base method
-func (m *MockEvaluator) IncrementEpoch() {
+func (m *MockEvaluator) IncrementEpoch(clusterID string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "IncrementEpoch")
+	m.ctrl.Call(m, "IncrementEpoch", clusterID)
 }
 
 // IncrementEpoch indicates an expected call of IncrementEpoch
-func (mr *MockEvaluatorMockRecorder) IncrementEpoch() *gomock.Call {
+func (mr *MockEvaluatorMockRecorder) IncrementEpoch(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementEpoch", reflect.TypeOf((*MockEvaluator)(nil).IncrementEpoch))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementEpoch", reflect.TypeOf((*MockEvaluator)(nil).IncrementEpoch), clusterID)
 }
 
 // Epoch mocks base method
-func (m *MockEvaluator) Epoch() uint32 {
+func (m *MockEvaluator) Epoch(clusterID string) uint32 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Epoch")
+	ret := m.ctrl.Call(m, "Epoch", clusterID)
 	ret0, _ := ret[0].(uint32)
 	return ret0
 }
 
 // Epoch indicates an expected call of Epoch
-func (mr *MockEvaluatorMockRecorder) Epoch() *gomock.Call {
+func (mr *MockEvaluatorMockRecorder) Epoch(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Epoch", reflect.TypeOf((*MockEvaluator)(nil).Epoch))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Epoch", reflect.TypeOf((*MockEvaluator)(nil).Epoch), clusterID)
 }
 
 // MocknamespaceProvider is a mock of namespaceProvider interface

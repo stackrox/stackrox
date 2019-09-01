@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/mitchellh/hashstructure"
-	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
@@ -46,7 +45,6 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		validateInput:     newValidateInput(),
 		clusterEnrichment: newClusterEnrichment(clusters),
 		updateImages:      newUpdateImages(images),
-		persistDeployment: newPersistDeployment(deployments),
 		lifecycleManager:  manager,
 
 		graphEvaluator: graphEvaluator,
@@ -60,7 +58,6 @@ type pipelineImpl struct {
 	validateInput     *validateInputImpl
 	clusterEnrichment *clusterEnrichmentImpl
 	updateImages      *updateImagesImpl
-	persistDeployment *persistDeploymentImpl
 	lifecycleManager  lifecycle.Manager
 
 	deployments deploymentDataStore.DataStore
@@ -112,11 +109,11 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.Res
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
-	if err := s.persistDeployment.do(ctx, action, deployment, false); err != nil {
+	if err := s.deployments.RemoveDeployment(ctx, deployment.GetClusterId(), deployment.GetId()); err != nil {
 		return err
 	}
 
-	s.graphEvaluator.IncrementEpoch()
+	s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
 
 	// Process the deployment (enrichment, alert generation, enforcement action generation.)
 	if err := s.lifecycleManager.DeploymentRemoved(deployment); err != nil {
@@ -125,27 +122,24 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.Res
 	return nil
 }
 
-func (s *pipelineImpl) dedupeBasedOnHash(ctx context.Context, action central.ResourceAction, newDeployment *storage.Deployment) (bool, error) {
-	var err error
-	newDeployment.Hash, err = hashstructure.Hash(newDeployment, &hashstructure.HashOptions{})
-	if err != nil {
-		return false, err
+func compareMap(m1, m2 map[string]string) bool {
+	if len(m1) != len(m2) {
+		return false
 	}
-
-	// Check if this deployment needs to be processed based on hash
-	oldDeployment, exists, err := s.deployments.GetDeployment(ctx, newDeployment.GetId())
-	if err != nil || !exists {
-		return false, err
-	}
-	// If it already exists and the hash is the same, then just update the container instances of the old deployment and upsert
-	if exists && oldDeployment.GetHash() == newDeployment.GetHash() {
-		// Using the index of Container is save as this is ensured by the hash
-		for i, c := range newDeployment.GetContainers() {
-			oldDeployment.Containers[i].Instances = c.Instances
+	for k, v1 := range m1 {
+		if v2, ok := m2[k]; !ok || v2 != v1 {
+			return false
 		}
-		return true, s.persistDeployment.do(ctx, action, oldDeployment, false)
 	}
-	return false, nil
+	return true
+}
+
+func (s *pipelineImpl) rewriteInstancesAndPersist(ctx context.Context, oldDeployment *storage.Deployment, newDeployment *storage.Deployment) error {
+	// Using the index of Container is save as this is ensured by the hash
+	for i, c := range newDeployment.GetContainers() {
+		oldDeployment.Containers[i].Instances = c.Instances
+	}
+	return s.deployments.UpsertDeploymentIntoStoreOnly(ctx, oldDeployment)
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -155,14 +149,23 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 		return err
 	}
 
-	dedupe, err := s.dedupeBasedOnHash(ctx, action, deployment)
+	var err error
+	deployment.Hash, err = hashstructure.Hash(deployment, &hashstructure.HashOptions{})
 	if err != nil {
-		err = errors.Wrapf(err, "Could not check deployment %q for deduping", deployment.GetName())
-		log.Error(err)
 		return err
 	}
-	if dedupe {
-		return nil
+
+	oldDeployment, exists, err := s.deployments.GetDeployment(ctx, deployment.GetId())
+	if err != nil {
+		return err
+	}
+	incrementNetworkGraphEpoch := true
+	// If it exists, check to see if we can dedupe it
+	if exists {
+		if oldDeployment.GetHash() == deployment.GetHash() {
+			return s.rewriteInstancesAndPersist(ctx, oldDeployment, deployment)
+		}
+		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 	}
 
 	// Fill in cluster information.
@@ -172,7 +175,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
-	if err := s.persistDeployment.do(ctx, action, deployment, true); err != nil {
+	if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
 		return err
 	}
 
@@ -189,7 +192,9 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	if err := s.lifecycleManager.DeploymentUpdated(enricher.EnrichmentContext{UseNonBlockingCallsWherePossible: true}, deployment, injectorToPass); err != nil {
 		return err
 	}
-	s.graphEvaluator.IncrementEpoch()
+	if incrementNetworkGraphEpoch {
+		s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
+	}
 	return nil
 }
 

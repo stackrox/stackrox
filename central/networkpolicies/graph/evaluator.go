@@ -2,12 +2,12 @@ package graph
 
 import (
 	"sort"
-	"sync/atomic"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -17,10 +17,10 @@ var (
 // Evaluator implements the interface for the network graph generator
 //go:generate mockgen-wrapper
 type Evaluator interface {
-	GetGraph(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) *v1.NetworkGraph
+	GetGraph(clusterID string, deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) *v1.NetworkGraph
 	GetAppliedPolicies(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy
-	IncrementEpoch()
-	Epoch() uint32
+	IncrementEpoch(clusterID string)
+	Epoch(clusterID string) uint32
 }
 
 type namespaceProvider interface {
@@ -29,7 +29,8 @@ type namespaceProvider interface {
 
 // evaluatorImpl handles all of the graph calculations
 type evaluatorImpl struct {
-	epoch uint32
+	clusterEpochMap map[string]uint32
+	epochMutex      sync.RWMutex
 
 	namespaceStore namespaceProvider
 }
@@ -37,25 +38,37 @@ type evaluatorImpl struct {
 // newGraphEvaluator takes in namespaces
 func newGraphEvaluator(namespaceStore namespaceProvider) *evaluatorImpl {
 	return &evaluatorImpl{
-		namespaceStore: namespaceStore,
+		namespaceStore:  namespaceStore,
+		clusterEpochMap: make(map[string]uint32),
 	}
 }
 
 // IncrementEpoch increments epoch, effectively indicating that a graph that is generated may change.
-func (g *evaluatorImpl) IncrementEpoch() {
-	atomic.AddUint32(&g.epoch, 1)
+func (g *evaluatorImpl) IncrementEpoch(clusterID string) {
+	g.epochMutex.Lock()
+	defer g.epochMutex.Unlock()
+	g.clusterEpochMap[clusterID]++
 }
 
 // Epoch returns the current value for epoch, which tracks modifications to deployments.
-func (g *evaluatorImpl) Epoch() uint32 {
-	return atomic.LoadUint32(&g.epoch)
+func (g *evaluatorImpl) Epoch(clusterID string) uint32 {
+	g.epochMutex.RLock()
+	defer g.epochMutex.RUnlock()
+	if clusterID != "" {
+		return g.clusterEpochMap[clusterID]
+	}
+	var totalEpoch uint32
+	for _, v := range g.clusterEpochMap {
+		totalEpoch += v
+	}
+	return totalEpoch
 }
 
 // GetGraph generates a network graph for the input deployments based on the input policies.
-func (g *evaluatorImpl) GetGraph(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) *v1.NetworkGraph {
+func (g *evaluatorImpl) GetGraph(clusterID string, deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) *v1.NetworkGraph {
 	nodes := g.evaluate(deployments, networkPolicies)
 	return &v1.NetworkGraph{
-		Epoch: g.Epoch(),
+		Epoch: g.Epoch(clusterID),
 		Nodes: nodes,
 	}
 }

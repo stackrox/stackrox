@@ -84,10 +84,12 @@ export function fetchNetworkPolicies(policyIds) {
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNodeUpdates() {
-    return axios.get(`${networkPoliciesBaseUrl}/graph/epoch`).then(response => ({
-        response: response.data
-    }));
+export function fetchNodeUpdates(clusterId) {
+    return axios
+        .get(`${networkPoliciesBaseUrl}/graph/epoch?clusterId=${clusterId}`)
+        .then(response => ({
+            response: response.data
+        }));
 }
 
 /**

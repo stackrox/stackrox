@@ -102,7 +102,8 @@ export function* getUndoNetworkModification() {
 export function* pollNodeUpdates() {
     while (true) {
         try {
-            const result = yield call(service.fetchNodeUpdates);
+            const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+            const result = yield call(service.fetchNodeUpdates, clusterId);
             yield put(backendNetworkActions.fetchNodeUpdates.success(result.response));
         } catch (error) {
             yield put(backendNetworkActions.fetchNodeUpdates.failure(error));

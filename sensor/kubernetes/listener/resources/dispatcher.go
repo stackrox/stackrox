@@ -138,7 +138,7 @@ func (e *exclusiveDispatcherImpl) ProcessEvent(obj interface{}, action central.R
 	defer e.lock.Unlock()
 
 	if metaObj, ok := obj.(v1.Object); ok {
-		kubernetes.RemoveAppliedAnnotation(metaObj)
+		kubernetes.TrimAnnotations(metaObj)
 	}
 	return e.dispatcher.ProcessEvent(obj, action)
 }

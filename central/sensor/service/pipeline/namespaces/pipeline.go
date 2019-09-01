@@ -88,7 +88,7 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.Res
 	if err := s.persistNamespace(ctx, action, event); err != nil {
 		return err
 	}
-	s.graphEvaluator.IncrementEpoch()
+	s.graphEvaluator.IncrementEpoch(event.GetClusterId())
 
 	return nil
 }
@@ -106,7 +106,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	if err := s.persistNamespace(ctx, action, ns); err != nil {
 		return err
 	}
-	s.graphEvaluator.IncrementEpoch()
+	s.graphEvaluator.IncrementEpoch(ns.GetClusterId())
 
 	return nil
 }

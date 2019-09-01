@@ -6,15 +6,22 @@ import (
 )
 
 const (
-	kubectlAppliedAnnotationKey = "kubectl.kubernetes.io/last-applied-configuration"
-
 	maxValueLen = 256
 )
 
-// RemoveAppliedAnnotation removes the kubectl apply annotation
-func RemoveAppliedAnnotation(object v1.Object) {
+var (
+	annotationKeys = []string{
+		"kubectl.kubernetes.io/last-applied-configuration",
+		"deployment.kubernetes.io/revision",
+	}
+)
+
+// TrimAnnotations removes the kubectl apply annotation
+func TrimAnnotations(object v1.Object) {
 	annotations := object.GetAnnotations()
-	delete(annotations, kubectlAppliedAnnotationKey)
+	for _, key := range annotationKeys {
+		delete(annotations, key)
+	}
 	for k, v := range annotations {
 		annotations[k] = stringutils.Truncate(v, maxValueLen, stringutils.WordOriented{})
 	}

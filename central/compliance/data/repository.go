@@ -203,7 +203,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 	r.networkPolicies = networkPoliciesByID(networkPolicies)
 
-	r.networkGraph = f.networkGraphEvaluator.GetGraph(deployments, networkPolicies)
+	r.networkGraph = f.networkGraphEvaluator.GetGraph(clusterID, deployments, networkPolicies)
 
 	policies, err := f.policyStore.GetPolicies(ctx)
 	if err != nil {
