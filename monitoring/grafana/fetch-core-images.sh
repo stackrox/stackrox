@@ -7,7 +7,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 mkdir -p "$DIR/captures"
 
 ENDPOINT=${ENDPOINT:-localhost:9443}
-DURATION_MIN=${DURATION_MIN:-60}
+DURATION_MIN=${DURATION_MIN:-90}
 
 CURR_TIME=$(date +%s000) # in milliseconds
 START_TIME=$(( CURR_TIME - DURATION_MIN * 60 * 1000 )) # in milliseconds
