@@ -586,9 +586,15 @@ commands:
             ZONE="$(cat "${CONFIG_DIR}/zone")"
             [[ -n "$ZONE" ]]
             gcloud config set compute/zone "$ZONE"
-            gcloud container clusters get-credentials --project stackrox-ci "$CLUSTER_NAME"
+            cmd=(gcloud container clusters get-credentials --project stackrox-ci --zone "$ZONE" "$CLUSTER_NAME")
+            "${cmd[@]}"
             echo "Restored config for cluster ${CLUSTER_NAME}"
             cci-export CLUSTER_NAME "$CLUSTER_NAME"
+            echo
+            echo "Run the following command to attach to the cluster:"
+            echo
+            printf " %q" "${cmd[@]}"
+            echo
 
       - run:
           name: Waiting for << parameters.cluster-id >> cluster to stabilize
