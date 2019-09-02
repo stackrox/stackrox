@@ -44,7 +44,7 @@ func loadDefaultCertificate() (*tls.Certificate, error) {
 }
 
 func loadInternalCertificateFromFiles() (*tls.Certificate, error) {
-	if filesExist, err := fileutils.AllExist(mtls.CertFilePath, mtls.KeyFilePath); err != nil || !filesExist {
+	if filesExist, err := fileutils.AllExist(mtls.CertFilePath(), mtls.KeyFilePath()); err != nil || !filesExist {
 		return nil, err
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"k8s.io/client-go/rest"
 )
 
@@ -18,6 +19,8 @@ type UpgraderConfig struct {
 	CentralEndpoint string
 
 	K8sRESTConfig *rest.Config
+
+	Owner *k8sobjects.ObjectRef
 }
 
 // Validate checks if this upgrader config is complete and well-formed. It does *not* check whether the values stored
@@ -52,6 +55,14 @@ func Create() (*UpgraderConfig, error) {
 		ProcessID:       os.Getenv(upgradeProcessIDEnvVar),
 		CentralEndpoint: os.Getenv(env.CentralEndpoint.EnvVar()),
 		K8sRESTConfig:   restConfig,
+	}
+
+	if ownerRefStr := os.Getenv(upgraderOwnerEnvVar); ownerRefStr != "" {
+		owner, err := k8sobjects.ParseRef(ownerRefStr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid owner reference string %q", ownerRefStr)
+		}
+		cfg.Owner = &owner
 	}
 
 	if err := cfg.Validate(); err != nil {

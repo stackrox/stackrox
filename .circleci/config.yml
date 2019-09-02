@@ -764,7 +764,10 @@ commands:
             proxy_pid=$!
             sleep 5
             KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
-              bin/linux/upgrader -kube-config kubectl -validate-bundle deploy/<< parameters.orchestrator-flavor >>/sensor-deploy
+              bin/linux/upgrader \
+                -kube-config kubectl \
+                -local-bundle deploy/<< parameters.orchestrator-flavor >>/sensor-deploy \
+                -workflow validate-bundle
             kill "$proxy_pid"
 
       - *waitForSensorK8s
@@ -1483,6 +1486,7 @@ jobs:
       - run:
           name: Checkout 2.4.16.4
           command: git checkout 2.4.16.4
+
       - run:
           name: Launch Central only
           command: |
@@ -1499,6 +1503,7 @@ jobs:
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
+
       - run:
           name: Checkout current commit again
           command: git reset --hard "${CIRCLE_SHA1}"
@@ -1581,6 +1586,82 @@ jobs:
 
       - *storeQATestResults
       - *storeQASpockReports
+
+      - run:
+          name: Deploy sensor via upgrader
+          command: |
+            kubectl proxy --port 28001 &
+            proxy_pid=$!
+            sleep 5
+
+            roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" sensor generate k8s \
+              --name remote-new
+
+            CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
+              | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
+            ROX_UPGRADE_PROCESS_ID=3b2cbf78-d35a-4c2c-b67b-e37f805c14da \
+                ROX_CLUSTER_ID="$CLUSTER_ID" \
+                ROX_CENTRAL_ENDPOINT="${API_HOSTNAME}:${API_PORT}" \
+                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
+                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
+                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
+                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
+              ./bin/linux/upgrader -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
+
+            kill "$proxy_pid"
+
+      - *waitForSensorK8s
+
+      - run:
+          name: Deploy sensor via upgrader a second time
+          command: |
+            kubectl proxy --port 28001 &
+            proxy_pid=$!
+            sleep 5
+
+            CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
+              | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
+            ROX_UPGRADE_PROCESS_ID=3b2cbf78-d35a-4c2c-b67b-e37f805c14da \
+                ROX_CLUSTER_ID="$CLUSTER_ID" \
+                ROX_CENTRAL_ENDPOINT="${API_HOSTNAME}:${API_PORT}" \
+                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
+                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
+                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
+                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
+              ./bin/linux/upgrader -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
+
+            kill "$proxy_pid"
+
+      - *waitForSensorK8s
+
+      - run:
+          name: Roll back sensor upgrade
+          command: |
+            kubectl proxy --port 28001 &
+            proxy_pid=$!
+            sleep 5
+
+            CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
+              | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
+            ROX_UPGRADE_PROCESS_ID=3b2cbf78-d35a-4c2c-b67b-e37f805c14da \
+                ROX_CLUSTER_ID="$CLUSTER_ID" \
+                ROX_CENTRAL_ENDPOINT="${API_HOSTNAME}:${API_PORT}" \
+                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
+                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
+                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
+                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
+              ./bin/linux/upgrader -workflow roll-back -kube-config kubectl
+
+            kill "$proxy_pid"
+
+      - run:
+          name: Verify sensor is gone
+          command: |
+            kubectl -n stackrox wait deploy/sensor --for=delete --timeout=30s 2>/dev/null || true
+            if kubectl -n stackrox get deploy/sensor 2>/dev/null ; then
+              echo >&2 "Sensor deployment still exists after 30s"
+              exit 1
+            fi
 
       - *collectK8sLogs
       - *storeK8sLogs

@@ -1,11 +1,13 @@
 package upgradectx
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/sensor/upgrader/common"
@@ -32,6 +34,8 @@ var (
 // UpgradeContext provides a unified interface for interacting with the environment (e.g., the K8s API server) in the
 // upgrade process.
 type UpgradeContext struct {
+	ctx context.Context
+
 	config config.UpgraderConfig
 
 	scheme            *runtime.Scheme
@@ -45,12 +49,22 @@ type UpgradeContext struct {
 }
 
 // Create creates a new upgrader context from the given config.
-func Create(config *config.UpgraderConfig) (*UpgradeContext, error) {
-	k8sClientSet, err := kubernetes.NewForConfig(config.K8sRESTConfig)
+func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext, error) {
+	// Ensure that the context lifetime has an effect.
+	restConfigShallowCopy := *config.K8sRESTConfig
+	oldWrapTransport := restConfigShallowCopy.WrapTransport
+	restConfigShallowCopy.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		if oldWrapTransport != nil {
+			rt = oldWrapTransport(rt)
+		}
+		return httputil.ContextBoundRoundTripper(ctx, rt)
+	}
+
+	k8sClientSet, err := kubernetes.NewForConfig(&restConfigShallowCopy)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Kubernetes API clients")
 	}
-	dynamicClientPool := dynamic.NewDynamicClientPool(config.K8sRESTConfig)
+	dynamicClientPool := dynamic.NewDynamicClientPool(&restConfigShallowCopy)
 
 	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery(), common.OrderedBundleResourceTypes)
 	if err != nil {
@@ -81,7 +95,8 @@ func Create(config *config.UpgraderConfig) (*UpgradeContext, error) {
 
 	schm := scheme.Scheme
 
-	ctx := &UpgradeContext{
+	c := &UpgradeContext{
+		ctx:               ctx,
 		config:            *config,
 		scheme:            schm,
 		codecs:            serializer.NewCodecFactory(schm),
@@ -102,14 +117,14 @@ func Create(config *config.UpgraderConfig) (*UpgradeContext, error) {
 			return nil, errors.Wrap(err, "instantiating TLS config")
 		}
 		tlsConf.NextProtos = nil // no HTTP/2 or pure GRPC!
-		ctx.httpClient = &http.Client{
-			Transport: &http.Transport{
+		c.httpClient = &http.Client{
+			Transport: httputil.ContextBoundRoundTripper(ctx, &http.Transport{
 				TLSClientConfig: tlsConf,
-			},
+			}),
 		}
 	}
 
-	return ctx, nil
+	return c, nil
 }
 
 // GetResourceMetadata returns the API resource metadata for the given GroupVersionKind. It returns `nil` if the server
@@ -163,6 +178,11 @@ func (c *UpgradeContext) UniversalDecoder() runtime.Decoder {
 	return fallbackDecoder{c.codecs.UniversalDeserializer(), yamlDecoder{jsonDecoder: unstructured.UnstructuredJSONScheme}}
 }
 
+// IsProcessStateObject checks if the given object belongs to the state of this upgrade process.
+func (c *UpgradeContext) IsProcessStateObject(obj metav1.Object) bool {
+	return obj.GetLabels()[common.UpgradeProcessIDLabelKey] == c.config.ProcessID
+}
+
 // AnnotateProcessStateObject enriches the given object with labels and annotations that allow identifying it as an
 // object belonging to this upgrade process. It should only be used on objects that constitute upgrade process state,
 // not on the upgraded resources itself.
@@ -173,6 +193,16 @@ func (c *UpgradeContext) AnnotateProcessStateObject(obj metav1.Object) {
 	}
 	lbls[common.UpgradeProcessIDLabelKey] = c.config.ProcessID
 	obj.SetLabels(lbls)
+
+	if c.config.Owner != nil {
+		ownerRefs := obj.GetOwnerReferences()
+		ownerRefs = append(ownerRefs, metav1.OwnerReference{
+			APIVersion: c.config.Owner.GVK.GroupVersion().String(),
+			Kind:       c.config.Owner.GVK.Kind,
+			Name:       c.config.Owner.Name,
+		})
+		obj.SetOwnerReferences(ownerRefs)
+	}
 }
 
 // ClusterID returns the ID of this cluster.
@@ -236,6 +266,11 @@ func (c *UpgradeContext) unpackList(listObj runtime.Object) ([]k8sobjects.Object
 		objs = append(objs, &item)
 	}
 	return objs, nil
+}
+
+// Owner returns the owning object of this upgrader instance, if any.
+func (c *UpgradeContext) Owner() *k8sobjects.ObjectRef {
+	return c.config.Owner
 }
 
 // ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process.

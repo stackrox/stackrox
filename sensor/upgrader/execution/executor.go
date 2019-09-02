@@ -53,6 +53,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 		}
 		ann[common.LastUpgradeIDAnnotationKey] = e.ctx.ProcessID()
 		obj.SetAnnotations(ann)
+		obj.SetResourceVersion("")
 	}
 
 	switch act.ActionName {

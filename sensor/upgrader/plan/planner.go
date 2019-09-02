@@ -10,7 +10,8 @@ import (
 )
 
 type planner struct {
-	ctx *upgradectx.UpgradeContext
+	ctx      *upgradectx.UpgradeContext
+	rollback bool
 }
 
 func (p *planner) objectsAreEqual(a, b k8sobjects.Object) bool {
@@ -43,7 +44,7 @@ func (p *planner) GenerateExecutionPlan(desired []k8sobjects.Object) (*Execution
 		currObj := currObjMap[ref]
 		if currObj == nil {
 			plan.Creations = append(plan.Creations, desiredObj)
-		} else if !p.objectsAreEqual(currObj, desiredObj) && currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] != p.ctx.ProcessID() {
+		} else if !p.objectsAreEqual(currObj, desiredObj) && (currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] != p.ctx.ProcessID()) != p.rollback {
 			plan.Updates = append(plan.Updates, desiredObj)
 		} else {
 			log.Infof("Skipping update of object %v as it is unchanged or was already updated", ref)

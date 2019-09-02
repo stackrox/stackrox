@@ -1,85 +1,48 @@
 package runner
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
-	"github.com/stackrox/rox/sensor/upgrader/execution"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
-	"github.com/stackrox/rox/sensor/upgrader/preflight"
-	"github.com/stackrox/rox/sensor/upgrader/snapshot"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type runner struct {
 	ctx *upgradectx.UpgradeContext
 
-	preUpgradeState      map[k8sobjects.ObjectRef]k8sobjects.Object
-	postUpgradeWantState map[k8sobjects.ObjectRef]k8sobjects.Object
+	preUpgradeObjs  []k8sobjects.Object
+	preUpgradeState map[k8sobjects.ObjectRef]k8sobjects.Object
+	bundleContents  bundle.Contents
+	postUpgradeObjs []k8sobjects.Object
+	executionPlan   *plan.ExecutionPlan
 }
 
-func (r *runner) Run() error {
-	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx)
-	if err != nil {
-		return err
-	}
-	r.preUpgradeState = k8sobjects.BuildObjectMap(preUpgradeObjs)
+func (r *runner) Run(workflow string) error {
+	workflowStages := r.Workflows()[workflow]
 
-	bundleContents, err := bundle.FetchBundle(r.ctx)
-	if err != nil {
-		return err
+	if workflowStages == nil {
+		return errors.Errorf("invalid workflow %q", workflow)
 	}
 
-	postUpgradeObjs, err := bundle.InstantiateBundle(r.ctx, bundleContents)
-	if err != nil {
-		return err
-	}
-	transferMetadata(postUpgradeObjs, r.preUpgradeState)
+	log.Infof("====== Running workflow %s ======", workflow)
 
-	r.postUpgradeWantState = k8sobjects.BuildObjectMap(postUpgradeObjs)
-
-	executionPlan, err := plan.GenerateExecutionPlan(r.ctx, postUpgradeObjs)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Desired execution plan:")
-	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
-	fmt.Println("CREATIONS")
-	for _, obj := range executionPlan.Creations {
-		var strW strings.Builder
-		utils.Must(encoder.Encode(obj, &strW))
-		fmt.Println(strW.String())
-		fmt.Println("---")
+	stagesByID := r.Stages()
+	for _, stageID := range workflowStages {
+		stageDesc := stagesByID[stageID]
+		log.Infof("---- %s ----", stageDesc.name)
+		if err := stageDesc.run(); err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
 	}
 
-	fmt.Println()
-	fmt.Println("UPDATES")
-	for _, obj := range executionPlan.Updates {
-		var strW strings.Builder
-		utils.Must(encoder.Encode(obj, &strW))
-		fmt.Println(strW.String())
-		fmt.Println("---")
-	}
-
-	fmt.Println()
-	fmt.Println("DELETIONS")
-	for _, objRef := range executionPlan.Deletions {
-		fmt.Println(objRef)
-	}
-
-	if err := preflight.PerformChecks(r.ctx, executionPlan); err != nil {
-		return err
-	}
-
-	fmt.Println("EXECUTING UPGRADE PLAN")
-	if err := execution.ExecutePlan(r.ctx, executionPlan); err != nil {
-		return err
-	}
+	log.Infof("====== Workflow %s terminated successfully ======", workflow)
 
 	return nil
 }

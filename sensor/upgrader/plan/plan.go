@@ -17,7 +17,7 @@ type ExecutionPlan struct {
 }
 
 // GenerateExecutionPlan generates an execution plan for the given desired state.
-func GenerateExecutionPlan(ctx *upgradectx.UpgradeContext, desired []k8sobjects.Object) (*ExecutionPlan, error) {
-	p := &planner{ctx: ctx}
+func GenerateExecutionPlan(ctx *upgradectx.UpgradeContext, desired []k8sobjects.Object, rollback bool) (*ExecutionPlan, error) {
+	p := &planner{ctx: ctx, rollback: rollback}
 	return p.GenerateExecutionPlan(desired)
 }

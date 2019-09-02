@@ -24,15 +24,15 @@ import (
 
 const (
 	certsPrefix = "/run/secrets/stackrox.io/certs/"
-	// caCertFilePath is where the certificate is stored.
-	caCertFilePath = certsPrefix + "ca.pem"
-	// caKeyFilePath is where the key is stored.
-	caKeyFilePath = certsPrefix + "ca-key.pem"
+	// defaultCACertFilePath is where the certificate is stored.
+	defaultCACertFilePath = certsPrefix + "ca.pem"
+	// defaultCAKeyFilePath is where the key is stored.
+	defaultCAKeyFilePath = certsPrefix + "ca-key.pem"
 
-	// CertFilePath is where the certificate is stored.
-	CertFilePath = certsPrefix + "cert.pem"
-	// KeyFilePath is where the key is stored.
-	KeyFilePath = certsPrefix + "key.pem"
+	// defaultCertFilePath is where the certificate is stored.
+	defaultCertFilePath = certsPrefix + "cert.pem"
+	// defaultKeyFilePath is where the key is stored.
+	defaultKeyFilePath = certsPrefix + "key.pem"
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
@@ -84,12 +84,12 @@ type IssuedCert struct {
 // LeafCertificateFromFile reads a tls.Certificate (including private key and cert)
 // from the canonical locations on non-central services.
 func LeafCertificateFromFile() (tls.Certificate, error) {
-	return tls.LoadX509KeyPair(CertFilePath, KeyFilePath)
+	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
 }
 
 // loadCACertDER reads the PEM-decoded bytes of the cert from the local file system.
 func loadCACertDER() ([]byte, error) {
-	b, err := ioutil.ReadFile(caCertFilePath)
+	b, err := ioutil.ReadFile(caFilePathSetting.Setting())
 	if err != nil {
 		return nil, errors.Wrap(err, "file access")
 	}
@@ -146,7 +146,7 @@ func signerFromCABytes(caCert, caKey []byte) (cfsigner.Signer, error) {
 }
 
 func signer() (cfsigner.Signer, error) {
-	return local.NewSignerFromFile(caCertFilePath, caKeyFilePath, signingPolicy())
+	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), signingPolicy())
 }
 
 func signingPolicy() *config.Signing {

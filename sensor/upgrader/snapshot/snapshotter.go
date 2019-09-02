@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
@@ -25,7 +24,8 @@ var (
 )
 
 type snapshotter struct {
-	ctx *upgradectx.UpgradeContext
+	ctx   *upgradectx.UpgradeContext
+	store bool
 }
 
 func (s *snapshotter) SnapshotState() ([]k8sobjects.Object, error) {
@@ -41,7 +41,9 @@ func (s *snapshotter) SnapshotState() ([]k8sobjects.Object, error) {
 		return nil, errors.Wrap(err, "retrieving state snapshot secret")
 	}
 
-	if snapshotSecret != nil {
+	// Ignore the snapshot secret if it doesn't belong to this upgrade process. This means storing will fail if
+	// requested, which is okay.
+	if snapshotSecret != nil && s.ctx.IsProcessStateObject(snapshotSecret) {
 		log.Info("Matching state snapshot secret found, not creating a new one")
 		return s.stateFromSecret(snapshotSecret)
 	}
@@ -50,9 +52,12 @@ func (s *snapshotter) SnapshotState() ([]k8sobjects.Object, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "snapshotting state")
 	}
-	_, err = coreV1Client.Secrets(common.Namespace).Create(snapshotSecret)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating state snapshot secret")
+
+	if s.store {
+		_, err = coreV1Client.Secrets(common.Namespace).Create(snapshotSecret)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating state snapshot secret")
+		}
 	}
 	return objects, nil
 }
@@ -71,11 +76,17 @@ func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]k8sobjects.Object, e
 	if err != nil {
 		return nil, errors.Wrap(err, "creating gzip readere for state snapshot data")
 	}
-	defer utils.IgnoreError(gzReader.Close)
 
 	allObjBytes, err := ioutil.ReadAll(gzReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading compressed state snapshot data")
+	}
+	if err := gzReader.Close(); err != nil {
+		return nil, errors.Wrap(err, "reading compressed state snapshot data")
+	}
+
+	if len(allObjBytes) == 0 {
+		return nil, nil
 	}
 
 	objBytes := bytes.Split(allObjBytes, jsonSeparator)
