@@ -24,6 +24,21 @@ func (m *Metadata) GroupVersionKind() schema.GroupVersionKind {
 	}
 }
 
+// GroupVersionResource returns the `schema.GroupVersionResource` of an API resource.
+func (m *Metadata) GroupVersionResource() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    m.Group,
+		Version:  m.Version,
+		Resource: m.Name,
+	}
+}
+
+// String returns a string representation for this resource.
+func (m *Metadata) String() string {
+	gvr := m.GroupVersionResource()
+	return gvr.String()
+}
+
 // GetAvailableResources uses the Kubernetes Discovery API to list all relevant resources on the server.
 func GetAvailableResources(client discovery.DiscoveryInterface, relevantGVKs []schema.GroupVersionKind) (map[schema.GroupVersionKind]*Metadata, error) {
 	resourceLists, err := client.ServerResources()

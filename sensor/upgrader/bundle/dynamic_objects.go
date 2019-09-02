@@ -87,10 +87,12 @@ func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents 
 	obj.SetName(objDesc.Name)
 	obj.SetNamespace(common.Namespace)
 
-	if obj.GetLabels() == nil {
-		obj.SetLabels(make(map[string]string))
+	lbls := obj.GetLabels()
+	if lbls == nil {
+		lbls = make(map[string]string)
 	}
-	obj.GetLabels()[common.UpgradeResourceLabelKey] = common.UpgradeResourceLabelValue
+	lbls[common.UpgradeResourceLabelKey] = common.UpgradeResourceLabelValue
+	obj.SetLabels(lbls)
 	return obj, nil
 }
 

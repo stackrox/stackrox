@@ -22,7 +22,8 @@ type ActionDesc struct {
 	Object     k8sobjects.Object
 }
 
-// Actions returns all actions performed as part of an execution plan.
+// Actions returns all actions performed as part of an execution plan, in the correct order (creations, then updates,
+// then deletions).
 func (p *ExecutionPlan) Actions() []ActionDesc {
 	var allActions []ActionDesc
 	allActions = append(allActions, actionsForObjects(CreateAction, p.Creations)...)

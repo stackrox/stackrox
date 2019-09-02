@@ -98,10 +98,10 @@ func Create(config *config.UpgraderConfig) (*UpgradeContext, error) {
 		tlsConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
 			UseClientCert: true,
 		})
-		tlsConf.NextProtos = nil // no HTTP/2 or pure GRPC!
 		if err != nil {
 			return nil, errors.Wrap(err, "instantiating TLS config")
 		}
+		tlsConf.NextProtos = nil // no HTTP/2 or pure GRPC!
 		ctx.httpClient = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: tlsConf,
@@ -167,10 +167,12 @@ func (c *UpgradeContext) UniversalDecoder() runtime.Decoder {
 // object belonging to this upgrade process. It should only be used on objects that constitute upgrade process state,
 // not on the upgraded resources itself.
 func (c *UpgradeContext) AnnotateProcessStateObject(obj metav1.Object) {
-	if obj.GetLabels() == nil {
-		obj.SetLabels(make(map[string]string))
+	lbls := obj.GetLabels()
+	if lbls == nil {
+		lbls = make(map[string]string)
 	}
-	obj.GetLabels()[common.UpgradeProcessIDLabelKey] = c.config.ProcessID
+	lbls[common.UpgradeProcessIDLabelKey] = c.config.ProcessID
+	obj.SetLabels(lbls)
 }
 
 // ClusterID returns the ID of this cluster.

@@ -2,6 +2,7 @@ package preflight
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,7 +37,7 @@ func (objectPreconditionsCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *
 
 			exists := err == nil
 
-			if act.ActionName == plan.CreateAction && exists {
+			if act.ActionName == plan.CreateAction && exists && !common.IsSharedObject(act.ObjectRef) {
 				reporter.Errorf("To-be-created object %v already exists", act.ObjectRef)
 			} else if act.ActionName != plan.CreateAction && !exists {
 				reporter.Errorf("To-be-%sd object %v does not exist", act.ActionName, act.ObjectRef)

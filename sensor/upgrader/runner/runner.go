@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
+	"github.com/stackrox/rox/sensor/upgrader/execution"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/preflight"
@@ -72,6 +73,11 @@ func (r *runner) Run() error {
 	}
 
 	if err := preflight.PerformChecks(r.ctx, executionPlan); err != nil {
+		return err
+	}
+
+	fmt.Println("EXECUTING UPGRADE PLAN")
+	if err := execution.ExecutePlan(r.ctx, executionPlan); err != nil {
 		return err
 	}
 

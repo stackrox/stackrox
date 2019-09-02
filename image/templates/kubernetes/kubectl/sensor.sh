@@ -98,10 +98,12 @@ ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
 
 {{if .MonitoringEndpoint}}
 echo "Creating secrets for monitoring..."
-${KUBE_COMMAND} create secret -n "stackrox" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"
-${KUBE_COMMAND} -n "stackrox" label secret/monitoring-client 'auto-upgrade.stackrox.io/component=sensor'
-${KUBE_COMMAND} create cm -n "stackrox" telegraf --from-file="$DIR/telegraf.conf"
-${KUBE_COMMAND} -n "stackrox" label cm/telegraf 'auto-upgrade.stackrox.io/component=sensor'
+if ${KUBE_COMMAND} create secret -n "stackrox" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"; then
+	${KUBE_COMMAND} -n "stackrox" label secret/monitoring-client 'auto-upgrade.stackrox.io/component=sensor'
+fi
+if ${KUBE_COMMAND} create cm -n "stackrox" telegraf --from-file="$DIR/telegraf.conf"; then
+	${KUBE_COMMAND} -n "stackrox" label cm/telegraf 'auto-upgrade.stackrox.io/component=sensor'
+fi
 {{- end}}
 
 
