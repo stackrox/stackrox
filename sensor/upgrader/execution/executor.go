@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
+	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +32,7 @@ func (e *executor) ExecutePlan(execPlan *plan.ExecutionPlan) error {
 }
 
 func (e *executor) executeAction(act plan.ActionDesc) error {
-	res := e.ctx.GetResourceMetadata(act.ObjectRef.GVK)
+	res := e.ctx.GetResourceMetadata(act.ObjectRef.GVK, resources.BundleResource)
 	if res == nil {
 		return errors.Errorf("no resource information available for object kind %v", act.ObjectRef.GVK)
 	}

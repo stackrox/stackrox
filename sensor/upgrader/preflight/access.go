@@ -3,6 +3,7 @@ package preflight
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
+	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	v1 "k8s.io/api/authorization/v1"
 )
@@ -29,7 +30,7 @@ func (accessCheck) getAllResourceAttribs(ctx *upgradectx.UpgradeContext, execPla
 			return nil, errors.Errorf("invalid action name %q for object %v", act.ActionName, act.ObjectRef)
 		}
 
-		resMD := ctx.GetResourceMetadata(act.ObjectRef.GVK)
+		resMD := ctx.GetResourceMetadata(act.ObjectRef.GVK, resources.BundleResource)
 		if resMD == nil {
 			return nil, errors.Errorf("no metadata available for resource %v", act.ObjectRef.GVK)
 		}

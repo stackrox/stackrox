@@ -2,6 +2,7 @@ package preflight
 
 import (
 	"github.com/stackrox/rox/sensor/upgrader/plan"
+	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
@@ -15,7 +16,7 @@ func (resourcesCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execu
 	actsByResources := plan.GroupActionsByResource(execPlan.Actions())
 
 	for gvk, acts := range actsByResources {
-		res := ctx.GetResourceMetadata(gvk)
+		res := ctx.GetResourceMetadata(gvk, resources.BundleResource)
 		if res == nil {
 			reporter.Errorf("server does not support resource type %v", gvk)
 			continue

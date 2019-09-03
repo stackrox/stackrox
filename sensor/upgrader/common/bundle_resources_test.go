@@ -7,8 +7,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// TestEnsureBundleResourcesTypesAreCorrect exists to make accidental modifications of BundleResourcesTypes less likely.
-// There is of course no protection against somebody intentionally modifying both lists.
+// TestEnsureBundleResourcesTypesAreCorrect exists to make accidental modifications of OrderedBundleResourcesTypes less
+// likely. There is of course no protection against somebody intentionally modifying both lists.
 func TestEnsureBundleResourcesTypesAreCorrect(t *testing.T) {
 	t.Parallel()
 

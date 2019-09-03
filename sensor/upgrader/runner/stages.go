@@ -1,7 +1,12 @@
 package runner
 
 import (
+	"time"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
+	"github.com/stackrox/rox/sensor/upgrader/cleanup"
 	"github.com/stackrox/rox/sensor/upgrader/execution"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
@@ -17,6 +22,7 @@ type stage struct {
 func (r *runner) Workflows() map[string][]string {
 	return map[string][]string{
 		"roll-forward": {
+			"cleanup-foreign-state",
 			"snapshot",
 			"fetch-bundle",
 			"instantiate-bundle",
@@ -41,11 +47,19 @@ func (r *runner) Workflows() map[string][]string {
 			"fetch-bundle",
 			"instantiate-bundle",
 		},
+		"cleanup": {
+			"cleanup-owner",
+			"wait-for-deletion",
+		},
 	}
 }
 
 func (r *runner) Stages() map[string]stage {
 	return map[string]stage{
+		"cleanup-foreign-state": {
+			name: "Clean up state left over by other upgrade processes",
+			run:  r.cleanupForeignState,
+		},
 		"snapshot": {
 			name: "Take or read state snapshot",
 			run:  r.snapshotForRollForward,
@@ -85,6 +99,14 @@ func (r *runner) Stages() map[string]stage {
 		"execute": {
 			name: "Execute plan",
 			run:  r.executePlan,
+		},
+		"cleanup-owner": {
+			name: "Clean up owning deployment",
+			run:  r.cleanupOwner,
+		},
+		"wait-for-deletion": {
+			name: "Wait for deletion to take effect",
+			run:  r.waitForDeletion,
 		},
 	}
 }
@@ -179,4 +201,27 @@ func (r *runner) executePlan() error {
 		return err
 	}
 	return nil
+}
+
+func (r *runner) cleanupForeignState() error {
+	if err := cleanup.ForeignState(r.ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *runner) cleanupOwner() error {
+	if err := cleanup.Owner(r.ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *runner) waitForDeletion() error {
+	const deletionMaxGracePeriod = 30 * time.Second
+
+	if concurrency.WaitWithTimeout(r.ctx.Context(), deletionMaxGracePeriod) {
+		return errors.Wrap(r.ctx.Context().Err(), "context error waiting for deletion")
+	}
+	return errors.Errorf("still alive %v after supposed deletion, this doesn't seem right", deletionMaxGracePeriod)
 }

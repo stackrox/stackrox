@@ -45,6 +45,8 @@ type UpgradeContext struct {
 	dynamicClientPool dynamic.ClientPool
 	schemaValidator   validation.Schema
 
+	ownerRef *metav1.OwnerReference
+
 	httpClient *http.Client
 }
 
@@ -66,12 +68,31 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 	dynamicClientPool := dynamic.NewDynamicClientPool(&restConfigShallowCopy)
 
-	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery(), common.OrderedBundleResourceTypes)
+	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery())
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving Kubernetes resources from server")
 	}
 
-	log.Infof("Server supports %d out of %d relevant resource types", len(resourceMap), len(common.OrderedBundleResourceTypes))
+	numBundleResources := 0
+	numStateResources := 0
+	for _, br := range common.OrderedBundleResourceTypes {
+		resMD := resourceMap[br]
+		if resMD != nil {
+			resMD.Purpose |= resources.BundleResource
+			numBundleResources++
+		}
+	}
+	log.Infof("Server supports %d out of %d relevant bundle resource types", numBundleResources, len(common.OrderedBundleResourceTypes))
+
+	for _, sr := range common.StateResourceTypes {
+		resMD := resourceMap[sr]
+		if resMD != nil {
+			resMD.Purpose |= resources.StateResource
+			numStateResources++
+		}
+	}
+	log.Infof("Server supports %d out of %d relevant state resource types", numStateResources, len(common.StateResourceTypes))
+
 	for _, gvk := range common.OrderedBundleResourceTypes {
 		if _, ok := resourceMap[gvk]; ok {
 			log.Infof("Resource type %s is SUPPORTED", gvk)
@@ -124,14 +145,48 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 		}
 	}
 
+	if config.Owner != nil {
+		ownerRes := resourceMap[config.Owner.GVK]
+		if ownerRes == nil {
+			return nil, errors.Errorf("server does not support resource type of supposed owner %v", config.Owner)
+		}
+		client, err := dynamicClientPool.ClientForGroupVersionKind(config.Owner.GVK)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error obtaining dynamic client for owner resource type %v", config.Owner.GVK)
+		}
+		ownerResourceClient := client.Resource(&ownerRes.APIResource, config.Owner.Namespace)
+		ownerObj, err := ownerResourceClient.Get(config.Owner.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not retrieve supposed owner %v", config.Owner)
+		}
+		c.ownerRef = &metav1.OwnerReference{
+			APIVersion: config.Owner.GVK.GroupVersion().String(),
+			Kind:       config.Owner.GVK.Kind,
+			Name:       config.Owner.Name,
+			UID:        ownerObj.GetUID(),
+		}
+	}
+
 	return c, nil
 }
 
-// GetResourceMetadata returns the API resource metadata for the given GroupVersionKind. It returns `nil` if the server
-// does not support the given resource (this is not necessarily an error, unless we are trying to create an object of
-// this resource type).
-func (c *UpgradeContext) GetResourceMetadata(gvk schema.GroupVersionKind) *resources.Metadata {
-	return c.resources[gvk]
+// Context returns a Go context valid for an upgrade process.
+func (c *UpgradeContext) Context() context.Context {
+	return c.ctx
+}
+
+// GetResourceMetadata returns the API resource metadata for the given GroupVersionKind and purpose. It returns `nil`
+// if the server does not support the given resource (this is not necessarily an error, unless we are trying to create
+// an object of this resource type), or if the purpose does not match what this resource was intended to be used for.
+func (c *UpgradeContext) GetResourceMetadata(gvk schema.GroupVersionKind, purpose resources.Purpose) *resources.Metadata {
+	resMD := c.resources[gvk]
+	if resMD == nil {
+		return nil
+	}
+	if resMD.Purpose&purpose != purpose {
+		return nil
+	}
+	return resMD
 }
 
 // Resources returns a slice of the metadata objects for all supported API resources.
@@ -156,6 +211,16 @@ func (c *UpgradeContext) DynamicClientForResource(resource *resources.Metadata, 
 		return nil, err
 	}
 	return client.Resource(&resource.APIResource, namespace), nil
+}
+
+// DynamicClientForGVK returns a dynamic client for the given group/version/kind, given that it is a valid resource for
+// the given purpose.
+func (c *UpgradeContext) DynamicClientForGVK(gvk schema.GroupVersionKind, purpose resources.Purpose, namespace string) (dynamic.ResourceInterface, error) {
+	resMD := c.GetResourceMetadata(gvk, purpose)
+	if resMD == nil {
+		return nil, errors.Errorf("the server does not support resource type %v for purpose %v", gvk, purpose)
+	}
+	return c.DynamicClientForResource(resMD, namespace)
 }
 
 // ProcessID returns the ID of the current upgrade process.
@@ -194,13 +259,9 @@ func (c *UpgradeContext) AnnotateProcessStateObject(obj metav1.Object) {
 	lbls[common.UpgradeProcessIDLabelKey] = c.config.ProcessID
 	obj.SetLabels(lbls)
 
-	if c.config.Owner != nil {
+	if c.ownerRef != nil {
 		ownerRefs := obj.GetOwnerReferences()
-		ownerRefs = append(ownerRefs, metav1.OwnerReference{
-			APIVersion: c.config.Owner.GVK.GroupVersion().String(),
-			Kind:       c.config.Owner.GVK.Kind,
-			Name:       c.config.Owner.Name,
-		})
+		ownerRefs = append(ownerRefs, *c.ownerRef)
 		obj.SetOwnerReferences(ownerRefs)
 	}
 }
@@ -273,20 +334,24 @@ func (c *UpgradeContext) Owner() *k8sobjects.ObjectRef {
 	return c.config.Owner
 }
 
-// ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process.
-func (c *UpgradeContext) ListCurrentObjects() ([]k8sobjects.Object, error) {
-	listOpts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", common.UpgradeResourceLabelKey, common.UpgradeResourceLabelValue),
+// List lists all Kubernetes options of resources of the given purpose, applying the given list options.
+func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav1.ListOptions) ([]k8sobjects.Object, error) {
+	if listOpts == nil {
+		listOpts = &metav1.ListOptions{}
 	}
 
 	var result []k8sobjects.Object
 
 	for _, resourceType := range c.resources {
+		if resourceType.Purpose&resourcePurpose != resourcePurpose {
+			continue
+		}
+
 		resourceClient, err := c.DynamicClientForResource(resourceType, common.Namespace)
 		if err != nil {
 			return nil, errors.Wrapf(err, "obtaining dynamic client for resource %v", resourceType)
 		}
-		listObj, err := resourceClient.List(listOpts)
+		listObj, err := resourceClient.List(*listOpts)
 		if err != nil {
 			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceType)
 		}
@@ -299,4 +364,13 @@ func (c *UpgradeContext) ListCurrentObjects() ([]k8sobjects.Object, error) {
 	}
 
 	return result, nil
+}
+
+// ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process.
+func (c *UpgradeContext) ListCurrentObjects() ([]k8sobjects.Object, error) {
+	listOpts := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", common.UpgradeResourceLabelKey, common.UpgradeResourceLabelValue),
+	}
+
+	return c.List(resources.BundleResource, &listOpts)
 }

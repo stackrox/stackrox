@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
+	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +20,7 @@ func (objectPreconditionsCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *
 	groupedActions := plan.GroupActionsByResource(execPlan.Actions())
 
 	for gvk, acts := range groupedActions {
-		res := ctx.GetResourceMetadata(gvk)
+		res := ctx.GetResourceMetadata(gvk, resources.BundleResource)
 		if res == nil {
 			return errors.Errorf("could not find resource metadata for resource type %v", gvk)
 		}

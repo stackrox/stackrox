@@ -12,6 +12,7 @@ import (
 // Metadata represents Kubernetes API resource metadata.
 type Metadata struct {
 	v1.APIResource
+	Purpose Purpose
 }
 
 // GroupVersionKind returns the `schema.GroupVersionKind` of an API resource. The returned value is safe to be used
@@ -40,15 +41,10 @@ func (m *Metadata) String() string {
 }
 
 // GetAvailableResources uses the Kubernetes Discovery API to list all relevant resources on the server.
-func GetAvailableResources(client discovery.DiscoveryInterface, relevantGVKs []schema.GroupVersionKind) (map[schema.GroupVersionKind]*Metadata, error) {
+func GetAvailableResources(client discovery.DiscoveryInterface) (map[schema.GroupVersionKind]*Metadata, error) {
 	resourceLists, err := client.ServerResources()
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving list of server resources")
-	}
-
-	relevantGVKSet := make(map[schema.GroupVersionKind]struct{}, len(relevantGVKs))
-	for _, gvk := range relevantGVKs {
-		relevantGVKSet[gvk] = struct{}{}
 	}
 
 	result := make(map[schema.GroupVersionKind]*Metadata)
@@ -73,10 +69,6 @@ func GetAvailableResources(client discovery.DiscoveryInterface, relevantGVKs []s
 				Group:   apiResource.Group,
 				Version: apiResource.Version,
 				Kind:    apiResource.Kind,
-			}
-
-			if _, relevant := relevantGVKSet[gvk]; !relevant {
-				continue
 			}
 
 			md := &Metadata{
