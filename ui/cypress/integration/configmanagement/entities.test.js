@@ -288,8 +288,7 @@ describe('Config Management Entities', () => {
             ]);
         });
 
-        // @TODO: Fix this test
-        xit('should have the correct tabs for a single entity view', () => {
+        it('should have the correct tabs for a single entity view', () => {
             renderListAndSidePanel('clusters');
             navigateToSingleEntityPage('cluster');
             hasTabsFor([
