@@ -78,6 +78,7 @@ class BaseSpecification extends Specification {
             dtrId = Services.addDockerTrustedRegistry()
             stackroxScannerIntegrationDidPreExist = Services.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
             orchestrator.setup()
+            orchestrator.createNamespace("default")
         } catch (Exception e) {
             println "Error setting up orchestrator: ${e.message}"
             throw e
@@ -87,6 +88,7 @@ class BaseSpecification extends Specification {
             tc.setProjectSectionId("Prevent", "Policies")
             tc.createRun()
         }*/
+
         def allResources = RoleService.getResources()
         Map<String,RoleOuterClass.Access> resourceAccess = [:]
         allResources.getResourcesList().each { it -> resourceAccess.put(it, RoleOuterClass.Access.READ_WRITE_ACCESS) }
