@@ -212,18 +212,6 @@ spec:
   sessionAffinity: None
 {{if ne .CollectionMethod "NO_COLLECTION" -}}
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: collector
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-imagePullSecrets:
-- name: stackrox
-- name: collector-stackrox
----
 apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:

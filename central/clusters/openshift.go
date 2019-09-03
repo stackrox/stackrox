@@ -33,10 +33,11 @@ func (o *openshift) Render(c Wrap, _ []byte) ([]*zip.File, error) {
 		"kubernetes/kubectl/sensor.yaml",
 		"kubernetes/kubectl/sensor-netpol.yaml",
 		"kubernetes/kubectl/sensor-pod-security.yaml",
+		"kubernetes/kubectl/sensor-rbac.yaml",
 		"openshift/kubectl/delete-sensor.sh",
 		"openshift/kubectl/sensor.sh",
 		"openshift/kubectl/sensor-image-setup.sh",
-		"openshift/kubectl/sensor-rbac.yaml",
+		"openshift/kubectl/sensor-scc.yaml",
 	)
 
 	if c.MonitoringEndpoint != "" {

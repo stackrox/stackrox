@@ -19,11 +19,42 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
 imagePullSecrets:
 - name: stackrox
+{{if ne .CollectionMethod "NO_COLLECTION" -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: collector
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+imagePullSecrets:
+- name: stackrox
+- name: collector-stackrox
+{{- end}}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:view-cluster
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - watch
+  - list
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:monitor-deployments
+  name: stackrox:monitor-cluster
   labels:
     app.kubernetes.io/name: stackrox
     auto-upgrade.stackrox.io/component: "sensor"
@@ -33,8 +64,68 @@ subjects:
   namespace: stackrox
 roleRef:
   kind: ClusterRole
-  name: view
+  name: stackrox:view-cluster
   apiGroup: rbac.authorization.k8s.io
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: edit
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-namespace
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: stackrox
+roleRef:
+  kind: Role
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:edit-workloads
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+rules:
+- resources:
+  - cronjobs
+  - jobs
+  - daemonsets
+  - deployments
+  - deployments/scale
+  - deploymentconfigs
+  - pods
+  - replicasets
+  - replicationcontrollers
+  - services
+  - statefulsets
+  apiGroups:
+  - '*'
+  verbs:
+  - update
+  - patch
+  - delete
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -49,24 +140,7 @@ subjects:
   namespace: stackrox
 roleRef:
   kind: ClusterRole
-  name: edit
-  apiGroup: rbac.authorization.k8s.io
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: launch-benchmarks
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-subjects:
-- kind: ServiceAccount
-  name: sensor
-  namespace: stackrox
-roleRef:
-  kind: ClusterRole
-  name: edit
+  name: stackrox:edit-workloads
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
@@ -77,18 +151,19 @@ metadata:
     app.kubernetes.io/name: stackrox
     auto-upgrade.stackrox.io/component: "sensor"
 rules:
-  - resources:
-    - 'networkpolicies'
-    apiGroups:
-    - '*'
-    verbs:
-    - get
-    - watch
-    - list
-    - create
-    - update
-    - patch
-    - delete
+- resources:
+  - 'networkpolicies'
+  apiGroups:
+  - networking.k8s.io
+  - extensions
+  verbs:
+  - get
+  - watch
+  - list
+  - create
+  - update
+  - patch
+  - delete
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -104,38 +179,6 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: stackrox:network-policies
-  apiGroup: rbac.authorization.k8s.io
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: stackrox:view-nodes
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-rules:
-- resources:
-  - nodes
-  apiGroups: [""]
-  verbs:
-  - get
-  - watch
-  - list
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: stackrox:view-nodes-binding
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-subjects:
-- kind: ServiceAccount
-  name: sensor
-  namespace: stackrox
-roleRef:
-  kind: ClusterRole
-  name: stackrox:view-nodes
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
@@ -198,42 +241,4 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: stackrox:create-events
-  apiGroup: rbac.authorization.k8s.io
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: stackrox:view-rbac
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-rules:
-- resources:
-  - roles
-  - clusterroles
-  - rolebindings
-  - clusterrolebindings
-  - serviceaccounts
-  apiGroups:
-  - ""
-  - "rbac.authorization.k8s.io"
-  verbs:
-  - get
-  - watch
-  - list
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: stackrox:view-rbac-binding
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-subjects:
-- kind: ServiceAccount
-  name: sensor
-  namespace: stackrox
-roleRef:
-  kind: ClusterRole
-  name: stackrox:view-rbac
   apiGroup: rbac.authorization.k8s.io
