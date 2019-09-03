@@ -100,7 +100,11 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         "Revert Cluster"
         if (created) {
-            orchestrator.deleteDeployment(deployment)
+            try {
+                orchestrator.deleteDeployment(deployment)
+            } catch (NullPointerException ignore) {
+                orchestrator.deleteDeployment(deployment)
+            }
         }
 
         where:
