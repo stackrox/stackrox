@@ -84,7 +84,7 @@ const Role = ({ id, entityListType, query, entityContext }) => {
                 if (!clusters || !clusters.length)
                     return <PageNotFound resourceType={entityTypes.ROLE} />;
 
-                const { k8srole: entity } = clusters[0];
+                const { k8srole: entity } = clusters.find(cluster => cluster.k8srole);
 
                 if (entityListType) {
                     return (
