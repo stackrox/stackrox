@@ -27,7 +27,7 @@ class PaginationTest extends BaseSpecification {
                     .addSecretName("p1", SECRETS[0]),
             new Deployment()
                     .setName("pagination2")
-                    .setImage("busybox:1.31")
+                    .setImage("busybox:1.25")
                     .addLabel("app", "pagination2")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p2", SECRETS[1]),

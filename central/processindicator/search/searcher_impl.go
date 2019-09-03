@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	indicatorSACSearchHelper = sac.ForResource(resources.Indicator).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
+	indicatorSACSearchHelper = sac.ForResource(resources.Indicator).MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for ProcessStorage.

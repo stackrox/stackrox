@@ -1415,7 +1415,6 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ROX_BADGER_DB: true
-      - ROX_IMAGE_SAC: true
 
     steps:
       - run-qa-tests:
@@ -1448,7 +1447,6 @@ jobs:
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
-      - ROX_IMAGE_SAC: true
 
     steps:
       - run-qa-tests:
@@ -1820,7 +1818,6 @@ jobs:
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SCOPED_ACCESS_CONTROL: true
       - ROX_CLIENT_CA_AUTH: true
-      - ROX_IMAGE_SAC: true
 
     steps:
       - checkout

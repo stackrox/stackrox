@@ -21,7 +21,7 @@ var (
 		Field: search.LastUpdatedTime.String(),
 	}
 
-	imagesSACSearchHelper = sac.ForResource(resources.Image).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterNSScopesField)
+	imagesSACSearchHelper = sac.ForResource(resources.Image).MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

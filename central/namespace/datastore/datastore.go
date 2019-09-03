@@ -44,7 +44,7 @@ func New(store store.Store, indexer index.Indexer) (DataStore, error) {
 
 var (
 	namespaceSAC             = sac.ForResource(resources.Namespace)
-	namespaceSACSearchHelper = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
+	namespaceSACSearchHelper = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 type datastoreImpl struct {

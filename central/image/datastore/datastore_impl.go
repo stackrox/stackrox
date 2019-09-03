@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
@@ -63,7 +62,6 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 	if err != nil {
 		return nil, err
 	}
-	scrubClusterNSScopes(imgs...)
 	return imgs, nil
 }
 
@@ -72,7 +70,6 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 	if err != nil {
 		return nil, err
 	}
-	scrubClusterNSScopesFromListImages(imgs...)
 	return imgs, nil
 }
 
@@ -82,12 +79,10 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 		return nil, false, err
 	}
 
-	if env.ImageClusterNSScopes.Setting() == "true" {
-		if ok, err := imagesSAC.ReadAllowedForClusterNSScopes(ctx, img.GetClusternsScopes()); err != nil || !ok {
-			return nil, false, err
-		}
+	if ok, err := ds.canReadImage(ctx, sha); err != nil || !ok {
+		return nil, false, err
 	}
-	scrubClusterNSScopesFromListImages(img)
+
 	return img, true, nil
 }
 
@@ -107,6 +102,23 @@ func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 	return len(searchResults), nil
 }
 
+func (ds *datastoreImpl) canReadImage(ctx context.Context, sha string) (bool, error) {
+	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
+		return false, err
+	} else if ok {
+		return true, nil
+	}
+
+	queryForImage := searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.ImageSHA, sha).ProtoQuery()
+	if results, err := ds.searcher.Search(ctx, queryForImage); err != nil {
+		return false, err
+	} else if len(results) > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // GetImage delegates to the underlying store.
 func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Image, bool, error) {
 	img, found, err := ds.storage.GetImage(sha)
@@ -114,12 +126,10 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 		return nil, false, err
 	}
 
-	if env.ImageClusterNSScopes.Setting() == "true" {
-		if ok, err := imagesSAC.ReadAllowedForClusterNSScopes(ctx, img.GetClusternsScopes()); err != nil || !ok {
-			return nil, false, err
-		}
+	if ok, err := ds.canReadImage(ctx, sha); err != nil || !ok {
+		return nil, false, err
 	}
-	scrubClusterNSScopes(img)
+
 	return img, true, nil
 }
 
@@ -132,7 +142,6 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 		if err != nil {
 			return nil, err
 		}
-		scrubClusterNSScopes(imgs...)
 		return imgs, nil
 	}
 
@@ -190,18 +199,6 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 	return errorList.ToError()
 }
 
-func scrubClusterNSScopes(images ...*storage.Image) {
-	for _, img := range images {
-		img.ClusternsScopes = nil
-	}
-}
-
-func scrubClusterNSScopesFromListImages(images ...*storage.ListImage) {
-	for _, img := range images {
-		img.ClusternsScopes = nil
-	}
-}
-
 // merge adds the most up to date data from the two inputs to the first input.
 func merge(mergeTo *storage.Image, mergeWith *storage.Image) (updated bool) {
 	// If the image currently in the DB has more up to date info, swap it out.
@@ -216,22 +213,6 @@ func merge(mergeTo *storage.Image, mergeWith *storage.Image) (updated bool) {
 		updated = true
 	}
 
-	if len(mergeTo.GetClusternsScopes()) == 0 {
-		mergeTo.ClusternsScopes = mergeWith.GetClusternsScopes()
-	} else {
-		var newScopes bool
-		for k := range mergeTo.GetClusternsScopes() {
-			if _, ok := mergeWith.GetClusternsScopes()[k]; !ok {
-				newScopes = true
-			}
-		}
-		if newScopes {
-			updated = true
-		}
-		for k, v := range mergeWith.GetClusternsScopes() {
-			mergeTo.ClusternsScopes[k] = v
-		}
-	}
 	return
 }
 

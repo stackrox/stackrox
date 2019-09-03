@@ -2,7 +2,6 @@ package deploymentevents
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -11,7 +10,6 @@ import (
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/mock"
@@ -47,7 +45,6 @@ func (suite *PipelineTestSuite) TearDownTest() {
 }
 
 func (suite *PipelineTestSuite) TestUpdateImages() {
-	suite.NoError(os.Setenv(env.ImageClusterNSScopes.EnvVar(), "true"))
 	events := fakeDeploymentEvents()
 	ctx := context.Background()
 
@@ -68,7 +65,6 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 }
 
 func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
-	suite.NoError(os.Setenv(env.ImageClusterNSScopes.EnvVar(), "true"))
 	ctx := context.Background()
 	deployment := &storage.Deployment{
 		Id: "id1",

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/image/index"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/features"
@@ -29,7 +30,6 @@ type searcherSuite struct {
 	suite.Suite
 
 	noAccessCtx       context.Context
-	ns1ReadAccessCtx  context.Context
 	fullReadAccessCtx context.Context
 
 	badgerDB   *badger.DB
@@ -44,16 +44,19 @@ func TestSearcher(t *testing.T) {
 	suite.Run(t, new(searcherSuite))
 }
 
+func (s *searcherSuite) nsReadContext(clusterID, ns string) context.Context {
+	return sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Image),
+			sac.ClusterScopeKeys(clusterID),
+			sac.NamespaceScopeKeys(ns)))
+}
+
 func (s *searcherSuite) SetupSuite() {
 	s.noAccessCtx = sac.WithGlobalAccessScopeChecker(
 		context.Background(),
 		sac.DenyAllAccessScopeChecker())
-	s.ns1ReadAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Image),
-			sac.ClusterScopeKeys("clusterA"),
-			sac.NamespaceScopeKeys("ns1")))
 	s.fullReadAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -76,12 +79,46 @@ func (s *searcherSuite) SetupTest() {
 }
 
 func (s *searcherSuite) TestNoAccess() {
+	mockCtrl := gomock.NewController(s.T())
+	defer mockCtrl.Finish()
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, nil)
+	s.Require().NoError(err)
+
+	deployments := []*storage.Deployment{
+		{
+			Id:        "deploy1",
+			ClusterId: "clusterA",
+			Namespace: "ns2",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+			},
+		},
+		{
+			Id:        "deploy2",
+			ClusterId: "clusterB",
+			Namespace: "ns1",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+			},
+		},
+	}
+	for _, deployment := range deployments {
+		s.Require().NoError(deploymentDS.UpsertDeployment(sac.WithAllAccess(context.Background()), deployment))
+	}
+
 	img := &storage.Image{
 		Id: "img1",
-		ClusternsScopes: map[string]string{
-			"deploy1": sac.ClusterNSScopeString("clusterA", "ns2"),
-			"deploy2": sac.ClusterNSScopeString("clusterB", "ns1"),
-		},
 	}
 
 	s.Require().NoError(s.store.UpsertImage(img))
@@ -95,13 +132,28 @@ func (s *searcherSuite) TestNoAccess() {
 		s.Len(results, 1)
 	}
 
-	results, err = s.searcher.Search(s.ns1ReadAccessCtx, search.EmptyQuery())
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), search.EmptyQuery())
 	s.NoError(err)
 	if features.ScopedAccessControl.Enabled() {
 		s.Empty(results)
 	} else {
 		s.Len(results, 1)
 	}
+	results, err = s.searcher.Search(s.nsReadContext("clusterB", "ns2"), search.EmptyQuery())
+	s.NoError(err)
+	if features.ScopedAccessControl.Enabled() {
+		s.Empty(results)
+	} else {
+		s.Len(results, 1)
+	}
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns2"), search.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 1)
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterB", "ns1"), search.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 1)
 
 	results, err = s.searcher.Search(s.fullReadAccessCtx, search.EmptyQuery())
 	s.NoError(err)
@@ -113,12 +165,46 @@ func (s *searcherSuite) TestHasAccess() {
 		s.T().SkipNow()
 	}
 
+	mockCtrl := gomock.NewController(s.T())
+	defer mockCtrl.Finish()
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, nil)
+	s.Require().NoError(err)
+
+	deployments := []*storage.Deployment{
+		{
+			Id:        "deploy1",
+			ClusterId: "clusterA",
+			Namespace: "ns1",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+			},
+		},
+		{
+			Id:        "deploy2",
+			ClusterId: "clusterB",
+			Namespace: "ns2",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+			},
+		},
+	}
+	for _, deployment := range deployments {
+		s.Require().NoError(deploymentDS.UpsertDeployment(sac.WithAllAccess(context.Background()), deployment))
+	}
+
 	img := &storage.Image{
 		Id: "img1",
-		ClusternsScopes: map[string]string{
-			"deploy1": sac.ClusterNSScopeString("clusterA", "ns1"),
-			"deploy2": sac.ClusterNSScopeString("clusterB", "ns2"),
-		},
 	}
 
 	s.Require().NoError(s.store.UpsertImage(img))
@@ -132,13 +218,135 @@ func (s *searcherSuite) TestHasAccess() {
 		s.Len(results, 1)
 	}
 
-	results, err = s.searcher.Search(s.ns1ReadAccessCtx, search.EmptyQuery())
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), search.EmptyQuery())
 	s.NoError(err)
 	s.Len(results, 1)
 
 	results, err = s.searcher.Search(s.fullReadAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Len(results, 1)
+}
+
+func (s *searcherSuite) TestPagination() {
+	if !features.ScopedAccessControl.Enabled() {
+		s.T().SkipNow()
+	}
+
+	mockCtrl := gomock.NewController(s.T())
+	defer mockCtrl.Finish()
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, nil)
+	s.Require().NoError(err)
+
+	deployments := []*storage.Deployment{
+		{
+			Id:        "deploy1",
+			ClusterId: "clusterA",
+			Namespace: "ns1",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+				{
+					Image: &storage.ContainerImage{
+						Id: "img2",
+					},
+				},
+			},
+		},
+		{
+			Id:        "deploy2",
+			ClusterId: "clusterB",
+			Namespace: "ns2",
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "img1",
+					},
+				},
+				{
+					Image: &storage.ContainerImage{
+						Id: "img3",
+					},
+				},
+			},
+		},
+	}
+	for _, deployment := range deployments {
+		s.Require().NoError(deploymentDS.UpsertDeployment(sac.WithAllAccess(context.Background()), deployment))
+	}
+
+	imgs := []*storage.Image{
+		{Id: "img1"},
+		{Id: "img2"},
+		{Id: "img3"},
+	}
+
+	for _, img := range imgs {
+		s.Require().NoError(s.store.UpsertImage(img))
+		s.Require().NoError(s.indexer.AddImage(img))
+	}
+
+	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
+	s.NoError(err)
+	s.Empty(results)
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), search.EmptyQuery())
+	s.NoError(err)
+	s.ElementsMatch([]string{"img1", "img2"}, search.ResultsToIDs(results))
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns2"), search.EmptyQuery())
+	s.NoError(err)
+	s.Empty(results)
+
+	results, err = s.searcher.Search(s.nsReadContext("clusteB", "ns1"), search.EmptyQuery())
+	s.NoError(err)
+	s.Empty(results)
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterB", "ns2"), search.EmptyQuery())
+	s.NoError(err)
+	s.ElementsMatch([]string{"img1", "img3"}, search.ResultsToIDs(results))
+
+	results, err = s.searcher.Search(s.fullReadAccessCtx, search.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 3)
+
+	qWithPagination := search.EmptyQuery()
+	qWithPagination.Pagination = &v1.QueryPagination{
+		Limit: 1,
+		SortOptions: []*v1.QuerySortOption{
+			{Field: search.ImageSHA.String(), Reversed: true},
+		},
+	}
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), qWithPagination)
+	s.NoError(err)
+	s.Equal([]string{"img2"}, search.ResultsToIDs(results))
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterB", "ns2"), qWithPagination)
+	s.NoError(err)
+	s.Equal([]string{"img3"}, search.ResultsToIDs(results))
+
+	results, err = s.searcher.Search(s.fullReadAccessCtx, qWithPagination)
+	s.NoError(err)
+	s.Equal([]string{"img3"}, search.ResultsToIDs(results))
+
+	qWithPagination.Pagination.Limit = 2
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), qWithPagination)
+	s.NoError(err)
+	s.Equal([]string{"img2", "img1"}, search.ResultsToIDs(results))
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterB", "ns2"), qWithPagination)
+	s.NoError(err)
+	s.Equal([]string{"img3", "img1"}, search.ResultsToIDs(results))
+
+	results, err = s.searcher.Search(s.fullReadAccessCtx, qWithPagination)
+	s.NoError(err)
+	s.Equal([]string{"img3", "img2"}, search.ResultsToIDs(results))
 }
 
 func (s *searcherSuite) TestNoClusterNSScopes() {
@@ -161,7 +369,15 @@ func (s *searcherSuite) TestNoClusterNSScopes() {
 		s.Len(results, 1)
 	}
 
-	results, err = s.searcher.Search(s.ns1ReadAccessCtx, search.EmptyQuery())
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), search.EmptyQuery())
+	s.NoError(err)
+	if features.ScopedAccessControl.Enabled() {
+		s.Empty(results)
+	} else {
+		s.Len(results, 1)
+	}
+
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns2"), search.EmptyQuery())
 	s.NoError(err)
 	if features.ScopedAccessControl.Enabled() {
 		s.Empty(results)
@@ -235,42 +451,39 @@ func (s *searcherSuite) TestNoSharedImageLeak() {
 	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, nil)
 	s.Require().NoError(err)
 
-	clusterNSScopes := make(map[string]string)
 	for _, deployment := range deployments {
-		clusterNSScopes[deployment.GetId()] = sac.ClusterNSScopeStringFromObject(deployment)
 		s.Require().NoError(deploymentDS.UpsertDeployment(sac.WithAllAccess(context.Background()), deployment))
 	}
 
 	img := &storage.Image{
-		Id:              "img1",
-		ClusternsScopes: clusterNSScopes,
+		Id: "img1",
 	}
 
 	s.Require().NoError(s.store.UpsertImage(img))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, "clusterA").ProtoQuery()
-	results, err := s.searcher.Search(s.ns1ReadAccessCtx, q)
+	results, err := s.searcher.Search(s.nsReadContext("clusterA", "ns1"), q)
 	s.NoError(err)
 	s.Len(results, 1)
 
 	q = search.NewQueryBuilder().AddExactMatches(search.Namespace, "ns1").ProtoQuery()
-	results, err = s.searcher.Search(s.ns1ReadAccessCtx, q)
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), q)
 	s.NoError(err)
 	s.Len(results, 1)
 
 	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, "clusterB").ProtoQuery()
-	results, err = s.searcher.Search(s.ns1ReadAccessCtx, q)
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), q)
 	s.NoError(err)
 	s.Empty(results)
 
 	q = search.NewQueryBuilder().AddExactMatches(search.Namespace, "ns2").ProtoQuery()
-	results, err = s.searcher.Search(s.ns1ReadAccessCtx, q)
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), q)
 	s.NoError(err)
 	s.Empty(results)
 
 	q = search.NewQueryBuilder().AddExactMatches(search.Namespace, "ns3").ProtoQuery()
-	results, err = s.searcher.Search(s.ns1ReadAccessCtx, q)
+	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), q)
 	s.NoError(err)
 	s.Empty(results)
 

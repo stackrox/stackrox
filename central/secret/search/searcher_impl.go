@@ -20,7 +20,7 @@ var (
 		Field: search.CreatedTime.String(),
 	}
 
-	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
+	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer focentral/serviceaccount/search/searcher_impl.gor AlertStorage.

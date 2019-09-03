@@ -32,7 +32,7 @@ const (
 
 var (
 	clusterSAC             = sac.ForResource(resources.Cluster)
-	clusterSACSearchHelper = clusterSAC.MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDField)
+	clusterSACSearchHelper = clusterSAC.MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 type datastoreImpl struct {

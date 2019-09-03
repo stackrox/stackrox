@@ -37,14 +37,16 @@ func fakeResult(id, cluster, namespace string) search.Result {
 }
 
 func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
-	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
+	options := search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
 			Store:     true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 		search.Namespace: {
 			FieldPath: "namespace",
 			Store:     true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 	})
 
@@ -59,7 +61,7 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 		}, nil
 	}
 
-	h, err := NewSearchHelper(testNSResource, options, ClusterIDAndNamespaceFields)
+	h, err := NewSearchHelper(testNSResource, options)
 	require.NoError(t, err)
 
 	scc := OneStepSCC{
@@ -85,14 +87,16 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 }
 
 func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
-	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
+	options := search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
 			Store:     true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 		search.Namespace: {
 			FieldPath: "namespace",
 			Store:     true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 	})
 
@@ -107,7 +111,7 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 		}, nil
 	}
 
-	h, err := NewSearchHelper(testNSResource, options, ClusterIDAndNamespaceFields)
+	h, err := NewSearchHelper(testNSResource, options)
 	require.NoError(t, err)
 
 	scc := AllowAllAccessScopeChecker()
@@ -121,49 +125,53 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 }
 
 func TestSearchHelper_TestNew_WithMissingClusterIDField(t *testing.T) {
-	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
+	options := search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, map[search.FieldLabel]*v1.SearchField{
 		search.Namespace: {
 			FieldPath: "namespace",
 			Store:     true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 	})
 
-	_, err := NewSearchHelper(testClusterResource, options, ClusterIDField)
+	_, err := NewSearchHelper(testClusterResource, options)
 	assert.Error(t, err)
 }
 
 func TestSearchHelper_TestNew_WithFieldNotStored(t *testing.T) {
-	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
+	options := search.OptionsMapFromMap(v1.SearchCategory_CLUSTERS, map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
 			Store:     false,
+			Category:  v1.SearchCategory_CLUSTERS,
 		},
 	})
 
-	_, err := NewSearchHelper(testClusterResource, options, ClusterIDField)
+	_, err := NewSearchHelper(testClusterResource, options)
 	assert.Error(t, err)
 }
 
 func TestSearchHelper_TestNew_WithMissingNSField_NotScoped(t *testing.T) {
-	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
+	options := search.OptionsMapFromMap(v1.SearchCategory_CLUSTERS, map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
 			Store:     true,
+			Category:  v1.SearchCategory_CLUSTERS,
 		},
 	})
 
-	_, err := NewSearchHelper(testClusterResource, options, ClusterIDField)
+	_, err := NewSearchHelper(testClusterResource, options)
 	assert.NoError(t, err)
 }
 
 func TestSearchHelper_TestNew_WithMissingNSField_Scoped(t *testing.T) {
-	options := search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
+	options := search.OptionsMapFromMap(v1.SearchCategory_DEPLOYMENTS, map[search.FieldLabel]*v1.SearchField{
 		search.ClusterID: {
 			FieldPath: "cluster_id",
 			Store:     true,
+			Category:  v1.SearchCategory_DEPLOYMENTS,
 		},
 	})
 
-	_, err := NewSearchHelper(testNSResource, options, ClusterIDAndNamespaceFields)
+	_, err := NewSearchHelper(testNSResource, options)
 	assert.Error(t, err)
 }

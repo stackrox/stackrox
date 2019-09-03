@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	processWhitelistSACSearchHelper = sac.ForResource(resources.ProcessWhitelist).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
+	processWhitelistSACSearchHelper = sac.ForResource(resources.ProcessWhitelist).MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 type searcherImpl struct {

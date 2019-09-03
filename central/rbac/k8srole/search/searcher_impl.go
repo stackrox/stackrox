@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	k8sRolesSACSearchHelper = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
+	k8sRolesSACSearchHelper = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

@@ -47,7 +47,7 @@ func Walk(category v1.SearchCategory, prefix string, obj interface{}) search.Opt
 		fields:   make(map[search.FieldLabel]*v1.SearchField),
 	}
 	sw.walkRecursive(prefix, reflect.TypeOf(obj))
-	return search.OptionsMapFromMap(sw.fields)
+	return search.OptionsMapFromMap(category, sw.fields)
 }
 
 func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField) {

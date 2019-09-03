@@ -25,7 +25,7 @@ var (
 		Reversed: true,
 	}
 
-	alertSearchHelper = sac.ForResource(resources.Alert).MustCreateSearchHelper(mappings.OptionsMap, sac.ClusterIDAndNamespaceFields)
+	alertSearchHelper = sac.ForResource(resources.Alert).MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

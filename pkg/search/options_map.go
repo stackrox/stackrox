@@ -31,11 +31,19 @@ type OptionsMap interface {
 	Original() map[FieldLabel]*v1.SearchField
 	// Merge merges two OptionsMaps
 	Merge(o OptionsMap) OptionsMap
+	// PrimaryCategory is the category of the object this options map describes. Note that some of the fields might
+	// be linked fields and hence refer to a different category.
+	PrimaryCategory() v1.SearchCategory
 }
 
 type optionsMapImpl struct {
-	normalized map[string]*v1.SearchField
-	original   map[FieldLabel]*v1.SearchField
+	normalized      map[string]*v1.SearchField
+	original        map[FieldLabel]*v1.SearchField
+	primaryCategory v1.SearchCategory
+}
+
+func (o *optionsMapImpl) PrimaryCategory() v1.SearchCategory {
+	return o.primaryCategory
 }
 
 func (o *optionsMapImpl) Get(field string) (*v1.SearchField, bool) {
@@ -72,10 +80,14 @@ func (o *optionsMapImpl) Merge(o1 OptionsMap) OptionsMap {
 }
 
 // OptionsMapFromMap constructs an OptionsMap object from the given map.
-func OptionsMapFromMap(m map[FieldLabel]*v1.SearchField) OptionsMap {
+func OptionsMapFromMap(primaryCategory v1.SearchCategory, m map[FieldLabel]*v1.SearchField) OptionsMap {
 	normalized := make(map[string]*v1.SearchField)
 	for k, v := range m {
 		normalized[strings.ToLower(string(k))] = v
 	}
-	return &optionsMapImpl{normalized: normalized, original: m}
+	return &optionsMapImpl{
+		normalized:      normalized,
+		original:        m,
+		primaryCategory: primaryCategory,
+	}
 }

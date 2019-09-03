@@ -166,11 +166,10 @@ func idForSha(sha string) string {
 
 func convertImageToListImage(i *storage.Image) *storage.ListImage {
 	listImage := &storage.ListImage{
-		Id:              i.GetId(),
-		Name:            i.GetName().GetFullName(),
-		Created:         i.GetMetadata().GetV1().GetCreated(),
-		LastUpdated:     i.GetLastUpdated(),
-		ClusternsScopes: i.GetClusternsScopes(),
+		Id:          i.GetId(),
+		Name:        i.GetName().GetFullName(),
+		Created:     i.GetMetadata().GetV1().GetCreated(),
+		LastUpdated: i.GetLastUpdated(),
 	}
 	if i.SetComponents != nil {
 		listImage.SetComponents = &storage.ListImage_Components{

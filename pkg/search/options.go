@@ -146,9 +146,6 @@ var (
 	// General
 	CreatedTime = newFieldLabel("Created Time")
 
-	// Internal Scoped Access Control only
-	ClusterNSScopes = newFieldLabel("ClusterNS Scopes")
-
 	// Inactive Deployment
 	Inactive = newFieldLabel("Inactive Deployment")
 
