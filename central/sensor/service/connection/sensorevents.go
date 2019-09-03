@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -42,6 +43,13 @@ func (s *sensorEventHandler) handleMessages(ctx context.Context, msg *central.Ms
 	return s.pipeline.Run(ctx, msg, s.injector)
 }
 
+func stripTypePrefix(s string) string {
+	if idx := strings.LastIndex(s, "_"); idx != -1 {
+		return s[idx+1:]
+	}
+	return s
+}
+
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
 	var typ string
 	switch evt := msg.Msg.(type) {
@@ -68,7 +76,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	queue := s.typeToQueue[typ]
 	// Lazily create the queue for a type if necessary
 	if queue == nil {
-		queue = newWorkerQueue(workerQueueSize)
+		queue = newWorkerQueue(workerQueueSize, stripTypePrefix(typ))
 		s.typeToQueue[typ] = queue
 		go queue.run(ctx, s.stopSig, s.handleMessages)
 	}

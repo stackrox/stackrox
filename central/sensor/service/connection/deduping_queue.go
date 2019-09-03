@@ -4,7 +4,6 @@ import (
 	"container/list"
 
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -16,13 +15,15 @@ type dedupingQueue struct {
 	notEmptySig       concurrency.Signal
 	queue             *list.List
 	resourceIDToEvent map[string]*list.Element
+	typ               string
 }
 
-func newDedupingQueue() *dedupingQueue {
+func newDedupingQueue(typ string) *dedupingQueue {
 	return &dedupingQueue{
 		notEmptySig:       concurrency.NewSignal(),
 		queue:             list.New(),
 		resourceIDToEvent: make(map[string]*list.Element),
+		typ:               typ,
 	}
 }
 
@@ -48,7 +49,7 @@ func (q *dedupingQueue) pull() *central.MsgFromSensor {
 	}
 
 	msg := q.queue.Remove(q.queue.Front()).(*central.MsgFromSensor)
-	metrics.IncrementSensorEventQueueCounter(ops.Remove, common.GetMessageType(msg))
+	metrics.IncrementSensorEventQueueCounter(ops.Remove, q.typ)
 
 	if msg.GetDedupeKey() != "" {
 		delete(q.resourceIDToEvent, msg.GetDedupeKey())
@@ -71,17 +72,17 @@ func (q *dedupingQueue) push(msg *central.MsgFromSensor) {
 
 func (q *dedupingQueue) pushNoLock(msg *central.MsgFromSensor) {
 	if msg.GetDedupeKey() == "" {
-		metrics.IncrementSensorEventQueueCounter(ops.Add, common.GetMessageType(msg))
+		metrics.IncrementSensorEventQueueCounter(ops.Add, q.typ)
 		q.queue.PushBack(msg)
 		return
 	}
 	var msgInserted *list.Element
 	if evt, ok := q.resourceIDToEvent[msg.GetDedupeKey()]; ok {
-		metrics.IncrementSensorEventQueueCounter(ops.Dedupe, common.GetMessageType(msg))
+		metrics.IncrementSensorEventQueueCounter(ops.Dedupe, q.typ)
 		msgInserted = q.queue.InsertBefore(msg, evt)
 		q.queue.Remove(evt)
 	} else {
-		metrics.IncrementSensorEventQueueCounter(ops.Add, common.GetMessageType(msg))
+		metrics.IncrementSensorEventQueueCounter(ops.Add, q.typ)
 		msgInserted = q.queue.PushBack(msg)
 	}
 	q.resourceIDToEvent[msg.GetDedupeKey()] = msgInserted

@@ -16,11 +16,11 @@ type workerQueue struct {
 	waitGroup concurrency.WaitGroup
 }
 
-func newWorkerQueue(poolSize int) *workerQueue {
+func newWorkerQueue(poolSize int, typ string) *workerQueue {
 	totalSize := poolSize + 1
 	queues := make([]*dedupingQueue, totalSize)
 	for i := 0; i < totalSize; i++ {
-		queues[i] = newDedupingQueue()
+		queues[i] = newDedupingQueue(typ)
 	}
 
 	return &workerQueue{

@@ -81,7 +81,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	typ := reflectutils.Type(msg.Msg)
 	queue := c.queues[typ]
 	if queue == nil {
-		queue = newDedupingQueue()
+		queue = newDedupingQueue(stripTypePrefix(typ))
 		c.queues[typ] = queue
 		go c.handleMessages(ctx, queue)
 	}
