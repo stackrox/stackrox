@@ -9,6 +9,7 @@ import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import searchContext from 'Containers/searchContext';
 import networkStatuses from 'constants/networkStatuses';
+import COMPLIANCE_STATES from 'constants/complianceStates';
 
 import ScanButton from 'Containers/Compliance/ScanButton';
 import Query from 'Components/ThrowingQuery';
@@ -20,10 +21,12 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 
 const passingColor = 'var(--tertiary-400)';
 const failingColor = 'var(--alert-400)';
+const NAColor = 'var(--base-400)';
 
 const sunburstLegendData = [
-    { title: 'Passing Controls', color: 'var(--tertiary-400)' },
-    { title: 'Failing Controls', color: 'var(--alert-400)' }
+    { title: 'Passing', color: 'var(--tertiary-400)' },
+    { title: 'Failing', color: 'var(--alert-400)' },
+    { title: 'N/A', color: 'var(--base-400)' }
 ];
 
 const QUERY = gql`
@@ -61,11 +64,21 @@ const getCategoryControlMapping = data => {
     return categoryMapping;
 };
 
+const getColor = (numPassing, numFailing) => {
+    if (!numPassing && !numFailing) {
+        return NAColor;
+    }
+    if (!numFailing) {
+        return passingColor;
+    }
+    return failingColor;
+};
+
 const getSunburstData = (categoryMapping, urlBuilder) => {
     const categories = Object.keys(categoryMapping);
     const data = categories.map(category => {
         const controls = categoryMapping[category];
-        const totalValues = controls.reduce(
+        const { totalPassing, totalFailing } = controls.reduce(
             (acc, curr) => {
                 acc.totalPassing += curr.numPassing;
                 acc.totalFailing += curr.numFailing;
@@ -73,20 +86,17 @@ const getSunburstData = (categoryMapping, urlBuilder) => {
             },
             { totalPassing: 0, totalFailing: 0 }
         );
-        const categoryValue = getPercentagePassing(
-            totalValues.totalPassing,
-            totalValues.totalFailing
-        );
+        const categoryValue = getPercentagePassing(totalPassing, totalFailing);
         return {
             name: category,
-            color: categoryValue === 100 ? passingColor : failingColor,
+            color: getColor(totalPassing, totalFailing),
             value: categoryValue,
-            children: controls.map(control => {
-                const value = getPercentagePassing(control.numPassing, control.numFailing);
-                const link = urlBuilder.base(entityTypes.CONTROL, control.controlID).url();
+            children: controls.map(({ numPassing, numFailing, controlID }) => {
+                const value = getPercentagePassing(numPassing, numFailing);
+                const link = urlBuilder.base(entityTypes.CONTROL, controlID).url();
                 return {
-                    name: control.controlID,
-                    color: value === 100 ? passingColor : failingColor,
+                    name: controlID,
+                    color: getColor(numPassing, numFailing),
                     value,
                     link
                 };
@@ -102,10 +112,11 @@ const getTotalPassingFailing = data => {
             const { numPassing, numFailing } = curr;
             const value = getPercentagePassing(numPassing, numFailing);
             if (value === 100) acc.controlsPassing += 1;
+            else if (!numPassing && !numFailing) acc.controlsNA += 1;
             else acc.controlsFailing += 1;
             return acc;
         },
-        { controlsPassing: 0, controlsFailing: 0 }
+        { controlsPassing: 0, controlsFailing: 0, controlsNA: 0 }
     );
     return result;
 };
@@ -113,6 +124,7 @@ const getTotalPassingFailing = data => {
 const getSunburstRootData = (
     controlsPassing,
     controlsFailing,
+    controlsNA,
     urlBuilder,
     standardType,
     searchParam
@@ -122,7 +134,7 @@ const getSunburstRootData = (
         .query({
             [searchParam]: {
                 standard: standardLabels[standardType],
-                'Compliance State': 'Pass'
+                'Compliance State': COMPLIANCE_STATES.PASS
             }
         })
         .url();
@@ -132,7 +144,17 @@ const getSunburstRootData = (
         .query({
             [searchParam]: {
                 standard: standardLabels[standardType],
-                'Compliance State': 'Fail'
+                'Compliance State': COMPLIANCE_STATES.FAIL
+            }
+        })
+        .url();
+
+    const controlsNALink = urlBuilder
+        .base(entityTypes.CONTROL)
+        .query({
+            [searchParam]: {
+                standard: standardLabels[standardType],
+                'Compliance State': COMPLIANCE_STATES['N/A']
             }
         })
         .url();
@@ -147,6 +169,11 @@ const getSunburstRootData = (
             text: `${controlsFailing} Controls Failing`,
             link: controlsFailingLink,
             className: 'text-alert-700'
+        },
+        {
+            text: `${controlsNA} Controls N/A`,
+            link: controlsNALink,
+            className: 'text-base-700'
         }
     ];
     return sunburstRootData;
@@ -154,10 +181,11 @@ const getSunburstRootData = (
 
 const getSunburstProps = (data, urlBuilder, standardType, searchParam) => {
     const categoryMapping = getCategoryControlMapping(data);
-    const { controlsPassing, controlsFailing } = getTotalPassingFailing(data);
+    const { controlsPassing, controlsFailing, controlsNA } = getTotalPassingFailing(data);
     const sunburstRootData = getSunburstRootData(
         controlsPassing,
         controlsFailing,
+        controlsNA,
         urlBuilder,
         standardType,
         searchParam

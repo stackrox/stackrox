@@ -18,6 +18,8 @@ import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import { standardLabels } from 'messages/standards';
+import { CONTROL_FRAGMENT } from 'queries/controls';
+import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import EntityList from '../List/EntityList';
 
 const Node = ({ id, entityListType, query, entityContext }) => {
@@ -53,31 +55,13 @@ const Node = ({ id, entityListType, query, entityContext }) => {
                     value
                 }
                 complianceResults(query: $query) {
-                    resource {
-                        __typename
-                    }
-                    control {
-                        id
-                        standardId
-                        name
-                        description
-                    }
-                    value {
-                        overallState
-                        evidence {
-                            message
-                        }
-                    }
-                }
-                controls(query: $query) {
-                    id
-                    standardId
-                    name
-                    description
+                    ...controlFields
                 }
             }
         }
+        ${CONTROL_FRAGMENT}
     `;
+
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
@@ -94,8 +78,7 @@ const Node = ({ id, entityListType, query, entityContext }) => {
                     clusterName,
                     clusterId,
                     annotations,
-                    complianceResults = [],
-                    controls
+                    complianceResults = []
                 } = node;
 
                 const metadataKeyValuePairs = [
@@ -116,6 +99,18 @@ const Node = ({ id, entityListType, query, entityContext }) => {
                         value: joinedAt ? format(joinedAt, dateTimeFormat) : 'N/A'
                     }
                 ];
+
+                if (entityListType) {
+                    return (
+                        <EntityList
+                            entityListType={entityListType}
+                            data={getControlsWithStatus(complianceResults)}
+                            query={query}
+                            entityContext={{ ...entityContext, [entityTypes.NODE]: id }}
+                        />
+                    );
+                }
+
                 const failedComplianceResults = complianceResults
                     .filter(cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
                     .map(cr => ({
@@ -125,24 +120,6 @@ const Node = ({ id, entityListType, query, entityContext }) => {
                             standard: standardLabels[cr.control.standardId]
                         }
                     }));
-
-                if (entityListType) {
-                    const processedControls = controls.map(control => ({
-                        ...control,
-                        standard: standardLabels[control.standardId],
-                        control: `${control.name} - ${control.description}`,
-                        passing: !failedComplianceResults.find(cr => cr.control.id === control.id)
-                    }));
-
-                    return (
-                        <EntityList
-                            entityListType={entityListType}
-                            data={processedControls}
-                            query={query}
-                            entityContext={{ ...entityContext, [entityTypes.NODE]: id }}
-                        />
-                    );
-                }
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">

@@ -30,6 +30,28 @@ const sortSeverity = (a, b) => {
 };
 
 /**
+ * Sort Status
+ * @param a
+ * @param b
+ * @returns {number}
+ */
+
+const sortStatus = (a, b) => {
+    const map = {
+        Pass: 'PASS',
+        NA: 'N/A',
+        Fail: 'FAIL'
+    };
+    const priorityArray = ['FAIL', 'PASS', 'N/A'];
+    const firstSeverity = map[a] || a;
+    const secondSeverity = map[b] || b;
+
+    const firstPrio = priorityArray.indexOf(firstSeverity);
+    const secPrio = priorityArray.indexOf(secondSeverity);
+    return firstPrio - secPrio;
+};
+
+/**
  * Sort Values (Numbers or Strings)
  * @returns {number}
  */
@@ -130,6 +152,7 @@ const sortValueByLength = (a, b) => {
 export {
     sortSeverity,
     sortValue,
+    sortStatus,
     sortVersion,
     sortNumberByKey,
     sortLifecycle,

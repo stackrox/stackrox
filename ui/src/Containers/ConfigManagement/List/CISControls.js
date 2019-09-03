@@ -1,20 +1,17 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD_NO_NODES as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
-import { sortVersion } from 'sorters/sorters';
+import { sortVersion, sortStatus } from 'sorters/sorters';
+import searchContext from 'Containers/searchContext';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+import COMPLIANCE_STATES from 'constants/complianceStates';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import List from './List';
-
-const COMPLIANCE_STATES = {
-    Pass: 'Pass',
-    Fail: 'Fail'
-};
 
 const tableColumns = [
     {
@@ -39,18 +36,27 @@ const tableColumns = [
     {
         Header: `Control Status`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
+        className: `w-1/8 ${defaultColumnClassName} capitalize`,
         // eslint-disable-next-line
         Cell: ({ original }) => {
-            return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
+            if (original.status === COMPLIANCE_STATES.FAIL)
+                return <LabelChip text="Fail" type="alert" />;
+            if (original.status === COMPLIANCE_STATES.PASS) return 'Pass';
+            return original.status;
         },
-        accessor: 'passing'
+        accessor: 'status',
+        sortMethod: sortStatus
     }
 ];
 
 const filterByComplianceState = (rows, state) => {
     if (!state || !rows) return rows;
-    return rows.filter(row => (state === COMPLIANCE_STATES.Pass ? row.passing : !row.passing));
+    const filteredRows = rows.filter(row => {
+        if (state === COMPLIANCE_STATES.PASS) return row.status === COMPLIANCE_STATES.PASS;
+        if (state === COMPLIANCE_STATES.FAIL) return row.status === COMPLIANCE_STATES.FAIL;
+        return row.status === COMPLIANCE_STATES['N/A'];
+    });
+    return filteredRows;
 };
 
 const createTableRows = data => {
@@ -58,28 +64,29 @@ const createTableRows = data => {
 
     let standardKeyIndex = 0;
     let controlKeyIndex = 0;
-    let nodeKeyIndex = 0;
     data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
         if (scope === entityTypes.STANDARD) standardKeyIndex = idx;
         if (scope === entityTypes.CONTROL) controlKeyIndex = idx;
-        if (scope === entityTypes.NODE) nodeKeyIndex = idx;
     });
     const controls = {};
     data.results.results.forEach(({ keys, numFailing, numPassing }) => {
         if (!keys[controlKeyIndex]) return;
         const controlId = keys[controlKeyIndex].id;
         if (controls[controlId]) {
-            controls[controlId].nodes.push(keys[nodeKeyIndex].name);
-            if (numFailing || (!numPassing && !numFailing)) {
-                controls[controlId].passing = false;
+            const { status } = controls[controlId];
+            if (status === COMPLIANCE_STATES.FAIL || numFailing) {
+                controls[controlId].status = COMPLIANCE_STATES.FAIL;
             }
         } else {
+            let status = '';
+            if (!numPassing) status = COMPLIANCE_STATES.FAIL;
+            if (!numFailing) status = COMPLIANCE_STATES.PASS;
+            if (!numPassing && !numFailing) status = COMPLIANCE_STATES['N/A'];
             controls[controlId] = {
                 id: controlId,
                 standard: standardLabels[keys[standardKeyIndex].id],
                 control: `${keys[controlKeyIndex].name} - ${keys[controlKeyIndex].description}`,
-                passing: !numFailing,
-                nodes: [keys[nodeKeyIndex].name]
+                status
             };
         }
     });
@@ -87,20 +94,27 @@ const createTableRows = data => {
 };
 
 const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
+    const searchParam = useContext(searchContext);
+
     const queryText = queryService.objectToWhereClause({ Standard: 'CIS', ...query });
     const variables = {
         where: queryText,
         groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE]
     };
 
-    const complianceState = query ? query[SEARCH_OPTIONS.COMPLIANCE.STATE] : null;
+    let complianceState = null;
+
+    if (query) {
+        complianceState = query[searchParam]
+            ? query[searchParam][SEARCH_OPTIONS.COMPLIANCE.STATE]
+            : query[SEARCH_OPTIONS.COMPLIANCE.STATE];
+    }
 
     function createTableRowsFilteredByComplianceState(items) {
         const tableRows = createTableRows(items);
         const filteredTableRows = filterByComplianceState(tableRows, complianceState);
         return filteredTableRows;
     }
-
     return (
         <List
             className={className}
@@ -113,6 +127,20 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSorted={[
+                {
+                    id: 'status',
+                    desc: false
+                },
+                {
+                    id: 'standard',
+                    desc: false
+                },
+                {
+                    id: 'control',
+                    desc: false
+                }
+            ]}
             defaultSearchOptions={[SEARCH_OPTIONS.COMPLIANCE.STATE]}
             data={filterByComplianceState(data, complianceState)}
         />

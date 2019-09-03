@@ -1,7 +1,8 @@
 import React from 'react';
+import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
-import { CLUSTERS_QUERY as QUERY } from 'queries/cluster';
+
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
@@ -13,6 +14,35 @@ import List from './List';
 import TableCellLink from './Link';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
+
+const QUERY = gql`
+    query clusters($query: String) {
+        results: clusters(query: $query) {
+            id
+            name
+            serviceAccountCount
+            k8sroleCount
+            subjectCount
+            status {
+                orchestratorMetadata {
+                    version
+                }
+            }
+            complianceControlCount(query: "Standard:CIS") {
+                passingCount
+                failingCount
+                unknownCount
+            }
+            policyStatus {
+                status
+                failingPolicies {
+                    id
+                    name
+                }
+            }
+        }
+    }
+`;
 
 const buildTableColumns = (match, location) => {
     const tableColumns = [
@@ -51,31 +81,26 @@ const buildTableColumns = (match, location) => {
             Header: `CIS Controls`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'complianceResults',
+            accessor: 'complianceControlCount',
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { complianceResults = [] } = original;
-                const filteredComplianceResults = complianceResults.filter(
-                    // eslint-disable-next-line
-                    result => result.resource.__typename === 'Cluster'
-                );
-                const { length } = filteredComplianceResults;
-                if (!length) {
+                const { complianceControlCount } = original;
+                const { passingCount, failingCount, unknownCount } = complianceControlCount;
+                const totalCount = passingCount + failingCount + unknownCount;
+                if (!totalCount) {
                     return <LabelChip text="No Controls" type="alert" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.CONTROL)
                     .url();
-                if (length > 1)
-                    return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${length} ${pluralize('Controls', length)}`}
-                        />
-                    );
-                return original.complianceResults[0].control.name;
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${totalCount} ${pluralize('Controls', totalCount)}`}
+                    />
+                );
             }
         },
         {
@@ -163,7 +188,8 @@ const createTableRows = data => data.results;
 const Clusters = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
     const tableColumns = buildTableColumns(match, location);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
-    const queryText = queryService.objectToWhereClause({ ...restQuery });
+    const queryObject = { ...restQuery };
+    const queryText = queryService.objectToWhereClause(queryObject);
     const variables = queryText ? { query: queryText } : null;
 
     function createTableRowsFilteredByPolicyStatus(items) {

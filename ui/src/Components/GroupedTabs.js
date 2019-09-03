@@ -59,7 +59,7 @@ const GroupedTabs = ({ groups, tabs, activeTab, onClick }) => {
                     <ul
                         className={`${
                             showGroupTab ? `flex-1` : ''
-                        } flex list-reset border-l border-base-400 border-r`}
+                        } flex list-reset border-l border-base-400 border-r h-full`}
                     >
                         {grouppedTabs.map((datum, i) => (
                             <Tab

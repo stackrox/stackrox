@@ -202,12 +202,3 @@ export const CONTROL_FRAGMENT = gql`
         }
     }
 `;
-
-export const CONTROLS_FRAGMENT = gql`
-    fragment controlsListFields on ComplianceControl {
-        id
-        standardId
-        name
-        description
-    }
-`;

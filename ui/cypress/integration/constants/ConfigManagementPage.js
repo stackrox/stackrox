@@ -70,7 +70,8 @@ export const listSelectors = {
     tableRows: '.rt-tr-group > .rt-tr',
     tableCells: '.rt-td',
     tableLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
-    tablePanelHeader: '[data-test-id="panel"] [data-test-id="panel-header"]'
+    tablePanelHeader: '[data-test-id="panel"] [data-test-id="panel-header"]',
+    tableNextPage: '[data-test-id="next-page-button"]'
 };
 
 export const entitySelectors = {

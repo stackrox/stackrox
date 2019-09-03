@@ -236,6 +236,8 @@ describe('Config Management Entities', () => {
 
         it('should show no failing nodes in the control findings section of a passing control', () => {
             cy.visit(url.list.controls);
+            cy.wait(5000);
+            cy.get(selectors.tableNextPage).click();
             cy.get(selectors.tableCells)
                 .contains(controlStatus.pass)
                 .eq(0)
@@ -266,13 +268,17 @@ describe('Config Management Entities', () => {
             clickOnRowEntity('clusters', 'Service Accounts', true);
         });
 
+        it('should click on the controls link in the clusters list and open the side panel with the controls list', () => {
+            clickOnRowEntity('clusters', 'controls');
+        });
+
         it('should take you to a cluster single when the "navigate away" button is clicked', () => {
             renderListAndSidePanel('clusters');
             navigateToSingleEntityPage('cluster');
         });
 
         // @TODO: Fix this test
-        xit('should have the correct count widgets for a single entity view', () => {
+        it('should have the correct count widgets for a single entity view', () => {
             renderListAndSidePanel('clusters');
             navigateToSingleEntityPage('cluster');
             hasCountWidgetsFor([
@@ -396,7 +402,7 @@ describe('Config Management Entities', () => {
         });
 
         // @TODO: Fix this test
-        xit('should have the same number of Controls in the count widget as in the Controls table', () => {
+        it('should have the same number of Controls in the count widget as in the Controls table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');

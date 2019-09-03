@@ -18,12 +18,12 @@ import { SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
 import { ROLE_FRAGMENT } from 'queries/role';
 import { SECRET_FRAGMENT } from 'queries/secret';
 import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
-import { CONTROL_FRAGMENT, CONTROLS_FRAGMENT } from 'queries/controls';
+import { CONTROL_FRAGMENT } from 'queries/controls';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
-import { standardLabels } from 'messages/standards';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
+import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
 import EntityList from '../List/EntityList';
@@ -95,8 +95,8 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                 }
                 ${
                     entityListType === entityTypes.CONTROL
-                        ? 'complianceResults(query: $query) { ...controlFields } controls(query: $query) { ...controlsListFields}'
-                        : 'controls(query: "Standard:CIS") { ...controlsListFields}'
+                        ? 'complianceResults(query: $query) { ...controlFields }'
+                        : 'complianceControlCount(query: "Standard:CIS") { passingCount failingCount unknownCount}'
                 }
                 status {
                     orchestratorMetadata {
@@ -116,7 +116,6 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
         ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
         ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
         ${entityListType === entityTypes.CONTROL ? CONTROL_FRAGMENT : ''}
-        ${CONTROLS_FRAGMENT}
     `;
 
     return (
@@ -126,28 +125,12 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                 const { cluster: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.CLUSTER} />;
 
-                const { complianceResults = [], controls } = entity;
+                const { complianceResults = [] } = entity;
 
                 if (entityListType) {
                     let listData = getSubListFromEntity(entity, entityListType);
                     if (entityListType === entityTypes.CONTROL) {
-                        const failedComplianceResults = complianceResults
-                            .filter(cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
-                            .map(cr => ({
-                                ...cr,
-                                control: {
-                                    ...cr.control,
-                                    standard: standardLabels[cr.control.standardId]
-                                }
-                            }));
-                        listData = controls.map(control => ({
-                            ...control,
-                            standard: standardLabels[control.standardId],
-                            control: `${control.name} - ${control.description}`,
-                            passing: !failedComplianceResults.find(
-                                cr => cr.control.id === control.id
-                            )
-                        }));
+                        listData = getControlsWithStatus(complianceResults);
                     }
                     return (
                         <EntityList
@@ -169,6 +152,7 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                     k8sroleCount,
                     secretCount,
                     imageCount,
+                    complianceControlCount,
                     status: { orchestratorMetadata = null }
                 } = entity;
 
@@ -180,6 +164,9 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                         value: version
                     }
                 ];
+
+                const { passingCount, failingCount, unknownCount } = complianceControlCount;
+                const totalControlCount = passingCount + failingCount + unknownCount;
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
@@ -240,7 +227,7 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="CIS Controls"
-                                    value={controls.length}
+                                    value={totalControlCount}
                                     entityType={entityTypes.CONTROL}
                                 />
                             </div>
