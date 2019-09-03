@@ -49,6 +49,9 @@ envsubst < "$DIR/replay.yaml.tmp" > "$newYAML"
 
 kubectl apply -f "${newYAML}"
 
+pod=$(kubectl -n stackrox get pod -l app=replay -o jsonpath={.items[].metadata.name})
+kubectl -n stackrox wait --for=condition=ready po/${pod}
+
 # Clean up the replay artifacts
 rm -rf $unzip_dir
 rm "${newYAML}"
