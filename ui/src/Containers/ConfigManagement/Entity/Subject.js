@@ -71,8 +71,7 @@ const Subject = ({ id, entityListType, query, entityContext }) => {
                         }
                     }
                     clusterAdmin
-                    clusterID
-                    clusterName
+                    ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterID clusterName'}
                     roles(query: $query) {
                         ${entityListType === entityTypes.ROLE ? '...k8roleFields' : 'id'}
                     }
@@ -134,13 +133,15 @@ const Subject = ({ id, entityListType, query, entityContext }) => {
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                 />
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.CLUSTER}
-                                    name="Cluster"
-                                    value={clusterName}
-                                    entityId={clusterID}
-                                />
+                                {clusterID && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.CLUSTER}
+                                        name="Cluster"
+                                        value={clusterName}
+                                        entityId={clusterID}
+                                    />
+                                )}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Roles"

@@ -23,7 +23,6 @@ import DeploymentFindings from './DeploymentFindings';
 
 const Deployment = ({ id, entityContext, entityListType, query }) => {
     const searchParam = useContext(searchContext);
-
     const variables = {
         id,
         query: queryService.objectToWhereClause(query[searchParam])
@@ -66,8 +65,11 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                 }
                 priority
                 replicas
-                serviceAccount
-                serviceAccountID
+                ${
+                    entityContext[entityTypes.SERVICE_ACCOUNT]
+                        ? ''
+                        : 'serviceAccount serviceAccountID'
+                }
                 ${
                     entityListType === entityTypes.POLICY
                         ? 'failingPolicies(query: $query) { ...policyFields }'
@@ -180,13 +182,15 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                         value={namespace}
                                     />
                                 )}
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.SERVICE_ACCOUNT}
-                                    name="Service Account"
-                                    value={serviceAccount}
-                                    entityId={serviceAccountID}
-                                />
+                                {serviceAccount && (
+                                    <RelatedEntity
+                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        entityType={entityTypes.SERVICE_ACCOUNT}
+                                        name="Service Account"
+                                        value={serviceAccount}
+                                        entityId={serviceAccountID}
+                                    />
+                                )}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Images"

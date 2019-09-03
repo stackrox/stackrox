@@ -121,21 +121,23 @@ const buildTableColumns = (match, location, entityContext) => {
             },
             accessor: 'secretCount'
         },
-        {
-            Header: `Service Account`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'serviceAccount',
-            // eslint-disable-next-line
+        entityContext && entityContext[entityTypes.SERVICE_ACCOUNT]
+            ? null
+            : {
+                  Header: `Service Account`,
+                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'serviceAccount',
+                  // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { serviceAccount, serviceAccountID, id } = original;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.SERVICE_ACCOUNT, serviceAccountID)
-                    .url();
-                return <TableCellLink pdf={pdf} url={url} text={serviceAccount} />;
-            }
-        }
+                      const { serviceAccount, serviceAccountID, id } = original;
+                      const url = URLService.getURL(match, location)
+                          .push(id)
+                          .push(entityTypes.SERVICE_ACCOUNT, serviceAccountID)
+                          .url();
+                      return <TableCellLink pdf={pdf} url={url} text={serviceAccount} />;
+                  }
+              }
     ];
     return tableColumns.filter(col => col);
 };
