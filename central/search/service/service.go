@@ -2,6 +2,7 @@ package service
 
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
@@ -45,6 +46,7 @@ type Builder interface {
 	WithRiskStore(store riskDataStore.DataStore) Builder
 	WithRoleStore(store roleDataStore.DataStore) Builder
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
+	WithClusterDataStore(store clusterDataStore.DataStore) Builder
 
 	WithAggregator(aggregation.Aggregator) Builder
 
@@ -63,6 +65,7 @@ type serviceBuilder struct {
 	risks           riskDataStore.DataStore
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
+	clusters        clusterDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 }
@@ -132,6 +135,11 @@ func (b *serviceBuilder) WithAggregator(aggregator aggregation.Aggregator) Build
 	return b
 }
 
+func (b *serviceBuilder) WithClusterDataStore(store clusterDataStore.DataStore) Builder {
+	b.clusters = store
+	return b
+}
+
 func (b *serviceBuilder) Build() Service {
 	s := serviceImpl{
 		alerts:          b.alerts,
@@ -146,6 +154,7 @@ func (b *serviceBuilder) Build() Service {
 		roles:           b.roles,
 		bindings:        b.bindings,
 		aggregator:      b.aggregator,
+		clusters:        b.clusters,
 	}
 	s.initializeAuthorizer()
 	return &s
@@ -169,5 +178,6 @@ func NewService() Service {
 		WithRoleStore(roleDataStore.Singleton()).
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
 		WithAggregator(aggregation.Singleton()).
+		WithClusterDataStore(clusterDataStore.Singleton()).
 		Build()
 }

@@ -159,7 +159,7 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
 	if !features.ScopedAccessControl.Enabled() {
 		suite.T().Skip()
 	}
-	suite.clusters.EXPECT().GetClusters().Times(0)
+	suite.clusters.EXPECT().GetSelectedClusters([]string{}).Return(nil, nil, nil)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
 	clusters, err := suite.clusterDataStore.GetClusters(suite.hasNoneCtx)

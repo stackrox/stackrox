@@ -203,3 +203,18 @@ func (mr *MockDataStoreMockRecorder) SearchRawClusters(ctx, q interface{}) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawClusters", reflect.TypeOf((*MockDataStore)(nil).SearchRawClusters), ctx, q)
 }
+
+// SearchResults mocks base method
+func (m *MockDataStore) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchResults", ctx, q)
+	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchResults indicates an expected call of SearchResults
+func (mr *MockDataStoreMockRecorder) SearchResults(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), ctx, q)
+}

@@ -65,6 +65,22 @@ func (mr *MockStoreMockRecorder) GetClusters() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockStore)(nil).GetClusters))
 }
 
+// GetSelectedClusters mocks base method
+func (m *MockStore) GetSelectedClusters(ids []string) ([]*storage.Cluster, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSelectedClusters", ids)
+	ret0, _ := ret[0].([]*storage.Cluster)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetSelectedClusters indicates an expected call of GetSelectedClusters
+func (mr *MockStoreMockRecorder) GetSelectedClusters(ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSelectedClusters", reflect.TypeOf((*MockStore)(nil).GetSelectedClusters), ids)
+}
+
 // CountClusters mocks base method
 func (m *MockStore) CountClusters() (int, error) {
 	m.ctrl.T.Helper()

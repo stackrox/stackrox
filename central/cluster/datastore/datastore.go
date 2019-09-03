@@ -5,6 +5,7 @@ import (
 	"time"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -18,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -45,8 +46,9 @@ type DataStore interface {
 	// UpdateClusterUpgradeStatus.
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 	UpdateClusterUpgradeStatus(ctx context.Context, id string, clusterUpgradeStatus *storage.ClusterUpgradeStatus) error
-	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
+	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 }
 
 // New returns an instance of DataStore.
@@ -62,6 +64,7 @@ func New(
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
+		searcher: search.New(storage, indexer),
 		ads:      ads,
 		dds:      dds,
 		ns:       ns,

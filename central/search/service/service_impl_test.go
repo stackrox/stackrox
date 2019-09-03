@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/globalindex"
@@ -69,6 +70,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build()
 
@@ -135,6 +137,7 @@ func TestAutocomplete(t *testing.T) {
 		WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -212,6 +215,7 @@ func TestAutocompleteForEnums(t *testing.T) {
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 

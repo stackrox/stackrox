@@ -56,6 +56,40 @@ func (b *storeImpl) GetClusters() ([]*storage.Cluster, error) {
 	return clusters, err
 }
 
+// GetSelectedClusters retrieves clusters with the given IDs from bolt.
+func (b *storeImpl) GetSelectedClusters(ids []string) ([]*storage.Cluster, []int, error) {
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Cluster")
+	var missingIndices []int
+	clusters := make([]*storage.Cluster, 0, len(ids))
+
+	err := b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(clusterBucket)
+		for i, id := range ids {
+			value := bucket.Get([]byte(id))
+			if value == nil {
+				missingIndices = append(missingIndices, i)
+				continue
+			}
+			var cluster storage.Cluster
+			if err := proto.Unmarshal(value, &cluster); err != nil {
+				return err
+			}
+			b.populateClusterStatus(tx, &cluster)
+			clusters = append(clusters, &cluster)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, nil, err
+	}
+	return clusters, missingIndices, nil
+}
+
 // CountClusters returns the number of clusters.
 func (b *storeImpl) CountClusters() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Cluster")

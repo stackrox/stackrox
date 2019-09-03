@@ -19,6 +19,7 @@ var (
 type Store interface {
 	GetCluster(id string) (*storage.Cluster, bool, error)
 	GetClusters() ([]*storage.Cluster, error)
+	GetSelectedClusters(ids []string) ([]*storage.Cluster, []int, error)
 	CountClusters() (int, error)
 	AddCluster(cluster *storage.Cluster) (string, error)
 	UpdateCluster(cluster *storage.Cluster) error

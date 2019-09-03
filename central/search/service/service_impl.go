@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/alert/mappings"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceSearch "github.com/stackrox/rox/central/compliance/search"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -71,6 +72,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_SECRETS:     s.secrets.SearchSecrets,
 		v1.SearchCategory_NAMESPACES:  s.namespaces.SearchResults,
 		v1.SearchCategory_NODES:       s.nodes.SearchResults,
+		v1.SearchCategory_CLUSTERS:    s.clusters.SearchResults,
 	}
 
 	if features.K8sRBAC.Enabled() {
@@ -93,6 +95,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_NODES:       s.nodes,
 		v1.SearchCategory_COMPLIANCE:  s.aggregator,
 		v1.SearchCategory_RISKS:       s.risks,
+		v1.SearchCategory_CLUSTERS:    s.clusters,
 	}
 
 	if features.K8sRBAC.Enabled() {
@@ -134,6 +137,7 @@ func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.Res
 		v1.SearchCategory_NODES:      resources.Node,
 		v1.SearchCategory_NAMESPACES: resources.Namespace,
 		v1.SearchCategory_RISKS:      resources.Risk,
+		v1.SearchCategory_CLUSTERS:   resources.Cluster,
 	}
 
 	if features.K8sRBAC.Enabled() {
@@ -156,6 +160,7 @@ func GetGlobalSearchCategories() set.V1SearchCategorySet {
 		v1.SearchCategory_SECRETS,
 		v1.SearchCategory_NODES,
 		v1.SearchCategory_NAMESPACES,
+		v1.SearchCategory_CLUSTERS,
 	)
 
 	if features.K8sRBAC.Enabled() {
@@ -182,6 +187,7 @@ type serviceImpl struct {
 	risks           riskDataStore.DataStore
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
+	clusters        clusterDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 	authorizer authz.Authorizer

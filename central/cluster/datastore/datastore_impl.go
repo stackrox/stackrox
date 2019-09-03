@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	"github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -31,14 +31,14 @@ const (
 )
 
 var (
-	clusterSAC             = sac.ForResource(resources.Cluster)
-	clusterSACSearchHelper = clusterSAC.MustCreateSearchHelper(mappings.OptionsMap)
+	clusterSAC = sac.ForResource(resources.Cluster)
 )
 
 type datastoreImpl struct {
 	indexer  index.Indexer
 	storage  store.Store
 	notifier notifierProcessor.Processor
+	searcher search.Searcher
 
 	ads alertDataStore.DataStore
 	dds deploymentDataStore.DataStore
@@ -70,28 +70,16 @@ func (ds *datastoreImpl) buildIndex() error {
 	return ds.indexer.AddClusters(clusters)
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return clusterSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
+	return ds.searcher.Search(ctx, q)
+}
+
+func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	return ds.searcher.SearchResults(ctx, q)
 }
 
 func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	clusters := make([]*storage.Cluster, 0, len(results))
-	for _, result := range results {
-		cluster, _, err := ds.storage.GetCluster(result.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "retrieving cluster with id '%s'", result.ID)
-		}
-		// The result may not exist if the object was deleted after the search
-		if cluster == nil {
-			continue
-		}
-		clusters = append(clusters, cluster)
-	}
-	return clusters, nil
+	return ds.searcher.SearchClusters(ctx, q)
 }
 
 func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
@@ -109,13 +97,10 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 		return ds.storage.GetClusters()
 	}
 
-	return ds.searchRawClusters(ctx, search.EmptyQuery())
+	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
 }
 
 func (ds *datastoreImpl) SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
-	if _, err := clusterSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	}
 	return ds.searchRawClusters(ctx, q)
 }
 
@@ -126,7 +111,7 @@ func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
 		return ds.storage.CountClusters()
 	}
 
-	visible, err := ds.Search(ctx, search.EmptyQuery())
+	visible, err := ds.Search(ctx, pkgSearch.EmptyQuery())
 	if err != nil {
 		return 0, err
 	}
@@ -273,12 +258,12 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 }
 
 func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListSecret, error) {
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
 	return ds.ss.SearchListSecrets(ctx, q)
 }
 
 func (ds *datastoreImpl) getDeployments(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListDeployment, error) {
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
 	deployments, err := ds.dds.SearchListDeployments(ctx, q)
 	if err != nil {
 		return nil, err
@@ -289,7 +274,7 @@ func (ds *datastoreImpl) getDeployments(ctx context.Context, cluster *storage.Cl
 
 // TODO(cgorman) Make this a search once the document mapping goes in
 func (ds *datastoreImpl) getAlerts(ctx context.Context, deployment *storage.ListDeployment) ([]*storage.Alert, error) {
-	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).AddExactMatches(search.DeploymentID, deployment.GetId())
+	qb := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).AddExactMatches(pkgSearch.DeploymentID, deployment.GetId())
 
 	existingAlerts, err := ds.ads.SearchRawAlerts(ctx, qb.ProtoQuery())
 	if err != nil {
