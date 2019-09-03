@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import * as Icon from 'react-feather';
 import Tooltip from 'rc-tooltip';
 import { generatePath } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 
 import Dialog from 'Components/Dialog';
 import PageHeader from 'Components/PageHeader';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
+import SearchInput from 'Components/SearchInput';
 import StatusField from 'Components/StatusField';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import CheckboxTable from 'Components/CheckboxTable';
 import { defaultColumnClassName, wrapClassName, rtTrActionsClassName } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
+import { actions as clustersActions } from 'reducers/clusters';
+import { selectors } from 'reducers';
 import {
     fetchClustersAsArray,
     getAutoUpgradeConfig,
@@ -41,7 +47,13 @@ const ClustersPage = ({
     location: { search },
     match: {
         params: { clusterId }
-    }
+    },
+    searchOptions,
+    searchModifiers,
+    searchSuggestions,
+    setSearchModifiers,
+    setSearchOptions,
+    setSearchSuggestions
 }) => {
     const [currentClusters, setCurrentClusters] = useState([]);
     const [showDialog, setShowDialog] = useState(false);
@@ -91,11 +103,14 @@ const ClustersPage = ({
         setSelectedClusterId(newClusterId);
     }
 
-    useEffect(() => {
-        fetchClustersAsArray().then(clusters => {
-            setCurrentClusters(clusters);
-        });
-    }, []);
+    useEffect(
+        () => {
+            fetchClustersAsArray(searchOptions).then(clusters => {
+                setCurrentClusters(clusters);
+            });
+        },
+        [searchOptions]
+    );
 
     function fetchConfig() {
         getAutoUpgradeConfig().then(config => {
@@ -250,11 +265,24 @@ const ClustersPage = ({
 
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
+    const defaultOption = searchModifiers.find(x => x.value === 'Cluster:');
 
     const pageHeader = (
         <PageHeader header={headerText} subHeader={subHeaderText}>
-            <div className="flex flex-1 justify-end">
-                <div className="flex items-center">
+            <div className="flex flex-1 items-center justify-end">
+                <SearchInput
+                    className="w-full"
+                    id="clusters-search"
+                    searchOptions={searchOptions}
+                    searchModifiers={searchModifiers}
+                    searchSuggestions={searchSuggestions}
+                    setSearchOptions={setSearchOptions}
+                    setSearchModifiers={setSearchModifiers}
+                    setSearchSuggestions={setSearchSuggestions}
+                    defaultOption={defaultOption}
+                    autoCompleteCategories={['CLUSTERS']}
+                />
+                <div className="flex items-center min-w-64 ml-4">
                     <ToggleSwitch
                         id="enableAutoUpgrade"
                         toggleHandler={toggleAutoUpgrade}
@@ -316,7 +344,30 @@ const ClustersPage = ({
 ClustersPage.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    match: ReactRouterPropTypes.match.isRequired
+    match: ReactRouterPropTypes.match.isRequired,
+
+    // Search specific input.
+    searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+    searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+    searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
+    setSearchOptions: PropTypes.func.isRequired,
+    setSearchModifiers: PropTypes.func.isRequired,
+    setSearchSuggestions: PropTypes.func.isRequired
 };
 
-export default ClustersPage;
+const mapStateToProps = createStructuredSelector({
+    searchOptions: selectors.getClustersSearchOptions,
+    searchModifiers: selectors.getClustersSearchModifiers,
+    searchSuggestions: selectors.getClustersSearchSuggestions
+});
+
+const mapDispatchToProps = {
+    setSearchOptions: clustersActions.setClustersSearchOptions,
+    setSearchModifiers: clustersActions.setClustersSearchModifiers,
+    setSearchSuggestions: clustersActions.setClustersSearchSuggestions
+};
+
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(ClustersPage);

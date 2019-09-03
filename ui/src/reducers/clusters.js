@@ -4,6 +4,12 @@ import isEqual from 'lodash/isEqual';
 import pick from 'lodash/pick';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import {
+    types as searchTypes,
+    getActions as getSearchActions,
+    reducers as searchReducers,
+    getSelectors as getSearchSelectors
+} from 'reducers/pageSearch';
 import mergeEntitiesById from 'utils/mergeEntitiesById';
 
 export const clusterFormId = 'cluster-form';
@@ -28,7 +34,8 @@ export const types = {
     FINISH_WIZARD: 'clusters/FINISH_WIZARD',
     SAVE_CLUSTER: createFetchingActionTypes('clusters/SAVE_CLUSTER'),
     DELETE_CLUSTERS: 'clusters/DELETE_CLUSTERS',
-    DOWNLOAD_CLUSTER_YAML: 'clusters/DOWNLOAD_CLUSTER_YAML'
+    DOWNLOAD_CLUSTER_YAML: 'clusters/DOWNLOAD_CLUSTER_YAML',
+    ...searchTypes('clusters')
 };
 
 // Actions
@@ -44,7 +51,8 @@ export const actions = {
     finishWizard: () => ({ type: types.FINISH_WIZARD }),
     saveCluster: createFetchingActions(types.SAVE_CLUSTER),
     deleteClusters: clusterIds => ({ type: types.DELETE_CLUSTERS, clusterIds }),
-    downloadClusterYaml: clusterId => ({ type: types.DOWNLOAD_CLUSTER_YAML, clusterId })
+    downloadClusterYaml: clusterId => ({ type: types.DOWNLOAD_CLUSTER_YAML, clusterId }),
+    ...getSearchActions('clusters')
 };
 
 // Reducers
@@ -98,7 +106,8 @@ const wizard = (state = null, { type, clusterId, page }) => {
 const reducer = combineReducers({
     byId,
     selectedCluster,
-    wizard
+    wizard,
+    ...searchReducers('clusters')
 });
 
 export default reducer;
@@ -119,5 +128,6 @@ export const selectors = {
     getClusters,
     getSelectedClusterId,
     getWizardCurrentPage,
-    getWizardClusterId
+    getWizardClusterId,
+    ...getSearchSelectors('clusters')
 };

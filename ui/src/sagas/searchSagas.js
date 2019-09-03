@@ -2,6 +2,7 @@ import { all, put, call } from 'redux-saga/effects';
 
 import {
     mainPath,
+    clustersPath,
     dashboardPath,
     violationsPath,
     riskPath,
@@ -12,6 +13,7 @@ import {
 } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { actions as alertActions } from 'reducers/alerts';
+import { actions as clustersActions } from 'reducers/clusters';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as policiesActions } from 'reducers/policies/search';
 import { actions as imagesActions } from 'reducers/images';
@@ -94,6 +96,14 @@ export default function* searches() {
             alertActions.setAlertsSearchSuggestions,
             alertActions.setAlertsSearchOptions,
             `categories=ALERTS`
+        ),
+        takeEveryNewlyMatchedLocation(
+            clustersPath,
+            getSearchOptions,
+            clustersActions.setClustersSearchModifiers,
+            clustersActions.setClustersSearchSuggestions,
+            clustersActions.setClustersSearchOptions,
+            `categories=CLUSTERS`
         ),
         takeEveryNewlyMatchedLocation(
             riskPath,

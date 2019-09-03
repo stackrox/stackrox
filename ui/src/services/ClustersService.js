@@ -1,4 +1,6 @@
 import { normalize } from 'normalizr';
+import queryString from 'qs';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 import { saveFile } from 'services/DownloadService';
 import axios from './instance';
@@ -28,8 +30,15 @@ export function fetchClusters() {
  *
  * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
-export function fetchClustersAsArray() {
-    return axios.get(clustersUrl).then(response => {
+export function fetchClustersAsArray(options) {
+    const query = searchOptionsToQuery(options);
+    const params = queryString.stringify(
+        {
+            query
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios.get(`${clustersUrl}?${params}`).then(response => {
         return (response.data && response.data.clusters) || [];
     });
 }
