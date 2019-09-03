@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -55,7 +56,7 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (st
 }
 
 func (f *factory) ResolveProvider(state string) (string, error) {
-	providerID, _ := splitState(state)
+	providerID, _ := idputil.SplitState(state)
 	if providerID == "" {
 		return "", httputil.NewError(http.StatusBadRequest, "malformed state")
 	}

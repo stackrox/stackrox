@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
+	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -19,20 +24,29 @@ const (
 
 type factory struct {
 	urlPathPrefix string
+
+	backendsByIssuer      map[string]map[*backendImpl]struct{}
+	backendsByIssuerMutex sync.Mutex
 }
 
 // NewFactory creates a new SAML auth provider factory.
 func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	f := &factory{
-		urlPathPrefix: urlPathPrefix,
+		urlPathPrefix:    urlPathPrefix,
+		backendsByIssuer: make(map[string]map[*backendImpl]struct{}),
 	}
 
 	return f
 }
 
 func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, map[string]string, error) {
-	return newBackend(ctx, f.urlPathPrefix+acsRelativePath, id, uiEndpoints, config)
+	be, config, err := newBackend(ctx, f.urlPathPrefix+acsRelativePath, id, uiEndpoints, config)
+	if err != nil {
+		return nil, nil, err
+	}
+	be.factory = f
+	return be, config, nil
 }
 
 func (f *factory) processACSRequest(r *http.Request) (string, error) {
@@ -42,12 +56,58 @@ func (f *factory) processACSRequest(r *http.Request) (string, error) {
 	if err := r.ParseForm(); err != nil {
 		return "", httputil.Errorf(http.StatusBadRequest, "could not parse form data: %v", err)
 	}
+
 	state := r.FormValue("RelayState")
-	providerID, _ := splitState(state)
-	if providerID == "" {
-		return "", httputil.NewError(http.StatusBadRequest, "malformed RelayState")
+	providerID, _ := idputil.SplitState(state)
+	if providerID != "" {
+		// Preferred option: specified via relay state
+		return providerID, nil
 	}
-	return providerID, nil
+	return f.autoRouteACSRequest(r)
+}
+
+func (f *factory) getBackendsByIssuer(issuerName string) []*backendImpl {
+	f.backendsByIssuerMutex.Lock()
+	defer f.backendsByIssuerMutex.Unlock()
+
+	backendSet := f.backendsByIssuer[issuerName]
+	if len(backendSet) == 0 {
+		return nil
+	}
+
+	backendSlice := make([]*backendImpl, 0, len(backendSet))
+	for be := range backendSet {
+		backendSlice = append(backendSlice, be)
+	}
+	return backendSlice
+}
+
+func (f *factory) RegisterBackend(be *backendImpl) {
+	issuerName := be.sp.IdentityProviderIssuer
+
+	f.backendsByIssuerMutex.Lock()
+	defer f.backendsByIssuerMutex.Unlock()
+	beSet := f.backendsByIssuer[issuerName]
+	if beSet == nil {
+		beSet = make(map[*backendImpl]struct{})
+		f.backendsByIssuer[issuerName] = beSet
+	}
+	beSet[be] = struct{}{}
+}
+
+func (f *factory) UnregisterBackend(be *backendImpl) {
+	issuerName := be.sp.IdentityProviderIssuer
+
+	f.backendsByIssuerMutex.Lock()
+	defer f.backendsByIssuerMutex.Unlock()
+	beSet := f.backendsByIssuer[issuerName]
+	if beSet == nil {
+		return
+	}
+	delete(beSet, be)
+	if len(beSet) == 0 {
+		delete(f.backendsByIssuer, issuerName)
+	}
 }
 
 func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -64,9 +124,78 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (st
 }
 
 func (f *factory) ResolveProvider(state string) (string, error) {
-	providerID, _ := splitState(state)
+	providerID, _ := idputil.SplitState(state)
 	if providerID == "" {
 		return "", fmt.Errorf("malformed state %q", state)
 	}
 	return providerID, nil
+}
+
+func (f *factory) autoRouteACSRequest(req *http.Request) (string, error) {
+	// Heuristically try to deduce the target backend from (a) IdP issuer name and (b) referer/origin URL.
+	// Note: heuristically is fine - signature checking still takes place, so even if we reroute this to the wrong
+	// backend, there are no adverse security implications.
+	resp, err := saml2.DecodeUnverifiedBaseResponse(req.FormValue("SAMLResponse"))
+	if err != nil {
+		return "", httputil.Errorf(http.StatusBadRequest, "no relay state specified, and not able to parse SAML response: %v", err)
+	}
+	issuerName := ""
+	if resp.Issuer != nil {
+		issuerName = resp.Issuer.Value
+	}
+	backends := f.getBackendsByIssuer(issuerName)
+	if len(backends) > 1 {
+		backends = filterBackendsByOrigin(req, backends)
+	}
+
+	switch l := len(backends); {
+	case l == 0:
+		return "", httputil.Errorf(http.StatusBadRequest, "no relay state specified, and no backend registered for IdP issuer %q", issuerName)
+	case l == 1:
+		return backends[0].id, nil
+	default:
+		return "", httputil.Errorf(http.StatusBadRequest,
+			"Multiple active auth provider backends exist for IdP issuer %q.\n"+
+				"Please set the `Default RelayState` field in your IdP config per the instructions on the configuration "+
+				"page, or delete all but one auth provider for this issuer", issuerName)
+	}
+}
+
+func filterBackendsByOrigin(req *http.Request, backends []*backendImpl) []*backendImpl {
+	var baseURLs []string
+
+	// Try both referer and origin
+	for _, ref := range []string{req.Referer(), req.Header.Get("Origin")} {
+		if ref == "" {
+			continue
+		}
+
+		if u, err := url.Parse(ref); err == nil {
+			baseURL := (&url.URL{
+				Scheme: stringutils.OrDefault(u.Scheme, "https"),
+				Host:   u.Host,
+				Path:   "/",
+			}).String()
+			baseURLs = append(baseURLs, baseURL)
+		}
+	}
+
+	if len(baseURLs) == 0 {
+		return backends
+	}
+
+	var filtered []*backendImpl
+	for _, be := range backends {
+		for _, baseURL := range baseURLs {
+			if strings.HasPrefix(be.sp.IdentityProviderSSOURL, baseURL) {
+				filtered = append(filtered, be)
+				break
+			}
+		}
+	}
+
+	if len(filtered) > 0 {
+		return filtered
+	}
+	return backends
 }

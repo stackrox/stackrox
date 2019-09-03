@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -20,15 +21,18 @@ var (
 )
 
 type backendImpl struct {
+	factory    *factory
 	acsURLPath string
 	sp         saml2.SAMLServiceProvider
 	id         string
 }
 
 func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+	p.factory.RegisterBackend(p)
 }
 
 func (p *backendImpl) OnDisable(provider authproviders.Provider) {
+	p.factory.UnregisterBackend(p)
 }
 
 func (p *backendImpl) loginURL(clientState string) (string, error) {
@@ -36,7 +40,7 @@ func (p *backendImpl) loginURL(clientState string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "could not construct auth request")
 	}
-	authURL, err := p.sp.BuildAuthURLRedirect(makeState(p.id, clientState), doc)
+	authURL, err := p.sp.BuildAuthURLRedirect(idputil.MakeState(p.id, clientState), doc)
 	if err != nil {
 		return "", errors.Wrap(err, "could not construct auth URL")
 	}
@@ -127,7 +131,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	}
 
 	relayState := r.FormValue("RelayState")
-	_, clientState := splitState(relayState)
+	_, clientState := idputil.SplitState(relayState)
 
 	return claims, opts, clientState, err
 }

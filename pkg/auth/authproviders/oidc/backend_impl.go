@@ -12,6 +12,7 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -51,7 +52,7 @@ func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	claim, opts, err := p.verifyIDToken(ctx, externalRawToken)
-	_, clientState := splitState(state)
+	_, clientState := idputil.SplitState(state)
 	if err != nil {
 		return nil, nil, clientState, err
 	}
@@ -207,7 +208,7 @@ func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) 
 		return ""
 	}
 
-	state := makeState(p.id, clientState)
+	state := idputil.MakeState(p.id, clientState)
 	options := make([]oauth2.AuthCodeOption, len(p.baseOptions)+1)
 	copy(options, p.baseOptions)
 	options[len(p.baseOptions)] = oidc.Nonce(nonce)
@@ -235,7 +236,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 		return nil, nil, "", errors.New("required form fields not found")
 	}
 
-	_, clientState := splitState(r.FormValue("state"))
+	_, clientState := idputil.SplitState(r.FormValue("state"))
 
 	userClaim, opts, err := p.verifyIDToken(r.Context(), rawIDToken)
 	if err != nil {
