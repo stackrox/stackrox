@@ -36,7 +36,7 @@ const Lollipop = ({ data, history }) => {
         return data.map((item, index) => {
             const val = {
                 link: item.link,
-                x: -2,
+                x: null,
                 y: item.y,
                 yOffset: -25,
                 xOffset: 10,
@@ -101,7 +101,7 @@ const Lollipop = ({ data, history }) => {
                     style={{
                         fill: 'var(--primary-800)',
                         cursor: 'pointer',
-                        transform: 'translate(400px,35px)'
+                        transform: 'translate(15px,35px)'
                     }}
                 />
 
