@@ -25,13 +25,13 @@ func (r *runner) Workflows() map[string][]string {
 			"execute",
 		},
 		"roll-back": {
-			"snapshot-nostore",
+			"snapshot-rollback",
 			"generate-rollback-plan",
 			"preflight-nofail",
 			"execute",
 		},
 		"dry-run": {
-			"snapshot-nostore",
+			"snapshot-dryrun",
 			"fetch-bundle",
 			"instantiate-bundle",
 			"generate-plan",
@@ -48,11 +48,15 @@ func (r *runner) Stages() map[string]stage {
 	return map[string]stage{
 		"snapshot": {
 			name: "Take or read state snapshot",
-			run:  r.takeOrReadSnapshot,
+			run:  r.snapshotForRollForward,
 		},
-		"snapshot-nostore": {
+		"snapshot-rollback": {
+			name: "Read existing state snapshot",
+			run:  r.snapshotForRollback,
+		},
+		"snapshot-dryrun": {
 			name: "Take or read state snapshot (do not store)",
-			run:  r.takeOrReadSnapshotNoStore,
+			run:  r.snapshotForDryRun,
 		},
 		"fetch-bundle": {
 			name: "Fetch sensor bundle",
@@ -85,8 +89,8 @@ func (r *runner) Stages() map[string]stage {
 	}
 }
 
-func (r *runner) takeOrReadSnapshot() error {
-	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx, true)
+func (r *runner) snapshotForRollForward() error {
+	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx, snapshot.Options{Store: true})
 	if err != nil {
 		return err
 	}
@@ -95,8 +99,18 @@ func (r *runner) takeOrReadSnapshot() error {
 	return nil
 }
 
-func (r *runner) takeOrReadSnapshotNoStore() error {
-	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx, false)
+func (r *runner) snapshotForDryRun() error {
+	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx, snapshot.Options{})
+	if err != nil {
+		return err
+	}
+	r.preUpgradeObjs = preUpgradeObjs
+	r.preUpgradeState = k8sobjects.BuildObjectMap(preUpgradeObjs)
+	return nil
+}
+
+func (r *runner) snapshotForRollback() error {
+	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx, snapshot.Options{MustExist: true})
 	if err != nil {
 		return err
 	}

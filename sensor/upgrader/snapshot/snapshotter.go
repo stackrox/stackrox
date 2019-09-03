@@ -24,8 +24,8 @@ var (
 )
 
 type snapshotter struct {
-	ctx   *upgradectx.UpgradeContext
-	store bool
+	ctx  *upgradectx.UpgradeContext
+	opts Options
 }
 
 func (s *snapshotter) SnapshotState() ([]k8sobjects.Object, error) {
@@ -48,12 +48,16 @@ func (s *snapshotter) SnapshotState() ([]k8sobjects.Object, error) {
 		return s.stateFromSecret(snapshotSecret)
 	}
 
+	if s.opts.MustExist {
+		return nil, errors.New("state snapshot secret does not exist")
+	}
+
 	objects, snapshotSecret, err := s.createStateSnapshot()
 	if err != nil {
 		return nil, errors.Wrap(err, "snapshotting state")
 	}
 
-	if s.store {
+	if s.opts.Store {
 		_, err = coreV1Client.Secrets(common.Namespace).Create(snapshotSecret)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating state snapshot secret")

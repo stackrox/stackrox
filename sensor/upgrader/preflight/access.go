@@ -13,54 +13,87 @@ func (accessCheck) Name() string {
 	return "Kubernetes authorization"
 }
 
-func (accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {
-	sarClient := ctx.ClientSet().AuthorizationV1().SelfSubjectAccessReviews()
+func (accessCheck) getAllResourceAttribs(ctx *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan) ([]v1.ResourceAttributes, error) {
+	resourceAttribsSet := make(map[v1.ResourceAttributes]struct{})
 
 	for _, act := range execPlan.Actions() {
-		var verb string
+		var verb, rollbackVerb string
 		switch act.ActionName {
 		case plan.CreateAction:
-			verb = "create"
+			verb, rollbackVerb = "create", "delete"
 		case plan.UpdateAction:
 			verb = "update"
 		case plan.DeleteAction:
-			verb = "delete"
+			verb, rollbackVerb = "delete", "create"
 		default:
-			return errors.Errorf("invalid action name %q for object %v", act.ActionName, act.ObjectRef)
+			return nil, errors.Errorf("invalid action name %q for object %v", act.ActionName, act.ObjectRef)
 		}
 
 		resMD := ctx.GetResourceMetadata(act.ObjectRef.GVK)
 		if resMD == nil {
-			return errors.Errorf("no metadata available for resource %v", act.ObjectRef.GVK)
+			return nil, errors.Errorf("no metadata available for resource %v", act.ObjectRef.GVK)
 		}
 
+		resourceAttribs := v1.ResourceAttributes{
+			Namespace: act.ObjectRef.Namespace,
+			Verb:      verb,
+			Group:     resMD.Group,
+			Version:   resMD.Version,
+			Resource:  resMD.Name,
+		}
+
+		// Name only makes sense for update and delete
+		if act.ActionName != plan.CreateAction {
+			resourceAttribs.Name = act.ObjectRef.Name
+		}
+
+		resourceAttribsSet[resourceAttribs] = struct{}{}
+
+		if rollbackVerb != "" {
+			rollbackResourceAttribs := resourceAttribs
+			// Name never makes sense for rollback as we'd be talking about objects that don't exist yet or will not
+			// exist when we perform the rollback.
+			rollbackResourceAttribs.Name = ""
+			rollbackResourceAttribs.Verb = rollbackVerb
+			resourceAttribsSet[rollbackResourceAttribs] = struct{}{}
+		}
+	}
+
+	result := make([]v1.ResourceAttributes, 0, len(resourceAttribsSet))
+
+	for resourceAttribs := range resourceAttribsSet {
+		// TODO(mi): Sorting would be nice, but seems overkill
+		result = append(result, resourceAttribs)
+	}
+
+	return result, nil
+}
+
+func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {
+	sarClient := ctx.ClientSet().AuthorizationV1().SelfSubjectAccessReviews()
+
+	resourceAttribs, err := c.getAllResourceAttribs(ctx, execPlan)
+	if err != nil {
+		return err
+	}
+
+	for _, ra := range resourceAttribs {
 		sar := &v1.SelfSubjectAccessReview{
 			Spec: v1.SelfSubjectAccessReviewSpec{
-				ResourceAttributes: &v1.ResourceAttributes{
-					Namespace: act.ObjectRef.Namespace,
-					Verb:      verb,
-					Group:     resMD.Group,
-					Version:   resMD.Version,
-					Resource:  resMD.Name,
-				},
+				ResourceAttributes: &ra,
 			},
 		}
-
-		if act.ActionName != plan.CreateAction {
-			sar.Spec.ResourceAttributes.Name = act.ObjectRef.Name
-		}
-
 		sarResult, err := sarClient.Create(sar)
 		if err != nil {
 			return errors.Wrap(err, "failed to perform SelfSubjectAccessReview check")
 		}
 		if sarResult.Status.EvaluationError != "" {
-			reporter.Warnf("Evaluation error performing access review check for action %s on object %v: %s", act.ActionName, act.ObjectRef, sarResult.Status.EvaluationError)
+			reporter.Warnf("Evaluation error performing access review check for action %s on resource %s: %s", ra.Verb, ra.Resource, sarResult.Status.EvaluationError)
 		}
 		if !sarResult.Status.Allowed && !sarResult.Status.Denied {
-			reporter.Warnf("K8s authorizer seems to have no opinion on whether action %s on object %v is allowed", act.ActionName, act.ObjectRef)
+			reporter.Warnf("K8s authorizer seems to have no opinion on whether action %s on resource %s is allowed", ra.Verb, ra.Resource)
 		} else if !sarResult.Status.Allowed {
-			reporter.Errorf("ActionName %s on object %v is not allowed", act.ActionName, act.ObjectRef)
+			reporter.Errorf("Action %s on resource %s is not allowed", ra.Verb, ra.Resource)
 		}
 	}
 	return nil
