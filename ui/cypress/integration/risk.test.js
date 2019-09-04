@@ -46,6 +46,18 @@ describe('Risk page', () => {
         cy.get(RiskPageSelectors.errMgBox).contains(errorMessages.deploymentNotFound);
     });
 
+    it('should display error message in process discovery tab', () => {
+        mockGetRisk();
+        mockGetDeployment();
+        cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
+        cy.wait('@firstDeployment');
+        cy.wait('@firstDeploymentRisk');
+
+        cy.get(RiskPageSelectors.panelTabs.processDiscovery).click();
+        cy.get(RiskPageSelectors.errMgBox).contains(errorMessages.processNotFound);
+        cy.get(RiskPageSelectors.cancelButton).click();
+    });
+
     it('should open the panel to view risk indicators', () => {
         mockGetRisk();
         mockGetDeployment();

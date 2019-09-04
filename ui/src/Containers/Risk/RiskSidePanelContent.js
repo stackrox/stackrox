@@ -11,19 +11,13 @@ import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './Process/Details';
 
-function getRiskSidePanelErrorMsg(deployment, risk) {
-    if (!deployment) {
-        return <div>Deployment not found. The selected deployment may have been removed.</div>;
-    }
+const riskErrMsg = `Risk not found. Risk for selected deployment may not have been processed.`;
+const deploymentErrMsg = `Deployment not found. The selected deployment may have been removed.`;
+const processErrMsg = `No processes discovered. The selected deployment may not have running pods, 
+    or the StackRox collector may not be running in your cluster. 
+    It is recommended to check the logs for more information.`;
 
-    if (!risk) {
-        return <div>Risk not found. Risk for selected deployment may not have been processed.</div>;
-    }
-    return null;
-}
-
-const RiskSidePanelErrorContent = ({ deployment, risk }) => {
-    const message = getRiskSidePanelErrorMsg(deployment, risk);
+const RiskSidePanelErrorContent = ({ message }) => {
     return (
         <div className="h-full flex-1 bg-base-200 border-r border-l border-b border-base-400 p-3">
             <Message message={message} type="error" />
@@ -36,14 +30,15 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
         return <Loader />;
     }
 
-    if (!selectedDeployment || !processGroup) {
-        return <RiskSidePanelErrorContent deployment={selectedDeployment} risk={deploymentRisk} />;
+    if (!selectedDeployment) {
+        return <RiskSidePanelErrorContent message={deploymentErrMsg} />;
     }
 
-    const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
-    if (processGroup.groups !== undefined && processGroup.groups.length !== 0) {
-        riskPanelTabs.push({ text: 'Process Discovery' });
-    }
+    const riskPanelTabs = [
+        { text: 'Risk Indicators' },
+        { text: 'Deployment Details' },
+        { text: 'Process Discovery' }
+    ];
     return (
         <Tabs headers={riskPanelTabs}>
             <TabContent>
@@ -56,10 +51,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                         View Deployment in Network Graph
                     </Link>
                     {!deploymentRisk ? (
-                        <RiskSidePanelErrorContent
-                            deployment={selectedDeployment}
-                            risk={deploymentRisk}
-                        />
+                        <RiskSidePanelErrorContent message={riskErrMsg} />
                     ) : (
                         <RiskDetails risk={deploymentRisk} />
                     )}
@@ -74,10 +66,14 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
             </TabContent>
             <TabContent>
                 <div className="flex flex-1 flex-col relative">
-                    <ProcessDetails
-                        processGroup={processGroup}
-                        deploymentId={selectedDeployment.id}
-                    />
+                    {!processGroup || !processGroup.groups || processGroup.groups.length === 0 ? (
+                        <RiskSidePanelErrorContent message={processErrMsg} />
+                    ) : (
+                        <ProcessDetails
+                            processGroup={processGroup}
+                            deploymentId={selectedDeployment.id}
+                        />
+                    )}
                 </div>
             </TabContent>
         </Tabs>
@@ -85,13 +81,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
 }
 
 RiskSidePanelErrorContent.propTypes = {
-    deployment: PropTypes.shape({}),
-    risk: PropTypes.shape({})
-};
-
-RiskSidePanelErrorContent.defaultProps = {
-    deployment: undefined,
-    risk: undefined
+    message: PropTypes.string.isRequired
 };
 
 RiskSidePanelContent.propTypes = {

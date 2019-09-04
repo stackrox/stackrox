@@ -2,7 +2,8 @@ export const url = '/main/risk';
 
 export const errorMessages = {
     deploymentNotFound: 'Deployment not found',
-    riskNotFound: 'Risk not found'
+    riskNotFound: 'Risk not found',
+    processNotFound: 'No processes discovered'
 };
 
 export const selectors = {
@@ -10,7 +11,8 @@ export const selectors = {
     errMgBox: 'div.error-message',
     panelTabs: {
         riskIndicators: 'button[data-test-id="tab"]:contains("Risk Indicators")',
-        deploymentDetails: 'button[data-test-id="tab"]:contains("Deployment Details")'
+        deploymentDetails: 'button[data-test-id="tab"]:contains("Deployment Details")',
+        processDiscovery: 'button[data-test-id="tab"]:contains("Process Discovery")'
     },
     cancelButton: 'button[data-test-id="cancel"]',
     search: {
