@@ -2,7 +2,8 @@ export const alerts = {
     countsByCluster: 'v1/alerts/summary/counts?*group_by=CLUSTER*',
     countsByCategory: '/v1/alerts/summary/counts?*group_by=CATEGORY*',
     alerts: '/v1/alerts?*',
-    alertById: '/v1/alerts/*'
+    alertById: '/v1/alerts/*',
+    resolveAlert: '/v1/alerts/*/resolve'
 };
 
 export const clusters = {

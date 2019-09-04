@@ -155,6 +155,7 @@ class ViolationsPage extends Component {
     resolveAlertHandler = (alertId, whitelist) => e => {
         e.stopPropagation();
         this.props.resolveAlerts([alertId], whitelist);
+        this.onPanelClose();
     };
 
     whitelistDeployments = () => {

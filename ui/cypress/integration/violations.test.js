@@ -22,6 +22,10 @@ describe('Violations page', () => {
         cy.route('GET', api.alerts.alertById, '@alertById').as('alertById');
     };
 
+    const mockResolveAlert = () => {
+        cy.route('PATCH', api.alerts.resolveAlert, {}).as('resolve');
+    };
+
     const mockGetAlertWithEmptyContainerConfig = () => {
         cy.fixture('alerts/alertWithEmptyContainerConfig.json').as('alertWithEmptyContainerConfig');
         cy.route('GET', api.alerts.alertById, '@alertWithEmptyContainerConfig').as(
@@ -205,5 +209,25 @@ describe('Violations page', () => {
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1))
             .click();
         cy.get(ViolationsPageSelectors.securityBestPractices).should('not.have.text', 'Commands');
+    });
+
+    it('should close side panel after resolving violation', () => {
+        mockGetAlert();
+        cy.get(ViolationsPageSelectors.panels).should('not.be.visible');
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.wait('@alertById');
+        cy.get(ViolationsPageSelectors.panels).should('be.visible');
+
+        mockResolveAlert();
+        mockGetAlert();
+        cy.get(ViolationsPageSelectors.firstPanelTableRow)
+            .get(ViolationsPageSelectors.resolveButton)
+            .eq(1)
+            .click({ force: true });
+        cy.wait('@resolve');
+
+        cy.get(ViolationsPageSelectors.panels)
+            .eq(1)
+            .should('not.be.visible');
     });
 });
