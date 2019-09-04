@@ -8,6 +8,16 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	// filesBlacklist is a set of filenames that we want to ignore in all bundles.
+	// Essentially, we try to make the upgrader function as if those files didn't exist.
+	filesBlacklist = set.NewFrozenStringSet(
+		"upgrader-serviceaccount.yaml",
+	)
 )
 
 // OpenFunc encapsulates the functionality of opening a file.
@@ -33,6 +43,14 @@ func (c contentsMap) File(fileName string) OpenFunc {
 	return c[fileName]
 }
 
+func (c contentsMap) add(fileName string, openFunc OpenFunc) bool {
+	if filesBlacklist.Contains(path.Base(fileName)) {
+		return false
+	}
+	c[fileName] = openFunc
+	return true
+}
+
 func buildDirContentsMapRecursive(dir, base string, m contentsMap) error {
 	fileInfos, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -48,9 +66,9 @@ func buildDirContentsMapRecursive(dir, base string, m contentsMap) error {
 		}
 
 		pathToFile := filepath.Join(dir, fi.Name())
-		m[path.Join(base, fi.Name())] = func() (io.ReadCloser, error) {
+		m.add(path.Join(base, fi.Name()), func() (io.ReadCloser, error) {
 			return os.Open(pathToFile)
-		}
+		})
 	}
 
 	return nil
@@ -77,7 +95,7 @@ func ContentsFromZIPData(zipData io.ReaderAt, length int64) (Contents, error) {
 		if strings.HasSuffix(file.Name, "/") {
 			continue
 		}
-		contentsMap[file.Name] = file.Open
+		contentsMap.add(file.Name, file.Open)
 	}
 
 	return contentsMap, nil

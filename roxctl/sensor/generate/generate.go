@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/roxctl/common"
@@ -27,11 +29,9 @@ var (
 		},
 	}
 	continueIfExists bool
-)
 
-type zipPost struct {
-	ID string `json:"id"`
-}
+	createUpgraderSA bool
+)
 
 func fullClusterCreation(timeout time.Duration) error {
 	conn, err := common.GetGRPCConnection()
@@ -66,7 +66,7 @@ func fullClusterCreation(timeout time.Duration) error {
 		}
 	}
 
-	if err := getBundle(id, timeout); err != nil {
+	if err := getBundle(id, createUpgraderSA, timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 	return nil
@@ -93,6 +93,11 @@ func Command() *cobra.Command {
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, kernel-module, ebpf)")
 
+	if features.SensorAutoUpgrade.Enabled() {
+		// TODO(viswa/malte): Hash out the default here. Viswa thinks it should be true.
+		c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", false, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
+	}
+
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())
 
@@ -114,9 +119,9 @@ func createCluster(svc v1.ClustersServiceClient, timeout time.Duration) (string,
 	return response.GetCluster().GetId(), nil
 }
 
-func getBundle(id string, timeout time.Duration) error {
+func getBundle(id string, createUpgraderSA bool, timeout time.Duration) error {
 	path := "/api/extensions/clusters/zip"
-	body, err := json.Marshal(&zipPost{ID: id})
+	body, err := json.Marshal(&apiparams.ClusterZip{ID: id, CreateUpgraderSA: &createUpgraderSA})
 	if err != nil {
 		return err
 	}

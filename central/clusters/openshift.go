@@ -3,6 +3,7 @@ package clusters
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -17,8 +18,8 @@ func newOpenshift() Deployer {
 	return &openshift{}
 }
 
-func (o *openshift) Render(c Wrap, _ []byte) ([]*zip.File, error) {
-	fields, err := fieldsFromWrap(c)
+func (*openshift) Render(cluster *storage.Cluster, _ []byte, opts RenderOptions) ([]*zip.File, error) {
+	fields, err := fieldsFromClusterAndRenderOpts(cluster, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +41,11 @@ func (o *openshift) Render(c Wrap, _ []byte) ([]*zip.File, error) {
 		"openshift/kubectl/sensor-scc.yaml",
 	)
 
-	if c.MonitoringEndpoint != "" {
+	if features.SensorAutoUpgrade.Enabled() {
+		filenames.Add("kubernetes/kubectl/upgrader-serviceaccount.yaml")
+	}
+
+	if cluster.MonitoringEndpoint != "" {
 		filenames.Add(monitoringFilenames...)
 	}
 

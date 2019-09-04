@@ -23,10 +23,9 @@ const (
 
 var (
 	log = logging.LoggerForModule()
-)
 
-// Wrap adds additional functionality to a storage.Cluster.
-type Wrap storage.Cluster
+	deployers = make(map[storage.ClusterType]Deployer)
+)
 
 // NewDeployer takes in a cluster and returns the cluster implementation
 func NewDeployer(c *storage.Cluster) (Deployer, error) {
@@ -37,13 +36,16 @@ func NewDeployer(c *storage.Cluster) (Deployer, error) {
 	return dep, nil
 }
 
+// RenderOptions are options that control the rendering.
+type RenderOptions struct {
+	CreateUpgraderSA bool
+}
+
 // Deployer is the interface that defines how to get the specific files per orchestrator
 // The first parameter is a wrap around the cluster and the second is the CA
 type Deployer interface {
-	Render(wrap Wrap, CA []byte) ([]*zip.File, error)
+	Render(cluster *storage.Cluster, CA []byte, opts RenderOptions) ([]*zip.File, error)
 }
-
-var deployers = make(map[storage.ClusterType]Deployer)
 
 func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.ImageName, error) {
 	image, _, err := utils.GenerateImageNameFromString(collectorImage)
@@ -69,7 +71,7 @@ func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage
 	return collectorImageName, nil
 }
 
-func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
+func fieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map[string]interface{}, error) {
 	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, version.GetMainVersion())
 	if err != nil {
 		return nil, err
@@ -124,6 +126,8 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 		"OfflineMode": env.OfflineModeEnv.Setting(),
 
 		"EnvVars": envVars,
+
+		"CreateUpgraderSA": opts.CreateUpgraderSA,
 	}
 
 	return fields, nil

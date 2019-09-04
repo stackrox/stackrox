@@ -92,6 +92,11 @@ ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml" || exit 1
 echo "Creating Pod Security Policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
 
+{{ if .CreateUpgraderSA}}
+echo "Creating upgrader service account"
+${KUBE_COMMAND} apply -f "${DIR}/upgrader-serviceaccount.yaml" || print_rbac_instructions
+{{- end}}
+
 {{if .AdmissionController}}
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
 {{- end}}
@@ -127,3 +132,9 @@ fi
 
 echo "Creating deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"
+
+{{ if not .CreateUpgraderSA}}
+if [[ -f "${DIR}/upgrader-serviceaccout.yaml" ]]; then
+    printf "%s\n\n%s\n" "Did not create the upgrader service account. To create it later, please run" "${KUBE_COMMAND} apply -f ${DIR}/upgrader-serviceaccount.yaml"
+fi
+{{- end}}

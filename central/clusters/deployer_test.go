@@ -85,8 +85,8 @@ func TestGenerateCollectorImageFromString(t *testing.T) {
 }
 
 // This should represent the defaults from the UI
-func getBaseConfig() Wrap {
-	test := Wrap{
+func getBaseConfig() *storage.Cluster {
+	return &storage.Cluster{
 		Id:                  "testID",
 		Name:                "Test Cluster",
 		Type:                storage.ClusterType_KUBERNETES_CLUSTER,
@@ -95,7 +95,6 @@ func getBaseConfig() Wrap {
 		CollectionMethod:    storage.CollectionMethod_KERNEL_MODULE,
 		AdmissionController: false,
 	}
-	return test
 }
 
 func TestImagePaths(t *testing.T) {
@@ -159,7 +158,7 @@ func TestImagePaths(t *testing.T) {
 			if version.GetMainVersion() != "" {
 				expectedMainImage = fmt.Sprintf("%s:%s", expectedMainImage, version.GetMainVersion())
 			}
-			fields, err := fieldsFromWrap(config)
+			fields, err := fieldsFromClusterAndRenderOpts(config, RenderOptions{})
 			assert.NoError(t, err)
 			assert.Contains(t, fields, image)
 			assert.Equal(t, expectedMainImage, fields[image])

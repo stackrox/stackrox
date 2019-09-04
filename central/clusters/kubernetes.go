@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -24,8 +25,8 @@ var monitoringFilenames = []string{
 
 var admissionController = "kubernetes/kubectl/admission-controller.yaml"
 
-func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
-	fields, err := fieldsFromWrap(c)
+func (*kubernetes) Render(cluster *storage.Cluster, ca []byte, opts RenderOptions) ([]*zip.File, error) {
+	fields, err := fieldsFromClusterAndRenderOpts(cluster, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -45,11 +46,15 @@ func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
 		"kubernetes/kubectl/sensor-pod-security.yaml",
 	)
 
-	if c.MonitoringEndpoint != "" {
+	if features.SensorAutoUpgrade.Enabled() {
+		filenames.Add("kubernetes/kubectl/upgrader-serviceaccount.yaml")
+	}
+
+	if cluster.MonitoringEndpoint != "" {
 		filenames.Add(monitoringFilenames...)
 	}
 
-	if c.AdmissionController {
+	if cluster.AdmissionController {
 		fields["CABundle"] = base64.StdEncoding.EncodeToString(ca)
 		filenames.Add(admissionController)
 	}

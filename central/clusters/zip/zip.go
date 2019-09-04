@@ -2,6 +2,7 @@ package zip
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,15 +10,15 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/monitoring"
 	"github.com/stackrox/rox/central/role/resources"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -34,6 +35,10 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+)
+
+const (
+	createUpgraderSADefault = false
 )
 
 // Handler returns a handler for the cluster zip method.
@@ -101,10 +106,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var clusterID v1.ResourceByID
-	err := jsonpb.Unmarshal(r.Body, &clusterID)
+	var params apiparams.ClusterZip
+	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
 
@@ -115,7 +120,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if identity.Service().GetType() == storage.ServiceType_SENSOR_SERVICE {
-		if identity.Service().GetId() != clusterID.GetId() {
+		if identity.Service().GetId() != params.ID {
 			httputil.WriteGRPCStyleError(w, codes.PermissionDenied, errors.New("sensors may only download their own bundle"))
 			return
 		}
@@ -124,10 +129,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wrapper := zip.NewWrapper()
 
 	// Add cluster YAML and command
-	cluster, _, err := z.clusterStore.GetCluster(r.Context(), clusterID.GetId())
+	cluster, _, err := z.clusterStore.GetCluster(r.Context(), params.ID)
 	if cluster == nil {
 		if err == nil {
-			err = fmt.Errorf("cluster %q not found", clusterID.GetId())
+			err = fmt.Errorf("cluster %q not found", params.ID)
 		}
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
@@ -146,7 +151,17 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	wrapper.AddFiles(zip.NewFile("ca.pem", ca, 0))
 
-	baseFiles, err := deployer.Render(clusters.Wrap(*cluster), ca)
+	// Ignore the param unless the feature flag is enabled.
+	var createUpgraderSA bool
+	if features.SensorAutoUpgrade.Enabled() {
+		if params.CreateUpgraderSA == nil {
+			createUpgraderSA = createUpgraderSADefault
+		} else {
+			createUpgraderSA = *params.CreateUpgraderSA
+		}
+	}
+
+	baseFiles, err := deployer.Render(cluster, ca, clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA})
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not render all files"))
 		return
