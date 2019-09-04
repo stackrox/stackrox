@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
 import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+import searchContext from 'Containers/searchContext';
 
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { sortValueByLength } from 'sorters/sorters';
 import LabelChip from 'Components/LabelChip';
 import pluralize from 'pluralize';
 import List from './List';
@@ -69,13 +69,11 @@ const buildTableColumns = (match, location, entityContext) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const { failingPolicies, failingPolicyCount: policyCount } = original;
-                const failingPolicyCount = failingPolicies ? failingPolicies.length : policyCount;
-                return !failingPolicyCount ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+                const { policyStatus } = original;
+                return policyStatus === 'pass' ? 'Pass' : <LabelChip text="Fail" type="alert" />;
             },
-            id: 'failingPolicies',
-            accessor: 'failingPolicies',
-            sortMethod: sortValueByLength
+            id: 'policyStatus',
+            accessor: 'policyStatus'
         },
         {
             Header: `Images`,
@@ -154,9 +152,15 @@ const Deployments = ({
     data,
     entityContext
 }) => {
+    const searchParam = useContext(searchContext);
+
     const autoFocusSearchInput = !selectedRowId;
+
     const tableColumns = buildTableColumns(match, location, entityContext);
-    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const {
+        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus,
+        ...restQuery
+    } = queryService.getQueryBasedOnSearchContext(query, searchParam);
     const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;
 

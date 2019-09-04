@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import pluralize from 'pluralize';
+import searchContext from 'Containers/searchContext';
 
 import { sortValueByLength } from 'sorters/sorters';
 import { NAMESPACES_QUERY as QUERY } from 'queries/namespace';
@@ -175,9 +176,14 @@ const Namespaces = ({
     data,
     entityContext
 }) => {
+    const searchParam = useContext(searchContext);
+
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
-    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const {
+        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus,
+        ...restQuery
+    } = queryService.getQueryBasedOnSearchContext(query, searchParam);
     const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;
 

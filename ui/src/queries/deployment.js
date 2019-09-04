@@ -44,6 +44,7 @@ export const DEPLOYMENT_FRAGMENT = gql`
             id
             name
         }
+        policyStatus
         tolerations {
             key
             operator
@@ -87,6 +88,7 @@ export const DEPLOYMENTS_QUERY = gql`
             serviceAccountID
             secretCount
             imageCount
+            policyStatus
         }
     }
 `;

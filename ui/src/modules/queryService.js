@@ -26,8 +26,13 @@ function getEntityWhereClause(search, entityContext) {
     return objectToWhereClause({ ...search, ...entityContextToQueryObject(entityContext) });
 }
 
+function getQueryBasedOnSearchContext(query, searchParam) {
+    return searchParam && query && query[searchParam] ? query[searchParam] : query || {};
+}
+
 export default {
     objectToWhereClause,
     entityContextToQueryObject,
-    getEntityWhereClause
+    getEntityWhereClause,
+    getQueryBasedOnSearchContext
 };
