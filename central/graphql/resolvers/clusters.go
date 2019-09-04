@@ -52,7 +52,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Cluster", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
-		schema.AddExtraResolver("Cluster", `controlStatus: Boolean!`),
+		schema.AddExtraResolver("Cluster", `controlStatus(query: String): String!`),
 		schema.AddExtraResolver("Cluster", "controls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Cluster", "failingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Cluster", "passingControls(query: String): [ComplianceControl!]!"),
@@ -532,20 +532,20 @@ func (resolver *clusterResolver) SecretCount(ctx context.Context) (int32, error)
 	return int32(len(result)), nil
 }
 
-func (resolver *clusterResolver) ControlStatus(ctx context.Context) (bool, error) {
+func (resolver *clusterResolver) ControlStatus(ctx context.Context, args rawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ControlStatus")
 
 	if err := readCompliance(ctx); err != nil {
-		return false, err
+		return "Fail", err
 	}
-	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}, rawQuery{})
+	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}, args)
 	if err != nil || r == nil {
-		return false, err
+		return "Fail", err
 	}
 	if len(r) != 1 {
-		return false, errors.Errorf("unexpected number of results: expected: 1, actual: %d", len(r))
+		return "Fail", errors.Errorf("unexpected number of results: expected: 1, actual: %d", len(r))
 	}
-	return r[0].GetNumFailing() == 0, nil
+	return getControlStatusFromAggregationResult(r[0]), nil
 }
 
 func (resolver *clusterResolver) Controls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {

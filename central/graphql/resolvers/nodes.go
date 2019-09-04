@@ -26,7 +26,7 @@ func init() {
 		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddType("ComplianceControlCount", []string{"failingCount: Int!", "passingCount: Int!", "unknownCount: Int!"}),
 		schema.AddExtraResolver("Node", "nodeComplianceControlCount(query: String) : ComplianceControlCount!"),
-		schema.AddExtraResolver("Node", "controlStatus: Boolean!"),
+		schema.AddExtraResolver("Node", "controlStatus(query: String): String!"),
 		schema.AddExtraResolver("Node", "failingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "controls(query: String): [ComplianceControl!]!"),
@@ -131,19 +131,19 @@ func (resolver *nodeResolver) NodeComplianceControlCount(ctx context.Context, ar
 	return getComplianceControlCountFromAggregationResults(results), nil
 }
 
-func (resolver *nodeResolver) ControlStatus(ctx context.Context) (bool, error) {
+func (resolver *nodeResolver) ControlStatus(ctx context.Context, args rawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "ControlStatus")
 	if err := readCompliance(ctx); err != nil {
-		return false, err
+		return "Fail", err
 	}
-	r, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE}, rawQuery{})
+	r, err := resolver.getNodeLastSuccessfulComplianceRunAggregatedResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE}, args)
 	if err != nil || r == nil {
-		return false, err
+		return "Fail", err
 	}
 	if len(r) != 1 {
-		return false, errors.Errorf("unexpected node aggregation results length: expected: 1, actual: %d", len(r))
+		return "Fail", errors.Errorf("unexpected node aggregation results length: expected: 1, actual: %d", len(r))
 	}
-	return r[0].GetNumFailing() == 0, nil
+	return getControlStatusFromAggregationResult(r[0]), nil
 }
 
 func (resolver *nodeResolver) getNodeLastSuccessfulComplianceRunAggregatedResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope, args rawQuery) ([]*v1.ComplianceAggregation_Result, error) {

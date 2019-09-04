@@ -194,3 +194,44 @@ func (resolver *complianceControlResolver) getClusterIDs(ctx context.Context) ([
 	}
 	return clusterIDs, nil
 }
+
+// ControlStatus can be pass/fail, or N/A is neither passing or failing
+type ControlStatus int32
+
+const (
+	fail ControlStatus = iota
+	pass
+	na
+)
+
+func (c ControlStatus) String() string {
+	return []string{"FAIL", "PASS", "N/A"}[c]
+}
+
+func getControlStatusFromAggregationResult(result *v1.ComplianceAggregation_Result) string {
+	passingControls := result.GetNumPassing()
+	failingControls := result.GetNumFailing()
+	var cs ControlStatus
+	if passingControls == 0 && failingControls == 0 {
+		cs = na
+	} else if failingControls != 0 {
+		cs = fail
+	} else {
+		cs = pass
+	}
+	return cs.String()
+}
+
+func getComplianceControlNodeCountFromAggregationResults(results []*v1.ComplianceAggregation_Result) *complianceControlNodeCountResolver {
+	ret := &complianceControlNodeCountResolver{}
+	for _, r := range results {
+		if r.GetNumFailing() != 0 {
+			ret.failingCount++
+		} else if r.GetNumPassing() != 0 {
+			ret.passingCount++
+		} else {
+			ret.unknownCount++
+		}
+	}
+	return ret
+}

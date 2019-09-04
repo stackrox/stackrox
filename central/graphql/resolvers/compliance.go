@@ -49,7 +49,7 @@ func InitCompliance() {
 			schema.AddExtraResolver("ComplianceStandardMetadata", "complianceResults(query: String): [ControlResult!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceResults(query: String): [ControlResult!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlEntities(clusterID: ID!): [Node!]!"),
-			schema.AddType("ComplianceControlNodeCount", []string{"failingCount: Int!", "passingCount: Int!"}),
+			schema.AddType("ComplianceControlNodeCount", []string{"failingCount: Int!", "passingCount: Int!", "unknownCount: Int!"}),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlNodeCount(query: String): ComplianceControlNodeCount"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlNodes(query: String): [Node!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlFailingNodes(query: String): [Node!]!"),
@@ -458,7 +458,7 @@ func (resolver *complianceControlResolver) ComplianceControlNodeCount(ctx contex
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	nr := complianceControlNodeCountResolver{failingCount: 0, passingCount: 0}
+	nr := complianceControlNodeCountResolver{failingCount: 0, passingCount: 0, unknownCount: 0}
 	standardIDs, err := getStandardIDs(ctx, resolver.root.ComplianceStandardStore)
 	if err != nil {
 		return nil, err
@@ -468,27 +468,14 @@ func (resolver *complianceControlResolver) ComplianceControlNodeCount(ctx contex
 		return nil, err
 	}
 	for _, clusterID := range clusterIDs {
-		hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
-		if err != nil || !hasComplianceSuccessfullyRun {
+		rs, ok, err := resolver.getNodeControlAggregationResults(ctx, clusterID, standardIDs, args)
+		if !ok || err != nil {
 			return nil, err
 		}
-		query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
-			AddExactMatches(search.ControlID, resolver.data.GetId()).RawQuery()
-		if err != nil {
-			return nil, err
-		}
-		if args.Query != nil {
-			query = strings.Join([]string{query, *(args.Query)}, "+")
-		}
-		r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL}, v1.ComplianceAggregation_NODE)
-		if err != nil {
-			return nil, err
-		}
-		if len(r) != 1 {
-			return nil, errors.Wrapf(errors.New("unexpected control-node aggregation results length"), "length of aggregated results expected: 1, actual : %d", len(r))
-		}
-		nr.failingCount += r[0].GetNumFailing()
-		nr.passingCount += r[0].GetNumPassing()
+		ret := getComplianceControlNodeCountFromAggregationResults(rs)
+		nr.failingCount += ret.FailingCount()
+		nr.passingCount += ret.PassingCount()
+		nr.unknownCount += ret.UnknownCount()
 	}
 	return &nr, nil
 }
@@ -651,6 +638,7 @@ func getScopeIDFromAggregationResult(result *v1.ComplianceAggregation_Result, sc
 type complianceControlNodeCountResolver struct {
 	failingCount int32
 	passingCount int32
+	unknownCount int32
 }
 
 func (resolver *complianceControlNodeCountResolver) FailingCount() int32 {
@@ -659,4 +647,8 @@ func (resolver *complianceControlNodeCountResolver) FailingCount() int32 {
 
 func (resolver *complianceControlNodeCountResolver) PassingCount() int32 {
 	return resolver.passingCount
+}
+
+func (resolver *complianceControlNodeCountResolver) UnknownCount() int32 {
+	return resolver.unknownCount
 }
