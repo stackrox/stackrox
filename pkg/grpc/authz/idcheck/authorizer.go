@@ -2,7 +2,6 @@ package idcheck
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -26,7 +25,7 @@ func Wrap(idAuthorizer IdentityBasedAuthorizer) authz.Authorizer {
 func (w identityBasedAuthorizerWrapper) Authorized(ctx context.Context, fullMethodName string) error {
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return errors.New("no identity in context")
+		return authz.ErrNotAuthorized("no identity in context")
 	}
 	return w.idAuthorizer.AuthorizeByIdentity(id)
 }

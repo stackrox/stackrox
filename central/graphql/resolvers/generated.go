@@ -128,9 +128,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
 	utils.Must(builder.AddType("ClusterUpgradeStatus", []string{
+		"currentUpgradeInitiatedAt: Time",
 		"currentUpgradeProcessId: String!",
 		"currentUpgradeProgress: UpgradeProgress",
 		"upgradability: ClusterUpgradeStatus_Upgradability!",
+		"upgradabilityStatusReason: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_Upgradability(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
@@ -1804,6 +1806,11 @@ func (resolver *Resolver) wrapClusterUpgradeStatuses(values []*storage.ClusterUp
 	return output, nil
 }
 
+func (resolver *clusterUpgradeStatusResolver) CurrentUpgradeInitiatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCurrentUpgradeInitiatedAt()
+	return timestamp(value)
+}
+
 func (resolver *clusterUpgradeStatusResolver) CurrentUpgradeProcessId(ctx context.Context) string {
 	value := resolver.data.GetCurrentUpgradeProcessId()
 	return value
@@ -1817,6 +1824,11 @@ func (resolver *clusterUpgradeStatusResolver) CurrentUpgradeProgress(ctx context
 func (resolver *clusterUpgradeStatusResolver) Upgradability(ctx context.Context) string {
 	value := resolver.data.GetUpgradability()
 	return value.String()
+}
+
+func (resolver *clusterUpgradeStatusResolver) UpgradabilityStatusReason(ctx context.Context) string {
+	value := resolver.data.GetUpgradabilityStatusReason()
+	return value
 }
 
 func toClusterUpgradeStatus_Upgradability(value *string) storage.ClusterUpgradeStatus_Upgradability {

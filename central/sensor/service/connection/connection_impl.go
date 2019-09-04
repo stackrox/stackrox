@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/recorder"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -29,7 +28,6 @@ type sensorConnection struct {
 
 	scrapeCtrl          scrape.Controller
 	networkPoliciesCtrl networkpolicies.Controller
-	upgradeCtrl         *upgradeController
 
 	sensorEventHandler *sensorEventHandler
 
@@ -62,10 +60,7 @@ func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, c
 
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
-	if features.SensorAutoUpgrade.Enabled() {
-		conn.upgradeCtrl = newUpgradeController(ctx, conn, clusterID, clusterMgr)
-		go conn.stopSig.SignalWhenNoCancel(conn.upgradeCtrl.errorSignal())
-	}
+
 	return conn, nil
 }
 

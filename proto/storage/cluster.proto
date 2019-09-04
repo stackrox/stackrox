@@ -114,29 +114,44 @@ message ClusterUpgradeStatus {
     }
 
     Upgradability   upgradability                = 1;
+    string          upgradability_status_reason  = 2;
 
     // The process ID of the current (or most recent) upgrade, if any.
-    string          current_upgrade_process_id   = 2;
+    string                      current_upgrade_process_id   = 3;
+    google.protobuf.Timestamp   current_upgrade_initiated_at = 4;
+
+
     // The progress of the current upgrade, if any,
     // OR of the most recent upgrade, in the event that it failed.
     // Note that we don't store any historical data -- the moment
     // a new upgrade attempt is triggered, we overwrite
     // information from the previous attempt.
-    UpgradeProgress current_upgrade_progress = 3;
+    UpgradeProgress current_upgrade_progress = 5;
 }
 
 message UpgradeProgress {
     enum UpgradeState {
         UNSET                         = 0;
+
+        // In-progress states.
         UPGRADE_TRIGGER_SENT          = 1;
         UPGRADER_LAUNCHING            = 2;
         UPGRADER_LAUNCHED             = 3;
         PRE_FLIGHT_CHECKS_COMPLETE    = 4;
-        PRE_FLIGHT_CHECKS_FAILED      = 5;
         UPGRADE_OPERATIONS_DONE       = 6;
-        UPGRADE_OPERATIONS_COMPLETE   = 7;
-        UPGRADE_ERROR_ROLLED_BACK     = 8;
-        UPGRADE_ERROR_ROLLBACK_FAILED = 9;
+
+
+        // The success state.
+        // PLEASE NUMBER ALL IN-PROGRESS STATES ABOVE THIS
+        // AND ALL ERROR STATES BELOW THIS.
+        UPGRADE_COMPLETE              = 10;
+
+
+        // Error states.
+        PRE_FLIGHT_CHECKS_FAILED      = 11;
+        UPGRADE_ERROR_ROLLED_BACK     = 12;
+        UPGRADE_ERROR_ROLLBACK_FAILED = 13;
+        UPGRADE_TIMED_OUT             = 14;
     }
 
     UpgradeState upgrade_state         = 1;

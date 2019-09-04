@@ -7,5 +7,5 @@ import (
 )
 
 func TestAuthzWorks(t *testing.T) {
-	testutils.AssertAuthzWorks(t, New(nil, nil))
+	testutils.AssertAuthzWorks(t, New(nil))
 }

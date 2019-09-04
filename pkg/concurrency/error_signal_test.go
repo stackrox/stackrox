@@ -188,7 +188,7 @@ func TestErrorSignalWhenIsTriggered(t *testing.T) {
 	var retVal bool
 	var signalWhenReturned Flag
 	go func() {
-		retVal = firstSig.SignalWhenNoCancel(&secondSig)
+		retVal = firstSig.SignalWhen(&secondSig, Never())
 		signalWhenReturned.Set(true)
 	}()
 
@@ -212,7 +212,7 @@ func TestErrorSignalWhenSignalItselfIsTriggered(t *testing.T) {
 	var retVal bool
 	var signalWhenReturned Flag
 	go func() {
-		retVal = firstSig.SignalWhenNoCancel(&secondSig)
+		retVal = firstSig.SignalWhen(&secondSig, Never())
 		signalWhenReturned.Set(true)
 	}()
 

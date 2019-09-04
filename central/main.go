@@ -82,6 +82,7 @@ import (
 	sensorService "github.com/stackrox/rox/central/sensor/service"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
+	sensorUpgradeControlService "github.com/stackrox/rox/central/sensorupgrade/controlservice"
 	sensorUpgradeService "github.com/stackrox/rox/central/sensorupgrade/service"
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
@@ -296,8 +297,9 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 	}
 
-	connection.ManagerSingleton().RegisterClusterManager(clusterDataStore.Singleton())
-	go connection.ManagerSingleton().Start()
+	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton()); err != nil {
+		log.Panicf("Couldn't start sensor connection manager: %v", err)
+	}
 
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
@@ -308,7 +310,10 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	}
 
 	if features.SensorAutoUpgrade.Enabled() {
-		servicesToRegister = append(servicesToRegister, sensorUpgradeService.Singleton())
+		servicesToRegister = append(servicesToRegister,
+			sensorUpgradeService.Singleton(),
+			sensorUpgradeControlService.Singleton(),
+		)
 	}
 
 	return servicesToRegister

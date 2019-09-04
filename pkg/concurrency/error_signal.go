@@ -291,17 +291,3 @@ func (s *ErrorSignal) SignalWhen(triggerCond Waitable, cancelCond Waitable) bool
 		return false
 	}
 }
-
-// SignalWhenNoCancel is a variant of SignalWhen that doesn't take a cancelCond.
-// In effect, the cancellation only happens when the signal is triggered by another goroutine.
-func (s *ErrorSignal) SignalWhenNoCancel(triggerCond Waitable) bool {
-	select {
-	case <-triggerCond.Done():
-		if triggerCondErr, ok := triggerCond.(ErrorWaitable); ok {
-			return s.SignalWithError(triggerCondErr.Err())
-		}
-		return s.Signal()
-	case <-s.Done():
-		return false
-	}
-}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "internalapi/central/cluster_config.proto";
+import "internalapi/central/cluster_status.proto";
+import "internalapi/central/network_flow.proto";
+import "internalapi/central/sensor_events.proto";
+import "internalapi/central/sensor_upgrade_ctrl_iservice.proto";
+
+package central;
+
+message SensorUpgradeTrigger {
+    // A UUID that identifies this specific upgrade process.
+    string upgrade_process_id = 1;
+}

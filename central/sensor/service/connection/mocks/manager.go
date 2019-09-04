@@ -87,6 +87,21 @@ func (mr *MockClusterManagerMockRecorder) GetCluster(ctx, id interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCluster", reflect.TypeOf((*MockClusterManager)(nil).GetCluster), ctx, id)
 }
 
+// GetClusters mocks base method
+func (m *MockClusterManager) GetClusters(ctx context.Context) ([]*storage.Cluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClusters", ctx)
+	ret0, _ := ret[0].([]*storage.Cluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClusters indicates an expected call of GetClusters
+func (mr *MockClusterManagerMockRecorder) GetClusters(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockClusterManager)(nil).GetClusters), ctx)
+}
+
 // MockManager is a mock of Manager interface
 type MockManager struct {
 	ctrl     *gomock.Controller
@@ -111,27 +126,17 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // Start mocks base method
-func (m *MockManager) Start() {
+func (m *MockManager) Start(mgr connection.ClusterManager) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Start")
+	ret := m.ctrl.Call(m, "Start", mgr)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Start indicates an expected call of Start
-func (mr *MockManagerMockRecorder) Start() *gomock.Call {
+func (mr *MockManagerMockRecorder) Start(mgr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start))
-}
-
-// RegisterClusterManager mocks base method
-func (m *MockManager) RegisterClusterManager(mgr connection.ClusterManager) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RegisterClusterManager", mgr)
-}
-
-// RegisterClusterManager indicates an expected call of RegisterClusterManager
-func (mr *MockManagerMockRecorder) RegisterClusterManager(mgr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterClusterManager", reflect.TypeOf((*MockManager)(nil).RegisterClusterManager), mgr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr)
 }
 
 // HandleConnection mocks base method
@@ -174,4 +179,32 @@ func (m *MockManager) GetActiveConnections() []connection.SensorConnection {
 func (mr *MockManagerMockRecorder) GetActiveConnections() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveConnections", reflect.TypeOf((*MockManager)(nil).GetActiveConnections))
+}
+
+// RecordUpgradeProgress mocks base method
+func (m *MockManager) RecordUpgradeProgress(clusterID, upgradeProcessID string, upgradeProgress *storage.UpgradeProgress) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordUpgradeProgress", clusterID, upgradeProcessID, upgradeProgress)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordUpgradeProgress indicates an expected call of RecordUpgradeProgress
+func (mr *MockManagerMockRecorder) RecordUpgradeProgress(clusterID, upgradeProcessID, upgradeProgress interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpgradeProgress", reflect.TypeOf((*MockManager)(nil).RecordUpgradeProgress), clusterID, upgradeProcessID, upgradeProgress)
+}
+
+// TriggerUpgrade mocks base method
+func (m *MockManager) TriggerUpgrade(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TriggerUpgrade", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TriggerUpgrade indicates an expected call of TriggerUpgrade
+func (mr *MockManagerMockRecorder) TriggerUpgrade(ctx, clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerUpgrade", reflect.TypeOf((*MockManager)(nil).TriggerUpgrade), ctx, clusterID)
 }

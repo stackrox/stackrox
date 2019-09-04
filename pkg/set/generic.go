@@ -20,6 +20,7 @@ import (
 //go:generate genny -in=$GOFILE -out=gen-uint32-$GOFILE gen "KeyType=uint32"
 //go:generate genny -in=$GOFILE -out=gen-v1-search-cats-$GOFILE -imp=github.com/stackrox/rox/generated/api/v1 gen "KeyType=v1.SearchCategory"
 //go:generate genny -in=$GOFILE -out=$GOPATH/src/github.com/stackrox/rox/pkg/auth/permissions/set.go -pkg permissions gen "KeyType=Resource"
+//go:generate genny -in=$GOFILE -out=gen-upgrade-progress-state-$GOFILE -imp=github.com/stackrox/rox/generated/storage gen "KeyType=storage.UpgradeProgress_UpgradeState"
 type KeyType generic.Type
 
 // KeyTypeSet will get translated to generic sets.

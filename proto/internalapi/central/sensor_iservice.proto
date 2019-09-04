@@ -6,7 +6,7 @@ import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_status.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/sensor_events.proto";
-import "internalapi/central/sensor_upgrade_iservice.proto";
+import "internalapi/central/sensor_upgrade.proto";
 
 package central;
 

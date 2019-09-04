@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -32,6 +33,7 @@ var (
 
 type service struct {
 	configDataStore datastore.DataStore
+	manager         connection.Manager
 }
 
 func (s *service) RegisterServiceServer(server *grpc.Server) {
@@ -68,5 +70,13 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 }
 
 func (s *service) TriggerSensorUpgrade(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
+	if req.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "no cluster ID specified")
+	}
+
+	err := s.manager.TriggerUpgrade(ctx, req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.Empty{}, nil
 }
