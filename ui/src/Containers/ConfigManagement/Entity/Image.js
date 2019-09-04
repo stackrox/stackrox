@@ -21,7 +21,7 @@ import EntityList from '../List/EntityList';
 import TableWidget from './widgets/TableWidget';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
-const Image = ({ id, entityListType, query, entityContext }) => {
+const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -98,6 +98,7 @@ const Image = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
                             entityContext={{ ...entityContext, [entityTypes.IMAGE]: id }}
                             query={query}

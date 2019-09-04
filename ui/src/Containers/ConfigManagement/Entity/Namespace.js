@@ -25,7 +25,7 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import EntityList from '../List/EntityList';
 
-const Namespace = ({ id, entityListType, query, entityContext }) => {
+const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -106,6 +106,7 @@ const Namespace = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
                             entityContext={{ ...entityContext, [entityTypes.NAMESPACE]: id }}
                         />

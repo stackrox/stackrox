@@ -186,6 +186,7 @@ const buildTableColumns = (match, location) => {
 const createTableRows = data => data.results;
 
 const Clusters = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
+    const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
     const queryObject = { ...restQuery };
@@ -211,6 +212,7 @@ const Clusters = ({ match, location, className, selectedRowId, onRowClick, query
             idAttribute="id"
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}
+            autoFocusSearchInput={autoFocusSearchInput}
         />
     );
 };

@@ -74,6 +74,7 @@ const Images = ({
     data,
     entityContext
 }) => {
+    const autoFocusSearchInput = !selectedRowId;
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
     const tableColumns = buildTableColumns(match, location, entityContext);
@@ -89,6 +90,7 @@ const Images = ({
             selectedRowId={selectedRowId}
             idAttribute="id"
             data={data}
+            autoFocusSearchInput={autoFocusSearchInput}
         />
     );
 };

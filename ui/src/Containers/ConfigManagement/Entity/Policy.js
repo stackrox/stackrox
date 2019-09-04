@@ -71,7 +71,7 @@ DeploymentViolations.defaultProps = {
     alerts: []
 };
 
-const Policy = ({ id, entityListType, query, entityContext }) => {
+const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
     const variables = {
         id,
@@ -135,6 +135,7 @@ const Policy = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
                             query={query}
                             entityContext={{ ...entityContext, [entityTypes.POLICY]: id }}

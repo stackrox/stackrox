@@ -31,6 +31,7 @@ const List = ({
     defaultSorted,
     defaultSearchOptions,
     data,
+    autoFocusSearchInput,
     match,
     location,
     history
@@ -85,6 +86,7 @@ const List = ({
                                     className="w-full"
                                     categoryOptions={searchOptions}
                                     categories={categories}
+                                    autoFocus={autoFocusSearchInput}
                                 />
                             );
                         }}
@@ -135,6 +137,7 @@ List.propTypes = {
     defaultSorted: PropTypes.arrayOf(PropTypes.shape({})),
     defaultSearchOptions: PropTypes.arrayOf(PropTypes.string),
     data: PropTypes.arrayOf(PropTypes.shape({})),
+    autoFocusSearchInput: PropTypes.bool,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired
@@ -147,7 +150,8 @@ List.defaultProps = {
     selectedRowId: null,
     defaultSorted: [],
     defaultSearchOptions: [],
-    data: null
+    data: null,
+    autoFocusSearchInput: true
 };
 
 export default withRouter(List);

@@ -115,6 +115,7 @@ const ServiceAccounts = ({
     data,
     entityContext
 }) => {
+    const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
@@ -140,6 +141,7 @@ const ServiceAccounts = ({
                 }
             ]}
             data={data}
+            autoFocusSearchInput={autoFocusSearchInput}
         />
     );
 };

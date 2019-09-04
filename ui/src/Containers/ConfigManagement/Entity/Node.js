@@ -22,7 +22,7 @@ import { CONTROL_FRAGMENT } from 'queries/controls';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import EntityList from '../List/EntityList';
 
-const Node = ({ id, entityListType, query, entityContext }) => {
+const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const queryObject = { ...query[searchParam] };
@@ -104,6 +104,7 @@ const Node = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             data={getControlsWithStatus(complianceResults)}
                             query={query}
                             entityContext={{ ...entityContext, [entityTypes.NODE]: id }}

@@ -175,6 +175,7 @@ const Namespaces = ({
     data,
     entityContext
 }) => {
+    const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
     const queryText = queryService.objectToWhereClause({ ...restQuery });
@@ -199,6 +200,7 @@ const Namespaces = ({
             idAttribute="metadata.id"
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}
+            autoFocusSearchInput={autoFocusSearchInput}
         />
     );
 };

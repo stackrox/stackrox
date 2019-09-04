@@ -71,6 +71,7 @@ const createTableRows = data =>
     data.subjects.reduce((acc, curr) => [...acc, ...curr.subjectWithClusterID], []);
 
 const Subjects = ({ match, location, selectedRowId, onRowClick, query, className, data }) => {
+    const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;
@@ -96,6 +97,7 @@ const Subjects = ({ match, location, selectedRowId, onRowClick, query, className
                 }
             ]}
             data={data}
+            autoFocusSearchInput={autoFocusSearchInput}
         />
     );
 };

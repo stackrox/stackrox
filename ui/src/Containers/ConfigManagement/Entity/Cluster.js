@@ -28,7 +28,7 @@ import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
 import EntityList from '../List/EntityList';
 
-const Cluster = ({ id, entityListType, query, entityContext }) => {
+const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const queryObject = { ...query[searchParam] };
@@ -135,6 +135,7 @@ const Cluster = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             data={listData}
                             entityContext={{ ...entityContext, [entityTypes.CLUSTER]: id }}
                             query={query}

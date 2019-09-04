@@ -141,7 +141,7 @@ SecretValues.propTypes = {
     files: PropTypes.arrayOf(PropTypes.shape).isRequired
 };
 
-const Secret = ({ id, entityListType, query, entityContext }) => {
+const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -215,6 +215,7 @@ const Secret = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             data={getSubListFromEntity(secret, entityListType)}
                             query={query}
                         />

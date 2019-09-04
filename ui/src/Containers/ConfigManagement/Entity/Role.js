@@ -20,7 +20,7 @@ import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import EntityList from '../List/EntityList';
 
-const Role = ({ id, entityListType, query, entityContext }) => {
+const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -90,6 +90,7 @@ const Role = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
                             entityContext={{ ...entityContext, [entityTypes.ROLE]: id }}
                             query={query}

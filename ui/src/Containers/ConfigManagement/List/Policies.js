@@ -104,6 +104,7 @@ const tableColumns = [
 const createTableRows = data => data.policies;
 
 const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
+    const autoFocusSearchInput = !selectedRowId;
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
     const queryText = queryService.objectToWhereClause({
         'Lifecycle Stage': 'DEPLOY',
@@ -136,6 +137,7 @@ const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
             ]}
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}
+            autoFocusSearchInput={autoFocusSearchInput}
         />
     );
 };

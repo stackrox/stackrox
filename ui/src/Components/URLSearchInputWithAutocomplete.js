@@ -261,9 +261,7 @@ const URLSearchInputWithAutocomplete = props => {
         createOptionPosition,
         ...rest
     };
-    return (
-        <Creatable {...creatableProps} components={{ ...creatableProps.components }} autoFocus />
-    );
+    return <Creatable {...creatableProps} components={{ ...creatableProps.components }} />;
 };
 
 URLSearchInputWithAutocomplete.propTypes = {
@@ -273,7 +271,8 @@ URLSearchInputWithAutocomplete.propTypes = {
     autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
     fetchAutocomplete: PropTypes.func,
     clearAutocomplete: PropTypes.func,
-    setAllSearchOptions: PropTypes.func.isRequired
+    setAllSearchOptions: PropTypes.func.isRequired,
+    autoFocus: PropTypes.bool
 };
 
 URLSearchInputWithAutocomplete.defaultProps = {
@@ -282,7 +281,8 @@ URLSearchInputWithAutocomplete.defaultProps = {
     categoryOptions: [],
     autoCompleteResults: [],
     fetchAutocomplete: null,
-    clearAutocomplete: null
+    clearAutocomplete: null,
+    autoFocus: true
 };
 
 const mapDispatchToProps = {

@@ -60,6 +60,7 @@ const EntityPage = ({ match, location }) => {
                         entityType={pageEntityType}
                         entityId={pageEntityId}
                         entityListType={entityListType1}
+                        entityId1={entityId1}
                         query={query}
                     />
                 </div>

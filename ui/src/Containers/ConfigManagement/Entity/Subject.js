@@ -43,7 +43,7 @@ const processSubjectDataByClusters = data => {
     return entity;
 };
 
-const Subject = ({ id, entityListType, query, entityContext }) => {
+const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -103,6 +103,7 @@ const Subject = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             data={listData}
                             query={query}
                             entityContext={{ ...entityContext, [entityTypes.SUBJECT]: id }}

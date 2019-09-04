@@ -96,6 +96,8 @@ const createTableRows = data => {
 const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
     const searchParam = useContext(searchContext);
 
+    const autoFocusSearchInput = !selectedRowId;
+
     const queryText = queryService.objectToWhereClause({ Standard: 'CIS', ...query });
     const variables = {
         where: queryText,
@@ -143,6 +145,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
             ]}
             defaultSearchOptions={[SEARCH_OPTIONS.COMPLIANCE.STATE]}
             data={filterByComplianceState(data, complianceState)}
+            autoFocusSearchInput={autoFocusSearchInput}
         />
     );
 };

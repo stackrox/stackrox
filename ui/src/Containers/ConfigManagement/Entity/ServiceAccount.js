@@ -22,7 +22,7 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import EntityList from '../List/EntityList';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
-const ServiceAccount = ({ id, entityListType, query, entityContext }) => {
+const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -98,6 +98,7 @@ const ServiceAccount = ({ id, entityListType, query, entityContext }) => {
                     return (
                         <EntityList
                             entityListType={entityListType}
+                            entityId={entityId1}
                             entityContext={{ ...entityContext, [entityTypes.SERVICE_ACCOUNT]: id }}
                             data={getSubListFromEntity(entity, entityListType)}
                             query={query}
