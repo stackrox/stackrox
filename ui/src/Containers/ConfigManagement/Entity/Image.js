@@ -177,7 +177,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 )}
                                 {layers.length > 0 && (
                                     <TableWidget
-                                        header={`${layers.length} layers accross this image`}
+                                        header={`${layers.length} layers across this image`}
                                         rows={layers}
                                         noDataText="No Layers"
                                         className="bg-base-100"

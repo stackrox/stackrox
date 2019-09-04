@@ -11,11 +11,11 @@ import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/R
 import Widget from 'Components/Widget';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import EntityWithFailedControls, { getRelatedEntities } from './widgets/EntityWithFailedControls';
+import EntityWithFailedControls from './widgets/EntityWithFailedControls';
 import Nodes from '../List/Nodes';
 
 const QUERY = gql`
-    query controlById($id: ID!, $groupBy: [ComplianceAggregation_Scope!], $where: String) {
+    query controlById($id: ID!, $where: String) {
         results: complianceControl(id: $id) {
             interpretationText
             description
@@ -24,21 +24,20 @@ const QUERY = gql`
             standardId
         }
 
-        entities: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
-            results {
-                aggregationKeys {
-                    id
-                    scope
+        entities: complianceControl(id: $id) {
+            complianceControlNodes {
+                name
+                clusterName
+                id
+                clusterId
+                osImage
+                containerRuntimeVersion
+                joinedAt
+                nodeComplianceControlCount(query: $where) {
+                    failingCount
+                    passingCount
+                    unknownCount
                 }
-                keys {
-                    ... on Node {
-                        clusterName
-                        id
-                        name
-                    }
-                }
-                numFailing
-                numPassing
             }
         }
     }
@@ -52,17 +51,29 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
         where: queryService.objectToWhereClause({
             ...query[searchParam],
             'Control Id': id
-        }),
-        groupBy: [entityTypes.CONTROL, entityTypes.NODE]
+        })
     };
 
     return (
         <Query query={QUERY} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
+
                 if (!data || !data.results)
                     return <PageNotFound resourceType={entityTypes.CONTROL} />;
-                const { results: entity, entities } = data;
+                const { results: entity, entities = {} } = data;
+                const { complianceControlNodes } = entities;
+
+                if (entityListType) {
+                    return (
+                        <Nodes
+                            match={match}
+                            location={location}
+                            data={complianceControlNodes}
+                            entityContext={{ ...entityContext, [entityTypes.CONTROL]: id }}
+                        />
+                    );
+                }
 
                 const {
                     standardId = '',
@@ -70,21 +81,20 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                     description = '',
                     interpretationText = ''
                 } = entity;
-                const nodes = getRelatedEntities(entities, entityTypes.NODE);
-
-                if (entityListType) {
-                    const nodeIds = nodes.map(node => node.id).join();
-                    const whereVars = { ...query[searchParam], 'Node Id': nodeIds };
-                    return (
-                        <Nodes
-                            match={match}
-                            location={location}
-                            query={whereVars}
-                            entityContext={{ ...entityContext, [entityTypes.CONTROL]: id }}
-                        />
-                    );
-                }
-
+                const nodes = complianceControlNodes.map(node => {
+                    const {
+                        id: nodeId,
+                        name: nodeName,
+                        nodeComplianceControlCount,
+                        clusterName
+                    } = node;
+                    return {
+                        id: nodeId,
+                        name: nodeName,
+                        clusterName,
+                        passing: !nodeComplianceControlCount.failingCount
+                    };
+                });
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Control Details">
@@ -105,7 +115,6 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                                         </div>
                                     </Widget>
                                 )}
-                                {}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Nodes"
@@ -118,7 +127,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                             <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                 <EntityWithFailedControls
                                     entityType={entityTypes.NODE}
-                                    entities={entities}
+                                    relatedEntities={nodes}
                                 />
                             </div>
                         </CollapsibleSection>

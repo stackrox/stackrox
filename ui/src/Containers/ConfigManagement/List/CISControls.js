@@ -95,14 +95,15 @@ const createTableRows = data => {
 
 const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
     const searchParam = useContext(searchContext);
-
     const autoFocusSearchInput = !selectedRowId;
 
     const {
         [SEARCH_OPTIONS.COMPLIANCE.STATE]: complianceState,
         ...restQuery
     } = queryService.getQueryBasedOnSearchContext(query, searchParam);
-    const queryText = queryService.objectToWhereClause({ Standard: 'CIS', ...restQuery });
+    const queryObject = { ...restQuery };
+    if (!queryObject.Standard) queryObject.Standard = 'CIS';
+    const queryText = queryService.objectToWhereClause(queryObject);
     const variables = {
         where: queryText,
         groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE]

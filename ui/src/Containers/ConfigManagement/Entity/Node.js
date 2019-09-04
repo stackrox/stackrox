@@ -153,7 +153,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                             <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                 {failedComplianceResults.length === 0 && (
                                     <NoResultsMessage
-                                        message="No nodes failing controls in this cluster"
+                                        message="No nodes failing controls on this node"
                                         className="p-6 shadow"
                                         icon="info"
                                     />

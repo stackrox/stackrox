@@ -5,6 +5,7 @@ import withAuth from '../helpers/basicAuth';
 // specifying an "entityName" will try to select that row in the table
 const renderListAndSidePanel = (entity, entityName = null) => {
     cy.visit(url.list[entity]);
+    cy.wait(1000);
     cy.get(`${selectors.tableRows}${entityName ? `:contains(${entityName})` : ''}`)
         .find(selectors.tableCells)
         .eq(1)

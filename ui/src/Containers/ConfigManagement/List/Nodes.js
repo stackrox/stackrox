@@ -25,13 +25,10 @@ const QUERY = gql`
             osImage
             containerRuntimeVersion
             joinedAt
-            complianceResults(query: "Standard: CIS") {
-                resource {
-                    __typename
-                }
-                control {
-                    id
-                }
+            nodeComplianceControlCount(query: "Standard:CIS") {
+                failingCount
+                passingCount
+                unknownCount
             }
         }
     }
@@ -92,35 +89,38 @@ const buildTableColumns = (match, location, entityContext) => {
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                   }
               },
-        {
-            Header: `CIS Controls`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'complianceResults',
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { complianceResults = [] } = original;
-                const filteredComplianceResults = complianceResults.filter(
-                    // eslint-disable-next-line
-                    result => result.resource.__typename === 'Node'
-                );
-                const { length } = filteredComplianceResults;
-                if (!length) {
-                    return <LabelChip text="No Controls" type="alert" />;
-                }
-                const url = URLService.getURL(match, location)
-                    .push(original.id)
-                    .push(entityTypes.CONTROL)
-                    .url();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${length} ${pluralize('Controls', length)}`}
-                    />
-                );
-            }
-        }
+        entityContext && entityContext[entityTypes.CONTROL]
+            ? null
+            : {
+                  Header: `CIS Controls`,
+                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'nodeComplianceControlCount',
+                  // eslint-disable-next-line
+                  Cell: ({ original, pdf }) => {
+                      const { nodeComplianceControlCount } = original;
+                      const {
+                          passingCount,
+                          failingCount,
+                          unknownCount
+                      } = nodeComplianceControlCount;
+                      const controlCount = passingCount + failingCount + unknownCount;
+                      if (!controlCount) {
+                          return <LabelChip text="No Controls" type="alert" />;
+                      }
+                      const url = URLService.getURL(match, location)
+                          .push(original.id)
+                          .push(entityTypes.CONTROL)
+                          .url();
+                      return (
+                          <TableCellLink
+                              pdf={pdf}
+                              url={url}
+                              text={`${controlCount} ${pluralize('Controls', controlCount)}`}
+                          />
+                      );
+                  }
+              }
     ];
     return tableColumns.filter(col => col);
 };

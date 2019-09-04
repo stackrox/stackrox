@@ -27,9 +27,12 @@ export const getRelatedEntities = (data, entityType) => {
     return Object.values(relatedEntities);
 };
 
-const EntityWithFailedControls = ({ entityType, entities }) => {
-    const relatedEntities = getRelatedEntities(entities, entityType);
-    const failingRelatedEntities = relatedEntities.filter(relatedEntity => !relatedEntity.passing);
+const EntityWithFailedControls = ({ entityType, entities, relatedEntities }) => {
+    let localRelatedEntities = relatedEntities;
+    if (!relatedEntities.length) localRelatedEntities = getRelatedEntities(entities, entityType);
+    const failingRelatedEntities = localRelatedEntities.filter(
+        relatedEntity => !relatedEntity.passing
+    );
     const count = failingRelatedEntities.length;
     if (count === 0)
         return (
@@ -39,7 +42,7 @@ const EntityWithFailedControls = ({ entityType, entities }) => {
                 icon="info"
             />
         );
-    const tableHeader = `${count} ${count === 1 ? 'node has' : 'nodes have'} failing controls`;
+    const tableHeader = `${count} ${count === 1 ? 'node is' : 'nodes are'} failing this control`;
     return (
         <TableWidget
             entityType={entityType}
@@ -57,13 +60,15 @@ EntityWithFailedControls.propTypes = {
     entityType: PropTypes.string.isRequired,
     entities: PropTypes.shape({
         results: PropTypes.arrayOf(PropTypes.shape())
-    })
+    }),
+    relatedEntities: PropTypes.arrayOf(PropTypes.shape())
 };
 
 EntityWithFailedControls.defaultProps = {
     entities: {
         results: []
-    }
+    },
+    relatedEntities: []
 };
 
 export default EntityWithFailedControls;

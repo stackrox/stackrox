@@ -20,22 +20,10 @@ export const NODE_FRAGMENT = gql`
             key
             value
         }
-        complianceResults {
-            resource {
-                __typename
-            }
-            control {
-                id
-                standardId
-                name
-                description
-            }
-            value {
-                overallState
-                evidence {
-                    message
-                }
-            }
+        nodeComplianceControlCount(query: "Standard:CIS") {
+            failingCount
+            passingCount
+            unknownCount
         }
     }
 `;
