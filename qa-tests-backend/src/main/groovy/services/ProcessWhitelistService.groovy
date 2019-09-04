@@ -2,7 +2,9 @@ package services
 
 import io.stackrox.proto.api.v1.ProcessWhitelistServiceGrpc
 import io.stackrox.proto.api.v1.ProcessWhitelistServiceOuterClass
-import io.stackrox.proto.storage.ProcessWhitelistOuterClass
+import io.stackrox.proto.storage.ProcessWhitelistOuterClass.ProcessWhitelist
+import io.stackrox.proto.storage.ProcessWhitelistOuterClass.WhitelistItemOrBuilder
+import io.stackrox.proto.storage.ProcessWhitelistOuterClass.WhitelistItem
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass.ProcessWhitelistKey
 import objects.Deployment
 import util.Timer
@@ -11,9 +13,8 @@ class ProcessWhitelistService extends BaseService {
     static getProcessWhitelistService() {
         return ProcessWhitelistServiceGrpc.newBlockingStub(getChannel())
     }
-    static  ProcessWhitelistOuterClass.ProcessWhitelist getProcessWhitelist(
-            String clusterId, Deployment deployment, String containerName = null,
-            int iterations = 20, int interval = 6) {
+    static ProcessWhitelist getProcessWhitelist(
+            String clusterId, Deployment deployment, String containerName = null) {
         String namespace = deployment.getNamespace()
         String deploymentId = deployment.getDeploymentUid()
         String cName = containerName ?: deployment.getName()
@@ -25,25 +26,10 @@ class ProcessWhitelistService extends BaseService {
                         .setDeploymentId(deploymentId)
                         .setContainerName(cName).build())
                 .build()
-        Timer t = new Timer(iterations, interval)
-        while (t.IsValid()) {
-            def whitelist = getWhitelistProcesses(request)
-            if (whitelist) {
-                println "SR found whitelisted process for the key - " +
-                        "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
-                            " within ${t.SecondsSince()}s"
-                return whitelist
-                }
-            println "SR has not found whitelisted  process for the key - " +
-                    "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} yet"
-        }
-        println "SR has not found whitelisted  process for the key in - " +
-                "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
-                "${iterations * interval} seconds"
-        return null
+        return getWhitelistProcesses(request)
     }
 
-    static List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists(
+    static List<ProcessWhitelist> lockProcessWhitelists(
             String clusterId, Deployment deployment, String containerName, boolean  lock) {
         try {
             String cName = containerName ?: deployment.getName()
@@ -62,7 +48,7 @@ class ProcessWhitelistService extends BaseService {
         }
     }
 
-    static List<ProcessWhitelistOuterClass.ProcessWhitelist> updateProcessWhitelists(
+    static List<ProcessWhitelist> updateProcessWhitelists(
             ProcessWhitelistKey[] keys,
             String [] toBeAddedProcesses,
             String[] toBeRemovedProcesses) {
@@ -72,27 +58,28 @@ class ProcessWhitelistService extends BaseService {
             for ( ProcessWhitelistKey key : keys) {
                 requestBuilder.addKeys(key)
             }
-            ProcessWhitelistOuterClass.WhitelistItemOrBuilder itemBuilder =
-                    ProcessWhitelistOuterClass.WhitelistItem.newBuilder()
+            WhitelistItemOrBuilder itemBuilder =
+                    WhitelistItem.newBuilder()
             for ( String processToBeAdded : toBeAddedProcesses) {
-                ProcessWhitelistOuterClass.WhitelistItem   item  =
+                WhitelistItem item  =
                         itemBuilder.setProcessName(processToBeAdded).build()
                 requestBuilder.addAddElements(item)
             }
 
             for ( String processToBeRemoved : toBeRemovedProcesses) {
-                ProcessWhitelistOuterClass.WhitelistItem   item  =
+                WhitelistItem   item  =
                         itemBuilder.setProcessName(processToBeRemoved).build()
                 requestBuilder.addRemoveElements(item)
             }
-            List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedLst = getProcessWhitelistService()
+            List<ProcessWhitelist> updatedLst = getProcessWhitelistService()
                 .updateProcessWhitelists(requestBuilder.build()).whitelistsList
             return updatedLst
     } catch (Exception e) {
             println "Error updating process whitelists: ${e}"
     }
     }
-    static ProcessWhitelistOuterClass.ProcessWhitelist getWhitelistProcesses(
+
+    static ProcessWhitelist getWhitelistProcesses(
         ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request) {
         try {
             return getProcessWhitelistService().getProcessWhitelist(request)
@@ -103,33 +90,36 @@ class ProcessWhitelistService extends BaseService {
         return null
     }
 
-    static boolean waitForDeploymentWhitelistsCreated(String clusterId, Deployment deployment, String containerName) {
+    static ProcessWhitelist waitForDeploymentWhitelistsCreated(String clusterId, Deployment deployment,
+                                                               String containerName) {
         Timer t = new Timer(20, 6)
         try {
             while (t.IsValid()) {
-                ProcessWhitelistOuterClass.ProcessWhitelist whitelist =
+                ProcessWhitelist whitelist =
                         getProcessWhitelist(clusterId, deployment, containerName)
                 if (whitelist != null) {
-                    return true
+                    return whitelist
                 }
+                println("Waiting for whitelist to be created")
             }
             println("Did not find whitelists for deployment ${deployment.getDeploymentUid()}")
         }
         catch (Exception e) {
             println "Error waiting for deployment whitelists to be created ${e}"
         }
-        return false
+        return null
     }
 
     static boolean waitForDeploymentWhitelistsDeleted(String clusterId, Deployment deployment, String containerName) {
         Timer t = new Timer(5, 2)
         try {
             while (t.IsValid()) {
-                ProcessWhitelistOuterClass.ProcessWhitelist whitelist =
+                ProcessWhitelist whitelist =
                         getProcessWhitelist(clusterId, deployment, containerName)
                 if (whitelist == null) {
                     return true
                 }
+                println("Waiting for whitelist to be deleted")
             }
             println("Whitelists still exist for deployment ${deployment.getDeploymentUid()}")
         }

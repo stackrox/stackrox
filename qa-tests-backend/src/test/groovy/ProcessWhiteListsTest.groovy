@@ -153,7 +153,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         String deploymentId = deployment.getDeploymentUid()
         String containerName = deployment.getName()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                 getProcessWhitelist(clusterId, deployment, containerName)
+                 waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
         assert (whitelist != null)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                  (whitelist.key.containerName.equalsIgnoreCase(containerName)))
@@ -178,7 +178,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
          }
         orchestrator.execInContainer(deployment, "pwd")
         if (resolveWhitelist) {
-            waitForViolation(containerName, "Unauthorized Process Execution", 90)
+            assert !waitForViolation(containerName, "Unauthorized Process Execution", 15)
         }
         else {
             assert waitForViolation(containerName, "Unauthorized Process Execution", 90)
@@ -218,7 +218,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         String deploymentId = deployment.getDeploymentUid()
         String containerName = deployment.getName()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                    getProcessWhitelist(clusterId, deployment, containerName)
+                    waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
         assert (whitelist != null)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                     (whitelist.key.containerName.equalsIgnoreCase(containerName)))
@@ -254,9 +254,9 @@ class ProcessWhiteListsTest extends BaseSpecification {
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE }
         assert deployment != null
         String containerName = deployment.getName()
-        def whitelistsCreated = ProcessWhitelistService.
+        def whitelist = ProcessWhitelistService.
                 waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
-        assert(whitelistsCreated)
+        assert(whitelist != null)
 
         //Delete the deployment
         orchestrator.deleteDeployment(deployment)
@@ -287,7 +287,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         //Wait for whitelist to be created
         def initialWhitelist = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, deployment, containerName)
+                waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
         assert (initialWhitelist != null)
 
         //Add the process to the whitelist
@@ -302,7 +302,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
                 .updateProcessWhitelists(keys, toBeAddedProcesses, toBeRemovedProcesses)
         assert ( updatedList!= null)
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, deployment, containerName)
+                waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
         List<ProcessWhitelistOuterClass.WhitelistElement> elements = whitelist.elementsList
         ProcessWhitelistOuterClass.WhitelistElement element = elements.find { it.element.processName.contains("pwd") }
         assert ( element != null)
@@ -317,7 +317,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         then:
         "verify process is not added to the whitelist"
         ProcessWhitelistOuterClass.ProcessWhitelist whitelistAfterReRun = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, deployment, containerName)
+                waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
         assert  ( whitelistAfterReRun.elementsList.find { it.element.processName.contains("pwd") } == null)
         where:
         deploymentName                                   | processName
