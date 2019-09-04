@@ -48,7 +48,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                 }
                 creationTime
             }
-            ${entityContext[entityTypes.CLUSTER] ? '' : 'cluster { id name}'}
+            cluster { id name }
             ${
                 entityListType === entityTypes.IMAGE
                     ? 'images(query: $query) {...imageFields}'
@@ -165,7 +165,10 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Namespace Findings">
                             <div className="flex pdf-page pdf-stretch rounded relative rounded mb-4 ml-4 mr-4">
                                 <DeploymentsWithFailedPolicies
-                                    query={queryService.objectToWhereClause({ Namespace: name })}
+                                    query={queryService.objectToWhereClause({
+                                        Cluster: cluster.name,
+                                        Namespace: name
+                                    })}
                                     message="No deployments violating policies in this namespace"
                                 />
                             </div>
