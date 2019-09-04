@@ -681,7 +681,7 @@ class Enforcement extends BaseSpecification {
         orchestrator.createDeployment(wpDeployment)
         String clusterId = ClusterService.getClusterId()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                waitForDeploymentWhitelistsCreated(clusterId, wpDeployment)
+                getProcessWhitelist(clusterId, wpDeployment)
         assert (whitelist != null)
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
                 lockProcessWhitelists(clusterId, wpDeployment, "", true)
