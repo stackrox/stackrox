@@ -118,7 +118,9 @@ const ClustersPage = ({
         });
     }
 
-    function onAddCluster() {}
+    function onAddCluster() {
+        setSelectedClusterId('new');
+    }
 
     function upgradeSelectedClusters() {
         upgradeClusters(selectedClusters).then(() => {
@@ -214,7 +216,7 @@ const ClustersPage = ({
                 text="New Cluster"
                 className="btn btn-base ml-2"
                 onClick={onAddCluster}
-                disabled={selectedClusterId}
+                disabled={!!selectedClusterId}
             />
         </React.Fragment>
     );

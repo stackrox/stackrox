@@ -7,26 +7,50 @@ import set from 'lodash/set';
 import Message from 'Components/Message';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
-import { getClusterById, saveCluster } from 'services/ClustersService';
+import { getClusterById, saveCluster, downloadClusterYaml } from 'services/ClustersService';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
-import { wizardSteps } from './cluster.helpers';
+import { clusterTypeOptions, defaultNewClusterType, wizardSteps } from './cluster.helpers';
+
+const newClusterSkeleton = {
+    id: null,
+    name: '',
+    type: defaultNewClusterType,
+    mainImage: '',
+    collectorImage: '',
+    centralApiEndpoint: '',
+    runtimeSupport: false,
+    monitoringEndpoint: '',
+    collectionMethod: 'NO_COLLECTION',
+    DEPRECATEDProviderMetadata: null,
+    admissionController: false,
+    DEPRECATEDOrchestratorMetadata: null,
+    status: null,
+    dynamicConfig: {
+        admissionControllerConfig: {
+            enabled: false,
+            timeoutSeconds: 3,
+            scanInline: false,
+            disableBypass: false
+        }
+    }
+};
 
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
-    const [selectedCluster, setSelectedCluster] = useState(null);
+    const [selectedCluster, setSelectedCluster] = useState(newClusterSkeleton);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [errorState, setErrorState] = useState(null);
 
     function unselectCluster() {
         setSelectedClusterId('');
-        setSelectedCluster(null);
+        setSelectedCluster(newClusterSkeleton);
         setWizardStep(wizardSteps.FORM);
     }
 
     useEffect(
         () => {
-            if (selectedClusterId) {
+            if (selectedClusterId && selectedClusterId !== 'new') {
                 setErrorState(null);
                 // @TODO, can we cache this on client side, if user is going back and forth to clusters?
                 getClusterById(selectedClusterId)
@@ -59,6 +83,17 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         }
     }
 
+    function onClusterTypeChange(newClusterType) {
+        if (
+            clusterTypeOptions.find(value => value === newClusterType) !== undefined &&
+            selectedCluster.type !== newClusterType
+        ) {
+            const newClusterSettings = { ...selectedCluster, type: newClusterType.value };
+
+            setSelectedCluster(newClusterSettings);
+        }
+    }
+
     function onNext() {
         if (wizardStep === wizardSteps.FORM) {
             saveCluster(selectedCluster).then(() => {
@@ -69,16 +104,13 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         }
     }
 
-    // @TODO, migrate download saving from Integrations modal
-    function onDownload() {}
+    function onDownload() {
+        downloadClusterYaml(selectedClusterId);
+    }
 
     /**
      * rendering section
      */
-
-    // Only render if we have image data to render.
-    if (!selectedClusterId) return null;
-
     const showFormStyles = wizardStep === wizardSteps.FORM && !errorState;
     const showDeploymentStyles = wizardStep === wizardSteps.DEPLOYMENT && !errorState;
     const selectedClusterName = (selectedCluster && selectedCluster.name) || '';
@@ -99,7 +131,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         />
     );
 
-    return selectedCluster || !!errorState ? (
+    return selectedClusterId || !!errorState ? (
         <Panel
             header={selectedClusterName}
             headerComponents={(errorState && <div />) || panelButtons}
@@ -110,11 +142,15 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 <Message type="error" message="We could not retrieve the cluster with that ID." />
             )}
             {showFormStyles && (
-                <ClusterEditForm selectedCluster={selectedCluster} handleChange={onChange} />
+                <ClusterEditForm
+                    selectedCluster={selectedCluster}
+                    handleChange={onChange}
+                    onClusterTypeChange={onClusterTypeChange}
+                />
             )}
             {showDeploymentStyles && (
                 <ClusterDeployment
-                    editing
+                    editing={!!selectedCluster}
                     onFileDownload={onDownload}
                     clusterCheckedIn={
                         !!(

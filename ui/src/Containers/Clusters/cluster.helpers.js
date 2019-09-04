@@ -3,36 +3,38 @@ import get from 'lodash/get';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 
-const runtimeOptions = [
+export const runtimeOptions = [
     {
-        inputOption: 'No Runtime Support',
+        label: 'No Runtime Support',
         tableDisplay: 'None',
         value: 'NO_COLLECTION'
     },
     {
-        inputOption: 'Kernel Module Support',
+        label: 'Kernel Module Support',
         tableDisplay: 'Kernel Module',
         value: 'KERNEL_MODULE'
     },
     {
-        inputOption: 'eBPF Support',
+        label: 'eBPF Support',
         tableDisplay: 'eBPF',
         value: 'EBPF'
     }
 ];
 
-const clusterTypeOptions = [
+export const clusterTypeOptions = [
     {
-        inputOption: 'Kubernetes',
+        label: 'Kubernetes',
         tableDisplay: 'Kubernetes',
         value: 'KUBERNETES_CLUSTER'
     },
     {
-        inputOption: 'OpenShift',
+        label: 'OpenShift',
         tableDisplay: 'OpenShift',
         value: 'OPENSHIFT_CLUSTER'
     }
 ];
+
+export const defaultNewClusterType = 'KUBERNETES_CLUSTER';
 
 // @TODO: add optional button text and func
 const upgradeStates = {

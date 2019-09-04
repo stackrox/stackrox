@@ -27,7 +27,7 @@ const ClusterDeploymentPage = ({ onFileDownload, clusterCheckedIn, editing }) =>
                         <Icon.Download className="h-3 w-3" />
                     </button>
                 </div>
-                <div className="text-xs text-center text-base-400">
+                <div className="text-xs text-center text-base-600">
                     * You may modify the YAML to suit your environment as needed
                 </div>
             </div>

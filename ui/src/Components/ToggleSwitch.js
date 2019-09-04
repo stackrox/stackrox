@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 
 function ToggleSwitch({ id, toggleHandler, label, enabled, extraClassNames }) {
     return (
-        <div className={`toggle-switch-wrapper mb-2 ${extraClassNames}`}>
+        <div className={`toggle-switch-wrapper ${extraClassNames}`}>
             <label className="text-xs text-grey-dark" htmlFor={id}>
                 {label}
             </label>
@@ -31,12 +31,13 @@ function ToggleSwitch({ id, toggleHandler, label, enabled, extraClassNames }) {
 ToggleSwitch.propTypes = {
     id: PropTypes.string.isRequired,
     toggleHandler: PropTypes.func.isRequired,
-    label: PropTypes.string.isRequired,
+    label: PropTypes.string,
     enabled: PropTypes.bool,
     extraClassNames: PropTypes.string
 };
 
 ToggleSwitch.defaultProps = {
+    label: '',
     enabled: false,
     extraClassNames: ''
 };

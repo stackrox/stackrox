@@ -8,6 +8,7 @@ class Select extends Component {
         onChange: PropTypes.func.isRequired,
         placeholder: PropTypes.string,
         className: PropTypes.string,
+        wrapperClass: PropTypes.string,
         value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
     };
 
@@ -15,6 +16,7 @@ class Select extends Component {
         placeholder: '',
         className:
             'block w-full border bg-base-200 border-base-400 text-base-600 p-3 pr-8 rounded-sm z-1 focus:border-base-500',
+        wrapperClass: '',
         value: ''
     };
 
@@ -30,9 +32,9 @@ class Select extends Component {
     };
 
     render() {
-        const { className, options, placeholder, value } = this.props;
+        const { className, wrapperClass, options, placeholder, value } = this.props;
         return (
-            <div className="flex relative">
+            <div className={`flex relative ${wrapperClass}`}>
                 <select
                     className={`${className} cursor-pointer`}
                     onChange={this.onClick}
