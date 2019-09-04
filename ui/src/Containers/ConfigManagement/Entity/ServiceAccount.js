@@ -26,6 +26,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
     const searchParam = useContext(searchContext);
 
     const variables = {
+        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
@@ -38,18 +39,14 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
             serviceAccount(id: $id) {
                 id
                 name
-                ${
-                    entityContext[entityTypes.NAMESPACE]
-                        ? ''
-                        : `saNamespace {
+                saNamespace {
                     metadata {
                         id
                         name
                     }
-                }`
                 }
-                
-                ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
+                clusterId 
+                clusterName
                 ${
                     entityListType === entityTypes.DEPLOYMENT
                         ? 'deployments(query: $query) { ...deploymentFields }'
@@ -147,7 +144,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                                     annotations={annotations}
                                     secrets={secrets}
                                 />
-                                {clusterName && (
+                                {!(entityContext && entityContext[entityTypes.CLUSTER]) && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 h-48 mb-4"
                                         entityType={entityTypes.CLUSTER}
@@ -156,7 +153,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                                         entityId={clusterId}
                                     />
                                 )}
-                                {saNamespace && (
+                                {!(entityContext && entityContext[entityTypes.NAMESPACE]) && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 h-48 mb-4"
                                         entityType={entityTypes.NAMESPACE}

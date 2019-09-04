@@ -24,6 +24,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
+        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause(query[searchParam])
     };

@@ -47,6 +47,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
+        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause(query[searchParam])
     };
@@ -71,7 +72,8 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                         }
                     }
                     clusterAdmin
-                    ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterID clusterName'}
+                    clusterID 
+                    clusterName
                     roles(query: $query) {
                         ${entityListType === entityTypes.ROLE ? '...k8roleFields' : 'id'}
                     }
@@ -134,7 +136,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                 />
-                                {clusterID && (
+                                {!(entityContext && entityContext[entityTypes.CLUSTER]) && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 h-48 mb-4"
                                         entityType={entityTypes.CLUSTER}

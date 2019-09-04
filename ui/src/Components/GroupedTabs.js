@@ -1,13 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
 
-const Tab = ({ text, index, active, onClick }) => (
+const Tab = ({ text, index, active, to }) => (
     <li
         className={`hover:bg-primary-200 flex-grow ${
             active ? 'bg-base-100 text-primary-700' : ''
         } ${index !== 0 ? 'border-l border-base-400' : ''}`}
     >
-        <button type="button" onClick={onClick} data-test-id="tab" className="w-full">
+        <Link to={to} data-test-id="tab" className="w-full no-underline">
             <div
                 className={`${
                     active ? 'text-primary-700' : 'text-base-500 hover:text-base-600'
@@ -15,7 +16,7 @@ const Tab = ({ text, index, active, onClick }) => (
             >
                 {text}
             </div>
-        </button>
+        </Link>
     </li>
 );
 
@@ -23,13 +24,10 @@ Tab.propTypes = {
     text: PropTypes.string.isRequired,
     index: PropTypes.number.isRequired,
     active: PropTypes.bool.isRequired,
-    onClick: PropTypes.func.isRequired
+    to: PropTypes.string.isRequired
 };
 
-const GroupedTabs = ({ groups, tabs, activeTab, onClick }) => {
-    const onClickHandler = datum => () => {
-        onClick(datum);
-    };
+const GroupedTabs = ({ groups, tabs, activeTab }) => {
     const groupMapping = tabs.reduce((acc, curr) => {
         acc[curr.group] = [...(acc[curr.group] || []), curr];
         return acc;
@@ -67,7 +65,7 @@ const GroupedTabs = ({ groups, tabs, activeTab, onClick }) => {
                                 index={i}
                                 text={datum.text}
                                 active={activeTab === datum.value}
-                                onClick={onClickHandler(datum)}
+                                to={datum.to}
                             />
                         ))}
                     </ul>
@@ -92,11 +90,11 @@ GroupedTabs.propTypes = {
         PropTypes.shape({
             group: PropTypes.string.isRequired,
             value: PropTypes.string.isRequired,
-            text: PropTypes.string.isRequired
+            text: PropTypes.string.isRequired,
+            to: PropTypes.string.isRequired
         })
     ).isRequired,
-    activeTab: PropTypes.string.isRequired,
-    onClick: PropTypes.func.isRequired
+    activeTab: PropTypes.string.isRequired
 };
 
 export default GroupedTabs;

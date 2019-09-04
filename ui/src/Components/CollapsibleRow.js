@@ -62,7 +62,7 @@ CollapsibleRow.propTypes = {
     isCollapsible: PropTypes.bool,
     children: PropTypes.node.isRequired,
     isCollapsibleOpen: PropTypes.bool,
-    hasTitleBorder: PropTypes.string
+    hasTitleBorder: PropTypes.bool
 };
 
 CollapsibleRow.defaultProps = {

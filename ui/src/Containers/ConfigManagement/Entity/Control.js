@@ -50,7 +50,8 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
         id,
         where: queryService.objectToWhereClause({
             ...query[searchParam],
-            'Control Id': id
+            'Control Id': id,
+            cacheBuster: new Date().getUTCMilliseconds()
         })
     };
 

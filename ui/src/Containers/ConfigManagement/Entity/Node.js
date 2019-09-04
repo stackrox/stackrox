@@ -29,6 +29,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
     if (!queryObject.Standard) queryObject.Standard = 'CIS';
 
     const variables = {
+        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.getEntityWhereClause(queryObject)
     };

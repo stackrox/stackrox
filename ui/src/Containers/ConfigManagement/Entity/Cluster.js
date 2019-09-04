@@ -38,6 +38,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
 
     const variables = {
         id,
+        cacheBuster: new Date().getUTCMilliseconds(),
         query: queryService.objectToWhereClause(queryObject)
     };
 

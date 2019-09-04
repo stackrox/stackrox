@@ -24,6 +24,7 @@ import DeploymentFindings from './DeploymentFindings';
 const Deployment = ({ id, entityContext, entityListType, query }) => {
     const searchParam = useContext(searchContext);
     const variables = {
+        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause(query[searchParam])
     };

@@ -33,39 +33,21 @@ const ENTITY_TO_TAB = {
     [entityTypes.CONTROL]: TAB_GROUPS.POLICIES
 };
 
-function getTab(relationship, entityType) {
-    if (entityType === entityTypes.DEPLOYMENT && relationship === entityTypes.POLICY) {
+const EntityTabs = ({ match, location, entityType, entityListType, pageEntityId }) => {
+    function getTab(relationship) {
+        const failingText =
+            entityType === entityTypes.DEPLOYMENT && relationship === entityTypes.POLICY
+                ? 'failing '
+                : '';
         return {
             group: ENTITY_TO_TAB[relationship],
             value: relationship,
-            text: `Failing ${pluralize(entityLabels[entityTypes.POLICY])}`
+            text: `${failingText}${pluralize(entityLabels[relationship])}`,
+            to: URLService.getURL(match, location)
+                .base(entityType, pageEntityId)
+                .push(relationship)
+                .url()
         };
-    }
-
-    return {
-        group: ENTITY_TO_TAB[relationship],
-        value: relationship,
-        text: pluralize(entityLabels[relationship])
-    };
-}
-
-const EntityTabs = ({
-    match,
-    location,
-    entityType,
-    entityListType,
-    pageEntityId,
-    history,
-    disabled
-}) => {
-    function onClick({ value }) {
-        if (disabled) return;
-
-        const url = URLService.getURL(match, location)
-            .base(entityType, pageEntityId)
-            .push(value)
-            .url();
-        history.push(url);
     }
 
     const relationships = entityTabsMap[entityType];
@@ -73,15 +55,11 @@ const EntityTabs = ({
     const entityTabs = relationships.map(relationship => getTab(relationship, entityType));
     const groups = Object.values(TAB_GROUPS);
 
-    const tabs = [{ group: TAB_GROUPS.OVERVIEW, value: '', text: 'Overview' }, ...entityTabs];
-    return (
-        <GroupedTabs
-            groups={groups}
-            tabs={tabs}
-            activeTab={entityListType || ''}
-            onClick={onClick}
-        />
-    );
+    const tabs = [
+        { group: TAB_GROUPS.OVERVIEW, value: '', text: 'Overview', to: '.' },
+        ...entityTabs
+    ];
+    return <GroupedTabs groups={groups} tabs={tabs} activeTab={entityListType || ''} />;
 };
 
 EntityTabs.propTypes = {
@@ -89,14 +67,11 @@ EntityTabs.propTypes = {
     entityListType: PropTypes.string,
     pageEntityId: PropTypes.string.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
-    disabled: PropTypes.bool
+    location: ReactRouterPropTypes.location.isRequired
 };
 
 EntityTabs.defaultProps = {
-    entityListType: null,
-    disabled: false
+    entityListType: null
 };
 
 export default withRouter(EntityTabs);
