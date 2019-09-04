@@ -1278,6 +1278,7 @@ jobs:
       - ROX_PLAINTEXT_ENDPOINTS: "http@8080,grpc@8081"
       - ROX_CONFIG_MGMT_UI: true
       - ROX_BADGER_DB: true
+      - ROX_SENSOR_AUTOUPGRADE: true
 
     steps:
       - checkout
@@ -1415,6 +1416,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ROX_BADGER_DB: true
+      - ROX_SENSOR_AUTOUPGRADE: true
 
     steps:
       - run-qa-tests:
@@ -1447,6 +1449,7 @@ jobs:
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
+      - ROX_SENSOR_AUTOUPGRADE: true
 
     steps:
       - run-qa-tests:
@@ -1468,6 +1471,7 @@ jobs:
       - STORAGE: pvc
       - LOAD_BALANCER: lb
       - ROX_DB_BACKUP_RESTORE_V2: true
+      - ROX_SENSOR_AUTOUPGRADE: true
 
     steps:
       - checkout
