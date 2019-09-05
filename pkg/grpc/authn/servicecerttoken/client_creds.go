@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/httputil"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -20,6 +22,33 @@ func NewServiceCertClientCreds(cert *tls.Certificate) credentials.PerRPCCredenti
 	return &serviceCertClientCreds{
 		cert: cert,
 	}
+}
+
+// NewServiceCertInjectingRoundTripper returns an `http.RoundTripper` that injects a ServiceCert token into an HTTP
+// request (provided there is no existing authorization header) before delegating to the given underlying roundtripper.
+func NewServiceCertInjectingRoundTripper(cert *tls.Certificate, rt http.RoundTripper) http.RoundTripper {
+	return httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		// Do not attempt to modify an existing authorization header
+		if req.Header.Get("authorization") != "" {
+			return rt.RoundTrip(req)
+		}
+
+		token, err := createToken(cert, time.Now())
+		if err != nil {
+			return nil, errors.Wrap(err, "creating service cert token")
+		}
+
+		reqShallowCopy := *req
+		newHeader := make(http.Header)
+		for k, vs := range req.Header {
+			newHeader[k] = append([]string{}, vs...)
+		}
+
+		newHeader.Set("authorization", fmt.Sprintf("%s %s", tokenType, token))
+		reqShallowCopy.Header = newHeader
+
+		return rt.RoundTrip(&reqShallowCopy)
+	})
 }
 
 func (i *serviceCertClientCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {

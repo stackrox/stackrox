@@ -3,10 +3,12 @@ package upgradectx
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -131,17 +133,34 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 
 	if config.CentralEndpoint != "" {
+		host, _, err := net.SplitHostPort(config.CentralEndpoint)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing central endpoint")
+		}
+
 		tlsConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
 			UseClientCert: true,
+			ServerName:    host,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "instantiating TLS config")
 		}
+
+		// Set up the HTTP transport: use TLS, ServiceCert tokens, and respect context cancellations.
+		var transport http.RoundTripper = &http.Transport{
+			TLSClientConfig: tlsConf,
+		}
+
+		if len(tlsConf.Certificates) != 1 {
+			return nil, errors.Errorf("TLS config has unexpected number of client certificates (%d, expected 1)", len(tlsConf.Certificates))
+		}
+
+		transport = servicecerttoken.NewServiceCertInjectingRoundTripper(&tlsConf.Certificates[0], transport)
+		transport = httputil.ContextBoundRoundTripper(ctx, transport)
+
 		tlsConf.NextProtos = nil // no HTTP/2 or pure GRPC!
 		c.httpClient = &http.Client{
-			Transport: httputil.ContextBoundRoundTripper(ctx, &http.Transport{
-				TLSClientConfig: tlsConf,
-			}),
+			Transport: transport,
 		}
 	}
 
