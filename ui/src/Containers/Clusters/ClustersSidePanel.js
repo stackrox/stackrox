@@ -11,40 +11,16 @@ import { getClusterById, saveCluster, downloadClusterYaml } from 'services/Clust
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
-import { clusterTypeOptions, defaultNewClusterType, wizardSteps } from './cluster.helpers';
-
-const newClusterSkeleton = {
-    id: null,
-    name: '',
-    type: defaultNewClusterType,
-    mainImage: '',
-    collectorImage: '',
-    centralApiEndpoint: '',
-    runtimeSupport: false,
-    monitoringEndpoint: '',
-    collectionMethod: 'NO_COLLECTION',
-    DEPRECATEDProviderMetadata: null,
-    admissionController: false,
-    DEPRECATEDOrchestratorMetadata: null,
-    status: null,
-    dynamicConfig: {
-        admissionControllerConfig: {
-            enabled: false,
-            timeoutSeconds: 3,
-            scanInline: false,
-            disableBypass: false
-        }
-    }
-};
+import { clusterTypeOptions, newClusterDefault, wizardSteps } from './cluster.helpers';
 
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
-    const [selectedCluster, setSelectedCluster] = useState(newClusterSkeleton);
+    const [selectedCluster, setSelectedCluster] = useState(newClusterDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [errorState, setErrorState] = useState(null);
 
     function unselectCluster() {
         setSelectedClusterId('');
-        setSelectedCluster(newClusterSkeleton);
+        setSelectedCluster(newClusterDefault);
         setWizardStep(wizardSteps.FORM);
     }
 
@@ -52,7 +28,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         () => {
             if (selectedClusterId && selectedClusterId !== 'new') {
                 setErrorState(null);
-                // @TODO, can we cache this on client side, if user is going back and forth to clusters?
+                // don't want to cache or memoize, because we always want the latest real-time data
                 getClusterById(selectedClusterId)
                     .then(response => {
                         setSelectedCluster(response);

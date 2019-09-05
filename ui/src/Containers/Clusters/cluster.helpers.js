@@ -34,7 +34,34 @@ export const clusterTypeOptions = [
     }
 ];
 
-export const defaultNewClusterType = 'KUBERNETES_CLUSTER';
+export const clusterTablePollingInterval = 5000; // milliseconds
+
+const defaultNewClusterType = 'KUBERNETES_CLUSTER';
+const defaultCollectionMethod = 'NO_COLLECTION';
+
+export const newClusterDefault = {
+    id: null,
+    name: '',
+    type: defaultNewClusterType,
+    mainImage: '',
+    collectorImage: '',
+    centralApiEndpoint: '',
+    runtimeSupport: false,
+    monitoringEndpoint: '',
+    collectionMethod: defaultCollectionMethod,
+    DEPRECATEDProviderMetadata: null,
+    admissionController: false,
+    DEPRECATEDOrchestratorMetadata: null,
+    status: null,
+    dynamicConfig: {
+        admissionControllerConfig: {
+            enabled: false,
+            timeoutSeconds: 3,
+            scanInline: false,
+            disableBypass: false
+        }
+    }
+};
 
 // @TODO: add optional button text and func
 const upgradeStates = {
@@ -151,6 +178,10 @@ export const wizardSteps = Object.freeze({
 });
 
 export default {
+    runtimeOptions,
+    clusterTypeOptions,
+    clusterTablePollingInterval,
+    newClusterDefault,
     formatClusterType,
     formatCollectionMethod,
     formatEnabledDisabledField,

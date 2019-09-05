@@ -17,6 +17,8 @@ import ToggleSwitch from 'Components/ToggleSwitch';
 import CheckboxTable from 'Components/CheckboxTable';
 import { defaultColumnClassName, wrapClassName, rtTrActionsClassName } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
+
+import useInterval from 'hooks/useInterval';
 import { actions as clustersActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
 import {
@@ -34,6 +36,7 @@ import ClustersSidePanel from './ClustersSidePanel';
 // @TODO, refactor these helper utilities to this folder,
 //        when retiring clusters in Integrations section
 import {
+    clusterTablePollingInterval,
     formatClusterType,
     formatCollectionMethod,
     formatEnabledDisabledField,
@@ -61,6 +64,7 @@ const ClustersPage = ({
     const [selectedClusters, setSelectedClusters] = useState([]);
     const [tableRef, setTableRef] = useState(null);
     const [selectedClusterId, setSelectedClusterId] = useState(clusterId);
+    const [pollingCount, setPollingCount] = useState(0);
 
     // @TODO, implement actual delete logic into this stub function
     const onDeleteHandler = cluster => e => {
@@ -109,8 +113,13 @@ const ClustersPage = ({
                 setCurrentClusters(clusters);
             });
         },
-        [searchOptions]
+        [searchOptions, pollingCount]
     );
+
+    // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
+    useInterval(() => {
+        setPollingCount(pollingCount + 1);
+    }, clusterTablePollingInterval);
 
     function fetchConfig() {
         getAutoUpgradeConfig().then(config => {
@@ -198,18 +207,18 @@ const ClustersPage = ({
     const headerActions = (
         <React.Fragment>
             <PanelButton
-                icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
+                icon={<Icon.DownloadCloud className="h-4 w-4 ml-1" />}
                 text={`Upgrade (${selectedClusters.length})`}
                 className="btn btn-tertiary ml-2"
                 onClick={upgradeSelectedClusters}
-                disabled={selectedClusters.length === 0 || selectedClusterId}
+                disabled={selectedClusters.length === 0 || !!selectedClusterId}
             />
             <PanelButton
-                icon={<Icon.DownloadCloud className="h-4 w-4 ml-1" />}
+                icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
                 text={`Delete (${selectedClusters.length})`}
                 className="btn btn-alert ml-2"
                 onClick={deleteSelectedClusters}
-                disabled={selectedClusters.length === 0 || selectedClusterId}
+                disabled={selectedClusters.length === 0 || !!selectedClusterId}
             />
             <PanelButton
                 icon={<Icon.Plus className="h-4 w-4 ml-1" />}
