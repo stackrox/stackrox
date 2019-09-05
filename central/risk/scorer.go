@@ -1,19 +1,16 @@
 package risk
 
 import (
-	"github.com/stackrox/rox/central/processwhitelist/evaluator"
-	"github.com/stackrox/rox/central/risk/getters"
-	"github.com/stackrox/rox/central/risk/multipliers"
-	"github.com/stackrox/rox/pkg/features"
-)
-
-import (
 	"context"
 
+	"github.com/stackrox/rox/central/processwhitelist/evaluator"
 	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/risk/getters"
+	"github.com/stackrox/rox/central/risk/multipliers"
 	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
