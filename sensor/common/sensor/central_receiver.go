@@ -7,6 +7,7 @@ import (
 	complianceLogic "github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
+	"github.com/stackrox/rox/sensor/common/upgrade"
 )
 
 // CentralReceiver handles receiving data from central.
@@ -21,12 +22,14 @@ type CentralReceiver interface {
 func NewCentralReceiver(scrapeCommandHandler complianceLogic.CommandHandler,
 	enforcer enforcers.Enforcer,
 	networkPoliciesCommandHandler networkpolicies.CommandHandler,
-	configCommandHandler config.Handler) CentralReceiver {
+	configCommandHandler config.Handler,
+	upgradeCommandHandler upgrade.CommandHandler) CentralReceiver {
 	return &centralReceiverImpl{
 		scrapeCommandHandler:          scrapeCommandHandler,
 		enforcer:                      enforcer,
 		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
 		configCommandHandler:          configCommandHandler,
+		upgradeCommandHandler:         upgradeCommandHandler,
 
 		stopC:    concurrency.NewErrorSignal(),
 		stoppedC: concurrency.NewErrorSignal(),

@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	"github.com/stackrox/rox/sensor/common/upgrade"
 	"google.golang.org/grpc"
 )
 
@@ -64,6 +65,7 @@ type Sensor struct {
 	networkPoliciesCommandHandler networkpolicies.CommandHandler
 	clusterStatusUpdater          clusterstatus.Updater
 	configHandler                 config.Handler
+	upgradeCommandHandler         upgrade.CommandHandler
 
 	server          pkgGRPC.API
 	profilingServer *http.Server
@@ -77,7 +79,7 @@ type Sensor struct {
 // NewSensor initializes a Sensor, including reading configurations from the environment.
 func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager,
 	m roxmetadata.Metadata, networkPoliciesCommandHandler networkpolicies.CommandHandler, clusterStatusUpdater clusterstatus.Updater,
-	configHandler config.Handler) *Sensor {
+	configHandler config.Handler, upgradeCommandHandler upgrade.CommandHandler) *Sensor {
 	return &Sensor{
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
@@ -91,6 +93,7 @@ func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orche
 		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
 		clusterStatusUpdater:          clusterStatusUpdater,
 		configHandler:                 configHandler,
+		upgradeCommandHandler:         upgradeCommandHandler,
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -183,7 +186,7 @@ func (s *Sensor) Start() {
 		s.commandHandler.Start(compliance.Singleton().Output())
 	}
 
-	for _, toStart := range []startable{s.networkPoliciesCommandHandler, s.clusterStatusUpdater} {
+	for _, toStart := range []startable{s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.upgradeCommandHandler} {
 		if toStart != nil {
 			toStart.Start()
 		}
@@ -216,7 +219,7 @@ func (s *Sensor) Stop() {
 	}
 
 	for _, toStop := range []stoppable{s.listener, s.enforcer, s.networkConnManager,
-		s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.configHandler} {
+		s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.configHandler, s.upgradeCommandHandler} {
 		if toStop != nil {
 			toStop.Stop()
 		}
@@ -284,7 +287,7 @@ func pollMetadataWithTimeout(svc v1.MetadataServiceClient) error {
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(),
-		s.networkConnManager, s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.configHandler)
+		s.networkConnManager, s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.configHandler, s.upgradeCommandHandler)
 
 	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler)
 

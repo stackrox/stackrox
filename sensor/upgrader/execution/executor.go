@@ -2,13 +2,13 @@ package execution
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -71,7 +71,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 			return err
 		}
 	case plan.DeleteAction:
-		if err := client.Delete(act.ObjectRef.Name, &metav1.DeleteOptions{}); err != nil {
+		if err := client.Delete(act.ObjectRef.Name, kubernetes.DeleteBackgroundOption); err != nil {
 			return err
 		}
 	default:

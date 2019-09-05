@@ -10,6 +10,7 @@ import (
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
 	"github.com/stackrox/rox/sensor/common/signal"
+	"github.com/stackrox/rox/sensor/common/upgrade"
 	"google.golang.org/grpc"
 )
 
@@ -30,9 +31,10 @@ func NewCentralCommunication(
 	networkConnManager networkConnManager.Manager,
 	networkPoliciesCommandHandler networkpolicies.CommandHandler,
 	clusterStatusUpdater clusterstatus.Updater,
-	configCommandHandler config.Handler) CentralCommunication {
+	configCommandHandler config.Handler,
+	upgradeCommandHandler upgrade.CommandHandler) CentralCommunication {
 	return &centralCommunicationImpl{
-		receiver: NewCentralReceiver(scrapeCommandHandler, enforcer, networkPoliciesCommandHandler, configCommandHandler),
+		receiver: NewCentralReceiver(scrapeCommandHandler, enforcer, networkPoliciesCommandHandler, configCommandHandler, upgradeCommandHandler),
 		sender:   NewCentralSender(listener, signalService, networkConnManager, scrapeCommandHandler, networkPoliciesCommandHandler, clusterStatusUpdater, configCommandHandler),
 
 		stopC:    concurrency.NewErrorSignal(),

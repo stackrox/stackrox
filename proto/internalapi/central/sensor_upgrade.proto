@@ -11,6 +11,17 @@ import "internalapi/central/sensor_upgrade_ctrl_iservice.proto";
 package central;
 
 message SensorUpgradeTrigger {
+    message EnvVarDef {
+        string name = 1;
+
+        string source_env_var = 2;
+        string default_value  = 3;
+    }
+
     // A UUID that identifies this specific upgrade process.
     string upgrade_process_id = 1;
+
+    string image                = 2;
+    repeated string command     = 3;
+    repeated EnvVarDef env_vars = 4;
 }

@@ -7,20 +7,24 @@ import (
 
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"github.com/stackrox/rox/sensor/common/sensor"
+	"github.com/stackrox/rox/sensor/common/upgrade"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
+	k8sUpgrade "github.com/stackrox/rox/sensor/kubernetes/upgrade"
 )
 
 var (
@@ -45,6 +49,13 @@ func main() {
 
 	sensorInstanceID := uuid.NewV4().String()
 
+	var upgradeCmdHandler upgrade.CommandHandler
+	if features.SensorAutoUpgrade.Enabled() {
+		var err error
+		upgradeCmdHandler, err = k8sUpgrade.NewCommandHandler()
+		utils.Must(err)
+	}
+
 	s := sensor.NewSensor(
 		listener.New(),
 		enforcer.MustCreate(),
@@ -54,6 +65,7 @@ func main() {
 		networkpolicies.NewCommandHandler(),
 		clusterstatus.NewUpdater(),
 		config.NewCommandHandler(),
+		upgradeCmdHandler,
 	)
 	s.Start()
 

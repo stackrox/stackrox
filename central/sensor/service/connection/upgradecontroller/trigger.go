@@ -6,17 +6,44 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/version"
 )
 
-func constructTriggerUpgradeMessage(upgradeProcessID string) *central.MsgToSensor {
+func constructTriggerUpgradeMessage(cluster *storage.Cluster, upgradeProcessID string) (*central.MsgToSensor, error) {
+	upgraderImage, err := utils.GenerateImageFromStringWithDefaultTag(cluster.GetMainImage(), version.GetMainVersion())
+	if err != nil {
+		return nil, errors.Wrap(err, "generating upgrader image name")
+	}
+
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_SensorUpgradeTrigger{
 			SensorUpgradeTrigger: &central.SensorUpgradeTrigger{
 				UpgradeProcessId: upgradeProcessID,
+				Image:            upgraderImage.GetName().GetFullName(),
+				// TODO: remove sleeps and adjust command, this is just for better debuggability
+				Command: []string{"sh", "-c", "sleep 10 ; sensor-upgrader -workflow roll-forward && sleep 30 && sensor-upgrader -workflow cleanup"},
+				EnvVars: []*central.SensorUpgradeTrigger_EnvVarDef{
+					{
+						Name:         env.ClusterID.EnvVar(),
+						SourceEnvVar: env.ClusterID.EnvVar(),
+						DefaultValue: cluster.GetId(),
+					},
+					{
+						Name:         env.CentralEndpoint.EnvVar(),
+						SourceEnvVar: env.CentralEndpoint.EnvVar(),
+						DefaultValue: cluster.GetCentralApiEndpoint(),
+					},
+					{
+						Name:         "ROX_UPGRADE_PROCESS_ID",
+						DefaultValue: upgradeProcessID,
+					},
+				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (u *upgradeController) shouldInitiateNewUpgrade(status *storage.ClusterUpgradeStatus) bool {
@@ -62,9 +89,19 @@ func (u *upgradeController) Trigger(ctx concurrency.Waitable) error {
 		upgradeProcessID = clusterUpgradeStatus.GetCurrentUpgradeProcessId()
 	}
 
+	cluster, err := u.getCluster()
+	if err != nil {
+		return err
+	}
+
+	triggerMsg, err := constructTriggerUpgradeMessage(cluster, upgradeProcessID)
+	if err != nil {
+		return err
+	}
+
 	// Always send the sensor a message about the current upgrade process. The sensor handles these
 	// in an idempotent way.
-	if err := injector.InjectMessage(ctx, constructTriggerUpgradeMessage(upgradeProcessID)); err != nil {
+	if err := injector.InjectMessage(ctx, triggerMsg); err != nil {
 		return errors.Wrap(err, "failed to send trigger upgrade message to sensor")
 	}
 

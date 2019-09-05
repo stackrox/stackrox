@@ -26,8 +26,10 @@ var (
 // Kubernetes delete options that ensure that dependent objects (e.g. pods) are deleted when
 // the owning resource is deleted.
 var (
-	DeletePolicy = metav1.DeletePropagationForeground
-	DeleteOption = &metav1.DeleteOptions{PropagationPolicy: &DeletePolicy}
+	DeletePolicyForeground = metav1.DeletePropagationForeground
+	DeletePolicyBackground = metav1.DeletePropagationBackground
+	DeleteOption           = &metav1.DeleteOptions{PropagationPolicy: &DeletePolicyForeground}
+	DeleteBackgroundOption = &metav1.DeleteOptions{PropagationPolicy: &DeletePolicyBackground}
 
 	ScaleToZeroSpec = v1beta1.ScaleSpec{
 		Replicas: 0,

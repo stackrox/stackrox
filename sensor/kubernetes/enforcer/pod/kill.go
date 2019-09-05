@@ -2,9 +2,17 @@ package pod
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+var (
+	podDeleteOptions = &metaV1.DeleteOptions{
+		GracePeriodSeconds: &([]int64{0})[0],
+		PropagationPolicy:  &pkgKubernetes.DeletePolicyBackground,
+	}
 )
 
 // EnforceKill kills the pod holding the container info specified container instance.
@@ -12,8 +20,7 @@ func EnforceKill(client *kubernetes.Clientset, containerInfo *central.ContainerI
 	podID := containerInfo.GetPodId()
 	ns := containerInfo.GetDeploymentEnforcement().GetNamespace()
 
-	var gracePeriod int64
-	err = client.CoreV1().Pods(ns).Delete(podID, &metaV1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
+	err = client.CoreV1().Pods(ns).Delete(podID, podDeleteOptions)
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}

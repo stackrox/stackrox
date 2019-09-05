@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	networkingV1 "k8s.io/api/networking/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -94,7 +95,7 @@ type deletePolicy struct {
 }
 
 func (a *deletePolicy) Execute(client networkingV1Client.NetworkingV1Interface) error {
-	return client.NetworkPolicies(a.namespace).Delete(a.name, &metav1.DeleteOptions{})
+	return client.NetworkPolicies(a.namespace).Delete(a.name, kubernetes.DeleteBackgroundOption)
 }
 
 func (a *deletePolicy) Record(mod *storage.NetworkPolicyModification) {
@@ -233,7 +234,7 @@ func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
 		name:      deleted.Name,
 	}})
 
-	err = nsClient.Delete(existing.Name, &metav1.DeleteOptions{})
+	err = nsClient.Delete(existing.Name, kubernetes.DeleteBackgroundOption)
 	if err != nil {
 		return errors.Wrapf(err, "deleting network policy %s/%s", existing.Namespace, existing.Name)
 	}

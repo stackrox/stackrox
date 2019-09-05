@@ -12,7 +12,6 @@ message RecordUpgradeProgressRequest {
     storage.UpgradeProgress upgrade_progress   = 2;
 }
 
-
 service SensorUpgradeControlService {
     rpc RecordUpgradeProgress (RecordUpgradeProgressRequest) returns (google.protobuf.Empty);
 }

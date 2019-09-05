@@ -11,11 +11,13 @@ import (
 	complianceLogic "github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
+	"github.com/stackrox/rox/sensor/common/upgrade"
 )
 
 type centralReceiverImpl struct {
 	scrapeCommandHandler          complianceLogic.CommandHandler
 	networkPoliciesCommandHandler networkpolicies.CommandHandler
+	upgradeCommandHandler         upgrade.CommandHandler
 	enforcer                      enforcers.Enforcer
 	configCommandHandler          config.Handler
 
@@ -76,6 +78,8 @@ func (s *centralReceiverImpl) processMsg(msg *central.MsgToSensor) {
 		s.processNetworkPoliciesCommand(m.NetworkPoliciesCommand)
 	case *central.MsgToSensor_ClusterConfig:
 		s.processConfigChangeCommand(m.ClusterConfig)
+	case *central.MsgToSensor_SensorUpgradeTrigger:
+		s.processUpgradeTriggerCommand(m.SensorUpgradeTrigger)
 	default:
 		log.Errorf("Unsupported message from central of type %T: %+v", m, m)
 	}
@@ -93,6 +97,15 @@ func (s *centralReceiverImpl) processNetworkPoliciesCommand(command *central.Net
 
 func (s *centralReceiverImpl) processScrapeCommand(command *central.ScrapeCommand) {
 	if !s.scrapeCommandHandler.SendCommand(command) {
+		log.Errorf("unable to send command: %s", proto.MarshalTextString(command))
+	}
+}
+
+func (s *centralReceiverImpl) processUpgradeTriggerCommand(command *central.SensorUpgradeTrigger) {
+	if s.upgradeCommandHandler == nil {
+		log.Errorf("Unable to send command %s as upgrades are not supported", proto.MarshalTextString(command))
+	}
+	if !s.upgradeCommandHandler.SendCommand(command) {
 		log.Errorf("unable to send command: %s", proto.MarshalTextString(command))
 	}
 }

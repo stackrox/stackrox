@@ -9,13 +9,13 @@ import (
 )
 
 type contextBoundRoundTripper struct {
-	ctx      context.Context
+	ctx      concurrency.ErrorWaitable
 	delegate http.RoundTripper
 }
 
 // ContextBoundRoundTripper returns an http.RoundTripper that delegates to the rt for performing requests, but ensures
 // every request is canceled when `ctx` is canceled.
-func ContextBoundRoundTripper(ctx context.Context, rt http.RoundTripper) http.RoundTripper {
+func ContextBoundRoundTripper(ctx concurrency.ErrorWaitable, rt http.RoundTripper) http.RoundTripper {
 	return &contextBoundRoundTripper{
 		ctx:      ctx,
 		delegate: rt,
@@ -60,7 +60,7 @@ func (r *contextBoundRoundTripper) RoundTrip(req *http.Request) (*http.Response,
 // ctx will be propagated to the context of the resulting request.
 // Callers should ensure that the returned cancel function is called eventually, otherwise this function might leak
 // Goroutines.
-func ContextBoundRequest(ctx context.Context, req *http.Request) (*http.Request, context.CancelFunc) {
+func ContextBoundRequest(ctx concurrency.ErrorWaitable, req *http.Request) (*http.Request, context.CancelFunc) {
 	subCtx, cancel := context.WithCancel(req.Context())
 	concurrency.CancelContextOnSignal(subCtx, cancel, ctx)
 	return req.WithContext(subCtx), cancel
