@@ -58,13 +58,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if err != nil || !exists {
 		return err
 	}
-
-	if reprocessMsg.RiskOnly {
-		s.riskManager.ReprocessDeploymentRisk(deployment)
-	} else {
-		return s.manager.EnrichAndDetect(deployment)
-	}
-	return nil
+	return s.manager.EnrichAndDetect(deployment)
 }
 
 func (s *pipelineImpl) OnFinish(_ string) {}

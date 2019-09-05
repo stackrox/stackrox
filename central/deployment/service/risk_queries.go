@@ -42,7 +42,7 @@ func filterRiskPagination(q *v1.Query) *v1.QueryPagination {
 	if len(q.GetPagination().GetSortOptions()) == 1 &&
 		q.GetPagination().GetSortOptions()[0].GetField() == search.Priority.String() {
 		newPagination := proto.Clone(q.Pagination).(*v1.QueryPagination)
-		newPagination.GetSortOptions()[0].Field = search.RiskScore.String()
+		newPagination.GetSortOptions()[0].Field = search.AggregateRiskScore.String()
 		newPagination.GetSortOptions()[0].Reversed = !q.GetPagination().GetSortOptions()[0].Reversed
 		return newPagination
 	}
@@ -85,7 +85,7 @@ func filterRiskQuery(q *v1.Query, ranker *ranking.Ranker) *v1.Query {
 		numericValue.Value = float64(ranker.GetScoreForRank(int64(numericValue.Value)))
 
 		// Set the query to the new value.
-		matchFieldQuery.MatchFieldQuery.Field = search.RiskScore.String()
+		matchFieldQuery.MatchFieldQuery.Field = search.AggregateRiskScore.String()
 		matchFieldQuery.MatchFieldQuery.Value = blevesearch.PrintNumericQueryValue(numericValue)
 	})
 	if err != nil {
@@ -96,7 +96,7 @@ func filterRiskQuery(q *v1.Query, ranker *ranking.Ranker) *v1.Query {
 	// If we end up with a query, add the deployment type specification for it.
 	return search.ConjunctionQuery(
 		search.NewQueryBuilder().
-			AddStrings(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+			AddStrings(search.RiskEntityType, storage.RiskEntityType_DEPLOYMENT.String()).
 			ProtoQuery(),
 		newQuery,
 	)

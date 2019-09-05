@@ -30,7 +30,6 @@ enum ResourceAction {
 
 message ReprocessDeployment {
     string deployment_id = 1;
-    bool   risk_only     = 2;
 }
 
 message SensorEvent {

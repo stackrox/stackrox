@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/deployment/datastore/mocks"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -20,13 +20,13 @@ type loopTestSuite struct {
 	mockCtrl *gomock.Controller
 
 	mockManager    *connectionMocks.MockManager
-	mockDeployment *mocks.MockDataStore
+	mockDeployment *deploymentMocks.MockDataStore
 }
 
 func (suite *loopTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockManager = connectionMocks.NewMockManager(suite.mockCtrl)
-	suite.mockDeployment = mocks.NewMockDataStore(suite.mockCtrl)
+	suite.mockDeployment = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 }
 
 func (suite *loopTestSuite) TearDownTest() {
@@ -39,7 +39,7 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 		timesSpec = (*gomock.Call).MinTimes
 	}
 	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).ProtoQuery()
-	timesSpec(suite.mockDeployment.EXPECT().SearchDeployments(getDeploymentsContext, query), times).Return(nil, nil)
+	timesSpec(suite.mockDeployment.EXPECT().SearchDeployments(getDeploymentContext, query), times).Return(nil, nil)
 }
 
 func (suite *loopTestSuite) TestTimerDoesNotTick() {

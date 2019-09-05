@@ -89,10 +89,10 @@ func TestConvertQuery(t *testing.T) {
 			expectedRiskQuery: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					search.NewQueryBuilder().
-						AddStrings(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+						AddStrings(search.RiskEntityType, storage.RiskEntityType_DEPLOYMENT.String()).
 						ProtoQuery(),
 					search.NewQueryBuilder().
-						AddStrings(search.RiskScore, ">3.000000").
+						AddStrings(search.AggregateRiskScore, ">3.000000").
 						ProtoQuery(),
 				)
 				return query
@@ -102,7 +102,7 @@ func TestConvertQuery(t *testing.T) {
 				Offset: 0,
 				SortOptions: []*v1.QuerySortOption{
 					{
-						Field:    search.RiskScore.String(),
+						Field:    search.AggregateRiskScore.String(),
 						Reversed: false,
 					},
 				},
@@ -139,7 +139,7 @@ func TestConvertQuery(t *testing.T) {
 				Offset: 0,
 				SortOptions: []*v1.QuerySortOption{
 					{
-						Field:    search.RiskScore.String(),
+						Field:    search.AggregateRiskScore.String(),
 						Reversed: false,
 					},
 				},
@@ -183,10 +183,10 @@ func TestConvertQuery(t *testing.T) {
 			expectedRiskQuery: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					search.NewQueryBuilder().
-						AddStrings(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+						AddStrings(search.RiskEntityType, storage.RiskEntityType_DEPLOYMENT.String()).
 						ProtoQuery(),
 					search.NewQueryBuilder().
-						AddStrings(search.RiskScore, ">=3.000000").
+						AddStrings(search.AggregateRiskScore, ">=3.000000").
 						ProtoQuery(),
 				)
 				return query
@@ -225,10 +225,10 @@ func TestConvertQuery(t *testing.T) {
 			expectedRiskQuery: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					search.NewQueryBuilder().
-						AddStrings(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+						AddStrings(search.RiskEntityType, storage.RiskEntityType_DEPLOYMENT.String()).
 						ProtoQuery(),
 					search.NewQueryBuilder().
-						AddStrings(search.RiskScore, ">=3.000000").
+						AddStrings(search.AggregateRiskScore, ">=3.000000").
 						ProtoQuery(),
 				)
 				return query
@@ -264,10 +264,10 @@ func TestConvertQuery(t *testing.T) {
 			expectedRiskQuery: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					search.NewQueryBuilder().
-						AddStrings(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+						AddStrings(search.RiskEntityType, storage.RiskEntityType_DEPLOYMENT.String()).
 						ProtoQuery(),
 					search.NewQueryBuilder().
-						AddStrings(search.RiskScore, "<=3.000000").
+						AddStrings(search.AggregateRiskScore, "<=3.000000").
 						ProtoQuery(),
 				)
 				return query
@@ -277,7 +277,7 @@ func TestConvertQuery(t *testing.T) {
 				Offset: 0,
 				SortOptions: []*v1.QuerySortOption{
 					{
-						Field:    search.RiskScore.String(),
+						Field:    search.AggregateRiskScore.String(),
 						Reversed: true,
 					},
 				},

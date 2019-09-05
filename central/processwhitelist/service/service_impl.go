@@ -6,7 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
-	"github.com/stackrox/rox/central/reprocessor"
+	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
@@ -35,7 +36,7 @@ var (
 
 type serviceImpl struct {
 	dataStore   datastore.DataStore
-	reprocessor reprocessor.Loop
+	riskManager riskManager.Manager
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
@@ -100,7 +101,7 @@ func (s *serviceImpl) reprocessDeploymentRisks(keys []*storage.ProcessWhitelistK
 	for _, key := range keys {
 		deploymentIDs.Add(key.GetDeploymentId())
 	}
-	s.reprocessor.ReprocessRiskForDeployments(deploymentIDs.AsSlice()...)
+	s.riskManager.ReprocessRiskForDeployments(deploymentIDs.AsSlice(), risk.SuspiciousProcesses, risk.PolicyViolations)
 }
 
 func (s *serviceImpl) UpdateProcessWhitelists(ctx context.Context, request *v1.UpdateProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {

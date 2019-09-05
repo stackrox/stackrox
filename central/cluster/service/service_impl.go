@@ -8,7 +8,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/monitoring"
-	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -46,8 +45,7 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
-	datastore   datastore.DataStore
-	riskManager manager.Manager
+	datastore datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

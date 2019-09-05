@@ -20,6 +20,14 @@ func NewRanker() *Ranker {
 	}
 }
 
+// GetScoreForID returns the score for given id
+func (s *Ranker) GetScoreForID(id string) float32 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.idToScore[id]
+}
+
 // GetRankForID returns the current ranking based on the id of the object added with the score.
 func (s *Ranker) GetRankForID(id string) int64 {
 	s.scoreSorterMutex.RLock()

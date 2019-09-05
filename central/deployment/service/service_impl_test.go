@@ -102,7 +102,7 @@ func TestLabelsMap(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).AnyTimes()
-	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any(), true).AnyTimes()
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

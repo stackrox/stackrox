@@ -81,13 +81,13 @@ func (ds *datastoreImpl) initializeRanker() error {
 		))
 
 	risks, err := ds.risks.SearchRawRisks(riskElevatedCtx, pkgSearch.NewQueryBuilder().AddStrings(
-		pkgSearch.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).ProtoQuery())
+		pkgSearch.RiskEntityType, storage.RiskEntityType_DEPLOYMENT.String()).ProtoQuery())
 	if err != nil {
 		return err
 	}
 
 	for _, risk := range risks {
-		ds.ranker.Add(risk.GetSubject().GetId(), risk.GetScore())
+		ds.ranker.Add(risk.GetEntity().GetId(), risk.GetScore())
 	}
 	return nil
 }
@@ -270,7 +270,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 			sac.ResourceScopeKeys(resources.Indicator, resources.NetworkGraph, resources.ProcessWhitelist, resources.Risk),
 		))
 
-	if err := ds.risks.RemoveRisk(deleteRelatedCtx, id, storage.RiskSubjectType_DEPLOYMENT); err != nil {
+	if err := ds.risks.RemoveRisk(deleteRelatedCtx, id, storage.RiskEntityType_DEPLOYMENT); err != nil {
 		return err
 	}
 	if err := ds.whitelists.RemoveProcessWhitelistsByDeployment(deleteRelatedCtx, id); err != nil {

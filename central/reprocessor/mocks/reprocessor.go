@@ -67,31 +67,3 @@ func (mr *MockLoopMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockLoop)(nil).Stop))
 }
-
-// ReprocessRisk mocks base method
-func (m *MockLoop) ReprocessRisk() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ReprocessRisk")
-}
-
-// ReprocessRisk indicates an expected call of ReprocessRisk
-func (mr *MockLoopMockRecorder) ReprocessRisk() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessRisk", reflect.TypeOf((*MockLoop)(nil).ReprocessRisk))
-}
-
-// ReprocessRiskForDeployments mocks base method
-func (m *MockLoop) ReprocessRiskForDeployments(deploymentIDs ...string) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range deploymentIDs {
-		varargs = append(varargs, a)
-	}
-	m.ctrl.Call(m, "ReprocessRiskForDeployments", varargs...)
-}
-
-// ReprocessRiskForDeployments indicates an expected call of ReprocessRiskForDeployments
-func (mr *MockLoopMockRecorder) ReprocessRiskForDeployments(deploymentIDs ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessRiskForDeployments", reflect.TypeOf((*MockLoop)(nil).ReprocessRiskForDeployments), deploymentIDs...)
-}

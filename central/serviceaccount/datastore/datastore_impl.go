@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
@@ -16,12 +17,18 @@ import (
 
 var (
 	serviceAccountsSAC = sac.ForResource(resources.ServiceAccount)
+	riskElevatedCtx    = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Risk),
+		))
 )
 
 type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
+	risks    riskDS.DataStore
 }
 
 func (d *datastoreImpl) buildIndex() error {
@@ -74,6 +81,9 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 	}
 
 	if err := d.storage.DeleteServiceAccount(id); err != nil {
+		return err
+	}
+	if err := d.risks.RemoveRisk(riskElevatedCtx, id, storage.RiskEntityType_SERVICEACCOUNT); err != nil {
 		return err
 	}
 	return d.indexer.DeleteServiceAccount(id)

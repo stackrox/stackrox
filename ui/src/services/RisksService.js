@@ -3,14 +3,14 @@ import axios from './instance';
 const url = '/v1/risks';
 
 /**
- * Fetches risk given subject ID and type
+ * Fetches risk given entity ID and type
  *
- * @param {!string} subjectID
- * @param {!string} subjectType
+ * @param {!string} entityID
+ * @param {!string} entityType
  * @returns {Promise<Object, Error>} fulfilled with response
  */
-function fetchRisk(subjectID, subjectType) {
-    return axios.get(`${url}/${subjectType}/${subjectID}`).then(response => response.data);
+function fetchRisk(entityID, entityType) {
+    return axios.get(`${url}/${entityType}/${entityID}`).then(response => response.data);
 }
 
 export default fetchRisk;

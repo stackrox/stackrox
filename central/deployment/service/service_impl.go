@@ -13,7 +13,6 @@ import (
 	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -56,7 +55,6 @@ type serviceImpl struct {
 	processIndicators       processIndicatorStore.DataStore
 	processWhitelistResults processWhitelistResultsStore.DataStore
 	risks                   riskDataStore.DataStore
-	manager                 manager.Manager
 }
 
 func (s *serviceImpl) whitelistResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessWhitelistResults, error) {

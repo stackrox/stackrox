@@ -1,4 +1,4 @@
-package risk
+package scorer
 
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
@@ -15,7 +15,12 @@ var (
 )
 
 func initialize() {
-	scorer = NewScorer(alertDataStore.Singleton(), roleStore.Singleton(), bindingStore.Singleton(), saStore.Singleton(), evaluator.Singleton())
+	scorer = NewScorer(
+		alertDataStore.Singleton(),
+		roleStore.Singleton(),
+		bindingStore.Singleton(),
+		saStore.Singleton(),
+		evaluator.Singleton())
 }
 
 // GetScorer returns the singleton Scorer object to use when scoring risk.

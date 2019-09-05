@@ -9,14 +9,14 @@ import "storage/risk.proto";
 package v1;
 
 message GetRiskRequest {
-    string subjectID    = 1;
-    string subjectType  = 2;
+    string entityID    = 1;
+    string entityType  = 2;
 }
 
 service RiskService {
     rpc GetRisk (GetRiskRequest) returns (storage.Risk) {
         option (google.api.http) = {
-            get: "/v1/risks/{subjectType}/{subjectID}"
+            get: "/v1/risks/{entityType}/{entityID}"
         };
     }
 }

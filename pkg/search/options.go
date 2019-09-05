@@ -150,9 +150,11 @@ var (
 	Inactive = newFieldLabel("Inactive Deployment")
 
 	// Risk Search Fields
-	RiskScore       = newFieldLabel("Risk Score")
-	RiskSubjectType = newFieldLabel("Risk Subject Type")
-	RiskIndicator   = newFieldLabel("Risk Indicator")
+	AggregateRiskScore = newFieldLabel("Aggregate Risk Score")
+	RiskScore          = newFieldLabel("Risk Score")
+	RiskEntityID       = newFieldLabel("Risk Entity ID")
+	RiskEntityType     = newFieldLabel("Risk Entity Type")
+	RiskIndicator      = newFieldLabel("Risk Indicator")
 )
 
 func newFieldLabel(s string) FieldLabel {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/central/deployment/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/throttle"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -24,15 +23,14 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	riskDedupeNamespace = uuid.NewV4()
-	dedupeNamespace     = uuid.NewV4()
+	dedupeNamespace = uuid.NewV4()
 
 	once sync.Once
 	loop Loop
 
 	maxInjectionDelay = 500 * time.Millisecond
 
-	getDeploymentsContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+	getDeploymentContext = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment)))
@@ -41,7 +39,7 @@ var (
 // Singleton returns the singleton reprocessor loop
 func Singleton() Loop {
 	once.Do(func() {
-		loop = NewLoop(connection.ManagerSingleton(), datastore.Singleton())
+		loop = NewLoop(connection.ManagerSingleton(), deploymentDS.Singleton())
 	})
 	return loop
 }
@@ -52,27 +50,22 @@ type Loop interface {
 	Start()
 	ShortCircuit()
 	Stop()
-
-	ReprocessRisk()
-	ReprocessRiskForDeployments(deploymentIDs ...string)
 }
 
 // NewLoop returns a new instance of a Loop.
-func NewLoop(connManager connection.Manager, deployments datastore.DataStore) Loop {
+func NewLoop(connManager connection.Manager, deployments deploymentDS.DataStore) Loop {
 	return newLoopWithDuration(connManager, deployments, 4*time.Hour, 30*time.Minute, 15*time.Second)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
-func newLoopWithDuration(connManager connection.Manager, deployments datastore.DataStore, enrichAndDetectDuration, enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
+func newLoopWithDuration(connManager connection.Manager, deployments deploymentDS.DataStore, enrichAndDetectDuration, enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
 	return &loopImpl{
 		enrichAndDetectTickerDuration:  enrichAndDetectDuration,
-		deploymenRiskTickerDuration:    deploymentRiskDuration,
 		enrichAndDetectInjectionPeriod: enrichAndDetectInjectionPeriod,
 
-		deployments:       deployments,
-		deploymentRiskSet: set.NewStringSet(),
+		deployments: deployments,
 
 		stopChan:  concurrency.NewSignal(),
 		stopped:   concurrency.NewSignal(),
@@ -88,11 +81,7 @@ type loopImpl struct {
 	enrichAndDetectInjectionPeriod time.Duration
 	enrichAndDetectTicker          *time.Ticker
 
-	deployments                 datastore.DataStore
-	deploymentRiskSet           set.StringSet
-	deploymentRiskLock          sync.Mutex
-	deploymentRiskTicker        *time.Ticker
-	deploymenRiskTickerDuration time.Duration
+	deployments deploymentDS.DataStore
 
 	shortChan chan struct{}
 	stopChan  concurrency.Signal
@@ -102,20 +91,9 @@ type loopImpl struct {
 	throttler   throttle.DropThrottle
 }
 
-func (l *loopImpl) ReprocessRisk() {
-	l.throttler.Run(func() { l.sendDeployments(true, 0) })
-}
-
-func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
-	l.deploymentRiskLock.Lock()
-	defer l.deploymentRiskLock.Unlock()
-	l.deploymentRiskSet.AddAll(deploymentIDs...)
-}
-
 // Start starts the enrich and detect loop.
 func (l *loopImpl) Start() {
 	l.enrichAndDetectTicker = time.NewTicker(l.enrichAndDetectTickerDuration)
-	l.deploymentRiskTicker = time.NewTicker(l.deploymenRiskTickerDuration)
 	go l.loop()
 }
 
@@ -132,13 +110,13 @@ func (l *loopImpl) ShortCircuit() {
 	}
 }
 
-func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration, deploymentIDs ...string) {
+func (l *loopImpl) sendDeployments(injectionPeriod time.Duration, deploymentIDs ...string) {
 	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
 	if len(deploymentIDs) > 0 {
 		query = query.AddDocIDs(deploymentIDs...)
 	}
 
-	results, err := l.deployments.SearchDeployments(getDeploymentsContext, query.ProtoQuery())
+	results, err := l.deployments.SearchDeployments(getDeploymentContext, query.ProtoQuery())
 	if err != nil {
 		log.Errorf("error getting results for reprocessing: %v", err)
 		return
@@ -170,12 +148,7 @@ func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration,
 			continue
 		}
 
-		var dedupeKey string
-		if riskOnly {
-			dedupeKey = uuid.NewV5(riskDedupeNamespace, r.Id).String()
-		} else {
-			dedupeKey = uuid.NewV5(dedupeNamespace, r.Id).String()
-		}
+		dedupeKey := uuid.NewV5(dedupeNamespace, r.Id).String()
 		if injectionLimiter != nil {
 			_ = injectionLimiter.Wait(context.Background())
 		}
@@ -188,7 +161,6 @@ func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration,
 					Resource: &central.SensorEvent_ReprocessDeployment{
 						ReprocessDeployment: &central.ReprocessDeployment{
 							DeploymentId: r.Id,
-							RiskOnly:     riskOnly,
 						},
 					},
 				},
@@ -202,22 +174,14 @@ func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration,
 func (l *loopImpl) loop() {
 	defer l.stopped.Signal()
 	defer l.enrichAndDetectTicker.Stop()
-	defer l.deploymentRiskTicker.Stop()
 	for {
 		select {
 		case <-l.stopChan.Done():
 			return
 		case <-l.shortChan:
-			l.sendDeployments(false, 0)
+			l.sendDeployments(0)
 		case <-l.enrichAndDetectTicker.C:
-			l.sendDeployments(false, l.enrichAndDetectInjectionPeriod)
-		case <-l.deploymentRiskTicker.C:
-			l.deploymentRiskLock.Lock()
-			if l.deploymentRiskSet.Cardinality() > 0 {
-				l.sendDeployments(true, 0, l.deploymentRiskSet.AsSlice()...)
-				l.deploymentRiskSet.Clear()
-			}
-			l.deploymentRiskLock.Unlock()
+			l.sendDeployments(l.enrichAndDetectInjectionPeriod)
 		}
 	}
 }

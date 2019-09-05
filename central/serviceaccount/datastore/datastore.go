@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	"github.com/stackrox/rox/central/serviceaccount/search"
@@ -25,11 +26,12 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDS.DataStore) (DataStore, error) {
 	d := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
+		risks:    risks,
 	}
 	if err := d.buildIndex(); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")

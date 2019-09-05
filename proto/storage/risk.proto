@@ -9,8 +9,11 @@ package storage;
 
 message Risk {
     string id                       = 1;
-    RiskSubject subject             = 2;
+    RiskEntityMeta entity           = 2;
+    // score represents risk score obtained only from entity's individual risk factors
     float score                     = 3 [(gogoproto.moretags) = "search:\"Risk Score,store,hidden\""];
+    // aggregate_score represents risk score obtained by aggregation of dependent entities' risk and individual risk factors
+    float aggregate_score           = 5 [(gogoproto.moretags) = "search:\"Aggregate Risk Score,store,hidden\""];
 
     message Result {
         message Factor {
@@ -24,14 +27,15 @@ message Risk {
     repeated Result results         = 4;
 }
 
-message RiskSubject {
-    string id                   = 1;
+message RiskEntityMeta {
+    string id                   = 1 [(gogoproto.moretags) = "search:\"Risk Entity ID,store,hidden\""];
+    string namespace_id         = 5 [(gogoproto.moretags) = "search:\"Namespace ID,store,hidden\""];
     string namespace            = 2 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string cluster_id           = 3 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
-    RiskSubjectType type        = 4 [(gogoproto.moretags) = "search:\"Risk Subject Type,store,hidden\""];
+    RiskEntityType type        = 4 [(gogoproto.moretags) = "search:\"Risk Entity Type,store,hidden\""];
 }
 
-enum RiskSubjectType {
+enum RiskEntityType {
     UNKNOWN                 = 0;
     DEPLOYMENT              = 1;
     NAMESPACE               = 2;

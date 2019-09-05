@@ -6,16 +6,15 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/central/risk/getters"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 const (
-	// PolicyViolationsHeading is the risk result name for scores calculated by this multiplier.
-	PolicyViolationsHeading = "Policy Violations"
-
 	policySaturation = 50
 	policyMaxValue   = 4
 )
@@ -38,9 +37,12 @@ func NewViolations(getter getters.AlertGetter) *ViolationsMultiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on policy violations.
-func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
+func (v *ViolationsMultiplier) Score(ctx context.Context, msg proto.Message) *storage.Risk_Result {
+	deployment, ok := msg.(*storage.Deployment)
+	if !ok {
+		return nil
+	}
 	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
-
 	alerts, err := v.getter.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	})
@@ -67,7 +69,7 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 	}
 	score := normalizeScore(severitySum, policySaturation, policyMaxValue)
 	return &storage.Risk_Result{
-		Name:    PolicyViolationsHeading,
+		Name:    risk.PolicyViolations.DisplayTitle,
 		Factors: policyFactors(factors),
 		Score:   score,
 	}

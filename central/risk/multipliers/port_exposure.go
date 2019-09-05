@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/risk"
 )
 
 const (
-	// ReachabilityHeading is the risk result name for scores calculated by this multiplier.
-	ReachabilityHeading = `Service Reachability`
-
 	reachabilitySaturation = 10
 	reachabilityValue      = 2
 )
@@ -25,10 +24,14 @@ func NewReachability() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on the service configuration
-func (s *reachabilityMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
+func (s *reachabilityMultiplier) Score(_ context.Context, msg proto.Message) *storage.Risk_Result {
+	deployment, ok := msg.(*storage.Deployment)
+	if !ok {
+		return nil
+	}
 	var score float32
 	riskResult := &storage.Risk_Result{
-		Name: ReachabilityHeading,
+		Name: risk.PortExposure.DisplayTitle,
 	}
 	for _, p := range deployment.GetPorts() {
 		score += exposureValue(p.GetExposure())

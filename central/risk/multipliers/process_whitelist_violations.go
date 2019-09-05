@@ -4,14 +4,14 @@ import (
 	"context"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/central/processwhitelist/evaluator"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 const (
-	processWhitelistHeading = `Suspicious Process Executions`
-
 	processWhitelistSaturation = 10
 	processWhitelistValue      = 4
 
@@ -63,7 +63,11 @@ func formatProcess(process *storage.ProcessIndicator) string {
 	return sb.String()
 }
 
-func (p *processWhitelistMultiplier) Score(_ context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
+func (p *processWhitelistMultiplier) Score(_ context.Context, msg proto.Message) *storage.Risk_Result {
+	deployment, ok := msg.(*storage.Deployment)
+	if !ok {
+		return nil
+	}
 	violatingProcesses, err := p.evaluator.EvaluateWhitelistsAndPersistResult(deployment)
 	if err != nil {
 		log.Errorf("Couldn't evaluate whitelist: %v", err)
@@ -72,7 +76,7 @@ func (p *processWhitelistMultiplier) Score(_ context.Context, deployment *storag
 
 	scorer := newScorer()
 	riskResult := &storage.Risk_Result{
-		Name: processWhitelistHeading,
+		Name: risk.SuspiciousProcesses.DisplayTitle,
 	}
 
 	for _, process := range violatingProcesses {

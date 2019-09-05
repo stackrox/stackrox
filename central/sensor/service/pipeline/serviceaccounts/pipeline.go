@@ -7,7 +7,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/reprocessor"
+	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -39,7 +40,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		clusters:        clusters,
 		deployments:     deployments,
 		serviceaccounts: serviceaccounts,
-		riskReprocessor: reprocessor.Singleton(),
+		riskManager:     riskManager.Singleton(),
 	}
 }
 
@@ -47,7 +48,7 @@ type pipelineImpl struct {
 	clusters        clusterDataStore.DataStore
 	deployments     deploymentDataStore.DataStore
 	serviceaccounts datastore.DataStore
-	riskReprocessor reprocessor.Loop
+	riskManager     riskManager.Manager
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
@@ -133,7 +134,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	}
 	deploymentIDs := search.ResultsToIDs(results)
 	// Reprocess risk
-	s.riskReprocessor.ReprocessRiskForDeployments(deploymentIDs...)
+	s.riskManager.ReprocessRiskForDeployments(deploymentIDs, risk.RBACConfiguration)
 
 	return nil
 }

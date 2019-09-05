@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,7 +24,12 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	imagesSAC = sac.ForResource(resources.Image)
+	imagesSAC       = sac.ForResource(resources.Image)
+	riskElevatedCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Risk),
+		))
 )
 
 type datastoreImpl struct {
@@ -32,14 +38,15 @@ type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
+	risks    riskDS.DataStore
 }
 
-func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher) (*datastoreImpl, error) {
+func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDS.DataStore) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: searcher,
-
+		storage:    storage,
+		indexer:    indexer,
+		searcher:   searcher,
+		risks:      risks,
 		keyedMutex: concurrency.NewKeyedMutex(16),
 	}
 	if err := ds.buildIndex(); err != nil {
@@ -194,6 +201,9 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 		}
 		if err := ds.indexer.DeleteImage(id); err != nil {
 			errorList.AddError(err)
+		}
+		if err := ds.risks.RemoveRisk(riskElevatedCtx, id, storage.RiskEntityType_IMAGE); err != nil {
+			return err
 		}
 	}
 	return errorList.ToError()

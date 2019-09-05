@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/processwhitelist/evaluator/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +44,7 @@ func TestProcessWhitelists(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name:  processWhitelistHeading,
+				Name:  risk.SuspiciousProcesses.DisplayTitle,
 				Score: 1.6,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"},
@@ -69,7 +70,7 @@ func TestProcessWhitelists(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name:  processWhitelistHeading,
+				Name:  risk.SuspiciousProcesses.DisplayTitle,
 				Score: 2.14,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"},
@@ -86,7 +87,7 @@ func TestProcessWhitelists(t *testing.T) {
 
 			mockEvaluator := mocks.NewMockEvaluator(mockCtrl)
 			mockEvaluator.EXPECT().EvaluateWhitelistsAndPersistResult(deployment).Return(c.violatingProcesses, c.evaluatorErr)
-			result := NewProcessWhitelists(mockEvaluator).Score(context.Background(), deployment, nil)
+			result := NewProcessWhitelists(mockEvaluator).Score(context.Background(), deployment)
 			assert.ElementsMatch(t, c.expected.GetFactors(), result.GetFactors())
 			assert.InDelta(t, c.expected.GetScore(), result.GetScore(), 0.001)
 		})

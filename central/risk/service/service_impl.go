@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	pkgRisk "github.com/stackrox/rox/pkg/risk"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -42,16 +43,16 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 }
 
 func (s *serviceImpl) GetRisk(ctx context.Context, request *v1.GetRiskRequest) (*storage.Risk, error) {
-	subjectType, err := datastore.RiskSubjectType(request.SubjectType)
-	if err != nil || subjectType == storage.RiskSubjectType_UNKNOWN {
+	entityType, err := pkgRisk.EntityType(request.EntityType)
+	if err != nil || entityType == storage.RiskEntityType_UNKNOWN {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	risk, err := s.riskDataStore.GetRisk(ctx, request.GetSubjectID(), subjectType)
+	risk, found, err := s.riskDataStore.GetRisk(ctx, request.GetEntityID(), entityType, true)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if risk == nil {
-		return nil, status.Errorf(codes.NotFound, "risk for %s %s does not exist", request.GetSubjectType(), request.GetSubjectID())
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "risk for %s %s does not exist", request.GetEntityType(), request.GetEntityID())
 	}
 	return risk, nil
 }
