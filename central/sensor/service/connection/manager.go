@@ -29,6 +29,6 @@ type Manager interface {
 	GetActiveConnections() []SensorConnection
 
 	// Upgrade-related methods.
-	RecordUpgradeProgress(clusterID, upgradeProcessID string, upgradeProgress *storage.UpgradeProgress) error
 	TriggerUpgrade(ctx context.Context, clusterID string) error
+	ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error)
 }

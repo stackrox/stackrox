@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
 	"github.com/stackrox/rox/sensor/upgrader/cleanup"
 	"github.com/stackrox/rox/sensor/upgrader/execution"
@@ -15,98 +16,63 @@ import (
 )
 
 type stage struct {
-	name string
-	run  func() error
+	description string
+	run         func() error
 }
 
-func (r *runner) Workflows() map[string][]string {
-	return map[string][]string{
-		"roll-forward": {
-			"cleanup-foreign-state",
-			"snapshot",
-			"fetch-bundle",
-			"instantiate-bundle",
-			"generate-plan",
-			"preflight",
-			"execute",
+func (r *runner) Stages() map[sensorupgrader.Stage]stage {
+	return map[sensorupgrader.Stage]stage{
+		sensorupgrader.CleanupForeignStateStage: {
+			description: "Clean up state left over by other upgrade processes",
+			run:         r.cleanupForeignState,
 		},
-		"roll-back": {
-			"snapshot-rollback",
-			"generate-rollback-plan",
-			"preflight-nofail",
-			"execute",
+		sensorupgrader.SnapshotForRollForwardStage: {
+			description: "Take or read state snapshot",
+			run:         r.snapshotForRollForward,
 		},
-		"dry-run": {
-			"snapshot-dryrun",
-			"fetch-bundle",
-			"instantiate-bundle",
-			"generate-plan",
-			"preflight",
+		sensorupgrader.SnapshotForRollbackStage: {
+			description: "Read existing state snapshot",
+			run:         r.snapshotForRollback,
 		},
-		"validate-bundle": {
-			"fetch-bundle",
-			"instantiate-bundle",
+		sensorupgrader.SnapshotForDryRunStage: {
+			description: "Take or read state snapshot (do not store)",
+			run:         r.snapshotForDryRun,
 		},
-		"cleanup": {
-			"cleanup-owner",
-			"wait-for-deletion",
+		sensorupgrader.FetchBundleStage: {
+			description: "Fetch sensor bundle",
+			run:         r.fetchBundle,
 		},
-	}
-}
-
-func (r *runner) Stages() map[string]stage {
-	return map[string]stage{
-		"cleanup-foreign-state": {
-			name: "Clean up state left over by other upgrade processes",
-			run:  r.cleanupForeignState,
+		sensorupgrader.InstantiateBundleStage: {
+			description: "Instantiate objects from sensor bundle",
+			run:         r.instantiateBundle,
 		},
-		"snapshot": {
-			name: "Take or read state snapshot",
-			run:  r.snapshotForRollForward,
+		sensorupgrader.GeneratePlanStage: {
+			description: "Generate execution plan",
+			run:         r.generatePlan,
 		},
-		"snapshot-rollback": {
-			name: "Read existing state snapshot",
-			run:  r.snapshotForRollback,
+		sensorupgrader.GenerateRollbackPlanStage: {
+			description: "Generate rollback execution plan",
+			run:         r.generateRollbackPlan,
 		},
-		"snapshot-dryrun": {
-			name: "Take or read state snapshot (do not store)",
-			run:  r.snapshotForDryRun,
+		sensorupgrader.PreflightStage: {
+			description: "Run preflight checks",
+			run:         r.preflightChecks,
 		},
-		"fetch-bundle": {
-			name: "Fetch sensor bundle",
-			run:  r.fetchBundle,
+		sensorupgrader.PreflightNoFailStage: {
+			description: "Run preflight checks (informative only)",
+			run:         r.preflightChecksNoFail,
 		},
-		"instantiate-bundle": {
-			name: "Instantiate objects from sensor bundle",
-			run:  r.instantiateBundle,
+		sensorupgrader.ExecuteStage: {
+			description: "Execute plan",
+			run:         r.executePlan,
 		},
-		"generate-plan": {
-			name: "Generate execution plan",
-			run:  r.generatePlan,
+		sensorupgrader.CleanupOwnerStage: {
+			description: "Clean up owning deployment",
+			run:         r.cleanupOwner,
 		},
-		"generate-rollback-plan": {
-			name: "Generate rollback execution plan",
-			run:  r.generateRollbackPlan,
-		},
-		"preflight": {
-			name: "Run preflight checks",
-			run:  r.preflightChecks,
-		},
-		"preflight-nofail": {
-			name: "Run preflight checks (informative only)",
-			run:  r.preflightChecksNoFail,
-		},
-		"execute": {
-			name: "Execute plan",
-			run:  r.executePlan,
-		},
-		"cleanup-owner": {
-			name: "Clean up owning deployment",
-			run:  r.cleanupOwner,
-		},
-		"wait-for-deletion": {
-			name: "Wait for deletion to take effect",
-			run:  r.waitForDeletion,
+		sensorupgrader.WaitForDeletionStage: {
+			description: "Wait for deletion to take effect",
+			run:         r.waitForDeletion,
 		},
 	}
 }

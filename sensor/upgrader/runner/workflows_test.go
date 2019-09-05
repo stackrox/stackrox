@@ -3,6 +3,7 @@ package runner
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -10,7 +11,7 @@ func TestWorkflowsAreValid(t *testing.T) {
 	t.Parallel()
 
 	r := &runner{}
-	workflows := r.Workflows()
+	workflows := sensorupgrader.Workflows()
 	stages := r.Stages()
 
 	for workflow, stageIDs := range workflows {

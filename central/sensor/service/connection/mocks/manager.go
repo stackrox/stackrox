@@ -181,20 +181,6 @@ func (mr *MockManagerMockRecorder) GetActiveConnections() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveConnections", reflect.TypeOf((*MockManager)(nil).GetActiveConnections))
 }
 
-// RecordUpgradeProgress mocks base method
-func (m *MockManager) RecordUpgradeProgress(clusterID, upgradeProcessID string, upgradeProgress *storage.UpgradeProgress) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordUpgradeProgress", clusterID, upgradeProcessID, upgradeProgress)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecordUpgradeProgress indicates an expected call of RecordUpgradeProgress
-func (mr *MockManagerMockRecorder) RecordUpgradeProgress(clusterID, upgradeProcessID, upgradeProgress interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpgradeProgress", reflect.TypeOf((*MockManager)(nil).RecordUpgradeProgress), clusterID, upgradeProcessID, upgradeProgress)
-}
-
 // TriggerUpgrade mocks base method
 func (m *MockManager) TriggerUpgrade(ctx context.Context, clusterID string) error {
 	m.ctrl.T.Helper()
@@ -207,4 +193,19 @@ func (m *MockManager) TriggerUpgrade(ctx context.Context, clusterID string) erro
 func (mr *MockManagerMockRecorder) TriggerUpgrade(ctx, clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerUpgrade", reflect.TypeOf((*MockManager)(nil).TriggerUpgrade), ctx, clusterID)
+}
+
+// ProcessCheckInFromUpgrader mocks base method
+func (m *MockManager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessCheckInFromUpgrader", ctx, clusterID, req)
+	ret0, _ := ret[0].(*central.UpgradeCheckInFromUpgraderResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProcessCheckInFromUpgrader indicates an expected call of ProcessCheckInFromUpgrader
+func (mr *MockManagerMockRecorder) ProcessCheckInFromUpgrader(ctx, clusterID, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessCheckInFromUpgrader", reflect.TypeOf((*MockManager)(nil).ProcessCheckInFromUpgrader), ctx, clusterID, req)
 }

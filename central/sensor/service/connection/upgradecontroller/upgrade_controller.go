@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
@@ -15,7 +16,7 @@ type UpgradeController interface {
 	// Note that callers are responsible for external synchronization -- in particular, they must ensure that
 	// a previous call to RegisterConnection has returned before making a new call. Else, the behaviour is undefined.
 	RegisterConnection(sensorCtx context.Context, connection common.MessageInjector)
-	RecordUpgradeProgress(upgradeProcessID string, upgradeProgress *storage.UpgradeProgress) error
+	ProcessCheckInFromUpgrader(req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error)
 	Trigger(ctx concurrency.Waitable) error
 }
 

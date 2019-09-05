@@ -3,11 +3,13 @@ package upgradecontroller
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -50,7 +52,11 @@ func (u *upgradeController) shouldInitiateNewUpgrade(status *storage.ClusterUpgr
 	if status.GetCurrentUpgradeProcessId() == "" {
 		return true
 	}
-	return upgradeErrorStates.Contains(status.GetCurrentUpgradeProgress().GetUpgradeState())
+
+	// Do not initiate an upgrade until the previous upgrade attempt reaches a terminal state -- if rollbacks are in progress,
+	// for example, we don't want to clobber everything.
+	// The upgrade is guaranteed to reach a terminal state after 10 minutes, since a timeout will happen.
+	return stateutils.TerminalStates.Contains(status.GetCurrentUpgradeProgress().GetUpgradeState())
 }
 
 func (u *upgradeController) Trigger(ctx concurrency.Waitable) error {
@@ -108,12 +114,17 @@ func (u *upgradeController) Trigger(ctx concurrency.Waitable) error {
 	// Only if it's a new upgrade, update the status of these fields in the DB.
 	if isNewUpgrade {
 		clusterUpgradeStatus.CurrentUpgradeProcessId = upgradeProcessID
-		clusterUpgradeStatus.CurrentUpgradeInitiatedAt = types.TimestampNow()
+		initiatedTime := types.TimestampNow()
+		clusterUpgradeStatus.CurrentUpgradeInitiatedAt = initiatedTime
 		clusterUpgradeStatus.CurrentUpgradeProgress = &storage.UpgradeProgress{
 			UpgradeState: storage.UpgradeProgress_UPGRADE_TRIGGER_SENT,
 		}
 
+		if err := u.setUpgradeStatus(clusterUpgradeStatus); err != nil {
+			return errors.Wrap(err, "Failed to update cluster upgrade status in the DB")
+		}
 		u.upgradeDoneSig.Signal()
+		go u.markUpgradeTimedOutAt(protoconv.ConvertTimestampToTimeOrNow(initiatedTime).Add(upgradeAttemptTimeout), upgradeProcessID)
 	}
 
 	return nil

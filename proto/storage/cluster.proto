@@ -148,10 +148,12 @@ message UpgradeProgress {
 
 
         // Error states.
-        PRE_FLIGHT_CHECKS_FAILED      = 11;
-        UPGRADE_ERROR_ROLLED_BACK     = 12;
-        UPGRADE_ERROR_ROLLBACK_FAILED = 13;
-        UPGRADE_TIMED_OUT             = 14;
+        UPGRADE_INITIALIZATION_ERROR  = 11;
+        PRE_FLIGHT_CHECKS_FAILED      = 12;
+        UPGRADE_ERROR_ROLLING_BACK    = 13;
+        UPGRADE_ERROR_ROLLED_BACK     = 14;
+        UPGRADE_ERROR_ROLLBACK_FAILED = 15;
+        UPGRADE_TIMED_OUT             = 16;
     }
 
     UpgradeState upgrade_state         = 1;

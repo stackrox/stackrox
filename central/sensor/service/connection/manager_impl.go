@@ -31,6 +31,15 @@ var (
 	clusterSAC = sac.ForResource(resources.Cluster)
 )
 
+func checkClusterWriteAccess(ctx context.Context, clusterID string) error {
+	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
+		return status.Error(codes.Internal, err.Error())
+	} else if !ok {
+		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
+	}
+	return nil
+}
+
 type connectionAndUpgradeController struct {
 	connection  *sensorConnection
 	upgradeCtrl upgradecontroller.UpgradeController
@@ -178,23 +187,23 @@ func (m *manager) getOrCreateUpgradeCtrl(clusterID string) (upgradecontroller.Up
 	return connAndUpgradeCtrl.upgradeCtrl, nil
 }
 
-func (m *manager) RecordUpgradeProgress(clusterID, upgradeProcessID string, upgradeProgress *storage.UpgradeProgress) error {
+func (m *manager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
+	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
+		return nil, err
+	}
 	if !features.SensorAutoUpgrade.Enabled() {
-		return errors.New("cannot record upgrade progress; auto-upgrade feature flag disabled")
+		return nil, errors.New("cannot process check in from upgrader; auto-upgrade feature flag disabled")
 	}
 	upgradeCtrl, err := m.getOrCreateUpgradeCtrl(clusterID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	return upgradeCtrl.RecordUpgradeProgress(upgradeProcessID, upgradeProgress)
+	return upgradeCtrl.ProcessCheckInFromUpgrader(req)
 }
 
 func (m *manager) TriggerUpgrade(ctx context.Context, clusterID string) error {
-	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
-		return status.Error(codes.Internal, err.Error())
-	} else if !ok {
-		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
+	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
+		return err
 	}
 
 	var upgradeCtrl upgradecontroller.UpgradeController

@@ -3,6 +3,7 @@ package runner
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
@@ -24,7 +25,7 @@ type runner struct {
 }
 
 func (r *runner) Run(workflow string) error {
-	workflowStages := r.Workflows()[workflow]
+	workflowStages := sensorupgrader.Workflows()[workflow]
 
 	if workflowStages == nil {
 		return errors.Errorf("invalid workflow %q", workflow)
@@ -35,7 +36,7 @@ func (r *runner) Run(workflow string) error {
 	stagesByID := r.Stages()
 	for _, stageID := range workflowStages {
 		stageDesc := stagesByID[stageID]
-		log.Infof("---- %s ----", stageDesc.name)
+		log.Infof("---- %s ----", stageDesc.description)
 		if err := stageDesc.run(); err != nil {
 			log.Errorf(err.Error())
 			return err

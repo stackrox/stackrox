@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -12,8 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -24,27 +21,30 @@ type service struct {
 	connectionManager connection.Manager
 }
 
-func (s *service) RecordUpgradeProgress(ctx context.Context, req *central.RecordUpgradeProgressRequest) (*types.Empty, error) {
+func clusterIDFromCtx(ctx context.Context) (string, error) {
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return nil, authz.ErrNotAuthorized("no identity in context")
+		return "", authz.ErrNotAuthorized("no identity in context")
 	}
 
 	svc := id.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return nil, authz.ErrNotAuthorized("only sensor/upgrader may access this API")
+		return "", authz.ErrNotAuthorized("only sensor/upgrader may access this API")
 	}
 
 	clusterID := svc.GetId()
 	if clusterID == "" {
-		return nil, authz.ErrNotAuthorized("only sensors with a valid cluster ID may access this API")
+		return "", authz.ErrNotAuthorized("only sensors with a valid cluster ID may access this API")
 	}
+	return clusterID, nil
+}
 
-	if err := s.connectionManager.RecordUpgradeProgress(clusterID, req.GetUpgradeProcessId(), req.GetUpgradeProgress()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+func (s *service) UpgradeCheckInFromUpgrader(ctx context.Context, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
+	clusterID, err := clusterIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	return &types.Empty{}, nil
+	return s.connectionManager.ProcessCheckInFromUpgrader(ctx, clusterID, req)
 }
 
 func (s *service) RegisterServiceServer(server *grpc.Server) {

@@ -7,11 +7,21 @@ import "storage/cluster.proto";
 
 package central;
 
-message RecordUpgradeProgressRequest {
-    string                  upgrade_process_id = 1;
-    storage.UpgradeProgress upgrade_progress   = 2;
+message UpgradeCheckInFromUpgraderRequest {
+    string  upgrade_process_id        = 1;
+    string  current_workflow          = 2;
+    string  last_executed_stage       = 3;
+
+    // The error from the last executed stage, if any.
+    // If this is empty, that implies that the last stage
+    // was succesfully executed.
+    string  last_executed_stage_error = 4;
+}
+
+message UpgradeCheckInFromUpgraderResponse {
+    string workflow_to_execute = 1;
 }
 
 service SensorUpgradeControlService {
-    rpc RecordUpgradeProgress (RecordUpgradeProgressRequest) returns (google.protobuf.Empty);
+    rpc UpgradeCheckInFromUpgrader(UpgradeCheckInFromUpgraderRequest) returns (UpgradeCheckInFromUpgraderResponse);
 }
