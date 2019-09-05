@@ -47,11 +47,13 @@ function StatusField({ displayValue, type, action }) {
         <div className={`flex items-center content-center ${chosenType.color}`}>
             <IconElement />
             <div className="flex flex-col justify-center ml-2">
-                <div>{displayValue}</div>
+                {displayValue !== '' && <div>{displayValue}</div>}
                 {action !== null && (
                     <button
                         type="button"
-                        className="bg-transparent underline font-semibold p-0 m-0"
+                        className={`bg-transparent underline font-semibold p-0 m-0 text-left ${
+                            type === 'failure' ? 'text-alert-700' : 'text-tertiary-700'
+                        }`}
                         onClick={action.actionHandler}
                     >
                         {action.actionText}
@@ -63,15 +65,16 @@ function StatusField({ displayValue, type, action }) {
 }
 
 StatusField.propTypes = {
-    displayValue: PropTypes.string.isRequired,
+    displayValue: PropTypes.string,
     type: PropTypes.string,
     action: PropTypes.shape({
-        actionHandlerText: PropTypes.string.isRequired,
+        actionText: PropTypes.string.isRequired,
         actionHandler: PropTypes.func.isRequired
     })
 };
 
 StatusField.defaultProps = {
+    displayValue: '',
     type: 'info',
     action: null
 };

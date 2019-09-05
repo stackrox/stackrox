@@ -221,7 +221,12 @@ describe('cluster helpers', () => {
 
             const displayValue = parseUpgradeStatus(testCluster);
 
-            const expected = { displayValue: 'Upgrade available', type: 'download' };
+            const expected = {
+                action: {
+                    actionText: 'Upgrade available'
+                },
+                type: 'download'
+            };
             expect(displayValue).toEqual(expected);
         });
 
@@ -365,7 +370,13 @@ describe('cluster helpers', () => {
 
             const displayValue = parseUpgradeStatus(testCluster);
 
-            const expected = { displayValue: 'Upgrade failed. Rolled back.', type: 'failure' };
+            const expected = {
+                action: {
+                    actionText: 'Retry upgrade'
+                },
+                displayValue: 'Upgrade failed. Rolled back.',
+                type: 'failure'
+            };
             expect(displayValue).toEqual(expected);
         });
 

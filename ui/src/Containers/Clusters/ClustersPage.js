@@ -25,6 +25,7 @@ import {
     fetchClustersAsArray,
     getAutoUpgradeConfig,
     deleteClusters,
+    upgradeCluster,
     upgradeClusters,
     saveAutoUpgradeConfig
 } from 'services/ClustersService';
@@ -141,6 +142,15 @@ const ClustersPage = ({
         });
     }
 
+    function upgradeSingleCluster(id) {
+        upgradeCluster(id).then(() => {
+            // @TODO: refactor all the re-fetching logic, perhaps use polling increment to force-refresh
+            fetchClustersAsArray().then(clusters => {
+                setCurrentClusters(clusters);
+            });
+        });
+    }
+
     function deleteSelectedClusters() {
         setShowDialog(true);
     }
@@ -200,7 +210,20 @@ const ClustersPage = ({
 
     function getUpgradeStatusField(original) {
         const status = parseUpgradeStatus(original);
-        return <StatusField displayValue={status.displayValue} type={status.type} />;
+        if (status.action) {
+            status.action.actionHandler = e => {
+                e.stopPropagation();
+                upgradeSingleCluster(original.id);
+            };
+        }
+
+        return (
+            <StatusField
+                displayValue={status.displayValue}
+                type={status.type}
+                action={status.action}
+            />
+        );
     }
 
     // @TODO: flesh out the new Clusters page layout, placeholders for now

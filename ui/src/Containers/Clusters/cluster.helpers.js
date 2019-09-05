@@ -65,9 +65,19 @@ export const newClusterDefault = {
 
 // @TODO: add optional button text and func
 const upgradeStates = {
+    UP_TO_DATE: {
+        displayValue: 'On the latest version',
+        type: 'current'
+    },
+    MANUAL_UPGRADE_REQUIRED: {
+        displayValue: 'Manual upgrade required',
+        type: 'intervention'
+    },
     UNSET: {
-        displayValue: 'Upgrade available',
-        type: 'download'
+        type: 'download',
+        action: {
+            actionText: 'Upgrade available'
+        }
     },
     UPGRADE_TRIGGER_SENT: {
         displayValue: 'Upgrade trigger sent',
@@ -99,7 +109,10 @@ const upgradeStates = {
     },
     UPGRADE_ERROR_ROLLED_BACK: {
         displayValue: 'Upgrade failed. Rolled back.',
-        type: 'failure'
+        type: 'failure',
+        action: {
+            actionText: 'Retry upgrade'
+        }
     },
     UPGRADE_ERROR_ROLLBACK_FAILED: {
         displayValue: 'Upgrade failed. Rollback failed.',
@@ -145,17 +158,9 @@ export function formatSensorVersion(status) {
 export function parseUpgradeStatus(cluster) {
     const upgradability = get(cluster, 'status.upgradeStatus.upgradability', undefined);
     switch (upgradability) {
-        case 'UP_TO_DATE': {
-            return {
-                displayValue: 'On the latest version',
-                type: 'current'
-            };
-        }
+        case 'UP_TO_DATE':
         case 'MANUAL_UPGRADE_REQUIRED': {
-            return {
-                displayValue: 'Manual upgrade required',
-                type: 'intervention'
-            };
+            return upgradeStates[upgradability];
         }
         case 'AUTO_UPGRADE_POSSIBLE': {
             const upgradeState = get(
