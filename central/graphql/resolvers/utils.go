@@ -117,26 +117,24 @@ func getStandardIDs(ctx context.Context, cs complianceStandards.Repository) ([]s
 	return result, nil
 }
 
-func (resolver *clusterResolver) getRoleBindings(ctx context.Context, args rawQuery) ([]*storage.K8SRoleBinding, error) {
+func (resolver *clusterResolver) getRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error) {
 	if err := readK8sRoleBindings(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getConjunctionQuery(args)
-	if err != nil {
-		return nil, err
-	}
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, resolver.getConjunctionQuery(q))
 	if err != nil {
 		return nil, err
 	}
 	return bindings, nil
 }
 
-func (resolver *clusterResolver) getSubjects(ctx context.Context, args rawQuery) ([]*storage.Subject, error) {
+func (resolver *clusterResolver) getSubjects(ctx context.Context, q *v1.Query) ([]*storage.Subject, error) {
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
-	bindings, err := resolver.getRoleBindings(ctx, args)
+
+	bindings, err := resolver.getRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -148,16 +146,12 @@ func (resolver *clusterResolver) getQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
 }
 
-func (resolver *clusterResolver) getConjunctionQuery(args rawQuery) (*v1.Query, error) {
+func (resolver *clusterResolver) getConjunctionQuery(q *v1.Query) *v1.Query {
 	q1 := resolver.getQuery()
-	if args.String() == "" {
-		return q1, nil
+	if q == search.EmptyQuery() {
+		return q1
 	}
-	q2, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	return search.NewConjunctionQuery(q2, q1), nil
+	return search.NewConjunctionQuery(q, q1)
 }
 
 // SubjectCount returns the count of Subjects which have any permission on this namespace or the cluster it belongs to

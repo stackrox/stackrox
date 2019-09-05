@@ -46,15 +46,20 @@ func (resolver *subjectResolver) SubjectWithClusterID(ctx context.Context) ([]*s
 	}
 	var resolvers []*subjectWithClusterIDResolver
 	for _, cluster := range clusters {
-		q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.Id).ProtoQuery()
+		q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.Id).
+			AddExactMatches(search.SubjectName, resolver.data.GetName()).
+			AddStrings(search.SubjectKind, resolver.data.GetKind().String()).ProtoQuery()
 		bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 		if err != nil {
 			continue
 		}
 
-		subjectResolver, err := resolver.root.wrapSubject(k8srbac.GetSubject(resolver.Name(ctx), bindings))
+		if bindings == nil {
+			return nil, errors.Errorf("subject %s does not exist", resolver.data.GetName())
+		}
+		subjectResolver, err := resolver.root.wrapSubject(resolver.data, true, nil)
 		if err != nil {
-			continue
+			return nil, err
 		}
 		resolvers = append(resolvers, wrapSubject(cluster.GetId(), cluster.GetName(), subjectResolver))
 	}

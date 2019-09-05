@@ -118,11 +118,11 @@ func (resolver *clusterResolver) Deployments(ctx context.Context, args rawQuery)
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	query, err := resolver.getConjunctionQuery(args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, query))
+	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, resolver.getConjunctionQuery(q)))
 }
 
 // DeploymentCount returns count of all deployments in this cluster
@@ -145,11 +145,11 @@ func (resolver *clusterResolver) Nodes(ctx context.Context, args rawQuery) ([]*n
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getConjunctionQuery(args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapNodes(resolver.root.NodeGlobalDataStore.SearchRawNodes(ctx, q))
+	return resolver.root.wrapNodes(resolver.root.NodeGlobalDataStore.SearchRawNodes(ctx, resolver.getConjunctionQuery(q)))
 }
 
 // NodeCount returns count of all nodes on the cluster
@@ -194,13 +194,14 @@ func (resolver *clusterResolver) Namespaces(ctx context.Context, args rawQuery) 
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getConjunctionQuery(args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
+
 	return resolver.root.wrapNamespaces(namespace.ResolveByClusterID(ctx, resolver.data.GetId(),
 		resolver.root.NamespaceDataStore, resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore,
-		resolver.root.NetworkPoliciesStore, q))
+		resolver.root.NetworkPoliciesStore, resolver.getConjunctionQuery(q)))
 }
 
 // Namespace returns a given namespace on a cluster.
@@ -251,11 +252,12 @@ func (resolver *clusterResolver) K8sRoles(ctx context.Context, args rawQuery) ([
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getConjunctionQuery(args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapK8SRoles(resolver.root.K8sRoleStore.SearchRawRoles(ctx, q))
+
+	return resolver.root.wrapK8SRoles(resolver.root.K8sRoleStore.SearchRawRoles(ctx, resolver.getConjunctionQuery(q)))
 }
 
 // K8sRoleCount returns count of K8s roles in this cluster
@@ -304,11 +306,12 @@ func (resolver *clusterResolver) ServiceAccounts(ctx context.Context, args rawQu
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getConjunctionQuery(args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapServiceAccounts(resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, q))
+	return resolver.root.wrapServiceAccounts(resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx,
+		resolver.getConjunctionQuery(q)))
 }
 
 // ServiceAccountCount returns count of Service Accounts in this cluster
@@ -354,7 +357,11 @@ func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct
 func (resolver *clusterResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectWithClusterIDResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Subjects")
 
-	subjectResolvers, err := resolver.root.wrapSubjects(resolver.getSubjects(ctx, args))
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	subjectResolvers, err := resolver.root.wrapSubjects(resolver.getSubjects(ctx, q))
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +372,7 @@ func (resolver *clusterResolver) Subjects(ctx context.Context, args rawQuery) ([
 func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "SubjectCount")
 
-	subjects, err := resolver.getSubjects(ctx, rawQuery{})
+	subjects, err := resolver.getSubjects(ctx, search.EmptyQuery())
 	if err != nil {
 		return 0, err
 	}
@@ -376,7 +383,10 @@ func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error
 func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectWithClusterIDResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Subject")
 
-	bindings, err := resolver.getRoleBindings(ctx, rawQuery{})
+	q := search.NewQueryBuilder().AddExactMatches(search.SubjectName, args.Name).
+		AddStrings(search.SubjectKind, storage.SubjectKind_GROUP.String(), storage.SubjectKind_USER.String()).ProtoQuery()
+
+	bindings, err := resolver.getRoleBindings(ctx, resolver.getConjunctionQuery(q))
 	if err != nil {
 		return nil, err
 	}
@@ -393,11 +403,11 @@ func (resolver *clusterResolver) Images(ctx context.Context, args rawQuery) ([]*
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	q, err := resolver.getConjunctionQuery(args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx, q))
+	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getConjunctionQuery(q)))
 }
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) {
@@ -507,11 +517,11 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatu
 func (resolver *clusterResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Secrets")
 
-	query, err := resolver.getConjunctionQuery(args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	secrets, err := resolver.root.SecretsDataStore.SearchRawSecrets(ctx, query)
+	secrets, err := resolver.root.SecretsDataStore.SearchRawSecrets(ctx, resolver.getConjunctionQuery(q))
 	if err != nil {
 		return nil, err
 	}
