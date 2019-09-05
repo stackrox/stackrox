@@ -116,22 +116,26 @@ message ClusterUpgradeStatus {
     Upgradability   upgradability                = 1;
     string          upgradability_status_reason  = 2;
 
-    // The process ID of the current (or most recent) upgrade, if any.
-    string                      current_upgrade_process_id   = 3;
-    google.protobuf.Timestamp   current_upgrade_initiated_at = 4;
+    message UpgradeProcessStatus {
+        bool active = 1;
 
+        string id                              = 2;
+        string target_version                  = 3;
+        string upgrader_image                  = 4;
+        google.protobuf.Timestamp initiated_at = 5;
+        UpgradeProgress progress               = 6;
+    }
 
-    // The progress of the current upgrade, if any,
-    // OR of the most recent upgrade, in the event that it failed.
+    // The progress of the current or most recent upgrade, if any,
     // Note that we don't store any historical data -- the moment
     // a new upgrade attempt is triggered, we overwrite
     // information from the previous attempt.
-    UpgradeProgress current_upgrade_progress = 5;
+    UpgradeProcessStatus most_recent_process = 3;
 }
 
 message UpgradeProgress {
     enum UpgradeState {
-        UNSET                         = 0;
+        UPGRADE_INITIALIZING          = 0;
 
         // In-progress states.
         UPGRADE_TRIGGER_SENT          = 1;

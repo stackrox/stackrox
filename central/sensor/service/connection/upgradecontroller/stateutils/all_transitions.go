@@ -37,7 +37,7 @@ var (
 		{
 			workflowMatch: stringPtr(""),
 			currentStateMatch: anyStateFrom(
-				storage.UpgradeProgress_UNSET, // This should basically never happen, but being defensive can't hurt.
+				storage.UpgradeProgress_UPGRADE_INITIALIZING, // This should basically never happen, but being defensive can't hurt.
 
 				// These two states would be a little early to hear from the upgrader, but still possible in case
 				// the upgrader happens to reach out before sensor for whatever reason.

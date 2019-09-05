@@ -18,33 +18,38 @@ func constructUpgradeDetail(req *central.UpgradeCheckInFromUpgraderRequest) stri
 }
 
 func (u *upgradeController) ProcessCheckInFromUpgrader(req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
-	if err := u.checkErrSig(); err != nil {
-		return nil, err
-	}
-
-	u.storageLock.Lock()
-	defer u.storageLock.Unlock()
-
-	upgradeStatus, err := u.getClusterUpgradeStatus()
+	var resp *central.UpgradeCheckInFromUpgraderResponse
+	err := u.do(func() error {
+		var err error
+		resp, err = u.doProcessCheckInFromUpgrader(req)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
-	if upgradeStatus.GetCurrentUpgradeProcessId() != req.GetUpgradeProcessId() {
-		return nil, errors.Errorf("current upgrade process id (%s) is different; perhaps this upgrade process (id %s) has timed out?", upgradeStatus.GetCurrentUpgradeProcessId(), req.GetUpgradeProcessId())
+	return resp, nil
+}
+
+func (u *upgradeController) doProcessCheckInFromUpgrader(req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
+	if u.active == nil {
+		return nil, errors.New("no upgrade is currently in progress")
+	}
+
+	processStatus := u.active.status
+	if processStatus.GetId() != req.GetUpgradeProcessId() {
+		return nil, errors.Errorf("current upgrade process id (%s) is different; perhaps this upgrade process (id %s) has timed out?", processStatus.GetId(), req.GetUpgradeProcessId())
 	}
 
 	stage := sensorupgrader.GetStage(req.GetLastExecutedStage())
 
-	currentState := upgradeStatus.GetCurrentUpgradeProgress().GetUpgradeState()
+	currentState := processStatus.GetProgress().GetUpgradeState()
 	nextState, workflowToExecute, updateDetail := stateutils.DetermineNextStateAndWorkflowForUpgrader(currentState, req.GetCurrentWorkflow(), stage, req.GetLastExecutedStageError())
 
-	upgradeStatus.CurrentUpgradeProgress.UpgradeState = nextState
+	processStatus.Progress.UpgradeState = nextState
 	if updateDetail {
-		upgradeStatus.CurrentUpgradeProgress.UpgradeStatusDetail = constructUpgradeDetail(req)
+		processStatus.Progress.UpgradeStatusDetail = constructUpgradeDetail(req)
 	}
-	if err := u.setUpgradeStatus(upgradeStatus); err != nil {
-		return nil, err
-	}
+	u.upgradeStatusChanged = true
 
 	return &central.UpgradeCheckInFromUpgraderResponse{WorkflowToExecute: workflowToExecute}, nil
 }

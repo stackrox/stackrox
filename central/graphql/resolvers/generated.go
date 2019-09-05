@@ -128,13 +128,19 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
 	utils.Must(builder.AddType("ClusterUpgradeStatus", []string{
-		"currentUpgradeInitiatedAt: Time",
-		"currentUpgradeProcessId: String!",
-		"currentUpgradeProgress: UpgradeProgress",
+		"mostRecentProcess: ClusterUpgradeStatus_UpgradeProcessStatus",
 		"upgradability: ClusterUpgradeStatus_Upgradability!",
 		"upgradabilityStatusReason: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_Upgradability(0)))
+	utils.Must(builder.AddType("ClusterUpgradeStatus_UpgradeProcessStatus", []string{
+		"active: Boolean!",
+		"id: ID!",
+		"initiatedAt: Time",
+		"progress: UpgradeProgress",
+		"targetVersion: String!",
+		"upgraderImage: String!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
 	utils.Must(builder.AddType("ComplianceAggregation_AggregationKey", []string{
@@ -1806,19 +1812,9 @@ func (resolver *Resolver) wrapClusterUpgradeStatuses(values []*storage.ClusterUp
 	return output, nil
 }
 
-func (resolver *clusterUpgradeStatusResolver) CurrentUpgradeInitiatedAt(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetCurrentUpgradeInitiatedAt()
-	return timestamp(value)
-}
-
-func (resolver *clusterUpgradeStatusResolver) CurrentUpgradeProcessId(ctx context.Context) string {
-	value := resolver.data.GetCurrentUpgradeProcessId()
-	return value
-}
-
-func (resolver *clusterUpgradeStatusResolver) CurrentUpgradeProgress(ctx context.Context) (*upgradeProgressResolver, error) {
-	value := resolver.data.GetCurrentUpgradeProgress()
-	return resolver.root.wrapUpgradeProgress(value, true, nil)
+func (resolver *clusterUpgradeStatusResolver) MostRecentProcess(ctx context.Context) (*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
+	value := resolver.data.GetMostRecentProcess()
+	return resolver.root.wrapClusterUpgradeStatus_UpgradeProcessStatus(value, true, nil)
 }
 
 func (resolver *clusterUpgradeStatusResolver) Upgradability(ctx context.Context) string {
@@ -1847,6 +1843,59 @@ func toClusterUpgradeStatus_Upgradabilities(values *[]string) []storage.ClusterU
 		output[i] = toClusterUpgradeStatus_Upgradability(&v)
 	}
 	return output
+}
+
+type clusterUpgradeStatus_UpgradeProcessStatusResolver struct {
+	root *Resolver
+	data *storage.ClusterUpgradeStatus_UpgradeProcessStatus
+}
+
+func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatus(value *storage.ClusterUpgradeStatus_UpgradeProcessStatus, ok bool, err error) (*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterUpgradeStatus_UpgradeProcessStatusResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatuses(values []*storage.ClusterUpgradeStatus_UpgradeProcessStatus, err error) ([]*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterUpgradeStatus_UpgradeProcessStatusResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterUpgradeStatus_UpgradeProcessStatusResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Active(ctx context.Context) bool {
+	value := resolver.data.GetActive()
+	return value
+}
+
+func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) InitiatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetInitiatedAt()
+	return timestamp(value)
+}
+
+func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Progress(ctx context.Context) (*upgradeProgressResolver, error) {
+	value := resolver.data.GetProgress()
+	return resolver.root.wrapUpgradeProgress(value, true, nil)
+}
+
+func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) TargetVersion(ctx context.Context) string {
+	value := resolver.data.GetTargetVersion()
+	return value
+}
+
+func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) UpgraderImage(ctx context.Context) string {
+	value := resolver.data.GetUpgraderImage()
+	return value
 }
 
 func toCollectionMethod(value *string) storage.CollectionMethod {

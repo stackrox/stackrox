@@ -16,7 +16,7 @@ var (
 			sac.ResourceScopeKeys(resources.Cluster)))
 )
 
-func (u *upgradeController) getCluster() (*storage.Cluster, error) {
+func (u *upgradeController) getClusterOrError() (*storage.Cluster, error) {
 	cluster, _, err := u.storage.GetCluster(upgradeControllerCtx, u.clusterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve cluster %q", u.clusterID)
@@ -27,48 +27,36 @@ func (u *upgradeController) getCluster() (*storage.Cluster, error) {
 	return cluster, nil
 }
 
-// getClusterUpgradeStatus gets the upgrade status for the given cluster from storage.
-// It returns an error if the cluster doesn't exist, or if there's an error.
-// The error it returns will be wrapped and formatted.
-// It ALWAYS returns a non-nil cluster upgrade status if err == nil
-// (if the cluster in the DB had a nil cluster upgrade status, it allocates a new, empty, object).
-func (u *upgradeController) getClusterUpgradeStatus() (*storage.ClusterUpgradeStatus, error) {
-	cluster, err := u.getCluster()
-	if err != nil {
-		return nil, err
-	}
-	if upgradeStatus := cluster.GetStatus().GetUpgradeStatus(); upgradeStatus != nil {
-		return upgradeStatus, nil
-	}
-	return &storage.ClusterUpgradeStatus{}, nil
+func (u *upgradeController) getCluster() *storage.Cluster {
+	cluster, err := u.getClusterOrError()
+	u.expectNoError(err)
+	return cluster
 }
 
-func (u *upgradeController) setUpgradeStatus(status *storage.ClusterUpgradeStatus) error {
-	if err := u.storage.UpdateClusterUpgradeStatus(upgradeControllerCtx, u.clusterID, status); err != nil {
-		return errors.Wrapf(err, "failed to update cluster status for %q", u.clusterID)
+func (u *upgradeController) flushUpgradeStatus() error {
+	if !u.upgradeStatusChanged {
+		return nil
 	}
+	if err := u.storage.UpdateClusterUpgradeStatus(upgradeControllerCtx, u.clusterID, u.upgradeStatus); err != nil {
+		return err
+	}
+	u.upgradeStatusChanged = false
 	return nil
 }
 
-func (u *upgradeController) setUpgradeStatusOrTerminate(status *storage.ClusterUpgradeStatus) {
-	if err := u.setUpgradeStatus(status); err != nil {
-		u.errorSig.SignalWithError(err)
-	}
-}
-
 func (u *upgradeController) setUpgradeProgress(expectedProcessID string, state storage.UpgradeProgress_UpgradeState, detail string) error {
-	u.storageLock.Lock()
-	defer u.storageLock.Unlock()
-	upgradeStatus, err := u.getClusterUpgradeStatus()
-	if err != nil {
-		return err
+	if expectedProcessID == "" {
+		return errors.New("expected upgrade process ID must not be empty")
 	}
-	if upgradeStatus.GetCurrentUpgradeProcessId() != expectedProcessID {
-		return errors.Errorf("upgrade process ID %s is now old, not updating upgrade process", expectedProcessID)
+
+	if u.upgradeStatus.GetMostRecentProcess().GetId() != expectedProcessID {
+		return errors.Errorf("upgrade process ID %s is no longer valid, not updating upgrade progress", expectedProcessID)
 	}
-	upgradeStatus.CurrentUpgradeProgress = &storage.UpgradeProgress{
+
+	u.upgradeStatus.MostRecentProcess.Progress = &storage.UpgradeProgress{
 		UpgradeState:        state,
 		UpgradeStatusDetail: detail,
 	}
-	return u.storage.UpdateClusterUpgradeStatus(upgradeControllerCtx, u.clusterID, upgradeStatus)
+	u.upgradeStatusChanged = true
+	return nil
 }

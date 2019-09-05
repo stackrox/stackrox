@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // ClusterManager envelopes functions that interact with clusters
@@ -21,7 +22,7 @@ type ClusterManager interface {
 //go:generate mockgen-wrapper
 type Manager interface {
 	// Need to register cluster manager to avoid cyclic dependencies with cluster datastore
-	Start(mgr ClusterManager) error
+	Start(mgr ClusterManager, autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.
 	HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer) error

@@ -84,6 +84,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
 	sensorUpgradeControlService "github.com/stackrox/rox/central/sensorupgrade/controlservice"
 	sensorUpgradeService "github.com/stackrox/rox/central/sensorupgrade/service"
+	sensorUpgradeConfigStore "github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
@@ -297,7 +298,11 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 	}
 
-	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton()); err != nil {
+	var autoTriggerUpgrades *concurrency.Flag
+	if features.SensorAutoUpgrade.Enabled() {
+		autoTriggerUpgrades = sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
+	}
+	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton(), autoTriggerUpgrades); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 

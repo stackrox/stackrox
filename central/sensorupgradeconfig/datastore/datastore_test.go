@@ -43,7 +43,10 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.dataStore = New(s.storage)
+	s.storage.EXPECT().GetSensorUpgradeConfig().Return(nil, nil)
+	var err error
+	s.dataStore, err = New(s.storage)
+	s.Require().NoError(err)
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TearDownTest() {

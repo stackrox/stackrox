@@ -36,7 +36,9 @@ func addDefaultConfigIfEmpty(d DataStore) error {
 }
 
 func initialize() {
-	singleton = New(store.New(globaldb.GetGlobalDB()))
+	var err error
+	singleton, err = New(store.New(globaldb.GetGlobalDB()))
+	utils.Must(err)
 	utils.Must(addDefaultConfigIfEmpty(singleton))
 }
 

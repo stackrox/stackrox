@@ -13,29 +13,29 @@ import (
 type UpgradeController interface {
 	ErrorSignal() concurrency.ReadOnlyErrorSignal
 	// RegisterConnection registers a new connection from a sensor, and a handle to send messages to it.
-	// Note that callers are responsible for external synchronization -- in particular, they must ensure that
-	// a previous call to RegisterConnection has returned before making a new call. Else, the behaviour is undefined.
-	RegisterConnection(sensorCtx context.Context, connection common.MessageInjector)
+	// The return value is a once-triggered error waitable that gets triggered if there is any critical issue
+	// with the upgrade controller.
+	RegisterConnection(sensorCtx context.Context, connection common.MessageInjector) concurrency.ErrorWaitable
 	ProcessCheckInFromUpgrader(req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error)
 	Trigger(ctx concurrency.Waitable) error
 }
 
-type clusterStorage interface {
+// ClusterStorage is the fragment of the cluster store interface that is needed by the upgrade controller.
+type ClusterStorage interface {
 	UpdateClusterUpgradeStatus(ctx context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
 }
 
 // New returns a new UpgradeController for the given cluster.
-func New(clusterID string, storage clusterStorage) (UpgradeController, error) {
+func New(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concurrency.Flag) (UpgradeController, error) {
 	u := &upgradeController{
-		clusterID: clusterID,
-		errorSig:  concurrency.NewErrorSignal(),
-		storage:   storage,
-
-		upgradeDoneSig: concurrency.NewSignal(),
+		autoTriggerEnabledFlag: autoTriggerEnabledFlag,
+		clusterID:              clusterID,
+		errorSig:               concurrency.NewErrorSignal(),
+		storage:                storage,
 	}
-	err := u.initialize()
-	if err != nil {
+
+	if err := u.initialize(); err != nil {
 		return nil, err
 	}
 	return u, nil

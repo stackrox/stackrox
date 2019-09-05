@@ -11,6 +11,7 @@ import (
 	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	reflect "reflect"
 	time "time"
 )
@@ -126,17 +127,17 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // Start mocks base method
-func (m *MockManager) Start(mgr connection.ClusterManager) error {
+func (m *MockManager) Start(mgr connection.ClusterManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start", mgr)
+	ret := m.ctrl.Call(m, "Start", mgr, autoTriggerUpgrades)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Start indicates an expected call of Start
-func (mr *MockManagerMockRecorder) Start(mgr interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) Start(mgr, autoTriggerUpgrades interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, autoTriggerUpgrades)
 }
 
 // HandleConnection mocks base method

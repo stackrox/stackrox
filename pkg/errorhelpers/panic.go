@@ -14,6 +14,10 @@ var (
 // PanicOnDevelopment will panic if we are in a development build (environment variable will be injected by dev scripts)
 // It will not panic in a release version and instead log the error
 func PanicOnDevelopment(err error) error {
+	if err == nil {
+		return nil
+	}
+
 	if devbuild.IsEnabled() {
 		panic(err)
 	}

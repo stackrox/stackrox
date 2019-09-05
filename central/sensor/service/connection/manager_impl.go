@@ -49,7 +49,8 @@ type manager struct {
 	connectionsByClusterID      map[string]connectionAndUpgradeController
 	connectionsByClusterIDMutex sync.RWMutex
 
-	clusters ClusterManager
+	clusters            ClusterManager
+	autoTriggerUpgrades *concurrency.Flag
 }
 
 func newManager() *manager {
@@ -66,7 +67,7 @@ func (m *manager) initializeUpgradeControllers() error {
 	m.connectionsByClusterIDMutex.Lock()
 	defer m.connectionsByClusterIDMutex.Unlock()
 	for _, cluster := range clusters {
-		upgradeCtrl, err := upgradecontroller.New(cluster.GetId(), m.clusters)
+		upgradeCtrl, err := upgradecontroller.New(cluster.GetId(), m.clusters, m.autoTriggerUpgrades)
 		if err != nil {
 			return err
 		}
@@ -77,9 +78,10 @@ func (m *manager) initializeUpgradeControllers() error {
 	return nil
 }
 
-func (m *manager) Start(clusterManager ClusterManager) error {
+func (m *manager) Start(clusterManager ClusterManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.clusters = clusterManager
 	if features.SensorAutoUpgrade.Enabled() {
+		m.autoTriggerUpgrades = autoTriggerUpgrades
 		err := m.initializeUpgradeControllers()
 		if err != nil {
 			return errors.Wrap(err, "failed to initialize upgrade controllers")
@@ -127,13 +129,15 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 
 	if features.SensorAutoUpgrade.Enabled() {
 		if upgradeCtrl == nil {
-			upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters)
+			upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters, m.autoTriggerUpgrades)
 			if err != nil {
 				return nil, err
 			}
-			go newConnection.stopSig.SignalWhen(upgradeCtrl.ErrorSignal(), concurrency.Never())
 		}
-		upgradeCtrl.RegisterConnection(ctx, newConnection)
+		upgradeCtrlErrSig := upgradeCtrl.RegisterConnection(ctx, newConnection)
+		if upgradeCtrlErrSig != nil {
+			go newConnection.stopSig.SignalWhen(upgradeCtrlErrSig, concurrency.Never())
+		}
 	}
 	m.connectionsByClusterID[clusterID] = connectionAndUpgradeController{
 		connection:  newConnection,
@@ -150,6 +154,7 @@ func (m *manager) HandleConnection(ctx context.Context, clusterID string, pf pip
 
 	oldConnection, err := m.replaceConnection(ctx, clusterID, conn)
 	if err != nil {
+		log.Errorf("Replacing connection: %v", err)
 		return errors.Wrap(err, "replacing old connection")
 	}
 
@@ -178,7 +183,7 @@ func (m *manager) getOrCreateUpgradeCtrl(clusterID string) (upgradecontroller.Up
 	connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]
 	if connAndUpgradeCtrl.upgradeCtrl == nil {
 		var err error
-		connAndUpgradeCtrl.upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters)
+		connAndUpgradeCtrl.upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters, m.autoTriggerUpgrades)
 		if err != nil {
 			return nil, err
 		}
