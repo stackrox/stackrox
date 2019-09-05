@@ -108,7 +108,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                     <Link
                                         key={`${item.id}-${index}`}
                                         to={linkTo}
-                                        className={`no-underline text-base-600 hover:bg-base-400 hover:bg-base-200 inline-block border-base-300 w-full ${
+                                        className={`no-underline text-base-600 hover:bg-base-200 inline-block border-base-300 w-full ${
                                             index !== 4 || index !== 9 ? 'border-b' : ''
                                         }`}
                                     >

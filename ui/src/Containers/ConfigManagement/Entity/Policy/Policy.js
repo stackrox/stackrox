@@ -1,29 +1,26 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { entityViolationsColumns } from 'constants/listColumns';
 import { Link } from 'react-router-dom';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
-import pluralize from 'pluralize';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import SeverityLabel from 'Components/SeverityLabel';
 import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 import Widget from 'Components/Widget';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
-import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 import Button from 'Components/Button';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
-import EntityList from '../List/EntityList';
-import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
+import EntityList from '../../List/EntityList';
+import getSubListFromEntity from '../../List/utilities/getSubListFromEntity';
+import PolicyFindings from './PolicyFindings';
 
 const PolicyEditButton = ({ id }) => {
     return (
@@ -35,40 +32,6 @@ const PolicyEditButton = ({ id }) => {
 
 PolicyEditButton.propTypes = {
     id: PropTypes.string.isRequired
-};
-
-const DeploymentViolations = ({ className, alerts }) => {
-    if (!alerts || !alerts.length)
-        return (
-            <NoResultsMessage
-                message="No deployments violating this policy"
-                className="p-6 shadow"
-                icon="info"
-            />
-        );
-    const rows = alerts;
-    const columns = entityViolationsColumns[entityTypes.DEPLOYMENT];
-    return (
-        <TableWidget
-            header={`${rows.length} ${pluralize('Deployment', rows.length)} with Violation(s)`}
-            entityType={entityTypes.DEPLOYMENT}
-            columns={columns}
-            rows={rows}
-            idAttribute="deployment.id"
-            noDataText="No Deployments with Violation(s)"
-            className={className}
-        />
-    );
-};
-
-DeploymentViolations.propTypes = {
-    className: PropTypes.string,
-    alerts: PropTypes.arrayOf(PropTypes.shape({}))
-};
-
-DeploymentViolations.defaultProps = {
-    className: '',
-    alerts: []
 };
 
 const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
@@ -230,9 +193,10 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Policy Findings">
-                            <div className="flex mb-4 pdf-page pdf-stretch p-4">
-                                <DeploymentViolations
-                                    className="mx-4 w-full bg-base-100"
+                            <div className="flex mb-4 pdf-page pdf-stretch">
+                                <PolicyFindings
+                                    entityContext={entityContext}
+                                    policyId={id}
                                     alerts={alerts}
                                 />
                             </div>

@@ -13,7 +13,7 @@ import Namespace from './Entity/Namespace';
 import Role from './Entity/Role';
 import Control from './Entity/Control';
 import Image from './Entity/Image';
-import Policy from './Entity/Policy';
+import Policy from './Entity/Policy/Policy';
 import Subject from './Entity/Subject';
 
 const entityComponentMap = {

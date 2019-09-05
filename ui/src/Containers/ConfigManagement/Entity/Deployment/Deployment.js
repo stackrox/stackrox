@@ -207,7 +207,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Deployment Findings">
-                            <div className="flex pdf-page pdf-stretch rounded relative rounded mb-4 ml-4 mr-4">
+                            <div className="flex mb-4 pdf-page pdf-stretch">
                                 <DeploymentFindings
                                     entityContext={entityContext}
                                     deploymentID={id}

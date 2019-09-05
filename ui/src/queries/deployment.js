@@ -44,7 +44,7 @@ export const DEPLOYMENT_FRAGMENT = gql`
             id
             name
         }
-        policyStatus
+        policyStatus(query: $query)
         tolerations {
             key
             operator

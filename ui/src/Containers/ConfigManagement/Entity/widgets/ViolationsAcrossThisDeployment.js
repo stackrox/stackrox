@@ -49,6 +49,21 @@ const ViolationsAcrossThisDeployment = ({ deploymentID, policyID }) => {
                 if (policyViolation) {
                     content = (
                         <>
+                            <Widget
+                                header="Violation"
+                                className="m-4 flex-1"
+                                bodyClassName="flex flex-col p-4 leading-normal"
+                            >
+                                <ul className="list-reset leading-loose">
+                                    {policyViolation.violations.map(violation => {
+                                        return (
+                                            <li className="border-b border-base-300">
+                                                {violation.message}
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </Widget>
                             <div>
                                 <Widget
                                     header="Time of Violation"
@@ -65,31 +80,20 @@ const ViolationsAcrossThisDeployment = ({ deploymentID, policyID }) => {
                                     {policyViolation.policy.enforcementActions.join(', ') ||
                                         'No Enforcement'}
                                 </Widget>
+                                <Widget
+                                    header="Category"
+                                    className="m-4"
+                                    bodyClassName="flex flex-col p-4 leading-normal"
+                                >
+                                    {policyViolation.policy.categories.join(', ')}
+                                </Widget>
                             </div>
-                            <Widget
-                                header="Violation"
-                                className="m-4"
-                                bodyClassName="flex flex-col p-4 leading-normal"
-                            >
-                                <ul className="pl-3 leading-loose">
-                                    {policyViolation.violations.map(violation => {
-                                        return <li>{violation.message}</li>;
-                                    })}
-                                </ul>
-                            </Widget>
-                            <Widget
-                                header="Category"
-                                className="m-4"
-                                bodyClassName="flex flex-col p-4 leading-normal"
-                            >
-                                {policyViolation.policy.categories.join(', ')}
-                            </Widget>
                         </>
                     );
                 } else {
                     content = <div className="p-4">No Violations</div>;
                 }
-                return <div className="flex w-full mx-4 shadow rounded bg-base-100">{content}</div>;
+                return <div className="flex w-full bg-transparent">{content}</div>;
             }}
         </Query>
     );

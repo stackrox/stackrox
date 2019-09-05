@@ -13,7 +13,11 @@ const DeploymentFindings = ({ entityContext = {}, deploymentID }) => {
             />
         );
     }
-    return <FailedPoliciesAcrossDeployment deploymentID={deploymentID} />;
+    return (
+        <div className="mx-4 w-full">
+            <FailedPoliciesAcrossDeployment deploymentID={deploymentID} />
+        </div>
+    );
 };
 
 DeploymentFindings.propTypes = {
