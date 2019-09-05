@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes, { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
@@ -230,10 +230,15 @@ const ListTable = ({
     const isControlList = entityType === entityTypes.CONTROL;
     const formatData = isControlList ? formatStandardData : formatResourceData;
     const tableColumns = entityToColumns[standardId || entityType];
+    let tableData;
+    useEffect(() => {
+        if (tableData && tableData.length) {
+            createPDFTable(tableData, entityType, query, pdfId);
+        }
+    }, []); // eslint-disable-line
     return (
         <Query query={gqlQuery} variables={variables}>
             {({ loading, data }) => {
-                let tableData;
                 let contents = <Loader />;
                 let headerComponent;
                 let headerText;
@@ -245,10 +250,6 @@ const ListTable = ({
                         contents = <NoResultsMessage message="No data matched your search." />;
                     } else {
                         tableData = filterByComplianceState(formattedData, query, isControlList);
-
-                        if (tableData.length) {
-                            createPDFTable(tableData, entityType, query, pdfId);
-                        }
                         totalRows = getTotalRows(tableData, isControlList);
                         const { groupBy } = query;
 
@@ -259,6 +260,10 @@ const ListTable = ({
                             entityType,
                             totalRows
                         )} ${groupedByText}`;
+
+                        if (tableData && tableData.length) {
+                            createPDFTable(tableData, entityType, query, pdfId);
+                        }
 
                         contents = isControlList ? (
                             <TableGroup
