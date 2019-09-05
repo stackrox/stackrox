@@ -34,7 +34,7 @@ func generateAddMany(props GeneratorProperties) (Code, Code) {
 		Id("batch").Op(":=").Id("b").Dot("index").Dot("NewBatch").Params(),
 		For(List(Id("_"), Id(strings.ToLower(props.Singular))).Op(":=").Range().Id(strings.ToLower(props.Plural))).Block(
 			If(Err().Op(":=").Id("batch").Dot("Index").Call(
-				Id(strings.ToLower(props.Singular)).Dot("GetId").Call(),
+				Id(strings.ToLower(props.Singular)).Dot(props.IDFunc).Call(),
 				Op("&").Id(wrapperType).Values(Dict{
 					Id("Type"):       Qual(packagenames.V1, props.SearchCategory).Dot("String").Call(),
 					Id(props.Object): Id(strings.ToLower(props.Singular)),
