@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +31,7 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name: risk.PolicyViolations.DisplayTitle,
+				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: Critical)"},
 				},
@@ -50,7 +49,7 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name: risk.PolicyViolations.DisplayTitle,
+				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: Critical)"},
 				},
@@ -80,7 +79,7 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name: risk.PolicyViolations.DisplayTitle,
+				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: High)"},
 					{Message: "Policy 2 (severity: Medium)"},
@@ -112,7 +111,7 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name: risk.PolicyViolations.DisplayTitle,
+				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: Critical)"},
 					{Message: "Policy 2 (severity: High)"},
@@ -165,7 +164,7 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name: risk.PolicyViolations.DisplayTitle,
+				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 3 (severity: Critical)"},
 					{Message: "Policy 2 (severity: High)"},
@@ -182,7 +181,7 @@ func TestViolationsScore(t *testing.T) {
 				Alerts: c.alerts,
 			})
 			deployment := getMockDeployment()
-			result := mult.Score(context.Background(), deployment)
+			result := mult.Score(context.Background(), deployment, nil)
 			assert.Equal(t, c.expected, result)
 		})
 	}

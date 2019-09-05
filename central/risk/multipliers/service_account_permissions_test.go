@@ -9,7 +9,6 @@ import (
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
@@ -33,7 +32,7 @@ func TestPermissionScore(t *testing.T) {
 			roles:    []*storage.K8SRole{},
 			bindings: []*storage.K8SRoleBinding{},
 			expected: &storage.Risk_Result{
-				Name: risk.RBACConfiguration.DisplayTitle,
+				Name: rbacConfigurationHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Deployment is configured to automatically mount a token for service account \"service-account\""},
 				},
@@ -83,7 +82,7 @@ func TestPermissionScore(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name: risk.RBACConfiguration.DisplayTitle,
+				Name: rbacConfigurationHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Deployment is configured to automatically mount a token for service account \"service-account\""},
 					{Message: "Service account \"service-account\" is configured to mount a token into the deployment by default"},
@@ -135,7 +134,7 @@ func TestPermissionScore(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name: risk.RBACConfiguration.DisplayTitle,
+				Name: rbacConfigurationHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Deployment is configured to automatically mount a token for service account \"service-account\""},
 					{Message: "Service account \"service-account\" is configured to mount a token into the deployment by default"},
@@ -198,7 +197,7 @@ func TestPermissionScore(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name: risk.RBACConfiguration.DisplayTitle,
+				Name: rbacConfigurationHeading,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Deployment is configured to automatically mount a token for service account \"service-account\""},
 					{Message: "Service account \"service-account\" is configured to mount a token into the deployment by default"},
@@ -248,7 +247,7 @@ func TestPermissionScore(t *testing.T) {
 			}
 
 			mult := NewSAPermissionsMultiplier(mockRoleDatastore, mockBindingDatastore, mockSADatastore)
-			result := mult.Score(ctx, deployment)
+			result := mult.Score(ctx, deployment, nil)
 
 			assert.Equal(t, c.expected, result)
 			mockCtrl.Finish()

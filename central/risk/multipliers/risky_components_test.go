@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRiskyComponentCountScore(t *testing.T) {
 	riskyMultiplier := NewRiskyComponents()
+	deployment := getMockDeployment()
 
 	// Add some risky components to the deployment
 	images := getMockImages()
@@ -47,13 +47,12 @@ func TestRiskyComponentCountScore(t *testing.T) {
 	images[0].Scan.Components = components
 
 	expectedScore := &storage.Risk_Result{
-		Name: risk.RiskyImageComponent.DisplayTitle,
+		Name: RiskyComponentCountHeading,
 		Factors: []*storage.Risk_Result_Factor{
 			{Message: "Image docker.io/library/nginx:1.10 contains components: apk, curl, tcsh, telnet, wget and 1 other(s) that are useful for attackers"},
 		},
 		Score: 1.3,
 	}
-	score := riskyMultiplier.Score(context.Background(), images[0])
+	score := riskyMultiplier.Score(context.Background(), deployment, images)
 	assert.Equal(t, expectedScore, score)
-
 }

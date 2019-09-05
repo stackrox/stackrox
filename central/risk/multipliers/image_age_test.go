@@ -2,26 +2,24 @@ package multipliers
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestImageAgeScore(t *testing.T) {
 	imageAgeMultiplier := NewImageAge()
 
-	image := getMockImages()[0]
+	deployment := getMockDeployment()
 	expectedScore := &storage.Risk_Result{
-		Name: risk.ImageAge.DisplayTitle,
+		Name: ImageAgeHeading,
 		Factors: []*storage.Risk_Result_Factor{
-			{Message: fmt.Sprintf("Image %q is 180 days old", image.GetName().GetFullName())},
+			{Message: "Deployment contains an image 180 days old"},
 		},
 		Score: 1.25,
 	}
 
-	score := imageAgeMultiplier.Score(context.Background(), image)
+	score := imageAgeMultiplier.Score(context.Background(), deployment, getMockImages())
 	assert.Equal(t, expectedScore, score)
 }

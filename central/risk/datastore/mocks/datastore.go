@@ -67,34 +67,33 @@ func (mr *MockDataStoreMockRecorder) SearchRawRisks(ctx, q interface{}) *gomock.
 }
 
 // GetRisk mocks base method
-func (m *MockDataStore) GetRisk(ctx context.Context, entityID string, entityType storage.RiskEntityType, aggregateRisk bool) (*storage.Risk, bool, error) {
+func (m *MockDataStore) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRisk", ctx, entityID, entityType, aggregateRisk)
+	ret := m.ctrl.Call(m, "GetRisk", ctx, subjectID, subjectType)
 	ret0, _ := ret[0].(*storage.Risk)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetRisk indicates an expected call of GetRisk
-func (mr *MockDataStoreMockRecorder) GetRisk(ctx, entityID, entityType, aggregateRisk interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetRisk(ctx, subjectID, subjectType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRisk", reflect.TypeOf((*MockDataStore)(nil).GetRisk), ctx, entityID, entityType, aggregateRisk)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRisk", reflect.TypeOf((*MockDataStore)(nil).GetRisk), ctx, subjectID, subjectType)
 }
 
 // GetRiskByIndicators mocks base method
-func (m *MockDataStore) GetRiskByIndicators(ctx context.Context, entityID string, entityType storage.RiskEntityType, riskIndicatorNames []string) (*storage.Risk, error) {
+func (m *MockDataStore) GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, riskIndicatorNames []string) (*storage.Risk, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRiskByIndicators", ctx, entityID, entityType, riskIndicatorNames)
+	ret := m.ctrl.Call(m, "GetRiskByIndicators", ctx, subjectID, subjectType, riskIndicatorNames)
 	ret0, _ := ret[0].(*storage.Risk)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRiskByIndicators indicates an expected call of GetRiskByIndicators
-func (mr *MockDataStoreMockRecorder) GetRiskByIndicators(ctx, entityID, entityType, riskIndicatorNames interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetRiskByIndicators(ctx, subjectID, subjectType, riskIndicatorNames interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRiskByIndicators", reflect.TypeOf((*MockDataStore)(nil).GetRiskByIndicators), ctx, entityID, entityType, riskIndicatorNames)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRiskByIndicators", reflect.TypeOf((*MockDataStore)(nil).GetRiskByIndicators), ctx, subjectID, subjectType, riskIndicatorNames)
 }
 
 // UpsertRisk mocks base method
@@ -112,72 +111,15 @@ func (mr *MockDataStoreMockRecorder) UpsertRisk(ctx, risk interface{}) *gomock.C
 }
 
 // RemoveRisk mocks base method
-func (m *MockDataStore) RemoveRisk(ctx context.Context, entityID string, entityType storage.RiskEntityType) error {
+func (m *MockDataStore) RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveRisk", ctx, entityID, entityType)
+	ret := m.ctrl.Call(m, "RemoveRisk", ctx, subjectID, subjectType)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveRisk indicates an expected call of RemoveRisk
-func (mr *MockDataStoreMockRecorder) RemoveRisk(ctx, entityID, entityType interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) RemoveRisk(ctx, subjectID, subjectType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRisk", reflect.TypeOf((*MockDataStore)(nil).RemoveRisk), ctx, entityID, entityType)
-}
-
-// GetDependingRiskIDs mocks base method
-func (m *MockDataStore) GetDependingRiskIDs(riskID string) []string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDependingRiskIDs", riskID)
-	ret0, _ := ret[0].([]string)
-	return ret0
-}
-
-// GetDependingRiskIDs indicates an expected call of GetDependingRiskIDs
-func (mr *MockDataStoreMockRecorder) GetDependingRiskIDs(riskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDependingRiskIDs", reflect.TypeOf((*MockDataStore)(nil).GetDependingRiskIDs), riskID)
-}
-
-// GetDependentRiskIDs mocks base method
-func (m *MockDataStore) GetDependentRiskIDs(riskID string) []string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDependentRiskIDs", riskID)
-	ret0, _ := ret[0].([]string)
-	return ret0
-}
-
-// GetDependentRiskIDs indicates an expected call of GetDependentRiskIDs
-func (mr *MockDataStoreMockRecorder) GetDependentRiskIDs(riskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDependentRiskIDs", reflect.TypeOf((*MockDataStore)(nil).GetDependentRiskIDs), riskID)
-}
-
-// AddRiskDependencies mocks base method
-func (m *MockDataStore) AddRiskDependencies(parentRiskID string, dependentIDs ...string) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{parentRiskID}
-	for _, a := range dependentIDs {
-		varargs = append(varargs, a)
-	}
-	m.ctrl.Call(m, "AddRiskDependencies", varargs...)
-}
-
-// AddRiskDependencies indicates an expected call of AddRiskDependencies
-func (mr *MockDataStoreMockRecorder) AddRiskDependencies(parentRiskID interface{}, dependentIDs ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{parentRiskID}, dependentIDs...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRiskDependencies", reflect.TypeOf((*MockDataStore)(nil).AddRiskDependencies), varargs...)
-}
-
-// RemoveRiskDependencies mocks base method
-func (m *MockDataStore) RemoveRiskDependencies(riskID string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveRiskDependencies", riskID)
-}
-
-// RemoveRiskDependencies indicates an expected call of RemoveRiskDependencies
-func (mr *MockDataStoreMockRecorder) RemoveRiskDependencies(riskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRiskDependencies", reflect.TypeOf((*MockDataStore)(nil).RemoveRiskDependencies), riskID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRisk", reflect.TypeOf((*MockDataStore)(nil).RemoveRisk), ctx, subjectID, subjectType)
 }

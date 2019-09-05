@@ -6,19 +6,19 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/rbac/utils"
 	serviceAccountStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
+	rbacConfigurationHeading = "RBAC Configuration"
+
 	namespaceReadWeight  = 1.0
 	namespaceWriteWeight = 2.0
 	clusterReadWeight    = 3.0
@@ -50,11 +50,7 @@ func NewSAPermissionsMultiplier(roleStore roleStore.DataStore, bindingStore bind
 }
 
 // Score takes a deployment and evaluates its risk based on the permissions granted to the deployment's service account
-func (c *saPermissionsMultiplier) Score(ctx context.Context, msg proto.Message) *storage.Risk_Result {
-	deployment, ok := msg.(*storage.Deployment)
-	if !ok {
-		return nil
-	}
+func (c *saPermissionsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
 	var factors []*storage.Risk_Result_Factor
 	overallScore := float32(0)
 
@@ -94,7 +90,7 @@ func (c *saPermissionsMultiplier) Score(ctx context.Context, msg proto.Message) 
 
 	if overallScore > 0.0 {
 		return &storage.Risk_Result{
-			Name:    risk.RBACConfiguration.DisplayTitle,
+			Name:    rbacConfigurationHeading,
 			Factors: factors,
 			Score:   overallScore,
 		}

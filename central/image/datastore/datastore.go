@@ -11,7 +11,6 @@ import (
 	badgerStore "github.com/stackrox/rox/central/image/datastore/internal/store/badger"
 	boltStore "github.com/stackrox/rox/central/image/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/image/index"
-	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -35,24 +34,24 @@ type DataStore interface {
 	DeleteImages(ctx context.Context, ids ...string) error
 }
 
-func newDatastore(storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore) (DataStore, error) {
+func newDatastore(storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool) (DataStore, error) {
 	indexer := index.New(bleveIndex)
 	searcher := search.New(storage, indexer)
-	return newDatastoreImpl(storage, indexer, searcher, risks)
+	return newDatastoreImpl(storage, indexer, searcher)
 }
 
 // NewBadger returns a new instance of DataStore using the input store, indexer, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func NewBadger(db *badger.DB, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore) (DataStore, error) {
+func NewBadger(db *badger.DB, bleveIndex bleve.Index, noUpdateTimestamps bool) (DataStore, error) {
 	storage := badgerStore.New(db, noUpdateTimestamps)
-	return newDatastore(storage, bleveIndex, noUpdateTimestamps, risks)
+	return newDatastore(storage, bleveIndex, noUpdateTimestamps)
 }
 
 // NewBolt returns a new instance of DataStore using the input store, indexer, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func NewBolt(db *bbolt.DB, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore) (DataStore, error) {
+func NewBolt(db *bbolt.DB, bleveIndex bleve.Index, noUpdateTimestamps bool) (DataStore, error) {
 	storage := boltStore.New(db, noUpdateTimestamps)
-	return newDatastore(storage, bleveIndex, noUpdateTimestamps, risks)
+	return newDatastore(storage, bleveIndex, noUpdateTimestamps)
 }

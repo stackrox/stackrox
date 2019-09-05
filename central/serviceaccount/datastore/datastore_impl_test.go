@@ -5,9 +5,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
-	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
@@ -31,12 +29,12 @@ type ServiceAccountDataStoreTestSuite struct {
 
 	bleveIndex bleve.Index
 
-	indexer           index.Indexer
-	searcher          serviceAccountSearch.Searcher
-	storage           store.Store
-	datastore         DataStore
-	mockRiskDatastore *riskDatastoreMocks.MockDataStore
-	ctx               context.Context
+	indexer   index.Indexer
+	searcher  serviceAccountSearch.Searcher
+	storage   store.Store
+	datastore DataStore
+
+	ctx context.Context
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
@@ -51,8 +49,7 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 	suite.indexer = index.New(suite.bleveIndex)
 	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
-	suite.mockRiskDatastore = riskDatastoreMocks.NewMockDataStore(gomock.NewController(suite.T()))
-	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher, suite.mockRiskDatastore)
+	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -100,7 +97,6 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, "NONEXISTENT").ProtoQuery()
 	suite.assertSearchResults(invalidQ, nil)
 
-	suite.mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any())
 	err = suite.datastore.RemoveServiceAccount(suite.ctx, sa.GetId())
 	suite.Require().NoError(err)
 

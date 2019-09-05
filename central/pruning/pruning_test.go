@@ -99,13 +99,11 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	ctrl := gomock.NewController(t)
 	// Initialize real datastore
-	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
-	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	images, err := imageDatastore.NewBadger(db, bleveIndex, true, mockRiskDatastore)
+	images, err := imageDatastore.NewBadger(db, bleveIndex, true)
 	require.NoError(t, err)
 
+	ctrl := gomock.NewController(t)
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).Return((error)(nil))
 
@@ -115,8 +113,9 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
 
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
-	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any(), true)
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
 	deployments, err := deploymentDatastore.NewBadger(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, nil)
 	require.NoError(t, err)
 
@@ -143,7 +142,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
-	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any(), true).AnyTimes()
+	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
 	deployments, err := deploymentDatastore.NewBadger(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, nil)
 	require.NoError(t, err)
 

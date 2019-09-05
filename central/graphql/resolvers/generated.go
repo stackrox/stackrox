@@ -716,20 +716,18 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"memoryMbRequest: Float!",
 	}))
 	utils.Must(builder.AddType("Risk", []string{
-		"aggregateScore: Float!",
-		"entity: RiskEntityMeta",
 		"id: ID!",
 		"results: [Risk_Result]!",
 		"score: Float!",
+		"subject: RiskSubject",
 	}))
-	utils.Must(builder.AddType("RiskEntityMeta", []string{
+	utils.Must(builder.AddType("RiskSubject", []string{
 		"clusterId: String!",
 		"id: ID!",
 		"namespace: String!",
-		"namespaceId: String!",
-		"type: RiskEntityType!",
+		"type: RiskSubjectType!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.RiskEntityType(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.RiskSubjectType(0)))
 	utils.Must(builder.AddType("Risk_Result", []string{
 		"factors: [Risk_Result_Factor]!",
 		"name: String!",
@@ -6175,16 +6173,6 @@ func (resolver *Resolver) wrapRisks(values []*storage.Risk, err error) ([]*riskR
 	return output, nil
 }
 
-func (resolver *riskResolver) AggregateScore(ctx context.Context) float64 {
-	value := resolver.data.GetAggregateScore()
-	return float64(value)
-}
-
-func (resolver *riskResolver) Entity(ctx context.Context) (*riskEntityMetaResolver, error) {
-	value := resolver.data.GetEntity()
-	return resolver.root.wrapRiskEntityMeta(value, true, nil)
-}
-
 func (resolver *riskResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -6200,68 +6188,68 @@ func (resolver *riskResolver) Score(ctx context.Context) float64 {
 	return float64(value)
 }
 
-type riskEntityMetaResolver struct {
-	root *Resolver
-	data *storage.RiskEntityMeta
+func (resolver *riskResolver) Subject(ctx context.Context) (*riskSubjectResolver, error) {
+	value := resolver.data.GetSubject()
+	return resolver.root.wrapRiskSubject(value, true, nil)
 }
 
-func (resolver *Resolver) wrapRiskEntityMeta(value *storage.RiskEntityMeta, ok bool, err error) (*riskEntityMetaResolver, error) {
+type riskSubjectResolver struct {
+	root *Resolver
+	data *storage.RiskSubject
+}
+
+func (resolver *Resolver) wrapRiskSubject(value *storage.RiskSubject, ok bool, err error) (*riskSubjectResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &riskEntityMetaResolver{resolver, value}, nil
+	return &riskSubjectResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapRiskEntityMetas(values []*storage.RiskEntityMeta, err error) ([]*riskEntityMetaResolver, error) {
+func (resolver *Resolver) wrapRiskSubjects(values []*storage.RiskSubject, err error) ([]*riskSubjectResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	output := make([]*riskEntityMetaResolver, len(values))
+	output := make([]*riskSubjectResolver, len(values))
 	for i, v := range values {
-		output[i] = &riskEntityMetaResolver{resolver, v}
+		output[i] = &riskSubjectResolver{resolver, v}
 	}
 	return output, nil
 }
 
-func (resolver *riskEntityMetaResolver) ClusterId(ctx context.Context) string {
+func (resolver *riskSubjectResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *riskEntityMetaResolver) Id(ctx context.Context) graphql.ID {
+func (resolver *riskSubjectResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *riskEntityMetaResolver) Namespace(ctx context.Context) string {
+func (resolver *riskSubjectResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
 }
 
-func (resolver *riskEntityMetaResolver) NamespaceId(ctx context.Context) string {
-	value := resolver.data.GetNamespaceId()
-	return value
-}
-
-func (resolver *riskEntityMetaResolver) Type(ctx context.Context) string {
+func (resolver *riskSubjectResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
 }
 
-func toRiskEntityType(value *string) storage.RiskEntityType {
+func toRiskSubjectType(value *string) storage.RiskSubjectType {
 	if value != nil {
-		return storage.RiskEntityType(storage.RiskEntityType_value[*value])
+		return storage.RiskSubjectType(storage.RiskSubjectType_value[*value])
 	}
-	return storage.RiskEntityType(0)
+	return storage.RiskSubjectType(0)
 }
 
-func toRiskEntityTypes(values *[]string) []storage.RiskEntityType {
+func toRiskSubjectTypes(values *[]string) []storage.RiskSubjectType {
 	if values == nil {
 		return nil
 	}
-	output := make([]storage.RiskEntityType, len(*values))
+	output := make([]storage.RiskSubjectType, len(*values))
 	for i, v := range *values {
-		output[i] = toRiskEntityType(&v)
+		output[i] = toRiskSubjectType(&v)
 	}
 	return output
 }

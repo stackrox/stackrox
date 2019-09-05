@@ -31,21 +31,21 @@ func TestUsesConvertedQueryCorrectly(t *testing.T) {
 	// Fake risk results.
 	fakeRiskResults := []*storage.Risk{
 		{
-			Entity: &storage.RiskEntityMeta{
+			Subject: &storage.RiskSubject{
 				Id:   "dep3",
-				Type: storage.RiskEntityType_DEPLOYMENT,
+				Type: storage.RiskSubjectType_DEPLOYMENT,
 			},
 		},
 		{
-			Entity: &storage.RiskEntityMeta{
+			Subject: &storage.RiskSubject{
 				Id:   "dep4",
-				Type: storage.RiskEntityType_DEPLOYMENT,
+				Type: storage.RiskSubjectType_DEPLOYMENT,
 			},
 		},
 		{
-			Entity: &storage.RiskEntityMeta{
+			Subject: &storage.RiskSubject{
 				Id:   "dep1",
-				Type: storage.RiskEntityType_DEPLOYMENT,
+				Type: storage.RiskSubjectType_DEPLOYMENT,
 			},
 		},
 	}
@@ -53,12 +53,12 @@ func TestUsesConvertedQueryCorrectly(t *testing.T) {
 	// Expect the given risk query and return the fake results.
 	expectedRiskQuery := func() *v1.Query {
 		query := search.NewQueryBuilder().
-			AddStrings(search.RiskEntityType, storage.RiskEntityType_DEPLOYMENT.String()).
+			AddStrings(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
 			ProtoQuery()
 		query.Pagination = &v1.QueryPagination{
 			SortOptions: []*v1.QuerySortOption{
 				{
-					Field:    search.AggregateRiskScore.String(),
+					Field:    search.RiskScore.String(),
 					Reversed: false,
 				},
 			},

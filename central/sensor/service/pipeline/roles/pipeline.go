@@ -7,7 +7,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srole/datastore"
-	riskManager "github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -32,16 +31,16 @@ func GetPipeline() pipeline.Fragment {
 // NewPipeline returns a new instance of Pipeline for k8s role
 func NewPipeline(clusters clusterDatastore.DataStore, roles datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		clusters:    clusters,
-		roles:       roles,
-		riskManager: riskManager.Singleton(),
+		clusters:        clusters,
+		roles:           roles,
+		riskReprocessor: reprocessor.Singleton(),
 	}
 }
 
 type pipelineImpl struct {
-	clusters    clusterDatastore.DataStore
-	roles       datastore.DataStore
-	riskManager riskManager.Manager
+	clusters        clusterDatastore.DataStore
+	roles           datastore.DataStore
+	riskReprocessor reprocessor.Loop
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
@@ -59,7 +58,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	if err != nil {
 		return err
 	}
-	s.riskManager.ReprocessRiskForAllDeployments(risk.RBACConfiguration)
+	s.riskReprocessor.ReprocessRisk()
 	return nil
 }
 

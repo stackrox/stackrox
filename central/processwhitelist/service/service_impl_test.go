@@ -12,13 +12,12 @@ import (
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
 	resultsMocks "github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
-	"github.com/stackrox/rox/central/risk/manager/mocks"
+	"github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -58,7 +57,7 @@ type ProcessWhitelistServiceTestSuite struct {
 	datastore       datastore.DataStore
 	service         Service
 	db              *bbolt.DB
-	riskManager     *mocks.MockManager
+	reprocessor     *mocks.MockLoop
 	resultDatastore *resultsMocks.MockDataStore
 	mockCtrl        *gomock.Controller
 }
@@ -82,8 +81,8 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 	suite.resultDatastore.EXPECT().DeleteWhitelistResults(gomock.Any(), gomock.Any()).AnyTimes()
 
 	suite.datastore = datastore.New(wlStore, indexer, searcher, suite.resultDatastore)
-	suite.riskManager = mocks.NewMockManager(suite.mockCtrl)
-	suite.service = New(suite.datastore, suite.riskManager)
+	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
+	suite.service = New(suite.datastore, suite.reprocessor)
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) TearDownTest() {
@@ -246,7 +245,7 @@ func (suite *ProcessWhitelistServiceTestSuite) TestUpdateProcessWhitelist() {
 				AddElements:    fixtures.MakeWhitelistItems(c.toAdd...),
 				RemoveElements: fixtures.MakeWhitelistItems(c.toRemove...),
 			}
-			suite.riskManager.EXPECT().ReprocessRiskForDeployments(gomock.Any(), risk.SuspiciousProcesses, risk.PolicyViolations)
+			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
 			response, err := suite.service.UpdateProcessWhitelists(hasWriteCtx, request)
 			assert.NoError(t, err)
 			var successKeys []*storage.ProcessWhitelistKey

@@ -181,7 +181,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "The struts deployment details"
         Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
-        RiskOuterClass.Risk risk = Services.getRisk(dep.deploymentUid, RiskOuterClass.RiskEntityType.DEPLOYMENT)
+        RiskOuterClass.Risk risk = Services.getRisk(dep.deploymentUid, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
 
         expect:
         "Risk factors are present"
@@ -189,7 +189,6 @@ class DefaultPoliciesTest extends BaseSpecification {
         def waitTime = 30000
         def start = System.currentTimeMillis()
         while (riskResult == null && (System.currentTimeMillis() - start) < waitTime) {
-            risk = Services.getRisk(dep.deploymentUid, RiskOuterClass.RiskEntityType.DEPLOYMENT)
             riskResult = risk.resultsList.find { it.name == riskFactor }
             sleep 2000
         }
@@ -212,8 +211,8 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least a 100 CVEs.
-                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\"" +
-                " contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
+                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\" \\(container \"" +
+                     STRUTS + "\"\\) contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
                      "\\d+(\\.\\d{1,2})? and \\d+(\\.\\d{1,2})?" | []
 
         "Service Configuration"           | 2.0f     |

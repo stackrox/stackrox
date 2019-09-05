@@ -11,6 +11,7 @@ import (
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -31,6 +32,7 @@ func initialize() {
 		imageDataStore.Singleton(),
 		alertmanager.Singleton(),
 		riskManager.Singleton(),
+		reprocessor.Singleton(),
 		cache.DeletedDeploymentCacheSingleton(),
 		filter.Singleton(),
 	)

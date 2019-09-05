@@ -6,13 +6,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
+	// RiskyComponentCountHeading is the risk result name for scores calculated by this multiplier.
+	RiskyComponentCountHeading = "Components Useful for Attackers"
+
 	riskyComponentCountFloor = 0
 	riskyComponentCountCeil  = 10
 	maxRiskyScore            = 1.5
@@ -43,37 +44,41 @@ func NewRiskyComponents() Multiplier {
 	return &riskyComponentCountMultiplier{}
 }
 
-// Score takes a image and evaluates its risk based on image component counts.
-func (c *riskyComponentCountMultiplier) Score(_ context.Context, msg proto.Message) *storage.Risk_Result {
-	image, ok := msg.(*storage.Image)
-	if !ok {
-		return nil
-	}
-
+// Score takes a deployment and evaluates its risk based on image component counts.
+func (c *riskyComponentCountMultiplier) Score(_ context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	// Get the largest number of risky components in an image
-	// Create a name to version map of all the image components.
-	presentComponents := set.NewStringSet()
-	for _, component := range image.GetScan().GetComponents() {
-		presentComponents.Add(component.GetName())
+	var largestRiskySet *set.StringSet
+	var riskiestImage *storage.Image
+	for _, img := range images {
+		// Create a name to version map of all the image components.
+		presentComponents := set.NewStringSet()
+		for _, component := range img.GetScan().GetComponents() {
+			presentComponents.Add(component.GetName())
+		}
+
+		// Count how many known risky components match a labeled component.
+		riskySet := riskyComponents.Intersect(presentComponents)
+
+		// Keep track of the image with the largest number of risky components.
+		if largestRiskySet == nil || riskySet.Cardinality() > largestRiskySet.Cardinality() {
+			largestRiskySet = &riskySet
+			riskiestImage = img
+		}
 	}
-
-	// Count how many known risky components match a labeled component.
-	riskySet := riskyComponents.Intersect(presentComponents)
-
-	if riskySet.Cardinality() == 0 {
+	if largestRiskySet == nil || largestRiskySet.Cardinality() == 0 {
 		return nil
 	}
 
 	// Linear increase between 10 components and 20 components from weight of 1 to 1.5.
-	score := float32(1.0) + float32(riskySet.Cardinality()-riskyComponentCountFloor)/float32(riskyComponentCountCeil-riskyComponentCountFloor)/float32(2)
+	score := float32(1.0) + float32(largestRiskySet.Cardinality()-riskyComponentCountFloor)/float32(riskyComponentCountCeil-riskyComponentCountFloor)/float32(2)
 	if score > maxRiskyScore {
 		score = maxRiskyScore
 	}
 
 	return &storage.Risk_Result{
-		Name: risk.RiskyImageComponent.DisplayTitle,
+		Name: RiskyComponentCountHeading,
 		Factors: []*storage.Risk_Result_Factor{
-			{Message: generateMessage(image.GetName().GetFullName(), riskySet.AsSlice())},
+			{Message: generateMessage(riskiestImage.GetName().GetFullName(), largestRiskySet.AsSlice())},
 		},
 		Score: score,
 	}

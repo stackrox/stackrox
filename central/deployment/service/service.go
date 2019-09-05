@@ -8,6 +8,7 @@ import (
 	processWhitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	riskManager "github.com/stackrox/rox/central/risk/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -28,12 +29,13 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(datastore datastore.DataStore, processIndicators processIndicatorDataStore.DataStore, processWhitelists processWhitelistDataStore.DataStore,
-	processWhitelistResults processWhitelistResultsStore.DataStore, risks riskDataStore.DataStore) Service {
+	processWhitelistResults processWhitelistResultsStore.DataStore, risks riskDataStore.DataStore, manager riskManager.Manager) Service {
 	return &serviceImpl{
 		datastore:               datastore,
 		processIndicators:       processIndicators,
 		processWhitelists:       processWhitelists,
 		processWhitelistResults: processWhitelistResults,
 		risks:                   risks,
+		manager:                 manager,
 	}
 }

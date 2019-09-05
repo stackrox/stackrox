@@ -119,7 +119,7 @@ func (s *splitQueries) updateDeploymentWithRiskQuery(ctx context.Context) error 
 		localQuery = proto.Clone(s.riskQuery).(*v1.Query)
 	} else {
 		localQuery = search.NewQueryBuilder().
-			AddStrings(search.RiskEntityType, storage.RiskEntityType_DEPLOYMENT.String()).
+			AddStrings(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
 			ProtoQuery()
 	}
 
@@ -144,7 +144,7 @@ func (s *splitQueries) updateDeploymentWithRiskQuery(ctx context.Context) error 
 	if s.riskQuery != nil {
 		deploymentIDQueryBuilder := search.NewQueryBuilder()
 		for _, risk := range risks {
-			deploymentIDQueryBuilder.AddDocIDs(risk.GetEntity().GetId())
+			deploymentIDQueryBuilder.AddDocIDs(risk.GetSubject().GetId())
 		}
 		deploymentIDQuery := deploymentIDQueryBuilder.ProtoQuery()
 		s.deploymentQuery = search.NewConjunctionQuery(s.deploymentQuery, deploymentIDQuery)
@@ -154,7 +154,7 @@ func (s *splitQueries) updateDeploymentWithRiskQuery(ctx context.Context) error 
 	if s.riskPagination != nil {
 		s.riskSortOrder = make(map[string]int, len(risks))
 		for i, risk := range risks {
-			s.riskSortOrder[risk.GetEntity().GetId()] = i
+			s.riskSortOrder[risk.GetSubject().GetId()] = i
 		}
 	}
 

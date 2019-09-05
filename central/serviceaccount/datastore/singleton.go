@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globalindex"
-	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	"github.com/stackrox/rox/central/serviceaccount/search"
@@ -22,7 +21,7 @@ func initialize() {
 	store := store.Singleton()
 	indexer := index.New(globalindex.GetGlobalIndex())
 	var err error
-	ds, err = New(store, indexer, search.New(store, indexer), riskDS.Singleton())
+	ds, err = New(store, indexer, search.New(store, indexer))
 	if err != nil {
 		log.Panicf("Failed to initialize secrets datastore: %s", err)
 	}

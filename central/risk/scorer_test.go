@@ -1,9 +1,7 @@
-package scorer
+package risk
 
 import (
 	"context"
-	"fmt"
-	"sort"
 	"testing"
 	"time"
 
@@ -12,12 +10,12 @@ import (
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	"github.com/stackrox/rox/central/risk/getters"
+	"github.com/stackrox/rox/central/risk/multipliers"
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,34 +41,36 @@ func TestScore(t *testing.T) {
 		},
 	}, mockRoles, mockBindings, mockServiceAccounts, mockEvaluator)
 
-	var riskIndicators []risk.Indicator
-	for _, v := range risk.AllIndicatorMap {
-		riskIndicators = append(riskIndicators, v)
-	}
-
 	mockEvaluator.EXPECT().EvaluateWhitelistsAndPersistResult(deployment).MaxTimes(2).Return(nil, nil)
 
 	// Without user defined function
-	expectedRiskScore := 6.272
+	expectedRiskScore := 9.016
 	expectedRiskResults := []*storage.Risk_Result{
 		{
-			Name:    risk.PolicyViolations.DisplayTitle,
+			Name:    multipliers.PolicyViolationsHeading,
 			Factors: []*storage.Risk_Result_Factor{{Message: "Test (severity: Critical)"}},
 			Score:   1.96,
 		},
 		{
-			Name: risk.ServiceConfiguration.DisplayTitle,
+			Name: multipliers.VulnsHeading,
+			Factors: []*storage.Risk_Result_Factor{
+				{Message: "Image \"docker.io/library/nginx:1.10\" (container \"nginx\") contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
+			},
+			Score: 1.15,
+		},
+		{
+			Name: multipliers.ServiceConfigHeading,
 			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Volumes rw volume were mounted RW"},
 				{Message: "Secrets secret are used inside the deployment"},
 				{Message: "Capabilities ALL were added"},
 				{Message: "No capabilities were dropped"},
-				{Message: fmt.Sprintf("Container %q in the deployment is privileged", deployment.GetContainers()[0].GetName())},
+				{Message: "A container in the deployment is privileged"},
 			},
 			Score: 2.0,
 		},
 		{
-			Name: risk.PortExposure.DisplayTitle,
+			Name: multipliers.ReachabilityHeading,
 			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Port 22 is exposed to external clients"},
 				{Message: "Port 23 is exposed in the cluster"},
@@ -78,71 +78,40 @@ func TestScore(t *testing.T) {
 			},
 			Score: 1.6,
 		},
-	}
-	sort.Slice(expectedRiskResults, func(i, j int) bool {
-		return risk.AllIndicatorMap[expectedRiskResults[i].GetName()].DisplayPriority <
-			risk.AllIndicatorMap[expectedRiskResults[j].GetName()].DisplayPriority
-	})
-
-	if features.K8sRBAC.Enabled() {
-		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-	}
-
-	actualRisk := scorer.Score(ctx, deployment, riskIndicators...)
-	sort.Slice(actualRisk.GetResults(), func(i, j int) bool {
-		return risk.AllIndicatorMap[actualRisk.GetResults()[i].GetName()].DisplayPriority <
-			risk.AllIndicatorMap[actualRisk.GetResults()[j].GetName()].DisplayPriority
-	})
-	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
-
-	expectedRiskScore = 6.272
-
-	if features.K8sRBAC.Enabled() {
-		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-	}
-
-	actualRisk = scorer.Score(ctx, deployment, riskIndicators...)
-	sort.Slice(actualRisk.GetResults(), func(i, j int) bool {
-		return risk.AllIndicatorMap[actualRisk.GetResults()[i].GetName()].DisplayPriority <
-			risk.AllIndicatorMap[actualRisk.GetResults()[j].GetName()].DisplayPriority
-	})
-	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
-
-	image := getMockImage()
-	expectedRiskResults = []*storage.Risk_Result{
 		{
-			Name: risk.ImageVulnerabilities.DisplayTitle,
+			Name: multipliers.ImageAgeHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: fmt.Sprintf("Image %q contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0", image.GetName().GetFullName())},
-			},
-			Score: 1.15,
-		},
-		{
-			Name: risk.ImageAge.DisplayTitle,
-			Factors: []*storage.Risk_Result_Factor{
-				{Message: fmt.Sprintf("Image %q is 180 days old", image.GetName().GetFullName())},
+				{Message: "Deployment contains an image 180 days old"},
 			},
 			Score: 1.25,
 		},
 	}
-	sort.Slice(expectedRiskResults, func(i, j int) bool {
-		return risk.AllIndicatorMap[expectedRiskResults[i].GetName()].DisplayPriority <
-			risk.AllIndicatorMap[expectedRiskResults[j].GetName()].DisplayPriority
-	})
 
-	expectedRiskScore = 1.4375
-	actualRisk = scorer.Score(ctx, image, riskIndicators...)
-	sort.Slice(actualRisk.GetResults(), func(i, j int) bool {
-		return risk.AllIndicatorMap[actualRisk.GetResults()[i].GetName()].DisplayPriority <
-			risk.AllIndicatorMap[actualRisk.GetResults()[j].GetName()].DisplayPriority
-	})
+	if features.K8sRBAC.Enabled() {
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
+	}
 
+	actualRisk := scorer.Score(ctx, deployment, getMockImages())
+	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
+	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+
+	expectedRiskScore = 9.016
+
+	if features.K8sRBAC.Enabled() {
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
+	}
+
+	actualRisk = scorer.Score(ctx, deployment, getMockImages())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
 	mockCtrl.Finish()
+}
+
+func getMockImages() []*storage.Image {
+	return []*storage.Image{
+		getMockImage(),
+	}
 }
 
 func getMockImage() *storage.Image {

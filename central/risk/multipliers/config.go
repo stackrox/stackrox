@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
+	// ServiceConfigHeading is the risk result name for scores calculated by this multiplier.
+	ServiceConfigHeading = "Service Configuration"
+
 	configSaturation = 8
 	configMaxScore   = 2
 )
@@ -25,13 +26,9 @@ func NewServiceConfig() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on the service configuration
-func (s *serviceConfigMultiplier) Score(_ context.Context, msg proto.Message) *storage.Risk_Result {
-	deployment, ok := msg.(*storage.Deployment)
-	if !ok {
-		return nil
-	}
+func (s *serviceConfigMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
 	riskResult := &storage.Risk_Result{
-		Name: risk.ServiceConfiguration.DisplayTitle,
+		Name: ServiceConfigHeading,
 	}
 	var overallScore float32
 	if volumeFactor := s.scoreVolumes(deployment); volumeFactor != "" {
@@ -125,7 +122,7 @@ func (s *serviceConfigMultiplier) scoreCapabilities(deployment *storage.Deployme
 func (s *serviceConfigMultiplier) scorePrivilege(deployment *storage.Deployment) string {
 	for _, container := range deployment.GetContainers() {
 		if container.GetSecurityContext().GetPrivileged() {
-			return fmt.Sprintf("Container %q in the deployment is privileged", container.GetName())
+			return "A container in the deployment is privileged"
 		}
 	}
 	return ""

@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/risk"
 )
 
 const (
+	// ImageAgeHeading is the risk result name for scores calculated by this multiplier.
+	ImageAgeHeading = "Image Freshness"
+
 	// You can tune the multiplier behavior from here:
 	// Minimum staleness before we add risk.
 	penalizeDaysFloor = 90
@@ -32,22 +33,15 @@ func NewImageAge() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on vulnerabilties
-func (c *imageAgeMultiplier) Score(_ context.Context, msg proto.Message) *storage.Risk_Result {
-	image, ok := msg.(*storage.Image)
-	if !ok {
-		return nil
-	}
-
+func (c *imageAgeMultiplier) Score(_ context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk_Result {
 	// Get the earliest created time in the container images, and find the duration since then.
-	imageCreated := image.GetMetadata().GetV1().GetCreated()
-	createdTime := protoconv.ConvertTimestampToTimeOrDefault(imageCreated, defaultTime)
-
-	if createdTime.IsZero() {
+	earliestImageCreated := getOldestCreatedTime(images)
+	if earliestImageCreated.IsZero() {
 		return nil
 	}
 
 	// Calculate days from creation time.
-	durationSinceImageCreated := time.Since(createdTime)
+	durationSinceImageCreated := time.Since(earliestImageCreated)
 	daysSinceCreated := int(durationSinceImageCreated.Hours() / 24)
 
 	// Creates a score that is:
@@ -66,18 +60,31 @@ func (c *imageAgeMultiplier) Score(_ context.Context, msg proto.Message) *storag
 		score = maxMultiplier
 	}
 
-	var message string
-	if image.GetName().GetFullName() == "" {
-		message = fmt.Sprintf("An image is %d days old", daysSinceCreated)
-	} else {
-		message = fmt.Sprintf("Image %q is %d days old", image.GetName().GetFullName(), daysSinceCreated)
-	}
-
 	return &storage.Risk_Result{
-		Name: risk.ImageAge.DisplayTitle,
+		Name: ImageAgeHeading,
 		Factors: []*storage.Risk_Result_Factor{
-			{Message: message},
+			{Message: fmt.Sprintf("Deployment contains an image %d days old", daysSinceCreated)},
 		},
 		Score: score,
 	}
+}
+
+// Fetches the creation time of the oldest image in the deployment.
+func getOldestCreatedTime(images []*storage.Image) time.Time {
+	var earliest time.Time
+	for _, img := range images {
+		// Get the time for the containers image.
+		imageCreated := img.GetMetadata().GetV1().GetCreated()
+
+		createdTime := protoconv.ConvertTimestampToTimeOrDefault(imageCreated, defaultTime)
+		if createdTime == defaultTime {
+			continue
+		}
+
+		// Check against max.
+		if earliest.IsZero() || createdTime.Before(earliest) {
+			earliest = createdTime
+		}
+	}
+	return earliest
 }

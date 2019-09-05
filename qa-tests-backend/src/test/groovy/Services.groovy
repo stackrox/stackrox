@@ -108,11 +108,11 @@ class Services extends BaseService {
         return getDeploymentClient().getDeployment(getResourceByID(id))
       }
 
-    static RiskOuterClass.Risk getRisk(String entityID, RiskOuterClass.RiskEntityType entityType) {
+    static RiskOuterClass.Risk getRisk(String subjectID, RiskOuterClass.RiskSubjectType subjectType) {
         RiskServiceOuterClass.GetRiskRequest request =
                 RiskServiceOuterClass.GetRiskRequest.newBuilder()
-                        .setEntityID(entityID)
-                        .setEntityType(entityType.toString()).build()
+                        .setSubjectID(subjectID)
+                        .setSubjectType(subjectType.toString()).build()
         return getRiskClient().getRisk(request)
     }
 
@@ -130,7 +130,7 @@ class Services extends BaseService {
         int iterations = timeoutSeconds / intervalSeconds
         Timer t = new Timer(iterations, intervalSeconds)
         while (t.IsValid()) {
-            RiskOuterClass.Risk risk = Services.getRisk(deploymentId, RiskOuterClass.RiskEntityType.DEPLOYMENT)
+            RiskOuterClass.Risk risk = Services.getRisk(deploymentId, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
             RiskOuterClass.Risk.Result result = risk.resultsList
                     .find { it.name == "Suspicious Process Executions" }
             if (result != null) {
