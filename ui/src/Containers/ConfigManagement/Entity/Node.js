@@ -150,30 +150,32 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 />
                             </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="Node Findings">
-                            <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                                {failedComplianceResults.length === 0 && (
-                                    <NoResultsMessage
-                                        message="No nodes failing controls on this node"
-                                        className="p-6 shadow"
-                                        icon="info"
-                                    />
-                                )}
-                                {failedComplianceResults.length > 0 && (
-                                    <TableWidget
-                                        entityType={entityTypes.CONTROL}
-                                        header={`${
-                                            failedComplianceResults.length
-                                        } controls failed across this node`}
-                                        rows={failedComplianceResults}
-                                        noDataText="No Controls"
-                                        className="bg-base-100"
-                                        columns={entityToColumns[entityTypes.CONTROL]}
-                                        idAttribute="control.id"
-                                    />
-                                )}
-                            </div>
-                        </CollapsibleSection>
+                        {!(entityContext && entityContext[entityTypes.CONTROL]) && (
+                            <CollapsibleSection title="Node Findings">
+                                <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                                    {failedComplianceResults.length === 0 && (
+                                        <NoResultsMessage
+                                            message="No nodes failing controls on this node"
+                                            className="p-6 shadow"
+                                            icon="info"
+                                        />
+                                    )}
+                                    {failedComplianceResults.length > 0 && (
+                                        <TableWidget
+                                            entityType={entityTypes.CONTROL}
+                                            header={`${
+                                                failedComplianceResults.length
+                                            } controls failed across this node`}
+                                            rows={failedComplianceResults}
+                                            noDataText="No Controls"
+                                            className="bg-base-100"
+                                            columns={entityToColumns[entityTypes.CONTROL]}
+                                            idAttribute="control.id"
+                                        />
+                                    )}
+                                </div>
+                            </CollapsibleSection>
+                        )}
                     </div>
                 );
             }}

@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { capitalize } from 'lodash';
 import entityTypes from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD_NO_NODES as QUERY } from 'queries/standard';
@@ -51,9 +52,12 @@ const tableColumns = [
 
 const filterByComplianceState = (rows, state) => {
     if (!state || !rows) return rows;
+    const complianceState = capitalize(state);
     const filteredRows = rows.filter(row => {
-        if (state === COMPLIANCE_STATES.PASS) return row.status === COMPLIANCE_STATES.PASS;
-        if (state === COMPLIANCE_STATES.FAIL) return row.status === COMPLIANCE_STATES.FAIL;
+        if (complianceState === COMPLIANCE_STATES.PASS)
+            return row.status === COMPLIANCE_STATES.PASS;
+        if (complianceState === COMPLIANCE_STATES.FAIL)
+            return row.status === COMPLIANCE_STATES.FAIL;
         return row.status === COMPLIANCE_STATES['N/A'];
     });
     return filteredRows;

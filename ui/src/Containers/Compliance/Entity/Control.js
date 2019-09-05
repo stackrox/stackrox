@@ -97,28 +97,28 @@ const ControlPage = ({
                                 {sidePanelMode && (
                                     <>
                                         <ControlRelatedResourceList
-                                            listEntityType1={entityTypes.CLUSTER}
+                                            listEntityType={entityTypes.CLUSTER}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType1={entityTypes.NAMESPACE}
+                                            listEntityType={entityTypes.NAMESPACE}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType1={entityTypes.NODE}
+                                            listEntityType={entityTypes.NODE}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType1={entityTypes.DEPLOYMENT}
+                                            listEntityType={entityTypes.DEPLOYMENT}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}

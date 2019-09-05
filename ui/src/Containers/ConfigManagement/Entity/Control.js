@@ -124,14 +124,16 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                                 />
                             </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="Control Findings">
-                            <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                                <EntityWithFailedControls
-                                    entityType={entityTypes.NODE}
-                                    relatedEntities={nodes}
-                                />
-                            </div>
-                        </CollapsibleSection>
+                        {!(entityContext && entityContext[entityTypes.NODE]) && (
+                            <CollapsibleSection title="Control Findings">
+                                <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                                    <EntityWithFailedControls
+                                        entityType={entityTypes.NODE}
+                                        relatedEntities={nodes}
+                                    />
+                                </div>
+                            </CollapsibleSection>
+                        )}
                     </div>
                 );
             }}

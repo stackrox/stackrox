@@ -138,7 +138,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
                         layers[i].components = [];
                     });
                     scan.components.forEach(component => {
-                        if (component.layerIndex !== undefined) {
+                        if (component.layerIndex !== undefined && layers[component.layerIndex]) {
                             layers[component.layerIndex].components.push(component);
                         }
                     });
