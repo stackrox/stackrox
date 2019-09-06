@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/upgrader/config"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
+	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,7 +50,8 @@ type UpgradeContext struct {
 
 	ownerRef *metav1.OwnerReference
 
-	httpClient *http.Client
+	httpClient     *http.Client
+	grpcClientConn *grpc.ClientConn
 }
 
 // Create creates a new upgrader context from the given config.
@@ -161,6 +163,10 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 		tlsConf.NextProtos = nil // no HTTP/2 or pure GRPC!
 		c.httpClient = &http.Client{
 			Transport: transport,
+		}
+		c.grpcClientConn, err = clientconn.AuthenticatedGRPCConnection(config.CentralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to initialize gRPC connection to Central")
 		}
 	}
 
@@ -305,6 +311,11 @@ func (c *UpgradeContext) DoHTTPRequest(req *http.Request) (*http.Response, error
 	}
 
 	return c.httpClient.Do(req)
+}
+
+// GetGRPCClient gets the gRPC client that can be used to make requests to Central.
+func (c *UpgradeContext) GetGRPCClient() *grpc.ClientConn {
+	return c.grpcClientConn
 }
 
 // Validator returns the schema validator to be used.

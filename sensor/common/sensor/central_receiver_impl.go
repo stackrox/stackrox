@@ -104,6 +104,7 @@ func (s *centralReceiverImpl) processScrapeCommand(command *central.ScrapeComman
 func (s *centralReceiverImpl) processUpgradeTriggerCommand(command *central.SensorUpgradeTrigger) {
 	if s.upgradeCommandHandler == nil {
 		log.Errorf("Unable to send command %s as upgrades are not supported", proto.MarshalTextString(command))
+		return
 	}
 	if !s.upgradeCommandHandler.SendCommand(command) {
 		log.Errorf("unable to send command: %s", proto.MarshalTextString(command))

@@ -2,8 +2,11 @@ package runner
 
 import "github.com/stackrox/rox/sensor/upgrader/upgradectx"
 
-// Run runs the upgrader.
+// Run runs the given workflow in the upgrader.
 func Run(ctx *upgradectx.UpgradeContext, workflow string) error {
-	r := &runner{ctx: ctx}
-	return r.Run(workflow)
+	r, err := newRunner(ctx, workflow)
+	if err != nil {
+		return err
+	}
+	return r.runFullWorkflow()
 }

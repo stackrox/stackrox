@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/upgrader/config"
 	_ "github.com/stackrox/rox/sensor/upgrader/flags"
+	"github.com/stackrox/rox/sensor/upgrader/metarunner"
 	"github.com/stackrox/rox/sensor/upgrader/runner"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
@@ -24,11 +25,25 @@ func main() {
 
 	flag.Parse()
 
+	utils.Must(mainCmd())
+}
+
+func mainCmd() error {
 	upgraderCfg, err := config.Create()
-	utils.Must(err)
+	if err != nil {
+		return err
+	}
 
 	upgradeCtx, err := upgradectx.Create(context.Background(), upgraderCfg)
-	utils.Must(err)
+	if err != nil {
+		return err
+	}
 
-	utils.Must(runner.Run(upgradeCtx, *workflow))
+	// If a workflow is explicitly specified, run that end-to-end.
+	if *workflow != "" {
+		return runner.Run(upgradeCtx, *workflow)
+	}
+
+	// Else, run the metarunner.
+	return metarunner.Run(upgradeCtx)
 }

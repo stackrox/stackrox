@@ -13,8 +13,7 @@ func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.C
 	return &central.SensorUpgradeTrigger{
 		UpgradeProcessId: process.GetId(),
 		Image:            process.GetUpgraderImage(),
-		// TODO: remove sleeps and adjust command, this is just for better debuggability
-		Command: []string{"sh", "-c", "sleep 10 ; sensor-upgrader -workflow roll-forward && sleep 30 && sensor-upgrader -workflow cleanup"},
+		Command:          []string{"sensor-upgrader"},
 		EnvVars: []*central.SensorUpgradeTrigger_EnvVarDef{
 			{
 				Name:         env.ClusterID.EnvVar(),
