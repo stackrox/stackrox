@@ -40,6 +40,7 @@ func InitCompliance() {
 			schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!"),
 			schema.AddQuery("complianceControl(id:ID!): ComplianceControl"),
 			schema.AddQuery("complianceControlGroup(id:ID!): ComplianceControlGroup"),
+			schema.AddQuery("complianceNamespaceCount(query: String): Int!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!"),
 			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControlGroup", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"}),
@@ -113,13 +114,27 @@ func (resolver *Resolver) ComplianceControlGroup(ctx context.Context, args struc
 	return resolver.wrapComplianceControlGroup(group, group != nil, nil)
 }
 
+// ComplianceNamespaceCount returns count of namespaces that have compliance run on them
+func (resolver *Resolver) ComplianceNamespaceCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceNamespaceCount")
+	if err := readCompliance(ctx); err != nil {
+		return 0, err
+	}
+	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NAMESPACE}
+	rs, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, v1.ComplianceAggregation_CONTROL)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(rs)), nil
+}
+
 type aggregatedResultQuery struct {
 	GroupBy *[]string
 	Unit    string
 	Where   *string
 }
 
-// AggregatedResults returns the aggregration of the last runs aggregated by scope, unit and filtered by a query
+// AggregatedResults returns the aggregation of the last runs aggregated by scope, unit and filtered by a query
 func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) (*complianceAggregationResponseWithDomainResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "AggregatedResults")
 
