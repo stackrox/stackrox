@@ -9,17 +9,11 @@ var (
 	// These fields of SecurityContextConstraints are advertised as required in the OpenAPI schema, but they actually
 	// aren't.
 	sccNonRequired = set.NewFrozenStringSet(
-		"allowPrivilegedContainer",
+		// The following fields will be reported as `null` by the server if they are empty/unset, but a `null` value
+		// would fail schema validation ... oO.
+		"allowedCapabilities",
 		"defaultAddCapabilities",
 		"requiredDropCapabilities",
-		"allowedCapabilities",
-		"allowHostDirVolumePlugin",
-		"volumes",
-		"allowHostNetwork",
-		"allowHostPorts",
-		"allowHostPID",
-		"allowHostIPC",
-		"readOnlyRootFilesystem",
 	)
 )
 

@@ -16,6 +16,27 @@ seLinuxContext:
   type: RunAsAny
 seccompProfiles:
   - '*'
+supplementalGroups:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+groups: []
+readOnlyRootFilesystem: true
+requiredDropCapabilities: null
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - secret
 ---
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
@@ -33,12 +54,30 @@ runAsUser:
   type: RunAsAny
 seLinuxContext:
   type: RunAsAny
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+groups: []
+readOnlyRootFilesystem: false
+requiredDropCapabilities: null
 seccompProfiles:
   - '*'
 allowHostDirVolumePlugin: true
 allowHostPID: true
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
 volumes:
-  - '*'
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - hostPath
+  - secret
 ---
 {{if ne .CollectionMethod "NO_COLLECTION"}}
 kind: SecurityContextConstraints
@@ -57,9 +96,9 @@ allowPrivilegedContainer: true
 defaultAddCapabilities: null
 fsGroup:
   type: RunAsAny
-groups: null
+groups: []
 priority: 100
-readOnlyRootFilesystem: false
+readOnlyRootFilesystem: true
 requiredDropCapabilities: null
 runAsUser:
   type: RunAsAny
@@ -69,6 +108,16 @@ seccompProfiles:
   - '*'
 supplementalGroups:
   type: RunAsAny
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowedCapabilities: null
 volumes:
-  - '*'
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - hostPath
+  - secret
 {{- end}}
