@@ -55,10 +55,12 @@ func TestCASetup(t *testing.T) {
 			expectedResp:      central.URLHasValidCertResponse_REQUEST_SUCCEEDED,
 			additionalMessage: "This failure likely means that setting up trusted CAs with Central is broken. Look at the TRUSTED_CA_FILE being exported in the deploy scripts",
 		},
-		{
-			url:          "https://untrusted-root.badssl.com",
-			expectedResp: central.URLHasValidCertResponse_CERT_SIGNED_BY_UNKNOWN_AUTHORITY,
-		},
+		// TODO(viswa): The below cert has expired, so this test doesn't work any more.
+		// Maybe re-enable it once badssl gets a new one.
+		//{
+		//	url:          "https://untrusted-root.badssl.com",
+		//	expectedResp: central.URLHasValidCertResponse_CERT_SIGNED_BY_UNKNOWN_AUTHORITY,
+		//},
 		{
 			url:          "https://expired.badssl.com",
 			expectedResp: central.URLHasValidCertResponse_CERT_SIGNING_AUTHORITY_VALID_BUT_OTHER_ERROR,
