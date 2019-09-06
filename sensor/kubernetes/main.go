@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
@@ -18,7 +17,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"github.com/stackrox/rox/sensor/common/sensor"
-	"github.com/stackrox/rox/sensor/common/upgrade"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
@@ -49,12 +47,8 @@ func main() {
 
 	sensorInstanceID := uuid.NewV4().String()
 
-	var upgradeCmdHandler upgrade.CommandHandler
-	if features.SensorAutoUpgrade.Enabled() {
-		var err error
-		upgradeCmdHandler, err = k8sUpgrade.NewCommandHandler()
-		utils.Must(err)
-	}
+	upgradeCmdHandler, err := k8sUpgrade.NewCommandHandler()
+	utils.Must(err)
 
 	s := sensor.NewSensor(
 		listener.New(),
