@@ -29,6 +29,9 @@ subjects:
   - kind: ServiceAccount
     name: sensor
     namespace: stackrox
+  - kind: ServiceAccount
+    name: sensor-upgrader
+    namespace: stackrox
 ---
 apiVersion: extensions/v1beta1
 kind: PodSecurityPolicy

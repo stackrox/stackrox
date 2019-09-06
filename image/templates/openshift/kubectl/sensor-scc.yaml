@@ -9,6 +9,7 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
 users:
   - system:serviceaccount:stackrox:sensor
+  - system:serviceaccount:stackrox:sensor-upgrader
 priority: 100
 runAsUser:
   type: RunAsAny
@@ -78,8 +79,8 @@ volumes:
   - emptyDir
   - hostPath
   - secret
----
 {{if ne .CollectionMethod "NO_COLLECTION"}}
+---
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
