@@ -27,6 +27,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs }) => {
             Header: 'CVSS',
             accessor: 'cvss',
             width: 50,
+            Cell: ci => ci.original && ci.original.cvss && ci.original.cvss.toFixed(1),
             headerClassName:
                 'font-600 border-b border-base-300 flex items-end justify-end bg-primary-300',
             className: 'pointer-events-none flex items-center justify-end italic'
