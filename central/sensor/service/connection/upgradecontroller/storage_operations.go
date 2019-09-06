@@ -3,6 +3,7 @@ package upgradecontroller
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -49,14 +50,27 @@ func (u *upgradeController) setUpgradeProgress(expectedProcessID string, state s
 		return errors.New("expected upgrade process ID must not be empty")
 	}
 
-	if u.upgradeStatus.GetMostRecentProcess().GetId() != expectedProcessID {
+	if u.active == nil || u.active.status.GetId() != expectedProcessID {
 		return errors.Errorf("upgrade process ID %s is no longer valid, not updating upgrade progress", expectedProcessID)
 	}
 
+	prevState := u.active.status.GetProgress().GetUpgradeState()
+	since := u.active.status.GetProgress().GetSince()
+	if prevState != state || since == nil {
+		since = types.TimestampNow()
+	}
+
+	// Carryover the detail if the state did not change and no new detail was specified.
+	if detail == "" && prevState == state {
+		detail = u.active.status.GetProgress().GetUpgradeStatusDetail()
+	}
 	u.upgradeStatus.MostRecentProcess.Progress = &storage.UpgradeProgress{
 		UpgradeState:        state,
 		UpgradeStatusDetail: detail,
+		Since:               since,
 	}
+	adjustTrigger(u.active.trigger, state)
+
 	u.upgradeStatusChanged = true
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.ClusterUpgradeStatus_UpgradeProcessStatus) *central.SensorUpgradeTrigger {
-	return &central.SensorUpgradeTrigger{
+	t := &central.SensorUpgradeTrigger{
 		UpgradeProcessId: process.GetId(),
 		Image:            process.GetUpgraderImage(),
 		Command:          []string{"sensor-upgrader"},
@@ -30,6 +30,14 @@ func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.C
 				DefaultValue: process.GetId(),
 			},
 		},
+	}
+	adjustTrigger(t, process.GetProgress().GetUpgradeState())
+	return t
+}
+
+func adjustTrigger(trigger *central.SensorUpgradeTrigger, state storage.UpgradeProgress_UpgradeState) {
+	if state >= storage.UpgradeProgress_UPGRADER_LAUNCHED {
+		trigger.Image = "" // indicate to sensor that it should not launch another upgrader
 	}
 }
 

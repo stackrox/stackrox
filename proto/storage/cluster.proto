@@ -157,9 +157,11 @@ message UpgradeProgress {
         UPGRADE_ERROR_ROLLING_BACK    = 13;
         UPGRADE_ERROR_ROLLED_BACK     = 14;
         UPGRADE_ERROR_ROLLBACK_FAILED = 15;
-        UPGRADE_TIMED_OUT             = 16;
+        UPGRADE_ERROR_UNKNOWN         = 16;
+        UPGRADE_TIMED_OUT             = 17;
     }
 
     UpgradeState upgrade_state         = 1;
     string       upgrade_status_detail = 2;
+    google.protobuf.Timestamp since    = 3;
 }

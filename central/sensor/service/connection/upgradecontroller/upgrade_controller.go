@@ -17,6 +17,7 @@ type UpgradeController interface {
 	// with the upgrade controller.
 	RegisterConnection(sensorCtx context.Context, connection common.MessageInjector) concurrency.ErrorWaitable
 	ProcessCheckInFromUpgrader(req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error)
+	ProcessCheckInFromSensor(req *central.UpgradeCheckInFromSensorRequest) error
 	Trigger(ctx concurrency.Waitable) error
 }
 

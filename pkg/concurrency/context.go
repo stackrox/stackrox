@@ -1,6 +1,9 @@
 package concurrency
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // DependentContext creates a cancellable context that is a child of parent context, and will be cancelled if the given
 // signal is triggered.
@@ -21,4 +24,35 @@ func CancelContextOnSignal(ctx context.Context, cancel context.CancelFunc, signa
 			cancel()
 		}
 	}()
+}
+
+type contextWrapper struct {
+	ErrorWaitable
+}
+
+func (w *contextWrapper) Err() error {
+	err := w.ErrorWaitable.Err()
+	if err != context.DeadlineExceeded {
+		return context.Canceled
+	}
+	return err
+}
+
+func (w *contextWrapper) Value(key interface{}) interface{} {
+	return nil
+}
+
+func (w *contextWrapper) Deadline() (time.Time, bool) {
+	return time.Time{}, false
+}
+
+// AsContext returns a wrapper object that makes the given waitable appear like a context without values.
+func AsContext(w Waitable) context.Context {
+	if ctx, _ := w.(context.Context); ctx != nil {
+		return ctx
+	}
+
+	return &contextWrapper{
+		ErrorWaitable: AsErrorWaitable(w),
+	}
 }

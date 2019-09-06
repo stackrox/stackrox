@@ -866,6 +866,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
 	utils.Must(builder.AddType("UpgradeProgress", []string{
+		"since: Time",
 		"upgradeState: UpgradeProgress_UpgradeState!",
 		"upgradeStatusDetail: String!",
 	}))
@@ -7359,6 +7360,11 @@ func (resolver *Resolver) wrapUpgradeProgresses(values []*storage.UpgradeProgres
 		output[i] = &upgradeProgressResolver{resolver, v}
 	}
 	return output, nil
+}
+
+func (resolver *upgradeProgressResolver) Since(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSince()
+	return timestamp(value)
 }
 
 func (resolver *upgradeProgressResolver) UpgradeState(ctx context.Context) string {

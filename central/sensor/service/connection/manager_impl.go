@@ -206,6 +206,20 @@ func (m *manager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID stri
 	return upgradeCtrl.ProcessCheckInFromUpgrader(req)
 }
 
+func (m *manager) ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromSensorRequest) error {
+	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
+		return err
+	}
+	if !features.SensorAutoUpgrade.Enabled() {
+		return errors.New("cannot process check in from sensor; auto-upgrade feature flag disabled")
+	}
+	upgradeCtrl, err := m.getOrCreateUpgradeCtrl(clusterID)
+	if err != nil {
+		return err
+	}
+	return upgradeCtrl.ProcessCheckInFromSensor(req)
+}
+
 func (m *manager) TriggerUpgrade(ctx context.Context, clusterID string) error {
 	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
 		return err

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -11,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -45,6 +48,17 @@ func (s *service) UpgradeCheckInFromUpgrader(ctx context.Context, req *central.U
 		return nil, err
 	}
 	return s.connectionManager.ProcessCheckInFromUpgrader(ctx, clusterID, req)
+}
+
+func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.UpgradeCheckInFromSensorRequest) (*types.Empty, error) {
+	clusterID, err := clusterIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.connectionManager.ProcessUpgradeCheckInFromSensor(ctx, clusterID, req); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &types.Empty{}, nil
 }
 
 func (s *service) RegisterServiceServer(server *grpc.Server) {

@@ -22,6 +22,33 @@ message UpgradeCheckInFromUpgraderResponse {
     string workflow_to_execute = 1;
 }
 
+message UpgradeCheckInFromSensorRequest {
+    message PodErrorCondition {
+        string message = 1;
+        bool image_related = 2;
+    }
+
+    message UpgraderPodState {
+        string pod_name = 1;
+
+        bool started            = 2;
+        PodErrorCondition error = 3;
+    }
+
+    message UpgraderPodStates {
+        repeated UpgraderPodState states = 1;
+    }
+
+    string upgrade_process_id = 1;
+
+    oneof state {
+        string launch_error          = 2;
+        UpgraderPodStates pod_states = 3;
+        bool deployment_gone         = 4;
+    }
+}
+
 service SensorUpgradeControlService {
     rpc UpgradeCheckInFromUpgrader(UpgradeCheckInFromUpgraderRequest) returns (UpgradeCheckInFromUpgraderResponse);
+    rpc UpgradeCheckInFromSensor(UpgradeCheckInFromSensorRequest) returns (google.protobuf.Empty);
 }

@@ -32,4 +32,5 @@ type Manager interface {
 	// Upgrade-related methods.
 	TriggerUpgrade(ctx context.Context, clusterID string) error
 	ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error)
+	ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromSensorRequest) error
 }

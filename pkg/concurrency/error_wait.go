@@ -1,6 +1,9 @@
 package concurrency
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 //lint:file-ignore ST1008 We do want to return errors as the first value here.
 
@@ -94,5 +97,40 @@ func (e errorNow) Done() <-chan struct{} {
 func ErrorNow(err error) ErrorWaitable {
 	return errorNow{
 		err: err,
+	}
+}
+
+type errorWaitableWrapper struct {
+	w       Waitable
+	isDone  func() bool
+	doneErr error
+}
+
+func (w *errorWaitableWrapper) Err() error {
+	if w.isDone() {
+		return w.doneErr
+	}
+	return nil
+}
+
+func (w *errorWaitableWrapper) Done() <-chan struct{} {
+	return w.w.Done()
+}
+
+// AsErrorWaitable wraps a given waitable into an error waitable.
+func AsErrorWaitable(w Waitable) ErrorWaitable {
+	if ew, _ := w.(ErrorWaitable); ew != nil {
+		return ew
+	}
+	var isDone func() bool
+	if doneChecker, _ := w.(interface{ IsDone() bool }); doneChecker != nil {
+		isDone = doneChecker.IsDone
+	} else {
+		isDone = func() bool { return IsDone(w) }
+	}
+	return &errorWaitableWrapper{
+		w:       w,
+		isDone:  isDone,
+		doneErr: context.Canceled,
 	}
 }

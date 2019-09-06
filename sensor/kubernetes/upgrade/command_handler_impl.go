@@ -3,9 +3,12 @@ package upgrade
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	kubernetes2 "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/upgrade"
@@ -25,6 +28,7 @@ type commandHandler struct {
 	currentProcessMutex sync.Mutex
 	baseK8sRESTConfig   *rest.Config
 	k8sClient           kubernetes.Interface
+	checkInClient       central.SensorUpgradeControlServiceClient
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
@@ -37,10 +41,15 @@ func NewCommandHandler() (upgrade.CommandHandler, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Kubernetes client set")
 	}
+	conn, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+	if err != nil {
+		return nil, errors.Wrap(err, "establishing central gRPC connection")
+	}
 
 	return &commandHandler{
 		baseK8sRESTConfig: config,
 		k8sClient:         k8sClient,
+		checkInClient:     central.NewSensorUpgradeControlServiceClient(conn),
 	}, nil
 }
 
@@ -87,6 +96,10 @@ func (h *commandHandler) SendCommand(trigger *central.SensorUpgradeTrigger) bool
 		if oldProcess.GetID() == trigger.GetUpgradeProcessId() {
 			return true // idempotent
 		}
+
+		// If we receive a trigger with a different ID (or no ID), we should always terminate the current process,
+		// regardless of whether or not we can successfully launch a new one.
+		oldProcess.Terminate(errors.New("upgrade process is no longer current"))
 	}
 
 	if trigger.GetUpgradeProcessId() == "" {
@@ -96,15 +109,12 @@ func (h *commandHandler) SendCommand(trigger *central.SensorUpgradeTrigger) bool
 		return true
 	}
 
-	newProc, err := newProcess(trigger, h.baseK8sRESTConfig)
+	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
 	if err != nil {
 		return false
 	}
 
 	h.currentProcess = newProc
-	if oldProcess != nil {
-		oldProcess.Terminate(errors.Errorf("superseded by new upgrade process %s", trigger.GetUpgradeProcessId()))
-	}
 
 	go newProc.Run()
 	go h.waitForTermination(newProc)

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 var (
@@ -94,5 +95,17 @@ func (u *upgradeController) ErrorSignal() concurrency.ReadOnlyErrorSignal {
 }
 
 func (u *upgradeController) shouldAutoTriggerUpgrade() bool {
-	return u.autoTriggerEnabledFlag.Get()
+	if !u.autoTriggerEnabledFlag.Get() {
+		return false // do not auto-trigger upgrade if setting is disabled
+	}
+	if u.upgradeStatus.Upgradability != storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE {
+		return false // only auto-trigger upgrade if upgradability indicates auto upgrade is possible
+	}
+	if u.upgradeStatus.GetMostRecentProcess().GetTargetVersion() == version.GetMainVersion() {
+		// do not auto-trigger upgrade if the most recent upgrade process was for the current central version
+		// (we don't distinguish success or failure; if success, the above condition should already catch this, as
+		// sensor should then be running the current version).
+		return false
+	}
+	return true
 }

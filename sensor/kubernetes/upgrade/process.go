@@ -1,6 +1,7 @@
 package upgrade
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -13,8 +14,8 @@ import (
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/timeutil"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,9 @@ const (
 	processIDLabelKey      = `upgrader.sensor.stackrox.io/process-id`
 
 	pollInterval = 10 * time.Second
+
+	checkInTimeout       = 10 * time.Second
+	checkInRetryInterval = 10 * time.Second
 )
 
 type process struct {
@@ -39,13 +43,19 @@ type process struct {
 
 	doneSig   concurrency.ErrorSignal
 	k8sClient kubernetes.Interface
+
+	checkInReqC chan *central.UpgradeCheckInFromSensorRequest
+
+	checkInClient central.SensorUpgradeControlServiceClient
 }
 
-func newProcess(trigger *central.SensorUpgradeTrigger, baseConfig *rest.Config) (*process, error) {
+func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
 	config := *baseConfig
 	p := &process{
-		trigger: trigger,
-		doneSig: concurrency.NewErrorSignal(),
+		trigger:       trigger,
+		doneSig:       concurrency.NewErrorSignal(),
+		checkInClient: checkInClient,
+		checkInReqC:   make(chan *central.UpgradeCheckInFromSensorRequest, 1),
 	}
 	baseWrapTransport := baseConfig.WrapTransport
 	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -64,17 +74,90 @@ func newProcess(trigger *central.SensorUpgradeTrigger, baseConfig *rest.Config) 
 }
 
 func (p *process) Run() {
-	p.doneSig.SignalWithError(p.doRun())
+	go p.handleCentralCheckIns()
+	p.doRun()
+	p.doneSig.Signal()
 }
 
-func (p *process) doRun() error {
-	log.Infof("Launching upgrade process %s with upgrader image %s", p.trigger.GetUpgradeProcessId(), p.trigger.GetImage())
-	deployment, err := p.getOrCreateUpgraderDeployment()
+func (p *process) handleCentralCheckIns() {
+	var reqRetry *central.UpgradeCheckInFromSensorRequest
+	var retryTimer *time.Timer
+
+	for {
+		var req *central.UpgradeCheckInFromSensorRequest
+
+		select {
+		case <-p.doneSig.Done():
+			timeutil.StopTimer(retryTimer)
+			return
+
+		case req = <-p.checkInReqC:
+
+		case <-timeutil.TimerC(retryTimer):
+			retryTimer = nil
+			req = reqRetry
+		}
+
+		timeutil.StopTimer(retryTimer)
+		retryTimer = nil
+		reqRetry = nil
+
+		if err := p.sendCheckInRequestSingle(req); err != nil {
+			log.Errorf("Error: Could not check in with central on upgrade progress: %v", err)
+			retryTimer = time.NewTimer(checkInRetryInterval)
+			reqRetry = req
+		}
+	}
+}
+
+func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensorRequest) error {
+	ctx, cancel := context.WithTimeout(concurrency.AsContext(&p.doneSig), checkInTimeout)
+	defer cancel()
+
+	_, err := p.checkInClient.UpgradeCheckInFromSensor(ctx, req)
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	return p.watchUpgraderDeployment(deployment)
+// checkInWithCentral schedules a check in request for being sent to central. This is done on a best-effort basis; if
+// it fails, NBD. We will keep retrying though while the upgrade process is in progress.
+func (p *process) checkInWithCentral(req *central.UpgradeCheckInFromSensorRequest) {
+	req.UpgradeProcessId = p.GetID()
+
+	// If there is a currently pending request, remove it from the channel - it is now obsolete.
+	select {
+	case <-p.checkInReqC:
+	default:
+	}
+
+	select {
+	case <-p.doneSig.Done():
+	case p.checkInReqC <- req:
+	}
+}
+
+func (p *process) doRun() {
+	if p.trigger.GetImage() != "" {
+		log.Infof("Launching upgrade process %s with upgrader image %s", p.trigger.GetUpgradeProcessId(), p.trigger.GetImage())
+		err := p.createUpgraderDeploymentIfNecessary()
+
+		var launchErrMsg string
+		if err != nil {
+			launchErrMsg = err.Error()
+		}
+
+		p.checkInWithCentral(&central.UpgradeCheckInFromSensorRequest{
+			State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
+				LaunchError: launchErrMsg,
+			},
+		})
+	} else { // watch only
+		log.Infof("Only watching upgrade process %s...", p.trigger.GetUpgradeProcessId())
+	}
+
+	p.watchUpgraderDeployment()
 }
 
 func (p *process) waitForDeploymentDeletion(name string, uid types.UID) error {
@@ -139,13 +222,13 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 	}
 }
 
-func (p *process) getOrCreateUpgraderDeployment() (*v1beta1.Deployment, error) {
+func (p *process) createUpgraderDeploymentIfNecessary() error {
 	deploymentsClient := p.k8sClient.ExtensionsV1beta1().Deployments(namespaces.StackRox)
 
 	upgraderDeployment, err := deploymentsClient.Get(upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if !k8sErrors.IsNotFound(err) {
-			return nil, errors.Wrap(err, "retrieving existing upgrader deployment")
+			return errors.Wrap(err, "retrieving existing upgrader deployment")
 		}
 		upgraderDeployment = nil
 	}
@@ -153,7 +236,7 @@ func (p *process) getOrCreateUpgraderDeployment() (*v1beta1.Deployment, error) {
 	if upgraderDeployment != nil {
 		if upgraderDeployment.GetLabels()[processIDLabelKey] == p.GetID() {
 			log.Infof("Current upgrader deployment for process ID %s found", p.GetID())
-			return upgraderDeployment, nil
+			return nil
 		}
 
 		log.Infof("Found leftover upgrader deployment. Deleting ...")
@@ -162,10 +245,10 @@ func (p *process) getOrCreateUpgraderDeployment() (*v1beta1.Deployment, error) {
 			PropagationPolicy: &pkgKubernetes.DeletePolicyBackground,
 		})
 		if err != nil && !k8sErrors.IsNotFound(err) {
-			return nil, errors.Wrap(err, "deleting old upgrader deployment")
+			return errors.Wrap(err, "deleting old upgrader deployment")
 		}
 		if err := p.waitForDeploymentDeletion(upgraderDeployment.GetName(), upgraderDeployment.GetUID()); err != nil {
-			return nil, errors.Wrap(err, "deleting old upgrader deployment")
+			return errors.Wrap(err, "deleting old upgrader deployment")
 		}
 		log.Infof("Deleted leftover upgrader deployment")
 	}
@@ -175,15 +258,15 @@ func (p *process) getOrCreateUpgraderDeployment() (*v1beta1.Deployment, error) {
 
 	newDeployment := createDeployment(p.trigger, serviceAccountName)
 
-	createdDeployment, err := deploymentsClient.Create(newDeployment)
+	_, err = deploymentsClient.Create(newDeployment)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating new upgrader deployment")
+		return errors.Wrap(err, "creating new upgrader deployment")
 	}
 	log.Infof("Successfully created new upgrader deployment for upgrade process %s", p.GetID())
-	return createdDeployment, nil
+	return nil
 }
 
-func (p *process) watchUpgraderDeployment(deployment *v1beta1.Deployment) error {
+func (p *process) watchUpgraderDeployment() {
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
@@ -192,49 +275,72 @@ func (p *process) watchUpgraderDeployment(deployment *v1beta1.Deployment) error 
 	for {
 		select {
 		case <-ticker.C:
-			done, err := p.pollAndUpdateProgress(deployment)
+			podStates, deploymentGone, err := p.pollAndUpdateProgress()
+			var checkIn *central.UpgradeCheckInFromSensorRequest
+
 			if err != nil {
+				// Don't check in with central, that's fine - nothing to see here anyway.
+				// There is no retry limit here. We can't tell Central anything useful, so the best course of action is
+				// to let the timeout logic handle this.
 				log.Errorf("Error polling upgrader deployment/pods: %v", err)
-			} else if done {
-				return nil
+			} else if deploymentGone {
+				checkIn = &central.UpgradeCheckInFromSensorRequest{
+					State: &central.UpgradeCheckInFromSensorRequest_DeploymentGone{
+						DeploymentGone: true,
+					},
+				}
+			} else {
+				// Regular check in with central on upgrader pods.
+				checkIn = &central.UpgradeCheckInFromSensorRequest{
+					State: &central.UpgradeCheckInFromSensorRequest_PodStates{
+						PodStates: &central.UpgradeCheckInFromSensorRequest_UpgraderPodStates{
+							States: podStates,
+						},
+					},
+				}
+			}
+
+			if checkIn != nil {
+				p.checkInWithCentral(checkIn)
 			}
 
 		case <-p.doneSig.Done():
-			return p.doneSig.Err()
+			return
 		}
 	}
 }
 
-func (p *process) pollAndUpdateProgress(deployment *v1beta1.Deployment) (bool, error) {
+func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, bool, error) {
 	errs := errorhelpers.NewErrorList("polling")
 
-	deploymentsClient := p.k8sClient.ExtensionsV1beta1().Deployments(deployment.GetNamespace())
-	foundDeployment, err := deploymentsClient.Get(deployment.GetName(), metav1.GetOptions{})
+	deploymentsClient := p.k8sClient.ExtensionsV1beta1().Deployments(namespaces.StackRox)
+	foundDeployment, err := deploymentsClient.Get(upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return true, nil
+			return nil, true, nil
 		}
 		errs.AddWrap(err, "upgrader deployment")
-	} else if foundDeployment != nil && foundDeployment.GetUID() != deployment.GetUID() {
-		return true, nil // new upgrader deployment
+	} else if foundDeployment != nil && foundDeployment.Labels[processIDLabelKey] != p.GetID() {
+		return nil, true, nil // new upgrader deployment
 	}
 
-	podsClient := p.k8sClient.CoreV1().Pods(deployment.GetNamespace())
+	podsClient := p.k8sClient.CoreV1().Pods(foundDeployment.GetNamespace())
 	pods, err := podsClient.List(metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(deployment.Spec.Selector),
+		LabelSelector: metav1.FormatLabelSelector(foundDeployment.Spec.Selector),
 	})
 	if err != nil {
 		errs.AddWrap(err, "upgrader pods")
-		return false, errs.ToError()
+		return nil, false, errs.ToError()
 	}
 
+	podStates := make([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, 0, len(pods.Items))
 	for _, pod := range pods.Items {
-		p.checkPodStatus(&pod)
+		podStates = append(podStates, p.checkPodStatus(&pod))
 	}
-	return false, nil
+	return podStates, false, nil
 }
 
-func (p *process) checkPodStatus(pod *v1.Pod) {
+func (p *process) checkPodStatus(pod *v1.Pod) *central.UpgradeCheckInFromSensorRequest_UpgraderPodState {
 	var upgraderContainerStatus *v1.ContainerStatus
 	for _, cs := range pod.Status.ContainerStatuses {
 		if cs.Name == upgraderContainerName {
@@ -243,21 +349,37 @@ func (p *process) checkPodStatus(pod *v1.Pod) {
 		}
 	}
 
-	if upgraderContainerStatus == nil {
-		log.Warnf("no upgrade container found for pod %s", pod.Name)
+	s := &central.UpgradeCheckInFromSensorRequest_UpgraderPodState{
+		PodName: pod.GetName(),
 	}
 
-	if upgraderContainerStatus.State.Running != nil {
-		log.Infof("Pod %s is running!", pod.Name)
+	if upgraderContainerStatus == nil {
+		log.Warnf("no upgrade container found for pod %s", pod.Name)
+		s.Error = &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{
+			Message: "no upgrade container found",
+		}
+	} else if upgraderContainerStatus.State.Running != nil {
+		log.Infof("Upgrader pod %s is running!", pod.GetName())
+		s.Started = true
 	} else if terminatedState := upgraderContainerStatus.State.Terminated; terminatedState != nil {
-		log.Infof("Pod %s terminated, reason: %s (%s)", pod.Name, terminatedState.Reason, terminatedState.Message)
+		s.Started = true
+		if terminatedState.ExitCode != 0 {
+			s.Error = &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{
+				Message: fmt.Sprintf("Pod terminated: %s (%s)", terminatedState.Message, terminatedState.Reason),
+			}
+		}
+		log.Infof("Upgrader pod %s terminated, reason: %s (%s)", pod.Name, terminatedState.Reason, terminatedState.Message)
 	} else if waitingState := upgraderContainerStatus.State.Waiting; waitingState != nil {
 		if isImagePullRelatedReason(waitingState.Reason) {
-			log.Warnf("Pod %s seems to have trouble pulling the image, reason: %s (%s)", pod.Name, waitingState.Reason, waitingState.Message)
-		} else {
-			log.Warnf("Pod %s is waiting to start, reason: %s (%s)", pod.Name, waitingState.Reason, waitingState.Message)
+			s.Error = &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{
+				Message:      fmt.Sprintf("Error pulling image: %s (%s)", waitingState.Reason, waitingState.Message),
+				ImageRelated: true,
+			}
+			log.Warnf("Upgrader pod %s seems to have trouble pulling the image, reason: %s (%s)", pod.Name, waitingState.Reason, waitingState.Message)
 		}
 	}
+
+	return s
 }
 
 func (p *process) Terminate(err error) {

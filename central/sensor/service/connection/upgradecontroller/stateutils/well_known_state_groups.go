@@ -15,5 +15,6 @@ var (
 		storage.UpgradeProgress_UPGRADE_TIMED_OUT,
 		storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK,
 		storage.UpgradeProgress_UPGRADE_ERROR_ROLLBACK_FAILED,
+		storage.UpgradeProgress_UPGRADE_ERROR_UNKNOWN,
 	)
 )

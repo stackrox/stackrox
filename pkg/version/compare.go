@@ -46,18 +46,26 @@ func lexicographicCompareIntArrays(a, b []int) int {
 	return 0
 }
 
-// CompareReleaseVersions compares the two versions, which must be release versions,
-// and returns -1 if versionA is DEFINITELY a lower version than versionB,
-// or 1 if versionA is DEFINITELY a greater version than versionB.
-// It returns 0 unless both versions are release versions.
-func CompareReleaseVersions(versionA, versionB string) int {
+// CompareReleaseVersionsOr compares the two versions if both of them are release versions.
+// If at least one of the versions is not a release versions, they are incomparable, and the result specified
+// as incomparableRes is returned. Otherwise, a result of < 0 is returned if versionA is lower than versionB,
+// a result of > 0 is returned if versionA is higher than versionB, and 0 is returned if both versions are equal.
+func CompareReleaseVersionsOr(versionA, versionB string, incomparableRes int) int {
 	kindA := GetVersionKind(versionA)
 	kindB := GetVersionKind(versionB)
 	if kindA != ReleaseKind || kindB != ReleaseKind {
-		return 0
+		return incomparableRes
 	}
 	if versionA == versionB {
 		return 0
 	}
 	return lexicographicCompareIntArrays(convertToIntArray(versionA), convertToIntArray(versionB))
+}
+
+// CompareReleaseVersions compares the two versions, which must be release versions,
+// and returns -1 if versionA is DEFINITELY a lower version than versionB,
+// or 1 if versionA is DEFINITELY a greater version than versionB.
+// It returns 0 unless both versions are release versions.
+func CompareReleaseVersions(versionA, versionB string) int {
+	return CompareReleaseVersionsOr(versionA, versionB, 0)
 }

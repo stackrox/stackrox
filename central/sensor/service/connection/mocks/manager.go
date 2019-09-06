@@ -210,3 +210,17 @@ func (mr *MockManagerMockRecorder) ProcessCheckInFromUpgrader(ctx, clusterID, re
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessCheckInFromUpgrader", reflect.TypeOf((*MockManager)(nil).ProcessCheckInFromUpgrader), ctx, clusterID, req)
 }
+
+// ProcessUpgradeCheckInFromSensor mocks base method
+func (m *MockManager) ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromSensorRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessUpgradeCheckInFromSensor", ctx, clusterID, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessUpgradeCheckInFromSensor indicates an expected call of ProcessUpgradeCheckInFromSensor
+func (mr *MockManagerMockRecorder) ProcessUpgradeCheckInFromSensor(ctx, clusterID, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessUpgradeCheckInFromSensor", reflect.TypeOf((*MockManager)(nil).ProcessUpgradeCheckInFromSensor), ctx, clusterID, req)
+}

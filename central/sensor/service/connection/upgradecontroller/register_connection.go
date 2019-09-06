@@ -92,16 +92,17 @@ func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralse
 
 	if u.active != nil {
 		// Check relative to the target version, not central's current version (we might have upgraded central since
-		// the upgrade was initiated).
-		versionCmp := version.CompareReleaseVersions(versionInfo.MainVersion, u.active.status.GetTargetVersion())
+		// the upgrade was initiated). If the versions are incomparable, we assume the upgrade is not complete, otherwise
+		// we erroneously mark upgrades as complete when testing with dev builds.
+		versionCmp := version.CompareReleaseVersionsOr(versionInfo.MainVersion, u.active.status.GetTargetVersion(), -1)
+
 		state := u.active.status.GetProgress().GetUpgradeState()
 		if versionCmp >= 0 /* TODO: && state == storage.UpgradeProgress_UPGRADE_OPERATIONS_DONE */ {
 			u.markUpgradeDone(storage.UpgradeProgress_UPGRADE_COMPLETE)
 		} else if versionCmp < 0 && state == storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK {
 			u.markUpgradeDone(storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK)
 		}
-	} else if upgradability == storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE &&
-		u.shouldAutoTriggerUpgrade() { // && active == nil
+	} else if u.shouldAutoTriggerUpgrade() { // && active == nil
 		cluster := u.getCluster()
 		process, err := u.newUpgradeProcess()
 		if err != nil {
