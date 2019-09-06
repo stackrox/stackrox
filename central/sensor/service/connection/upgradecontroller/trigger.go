@@ -86,6 +86,8 @@ func (u *upgradeController) doTrigger() (common.MessageInjector, *central.Sensor
 	switch u.upgradeStatus.GetUpgradability() {
 	case storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE:
 		// yay!
+	case storage.ClusterUpgradeStatus_SENSOR_VERSION_HIGHER:
+		// We still allow upgrade triggers in this case.
 	case storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED:
 		return nil, nil, errors.Errorf("manual upgrade required for cluster %s; cannot trigger upgrade", u.clusterID)
 	case storage.ClusterUpgradeStatus_UP_TO_DATE:
