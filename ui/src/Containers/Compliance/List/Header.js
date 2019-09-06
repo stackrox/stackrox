@@ -4,13 +4,14 @@ import { withRouter } from 'react-router-dom';
 import { standardLabels } from 'messages/standards';
 import lowerCase from 'lodash/lowerCase';
 import startCase from 'lodash/startCase';
-import { standardTypes } from 'constants/entityTypes';
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
+import findKey from 'lodash/findKey';
 
-const ListHeader = ({ entityType, searchComponent }) => {
-    const standardId = standardTypes[entityType];
+const ListHeader = ({ entityType, searchComponent, standard }) => {
+    const standardId = findKey(standardLabels, key => key === standard);
+
     const headerText = standardId
         ? standardLabels[standardId]
         : `${startCase(lowerCase(entityType))}s`;
@@ -26,7 +27,6 @@ const ListHeader = ({ entityType, searchComponent }) => {
             }
         };
     }
-
     return (
         <PageHeader header={headerText} subHeader={subHeaderText}>
             <div className="w-full">{searchComponent}</div>
@@ -38,7 +38,7 @@ const ListHeader = ({ entityType, searchComponent }) => {
                             {standardId && <ScanButton text="Scan" standardId={standardId} />}
                             <ExportButton
                                 fileName={`${headerText} Compliance Report`}
-                                id={entityType || standardId}
+                                id={standardId || entityType}
                                 type={standardId ? 'STANDARD' : ''}
                                 pdfId="capture-list"
                                 tableOptions={tableOptions}
@@ -52,11 +52,13 @@ const ListHeader = ({ entityType, searchComponent }) => {
 };
 ListHeader.propTypes = {
     searchComponent: PropTypes.element,
-    entityType: PropTypes.string.isRequired
+    entityType: PropTypes.string.isRequired,
+    standard: PropTypes.string
 };
 
 ListHeader.defaultProps = {
-    searchComponent: null
+    searchComponent: null,
+    standard: null
 };
 
 export default withRouter(ListHeader);

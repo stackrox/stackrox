@@ -24,6 +24,7 @@ const ComplianceListPage = ({ match, location }) => {
                 searchComponent={
                     <SearchInput categories={['COMPLIANCE']} shouldAddComplianceState />
                 }
+                standard={query.Standard || query.standard}
             />
             <CollapsibleBanner className="pdf-page">
                 <ComplianceAcrossEntities
