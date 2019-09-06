@@ -1344,7 +1344,7 @@ jobs:
       - run:
           name: Test HTTP access to plain HTTP proxy
           command: |
-            version="$(curl -f 'http://localhost:10080/v1/metadata' | jq -r '.version')"
+            version="$(curl --retry 5 --retry-connrefused --retry-delay 1 --retry-max-time 10 -f 'http://localhost:10080/v1/metadata' | jq -r '.version')"
             echo "Got version ${version} from server"
             [[ "$version" == "$(make tag)" ]]
 
@@ -1353,6 +1353,7 @@ jobs:
           command: |
             version="$(
               curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
+                --retry 5 --retry-connrefused --retry-delay 1 --retry-max-time 10 \
                 --resolve "central-proxy.stackrox.local:10443:127.0.0.1" \
                 -f \
                 'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.version')"
