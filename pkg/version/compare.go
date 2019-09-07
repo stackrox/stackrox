@@ -47,17 +47,18 @@ func lexicographicCompareIntArrays(a, b []int) int {
 }
 
 // CompareReleaseVersionsOr compares the two versions if both of them are release versions.
-// If at least one of the versions is not a release versions, they are incomparable, and the result specified
-// as incomparableRes is returned. Otherwise, a result of < 0 is returned if versionA is lower than versionB,
+// If at least one of the versions is not a release versions, they are incomparable UNLESS they are exactly the same,
+// and if they're not exactly the same, the result specified as incomparableRes is returned.
+// Otherwise, a result of < 0 is returned if versionA is lower than versionB,
 // a result of > 0 is returned if versionA is higher than versionB, and 0 is returned if both versions are equal.
 func CompareReleaseVersionsOr(versionA, versionB string, incomparableRes int) int {
 	kindA := GetVersionKind(versionA)
 	kindB := GetVersionKind(versionB)
-	if kindA != ReleaseKind || kindB != ReleaseKind {
-		return incomparableRes
-	}
 	if versionA == versionB {
 		return 0
+	}
+	if kindA != ReleaseKind || kindB != ReleaseKind {
+		return incomparableRes
 	}
 	return lexicographicCompareIntArrays(convertToIntArray(versionA), convertToIntArray(versionB))
 }

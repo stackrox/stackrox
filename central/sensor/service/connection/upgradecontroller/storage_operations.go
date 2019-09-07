@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -71,6 +72,16 @@ func (u *upgradeController) setUpgradeProgress(expectedProcessID string, state s
 	}
 	adjustTrigger(u.active.trigger, state)
 
+	if stateutils.TerminalStates.Contains(state) {
+		u.upgradeStatus.MostRecentProcess.Active = false
+		u.active = nil
+	}
+
 	u.upgradeStatusChanged = true
+
+	if prevState != state {
+		log.Infof("Changing upgrade state for cluster %s from %s to %s (detail: %s)", u.clusterID, prevState, state, detail)
+	}
+
 	return nil
 }

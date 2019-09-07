@@ -73,17 +73,6 @@ func determineUpgradabilityFromVersionInfo(versionInfo *centralsensor.SensorVers
 	return storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE, fmt.Sprintf("sensor is running an old version (%s)", versionInfo.MainVersion)
 }
 
-func (u *upgradeController) markUpgradeDone(state storage.UpgradeProgress_UpgradeState) {
-	if u.active == nil {
-		return
-	}
-
-	errorhelpers.PanicOnDevelopment(u.setUpgradeProgress(u.active.status.GetId(), state, ""))
-	u.active.status.Active = false
-	u.upgradeStatusChanged = true
-	u.active = nil
-}
-
 func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralsensor.SensorVersionInfo) {
 	upgradability, reason := determineUpgradabilityFromVersionInfo(versionInfo)
 	log.Infof("Determined upgradability status for sensor from cluster %s: %s. Reason: %s", u.clusterID, upgradability, reason)
@@ -98,9 +87,10 @@ func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralse
 
 		state := u.active.status.GetProgress().GetUpgradeState()
 		if versionCmp >= 0 /* TODO: && state == storage.UpgradeProgress_UPGRADE_OPERATIONS_DONE */ {
-			u.markUpgradeDone(storage.UpgradeProgress_UPGRADE_COMPLETE)
+			// It's okay to panic on development here; u.setUpgradeProgress does no DB operations.
+			errorhelpers.PanicOnDevelopment(u.setUpgradeProgress(u.active.status.GetId(), storage.UpgradeProgress_UPGRADE_COMPLETE, ""))
 		} else if versionCmp < 0 && state == storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK {
-			u.markUpgradeDone(storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK)
+			errorhelpers.PanicOnDevelopment(u.setUpgradeProgress(u.active.status.GetId(), storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK, ""))
 		}
 	} else if u.shouldAutoTriggerUpgrade() { // && active == nil
 		cluster := u.getCluster()

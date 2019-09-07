@@ -194,7 +194,6 @@ func TestStateMachineWithMockUpgraderExecutionFailed(t *testing.T) {
 		storage.UpgradeProgress_UPGRADER_LAUNCHED,
 		storage.UpgradeProgress_PRE_FLIGHT_CHECKS_COMPLETE,
 		storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK,
-		storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK,
 	}, sliceutils.Unique(store.stateHistory))
 }
 

@@ -145,7 +145,8 @@ var (
 			errOccurredMatch: boolPtr(false),
 
 			workflowToExecute: sensorupgrader.CleanupWorkflow,
-			nextState:         statePtr(storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK),
+			// Don't mark as rolled back until the sensor checks in.
+			nextState: statePtr(storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK),
 		},
 		// Any error when rolling back => rollback failed. Not much we can do at this point. :(
 		{
@@ -158,7 +159,15 @@ var (
 			updateDetail:      true,
 		},
 
-		// No need to define transitions explicitly for clean up since the upgrader
-		// should only be cleaning up on terminal states.
+		// The only non-terminal state where we ask the upgrader to clean up is "ROLLING_BACK",
+		// since the sensor is the one that successfully reports a rollback. We don't want to ask
+		// the upgrader to keep polling because there's not really anything further we can expect from it
+		// expect to clean up eventually.
+		{
+			currentStateMatch: anyStateFrom(storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK),
+			workflowMatch:     stringPtr(sensorupgrader.CleanupWorkflow),
+			workflowToExecute: sensorupgrader.CleanupWorkflow,
+			noStateChange:     true,
+		},
 	}
 )
