@@ -832,20 +832,9 @@ describe('Config Management Entities', () => {
             clickOnRowEntity('subjects', 'roles');
         });
 
-        it('should click on the cluster entity widget in the side panel and match the header ', () => {
-            renderListAndSidePanel('subjects');
-            clickOnEntityWidget('cluster', 'side-panel');
-        });
-
         it('should take you to a subject single when the "navigate away" button is clicked', () => {
             renderListAndSidePanel('subjects');
             navigateToSingleEntityPage('subject');
-        });
-
-        it('should show the related cluster widget', () => {
-            renderListAndSidePanel('subjects');
-            navigateToSingleEntityPage('subject');
-            hasRelatedEntityFor('Cluster');
         });
 
         it('should have the correct count widgets for a single entity view', () => {

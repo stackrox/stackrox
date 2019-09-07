@@ -133,6 +133,8 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                     }
                 ];
 
+                const scopedPermissionsByCluster = [{ clusterId, clusterName, scopedPermissions }];
+
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Service Account Details">
@@ -179,13 +181,11 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                         <CollapsibleSection title="Service Account Permissions">
                             <div className="flex mb-4 pdf-page pdf-stretch">
                                 <ClusterScopedPermissions
-                                    scopedPermissions={scopedPermissions}
-                                    clusterName={clusterName}
+                                    scopedPermissionsByCluster={scopedPermissionsByCluster}
                                     className="mx-4 bg-base-100 w-full"
                                 />
                                 <NamespaceScopedPermissions
-                                    scopedPermissions={scopedPermissions}
-                                    namespace={namespaceName}
+                                    scopedPermissionsByCluster={scopedPermissionsByCluster}
                                     className="flex-grow mx-4 bg-base-100 w-full"
                                 />
                             </div>

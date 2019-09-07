@@ -23,9 +23,11 @@ const ScopedPermissions = ({ permissions }) => {
     let content = [];
     const { length } = permissions;
     if (length) {
-        content = permissions.map(datum => {
+        content = permissions.map((datum, i) => {
             const colorClass = getLabelColor(datum.key);
-            const permissionKeyClass = `rounded bg-${colorClass}-200 text-${colorClass}-700 border border-${colorClass}-300 px-2 py-1 self-center`;
+            const permissionKeyClass = `rounded bg-${colorClass}-200 text-${colorClass}-700 ${
+                i !== permissions.length - 1 ? `border border-${colorClass}-300` : ''
+            } px-2 py-1 self-center`;
             return (
                 <div className="flex border-b border-base-300" key={datum.key}>
                     <div className="w-43 border-r border-base-300 px-3 text-sm flex">

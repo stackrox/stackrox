@@ -26,13 +26,12 @@ export const SUBJECT_WITH_CLUSTER_FRAGMENT = gql`
 
 export const SUBJECTS_QUERY = gql`
     query subjects($query: String) {
-        subjects(query: $query) {
-            ...subjectFields
-        }
-    }
-    fragment subjectFields on Subject {
-        subjectWithClusterID {
-            ...subjectWithClusterFields
+        clusters {
+            id
+            name
+            subjects(query: $query) {
+                ...subjectWithClusterFields
+            }
         }
     }
     fragment subjectWithClusterFields on SubjectWithClusterID {
@@ -52,10 +51,10 @@ export const SUBJECTS_QUERY = gql`
 `;
 
 export const SUBJECT_NAME = gql`
-    query getSubjectName($id: String!) {
+    query getSubjectName($subjectQuery: String!) {
         clusters {
             id
-            subject(name: $id) {
+            subjects(query: $subjectQuery) {
                 id: name
                 subject {
                     name
@@ -69,6 +68,7 @@ export const SUBJECT_QUERY = gql`
     query subject($id: String!) {
         clusters {
             id
+            name
             subject(name: $id) {
                 id: name
                 subject {

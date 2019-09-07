@@ -11,6 +11,8 @@ import { entityNameQueryMap } from 'modules/queryMap';
 import { ChevronRight } from 'react-feather';
 import Query from 'Components/ThrowingQuery';
 import BackButton from 'Containers/ConfigManagement/SidePanel/buttons/BackButton';
+import entityTypes from 'constants/entityTypes';
+import queryService from 'modules/queryService';
 
 const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />
@@ -105,17 +107,24 @@ BreadCrumbLinks.defaultProps = {
     className: ''
 };
 
+const getEntityVariables = (type, id) => {
+    if (type === entityTypes.SUBJECT) {
+        return { subjectQuery: queryService.objectToWhereClause({ Subject: id }) };
+    }
+    return { id };
+};
+
 const BreadCrumbs = props => {
     const { className, match, location, ...params } = props;
     const { entityType1, entityId1, entityType2, entityListType2, entityId2 } = params;
     if (!entityId1) return null;
 
     const entityQuery = entityNameQueryMap[entityType1];
-    const entityVariables = { id: entityId1 };
+    const entityVariables = getEntityVariables(entityType1, entityId1);
 
     const relatedEntityType = entityListType2 || entityType2;
     const relatedEntityQuery = entityNameQueryMap[relatedEntityType];
-    const relatedEntityVariables = { id: entityId2 };
+    const relatedEntityVariables = getEntityVariables(relatedEntityType, entityId2);
 
     return (
         <Query query={entityQuery} variables={entityVariables}>

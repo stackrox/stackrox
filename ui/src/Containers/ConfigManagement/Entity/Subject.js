@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
+import isEmpty from 'lodash/isEmpty';
 import { ROLE_FRAGMENT } from 'queries/role';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
-import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
@@ -19,28 +19,32 @@ import EntityList from '../List/EntityList';
 const processSubjectDataByClusters = data => {
     const entity = data.clusters.reduce(
         (acc, curr) => {
-            const {
-                subject,
-                type,
-                clusterAdmin,
-                clusterID,
-                clusterName,
-                roles,
-                ...rest
-            } = curr.subject;
+            if (!curr.subjects.length) return acc;
+            const { subject, type, clusterAdmin, roles, ...rest } = curr.subjects[0];
+            const { id: clusterId, name: clusterName } = curr;
             return {
                 subject,
                 type,
                 clusterAdmin,
-                clusterID,
-                clusterName,
-                roles,
-                clusters: [...acc.clusters, { ...rest }]
+                roles: [...acc.roles, ...roles],
+                clusters: [...acc.clusters, { ...rest, clusterId, clusterName }]
             };
         },
-        { clusters: [] }
+        { roles: [], clusters: [] }
     );
     return entity;
+};
+
+const getSubjectQuery = (id, entityContext) => {
+    const queryObject = {
+        Subject: id
+    };
+    if (!isEmpty(entityContext)) {
+        Object.keys(entityContext).forEach(entityType => {
+            queryObject[`${entityType} ID`] = entityContext[entityType];
+        });
+    }
+    return queryService.objectToWhereClause(queryObject);
 };
 
 const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
@@ -48,16 +52,17 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
 
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
-        id,
+        subjectQuery: getSubjectQuery(id, entityContext),
         query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const QUERY = gql`
-        query subject($id: String!, $query: String) {
+        query subject($subjectQuery: String!, $query: String) {
             clusters {
                 id
-                subject(name: $id) {
-                    id: name
+                name
+                subjects(query: $subjectQuery) {
+                    name
                     subject {
                         name
                         kind
@@ -72,8 +77,6 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                         }
                     }
                     clusterAdmin
-                    clusterID 
-                    clusterName
                     roles(query: $query) {
                         ${entityListType === entityTypes.ROLE ? '...k8roleFields' : 'id'}
                     }
@@ -89,9 +92,8 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                 if (loading) return <Loader transparent />;
                 if (!data.clusters || !data.clusters.length)
                     return <PageNotFound resourceType={entityTypes.SUBJECT} />;
-
                 const entity = processSubjectDataByClusters(data);
-                const { type, clusterAdmin, clusterID, clusterName, clusters = [] } = entity;
+                const { type, clusterAdmin, clusters = [] } = entity;
 
                 if (entityListType) {
                     let listData;
@@ -114,8 +116,8 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                 }
 
                 const scopedPermissionsAcrossAllClusters = clusters.reduce(
-                    (acc, { scopedPermissions }) => {
-                        return [...acc, ...scopedPermissions];
+                    (acc, { clusterId, clusterName, scopedPermissions }) => {
+                        return [...acc, { clusterId, clusterName, scopedPermissions }];
                     },
                     []
                 );
@@ -136,15 +138,6 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     className="mx-4 bg-base-100 h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                 />
-                                {!(entityContext && entityContext[entityTypes.CLUSTER]) && (
-                                    <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
-                                        entityType={entityTypes.CLUSTER}
-                                        name="Cluster"
-                                        value={clusterName}
-                                        entityId={clusterID}
-                                    />
-                                )}
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Roles"
@@ -156,13 +149,11 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Subject Permissions">
                             <div className="flex mb-4 pdf-page pdf-stretch">
                                 <ClusterScopedPermissions
-                                    scopedPermissions={scopedPermissionsAcrossAllClusters}
-                                    clusterName={clusterName}
+                                    scopedPermissionsByCluster={scopedPermissionsAcrossAllClusters}
                                     className="mx-4 bg-base-100"
                                 />
                                 <NamespaceScopedPermissions
-                                    scopedPermissions={scopedPermissionsAcrossAllClusters}
-                                    namespace={entity.namespace}
+                                    scopedPermissionsByCluster={scopedPermissionsAcrossAllClusters}
                                     className="flex-grow mx-4 bg-base-100"
                                 />
                             </div>

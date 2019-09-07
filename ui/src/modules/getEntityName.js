@@ -8,7 +8,14 @@ const entityNameKeyMap = {
     [entityTypes.CLUSTER]: data => resolvePath(data, 'cluster.name'),
     [entityTypes.DEPLOYMENT]: data => resolvePath(data, 'deployment.name'),
     [entityTypes.NAMESPACE]: data => resolvePath(data, 'namespace.metadata.name'),
-    [entityTypes.ROLE]: data => resolvePath(data, 'clusters[0].k8srole.name'),
+    [entityTypes.ROLE]: data => {
+        if (!data || !data.clusters || !data.clusters.length) return null;
+        const result = data.clusters.reduce((acc, curr) => {
+            if (!curr.k8srole) return acc;
+            return curr.k8srole.name;
+        }, null);
+        return result;
+    },
     [entityTypes.NODE]: data => resolvePath(data, 'node.name'),
     [entityTypes.CONTROL]: data => {
         if (!data.control) return null;
@@ -17,9 +24,10 @@ const entityNameKeyMap = {
     [entityTypes.IMAGE]: data => resolvePath(data, 'image.name.fullName'),
     [entityTypes.POLICY]: data => resolvePath(data, 'policy.name'),
     [entityTypes.SUBJECT]: data => {
-        if (!data || !data.clusters.length) return null;
+        if (!data || !data.clusters || !data.clusters.length) return null;
         const result = data.clusters.reduce((acc, curr) => {
-            return curr.subject.subject.name;
+            if (!curr.subjects.length) return acc;
+            return curr.subjects[0].subject.name;
         }, null);
         return result;
     }

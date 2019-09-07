@@ -67,8 +67,25 @@ const buildTableColumns = (match, location) => {
     return tableColumns;
 };
 
-const createTableRows = data =>
-    data.subjects.reduce((acc, curr) => [...acc, ...curr.subjectWithClusterID], []);
+const createTableRows = data => {
+    const subjectsMap = {};
+    data.clusters.forEach(cluster => {
+        cluster.subjects.forEach(subject => {
+            const { id: subjectId, roles: subjectRoles } = subject;
+            if (subjectsMap[subjectId]) {
+                const { roles } = subjectsMap[subjectId];
+                subjectsMap[subjectId].roles = [...roles, ...subjectRoles];
+            } else {
+                subjectsMap[subjectId] = {
+                    ...subject,
+                    clusterId: cluster.id,
+                    clusterName: cluster.name
+                };
+            }
+        });
+    });
+    return Object.values(subjectsMap);
+};
 
 const Subjects = ({ match, location, selectedRowId, onRowClick, query, className, data }) => {
     const autoFocusSearchInput = !selectedRowId;

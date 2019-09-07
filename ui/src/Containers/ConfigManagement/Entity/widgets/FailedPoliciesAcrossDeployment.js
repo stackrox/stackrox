@@ -42,7 +42,10 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
         <Query
             query={QUERY}
             variables={{
-                query: queryService.objectToWhereClause({ 'Deployment ID': deploymentID })
+                query: queryService.objectToWhereClause({
+                    'Deployment ID': deploymentID,
+                    'Lifecycle Stage': 'DEPLOY'
+                })
             }}
         >
             {({ loading, data }) => {
