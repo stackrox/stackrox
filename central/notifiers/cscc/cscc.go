@@ -30,6 +30,13 @@ var (
 		))
 )
 
+func init() {
+	notifiers.Add("cscc", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		j, err := newCSCC(notifier)
+		return j, err
+	})
+}
+
 // The Cloud SCC notifier plugin integrates with Google's Cloud Security Command Center.
 type cscc struct {
 	// The Service Account is a Google JSON service account key.
@@ -39,7 +46,6 @@ type cscc struct {
 	config *config
 
 	*storage.Notifier
-	clusters clusterDatastore.DataStore
 }
 
 type config struct {
@@ -120,7 +126,7 @@ func processUUID(u string) string {
 }
 
 func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
-	cluster, exists, err := c.clusters.GetCluster(clusterForAlertContext, id)
+	cluster, exists, err := clusterDatastore.Singleton().GetCluster(clusterForAlertContext, id)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +198,7 @@ func (c *cscc) AlertNotify(alert *storage.Alert) error {
 	)
 }
 
-func newCSCC(protoNotifier *storage.Notifier, clusters clusterDatastore.DataStore) (*cscc, error) {
+func newCSCC(protoNotifier *storage.Notifier) (*cscc, error) {
 	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
 	if !ok {
 		return nil, fmt.Errorf("Cloud SCC config is required")
@@ -206,12 +212,11 @@ func newCSCC(protoNotifier *storage.Notifier, clusters clusterDatastore.DataStor
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
-	return newWithConfig(protoNotifier, clusters, cfg), nil
+	return newWithConfig(protoNotifier, cfg), nil
 }
 
-func newWithConfig(protoNotifier *storage.Notifier, clusters clusterDatastore.DataStore, cfg *config) *cscc {
+func newWithConfig(protoNotifier *storage.Notifier, cfg *config) *cscc {
 	return &cscc{
-		clusters: clusters,
 		Notifier: protoNotifier,
 		client: client.Config{
 			ServiceAccount: []byte(cfg.ServiceAccount),
@@ -228,11 +233,4 @@ func (c *cscc) ProtoNotifier() *storage.Notifier {
 
 func (c *cscc) Test() error {
 	return errors.New("Test is not yet implemented for Cloud SCC")
-}
-
-func init() {
-	notifiers.Add("cscc", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := newCSCC(notifier, clusterDatastore.Singleton())
-		return j, err
-	})
 }
