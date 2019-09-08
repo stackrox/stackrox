@@ -3,9 +3,17 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { ClipLoader } from 'react-spinners';
 
+import ToggleSwitch from 'Components/ToggleSwitch';
+
 const baseClass = 'py-6 border-b border-base-300 border-solid';
 
-const ClusterDeploymentPage = ({ onFileDownload, clusterCheckedIn, editing }) => (
+const ClusterDeploymentPage = ({
+    onFileDownload,
+    clusterCheckedIn,
+    editing,
+    createUpgraderSA,
+    toggleSA
+}) => (
     <div className="w-full">
         <div className="px-4">
             {editing && clusterCheckedIn && (
@@ -16,6 +24,20 @@ const ClusterDeploymentPage = ({ onFileDownload, clusterCheckedIn, editing }) =>
                 {editing
                     ? 'If static configuration was updated, download the new configuration files'
                     : 'Download the required configuration files'}
+                <div className="mb-4 flex items-center py-2 border-b-2 border-base-300">
+                    <label
+                        htmlFor="createUpgraderSA"
+                        className="py-2 text-base-600 font-700 flex w-full"
+                    >
+                        Include creation of Service Account for Auto-Upgrades:
+                    </label>
+                    <ToggleSwitch
+                        id="createUpgraderSA"
+                        name="createUpgraderSA"
+                        toggleHandler={toggleSA}
+                        enabled={createUpgraderSA}
+                    />
+                </div>
                 <div className="flex justify-center p-3">
                     <button
                         type="button"
@@ -65,7 +87,9 @@ const ClusterDeploymentPage = ({ onFileDownload, clusterCheckedIn, editing }) =>
 ClusterDeploymentPage.propTypes = {
     onFileDownload: PropTypes.func.isRequired,
     clusterCheckedIn: PropTypes.bool.isRequired,
-    editing: PropTypes.bool.isRequired
+    editing: PropTypes.bool.isRequired,
+    createUpgraderSA: PropTypes.bool.isRequired,
+    toggleSA: PropTypes.func.isRequired
 };
 
 export default ClusterDeploymentPage;

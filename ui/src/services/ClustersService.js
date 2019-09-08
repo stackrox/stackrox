@@ -141,10 +141,10 @@ export function saveCluster(cluster) {
  *
  * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function downloadClusterYaml(clusterId) {
+export function downloadClusterYaml(clusterId, createUpgraderSA = false) {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/zip',
-        data: { id: clusterId }
+        data: { id: clusterId, createUpgraderSA }
     });
 }

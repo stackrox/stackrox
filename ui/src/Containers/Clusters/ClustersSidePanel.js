@@ -28,6 +28,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState(null);
 
+    const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
+
     function unselectCluster() {
         setSelectedClusterId('');
         setSelectedCluster(newClusterDefault);
@@ -126,8 +128,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         }
     }
 
+    function toggleSA() {
+        setCreateUpgraderSA(!createUpgraderSA);
+    }
+
     function onDownload() {
-        downloadClusterYaml(selectedClusterId);
+        downloadClusterYaml(selectedClusterId, createUpgraderSA);
     }
 
     /**
@@ -179,6 +185,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
             {showDeploymentStyles && (
                 <ClusterDeployment
                     editing={!!selectedCluster}
+                    createUpgraderSA={createUpgraderSA}
+                    toggleSA={toggleSA}
                     onFileDownload={onDownload}
                     clusterCheckedIn={
                         !!(
