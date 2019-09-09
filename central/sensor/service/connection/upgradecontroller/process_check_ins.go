@@ -12,13 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 )
 
-const (
-	// Do not conclude there were any upgrader errors before this time has elapsed.
-	upgraderStartGracePeriod = 30 * time.Second
-
-	upgraderStuckTimeout = 5 * time.Minute
-)
-
 func constructUpgradeDetail(req *central.UpgradeCheckInFromUpgraderRequest) string {
 	if req.GetLastExecutedStageError() != "" {
 		return fmt.Sprintf("Upgrader failed to execute %s of the %s workflow: %s", req.GetLastExecutedStage(), req.GetCurrentWorkflow(), req.GetLastExecutedStageError())
@@ -142,27 +135,28 @@ func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheck
 		nextState = storage.UpgradeProgress_UPGRADE_ERROR_UNKNOWN
 		detail = "Sensor reported the upgrader deployment no longer exists."
 	case *central.UpgradeCheckInFromSensorRequest_PodStates:
-		if currState >= storage.UpgradeProgress_UPGRADER_LAUNCHED && time.Since(inStateSince) < upgraderStuckTimeout {
+		if currState >= storage.UpgradeProgress_UPGRADER_LAUNCHED && time.Since(inStateSince) < u.timeouts.StuckInSameStateTimeout() {
 			// Generally, not interesting if the upgrader has already launched, unless it's been stuck in the same
 			// state for a really long time.
-			return nil
-		}
-		if time.Since(inStateSince) < upgraderStartGracePeriod {
-			// Do not jump to any conclusions before the grace period is over.
 			return nil
 		}
 
 		var ok bool
 		detail, ok = analyzeUpgraderPodStates(s.PodStates.GetStates())
-		if !ok {
-			// Errors before the upgrader has launched are initialization errors, all others are unknown errors.
-			if currState >= storage.UpgradeProgress_UPGRADER_LAUNCHED {
-				nextState = storage.UpgradeProgress_UPGRADE_ERROR_UNKNOWN
-			} else {
-				nextState = storage.UpgradeProgress_UPGRADE_INITIALIZATION_ERROR
-			}
-		} else {
+		if ok {
 			nextState = storage.UpgradeProgress_UPGRADER_LAUNCHING
+			break
+		}
+
+		if time.Since(inStateSince) < u.timeouts.UpgraderStartGracePeriod() {
+			// Do not jump to any conclusions before the grace period is over.
+			return nil
+		}
+		// Errors before the upgrader has launched are initialization errors, all others are unknown errors.
+		if currState >= storage.UpgradeProgress_UPGRADER_LAUNCHED {
+			nextState = storage.UpgradeProgress_UPGRADE_ERROR_UNKNOWN
+		} else {
+			nextState = storage.UpgradeProgress_UPGRADE_INITIALIZATION_ERROR
 		}
 	default:
 		return errors.Errorf("Unknown or malformed upgrade check-in from sensor: %+v", req)

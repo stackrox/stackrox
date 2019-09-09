@@ -18,6 +18,11 @@ var (
 	errUnknown = errors.New("unknown error")
 )
 
+type activeSensorConnectionInfo struct {
+	injector      common.MessageInjector
+	sensorVersion string
+}
+
 type upgradeController struct {
 	autoTriggerEnabledFlag *concurrency.Flag
 
@@ -28,8 +33,7 @@ type upgradeController struct {
 	// by a mutex, to ensure full sequential consistency (and performance is not a concern here).
 	mutex sync.Mutex
 
-	// The injector acts as a proxy for the active sensor connections (may be nil).
-	injector common.MessageInjector
+	activeSensorConn *activeSensorConnectionInfo
 
 	// The storage is safe for concurrent access, but access should still be protected with a lock
 	// to make sure that the stored ClusterUpgradeStatus is in a consistent state.
@@ -42,6 +46,8 @@ type upgradeController struct {
 	upgradeStatusChanged bool
 
 	active *activeUpgradeInfo
+
+	timeouts timeoutProvider
 }
 
 func (u *upgradeController) initialize() error {
@@ -88,10 +94,6 @@ func (u *upgradeController) do(doFn func() error) (err error) {
 	u.expectNoError(u.flushUpgradeStatus())
 
 	return
-}
-
-func (u *upgradeController) ErrorSignal() concurrency.ReadOnlyErrorSignal {
-	return &u.errorSig
 }
 
 func (u *upgradeController) shouldAutoTriggerUpgrade() bool {

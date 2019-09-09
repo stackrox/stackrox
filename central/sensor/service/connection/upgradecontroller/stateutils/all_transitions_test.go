@@ -20,3 +20,16 @@ func TestAllTransitionsAreWellFormed(t *testing.T) {
 		})
 	}
 }
+
+func TestAllTerminalStatesResultInCleanUp(t *testing.T) {
+	for _, transition := range allTransitions {
+		t.Run(fmt.Sprintf("transition_%+v", transition), func(t *testing.T) {
+			if transition.nextState == nil {
+				return
+			}
+			if TerminalStates.Contains(*transition.nextState) {
+				assert.Equal(t, sensorupgrader.CleanupWorkflow, transition.workflowToExecute)
+			}
+		})
+	}
+}

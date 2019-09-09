@@ -6,18 +6,20 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestVersionInfoClientToServer(t *testing.T) {
-	const version = "2.5.27.0"
-	ctx, err := appendSensorVersionInfoToContext(context.Background(), version)
+	const testVersion = "2.5.27.0"
+	testutils.SetMainVersion(t, testVersion)
+	ctx, err := AppendSensorVersionInfoToContext(context.Background())
 	require.NoError(t, err)
 	derived, err := deriveSensorVersionInfo(metautils.ExtractOutgoing(ctx))
 	require.NoError(t, err)
 	require.NotNil(t, derived)
-	assert.Equal(t, version, derived.MainVersion)
+	assert.Equal(t, testVersion, derived.MainVersion)
 }
 
 func TestVersionInfoOldSensors(t *testing.T) {

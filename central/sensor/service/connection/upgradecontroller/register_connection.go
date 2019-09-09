@@ -42,8 +42,8 @@ func (u *upgradeController) watchConnection(sensorCtx context.Context, injector 
 	}
 
 	errorhelpers.PanicOnDevelopment(u.do(func() error {
-		if u.injector == injector {
-			u.injector = nil
+		if u.activeSensorConn != nil && u.activeSensorConn.injector == injector {
+			u.activeSensorConn = nil
 		}
 		return nil
 	}))
@@ -73,46 +73,52 @@ func determineUpgradabilityFromVersionInfo(versionInfo *centralsensor.SensorVers
 	return storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE, fmt.Sprintf("sensor is running an old version (%s)", versionInfo.MainVersion)
 }
 
-func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralsensor.SensorVersionInfo) {
+func (u *upgradeController) maybeTriggerAutoUpgrade() {
+	if !u.shouldAutoTriggerUpgrade() {
+		return
+	}
+	cluster := u.getCluster()
+	process, err := u.newUpgradeProcess()
+	if err != nil {
+		// This is not a critical error, it just means we can't auto-trigger. NBD.
+		log.Errorf("Cannot automatically trigger auto-upgrade for sensor in cluster %s: %v", u.clusterID, err)
+	} else {
+		u.makeProcessActive(cluster, process)
+	}
+}
+
+func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralsensor.SensorVersionInfo) (sensorVersion string) {
 	upgradability, reason := determineUpgradabilityFromVersionInfo(versionInfo)
 	log.Infof("Determined upgradability status for sensor from cluster %s: %s. Reason: %s", u.clusterID, upgradability, reason)
 	u.upgradeStatus.Upgradability, u.upgradeStatus.UpgradabilityStatusReason = upgradability, reason
 	u.upgradeStatusChanged = true // we don't check for this but sensor checking in should be comparatively rare
-
-	if u.active != nil {
-		// Check relative to the target version, not central's current version (we might have upgraded central since
-		// the upgrade was initiated). If the versions are incomparable, we assume the upgrade is not complete, otherwise
-		// we erroneously mark upgrades as complete when testing with dev builds.
-		versionCmp := version.CompareReleaseVersionsOr(versionInfo.MainVersion, u.active.status.GetTargetVersion(), -1)
-
-		state := u.active.status.GetProgress().GetUpgradeState()
-		if versionCmp >= 0 /* TODO: && state == storage.UpgradeProgress_UPGRADE_OPERATIONS_DONE */ {
-			// It's okay to panic on development here; u.setUpgradeProgress does no DB operations.
-			errorhelpers.PanicOnDevelopment(u.setUpgradeProgress(u.active.status.GetId(), storage.UpgradeProgress_UPGRADE_COMPLETE, ""))
-		} else if versionCmp < 0 && state == storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK {
-			errorhelpers.PanicOnDevelopment(u.setUpgradeProgress(u.active.status.GetId(), storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK, ""))
-		}
-	} else if u.shouldAutoTriggerUpgrade() { // && active == nil
-		cluster := u.getCluster()
-		process, err := u.newUpgradeProcess()
-		if err != nil {
-			// This is not a critical error, it just means we can't auto-trigger. NBD.
-			log.Errorf("Cannot automatically trigger auto-upgrade for sensor in cluster %s: %v", u.clusterID, err)
-		} else {
-			u.makeProcessActive(cluster, process)
-		}
+	if versionInfo != nil {
+		sensorVersion = versionInfo.MainVersion
 	}
+
+	// No active upgrade process. Maybe trigger an auto-upgrade.
+	if u.active == nil {
+		u.maybeTriggerAutoUpgrade()
+	}
+
+	return sensorVersion
 }
 
-func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, injector common.MessageInjector) bool {
+func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, injector common.MessageInjector) (sensorSupportsAutoUpgrade bool) {
 	versionInfo, err := centralsensor.DeriveSensorVersionInfo(sensorCtx)
 	if err != nil {
-		u.injector = nil
+		u.activeSensorConn = nil
 		log.Errorf("Could not derive sensor version info for cluster %s from context: %v. Auto-upgrade functionality will not work.", u.clusterID, err)
 		return false
 	}
 
-	u.reconcileInitialUpgradeStatus(versionInfo)
+	sensorVersion := u.reconcileInitialUpgradeStatus(versionInfo)
+
+	// Special case: if the sensor is too old to support auto upgrades, then don't send it a trigger that
+	// it will not know how to parse.
+	if u.upgradeStatus.Upgradability == storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED {
+		return false
+	}
 
 	// In either case, send the sensor a message telling it about the upgrade status.
 	var trigger *central.SensorUpgradeTrigger
@@ -128,6 +134,9 @@ func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, inj
 			log.Errorf("Could not send initial upgrade trigger: %v. Connection went away before being fully registered?", err)
 		}
 	}()
-	u.injector = injector
+	u.activeSensorConn = &activeSensorConnectionInfo{
+		injector:      injector,
+		sensorVersion: sensorVersion,
+	}
 	return true
 }

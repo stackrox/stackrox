@@ -5,6 +5,16 @@ ignored=0
 total=0
 status=0
 
+# Check if this is for a release tag. This matters because we don't vet test files on release tags.
+is_release=0
+# Not the most robust way of checking, but works given our make invocation.
+# In any case, we default to is_release=0, which means we check test files too,
+# so if someone changes the invocation, they will find out since vet won't pass
+# on test files on release tags.
+if [[ "$1" == "-tags" && "$2" == "release" ]]; then
+  is_release=1
+fi
+
 while read -r line; do
     if [[ "$line" =~ ^exit\ status\ ([[:digit:]]+)$ ]]; then
         status="${BASH_REMATCH[1]}"
@@ -21,6 +31,12 @@ while read -r line; do
             if [[ "$line_in_file" =~ //\ NOVET$ ]]; then
                 line_to_echo="(${line} -- IGNORED due to NOVET annotation)"
                 ignored=$((ignored + 1))
+            fi
+            if (( is_release )); then
+                if [[ "$filename" =~ _test\.go$ ]]; then
+                    line_to_echo="(${line} -- IGNORED because it's a test file and we're running on release tags)"
+                    ignored=$((ignored + 1))
+                fi
             fi
         fi
     fi

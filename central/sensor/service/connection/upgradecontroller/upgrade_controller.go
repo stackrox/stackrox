@@ -11,7 +11,6 @@ import (
 
 // UpgradeController controls auto-upgrading for one specific cluster.
 type UpgradeController interface {
-	ErrorSignal() concurrency.ReadOnlyErrorSignal
 	// RegisterConnection registers a new connection from a sensor, and a handle to send messages to it.
 	// The return value is a once-triggered error waitable that gets triggered if there is any critical issue
 	// with the upgrade controller.
@@ -29,11 +28,16 @@ type ClusterStorage interface {
 
 // New returns a new UpgradeController for the given cluster.
 func New(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concurrency.Flag) (UpgradeController, error) {
+	return newWithTimeoutProvider(clusterID, storage, autoTriggerEnabledFlag, defaultTimeoutProvider)
+}
+
+func newWithTimeoutProvider(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concurrency.Flag, timeouts timeoutProvider) (UpgradeController, error) {
 	u := &upgradeController{
 		autoTriggerEnabledFlag: autoTriggerEnabledFlag,
 		clusterID:              clusterID,
 		errorSig:               concurrency.NewErrorSignal(),
 		storage:                storage,
+		timeouts:               timeouts,
 	}
 
 	if err := u.initialize(); err != nil {

@@ -74,7 +74,7 @@ func (u *upgradeController) Trigger(ctx concurrency.Waitable) error {
 }
 
 func (u *upgradeController) doTrigger() (common.MessageInjector, *central.SensorUpgradeTrigger, error) {
-	if u.injector == nil {
+	if u.activeSensorConn == nil {
 		return nil, nil, errors.Errorf("no active sensor connection for cluster %s exists, cannot trigger upgrade", u.clusterID)
 	}
 
@@ -104,5 +104,5 @@ func (u *upgradeController) doTrigger() (common.MessageInjector, *central.Sensor
 
 	u.makeProcessActive(cluster, process)
 
-	return u.injector, u.active.trigger, nil
+	return u.activeSensorConn.injector, u.active.trigger, nil
 }

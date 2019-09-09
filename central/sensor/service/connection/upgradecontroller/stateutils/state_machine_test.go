@@ -111,15 +111,19 @@ type stageStorage struct {
 	lock         sync.Mutex
 }
 
-func (s *stageStorage) get() storage.UpgradeProgress_UpgradeState {
+func (s *stageStorage) getFullHistory() []storage.UpgradeProgress_UpgradeState {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	return s.stateHistory[len(s.stateHistory)-1]
+	return append([]storage.UpgradeProgress_UpgradeState{}, s.stateHistory...)
 }
 
 func (s *stageStorage) set(state storage.UpgradeProgress_UpgradeState) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	s.setNoLock(state)
+}
+
+func (s *stageStorage) setNoLock(state storage.UpgradeProgress_UpgradeState) {
 	s.stateHistory = append(s.stateHistory, state)
 }
 
@@ -130,8 +134,10 @@ func setupStoreAndMockUpgrader(t *testing.T, errPairs []workflowStagePair) (*sta
 
 	m := &mockUpgrader{
 		nextWorkflow: func(workflow string, stage sensorupgrader.Stage, upgraderErr string) string {
-			nextState, nextWorkflow, _ := DetermineNextStateAndWorkflowForUpgrader(store.get(), workflow, stage, upgraderErr)
-			store.set(nextState)
+			store.lock.Lock()
+			defer store.lock.Unlock()
+			nextState, nextWorkflow, _ := DetermineNextStateAndWorkflowForUpgrader(store.stateHistory[len(store.stateHistory)-1], workflow, stage, upgraderErr)
+			store.setNoLock(nextState)
 			return nextWorkflow
 		},
 		errPairs: errPairs,
@@ -145,6 +151,10 @@ func setupStoreAndMockUpgrader(t *testing.T, errPairs []workflowStagePair) (*sta
 	return store, m
 }
 
+func assertMockUpgraderDone(t *testing.T, m *mockUpgrader) {
+	assert.True(t, concurrency.PollWithTimeout(m.done.Get, 50*time.Millisecond, time.Second))
+}
+
 func TestStateMachineWithMockUpgraderHappyPath(t *testing.T) {
 	store, m := setupStoreAndMockUpgrader(t, nil)
 	store.set(storage.UpgradeProgress_UPGRADE_COMPLETE)
@@ -155,44 +165,44 @@ func TestStateMachineWithMockUpgraderHappyPath(t *testing.T) {
 		storage.UpgradeProgress_PRE_FLIGHT_CHECKS_COMPLETE,
 		storage.UpgradeProgress_UPGRADE_OPERATIONS_DONE,
 		storage.UpgradeProgress_UPGRADE_COMPLETE,
-	}, sliceutils.Unique(store.stateHistory))
+	}, sliceutils.Unique(store.getFullHistory()))
 }
 
 func TestStateMachineWithMockUpgraderFailBeforePreflightChecks(t *testing.T) {
 	store, m := setupStoreAndMockUpgrader(t, []workflowStagePair{
 		{workflow: sensorupgrader.RollForwardWorkflow, stage: sensorupgrader.FetchBundleStage},
 	})
-	assert.True(t, m.done.Get())
+	assertMockUpgraderDone(t, m)
 	assert.Equal(t, []storage.UpgradeProgress_UpgradeState{
 		storage.UpgradeProgress_UPGRADER_LAUNCHING,
 		storage.UpgradeProgress_UPGRADER_LAUNCHED,
 		storage.UpgradeProgress_UPGRADE_INITIALIZATION_ERROR,
-	}, sliceutils.Unique(store.stateHistory))
+	}, sliceutils.Unique(store.getFullHistory()))
 }
 
 func TestStateMachineWithMockUpgraderPreFlightChecksFail(t *testing.T) {
 	store, m := setupStoreAndMockUpgrader(t, []workflowStagePair{
 		{workflow: sensorupgrader.RollForwardWorkflow, stage: sensorupgrader.PreflightStage},
 	})
-	assert.True(t, m.done.Get())
+	assertMockUpgraderDone(t, m)
 	assert.Equal(t, []storage.UpgradeProgress_UpgradeState{
 		storage.UpgradeProgress_UPGRADER_LAUNCHING,
 		storage.UpgradeProgress_UPGRADER_LAUNCHED,
 		storage.UpgradeProgress_PRE_FLIGHT_CHECKS_FAILED,
-	}, sliceutils.Unique(store.stateHistory))
+	}, sliceutils.Unique(store.getFullHistory()))
 }
 
 func TestStateMachineWithMockUpgraderExecutionFailed(t *testing.T) {
 	store, m := setupStoreAndMockUpgrader(t, []workflowStagePair{
 		{workflow: sensorupgrader.RollForwardWorkflow, stage: sensorupgrader.ExecuteStage},
 	})
-	assert.True(t, m.done.Get())
+	assertMockUpgraderDone(t, m)
 	assert.Equal(t, []storage.UpgradeProgress_UpgradeState{
 		storage.UpgradeProgress_UPGRADER_LAUNCHING,
 		storage.UpgradeProgress_UPGRADER_LAUNCHED,
 		storage.UpgradeProgress_PRE_FLIGHT_CHECKS_COMPLETE,
 		storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK,
-	}, sliceutils.Unique(store.stateHistory))
+	}, sliceutils.Unique(store.getFullHistory()))
 }
 
 func TestStateMachineWithMockUpgraderExecutionFailedAndRollbackFailed(t *testing.T) {
@@ -200,12 +210,12 @@ func TestStateMachineWithMockUpgraderExecutionFailedAndRollbackFailed(t *testing
 		{workflow: sensorupgrader.RollForwardWorkflow, stage: sensorupgrader.ExecuteStage},
 		{workflow: sensorupgrader.RollBackWorkflow, stage: sensorupgrader.ExecuteStage},
 	})
-	assert.True(t, m.done.Get())
+	assertMockUpgraderDone(t, m)
 	assert.Equal(t, []storage.UpgradeProgress_UpgradeState{
 		storage.UpgradeProgress_UPGRADER_LAUNCHING,
 		storage.UpgradeProgress_UPGRADER_LAUNCHED,
 		storage.UpgradeProgress_PRE_FLIGHT_CHECKS_COMPLETE,
 		storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK,
 		storage.UpgradeProgress_UPGRADE_ERROR_ROLLBACK_FAILED,
-	}, sliceutils.Unique(store.stateHistory))
+	}, sliceutils.Unique(store.getFullHistory()))
 }
