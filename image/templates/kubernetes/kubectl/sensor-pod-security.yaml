@@ -135,8 +135,8 @@ spec:
     rule: 'RunAsAny'
   fsGroup:
     rule: 'RunAsAny'
----
 {{if ne .CollectionMethod "NO_COLLECTION" -}}
+---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
