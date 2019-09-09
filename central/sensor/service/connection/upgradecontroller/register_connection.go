@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -123,7 +124,9 @@ func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, inj
 	// In either case, send the sensor a message telling it about the upgrade status.
 	var trigger *central.SensorUpgradeTrigger
 	if u.active != nil {
-		trigger = u.active.trigger
+		// Since we send the trigger asynchronously, clone the object -- we do modify the trigger
+		// sometimes, and don't want to cause a race.
+		trigger = protoutils.CloneCentralSensorUpgradeTrigger(u.active.trigger)
 	} else {
 		trigger = &central.SensorUpgradeTrigger{} // empty trigger indicates "no upgrade should be in progress"
 	}

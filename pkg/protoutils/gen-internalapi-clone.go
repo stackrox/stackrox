@@ -13,3 +13,10 @@ import "github.com/stackrox/rox/generated/internalapi/central"
 func CloneCentralSensorEvent(val *central.SensorEvent) *central.SensorEvent {
 	return protoCloneWrapper(val).(*central.SensorEvent)
 }
+
+// *central.SensorUpgradeTrigger represents a generic proto type that we clone.
+
+// CloneCentralSensorUpgradeTrigger is a (generic) wrapper around proto.Clone that is strongly typed.
+func CloneCentralSensorUpgradeTrigger(val *central.SensorUpgradeTrigger) *central.SensorUpgradeTrigger {
+	return protoCloneWrapper(val).(*central.SensorUpgradeTrigger)
+}

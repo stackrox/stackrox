@@ -2,11 +2,13 @@ package upgradecontroller
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // UpgradeController controls auto-upgrading for one specific cluster.
@@ -31,7 +33,21 @@ func New(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concu
 	return newWithTimeoutProvider(clusterID, storage, autoTriggerEnabledFlag, defaultTimeoutProvider)
 }
 
+func validateTimeouts(t timeoutProvider) error {
+	errList := errorhelpers.NewErrorList("timeout validation")
+	for _, duration := range []time.Duration{t.StuckInSameStateTimeout(), t.UpgraderStartGracePeriod(), t.AbsoluteNoProgressTimeout(), t.StateReconcilePollInterval()} {
+		if duration <= 0 {
+			errList.AddStringf("invalid duration: %v", duration)
+		}
+	}
+	return errList.ToError()
+}
+
 func newWithTimeoutProvider(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concurrency.Flag, timeouts timeoutProvider) (UpgradeController, error) {
+	if err := validateTimeouts(timeouts); err != nil {
+		return nil, errorhelpers.PanicOnDevelopment(err)
+	}
+
 	u := &upgradeController{
 		autoTriggerEnabledFlag: autoTriggerEnabledFlag,
 		clusterID:              clusterID,

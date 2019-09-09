@@ -8,10 +8,12 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -26,13 +28,16 @@ const (
 	fakeCurrVersion = "2.5.29.0"
 
 	fakeOldVersion = "2.5.28.0"
+
+	absoluteNoProgressTimeout = 200 * time.Millisecond
 )
 
 var (
 	testTimeoutProvider = timeoutProvider{
-		upgraderStartGracePeriod:    time.Second,
-		stuckInSameStateTimeout:     time.Second,
-		stateReconcilerPollInterval: 10 * time.Millisecond,
+		upgraderStartGracePeriod:        100 * time.Millisecond,
+		upgraderStuckInSameStateTimeout: 100 * time.Millisecond,
+		stateReconcilerPollInterval:     10 * time.Millisecond,
+		absoluteNoProgressTimeout:       absoluteNoProgressTimeout,
 	}
 )
 
@@ -81,7 +86,7 @@ func (r *recordingInjector) InjectMessage(ctx concurrency.Waitable, msg *central
 	}
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger())
+	r.triggers = append(r.triggers, protoutils.CloneCentralSensorUpgradeTrigger(msg.GetSensorUpgradeTrigger()))
 	return nil
 }
 
@@ -105,6 +110,13 @@ type UpgradeCtrlTestSuite struct {
 
 func TestUpgradeCtrl(t *testing.T) {
 	suite.Run(t, new(UpgradeCtrlTestSuite))
+}
+
+func (suite *UpgradeCtrlTestSuite) validateTrigger(trigger *central.SensorUpgradeTrigger) {
+	suite.NotEmpty(trigger.GetUpgradeProcessId())
+	suite.NotEmpty(trigger.GetCommand())
+	suite.Equal("stackrox.io/main:"+fakeCurrVersion, trigger.GetImage())
+	suite.processMustBeActiveWithID(trigger.GetUpgradeProcessId())
 }
 
 func (suite *UpgradeCtrlTestSuite) createUpgradeCtrl() {
@@ -159,6 +171,9 @@ func (suite *UpgradeCtrlTestSuite) upgradeStateMustBe(upgradeState storage.Upgra
 	suite.True(concurrency.PollWithTimeout(func() bool {
 		return upgradeState == suite.getUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeState()
 	}, 10*time.Millisecond, time.Second), "Got state %s but expected %s", suite.getUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeState(), upgradeState)
+	if stateutils.TerminalStates.Contains(upgradeState) {
+		suite.False(suite.getUpgradeStatus().GetMostRecentProcess().GetActive())
+	}
 }
 
 func (suite *UpgradeCtrlTestSuite) processMustBeActiveWithID(id string) {
@@ -173,10 +188,7 @@ func (suite *UpgradeCtrlTestSuite) simulateInitiationOfAutoUpgrade() string {
 
 	// It should have triggered an auto upgrade.
 	triggerSent := suite.waitForTriggerNumber(1)
-	suite.NotEmpty(triggerSent.GetUpgradeProcessId())
-	suite.NotEmpty(triggerSent.GetCommand())
-	suite.Equal("stackrox.io/main:"+fakeCurrVersion, triggerSent.GetImage())
-	suite.processMustBeActiveWithID(triggerSent.GetUpgradeProcessId())
+	suite.validateTrigger(triggerSent)
 	return triggerSent.GetUpgradeProcessId()
 }
 
@@ -247,10 +259,7 @@ func (suite *UpgradeCtrlTestSuite) TestWithOldSensorNoAutoUpgradeFlag() {
 	// Now, trigger an upgrade.
 	suite.NoError(suite.upgradeCtrl.Trigger(context.Background()))
 	triggerSent := suite.waitForTriggerNumber(2)
-	suite.NotEmpty(triggerSent.GetUpgradeProcessId())
-	suite.NotEmpty(triggerSent.GetCommand())
-	suite.Equal("stackrox.io/main:"+fakeCurrVersion, triggerSent.GetImage())
-	suite.processMustBeActiveWithID(triggerSent.GetUpgradeProcessId())
+	suite.validateTrigger(triggerSent)
 
 	// Shouldn't be able to re-trigger when an upgrade is in progress.
 	suite.Error(suite.upgradeCtrl.Trigger(context.Background()))
@@ -325,6 +334,48 @@ func (suite *UpgradeCtrlTestSuite) TestUpgradeExecutionErrorAndRollback() {
 	//Now, an old sensor checks in.
 	suite.registerConnectionFromNonAncientSensorVersion(fakeOldVersion)
 	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK)
+}
+
+// Failure cases where upgrades never start.
+func (suite *UpgradeCtrlTestSuite) TestUpgradeNeverStarts() {
+	suite.simulateInitiationOfAutoUpgrade()
+	time.Sleep(absoluteNoProgressTimeout)
+	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADE_TIMED_OUT)
+}
+
+func (suite *UpgradeCtrlTestSuite) TestUpgraderJustDisappears() {
+	processID := suite.simulateInitiationOfAutoUpgrade()
+	suite.sensorSaysUpgraderIsUp(processID)
+	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADER_LAUNCHING)
+	suite.upgraderCheckInAndRespMustBe(processID, "", sensorupgrader.UnsetStage, sensorupgrader.RollForwardWorkflow)
+	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADER_LAUNCHED)
+	time.Sleep(absoluteNoProgressTimeout)
+	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADE_TIMED_OUT)
+}
+
+func (suite *UpgradeCtrlTestSuite) TestSensorGoesAwayAndComesBackInTheMiddle() {
+	suite.registerConnectionFromNonAncientSensorVersion(fakeOldVersion)
+
+	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE)
+
+	// It should send an empty trigger, since we don't want the sensor to auto-upgrade
+	suite.Equal(&central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
+
+	// Now, trigger an upgrade.
+	suite.NoError(suite.upgradeCtrl.Trigger(context.Background()))
+	triggerSent := suite.waitForTriggerNumber(2)
+	suite.validateTrigger(triggerSent)
+
+	// The sensor connection goes away...
+	suite.cancelSensorCtx()
+	time.Sleep(100 * time.Millisecond)
+
+	// ... and it comes back.
+	suite.registerConnectionFromNonAncientSensorVersion(fakeOldVersion)
+	// It should get another trigger
+	triggerSent = suite.waitForTriggerNumber(3)
+	suite.validateTrigger(triggerSent)
+
 }
 
 // TESTS THAT DON'T USE THE SUITE ARE BELOW.
