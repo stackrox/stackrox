@@ -84,10 +84,6 @@ const upgradeStates = {
         displayValue: 'Upgrade initializing',
         type: 'progress'
     },
-    UPGRADE_TRIGGER_SENT: {
-        displayValue: 'Upgrade trigger sent',
-        type: 'progress'
-    },
     UPGRADER_LAUNCHING: {
         displayValue: 'Upgrader launching',
         type: 'progress'

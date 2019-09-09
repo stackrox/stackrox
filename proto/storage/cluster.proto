@@ -138,11 +138,10 @@ message UpgradeProgress {
         UPGRADE_INITIALIZING          = 0;
 
         // In-progress states.
-        UPGRADE_TRIGGER_SENT          = 1;
-        UPGRADER_LAUNCHING            = 2;
-        UPGRADER_LAUNCHED             = 3;
-        PRE_FLIGHT_CHECKS_COMPLETE    = 4;
-        UPGRADE_OPERATIONS_DONE       = 6;
+        UPGRADER_LAUNCHING            = 1;
+        UPGRADER_LAUNCHED             = 2;
+        PRE_FLIGHT_CHECKS_COMPLETE    = 3;
+        UPGRADE_OPERATIONS_DONE       = 4;
 
 
         // The success state.

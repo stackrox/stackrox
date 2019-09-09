@@ -254,27 +254,6 @@ describe('cluster helpers', () => {
             expect(displayValue).toEqual(expected);
         });
 
-        it('should return "Upgrade trigger sent" if upgradeState is UPGRADE_TRIGGER_SENT', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADE_TRIGGER_SENT'
-                            }
-                        }
-                    }
-                }
-            };
-
-            const displayValue = parseUpgradeStatus(testCluster);
-
-            const expected = { displayValue: 'Upgrade trigger sent', type: 'progress' };
-            expect(displayValue).toEqual(expected);
-        });
-
         it('should return "Upgrader launching" if upgradeState is UPGRADER_LAUNCHING', () => {
             const testCluster = {
                 status: {

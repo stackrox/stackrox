@@ -39,9 +39,8 @@ var (
 			currentStateMatch: anyStateFrom(
 				storage.UpgradeProgress_UPGRADE_INITIALIZING, // This should basically never happen, but being defensive can't hurt.
 
-				// These two states would be a little early to hear from the upgrader, but still possible in case
+				// This would be a little early to hear from the upgrader, but still possible in case
 				// the upgrader happens to reach out before sensor for whatever reason.
-				storage.UpgradeProgress_UPGRADE_TRIGGER_SENT,
 				storage.UpgradeProgress_UPGRADER_LAUNCHING,
 
 				storage.UpgradeProgress_UPGRADER_LAUNCHED, // This is the stage where we normally expect to hear from the upgrader.
