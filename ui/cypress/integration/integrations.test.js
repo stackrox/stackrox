@@ -109,7 +109,10 @@ describe('API Token Creation Flow', () => {
     });
 });
 
-describe('Cluster Creation Flow', () => {
+// TODO: change this test suite to use the new Cluster pages, instead of an Integrations modal,
+//       after ROX_SENSOR_AUTOUPGRADE=true becomes the default;
+//       then, un-skip the test suite
+xdescribe('Cluster Creation Flow', () => {
     withAuth();
 
     beforeEach(() => {

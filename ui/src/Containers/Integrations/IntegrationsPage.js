@@ -13,7 +13,7 @@ import { actions as apiTokenActions } from 'reducers/apitokens';
 import { actions as integrationActions } from 'reducers/integrations';
 import { actions as clusterActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
-import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
+import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import APITokensModal from './APITokens/APITokensModal';
 
 class IntegrationsPage extends Component {
@@ -97,6 +97,30 @@ class IntegrationsPage extends Component {
         const { type } = orchestrator;
         const clusters = this.props.clusters.filter(cluster => cluster.type === type);
         return clusters;
+    };
+
+    // DEPRECATED: only show orchestrators section if ROX_SENSOR_AUTOUPGRADE not set
+    getOrchestratorsSection = orchestrators => {
+        const autoUpgradeEnabled = isBackendFeatureFlagEnabled(
+            this.props.featureFlags,
+            knownBackendFlags.ROX_SENSOR_AUTOUPGRADE,
+            false
+        );
+
+        if (autoUpgradeEnabled) {
+            return null;
+        }
+
+        return (
+            <section className="mb-6">
+                <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
+                    Orchestrators &amp; Container Platforms
+                </h2>
+                <div className="flex flex-col items-center w-full">
+                    <div className="flex flex-wrap w-full -mx-6 p-3">{orchestrators}</div>
+                </div>
+            </section>
+        );
     };
 
     openIntegrationModal = integrationCategory => {
@@ -213,11 +237,15 @@ class IntegrationsPage extends Component {
 
     render() {
         const imageIntegrations = this.renderIntegrationTiles('imageIntegrations');
-        const orchestrators = this.renderIntegrationTiles('orchestrators');
         const plugins = this.renderIntegrationTiles('plugins');
         const authPlugins = this.renderIntegrationTiles('authPlugins');
         const authProviders = this.renderIntegrationTiles('authProviders');
         const backups = this.renderIntegrationTiles('backups');
+
+        // DEPRECATED: only show orchestrators section if ROX_SENSOR_AUTOUPGRADE not set
+        const orchestrators = this.renderIntegrationTiles('orchestrators');
+        const orchestratorsSection = this.getOrchestratorsSection(orchestrators);
+
         return (
             <div className="h-full flex flex-col md:w-full bg-base-200" id="integrationsPage">
                 <div className="flex flex-no-shrink">
@@ -235,14 +263,7 @@ class IntegrationsPage extends Component {
                         </div>
                     </section>
 
-                    <section className="mb-6">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Orchestrators &amp; Container Platforms
-                        </h2>
-                        <div className="flex flex-col items-center w-full">
-                            <div className="flex flex-wrap w-full -mx-6 p-3">{orchestrators}</div>
-                        </div>
-                    </section>
+                    {orchestratorsSection}
 
                     <section className="mb-6">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
