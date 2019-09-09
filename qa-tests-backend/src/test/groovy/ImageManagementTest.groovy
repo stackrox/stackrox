@@ -26,7 +26,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT, Integration])
-    def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry"() {
+    def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
         when:
         "Update Policy to build time"
         def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
@@ -46,23 +46,23 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        policy                                        | imageRegistry            | imageRemote              | imageTag
-        "Latest tag"                                  | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
+        policy                            | imageRegistry            | imageRemote              | imageTag | note
+        "Latest tag"                      | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
         //intentionally use the same policy twice to make sure alert count does not increment
-        "Latest tag"                                  | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "90-Day Image Age"                            | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
+        "Latest tag"                      | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | "(repeat)"
+        "90-Day Image Age"                | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
         // verify Azure registry
-        "90-Day Image Age"                            | "stackroxacr.azurecr.io" | "nginx" | "1.12"
-        "Ubuntu Package Manager in Image"             | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "Curl in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "Fixable CVSS >= 7"                           | "us.gcr.io" | "stackrox-ci/nginx" | "1.11"
-        "Wget in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "Apache Struts: CVE-2017-5638"                | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
+        "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
+        "Ubuntu Package Manager in Image" | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
+        "Curl in Image"                   | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
+        "Fixable CVSS >= 7"               | "us.gcr.io"              | "stackrox-ci/nginx"      | "1.11"   | ""
+        "Wget in Image"                   | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
+        "Apache Struts: CVE-2017-5638"    | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
     }
 
     @Unroll
     @Category([BAT, Integration])
-    def "Verify CI/CD Integration Endpoint Whitelists - #policy"() {
+    def "Verify CI/CD Integration Endpoint Whitelists - #policy - #whitelists"() {
         when:
         "Update Policy to build time and mark policy whitelist"
         def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])

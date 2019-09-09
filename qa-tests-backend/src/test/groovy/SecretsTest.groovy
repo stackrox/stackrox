@@ -18,7 +18,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    def "Verify the secret api can return the secret's information when adding a new secret : C964"() {
+    def "Verify the secret api can return the secret's information when adding a new secret"() {
         when:
         "Create a Secret"
         String secretName = "qasec"
@@ -34,7 +34,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    def "Verify the secret item should show the binding deployments : C977"() {
+    def "Verify the secret item should show the binding deployments"() {
         when:
         "Create a Secret"
         String secretName = "qasec"
@@ -59,7 +59,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    def "Verify the secret should not show the deleted binding deployment : C1020"() {
+    def "Verify the secret should not show the deleted binding deployment"() {
         when:
         "Create a Secret and bind deployment with it"
         String secretName = "qasec"
@@ -100,7 +100,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    def "Verify the secret information should not be infected by the previous secrets : C966"() {
+    def "Verify the secret information should not be infected by the previous secrets"() {
         when:
         "Create a Secret and bind deployment with it"
         String secretName = "qasec"
@@ -131,7 +131,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    def "Verify secrets page should not be messed up when a deployment's secret changed : C1019"() {
+    def "Verify secrets page should not be messed up when a deployment's secret changed"() {
         when:
         "Create a Secret and bind deployment with it"
         String secretNameOne = "qasec1"

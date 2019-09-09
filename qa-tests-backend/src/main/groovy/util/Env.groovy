@@ -49,5 +49,21 @@ class Env {
     static String mustGetClientCAPath() {
         return mustGetEnv("CLIENT_CA_PATH")
     }
+
+    static String mustGetCiJobName() {
+        return mustGetEnv("CI_JOB_NAME")
+    }
+
+    static String mustGetImageTag() {
+        return mustGetEnv("IMAGE_TAG")
+    }
+
+    static String mustGetResultsFilePath() {
+        return mustGetEnv("RESULTS_FILE_PATH")
+    }
+
+    static String mustGetTestRailPassword() {
+        return mustGetEnv("TESTRAIL_PASSWORD")
+    }
 }
 

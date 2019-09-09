@@ -39,7 +39,7 @@ class RuntimePolicyTest extends BaseSpecification  {
 
     @Unroll
     @Category([BAT, SMOKE])
-    def "Verify runtime policy : #policyName can be triggered"() {
+    def "Verify runtime policy : #policyName can be triggered - #depName"() {
         when:
         "Validate if policy is present"
         assert getPolicies().stream()
@@ -58,8 +58,6 @@ class RuntimePolicyTest extends BaseSpecification  {
         DEPLOYMENTAPTGET | "Ubuntu Package Manager Execution"
 
         DEPLOYMENTAPT | "Ubuntu Package Manager Execution"
-
-        DEPLOYMENTAPTGET | "Ubuntu Package Manager Execution"
     }
 
 }

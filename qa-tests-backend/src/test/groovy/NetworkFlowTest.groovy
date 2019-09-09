@@ -450,7 +450,7 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
-    def "Verify network policy generator apply/undo with delete modes: #deleteMode"() {
+    def "Verify network policy generator apply/undo with delete modes: #deleteMode #note"() {
         //skip on OS for now
         Assume.assumeTrue(Env.mustGetOrchestratorType() == OrchestratorTypes.K8S)
 
@@ -546,14 +546,14 @@ class NetworkFlowTest extends BaseSpecification {
 
         where:
         "data inputs:"
-        deleteMode | _
-        DeleteExistingPoliciesMode.NONE | _
+        deleteMode | note
+        DeleteExistingPoliciesMode.NONE | ""
 
         // Run same tests a second time to make sure we can apply -> undo -> apply again
-        DeleteExistingPoliciesMode.NONE | _
+        DeleteExistingPoliciesMode.NONE | "(repeat)"
 
-        DeleteExistingPoliciesMode.GENERATED_ONLY | _
-        DeleteExistingPoliciesMode.ALL | _
+        DeleteExistingPoliciesMode.GENERATED_ONLY | ""
+        DeleteExistingPoliciesMode.ALL | ""
     }
 
     @Category([BAT, NetworkFlowVisualization])

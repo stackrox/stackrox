@@ -397,9 +397,29 @@ storeDBBackupArtifact: &storeDBBackupArtifact
     path: db-backup
     destination: db-backup
 
+updateTestRail: &updateTestRail
+  run:
+    name: Update test results in TestRail
+    command: |
+      if [[ -z "${CIRCLE_TAG}" ]]; then
+        echo "Only run TestRail updater on tag builds... skipping."
+        exit 0
+      fi
+
+      ls -la qa-tests-backend/gradle-results
+      export RESULTS_FILE_PATH=$(pwd)/qa-tests-backend/gradle-results
+      export CI_JOB_NAME=${CIRCLE_JOB}
+      export IMAGE_TAG=${CIRCLE_TAG}
+      echo $RESULTS_FILE_PATH
+      echo $CI_JOB_NAME
+      echo $IMAGE_TAG
+      make -C qa-tests-backend update-test-rail
+    when: always
+
 version: 2.1
 
 commands:
+
   check-label-to-skip-tests:
     description: "Checks GitHub for the given label, and skips the tests if we're on a PR, and the label is present."
     parameters:
@@ -677,6 +697,8 @@ commands:
             fi
 
       - *collectK8sLogs
+      - copy-gradle-files:
+          target-dir: ${CIRCLE_JOB}-part1
 
       - run:
           name: QA Automation Platform Part 2
@@ -693,6 +715,10 @@ commands:
 
       - *storeQATestResults
       - *storeQASpockReports
+      - copy-gradle-files:
+          target-dir: ${CIRCLE_JOB}-part2
+
+      - *updateTestRail
 
       - *collectK8sLogs
       - *backupDB
@@ -810,6 +836,19 @@ commands:
             fi
             merge_base="$(git merge-base HEAD origin/master)"
             { git diff --name-only "${merge_base}" || echo "???" ; } | egrep -qv '^ui/' || circleci step halt
+
+  copy-gradle-files:
+    description: "Copy the gradle results files into a common directory to later parse by the TestRail updater"
+    parameters:
+      target-dir:
+        type: string
+    steps:
+    - run:
+        name: Copy gradle test result files
+        command: |
+          mkdir -p qa-tests-backend/gradle-results
+          mv qa-tests-backend/build/reports/tests/test/classes/ qa-tests-backend/gradle-results/<< parameters.target-dir >>
+        when: always
 
 jobs:
 
@@ -1589,6 +1628,10 @@ jobs:
 
       - *storeQATestResults
       - *storeQASpockReports
+      - copy-gradle-files:
+          target-dir: upgrade-test
+
+      - *updateTestRail
 
       - run:
           name: Deploy sensor via upgrader
@@ -1900,6 +1943,8 @@ jobs:
             fi
 
       - *collectK8sLogs
+      - copy-gradle-files:
+          target-dir: openshift-part1
 
       - run:
           name: QA Automation Platform Part 2
@@ -1911,6 +1956,10 @@ jobs:
 
       - *storeQATestResults
       - *storeQASpockReports
+      - copy-gradle-files:
+          target-dir: openshift-part2
+
+      - *updateTestRail
 
       - *backupDB
       - *storeDBBackupArtifact
@@ -2074,6 +2123,10 @@ jobs:
 
       - *storeQATestResults
       - *storeQASpockReports
+      - copy-gradle-files:
+          target-dir: kops-tests
+
+      - *updateTestRail
 
       - *restoreUI
       - *determineWhetherToRunUIDevServer
