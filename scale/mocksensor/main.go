@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strings"
 	"sync/atomic"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -18,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -26,6 +29,7 @@ var (
 	logger           = logging.LoggerForModule()
 	deploymentIDBase = uuid.NewV4().String()
 	deploymentCount  = int64(0)
+	admissionCount   = int64(0)
 )
 
 func getDeploymentCount() int {
@@ -36,10 +40,20 @@ func incrementDeploymentCount() {
 	atomic.AddInt64(&deploymentCount, 1)
 }
 
+func getAdmissionCount() int {
+	return int(atomic.LoadInt64(&admissionCount))
+}
+
+func incrementAndGetAdmissionCount() int {
+	return int(atomic.AddInt64(&admissionCount, 1))
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	deploymentInterval := flag.Duration("deployment-interval", 2000*time.Millisecond, "interval for sending deployments")
 	maxDeployments := flag.Int("max-deployments", 200, "maximum number of deployments to send")
+	admissionInterval := flag.Duration("admission-interval", 2000*time.Millisecond, "interval for sending admission controller requests")
+	maxAdmissionRequests := flag.Int("max-admission-requests", 0, "maximum number of admission controller requests to send")
 	indicatorInterval := flag.Duration("indicator-interval", 1000*time.Millisecond, "interval for sending indicators")
 	maxIndicators := flag.Int("max-indicators", 5000, "maximum number of indicators to send")
 	networkFlowInterval := flag.Duration("network-flow-interval", 30*time.Second, "interval for sending network flow diffs")
@@ -64,6 +78,8 @@ func main() {
 	}
 
 	client := central.NewSensorServiceClient(conn)
+	admissionClient := v1.NewDetectionServiceClient(conn)
+	clusterClient := v1.NewClustersServiceClient(conn)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -93,9 +109,14 @@ func main() {
 
 	go sendNetworkFlows(stream, *networkFlowInterval, *maxNetworkFlows, *maxUpdates, *flowDeleteRate, &networkFlowSignal)
 
+	admissionControllerSignal := concurrency.NewSignal()
+
+	go sendAdmissionControllerRequests(ctx, clusterClient, admissionClient, *admissionInterval, *maxAdmissionRequests, &admissionControllerSignal)
+
 	deploymentSignal.Wait()
 	indicatorSignal.Wait()
 	networkFlowSignal.Wait()
+	admissionControllerSignal.Wait()
 
 	logger.Infof("All sending done. The mock sensor will now just sleep forever.")
 	time.Sleep(365 * 24 * time.Hour)
@@ -224,5 +245,69 @@ func generateNetworkFlowUpdate(maxNetworkFlows int, flowDeleteRate float64) *cen
 	return &central.NetworkFlowUpdate{
 		Updated: flows,
 		Time:    timestamp.Now().GogoProtobuf(),
+	}
+}
+
+func sendAdmissionControllerRequests(ctx context.Context, clusterClient v1.ClustersServiceClient, admissionClient v1.DetectionServiceClient, admissionInterval time.Duration, maxAdmissionRequests int, signal *concurrency.Signal) {
+	defer signal.Signal()
+	ticker := time.NewTicker(admissionInterval)
+	defer ticker.Stop()
+
+	var clusterID string
+	if maxAdmissionRequests > 0 {
+		admissionControllerConfig := &storage.AdmissionControllerConfig{}
+		admissionControllerConfig.Enabled = true
+		admissionControllerConfig.TimeoutSeconds = 999
+		cluster := &storage.Cluster{
+			Id:                  "",
+			Name:                "prod cluster",
+			Type:                1,
+			MainImage:           defaults.MainImageRepo(),
+			CollectorImage:      "",
+			CentralApiEndpoint:  "central.stackrox:443",
+			MonitoringEndpoint:  "",
+			CollectionMethod:    0,
+			AdmissionController: true,
+			Status:              nil,
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AdmissionControllerConfig: admissionControllerConfig,
+			},
+		}
+		response, err := clusterClient.PostCluster(ctx, cluster)
+		if err != nil && !strings.Contains(err.Error(), "AlreadyExists") {
+			logging.Fatal(err)
+		}
+		clusterID = response.GetCluster().GetId()
+	}
+
+	wg := concurrency.NewWaitGroup(maxAdmissionRequests)
+	start := time.Now()
+	for getAdmissionCount() <= maxAdmissionRequests {
+		<-ticker.C
+		admissionNum := incrementAndGetAdmissionCount()
+		go func() {
+			defer wg.Add(-1)
+			if _, err := admissionClient.DetectDeployTime(ctx, getDeployDetectionRequest(admissionNum, clusterID)); err != nil {
+				logger.Errorf("Error: %v", err)
+			}
+		}()
+	}
+	<-wg.Done()
+	logger.Infof("Finished writing %d admission controller requests in %s", getAdmissionCount(), time.Since(start))
+}
+
+func getDeployDetectionRequest(reqNum int, clusterID string) *v1.DeployDetectionRequest {
+	deployment := fixtures.LightweightDeployment()
+	id := getGeneratedDeploymentID(reqNum)
+	deployment.Id = id
+	deployment.Name = fmt.Sprintf("nginx%d", reqNum)
+	deployment.ClusterId = clusterID
+	return &v1.DeployDetectionRequest{
+		Resource: &v1.DeployDetectionRequest_Deployment{
+			Deployment: deployment,
+		},
+		NoExternalMetadata: true,
+		EnforcementOnly:    true,
+		ClusterId:          clusterID,
 	}
 }
