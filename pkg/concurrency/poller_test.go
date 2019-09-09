@@ -46,6 +46,18 @@ func TestPollerWaitWithTimeout(t *testing.T) {
 	a.False(WaitWithTimeout(p, 200*time.Millisecond))
 }
 
+func TestPollWithTimeout(t *testing.T) {
+	assert.False(t, PollWithTimeout(func() bool {
+		return false
+	}, 5*time.Millisecond, 50*time.Millisecond))
+	var ctr int
+	assert.True(t, PollWithTimeout(func() bool {
+		ctr++
+		return ctr > 2
+	}, 5*time.Millisecond, 50*time.Millisecond))
+	assert.Equal(t, 3, ctr)
+}
+
 func TestPollerStops(t *testing.T) {
 	a := assert.New(t)
 

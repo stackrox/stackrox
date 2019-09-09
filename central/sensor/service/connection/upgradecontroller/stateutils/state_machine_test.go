@@ -138,10 +138,9 @@ func setupStoreAndMockUpgrader(t *testing.T, errPairs []workflowStagePair) (*sta
 	}
 	go m.run()
 
-	enoughRunsPoller := concurrency.NewPoller(func() bool {
+	assert.True(t, concurrency.PollWithTimeout(func() bool {
 		return m.done.Get() || m.getNumRunsDone() > 10
-	}, 50*time.Millisecond)
-	assert.True(t, concurrency.WaitWithTimeout(enoughRunsPoller, time.Second), m.getNumRunsDone())
+	}, 50*time.Millisecond, time.Second), m.getNumRunsDone())
 
 	return store, m
 }
@@ -149,8 +148,7 @@ func setupStoreAndMockUpgrader(t *testing.T, errPairs []workflowStagePair) (*sta
 func TestStateMachineWithMockUpgraderHappyPath(t *testing.T) {
 	store, m := setupStoreAndMockUpgrader(t, nil)
 	store.set(storage.UpgradeProgress_UPGRADE_COMPLETE)
-	donePoller := concurrency.NewPoller(m.done.Get, 10*time.Millisecond)
-	assert.True(t, concurrency.WaitWithTimeout(donePoller, time.Second))
+	assert.True(t, concurrency.PollWithTimeout(m.done.Get, 10*time.Millisecond, time.Second))
 	assert.Equal(t, []storage.UpgradeProgress_UpgradeState{
 		storage.UpgradeProgress_UPGRADER_LAUNCHING,
 		storage.UpgradeProgress_UPGRADER_LAUNCHED,

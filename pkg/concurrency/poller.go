@@ -57,3 +57,13 @@ func (p *Poller) Wait() {
 func (p *Poller) Stop() bool {
 	return !p.stopped.TestAndSet(true)
 }
+
+// PollWithTimeout is a utility wrapper around Poller and WaitWithTimeout.
+// It polls, at the duration specified by interval, until the passed condition func returns true.
+// It gives up after timeout.
+// It returns true if the condition was met, and false if there was a timeout.
+func PollWithTimeout(condition func() bool, interval, timeout time.Duration) bool {
+	p := NewPoller(condition, interval)
+	defer p.Stop()
+	return WaitWithTimeout(p, timeout)
+}
