@@ -17,7 +17,6 @@ const VulnsTable = ({ vulns, containsFixableCVEs }) => {
                     >
                         {ci.value}
                     </a>
-                    - {ci.original.summary}
                 </div>
             ),
             headerClassName: 'font-600 border-b border-base-300 flex items-end bg-primary-300',

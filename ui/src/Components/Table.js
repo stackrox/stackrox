@@ -64,6 +64,7 @@ class Table extends Component {
             );
             classes.push(rowInfo.original.disabled ? 'data-test-disabled' : '');
         }
+        classes.push(this.props.onRowClick ? '' : 'cursor-default');
         return {
             onClick: () => {
                 if (this.props.onRowClick) this.props.onRowClick(rowInfo.original);

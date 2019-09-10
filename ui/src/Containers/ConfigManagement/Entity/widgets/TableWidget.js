@@ -26,7 +26,6 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
         <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
     );
     function onRowClick(row) {
-        if (SubComponent || hasNestedTable) return; // If the "SubComponent" exists, clicking on the row shouldn't do anything because the expander is used
         const id = resolvePath(row, idAttribute);
         const url = URLService.getURL(match, location)
             .push(entityType, id)
@@ -43,7 +42,8 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
             <Table
                 columns={columns}
                 rows={rows}
-                onRowClick={onRowClick}
+                // If "SubComponent" exists, clicking on the row should do nothing because the expander is used
+                onRowClick={SubComponent || hasNestedTable ? null : onRowClick}
                 selectedRowId={selectedRowId}
                 idAttribute={idAttribute}
                 noDataText={noDataText}
