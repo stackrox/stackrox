@@ -89,7 +89,7 @@ const networkGraphFilterMode = (state = filterModes.active, action) => {
     return state;
 };
 
-const networkEdgeMap = (state = {}, action) => {
+const networkEdgeMap = (state = null, action) => {
     if (action.type === types.SET_NETWORK_EDGE_MAP) {
         const { flowGraph, policyGraph } = action;
         const allGraph = Object.assign({}, flowGraph, policyGraph);

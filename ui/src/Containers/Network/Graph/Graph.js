@@ -23,7 +23,7 @@ class Graph extends Component {
         filterState: PropTypes.number.isRequired,
 
         networkNodeMap: PropTypes.shape({}).isRequired,
-        networkEdgeMap: PropTypes.shape({}).isRequired,
+        networkEdgeMap: PropTypes.shape({}),
 
         networkPolicyGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(PropTypes.shape({}))
@@ -48,12 +48,20 @@ class Graph extends Component {
     };
 
     static defaultProps = {
+        networkEdgeMap: null,
         networkFlowGraph: null
     };
 
     shouldComponentUpdate(nextProps) {
-        const { networkFlowGraphUpdateKey, filterState, isLoading, wizardOpen } = this.props;
+        const {
+            networkFlowGraphUpdateKey,
+            filterState,
+            isLoading,
+            wizardOpen,
+            networkEdgeMap
+        } = this.props;
         return (
+            !networkEdgeMap ||
             nextProps.networkFlowGraphUpdateKey !== networkFlowGraphUpdateKey ||
             nextProps.filterState !== filterState ||
             nextProps.isLoading !== isLoading ||
