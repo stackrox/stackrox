@@ -58,7 +58,7 @@ export const DEPLOYMENT_FRAGMENT = gql`
     }
 `;
 export const DEPLOYMENT_QUERY = gql`
-    query getDeployment($id: ID!) {
+    query getDeployment($id: ID!, $query: String) {
         deployment(id: $id) {
             ...deploymentFields
         }
