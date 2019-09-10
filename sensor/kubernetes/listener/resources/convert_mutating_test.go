@@ -125,6 +125,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 								Tag:      "latest",
 								FullName: "docker.io/stackrox/kafka:latest",
 							},
+							Pullable: true,
 						},
 						Config: &storage.ContainerConfig{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},

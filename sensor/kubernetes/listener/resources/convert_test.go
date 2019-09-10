@@ -427,8 +427,9 @@ func TestConvert(t *testing.T) {
 						Status: v1.PodStatus{
 							ContainerStatuses: []v1.ContainerStatus{
 								{
-									Name:  "container1",
-									Image: "docker.io/stackrox/kafka:latest",
+									Name:    "container1",
+									Image:   "docker.io/stackrox/kafka:latest",
+									ImageID: "docker://docker.io/stackrox/kafka@sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 								},
 								{
 									Name:        "container2",
@@ -506,6 +507,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						Image: &storage.ContainerImage{
+							Id: "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 							Name: &storage.ImageName{
 								Registry: "docker.io",
 								Remote:   "stackrox/kafka",
