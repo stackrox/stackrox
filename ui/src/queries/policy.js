@@ -28,22 +28,6 @@ export const POLICY_FRAGMENT = gql`
         whitelists {
             expiration
         }
-        alerts {
-            id
-            deployment {
-                id
-                name
-            }
-            enforcement {
-                action
-                message
-            }
-            policy {
-                id
-                severity
-            }
-            time
-        }
     }
 `;
 export const POLICY = gql`
