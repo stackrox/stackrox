@@ -240,7 +240,7 @@ const ClustersPage = ({
     }
 
     function getUpgradeStatusField(original) {
-        const status = parseUpgradeStatus(original);
+        const status = parseUpgradeStatus(get(original, 'status.upgradeStatus', null));
         if (status.action) {
             status.action.actionHandler = e => {
                 e.stopPropagation();
@@ -371,6 +371,17 @@ const ClustersPage = ({
         </div>
     ));
 
+    function getCurrentUpgradeStatusOrNull() {
+        if (!currentClusters || !currentClusters.length) {
+            return null;
+        }
+        const selectedCluster = currentClusters.find(cluster => cluster.id === selectedClusterId);
+        if (!selectedCluster) {
+            return null;
+        }
+        return get(selectedCluster, 'status.upgradeStatus', null);
+    }
+
     return (
         <section className="flex flex-1 flex-col h-full">
             <div className="flex flex-1 flex-col">
@@ -407,6 +418,7 @@ const ClustersPage = ({
                     <ClustersSidePanel
                         selectedClusterId={selectedClusterId}
                         setSelectedClusterId={setSelectedClusterId}
+                        upgradeStatus={getCurrentUpgradeStatusOrNull()}
                     />
                 </div>
             </div>

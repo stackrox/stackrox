@@ -112,7 +112,7 @@ const upgradeStates = {
         }
     },
     PRE_FLIGHT_CHECKS_FAILED: {
-        displayValue: 'Pre-flight checks failed.',
+        displayValue: 'Pre-flight checks failed',
         type: 'failure',
         action: {
             actionText: 'Retry upgrade'
@@ -151,7 +151,7 @@ const upgradeStates = {
         }
     },
     unknown: {
-        displayValue: 'Undeterminate upgrade state!',
+        displayValue: 'Indeterminate upgrade state!',
         type: 'intervention'
     }
 };
@@ -187,7 +187,7 @@ export function formatSensorVersion(status) {
     return (status && status.sensorVersion) || 'Not Running';
 }
 
-export function formatUpgradeMessage(upgradeStatus) {
+export function formatUpgradeMessage(upgradeStatus, detail) {
     if (upgradeStatus.type === 'current') {
         return null;
     }
@@ -196,7 +196,8 @@ export function formatUpgradeMessage(upgradeStatus) {
             upgradeStatus.displayValue ||
             (upgradeStatus.action && upgradeStatus.action.actionText) ||
             'Unknown status',
-        type: ''
+        type: '',
+        detail
     };
     switch (upgradeStatus.type) {
         case 'failure': {
@@ -214,25 +215,52 @@ export function formatUpgradeMessage(upgradeStatus) {
     return message;
 }
 
-export function parseUpgradeStatus(cluster) {
-    const upgradability = get(cluster, 'status.upgradeStatus.upgradability', undefined);
+// This function looks at a cluster upgrade status, and figures out whether the most recent
+// upgrade has any information that is of relevance to the user.
+function hasRelevantInformationFromMostRecentUpgrade(upgradeStatus) {
+    // No information from the most recent upgrade -- probably means no upgrade has been done before.
+    // Not interesting.
+    if (get(upgradeStatus, 'mostRecentProcess', null) === null) {
+        return false;
+    }
+    const isActive = get(upgradeStatus, 'mostRecentProcess.active', false);
+    // The upgrade is currently active. Definitely show the user information about it.
+    if (isActive) {
+        return true;
+    }
+
+    // The upgrade is not active. This means that this is the most recently completed upgrade.
+    // If it was COMPLETE, the information is not interesting to the user.
+    // Else, we show the user the information.
+    return (
+        get(upgradeStatus, 'mostRecentProcess.progress.upgradeState', undefined) !==
+        'UPGRADE_COMPLETE'
+    );
+}
+
+export function getUpgradeStatusDetail(upgradeStatus) {
+    return get(upgradeStatus, 'mostRecentProcess.progress.upgradeStatusDetail', '');
+}
+
+export function parseUpgradeStatus(upgradeStatus) {
+    const upgradability = get(upgradeStatus, 'upgradability', undefined);
     switch (upgradability) {
         case 'UP_TO_DATE':
         case 'MANUAL_UPGRADE_REQUIRED': {
             return upgradeStates[upgradability];
         }
+        // Auto upgrades are possible even in the case of SENSOR_VERSION_HIGHER (it's not technically an upgrade,
+        // and not really something we ever expect, but eh.) If the backend detects this to be the case, it will not
+        // trigger an upgrade unless asked to by the user.
+        case 'SENSOR_VERSION_HIGHER':
         case 'AUTO_UPGRADE_POSSIBLE': {
-            const isActive = get(
-                cluster,
-                'status.upgradeStatus.mostRecentProcess.active',
-                undefined
-            );
-            if (!isActive) {
+            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
                 return upgradeStates.UPGRADE_AVAILABLE;
             }
+
             const upgradeState = get(
-                cluster,
-                'status.upgradeStatus.mostRecentProcess.progress.upgradeState',
+                upgradeStatus,
+                'mostRecentProcess.progress.upgradeState',
                 'unknown'
             );
 

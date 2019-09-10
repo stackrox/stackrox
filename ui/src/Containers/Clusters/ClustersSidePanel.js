@@ -16,12 +16,14 @@ import {
     clusterDetailPollingInterval,
     clusterTypeOptions,
     formatUpgradeMessage,
+    getUpgradeStatusDetail,
     newClusterDefault,
     parseUpgradeStatus,
     wizardSteps
 } from './cluster.helpers';
+import CollapsibleCard from '../../Components/CollapsibleCard';
 
-function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
+function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeStatus }) {
     const [selectedCluster, setSelectedCluster] = useState(newClusterDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [messageState, setMessageState] = useState(null);
@@ -44,10 +46,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 // don't want to cache or memoize, because we always want the latest real-time data
                 getClusterById(selectedClusterId)
                     .then(cluster => {
-                        const upgradeStatus = parseUpgradeStatus(cluster);
-                        const upgradeMessage = formatUpgradeMessage(upgradeStatus);
-                        setMessageState(upgradeMessage);
-
                         // TODO: refactor to use useReducer effect
                         setSelectedCluster(cluster);
 
@@ -139,6 +137,9 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     /**
      * rendering section
      */
+    if (!selectedClusterId) {
+        return null;
+    }
     const showFormStyles =
         wizardStep === wizardSteps.FORM && !(messageState && messageState.blocking);
     const showDeploymentStyles =
@@ -163,16 +164,43 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
 
     const showPanelButtons = !messageState || !messageState.blocking;
 
-    return selectedClusterId ? (
+    const parsedUpgradeStatus = parseUpgradeStatus(upgradeStatus);
+    const upgradeStatusDetail = getUpgradeStatusDetail(upgradeStatus);
+    const upgradeMessage = formatUpgradeMessage(parsedUpgradeStatus, upgradeStatusDetail);
+
+    return (
         <Panel
             header={selectedClusterName}
             headerComponents={showPanelButtons ? panelButtons : <div />}
-            className="w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
+            bodyClassName="pt-4"
+            className="bg-base-100 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
             onClose={unselectCluster}
         >
             {!!messageState && (
                 <div className="m-4">
                     <Message type={messageState.type} message={messageState.message} />
+                </div>
+            )}
+            {!!upgradeMessage && (
+                <div className="px-4 w-full">
+                    <CollapsibleCard
+                        title="Upgrade Status"
+                        cardClassName="border border-base-400 mb-2"
+                        titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
+                    >
+                        <div className="m-4">
+                            <Message type={upgradeMessage.type} message={upgradeMessage.message} />
+                            {upgradeMessage.detail !== '' && (
+                                <div className="mt-2 flex flex-col items-center">
+                                    <div className="bg-base-200">
+                                        <pre className="whitespace-normal">
+                                            {upgradeMessage.detail}
+                                        </pre>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </CollapsibleCard>
                 </div>
             )}
             {showFormStyles && (
@@ -198,16 +226,18 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 />
             )}
         </Panel>
-    ) : null;
+    );
 }
 
 ClustersSidePanel.propTypes = {
     setSelectedClusterId: PropTypes.func.isRequired,
-    selectedClusterId: PropTypes.string
+    selectedClusterId: PropTypes.string,
+    upgradeStatus: PropTypes.shape({})
 };
 
 ClustersSidePanel.defaultProps = {
-    selectedClusterId: ''
+    selectedClusterId: '',
+    upgradeStatus: null
 };
 
 export default ClustersSidePanel;

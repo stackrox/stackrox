@@ -31,13 +31,16 @@ export function fetchClusters() {
  * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
 export function fetchClustersAsArray(options) {
-    const query = searchOptionsToQuery(options);
-    const params = queryString.stringify(
-        {
-            query
-        },
-        { arrayFormat: 'repeat', allowDots: true }
-    );
+    let params;
+    if (options) {
+        const query = searchOptionsToQuery(options);
+        params = queryString.stringify(
+            {
+                query
+            },
+            { arrayFormat: 'repeat', allowDots: true }
+        );
+    }
     return axios.get(`${clustersUrl}?${params}`).then(response => {
         return (response.data && response.data.clusters) || [];
     });

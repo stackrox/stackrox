@@ -165,61 +165,42 @@ describe('cluster helpers', () => {
 
     describe('formatUpgradeStatus', () => {
         it('should return indeterminate status if upgradeStatus is null', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: null
-                }
-            };
+            const testUpgradeStatus = null;
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
-            const expected = { displayValue: 'Undeterminate upgrade state!', type: 'intervention' };
+            const expected = { displayValue: 'Indeterminate upgrade state!', type: 'intervention' };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "On the latest version" if upgradeStatus -> upgradability is UP_TO_DATE', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'UP_TO_DATE'
-                    }
-                }
+            const testUpgradeStatus = {
+                upgradability: 'UP_TO_DATE'
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = { displayValue: 'On the latest version', type: 'current' };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "Manual upgrade required" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'MANUAL_UPGRADE_REQUIRED'
-                    }
-                }
+            const testUpgradeStatus = {
+                upgradability: 'MANUAL_UPGRADE_REQUIRED'
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = { displayValue: 'Manual upgrade required', type: 'intervention' };
             expect(displayValue).toEqual(expected);
         });
 
-        it('should return "Upgrade available" if upgradeStatus -> upgradability is AUTO_UPGRADE_POSSIBLE but mostRecentProgress is not active', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: false
-                        }
-                    }
-                }
+        it('should return "Upgrade available" if there is no mostRecentProcess ', () => {
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE'
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
@@ -230,22 +211,63 @@ describe('cluster helpers', () => {
             expect(displayValue).toEqual(expected);
         });
 
-        it('should return "Upgrade initializing" if upgradeStatus -> upgradability is AUTO_UPGRADE_POSSIBLE and upgradeState is UPGRADE_INITIALIZING', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADE_INITIALIZING'
-                            }
-                        }
+        it('should return "Upgrade available" if upgradeStatus -> upgradability is AUTO_UPGRADE_POSSIBLE but mostRecentProgress is not active and is COMPLETE', () => {
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: false,
+                    progress: {
+                        upgradeState: 'UPGRADE_COMPLETE'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+
+            const expected = {
+                action: {
+                    actionText: 'Upgrade available'
+                },
+                type: 'download'
+            };
+            expect(displayValue).toEqual(expected);
+        });
+
+        it('should print the error (and "Retry Upgrade") if upgradeStatus -> upgradability is AUTO_UPGRADE_POSSIBLE but mostRecentProgress is not active and failed', () => {
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: false,
+                    progress: {
+                        upgradeState: 'PRE_FLIGHT_CHECKS_FAILED'
+                    }
+                }
+            };
+
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+
+            const expected = {
+                displayValue: 'Pre-flight checks failed',
+                type: 'failure',
+                action: {
+                    actionText: 'Retry upgrade'
+                }
+            };
+            expect(displayValue).toEqual(expected);
+        });
+
+        it('should return "Upgrade initializing" if upgradeStatus -> upgradability is AUTO_UPGRADE_POSSIBLE and upgradeState is UPGRADE_INITIALIZING', () => {
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADE_INITIALIZING'
+                    }
+                }
+            };
+
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 displayValue: 'Upgrade initializing',
@@ -255,153 +277,125 @@ describe('cluster helpers', () => {
         });
 
         it('should return "Upgrader launching" if upgradeState is UPGRADER_LAUNCHING', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADER_LAUNCHING'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADER_LAUNCHING'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = { displayValue: 'Upgrader launching', type: 'progress' };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "Upgrader launched" if upgradeState is UPGRADER_LAUNCHED', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADER_LAUNCHED'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADER_LAUNCHED'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = { displayValue: 'Upgrader launched', type: 'progress' };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "Pre-flight checks complete" if upgradeState is PRE_FLIGHT_CHECKS_COMPLETE', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'PRE_FLIGHT_CHECKS_COMPLETE'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'PRE_FLIGHT_CHECKS_COMPLETE'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = { displayValue: 'Pre-flight checks complete', type: 'progress' };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "Pre-flight checks failed." if upgradeState is PRE_FLIGHT_CHECKS_FAILED', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'PRE_FLIGHT_CHECKS_FAILED'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'PRE_FLIGHT_CHECKS_FAILED'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
                     actionText: 'Retry upgrade'
                 },
-                displayValue: 'Pre-flight checks failed.',
+                displayValue: 'Pre-flight checks failed',
                 type: 'failure'
             };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "Upgrade Operations Done" if upgradeState is UPGRADE_OPERATIONS_DONE', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADE_OPERATIONS_DONE'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADE_OPERATIONS_DONE'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = { displayValue: 'Upgrade operations done', type: 'progress' };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "Upgrade Operations Complete" if upgradeState is UPGRADE_COMPLETE', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADE_COMPLETE'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADE_COMPLETE'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = { displayValue: 'Upgrade complete', type: 'current' };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "Upgrade failed. Rolled back." if upgradeState is UPGRADE_ERROR_ROLLED_BACK', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADE_ERROR_ROLLED_BACK'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADE_ERROR_ROLLED_BACK'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
@@ -414,21 +408,17 @@ describe('cluster helpers', () => {
         });
 
         it('should return "Upgrade failed. Rollback failed." if upgradeState is UPGRADE_ERROR_ROLLBACK_FAILED', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADE_ERROR_ROLLBACK_FAILED'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADE_ERROR_ROLLBACK_FAILED'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
@@ -441,21 +431,17 @@ describe('cluster helpers', () => {
         });
 
         it('should return "Upgrade timed out." if upgradeState is UPGRADE_TIMED_OUT', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADE_TIMED_OUT'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADE_TIMED_OUT'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
@@ -468,21 +454,17 @@ describe('cluster helpers', () => {
         });
 
         it('should return "Upgrade timed out." if upgradeState is UPGRADE_TIMED_OUT', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'UPGRADE_ERROR_UNKNOWN'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'UPGRADE_ERROR_UNKNOWN'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
@@ -494,7 +476,7 @@ describe('cluster helpers', () => {
             expect(displayValue).toEqual(expected);
         });
 
-        it('should return "Undeterminate upgrade state!" if upgradeState does not match known progress', () => {
+        it('should return "Indeterminate upgrade state!" if upgradeState does not match known progress', () => {
             const testCluster = {
                 status: {
                     upgradeStatus: {
@@ -511,7 +493,7 @@ describe('cluster helpers', () => {
 
             const displayValue = parseUpgradeStatus(testCluster);
 
-            const expected = { displayValue: 'Undeterminate upgrade state!', type: 'intervention' };
+            const expected = { displayValue: 'Indeterminate upgrade state!', type: 'intervention' };
             expect(displayValue).toEqual(expected);
         });
     });

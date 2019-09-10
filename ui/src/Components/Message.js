@@ -40,13 +40,13 @@ function Message(props) {
     );
 }
 
-Message.defaultProps = {
-    type: 'info'
-};
-
 Message.propTypes = {
     message: PropTypes.string.isRequired,
     type: PropTypes.oneOf(['warn', 'error', 'info'])
+};
+
+Message.defaultProps = {
+    type: 'info'
 };
 
 export default Message;

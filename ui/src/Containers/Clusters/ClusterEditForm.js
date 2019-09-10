@@ -40,7 +40,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
     );
 
     return (
-        <form className="p-4 w-full mb-8">
+        <form className="px-4 w-full mb-8">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
             <CollapsibleCard
                 open
