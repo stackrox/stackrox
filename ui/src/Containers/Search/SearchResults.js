@@ -81,6 +81,14 @@ const filterOnMapping = {
     NETWORK: 'NETWORK'
 };
 
+const getLink = (item, id) => {
+    let link = '/main';
+    if (item === 'SECRETS') {
+        link = `${link}/configmanagement`;
+    }
+    return `${link}/${lowerCase(item)}${id ? `/${id}` : ''}`;
+};
+
 class SearchResults extends Component {
     static propTypes = {
         onClose: PropTypes.func.isRequired,
@@ -173,7 +181,7 @@ class SearchResults extends Component {
                                         onClick={this.onLinkHandler(
                                             original.category,
                                             item,
-                                            `/main/${lowerCase(item)}/${original.id}`
+                                            getLink(item, original.id)
                                         )}
                                         className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
                                     >
@@ -200,7 +208,7 @@ class SearchResults extends Component {
                                         onClick={this.onLinkHandler(
                                             original.category,
                                             filterOnMapping[item],
-                                            `/main/${lowerCase(item)}`,
+                                            getLink(item),
                                             original.name
                                         )}
                                         className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"

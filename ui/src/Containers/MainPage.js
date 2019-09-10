@@ -17,7 +17,6 @@ import {
     policiesPath,
     riskPath,
     imagesPath,
-    secretsPath,
     apidocsPath,
     accessControlPath,
     licensePath,
@@ -56,7 +55,6 @@ const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'
 const AsyncImagesPage = asyncComponent(() => import('Containers/Images/ImagesPage'));
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
-const AsyncSecretsPage = asyncComponent(() => import('Containers/Secrets/SecretsPage'));
 const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
 const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
@@ -127,7 +125,6 @@ class MainPage extends Component {
                     <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
                     <ProtectedRoute path={imagesPath} component={AsyncImagesPage} />
-                    <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     <ProtectedRoute
@@ -142,7 +139,7 @@ class MainPage extends Component {
                         featureFlagEnabled={isBackendFeatureFlagEnabled(
                             this.props.featureFlags,
                             knownBackendFlags.ROX_CONFIG_MGMT_UI,
-                            false
+                            true
                         )}
                     />
                     <ProtectedRoute

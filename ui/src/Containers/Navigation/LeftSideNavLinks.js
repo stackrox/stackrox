@@ -5,7 +5,6 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { connect } from 'react-redux';
 
-import { knownBackendFlags } from 'utils/featureFlags';
 import { filterLinksByFeatureFlag } from './navHelpers';
 
 const iconClassName = 'h-4 w-4 mb-1';
@@ -34,8 +33,7 @@ export const navLinks = [
     {
         text: 'Config Management',
         to: '/main/configmanagement',
-        renderIcon: () => <Icon.CheckSquare className={iconClassName} />,
-        featureFlag: knownBackendFlags.ROX_CONFIG_MGMT_UI
+        renderIcon: () => <Icon.UserCheck className={iconClassName} />
     },
     {
         text: 'Risk',
@@ -46,11 +44,6 @@ export const navLinks = [
         text: 'Images',
         to: '/main/images',
         renderIcon: () => <Icon.FileMinus className={iconClassName} />
-    },
-    {
-        text: 'Secrets',
-        to: '/main/secrets',
-        renderIcon: () => <Icon.Lock className={iconClassName} />
     },
     {
         text: 'Configure',

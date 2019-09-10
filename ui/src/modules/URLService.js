@@ -68,8 +68,8 @@ function getPath(urlParams) {
         },
         [contextTypes.SECRET]: {
             [pageTypes.ENTITY]: secretsPath,
-            [pageTypes.LIST]: '/main/secrets',
-            [pageTypes.DASHBOARD]: '/main/secrets'
+            [pageTypes.LIST]: '/main/configmanagement/secrets',
+            [pageTypes.DASHBOARD]: '/main/configmanagement/secrets'
         },
         [contextTypes.POLICY]: {
             [pageTypes.ENTITY]: policiesPath,
