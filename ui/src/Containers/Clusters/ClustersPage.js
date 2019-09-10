@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable react/jsx-no-bind */
+import React, { useEffect, useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import * as Icon from 'react-feather';
@@ -6,7 +7,9 @@ import Tooltip from 'rc-tooltip';
 import { generatePath } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import get from 'lodash/get';
 
+import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
 import PageHeader from 'Components/PageHeader';
 import Panel from 'Components/Panel';
@@ -66,6 +69,21 @@ const ClustersPage = ({
     const [tableRef, setTableRef] = useState(null);
     const [selectedClusterId, setSelectedClusterId] = useState(clusterId);
     const [pollingCount, setPollingCount] = useState(0);
+
+    function notificationsReducer(state, action) {
+        switch (action.type) {
+            case 'ADD_NOTIFICATION': {
+                return [...state, action.payload];
+            }
+            case 'REMOVE_NOTIFICATION': {
+                return state.filter(note => note !== action.payload);
+            }
+            default: {
+                return state;
+            }
+        }
+    }
+    const [notifications, dispatch] = useReducer(notificationsReducer, []);
 
     // @TODO, implement actual delete logic into this stub function
     const onDeleteHandler = cluster => e => {
@@ -143,12 +161,25 @@ const ClustersPage = ({
     }
 
     function upgradeSingleCluster(id) {
-        upgradeCluster(id).then(() => {
-            // @TODO: refactor all the re-fetching logic, perhaps use polling increment to force-refresh
-            fetchClustersAsArray().then(clusters => {
-                setCurrentClusters(clusters);
+        upgradeCluster(id)
+            .then(() => {
+                // @TODO: refactor all the re-fetching logic, perhaps use polling increment to force-refresh
+                fetchClustersAsArray().then(clusters => {
+                    setCurrentClusters(clusters);
+                });
+            })
+            .catch(error => {
+                const serverError = get(
+                    error,
+                    'response.data.message',
+                    'An unknown error has occurred.'
+                );
+                const givenCluster = currentClusters.find(cluster => cluster.id === id);
+                const clusterName = givenCluster ? givenCluster.name : '-';
+                const payload = `Failed to trigger upgrade for cluster ${clusterName}. Error: ${serverError}`;
+
+                dispatch({ type: 'ADD_NOTIFICATION', payload });
             });
-        });
     }
 
     function deleteSelectedClusters() {
@@ -328,6 +359,18 @@ const ClustersPage = ({
         </PageHeader>
     );
 
+    const messages = notifications.map(note => (
+        <div className="flex flex-1 border-b border-base-400 items-center justify-end relative py-0 pl-3 w-full">
+            <span className="w-full">{note}</span>
+            <CloseButton
+                onClose={() => {
+                    dispatch({ type: 'REMOVE_NOTIFICATION', payload: note });
+                }}
+                className="border-base-400 border-l"
+            />
+        </div>
+    ));
+
     return (
         <section className="flex flex-1 flex-col h-full">
             <div className="flex flex-1 flex-col">
@@ -338,6 +381,11 @@ const ClustersPage = ({
                             headerTextComponent={headerComponent}
                             headerComponents={headerActions}
                         >
+                            {messages.length > 0 && (
+                                <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
+                                    {messages}
+                                </div>
+                            )}
                             <div className="w-full">
                                 <CheckboxTable
                                     ref={table => {
