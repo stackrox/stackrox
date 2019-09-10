@@ -1,4 +1,4 @@
-FROM alpine:3.9
+FROM alpine:3.10
 
 RUN mkdir /stackrox-data
 
@@ -10,7 +10,7 @@ RUN wget -O product-docs.tgz https://storage.googleapis.com/doc-bundles/03c318a8
 
 RUN apk update && \
     apk add --no-cache \
-        openssl=1.1.1b-r1 \
+        openssl \
         && \
     apk --purge del apk-tools \
     ;

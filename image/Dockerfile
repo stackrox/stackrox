@@ -1,7 +1,7 @@
 ARG DATA_IMAGE_TAG=latest
 FROM stackrox-data:$DATA_IMAGE_TAG AS data
 
-FROM alpine:3.9
+FROM alpine:3.10
 LABEL "com.vendor"="StackRox (support@stackrox.com)"
 
 # Pulled from https://github.com/connorgorman/telegraf/releases with the slimmed down version of telegraf
@@ -13,7 +13,7 @@ RUN apk update && \
         ca-certificates=20190108-r0 \
         procps=3.3.15-r0 \
         su-exec=0.2-r0 \
-        musl=1.1.20-r5 \
+        musl \
         && \
     apk --purge del apk-tools \
     ;
