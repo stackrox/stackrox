@@ -86,7 +86,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         then:
         "Verify process in added : : #depName"
-        assert receivedProcessPaths.equals(expectedFilePaths)
+        assert receivedProcessPaths.containsAll(expectedFilePaths)
 
         where:
         "Data inputs are :"
@@ -114,11 +114,10 @@ class ProcessVisualizationTest extends BaseSpecification {
         TODO(ROX-3103)
         ["/usr/bin/id", "/usr/bin/find", "/usr/local/bin/docker-entrypoint.sh",
          "/usr/local/bin/gosu", "/usr/local/bin/redis-server"] as Set | REDISDEPLOYMENT
-        /*
-           Commenting the mongo based tests out due to ROX-2996
-        ["/bin/true", "/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
+        */
+
+        ["/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
          "/bin/rm", "/usr/bin/id", "/usr/bin/find",
          "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
-         */
    }
 }

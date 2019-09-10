@@ -2,12 +2,10 @@ import services.ProcessService
 
 import groups.BAT
 import groups.RUNTIME
-import spock.lang.Ignore
 import spock.lang.Unroll
 import objects.Deployment
 import org.junit.experimental.categories.Category
 
-@Ignore
 class ProcessVisualizationReplicaTest extends BaseSpecification {
     static final private Integer REPLICACOUNT = 4
 
@@ -96,19 +94,17 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
 
         then:
         "Verify process in added : : #depName"
-        assert receivedProcessPaths.equals(expectedFilePaths)
+        assert receivedProcessPaths.containsAll(expectedFilePaths)
 
         where:
         "Data inputs are :"
 
         expectedFilePaths | depName
 
-        /*
-        ["/bin/mktemp", "/bin/mv", "/main.sh", "/usr/sbin/apache2", "/usr/sbin/apache2ctl",
-          "/bin/chown", "/usr/bin/stat", "/bin/chmod", "/bin/mkdir"] as Set | APACHEDEPLOYMENT
-        */
+        ["/run.sh", "/usr/sbin/apache2",
+          "/bin/chown", "/usr/bin/tail", "/bin/chmod"] as Set | APACHEDEPLOYMENT
 
-        ["/bin/true", "/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
+        ["/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
          "/bin/rm", "/usr/bin/id", "/usr/bin/find",
          "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
    }
