@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
-	"k8s.io/api/batch/v1beta1"
+	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -121,7 +121,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 		return
 	}
 
-	w.populateReplicas(spec)
+	w.populateReplicas(spec, obj)
 
 	var podSpec v1.PodSpec
 
@@ -138,7 +138,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
 		podSpec = o.Spec
-	case *v1beta1.CronJob:
+	case *batchV1beta1.CronJob:
 		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
 	default:
 		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
@@ -207,7 +207,28 @@ func (w *DeploymentWrap) populateImagePullSecrets(podSpec v1.PodSpec) {
 	w.ImagePullSecrets = secrets
 }
 
-func (w *DeploymentWrap) populateReplicas(spec reflect.Value) {
+func (w *DeploymentWrap) populateDaemonSetReplicaSet(obj interface{}) {
+	ds := reflect.ValueOf(obj)
+	if ds.Kind() == reflect.Ptr {
+		ds = ds.Elem()
+	}
+	status := ds.FieldByName("Status")
+	if !doesFieldExist(status) {
+		return
+	}
+	na := status.FieldByName("NumberAvailable")
+	if !doesFieldExist(na) {
+		return
+	}
+	w.Replicas = na.Int()
+}
+
+func (w *DeploymentWrap) populateReplicas(spec reflect.Value, obj interface{}) {
+	if w.Deployment.GetType() == kubernetes.DaemonSet {
+		w.populateDaemonSetReplicaSet(obj)
+		return
+	}
+
 	replicaField := spec.FieldByName("Replicas")
 	if !doesFieldExist(replicaField) {
 		return
