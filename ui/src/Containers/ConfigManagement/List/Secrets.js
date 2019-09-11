@@ -140,8 +140,8 @@ const Secrets = ({
             idAttribute="id"
             defaultSorted={[
                 {
-                    id: 'deployments',
-                    desc: true
+                    id: 'name',
+                    desc: false
                 }
             ]}
             data={data}
