@@ -1,6 +1,10 @@
 import { ApolloClient } from 'apollo-client';
 import { createHttpLink } from 'apollo-link-http';
-import { InMemoryCache, IntrospectionFragmentMatcher } from 'apollo-cache-inmemory';
+import {
+    InMemoryCache,
+    IntrospectionFragmentMatcher,
+    defaultDataIdFromObject
+} from 'apollo-cache-inmemory';
 import { setContext } from 'apollo-link-context';
 import { getAccessToken } from 'services/AuthService';
 import introspectionQueryResultData from './fragmentTypes.json';
@@ -34,6 +38,12 @@ const authLink = setContext((_, { headers }) => {
 export default function() {
     return new ApolloClient({
         link: authLink.concat(httpLink),
-        cache: new InMemoryCache({ fragmentMatcher })
+        cache: new InMemoryCache({
+            fragmentMatcher,
+            dataIdFromObject: object => {
+                if (object.id && object.clusterID) return `${object.clusterID}/${object.id}`;
+                return defaultDataIdFromObject(object);
+            }
+        })
     });
 }

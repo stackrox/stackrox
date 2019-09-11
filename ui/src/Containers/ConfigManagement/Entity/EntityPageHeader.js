@@ -3,19 +3,26 @@ import PropTypes from 'prop-types';
 import getEntityName from 'modules/getEntityName';
 import { entityNameQueryMap } from 'modules/queryMap';
 import entityLabels from 'messages/entity';
+import entityTypes from 'constants/entityTypes';
+import queryService from 'modules/queryService';
 
 import Query from 'Components/ThrowingQuery';
 import PageHeader from 'Components/PageHeader';
 import startCase from 'lodash/startCase';
 import ExportButton from 'Components/ExportButton';
 
+const getEntityVariables = (type, id) => {
+    if (type === entityTypes.SUBJECT) {
+        return { subjectQuery: queryService.objectToWhereClause({ Subject: id }) };
+    }
+    return { id };
+};
+
 const getQueryAndVariables = (entityType, entityId) => {
     const query = entityNameQueryMap[entityType] || null;
     return {
         query,
-        variables: {
-            id: entityId
-        }
+        variables: getEntityVariables(entityType, entityId)
     };
 };
 

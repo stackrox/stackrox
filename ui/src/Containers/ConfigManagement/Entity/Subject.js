@@ -62,7 +62,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                 id
                 name
                 subjects(query: $subjectQuery) {
-                    name
+                    id: name
                     subject {
                         name
                         kind
@@ -77,6 +77,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                         }
                     }
                     clusterAdmin
+                    clusterID
                     roles(query: $query) {
                         ${entityListType === entityTypes.ROLE ? '...k8roleFields' : 'id'}
                     }
