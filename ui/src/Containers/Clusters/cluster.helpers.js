@@ -244,6 +244,10 @@ export function getUpgradeStatusDetail(upgradeStatus) {
 
 export function parseUpgradeStatus(upgradeStatus) {
     const upgradability = get(upgradeStatus, 'upgradability', undefined);
+    if (!upgradability) {
+        return null;
+    }
+
     switch (upgradability) {
         case 'UP_TO_DATE':
         case 'MANUAL_UPGRADE_REQUIRED': {
@@ -270,6 +274,15 @@ export function parseUpgradeStatus(upgradeStatus) {
             return upgradeStates.unknown;
         }
     }
+}
+
+export function getUpgradeableClusters(clusters = []) {
+    return clusters.filter(cluster => {
+        const upgradeStatus = get(cluster, 'status.upgradeStatus', null);
+        const statusObj = parseUpgradeStatus(upgradeStatus);
+
+        return statusObj.action; // if action property exists, you can try or retry an upgrade
+    });
 }
 
 export const wizardSteps = Object.freeze({

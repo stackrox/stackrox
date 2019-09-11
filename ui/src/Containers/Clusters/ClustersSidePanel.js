@@ -165,8 +165,11 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeSta
     const showPanelButtons = !messageState || !messageState.blocking;
 
     const parsedUpgradeStatus = parseUpgradeStatus(upgradeStatus);
-    const upgradeStatusDetail = getUpgradeStatusDetail(upgradeStatus);
-    const upgradeMessage = formatUpgradeMessage(parsedUpgradeStatus, upgradeStatusDetail);
+    const upgradeStatusDetail = upgradeStatus && getUpgradeStatusDetail(upgradeStatus);
+    const upgradeMessage =
+        upgradeStatus &&
+        upgradeStatusDetail &&
+        formatUpgradeMessage(parsedUpgradeStatus, upgradeStatusDetail);
 
     return (
         <Panel

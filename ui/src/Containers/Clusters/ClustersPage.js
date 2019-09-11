@@ -46,7 +46,8 @@ import {
     formatEnabledDisabledField,
     formatLastCheckIn,
     formatSensorVersion,
-    parseUpgradeStatus
+    parseUpgradeStatus,
+    getUpgradeableClusters
 } from './cluster.helpers';
 
 const ClustersPage = ({
@@ -126,12 +127,17 @@ const ClustersPage = ({
         setSelectedClusterId(newClusterId);
     }
 
+    function refreshClusterList() {
+        return fetchClustersAsArray(searchOptions).then(clusters => {
+            setCurrentClusters(clusters);
+        });
+    }
+
     useEffect(
         () => {
-            fetchClustersAsArray(searchOptions).then(clusters => {
-                setCurrentClusters(clusters);
-            });
+            refreshClusterList();
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [searchOptions, pollingCount]
     );
 
@@ -154,19 +160,14 @@ const ClustersPage = ({
         upgradeClusters(selectedClusters).then(() => {
             setSelectedClusters([]);
 
-            fetchClustersAsArray().then(clusters => {
-                setCurrentClusters(clusters);
-            });
+            refreshClusterList();
         });
     }
 
     function upgradeSingleCluster(id) {
         upgradeCluster(id)
             .then(() => {
-                // @TODO: refactor all the re-fetching logic, perhaps use polling increment to force-refresh
-                fetchClustersAsArray().then(clusters => {
-                    setCurrentClusters(clusters);
-                });
+                refreshClusterList();
             })
             .catch(error => {
                 const serverError = get(
@@ -241,6 +242,10 @@ const ClustersPage = ({
 
     function getUpgradeStatusField(original) {
         const status = parseUpgradeStatus(get(original, 'status.upgradeStatus', null));
+        if (!status) {
+            return '-';
+        }
+
         if (status.action) {
             status.action.actionHandler = e => {
                 e.stopPropagation();
@@ -257,15 +262,15 @@ const ClustersPage = ({
         );
     }
 
-    // @TODO: flesh out the new Clusters page layout, placeholders for now
+    const upgradableClusters = getUpgradeableClusters(selectedClusters);
     const headerActions = (
         <React.Fragment>
             <PanelButton
                 icon={<Icon.DownloadCloud className="h-4 w-4 ml-1" />}
-                text={`Upgrade (${selectedClusters.length})`}
+                text={`Upgrade (${upgradableClusters.length})`}
                 className="btn btn-tertiary ml-2"
                 onClick={upgradeSelectedClusters}
-                disabled={selectedClusters.length === 0 || !!selectedClusterId}
+                disabled={upgradableClusters.length === 0 || !!selectedClusterId}
             />
             <PanelButton
                 icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}

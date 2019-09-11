@@ -7,7 +7,8 @@ import {
     formatCollectionMethod,
     formatLastCheckIn,
     formatSensorVersion,
-    parseUpgradeStatus
+    parseUpgradeStatus,
+    getUpgradeableClusters
 } from './cluster.helpers';
 
 describe('cluster helpers', () => {
@@ -163,14 +164,93 @@ describe('cluster helpers', () => {
         });
     });
 
-    describe('formatUpgradeStatus', () => {
-        it('should return indeterminate status if upgradeStatus is null', () => {
+    describe('getUpgradeableClusters', () => {
+        it('should return 0 when no clusters are unpgradeable', () => {
+            const clusters = [
+                {
+                    id: 'f7ae6b5f-6329-4ed9-a439-83181991a526',
+                    name: 'K8S',
+                    status: {
+                        upgradeStatus: {
+                            upgradability: 'UP_TO_DATE',
+                            mostRecentProcess: {
+                                active: false,
+                                progress: {
+                                    upgradeState: 'UPGRADE_COMPLETE'
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    id: '26eac883-1f09-4123-971b-8b00ee63f5fd',
+                    name: 'remote1',
+                    status: {
+                        upgradeStatus: {
+                            upgradability: 'UP_TO_DATE',
+                            mostRecentProcess: {
+                                active: false,
+                                progress: {
+                                    upgradeState: 'UPGRADE_COMPLETE'
+                                }
+                            }
+                        }
+                    }
+                }
+            ];
+
+            const upgradeableClusters = getUpgradeableClusters(clusters);
+
+            expect(upgradeableClusters.length).toEqual(0);
+        });
+
+        it('should the number of ugradeable clusters', () => {
+            const clusters = [
+                {
+                    id: 'f7ae6b5f-6329-4ed9-a439-83181991a526',
+                    name: 'K8S',
+                    status: {
+                        upgradeStatus: {
+                            upgradability: 'UP_TO_DATE',
+                            mostRecentProcess: {
+                                active: false,
+                                progress: {
+                                    upgradeState: 'UPGRADE_COMPLETE'
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    id: '26eac883-1f09-4123-971b-8b00ee63f5fd',
+                    name: 'remote1',
+                    status: {
+                        upgradeStatus: {
+                            upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                            mostRecentProcess: {
+                                active: false,
+                                progress: {
+                                    upgradeState: 'UPGRADE_COMPLETE'
+                                }
+                            }
+                        }
+                    }
+                }
+            ];
+
+            const upgradeableClusters = getUpgradeableClusters(clusters);
+
+            expect(upgradeableClusters.length).toEqual(1);
+        });
+    });
+
+    describe('parseUpgradeStatus', () => {
+        it('should return null if upgradeStatus is null', () => {
             const testUpgradeStatus = null;
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
-            const expected = { displayValue: 'Indeterminate upgrade state!', type: 'intervention' };
-            expect(displayValue).toEqual(expected);
+            expect(displayValue).toEqual(null);
         });
 
         it('should return "On the latest version" if upgradeStatus -> upgradability is UP_TO_DATE', () => {
@@ -477,21 +557,17 @@ describe('cluster helpers', () => {
         });
 
         it('should return "Indeterminate upgrade state!" if upgradeState does not match known progress', () => {
-            const testCluster = {
-                status: {
-                    upgradeStatus: {
-                        upgradability: 'AUTO_UPGRADE_POSSIBLE',
-                        mostRecentProcess: {
-                            active: true,
-                            progress: {
-                                upgradeState: 'SNAFU'
-                            }
-                        }
+            const testUpgradeStatus = {
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
+                mostRecentProcess: {
+                    active: true,
+                    progress: {
+                        upgradeState: 'SNAFU'
                     }
                 }
             };
 
-            const displayValue = parseUpgradeStatus(testCluster);
+            const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = { displayValue: 'Indeterminate upgrade state!', type: 'intervention' };
             expect(displayValue).toEqual(expected);
