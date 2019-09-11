@@ -27,7 +27,7 @@ var (
 	ConfigMgmtUI = registerFeature("Enable Config Mgmt UI", "ROX_CONFIG_MGMT_UI", true)
 
 	// BadgerDB is used to enable BadgerDB as opposed to BoltDB for write heavy objects
-	BadgerDB = registerFeature("Enable BadgerDB as opposed to BoltDB for write heavy objects", "ROX_BADGER_DB", true)
+	BadgerDB = registerFeature("Enable BadgerDB as opposed to BoltDB for write heavy objects", "ROX_BADGER_DB", false)
 
 	// SensorAutoUpgrade controls the sensor autoupgrade feature.
 	SensorAutoUpgrade = registerFeature("Enable Sensor Autoupgrades", "ROX_SENSOR_AUTOUPGRADE", true)
