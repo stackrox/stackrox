@@ -35,7 +35,7 @@ function ProcessesDiscoveryCardHeader({
         });
     }
 
-    const trimmedName = name.length > 27 ? name.substring(0, 27) : name;
+    const trimmedName = name.length > 48 ? `${name.substring(0, 48)}...` : name;
     const backgroundClass = suspicious ? suspiciousProcessClassName : headerClassName;
     const textClass = suspicious ? 'text-alert-800' : 'text-primary-800';
     return (
