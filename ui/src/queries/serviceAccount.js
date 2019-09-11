@@ -60,6 +60,7 @@ export const SERVICE_ACCOUNTS = gql`
                 id
                 name
             }
+            deploymentCount
         }
     }
 `;

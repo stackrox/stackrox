@@ -98,6 +98,28 @@ const buildTableColumns = (match, location, entityContext) => {
             },
             accessor: 'roles',
             sortMethod: sortValueByLength
+        },
+        {
+            Header: `Deployments`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original, pdf }) => {
+                const { id, deploymentCount } = original;
+                if (!deploymentCount) return 'No Deployments';
+                const url = URLService.getURL(match, location)
+                    .push(id)
+                    .push(entityTypes.DEPLOYMENT)
+                    .url();
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${deploymentCount} ${pluralize('Deployment', deploymentCount)}`}
+                    />
+                );
+            },
+            accessor: 'deploymentCount'
         }
     ];
     return tableColumns.filter(col => col);
