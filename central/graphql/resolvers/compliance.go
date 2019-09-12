@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -41,6 +42,11 @@ func InitCompliance() {
 			schema.AddQuery("complianceControl(id:ID!): ComplianceControl"),
 			schema.AddQuery("complianceControlGroup(id:ID!): ComplianceControlGroup"),
 			schema.AddQuery("complianceNamespaceCount(query: String): Int!"),
+			schema.AddQuery("complianceClusterCount(query: String): Int!"),
+			schema.AddQuery("complianceNodeCount(query: String): Int!"),
+			schema.AddQuery("complianceDeploymentCount(query: String): Int!"),
+			schema.AddQuery("executedControls(query: String): [ComplianceControlWithControlStatus!]!"),
+			schema.AddQuery("executedControlCount(query: String): Int!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!"),
 			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControlGroup", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"}),
@@ -51,6 +57,7 @@ func InitCompliance() {
 			schema.AddExtraResolver("ComplianceControl", "complianceResults(query: String): [ControlResult!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlEntities(clusterID: ID!): [Node!]!"),
 			schema.AddType("ComplianceControlNodeCount", []string{"failingCount: Int!", "passingCount: Int!", "unknownCount: Int!"}),
+			schema.AddType("ComplianceControlWithControlStatus", []string{"complianceControl: ComplianceControl!", "controlStatus: String!"}),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlNodeCount(query: String): ComplianceControlNodeCount"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlNodes(query: String): [Node!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlFailingNodes(query: String): [Node!]!"),
@@ -121,11 +128,104 @@ func (resolver *Resolver) ComplianceNamespaceCount(ctx context.Context, args raw
 		return 0, err
 	}
 	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NAMESPACE}
+	return resolver.getComplianceEntityCount(ctx, args, scope)
+}
+
+// ComplianceClusterCount returns count of clusters that have compliance run on them
+func (resolver *Resolver) ComplianceClusterCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceClusterCount")
+	if err := readCompliance(ctx); err != nil {
+		return 0, err
+	}
+	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}
+	return resolver.getComplianceEntityCount(ctx, args, scope)
+}
+
+// ComplianceDeploymentCount returns count of deployments that have compliance run on them
+func (resolver *Resolver) ComplianceDeploymentCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceDeploymentCount")
+	if err := readCompliance(ctx); err != nil {
+		return 0, err
+	}
+	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_DEPLOYMENT}
+	return resolver.getComplianceEntityCount(ctx, args, scope)
+}
+
+// ComplianceNodeCount returns count of nodes that have compliance run on them
+func (resolver *Resolver) ComplianceNodeCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceNodeCount")
+	if err := readCompliance(ctx); err != nil {
+		return 0, err
+	}
+	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE}
+	return resolver.getComplianceEntityCount(ctx, args, scope)
+}
+
+// ComplianceNamespaceCount returns count of namespaces that have compliance run on them
+func (resolver *Resolver) getComplianceEntityCount(ctx context.Context, args rawQuery, scope []v1.ComplianceAggregation_Scope) (int32, error) {
+	r, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, v1.ComplianceAggregation_CONTROL)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(r)), nil
+}
+
+// ExecutedControls returns the controls which have executed along with their status across clusters
+func (resolver *Resolver) ExecutedControls(ctx context.Context, args rawQuery) ([]*ComplianceControlWithControlStatusResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ExecutedControls")
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}
+	rs, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, v1.ComplianceAggregation_CONTROL)
+	if err != nil {
+		return nil, err
+	}
+	var ret []*ComplianceControlWithControlStatusResolver
+	failing := make(map[string]int32)
+	passing := make(map[string]int32)
+	for _, r := range rs {
+		controlID, err := getScopeIDFromAggregationResult(r, v1.ComplianceAggregation_CONTROL)
+		if err != nil {
+			return nil, err
+		}
+		failing[controlID] += r.GetNumFailing()
+		passing[controlID] += r.GetNumPassing()
+	}
+	for k := range failing {
+		control := resolver.ComplianceStandardStore.Control(k)
+		cc := &ComplianceControlWithControlStatusResolver{
+			complianceControl: &complianceControlResolver{
+				root: resolver,
+				data: control,
+			},
+		}
+		cc.controlStatus = getControlStatus(failing[k], passing[k])
+		ret = append(ret, cc)
+	}
+	return ret, nil
+}
+
+// ExecutedControlCount returns the count of controls which have executed across all clusters
+func (resolver *Resolver) ExecutedControlCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ExecutedControls")
+	if err := readCompliance(ctx); err != nil {
+		return 0, err
+	}
+	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}
 	rs, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, v1.ComplianceAggregation_CONTROL)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(rs)), nil
+	controlSet := set.NewStringSet()
+	for _, r := range rs {
+		controlID, err := getScopeIDFromAggregationResult(r, v1.ComplianceAggregation_CONTROL)
+		if err != nil {
+			return 0, err
+		}
+		controlSet.Add(controlID)
+	}
+	return int32(controlSet.Cardinality()), nil
 }
 
 type aggregatedResultQuery struct {
@@ -666,4 +766,26 @@ func (resolver *complianceControlNodeCountResolver) PassingCount() int32 {
 
 func (resolver *complianceControlNodeCountResolver) UnknownCount() int32 {
 	return resolver.unknownCount
+}
+
+// ComplianceControlWithControlStatusResolver represents a control with its status across clusters
+type ComplianceControlWithControlStatusResolver struct {
+	complianceControl *complianceControlResolver
+	controlStatus     string
+}
+
+// ComplianceControl returns a control of ComplianceControlWithControlStatusResolver
+func (c *ComplianceControlWithControlStatusResolver) ComplianceControl() *complianceControlResolver {
+	if c == nil {
+		return nil
+	}
+	return c.complianceControl
+}
+
+// ControlStatus returns a control status of ComplianceControlWithControlStatusResolver
+func (c *ComplianceControlWithControlStatusResolver) ControlStatus() string {
+	if c == nil {
+		return ""
+	}
+	return c.controlStatus
 }

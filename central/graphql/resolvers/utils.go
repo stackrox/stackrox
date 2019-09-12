@@ -203,12 +203,14 @@ func (c ControlStatus) String() string {
 }
 
 func getControlStatusFromAggregationResult(result *v1.ComplianceAggregation_Result) string {
-	passingControls := result.GetNumPassing()
-	failingControls := result.GetNumFailing()
+	return getControlStatus(result.GetNumFailing(), result.GetNumPassing())
+}
+
+func getControlStatus(failing, passing int32) string {
 	var cs ControlStatus
-	if passingControls == 0 && failingControls == 0 {
+	if passing == 0 && failing == 0 {
 		cs = na
-	} else if failingControls != 0 {
+	} else if failing != 0 {
 		cs = fail
 	} else {
 		cs = pass
