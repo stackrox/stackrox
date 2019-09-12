@@ -2533,7 +2533,7 @@ workflows:
             tags:
               only: /.*/
       # Push release only on tags.
-      # Skip tags that end in -rc.#
+      # Skip tags that end in -rc.# or .x
       - mark-collector-release:
           context: docker-io-pull
           requires:
@@ -2543,7 +2543,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^(?!.*-rc\.\d+$).*$/
+              only: /^(?!.*-rc\.\d+$|.*\.x$).*$/
       - push-release:
           context: docker-io-and-stackrox-io-push
           requires:
@@ -2554,7 +2554,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^(?!.*-rc\.\d+$).*$/
+              only: /^(?!.*-rc\.\d+$|.*\.x$).*$/
 
 
   update_dev_license:

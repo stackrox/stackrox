@@ -151,6 +151,7 @@ bash openshift/central.sh
 Replace the value with the version number you want to release from:
 ```bash
 export RELEASE_BRANCH=2.4.22.x
+export MASTER_VERSION=${RELEASE_BRANCH}
 export RELEASE_VERSION=2.4.22.0
 ```
 
@@ -172,17 +173,26 @@ we push tags like `0.5`, not `v0.5`).
 Proceed with the steps that under the section of the release type you're making:
 non-patch or patch.
 
-#### Release Branch already exists
+#### Create a release branch from master
 These steps assume that the tip of `origin/master` is what you plan to release
 and that **all the builds for that commit have completed successfully**. We will
-checkout `origin/master` and create a new release branch from it. We will push the
-branch to github for use in future builds for that release version
+checkout `origin/master` and create a new release branch from it. We make an
+empty commit to `release/${RELEASE_BRANCH}` to diverge from master. This allows
+us to start tracking the point of divergence for the release. We will push the
+branch to github for use in future builds for that release version. We also will
+tag the master branch commit with `${MASTER_VERSION}` (N.B. not `${RELEASE_VERSION}` --
+master tag should now look like `2.4.22.x`.
 
 ```bash
 git checkout master
 git fetch
 git pull
+## Tag master branch to indicate current release 
+git tag -a -m "v${MASTER_VERSION}" "${MASTER_VERSION}"
+git push origin "${MASTER_VERSION}"
+## Create Release Branch
 git checkout -b release/${RELEASE_BRANCH}
+git commit --allow-empty -m "${RELEASE_BRANCH}"
 git push origin release/${RELEASE_BRANCH}
 ```
 
