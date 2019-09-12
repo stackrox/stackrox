@@ -8,17 +8,17 @@ import (
 
 func init() {
 	framework.MustRegisterChecks(
-		common.OptionalPermissionCheck("CIS_Kubernetes_v1_2_0:1_4_1", "/etc/kubernetes/manifests/kube-apiserver.yaml", 0644),
-		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_2_0:1_4_2", "/etc/kubernetes/manifests/kube-apiserver.yaml", "root", "root"),
+		common.OptionalPermissionCheck("CIS_Kubernetes_v1_4_1:1_4_1", "/etc/kubernetes/manifests/kube-apiserver.yaml", 0644),
+		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_2", "/etc/kubernetes/manifests/kube-apiserver.yaml", "root", "root"),
 
-		common.OptionalPermissionCheck("CIS_Kubernetes_v1_2_0:1_4_3", "/etc/kubernetes/manifests/kube-controller-manager.yaml", 0644),
-		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_2_0:1_4_4", "/etc/kubernetes/manifests/kube-controller-manager.yaml", "root", "root"),
+		common.OptionalPermissionCheck("CIS_Kubernetes_v1_4_1:1_4_3", "/etc/kubernetes/manifests/kube-controller-manager.yaml", 0644),
+		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_4", "/etc/kubernetes/manifests/kube-controller-manager.yaml", "root", "root"),
 
-		common.OptionalPermissionCheck("CIS_Kubernetes_v1_2_0:1_4_5", "/etc/kubernetes/manifests/kube-controller-manager.yaml", 0644),
-		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_2_0:1_4_6", "/etc/kubernetes/manifests/kube-controller-manager.yaml", "root", "root"),
+		common.OptionalPermissionCheck("CIS_Kubernetes_v1_4_1:1_4_5", "/etc/kubernetes/manifests/kube-scheduler.yaml", 0644),
+		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_6", "/etc/kubernetes/manifests/kube-scheduler.yaml", "root", "root"),
 
-		common.OptionalPermissionCheck("CIS_Kubernetes_v1_2_0:1_4_7", "/etc/kubernetes/manifests/kube-scheduler.yaml", 0644),
-		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_2_0:1_4_8", "/etc/kubernetes/manifests/kube-scheduler.yaml", "root", "root"),
+		common.OptionalPermissionCheck("CIS_Kubernetes_v1_4_1:1_4_7", "/etc/kubernetes/manifests/etcd.yaml", 0644),
+		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_8", "/etc/kubernetes/manifests/etcd.yaml", "root", "root"),
 
 		cniFilePermissions(),
 		cniFileOwnership(),
@@ -26,14 +26,18 @@ func init() {
 		etcdDataPermissions(),
 		etcdDataOwnership(),
 
-		common.OptionalPermissionCheck("CIS_Kubernetes_v1_2_0:1_4_13", "/etc/kubernetes/manifests/etcd.yaml", 0644),
-		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_2_0:1_4_14", "/etc/kubernetes/manifests/etcd.yaml", "root", "root"),
+		common.OptionalPermissionCheck("CIS_Kubernetes_v1_4_1:1_4_13", "/etc/kubernetes/manifests/admin.conf", 0644),
+		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_14", "/etc/kubernetes/manifests/admin.conf", "root", "root"),
 
-		common.OptionalPermissionCheck("CIS_Kubernetes_v1_2_0:1_4_15", "/etc/kubernetes/admin.conf", 0644),
-		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_2_0:1_4_16", "/etc/kubernetes/admin.conf", "root", "root"),
+		common.OptionalPermissionCheck("CIS_Kubernetes_v1_4_1:1_4_15", "/etc/kubernetes/scheduler.conf", 0644),
+		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_16", "/etc/kubernetes/scheduler.conf", "root", "root"),
 
-		common.OptionalPermissionCheck("CIS_Kubernetes_v1_2_0:1_4_17", "/etc/kubernetes/scheduler.conf", 0644),
-		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_2_0:1_4_18", "/etc/kubernetes/scheduler.conf", "root", "root"),
+		common.OptionalPermissionCheck("CIS_Kubernetes_v1_4_1:1_4_17", "/etc/kubernetes/controller-manager.conf", 0644),
+		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_18", "/etc/kubernetes/controller-manager.conf", "root", "root"),
+
+		common.RecursiveOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_19", "/etc/kubernetes/pki", "root", "root"),
+		common.PerNodeNoteCheck("CIS_Kubernetes_v1_4_1:1_4_20", "Ensure that the Kubernetes PKI certificate file permissions are set to 644 or more restrictive"),
+		common.PerNodeNoteCheck("CIS_Kubernetes_v1_4_1:1_4_21", "Ensure that the Kubernetes PKI key file permissions are set to 600"),
 	)
 }
 
@@ -59,7 +63,7 @@ func getDirectoryFileFromCommandLine(ctx framework.ComplianceContext, ret *compl
 
 func cniFilePermissions() framework.Check {
 	md := framework.CheckMetadata{
-		ID:                 "CIS_Kubernetes_v1_2_0:1_4_9",
+		ID:                 "CIS_Kubernetes_v1_4_1:1_4_9",
 		Scope:              framework.NodeKind,
 		InterpretationText: "StackRox checks that the permissions of files in the CNI configuration and binary directories are set to at most '0644'",
 		DataDependencies:   []string{"HostScraped"},
@@ -77,7 +81,7 @@ func cniFilePermissions() framework.Check {
 
 func cniFileOwnership() framework.Check {
 	md := framework.CheckMetadata{
-		ID:                 "CIS_Kubernetes_v1_2_0:1_4_10",
+		ID:                 "CIS_Kubernetes_v1_4_1:1_4_10",
 		Scope:              framework.NodeKind,
 		InterpretationText: "StackRox checks that the owner and group of files in the CNI configuration and binary directories is root:root",
 	}
@@ -94,7 +98,7 @@ func cniFileOwnership() framework.Check {
 
 func etcdDataPermissions() framework.Check {
 	md := framework.CheckMetadata{
-		ID:                 "CIS_Kubernetes_v1_2_0:1_4_11",
+		ID:                 "CIS_Kubernetes_v1_4_1:1_4_11",
 		Scope:              framework.NodeKind,
 		InterpretationText: "StackRox checks that the permissions of the etcd data directory are set to '0700'",
 	}
@@ -108,7 +112,7 @@ func etcdDataPermissions() framework.Check {
 
 func etcdDataOwnership() framework.Check {
 	md := framework.CheckMetadata{
-		ID:                 "CIS_Kubernetes_v1_2_0:1_4_12",
+		ID:                 "CIS_Kubernetes_v1_4_1:1_4_12",
 		Scope:              framework.NodeKind,
 		InterpretationText: "StackRox checks that the owner and group of the etcd data directory are set to etcd:etcd",
 	}

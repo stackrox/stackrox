@@ -54,7 +54,7 @@ it('renders for Compliance By CIS Docker', () => {
 });
 
 it('renders for Compliance By CIS K8s', () => {
-    testQueryForEntityType(standardTypes.CIS_Kubernetes_v1_2_0);
+    testQueryForEntityType(standardTypes.CIS_Kubernetes_v1_4_1);
 });
 
 it('renders for Compliance By HIPAA', () => {

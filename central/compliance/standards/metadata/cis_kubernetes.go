@@ -1,8 +1,8 @@
 package metadata
 
 var cisKubernetes = Standard{
-	ID:   "CIS_Kubernetes_v1_2_0",
-	Name: "CIS Kubernetes v1.2.0",
+	ID:   "CIS_Kubernetes_v1_4_1",
+	Name: "CIS Kubernetes v1.4.1",
 	Categories: []Category{
 		{
 			ID:          "1_1",
@@ -57,27 +57,27 @@ var cisKubernetes = Standard{
 				{
 					ID:          "1_1_10",
 					Name:        "1.1.10",
-					Description: "Ensure that the admission control policy is not set to AlwaysAdmit",
+					Description: "Ensure that the admission control plugin AlwaysAdmit is not set",
 				},
 				{
 					ID:          "1_1_11",
 					Name:        "1.1.11",
-					Description: "Ensure that the admission control policy is set to AlwaysPullImages",
+					Description: "Ensure that the admission control plugin AlwaysPullImages is set",
 				},
 				{
 					ID:          "1_1_12",
 					Name:        "1.1.12",
-					Description: "Ensure that the admission control policy is set to DenyEscalatingExec",
+					Description: "[DEPRECATED] Ensure that the admission control plugin DenyEscalatingExec is set",
 				},
 				{
 					ID:          "1_1_13",
 					Name:        "1.1.13",
-					Description: "Ensure that the admission control policy is set to SecurityContextDeny",
+					Description: "Ensure that the admission control plugin SecurityContextDeny is set",
 				},
 				{
 					ID:          "1_1_14",
 					Name:        "1.1.14",
-					Description: "Ensure that the admission control policy is set to NamespaceLifecycle",
+					Description: "Ensure that the admission control plugin NamespaceLifecycle is set",
 				},
 				{
 					ID:          "1_1_15",
@@ -142,7 +142,7 @@ var cisKubernetes = Standard{
 				{
 					ID:          "1_1_27",
 					Name:        "1.1.27",
-					Description: "Ensure that the admission control policy is set to ServiceAccount",
+					Description: "Ensure that the admission control plugin ServiceAccount is set",
 				},
 				{
 					ID:          "1_1_28",
@@ -162,37 +162,47 @@ var cisKubernetes = Standard{
 				{
 					ID:          "1_1_31",
 					Name:        "1.1.31",
-					Description: "Ensure that the --authorization-mode argument is set to Node",
+					Description: "Ensure that the API Server only makes use of Strong Cryptographic Ciphers",
 				},
 				{
 					ID:          "1_1_32",
 					Name:        "1.1.32",
-					Description: "Ensure that the admission control policy is set to NodeRestriction",
+					Description: "Ensure that the --authorization-mode argument includes Node",
 				},
 				{
 					ID:          "1_1_33",
 					Name:        "1.1.33",
-					Description: "Ensure that the --experimental-encryption-provider-config argument is set as appropriate",
+					Description: "Ensure that the admission control plugin NodeRestriction is set",
 				},
 				{
 					ID:          "1_1_34",
 					Name:        "1.1.34",
-					Description: "Ensure that the encryption provider is set to aescbc",
+					Description: "Ensure that the --encryption-provider-config argument is set as appropriate",
 				},
 				{
 					ID:          "1_1_35",
 					Name:        "1.1.35",
-					Description: "Ensure that the admission control policy is set to EventRateLimit",
+					Description: "Ensure that the encryption provider is set to aescbc",
 				},
 				{
 					ID:          "1_1_36",
 					Name:        "1.1.36",
-					Description: "Ensure that the AdvancedAuditing argument is not set to false",
+					Description: "Ensure that the admission control plugin EventRateLimit is set",
 				},
 				{
 					ID:          "1_1_37",
 					Name:        "1.1.37",
+					Description: "Ensure that the AdvancedAuditing argument is not set to false",
+				},
+				{
+					ID:          "1_1_38",
+					Name:        "1.1.38",
 					Description: "Ensure that the --request-timeout argument is set as appropriate",
+				},
+				{
+					ID:          "1_1_39",
+					Name:        "1.1.39",
+					Description: "Ensure that the --authorization-mode argument includes RBAC",
 				},
 			},
 		},
@@ -205,6 +215,11 @@ var cisKubernetes = Standard{
 					ID:          "1_2_1",
 					Name:        "1.2.1",
 					Description: "Ensure that the --profiling argument is set to false",
+				},
+				{
+					ID:          "1_2_2",
+					Name:        "1.2.2",
+					Description: "Ensure that the --address argument is set to 127.0.0.1",
 				},
 			},
 		},
@@ -241,12 +256,12 @@ var cisKubernetes = Standard{
 				{
 					ID:          "1_3_6",
 					Name:        "1.3.6",
-					Description: "Apply Security Context to Your Pods and Containers",
+					Description: "Ensure that the RotateKubeletServerCertificate argument is set to true",
 				},
 				{
 					ID:          "1_3_7",
 					Name:        "1.3.7",
-					Description: "Ensure that the RotateKubeletServerCertificate argument is set to true",
+					Description: "Ensure that the --address argument is set to 127.0.0.1",
 				},
 			},
 		},
@@ -345,6 +360,21 @@ var cisKubernetes = Standard{
 					Name:        "1.4.18",
 					Description: "Ensure that the controller-manager.conf file ownership is set to root:root",
 				},
+				{
+					ID:          "1_4_19",
+					Name:        "1.4.19",
+					Description: "Ensure that the Kubernetes PKI directory and file ownership is set to root:root",
+				},
+				{
+					ID:          "1_4_20",
+					Name:        "1.4.20",
+					Description: "Ensure that the Kubernetes PKI certificate file permissions are set to 644 or more restrictive",
+				},
+				{
+					ID:          "1_4_21",
+					Name:        "1.4.21",
+					Description: "Ensure that the Kubernetes PKI key file permissions are set to 600",
+				},
 			},
 		},
 		{
@@ -385,16 +415,6 @@ var cisKubernetes = Standard{
 				{
 					ID:          "1_5_7",
 					Name:        "1.5.7",
-					Description: "Ensure that the --wal-dir argument is set as appropriate",
-				},
-				{
-					ID:          "1_5_8",
-					Name:        "1.5.8",
-					Description: "Ensure that the --max-wals argument is set to 0",
-				},
-				{
-					ID:          "1_5_9",
-					Name:        "1.5.9",
 					Description: "Ensure that a unique Certificate Authority is used for etcd",
 				},
 			},
@@ -407,12 +427,12 @@ var cisKubernetes = Standard{
 				{
 					ID:          "1_6_1",
 					Name:        "1.6.1",
-					Description: "Ensure that the cluster-admin role is only used where required",
+					Description: "Place compensating controls in the form of PSP and RBAC for privileged containers usage",
 				},
 				{
 					ID:          "1_6_2",
 					Name:        "1.6.2",
-					Description: "Create Pod Security Policies for your cluster",
+					Description: "Ensure that the cluster-admin role is only used where required",
 				},
 				{
 					ID:          "1_6_3",
@@ -444,10 +464,47 @@ var cisKubernetes = Standard{
 					Name:        "1.6.8",
 					Description: "Configure Network policies as appropriate",
 				},
+			},
+		},
+		{
+			ID:          "1_7",
+			Name:        "1.7",
+			Description: "Master Node Security Configuration - Pod Security Policies",
+			Controls: []Control{
 				{
-					ID:          "1_6_9",
-					Name:        "1.6.9",
-					Description: "Place compensating controls in the form of PSP and RBAC for privileged containers usage",
+					ID:          "1_7_1",
+					Name:        "1.7.1",
+					Description: "Do not admit privileged containers",
+				},
+				{
+					ID:          "1_7_2",
+					Name:        "1.7.2",
+					Description: "Do not admit containers wishing to share the host process ID namespace",
+				},
+				{
+					ID:          "1_7_3",
+					Name:        "1.7.3",
+					Description: "Do not admit containers wishing to share the host IPC namespace",
+				},
+				{
+					ID:          "1_7_4",
+					Name:        "1.7.4",
+					Description: "Do not admit containers wishing to share the host network namespace",
+				},
+				{
+					ID:          "1_7_5",
+					Name:        "1.7.5",
+					Description: "Do not admit containers with allowPrivilegeEscalation",
+				},
+				{
+					ID:          "1_7_6",
+					Name:        "1.7.6",
+					Description: "Do not admit root containers",
+				},
+				{
+					ID:          "1_7_7",
+					Name:        "1.7.7",
+					Description: "Do not admit containers with dangerous capabilities",
 				},
 			},
 		},
@@ -459,77 +516,72 @@ var cisKubernetes = Standard{
 				{
 					ID:          "2_1_1",
 					Name:        "2.1.1",
-					Description: "Ensure that the --allow-privileged argument is set to false",
+					Description: "Ensure that the --anonymous-auth argument is set to false",
 				},
 				{
 					ID:          "2_1_2",
 					Name:        "2.1.2",
-					Description: "Ensure that the --anonymous-auth argument is set to false",
+					Description: "Ensure that the --authorization-mode argument is not set to AlwaysAllow",
 				},
 				{
 					ID:          "2_1_3",
 					Name:        "2.1.3",
-					Description: "Ensure that the --authorization-mode argument is not set to AlwaysAllow",
+					Description: "Ensure that the --client-ca-file argument is set as appropriate",
 				},
 				{
 					ID:          "2_1_4",
 					Name:        "2.1.4",
-					Description: "Ensure that the --client-ca-file argument is set as appropriate",
+					Description: "Ensure that the --read-only-port argument is set to 0",
 				},
 				{
 					ID:          "2_1_5",
 					Name:        "2.1.5",
-					Description: "Ensure that the --read-only-port argument is set to 0",
+					Description: "Ensure that the --streaming-connection-idle-timeout argument is not set to 0",
 				},
 				{
 					ID:          "2_1_6",
 					Name:        "2.1.6",
-					Description: "Ensure that the --streaming-connection-idle-timeout argument is not set to 0",
+					Description: "Ensure that the --protect-kernel-defaults argument is set to true",
 				},
 				{
 					ID:          "2_1_7",
 					Name:        "2.1.7",
-					Description: "Ensure that the --protect-kernel-defaults argument is set to true",
+					Description: "Ensure that the --make-iptables-util-chains argument is set to true",
 				},
 				{
 					ID:          "2_1_8",
 					Name:        "2.1.8",
-					Description: "Ensure that the --make-iptables-util-chains argument is set to true",
+					Description: "Ensure that the --hostname-override argument is not set",
 				},
 				{
 					ID:          "2_1_9",
 					Name:        "2.1.9",
-					Description: "Ensure that the --keep-terminated-pod-volumes argument is set to false",
+					Description: "Ensure that the --event-qps argument is set to 0",
 				},
 				{
 					ID:          "2_1_10",
 					Name:        "2.1.10",
-					Description: "Ensure that the --hostname-override argument is not set",
+					Description: "Ensure that the --tls-cert-file and --tls-private-key-file arguments are set as appropriate",
 				},
 				{
 					ID:          "2_1_11",
 					Name:        "2.1.11",
-					Description: "Ensure that the --event-qps argument is set to 0",
+					Description: "[DEPRECATED] Ensure that the --cadvisor-port argument is set to 0",
 				},
 				{
 					ID:          "2_1_12",
 					Name:        "2.1.12",
-					Description: "Ensure that the --tls-cert-file and --tls-private-key-file arguments are set as appropriate",
+					Description: "Ensure that the --rotate-certificates argument is set not to false",
 				},
 				{
 					ID:          "2_1_13",
 					Name:        "2.1.13",
-					Description: "Ensure that the --cadvisor-port argument is set to 0",
+					Description: "Ensure that the RotateKubeletServerCertificate argument is set to true",
 				},
 				{
 					ID:          "2_1_14",
 					Name:        "2.1.14",
-					Description: "Ensure that the RotateKubeletClientCertificate argument is not set to false",
-				},
-				{
-					ID:          "2_1_15",
-					Name:        "2.1.15",
-					Description: "Ensure that the RotateKubeletServerCertificate argument is set to true",
+					Description: "Ensure that the Kubelet only makes use of Strong Cryptographic Ciphers",
 				},
 			},
 		},
@@ -541,17 +593,17 @@ var cisKubernetes = Standard{
 				{
 					ID:          "2_2_1",
 					Name:        "2.2.1",
-					Description: "Ensure that the kubelet.conf file permissions are set to 644 or more restrictive",
+					Description: "Ensure that the kubelet service file permissions are set to 644 or more restrictive",
 				},
 				{
 					ID:          "2_2_2",
 					Name:        "2.2.2",
-					Description: "Ensure that the kubelet.conf file ownership is set to root:root",
+					Description: "Ensure that the kubelet.conf file permissions are set to 644 or more restrictive",
 				},
 				{
 					ID:          "2_2_3",
 					Name:        "2.2.3",
-					Description: "Ensure that the kubelet service file permissions are set to 644 or more restrictive",
+					Description: "Ensure that the kubelet.conf file ownership is set to root:root",
 				},
 				{
 					ID:          "2_2_4",
@@ -578,119 +630,15 @@ var cisKubernetes = Standard{
 					Name:        "2.2.8",
 					Description: "Ensure that the client certificate authorities file ownership is set to root:root",
 				},
-			},
-		},
-		{
-			ID:          "3_1",
-			Name:        "3.1",
-			Description: "Federated Deployments - Federation API Server",
-			Controls: []Control{
 				{
-					ID:          "3_1_1",
-					Name:        "3.1.1",
-					Description: "Ensure that the --anonymous-auth argument is set to false",
+					ID:          "2_2_9",
+					Name:        "2.2.9",
+					Description: "Ensure that the kubelet configuration file has permissions set to 644 or more restrictive",
 				},
 				{
-					ID:          "3_1_2",
-					Name:        "3.1.2",
-					Description: "Ensure that the --basic-auth-file argument is not set",
-				},
-				{
-					ID:          "3_1_3",
-					Name:        "3.1.3",
-					Description: "Ensure that the --insecure-allow-any-token argument is not set",
-				},
-				{
-					ID:          "3_1_4",
-					Name:        "3.1.4",
-					Description: "Ensure that the --insecure-bind-address argument is not set",
-				},
-				{
-					ID:          "3_1_5",
-					Name:        "3.1.5",
-					Description: "Ensure that the --insecure-port argument is set to 0",
-				},
-				{
-					ID:          "3_1_6",
-					Name:        "3.1.6",
-					Description: "Ensure that the --secure-port argument is not set to 0",
-				},
-				{
-					ID:          "3_1_7",
-					Name:        "3.1.7",
-					Description: "Ensure that the --profiling argument is set to false",
-				},
-				{
-					ID:          "3_1_8",
-					Name:        "3.1.8",
-					Description: "Ensure that the admission control policy is not set to AlwaysAdmit",
-				},
-				{
-					ID:          "3_1_9",
-					Name:        "3.1.9",
-					Description: "Ensure that the admission control policy is set to NamespaceLifecycle",
-				},
-				{
-					ID:          "3_1_10",
-					Name:        "3.1.10",
-					Description: "Ensure that the --audit-log-path argument is set as appropriate",
-				},
-				{
-					ID:          "3_1_11",
-					Name:        "3.1.11",
-					Description: "Ensure that the --audit-log-maxage argument is set to 30 or as appropriate",
-				},
-				{
-					ID:          "3_1_12",
-					Name:        "3.1.12",
-					Description: "Ensure that the --audit-log-maxbackup argument is set to 10 or as appropriate",
-				},
-				{
-					ID:          "3_1_13",
-					Name:        "3.1.13",
-					Description: "Ensure that the --audit-log-maxsize argument is set to 100 or as appropriate",
-				},
-				{
-					ID:          "3_1_14",
-					Name:        "3.1.14",
-					Description: "Ensure that the --authorization-mode argument is not set to AlwaysAllow",
-				},
-				{
-					ID:          "3_1_15",
-					Name:        "3.1.15",
-					Description: "Ensure that the --token-auth-file parameter is not set",
-				},
-				{
-					ID:          "3_1_16",
-					Name:        "3.1.16",
-					Description: "Ensure that the --service-account-lookup argument is set to true",
-				},
-				{
-					ID:          "3_1_17",
-					Name:        "3.1.17",
-					Description: "Ensure that the --service-account-key-file argument is set as appropriate",
-				},
-				{
-					ID:          "3_1_18",
-					Name:        "3.1.18",
-					Description: "Ensure that the --etcd-certfile and --etcd-keyfile arguments are set as appropriate",
-				},
-				{
-					ID:          "3_1_19",
-					Name:        "3.1.19",
-					Description: "Ensure that the --tls-cert-file and --tls-private-key-file arguments are set as appropriate",
-				},
-			},
-		},
-		{
-			ID:          "3_2",
-			Name:        "3.2",
-			Description: "Federated Deployments - Federation Controller Manager",
-			Controls: []Control{
-				{
-					ID:          "3_2_1",
-					Name:        "3.2.1",
-					Description: "Ensure that the --profiling argument is set to false",
+					ID:          "2_2_10",
+					Name:        "2.2.10",
+					Description: "Ensure that the kubelet configuration file ownership is set to root:root",
 				},
 			},
 		},

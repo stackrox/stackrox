@@ -75,7 +75,7 @@ const ComplianceDashboardPage = () => {
                         className="pdf-page"
                     />
                     <ComplianceByStandard
-                        standardType={standardTypes.CIS_Kubernetes_v1_2_0}
+                        standardType={standardTypes.CIS_Kubernetes_v1_4_1}
                         className="pdf-page"
                     />
                     <ComplianceByStandard

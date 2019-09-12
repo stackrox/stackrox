@@ -20,3 +20,17 @@ func PerNodeNoteCheck(id, desc string) framework.Check {
 		})
 	})
 }
+
+// PerNodeDeprecatedCheck marks every node with a SkipStatus with the evidence being the description
+func PerNodeDeprecatedCheck(id, desc string) framework.Check {
+	md := framework.CheckMetadata{
+		ID:                 id,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("The check has been retired because: %s", desc),
+	}
+	return framework.NewCheckFromFunc(md, func(ctx framework.ComplianceContext) {
+		framework.ForEachNode(ctx, func(ctx framework.ComplianceContext, node *storage.Node) {
+			framework.Skipf(ctx, "Deprecated check: %s", desc)
+		})
+	})
+}
