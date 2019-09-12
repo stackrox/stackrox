@@ -383,8 +383,11 @@ func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error
 func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectWithClusterIDResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Subject")
 
-	q := search.NewQueryBuilder().AddExactMatches(search.SubjectName, args.Name).
-		AddStrings(search.SubjectKind, storage.SubjectKind_GROUP.String(), storage.SubjectKind_USER.String()).ProtoQuery()
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, resolver.data.GetId()).
+		AddExactMatches(search.SubjectName, args.Name).
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_GROUP.String(), storage.SubjectKind_USER.String()).
+		ProtoQuery()
 
 	bindings, err := resolver.getRoleBindings(ctx, resolver.getConjunctionQuery(q))
 	if err != nil {

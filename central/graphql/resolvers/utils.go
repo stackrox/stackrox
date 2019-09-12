@@ -134,7 +134,12 @@ func (resolver *clusterResolver) getSubjects(ctx context.Context, q *v1.Query) (
 		return nil, err
 	}
 
-	bindings, err := resolver.getRoleBindings(ctx, q)
+	baseQ := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, resolver.data.GetId()).
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_USER.String(), storage.SubjectKind_GROUP.String()).
+		ProtoQuery()
+
+	bindings, err := resolver.getRoleBindings(ctx, search.NewConjunctionQuery(baseQ, q))
 	if err != nil {
 		return nil, err
 	}

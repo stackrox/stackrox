@@ -48,7 +48,7 @@ func (resolver *subjectResolver) SubjectWithClusterID(ctx context.Context) ([]*s
 	for _, cluster := range clusters {
 		q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.Id).
 			AddExactMatches(search.SubjectName, resolver.data.GetName()).
-			AddStrings(search.SubjectKind, resolver.data.GetKind().String()).ProtoQuery()
+			AddExactMatches(search.SubjectKind, resolver.data.GetKind().String()).ProtoQuery()
 		bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 		if err != nil {
 			continue
