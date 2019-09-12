@@ -35,7 +35,6 @@ func init() {
 					"azure/66c57ff5-f49f-4510-ae04-e26d3ad2ee63",
 					"aws/051999192406",
 					"aws/880732477823", // k@stackrox.com"
-					"aws/405534842425", // ll@stackrox.com
 					"aws/522993616158", // rhama@stackrox.com
 				},
 			}),
