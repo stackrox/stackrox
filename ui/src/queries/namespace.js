@@ -36,6 +36,38 @@ export const NAMESPACES_QUERY = gql`
     ${NAMESPACE_FRAGMENT}
 `;
 
+export const NAMESPACE_NO_POLICIES_FRAGMENT = gql`
+    fragment namespaceNoPoliciesFields on Namespace {
+        metadata {
+            name
+            id
+            clusterId
+            clusterName
+            labels {
+                key
+                value
+            }
+        }
+        numSecrets
+        imageCount
+        policyCount
+        k8sroleCount
+        serviceAccountCount
+        subjectCount
+        policyStatus {
+            status
+        }
+    }
+`;
+export const NAMESPACES_NO_POLICIES_QUERY = gql`
+    query namespaces($query: String) {
+        results: namespaces(query: $query) {
+            ...namespaceNoPoliciesFields
+        }
+    }
+    ${NAMESPACE_NO_POLICIES_FRAGMENT}
+`;
+
 export const ALL_NAMESPACES = gql`
     query namespaces {
         results: namespaces {

@@ -5,7 +5,7 @@ import pluralize from 'pluralize';
 import searchContext from 'Containers/searchContext';
 
 import { sortValueByLength } from 'sorters/sorters';
-import { NAMESPACES_QUERY as QUERY } from 'queries/namespace';
+import { NAMESPACES_NO_POLICIES_QUERY } from 'queries/namespace';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
@@ -57,8 +57,11 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { policyStatus } = original;
-                const { length } = policyStatus.failingPolicies;
-                return !length ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+                return policyStatus && policyStatus.status === 'pass' ? (
+                    'Pass'
+                ) : (
+                    <LabelChip text="Fail" type="alert" />
+                );
             },
             id: 'status',
             accessor: d => d.policyStatus.status
@@ -196,7 +199,7 @@ const Namespaces = ({
     return (
         <List
             className={className}
-            query={QUERY}
+            query={NAMESPACES_NO_POLICIES_QUERY}
             variables={variables}
             entityType={entityTypes.NAMESPACE}
             tableColumns={tableColumns}
