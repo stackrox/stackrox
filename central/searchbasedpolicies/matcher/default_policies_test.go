@@ -403,6 +403,18 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(secretEnvDep)
 
+	secretEnvSrcUnsetDep := &storage.Deployment{
+		Id: "SECRETENVSRCUNSETDEP",
+		Containers: []*storage.Container{
+			{Config: &storage.ContainerConfig{
+				Env: []*storage.ContainerConfig_EnvironmentConfig{
+					{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode"},
+				},
+			}},
+		},
+	}
+	suite.mustIndexDepAndImages(secretEnvSrcUnsetDep)
+
 	secretKeyRefDep := &storage.Deployment{
 		Id: "SECRETKEYREFDEP",
 		Containers: []*storage.Container{
@@ -749,6 +761,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				containerPort22Dep.GetId():                        {},
 				dockerSockDep.GetId():                             {},
 				secretEnvDep.GetId():                              {},
+				secretEnvSrcUnsetDep.GetId():                      {},
 				secretKeyRefDep.GetId():                           {},
 				depWithOwnerAnnotation.GetId():                    {},
 				depWithGoodEmailAnnotation.GetId():                {},

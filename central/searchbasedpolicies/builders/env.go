@@ -39,9 +39,11 @@ func (e EnvQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		return
 	}
 
+	envVarSrcSearchFieldSet := false
 	fieldLabels := []search.FieldLabel{search.EnvironmentKey, search.EnvironmentValue}
 	queryStrings := []string{regexOrWildcard(fields.GetEnv().GetKey()), regexOrWildcard(fields.GetEnv().GetValue())}
 	if fields.GetEnv().GetEnvVarSource() != storage.ContainerConfig_EnvironmentConfig_UNSET {
+		envVarSrcSearchFieldSet = true
 		fieldLabels = append(fieldLabels, search.EnvironmentVarSrc)
 		queryStrings = append(queryStrings, fields.GetEnv().GetEnvVarSource().String())
 	}
@@ -51,14 +53,16 @@ func (e EnvQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		keyMatches := result.Matches[keySearchField.GetFieldPath()]
 		valueMatches := result.Matches[valueSearchField.GetFieldPath()]
 		envVarSrcMatches := result.Matches[envVarSrcSearchField.GetFieldPath()]
-		if len(keyMatches) == 0 || len(valueMatches) == 0 || len(envVarSrcMatches) == 0 {
+
+		if len(keyMatches) == 0 || len(valueMatches) == 0 ||
+			(envVarSrcSearchFieldSet && len(envVarSrcMatches) == 0) {
 			return searchbasedpolicies.Violations{}
 		}
 		violations := searchbasedpolicies.Violations{
 			AlertViolations: make([]*storage.Alert_Violation, 0, len(keyMatches)),
 		}
 		for i, keyMatch := range keyMatches {
-			if i >= len(valueMatches) || i >= len(envVarSrcMatches) {
+			if i >= len(valueMatches) || (envVarSrcSearchFieldSet && i >= len(envVarSrcMatches)) {
 				log.Errorf("Mismatched number of key and value matches: %+v; %+v", keyMatches, valueMatches)
 				return violations
 			}
