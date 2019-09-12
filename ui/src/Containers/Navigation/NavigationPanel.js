@@ -12,14 +12,13 @@ import {
     accessControlPath,
     systemConfigPath
 } from 'routePaths';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { filterLinksByFeatureFlag } from './navHelpers';
 
 const navLinks = [
     {
         text: 'Clusters',
-        to: clustersPath.replace('/:clusterId', ''),
-        featureFlag: knownBackendFlags.ROX_SENSOR_AUTOUPGRADE
+        to: clustersPath.replace('/:clusterId', '')
+        // enabled by default as of 29.0
     },
     {
         text: 'System Policies',

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
 import get from 'lodash/get';
 import set from 'lodash/set';
@@ -23,18 +26,28 @@ import {
 } from './cluster.helpers';
 import CollapsibleCard from '../../Components/CollapsibleCard';
 
-function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeStatus }) {
-    const [selectedCluster, setSelectedCluster] = useState(newClusterDefault);
+function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, upgradeStatus }) {
+    const envAwareClusterDefault = {
+        ...newClusterDefault,
+        mainImage: metadata.releaseBuild ? 'stackrox.io/main' : 'stackrox/main',
+        collectorImage: metadata.releaseBuild
+            ? 'collector.stackrox.io/collector'
+            : 'stackrox/collector'
+    };
+
+    const [selectedCluster, setSelectedCluster] = useState(envAwareClusterDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [messageState, setMessageState] = useState(null);
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState(null);
+    const [submissionError, setSubmissionError] = useState('');
 
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
 
     function unselectCluster() {
+        setSubmissionError('');
         setSelectedClusterId('');
-        setSelectedCluster(newClusterDefault);
+        setSelectedCluster(envAwareClusterDefault);
         setMessageState(null);
         setWizardStep(wizardSteps.FORM);
     }
@@ -62,7 +75,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeSta
                         setMessageState({
                             blocking: true,
                             type: 'error',
-                            message: 'We could not retrieve the cluster with that ID.'
+                            message: 'There was an error downloading the configuration files.'
                         });
                     });
             }
@@ -109,18 +122,34 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeSta
 
     function onNext() {
         if (wizardStep === wizardSteps.FORM) {
-            saveCluster(selectedCluster).then(() => {
-                setWizardStep(wizardSteps.DEPLOYMENT);
-                if (
-                    !(
-                        selectedCluster &&
-                        selectedCluster.status &&
-                        selectedCluster.status.lastContact
-                    )
-                ) {
-                    setPollingDelay(clusterDetailPollingInterval);
-                }
-            });
+            setSubmissionError('');
+            saveCluster(selectedCluster)
+                .then(response => {
+                    const newId = response.response.result.cluster; // really is nested like this
+                    const clusterWithId = { ...selectedCluster, id: newId };
+                    setSelectedCluster(clusterWithId);
+
+                    setWizardStep(wizardSteps.DEPLOYMENT);
+
+                    if (
+                        !(
+                            selectedCluster &&
+                            selectedCluster.status &&
+                            selectedCluster.status.lastContact
+                        )
+                    ) {
+                        setPollingDelay(clusterDetailPollingInterval);
+                    }
+                })
+                .catch(error => {
+                    const serverError = get(
+                        error,
+                        'response.data.message',
+                        'An unknown error has occurred.'
+                    );
+
+                    setSubmissionError(serverError);
+                });
         } else {
             unselectCluster();
         }
@@ -131,7 +160,16 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeSta
     }
 
     function onDownload() {
-        downloadClusterYaml(selectedClusterId, createUpgraderSA);
+        setSubmissionError('');
+        downloadClusterYaml(selectedCluster.id, createUpgraderSA).catch(error => {
+            const serverError = get(
+                error,
+                'response.data.message',
+                'We could not download the configuration files.'
+            );
+
+            setSubmissionError(serverError);
+        });
     }
 
     /**
@@ -167,9 +205,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeSta
     const parsedUpgradeStatus = parseUpgradeStatus(upgradeStatus);
     const upgradeStatusDetail = upgradeStatus && getUpgradeStatusDetail(upgradeStatus);
     const upgradeMessage =
-        upgradeStatus &&
-        upgradeStatusDetail &&
-        formatUpgradeMessage(parsedUpgradeStatus, upgradeStatusDetail);
+        upgradeStatus && formatUpgradeMessage(parsedUpgradeStatus, upgradeStatusDetail);
 
     return (
         <Panel
@@ -196,14 +232,21 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeSta
                             {upgradeMessage.detail !== '' && (
                                 <div className="mt-2 flex flex-col items-center">
                                     <div className="bg-base-200">
-                                        <pre className="whitespace-normal">
+                                        <div className="whitespace-normal overflow-x-scroll">
                                             {upgradeMessage.detail}
-                                        </pre>
+                                        </div>
                                     </div>
                                 </div>
                             )}
                         </div>
                     </CollapsibleCard>
+                </div>
+            )}
+            {submissionError && submissionError.length > 0 && (
+                <div className="w-full">
+                    <div className="mb-4 mx-4">
+                        <Message type="error" message={submissionError} />
+                    </div>
                 </div>
             )}
             {showFormStyles && (
@@ -233,6 +276,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId, upgradeSta
 }
 
 ClustersSidePanel.propTypes = {
+    metadata: PropTypes.shape({ version: PropTypes.string, releaseBuild: PropTypes.bool })
+        .isRequired,
     setSelectedClusterId: PropTypes.func.isRequired,
     selectedClusterId: PropTypes.string,
     upgradeStatus: PropTypes.shape({})
@@ -243,4 +288,8 @@ ClustersSidePanel.defaultProps = {
     upgradeStatus: null
 };
 
-export default ClustersSidePanel;
+const mapStateToProps = createStructuredSelector({
+    metadata: selectors.getMetadata
+});
+
+export default connect(mapStateToProps)(ClustersSidePanel);

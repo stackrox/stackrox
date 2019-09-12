@@ -38,15 +38,15 @@ export const clusterTablePollingInterval = 5000; // milliseconds
 export const clusterDetailPollingInterval = 3000; // milliseconds
 
 const defaultNewClusterType = 'KUBERNETES_CLUSTER';
-const defaultCollectionMethod = 'NO_COLLECTION';
+const defaultCollectionMethod = 'KERNEL_MODULE';
 
 export const newClusterDefault = {
     id: null,
     name: '',
     type: defaultNewClusterType,
-    mainImage: '',
-    collectorImage: '',
-    centralApiEndpoint: '',
+    mainImage: 'stackrox/main',
+    collectorImage: 'stackrox/collector',
+    centralApiEndpoint: 'central.stackrox:443',
     runtimeSupport: false,
     monitoringEndpoint: '',
     collectionMethod: defaultCollectionMethod,
@@ -281,7 +281,7 @@ export function getUpgradeableClusters(clusters = []) {
         const upgradeStatus = get(cluster, 'status.upgradeStatus', null);
         const statusObj = parseUpgradeStatus(upgradeStatus);
 
-        return statusObj.action; // if action property exists, you can try or retry an upgrade
+        return statusObj && statusObj.action; // if action property exists, you can try or retry an upgrade
     });
 }
 

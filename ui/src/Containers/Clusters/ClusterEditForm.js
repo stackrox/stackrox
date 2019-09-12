@@ -51,7 +51,14 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                 <div className="p-3">
                     <div className="mb-4">
                         <label htmlFor="name" className="block py-2 text-base-600 font-700">
-                            Name:
+                            Cluster Name{' '}
+                            <span
+                                aria-label="Required"
+                                data-test-id="required"
+                                className="text-alert-500 ml-1"
+                            >
+                                *
+                            </span>
                         </label>
                         <div className="flex">
                             <input
@@ -66,7 +73,14 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                     </div>
                     <div className="mb-4">
                         <label htmlFor="mainImage" className="block py-2 text-base-600 font-700">
-                            Main Image Repository:
+                            Main Image Repository{' '}
+                            <span
+                                aria-label="Required"
+                                data-test-id="required"
+                                className="text-alert-500 ml-1"
+                            >
+                                *
+                            </span>
                         </label>
                         <div className="flex">
                             <input
@@ -83,7 +97,14 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             htmlFor="centralApiEndpoint"
                             className="block py-2 text-base-600 font-700"
                         >
-                            Central API Endpoint (include port):
+                            Central API Endpoint (include port){' '}
+                            <span
+                                aria-label="Required"
+                                data-test-id="required"
+                                className="text-alert-500 ml-1"
+                            >
+                                *
+                            </span>
                         </label>
                         <div className="flex">
                             <input
@@ -100,17 +121,17 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             htmlFor="monitoringEndpoint"
                             className="block py-2 text-base-600 font-700"
                         >
-                            Monitoring Endpoint (include port; empty means no monitoring):
+                            Monitoring Endpoint (include port; empty means no monitoring)
                         </label>
                         <div className="flex">
-                            <div className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10">
-                                <input
-                                    id="monitoringEndpoint"
-                                    name="monitoringEndpoint"
-                                    onChange={handleChange}
-                                    value={selectedCluster.monitoringEndpoint}
-                                />
-                            </div>
+                            <input
+                                id="monitoringEndpoint"
+                                name="monitoringEndpoint"
+                                onChange={handleChange}
+                                value={selectedCluster.monitoringEndpoint}
+                                placeholder="<monitoring-subdomain>.<domain>:<port>"
+                                className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                            />
                         </div>
                     </div>
                     <div className="mb-4">
@@ -118,15 +139,16 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             htmlFor="collectionMethod"
                             className="block py-2 text-base-600 font-700"
                         >
-                            Collection Method:
+                            Collection Method
                         </label>
                         <div className="flex">
                             <Select
                                 options={runtimeOptions}
                                 placeholder="Select a runtime option"
                                 onChange={onCollectionMethodChange}
-                                className="block w-full border-r bg-base-100 border-base-300 text-base-600 p-3 pr-8 z-1 focus:border-base-500"
+                                className="block w-full bg-base-100 border-base-300 text-base-600 p-3 pr-8 z-1 focus:border-base-500"
                                 wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full font-600 text-base-600 hover:border-base-400"
+                                triggerClass="border-l border-base-300"
                                 value={selectedCluster.collectionMethod}
                             />
                         </div>
@@ -136,7 +158,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             htmlFor="collectorImage"
                             className="block py-2 text-base-600 font-700"
                         >
-                            Collector Image Repository (uses Main image repository by default):
+                            Collector Image Repository (uses Main image repository by default)
                         </label>
                         <div className="flex">
                             <input
@@ -153,7 +175,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             htmlFor="admissionController"
                             className="block py-2 text-base-600 font-700"
                         >
-                            Cluster Type:
+                            Cluster Type
                         </label>
                         <div className="flex">
                             <Select
@@ -162,6 +184,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                                 onChange={onClusterTypeChange}
                                 className="block w-full border-r bg-base-100 border-base-300 text-base-600 p-3 pr-8 z-1 focus:border-base-500"
                                 wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full font-600 text-base-600 hover:border-base-400"
+                                triggerClass="border-l border-base-300"
                                 value={selectedCluster.type}
                             />
                         </div>
@@ -172,7 +195,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                                 htmlFor="admissionController"
                                 className="block py-2 text-base-600 font-700"
                             >
-                                Create Admission Controller Webhook:
+                                Create Admission Controller Webhook
                             </label>
                             <ToggleSwitch
                                 id="admissionController"
@@ -193,12 +216,12 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                 >
                     <div className="p-3">
                         <h3>Admission Controller</h3>
-                        <div className="mb-4 flex py-2 border-b-2 border-base-300 items-center justify-between">
+                        <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label
-                                htmlFor="dynamicConfig.admissionControllerConfig.enabled"
-                                className="py-2 text-base-600 font-700 flex w-full"
+                                htmlFor="admissionController"
+                                className="block py-2 text-base-600 font-700"
                             >
-                                Enable Admission Controller:
+                                Enable Admission Controller
                             </label>
                             <ToggleSwitch
                                 id="dynamicConfig.admissionControllerConfig.enabled"
@@ -209,13 +232,13 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                                 }
                             />
                         </div>
-                        <div className="mb-4 flex py-2 border-b-2 border-base-300 items-center justify-between">
+                        <div className="mb-4 flex px-2 py-2 items-center justify-between">
                             <label
                                 htmlFor="dynamicConfig.admissionControllerConfig
                             .timeoutSeconds"
                                 className="py-2 text-base-600 font-700 flex"
                             >
-                                Timeout (Seconds):
+                                Timeout (Seconds)
                             </label>
                             <input
                                 className="min-h-10 border-2 bg-base-100 border-base-300 text-base-600 p-3 rounded-r-sm cursor-pointer z-1 focus:border-base-300 w-12 font-600"
@@ -228,12 +251,12 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                                 }
                             />
                         </div>
-                        <div className="mb-4 flex py-2 border-b-2 border-base-300 items-center justify-between">
+                        <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label
-                                htmlFor="dynamicConfig.admissionControllerConfig.scanInline"
-                                className="py-2 text-base-600 font-700 flex w-full"
+                                htmlFor="admissionController"
+                                className="block py-2 text-base-600 font-700"
                             >
-                                Contact Image Scanners:
+                                Contact Image Scanners
                             </label>
                             <ToggleSwitch
                                 id="dynamicConfig.admissionControllerConfig.scanInline"
@@ -245,12 +268,12 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                                 }
                             />
                         </div>
-                        <div className="mb-4 flex py-2 border-b-2 border-base-300">
+                        <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label
-                                htmlFor="dynamicConfig.admissionControllerConfig.disableBypass"
-                                className="py-2 text-base-600 font-700 flex w-full"
+                                htmlFor="admissionController"
+                                className="block py-2 text-base-600 font-700"
                             >
-                                Disable Use of Bypass Annotation:
+                                Disable Use of Bypass Annotation
                             </label>
                             <ToggleSwitch
                                 id="dynamicConfig.admissionControllerConfig.disableBypass"

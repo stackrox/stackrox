@@ -148,7 +148,7 @@ class MainPage extends Component {
                         featureFlagEnabled={isBackendFeatureFlagEnabled(
                             this.props.featureFlags,
                             knownBackendFlags.ROX_SENSOR_AUTOUPGRADE,
-                            false
+                            true // enabled by default as of 29.0
                         )}
                     />
                     <Redirect from={mainPath} to={dashboardPath} />

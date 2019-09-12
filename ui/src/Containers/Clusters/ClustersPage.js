@@ -18,7 +18,12 @@ import SearchInput from 'Components/SearchInput';
 import StatusField from 'Components/StatusField';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import CheckboxTable from 'Components/CheckboxTable';
-import { defaultColumnClassName, wrapClassName, rtTrActionsClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    wrapClassName,
+    rtTrActionsClassName
+} from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 
 import useInterval from 'hooks/useInterval';
@@ -66,7 +71,8 @@ const ClustersPage = ({
     const [currentClusters, setCurrentClusters] = useState([]);
     const [showDialog, setShowDialog] = useState(false);
     const [autoUpgradeConfig, setAutoUpgradeConfig] = useState({});
-    const [selectedClusters, setSelectedClusters] = useState([]);
+    const [checkedClusterIds, setCheckedClusters] = useState([]);
+    const [upgradableClusters, setUpgradableClusters] = useState([]);
     const [tableRef, setTableRef] = useState(null);
     const [selectedClusterId, setSelectedClusterId] = useState(clusterId);
     const [pollingCount, setPollingCount] = useState(0);
@@ -89,7 +95,7 @@ const ClustersPage = ({
     // @TODO, implement actual delete logic into this stub function
     const onDeleteHandler = cluster => e => {
         e.stopPropagation();
-        setSelectedClusters([cluster.id]);
+        setCheckedClusters([cluster.id]);
         setShowDialog(true);
     };
 
@@ -109,16 +115,30 @@ const ClustersPage = ({
         );
     }
 
+    function calculateUpgradeableClusters(selection) {
+        const currentlySelectedClusters = currentClusters.filter(cluster =>
+            selection.includes(cluster.id)
+        );
+
+        const upgradeableList = getUpgradeableClusters(currentlySelectedClusters);
+
+        setUpgradableClusters(upgradeableList);
+    }
+
     function toggleCluster(id) {
-        const selection = toggleRow(id, selectedClusters);
-        setSelectedClusters(selection);
+        const selection = toggleRow(id, checkedClusterIds);
+        setCheckedClusters(selection);
+
+        calculateUpgradeableClusters(selection);
     }
 
     function toggleAllClusters() {
-        const rowsLength = selectedClusters.length;
+        const rowsLength = checkedClusterIds.length;
         const ref = tableRef.reactTable;
-        const selection = toggleSelectAll(rowsLength, selectedClusters, ref);
-        setSelectedClusters(selection);
+        const selection = toggleSelectAll(rowsLength, checkedClusterIds, ref);
+        setCheckedClusters(selection);
+
+        calculateUpgradeableClusters(selection);
     }
 
     // @TODO: Change table component to use href for accessibility and better UX here, instead of an onclick
@@ -157,8 +177,8 @@ const ClustersPage = ({
     }
 
     function upgradeSelectedClusters() {
-        upgradeClusters(selectedClusters).then(() => {
-            setSelectedClusters([]);
+        upgradeClusters(checkedClusterIds).then(() => {
+            setCheckedClusters([]);
 
             refreshClusterList();
         });
@@ -192,8 +212,8 @@ const ClustersPage = ({
     }
 
     function makeDeleteRequest() {
-        deleteClusters(selectedClusters).then(() => {
-            setSelectedClusters([]);
+        deleteClusters(checkedClusterIds).then(() => {
+            setCheckedClusters([]);
 
             fetchClustersAsArray()
                 .then(clusters => {
@@ -262,7 +282,6 @@ const ClustersPage = ({
         );
     }
 
-    const upgradableClusters = getUpgradeableClusters(selectedClusters);
     const headerActions = (
         <React.Fragment>
             <PanelButton
@@ -274,10 +293,10 @@ const ClustersPage = ({
             />
             <PanelButton
                 icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
-                text={`Delete (${selectedClusters.length})`}
+                text={`Delete (${checkedClusterIds.length})`}
                 className="btn btn-alert ml-2"
                 onClick={deleteSelectedClusters}
-                disabled={selectedClusters.length === 0 || !!selectedClusterId}
+                disabled={checkedClusterIds.length === 0 || !!selectedClusterId}
             />
             <PanelButton
                 icon={<Icon.Plus className="h-4 w-4 ml-1" />}
@@ -297,32 +316,44 @@ const ClustersPage = ({
         {
             accessor: 'name',
             Header: 'Name',
-            className: `${wrapClassName} ${defaultColumnClassName}`
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
             Header: 'Type',
-            Cell: ({ original }) => formatClusterType(original.type)
+            Cell: ({ original }) => formatClusterType(original.type),
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
             Header: 'Runtime Support',
-            Cell: ({ original }) => formatCollectionMethod(original.collectionMethod)
+            Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
+            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
             Header: 'Admission Controller Webhook',
-            Cell: ({ original }) => formatEnabledDisabledField(original.admissionController)
+            Cell: ({ original }) => formatEnabledDisabledField(original.admissionController),
+            headerClassName: `w-1/5 ${defaultHeaderClassName}`,
+            className: `w-1/5 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
             Header: 'Last Check-In',
-            Cell: ({ original }) => formatLastCheckIn(original.status)
+            Cell: ({ original }) => formatLastCheckIn(original.status),
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
             Header: 'Upgrade status',
-            Cell: ({ original }) => getUpgradeStatusField(original)
+            Cell: ({ original }) => getUpgradeStatusField(original),
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
             Header: 'Current Sensor Version',
             Cell: ({ original }) => formatSensorVersion(original.status),
-            className: `${wrapClassName} ${defaultColumnClassName} word-break`
+            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`
         },
         {
             Header: '',
@@ -412,7 +443,7 @@ const ClustersPage = ({
                                     onRowClick={handleRowClick}
                                     toggleRow={toggleCluster}
                                     toggleSelectAll={toggleAllClusters}
-                                    selection={selectedClusters}
+                                    selection={checkedClusterIds}
                                     selectedRowId={selectedClusterId}
                                     noDataText="No clusters to show."
                                     minRows={20}
@@ -430,7 +461,9 @@ const ClustersPage = ({
             <Dialog
                 className="w-1/3"
                 isOpen={showDialog}
-                text="Are you sure you want to delete?"
+                text={`Cluster deletion won't tear down StackRox services running on this cluster. You can remove them from the corresponding cluster by running the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${
+                    checkedClusterIds.length
+                } cluster(s)?`}
                 onConfirm={makeDeleteRequest}
                 confirmText="Delete"
                 onCancel={hideDialog}

@@ -104,7 +104,7 @@ class IntegrationsPage extends Component {
         const autoUpgradeEnabled = isBackendFeatureFlagEnabled(
             this.props.featureFlags,
             knownBackendFlags.ROX_SENSOR_AUTOUPGRADE,
-            false
+            true // enabled by default as of 29.0
         );
 
         if (autoUpgradeEnabled) {

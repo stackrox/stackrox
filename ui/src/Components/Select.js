@@ -9,6 +9,7 @@ class Select extends Component {
         placeholder: PropTypes.string,
         className: PropTypes.string,
         wrapperClass: PropTypes.string,
+        triggerClass: PropTypes.string,
         value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
     };
 
@@ -17,6 +18,7 @@ class Select extends Component {
         className:
             'block w-full border bg-base-200 border-base-400 text-base-600 p-3 pr-8 rounded-sm z-1 focus:border-base-500',
         wrapperClass: '',
+        triggerClass: '',
         value: ''
     };
 
@@ -32,11 +34,11 @@ class Select extends Component {
     };
 
     render() {
-        const { className, wrapperClass, options, placeholder, value } = this.props;
+        const { className, wrapperClass, triggerClass, options, placeholder, value } = this.props;
         return (
             <div className={`flex relative ${wrapperClass}`}>
                 <select
-                    className={`${className} cursor-pointer`}
+                    className={`${className} pr-8 w-full cursor-pointer`}
                     onChange={this.onClick}
                     value={value}
                     aria-label={placeholder}
@@ -52,7 +54,9 @@ class Select extends Component {
                         </option>
                     ))}
                 </select>
-                <div className="flex items-center px-2 cursor-pointer z-0 pointer-events-none">
+                <div
+                    className={`${triggerClass} absolute pin-y pin-r flex items-center px-2 cursor-pointer z-10 pointer-events-none`}
+                >
                     <Icon.ChevronDown className="h-4 w-4" />
                 </div>
             </div>
