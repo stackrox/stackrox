@@ -11,17 +11,13 @@ import gql from 'graphql-tag';
 
 const CLUSTERS_COUNT = gql`
     query clustersCount {
-        results: clusters {
-            id
-        }
+        results: complianceClusterCount
     }
 `;
 
 const NODES_COUNT = gql`
     query nodesCount {
-        results: nodes {
-            id
-        }
+        results: complianceNodeCount
     }
 `;
 
@@ -33,9 +29,7 @@ const NAMESPACE_COUNT = gql`
 
 const DEPLOYMENTS_COUNT = gql`
     query deploymentsCount {
-        results: deployments {
-            id
-        }
+        results: complianceDeploymentCount
     }
 `;
 
