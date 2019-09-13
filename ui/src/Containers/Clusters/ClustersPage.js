@@ -334,8 +334,8 @@ const ClustersPage = ({
         {
             Header: 'Admission Controller Webhook',
             Cell: ({ original }) => formatEnabledDisabledField(original.admissionController),
-            headerClassName: `w-1/5 ${defaultHeaderClassName}`,
-            className: `w-1/5 ${wrapClassName} ${defaultColumnClassName}`
+            headerClassName: `w-1/4 ${defaultHeaderClassName}`,
+            className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
             Header: 'Last Check-In',
