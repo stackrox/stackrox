@@ -54,6 +54,8 @@ func main() {
 	maxDeployments := flag.Int("max-deployments", 200, "maximum number of deployments to send")
 	admissionInterval := flag.Duration("admission-interval", 2000*time.Millisecond, "interval for sending admission controller requests")
 	maxAdmissionRequests := flag.Int("max-admission-requests", 0, "maximum number of admission controller requests to send")
+	deploymentUpdateInterval := flag.Duration("deployment-update-interval", 2000*time.Millisecond, "interval for sending deployment updates")
+	maxDeploymentUpdates := flag.Int("max-deployment-updates", 0, "maximum number of deployment updates to send")
 	indicatorInterval := flag.Duration("indicator-interval", 1000*time.Millisecond, "interval for sending indicators")
 	maxIndicators := flag.Int("max-indicators", 5000, "maximum number of indicators to send")
 	networkFlowInterval := flag.Duration("network-flow-interval", 30*time.Second, "interval for sending network flow diffs")
@@ -113,10 +115,15 @@ func main() {
 
 	go sendAdmissionControllerRequests(ctx, clusterClient, admissionClient, *admissionInterval, *maxAdmissionRequests, &admissionControllerSignal)
 
+	deploymentUpdateSignal := concurrency.NewSignal()
+
+	go sendDeploymentUpdates(stream, *deploymentUpdateInterval, *maxDeploymentUpdates, &deploymentUpdateSignal)
+
 	deploymentSignal.Wait()
 	indicatorSignal.Wait()
 	networkFlowSignal.Wait()
 	admissionControllerSignal.Wait()
+	deploymentUpdateSignal.Wait()
 
 	logger.Infof("All sending done. The mock sensor will now just sleep forever.")
 	time.Sleep(365 * 24 * time.Hour)
@@ -137,9 +144,13 @@ func deploymentSensorEvent(bigDepRate float64) *central.SensorEvent {
 	} else {
 		deployment = fixtures.LightweightDeployment()
 	}
-	id := getDeploymentID()
+	return deploymentSensorEventForNum(getDeploymentCount(), deployment)
+}
+
+func deploymentSensorEventForNum(depNum int, deployment *storage.Deployment) *central.SensorEvent {
+	id := getGeneratedDeploymentID(depNum)
 	deployment.Id = id
-	deployment.Name = fmt.Sprintf("nginx%d", getDeploymentCount())
+	deployment.Name = fmt.Sprintf("nginx%d", depNum)
 	return &central.SensorEvent{
 		Id:     id,
 		Action: central.ResourceAction_CREATE_RESOURCE,
@@ -310,4 +321,25 @@ func getDeployDetectionRequest(reqNum int, clusterID string) *v1.DeployDetection
 		EnforcementOnly:    true,
 		ClusterId:          clusterID,
 	}
+}
+
+func sendDeploymentUpdates(stream *threadSafeStream, updateInterval time.Duration, maxUpdates int, signal *concurrency.Signal) {
+	defer signal.Signal()
+	ticker := time.NewTicker(updateInterval)
+	defer ticker.Stop()
+
+	for i := 0; i < maxUpdates; i++ {
+		<-ticker.C
+		deployment := fixtures.LightweightDeployment()
+		deployment.Labels = map[string]string{uuid.NewV4().String(): uuid.NewV4().String()}
+		numDeps := getDeploymentCount()
+		if numDeps == 0 {
+			// Avoid divide by zero.
+			numDeps = 1
+		}
+		if err := stream.SendEvent(deploymentSensorEventForNum(rand.Int()%numDeps, deployment)); err != nil {
+			logger.Errorf("Error sending deployment update: %v", err)
+		}
+	}
+	logger.Infof("Finished writing %d deployment updates", maxUpdates)
 }
