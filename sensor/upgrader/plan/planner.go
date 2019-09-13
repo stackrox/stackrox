@@ -42,6 +42,7 @@ func (p *planner) GenerateExecutionPlan(desired []k8sobjects.Object) (*Execution
 	for _, desiredObj := range desired {
 		ref := k8sobjects.RefOf(desiredObj)
 		currObj := currObjMap[ref]
+		log.Infof("Testing object %v", ref)
 		if currObj == nil {
 			plan.Creations = append(plan.Creations, desiredObj)
 		} else if !p.objectsAreEqual(currObj, desiredObj) && (currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] != p.ctx.ProcessID()) != p.rollback {

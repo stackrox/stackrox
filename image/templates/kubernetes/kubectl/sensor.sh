@@ -134,7 +134,7 @@ echo "Creating deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"
 
 {{ if not .CreateUpgraderSA}}
-if [[ -f "${DIR}/upgrader-serviceaccout.yaml" ]]; then
-    printf "%s\n\n%s\n" "Did not create the upgrader service account. To create it later, please run" "${KUBE_COMMAND} apply -f ${DIR}/upgrader-serviceaccount.yaml"
+if [[ -f "${DIR}/upgrader-serviceaccount.yaml" ]]; then
+    printf "%s\n\n%s\n" "Did not create the upgrader service account. To create it later, please run" "${KUBE_COMMAND} apply -f \"${DIR}/upgrader-serviceaccount.yaml\""
 fi
 {{- end}}

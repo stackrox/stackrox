@@ -10,6 +10,7 @@ var (
 		upgraderStuckInSameStateTimeout: 5 * time.Minute,
 		stateReconcilerPollInterval:     5 * time.Second,
 		absoluteNoProgressTimeout:       10 * time.Minute,
+		rollbackSuccessPeriod:           30 * time.Second,
 	}
 )
 
@@ -29,6 +30,9 @@ type timeoutProvider struct {
 	// Mark as upgrade as timed out if it's still active, and has been running
 	// this long without making progress.
 	absoluteNoProgressTimeout time.Duration
+
+	// How long to wait before marking the rollback a success.
+	rollbackSuccessPeriod time.Duration
 }
 
 func (t *timeoutProvider) UpgraderStartGracePeriod() time.Duration {
@@ -45,4 +49,8 @@ func (t *timeoutProvider) StateReconcilePollInterval() time.Duration {
 
 func (t *timeoutProvider) AbsoluteNoProgressTimeout() time.Duration {
 	return t.absoluteNoProgressTimeout
+}
+
+func (t *timeoutProvider) RollBackSuccessPeriod() time.Duration {
+	return t.rollbackSuccessPeriod
 }

@@ -53,6 +53,9 @@ func (u *upgradeController) doProcessCheckInFromUpgrader(req *central.UpgradeChe
 	var detail string
 	if updateDetail {
 		detail = constructUpgradeDetail(req)
+	} else {
+		// Carry over the previous detail.
+		detail = processStatus.GetProgress().GetUpgradeStatusDetail()
 	}
 
 	if err := u.setUpgradeProgress(req.GetUpgradeProcessId(), nextState, detail); err != nil {
@@ -129,7 +132,10 @@ func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheck
 			nextState = storage.UpgradeProgress_UPGRADER_LAUNCHING
 		}
 	case *central.UpgradeCheckInFromSensorRequest_DeploymentGone:
-		// This is always an error - we only tell the deployment to delete itself (or sensor to delete it) if the
+		if currState == storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK {
+			return nil
+		}
+		// This is always an error unless the upgrader was rolling back - we only tell the deployment to delete itself (or sensor to delete it) if the
 		// process is complete (deletion of upgrader deployment is not a precondition for deletion!), and in this
 		// case we would have exited this function right at the top.
 		nextState = storage.UpgradeProgress_UPGRADE_ERROR_UNKNOWN

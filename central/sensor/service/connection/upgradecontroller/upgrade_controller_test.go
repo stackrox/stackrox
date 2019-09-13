@@ -30,6 +30,8 @@ const (
 	fakeOldVersion = "2.5.28.0"
 
 	absoluteNoProgressTimeout = 200 * time.Millisecond
+
+	rollBackSucessPeriod = 150 * time.Millisecond
 )
 
 var (
@@ -38,6 +40,7 @@ var (
 		upgraderStuckInSameStateTimeout: 100 * time.Millisecond,
 		stateReconcilerPollInterval:     10 * time.Millisecond,
 		absoluteNoProgressTimeout:       absoluteNoProgressTimeout,
+		rollbackSuccessPeriod:           rollBackSucessPeriod,
 	}
 )
 
@@ -333,6 +336,9 @@ func (suite *UpgradeCtrlTestSuite) TestUpgradeExecutionErrorAndRollback() {
 
 	//Now, an old sensor checks in.
 	suite.registerConnectionFromNonAncientSensorVersion(fakeOldVersion)
+	time.Sleep(rollBackSucessPeriod / 3)
+	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK)
+	time.Sleep(rollBackSucessPeriod)
 	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK)
 }
 

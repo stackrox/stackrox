@@ -205,7 +205,7 @@ function launch_sensor {
 
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then
     	extra_config+=("--admission-controller=true")
-    	extra_json_config+=', "admissionController: true'
+    	extra_json_config+=', "admissionController": true'
     fi
 
     # Delete path

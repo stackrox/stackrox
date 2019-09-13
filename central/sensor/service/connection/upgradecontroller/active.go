@@ -85,7 +85,12 @@ func (u *upgradeController) maybeReconcileStateWithActiveConnInfo(processID stri
 	// the other objects in the cluster have been rolled back, but it's the best we can do until we have
 	// better in-product health checks...)
 	if currState == storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK && versionCmp < 0 {
-		if err := u.setUpgradeProgress(processID, storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK, ""); err != nil {
+		if time.Since(protoconv.ConvertTimestampToTimeOrNow(u.active.status.GetProgress().GetSince())) < u.timeouts.RollBackSuccessPeriod() {
+			// Don't mark a rollback as successful too early.
+			return false, nil
+		}
+		newDetail := fmt.Sprintf("The upgrade was rolled back due to an error in the previous stage. Details: %s", u.active.status.GetProgress().GetUpgradeStatusDetail())
+		if err := u.setUpgradeProgress(processID, storage.UpgradeProgress_UPGRADE_ERROR_ROLLED_BACK, newDetail); err != nil {
 			return false, err
 		}
 		return true, nil

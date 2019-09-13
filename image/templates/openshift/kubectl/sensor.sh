@@ -77,3 +77,12 @@ if [[ -d "$DIR/additional-cas" ]]; then
 fi
 
 oc apply -f "$DIR/sensor.yaml"
+
+{{ if .CreateUpgraderSA}}
+echo "Creating upgrader service account"
+oc apply -f "${DIR}/upgrader-serviceaccount.yaml"
+{{ else }}
+if [[ -f "${DIR}/upgrader-serviceaccount.yaml" ]]; then
+    printf "%s\n\n%s\n" "Did not create the upgrader service account. To create it later, please run" "oc apply -f \"${DIR}/upgrader-serviceaccount.yaml\""
+fi
+{{- end}}

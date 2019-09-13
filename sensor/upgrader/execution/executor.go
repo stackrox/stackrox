@@ -25,7 +25,7 @@ func (e *executor) ExecutePlan(execPlan *plan.ExecutionPlan) error {
 	for _, act := range actions {
 		log.Infof("Performing action %s on object %v", act.ActionName, act.ObjectRef)
 		if err := e.executeAction(act); err != nil {
-			return errors.Wrapf(err, "executing action %s object %v", act.ActionName, act.ObjectRef)
+			return errors.Wrapf(err, "executing action %s on object %v", act.ActionName, act.ObjectRef)
 		}
 	}
 	return nil

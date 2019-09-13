@@ -130,11 +130,12 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Add cluster YAML and command
 	cluster, _, err := z.clusterStore.GetCluster(r.Context(), params.ID)
-	if cluster == nil {
-		if err == nil {
-			err = fmt.Errorf("cluster %q not found", params.ID)
-		}
+	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+		return
+	}
+	if cluster == nil {
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "cluster %q not found", params.ID)
 		return
 	}
 

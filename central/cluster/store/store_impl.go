@@ -216,11 +216,11 @@ func (b *storeImpl) UpdateClusterContactTimes(t time.Time, ids ...string) error 
 }
 
 func (b *storeImpl) getCluster(tx *bolt.Tx, id string, bucket *bolt.Bucket) (cluster *storage.Cluster, exists bool, err error) {
-	cluster = new(storage.Cluster)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
 	}
+	cluster = new(storage.Cluster)
 	exists = true
 	err = proto.Unmarshal(val, cluster)
 	if err != nil {

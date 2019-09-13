@@ -19,6 +19,9 @@ var (
 type Runner interface {
 	Err() error
 	Finished() bool
+	// MostRecentStage returns the most recent stage that the runner executed
+	// -- either succesfully, or unsuccessfully. If it was unsuccessful,
+	// Err() is guaranteed to be non-nil.
 	MostRecentStage() sensorupgrader.Stage
 	// RunNextStage runs the next stage of the runner.
 	// Callers MUST check r.Finished() and r.Err() before calling this.
@@ -87,7 +90,7 @@ func (r *runner) MostRecentStage() sensorupgrader.Stage {
 }
 
 func (r *runner) Finished() bool {
-	return r.mostRecentlyExecutedStageIdx >= len(r.stagesToExecute)-1
+	return r.Err() == nil && r.mostRecentlyExecutedStageIdx >= len(r.stagesToExecute)-1
 }
 
 func (r *runner) Err() error {
@@ -104,12 +107,12 @@ func (r *runner) RunNextStage() {
 		return
 	}
 
-	stage := r.stagesToExecute[r.mostRecentlyExecutedStageIdx+1]
+	r.mostRecentlyExecutedStageIdx++
+	stage := r.stagesToExecute[r.mostRecentlyExecutedStageIdx]
 	stageDesc := r.Stages()[stage]
 	log.Infof("---- %s ----", stageDesc.description)
 	if err := stageDesc.run(); err != nil {
 		r.err = errors.Wrapf(err, "executing stage %q", stageDesc.description)
 		return
 	}
-	r.mostRecentlyExecutedStageIdx++
 }
