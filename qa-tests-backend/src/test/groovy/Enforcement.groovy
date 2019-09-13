@@ -690,6 +690,7 @@ class Enforcement extends BaseSpecification {
                 find { it.element.processName.equalsIgnoreCase("/usr/sbin/nginx") } != null
         orchestrator.execInContainer(wpDeployment, "pwd")
         assert waitForViolation(wpDeployment.name, WHITELISTPROCESS_POLICY, 90)
+
         then:
         "check pod was killed"
         List<AlertOuterClass.ListAlert> violations = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
@@ -699,6 +700,8 @@ class Enforcement extends BaseSpecification {
             it.deployment.id.equalsIgnoreCase(wpDeployment.deploymentUid) }.id
         assert (alertId != null)
         AlertOuterClass.Alert alert = AlertService.getViolation(alertId)
+        assert alert != null
+
         def startTime = System.currentTimeMillis()
         assert wpDeployment.pods.collect {
             it ->

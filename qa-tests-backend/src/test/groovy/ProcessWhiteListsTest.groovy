@@ -157,7 +157,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert (whitelist != null)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                  (whitelist.key.containerName.equalsIgnoreCase(containerName)))
-        assert whitelist.getElements(0).element.processName.contains(processName)
+        assert whitelist.elementsList.find { it.element.processName == processName } != null
 
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
                  lockProcessWhitelists(clusterId, deployment, containerName, true)
@@ -222,7 +222,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert (whitelist != null)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                     (whitelist.key.containerName.equalsIgnoreCase(containerName)))
-        assert whitelist.getElements(0).element.processName.contains(processName)
+        assert whitelist.elementsList.find { it.element.processName == processName } != null
         Thread.sleep(60000)
         orchestrator.execInContainer(deployment, "pwd")
 
