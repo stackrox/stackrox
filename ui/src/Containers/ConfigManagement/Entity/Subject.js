@@ -112,7 +112,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
     }
 
     return (
-        <Query query={getQuery()} variables={variables}>
+        <Query query={getQuery()} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 if (!data.clusters || !data.clusters.length)

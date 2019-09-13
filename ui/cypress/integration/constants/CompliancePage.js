@@ -79,7 +79,7 @@ export const selectors = {
         passingStandardsAcrossClusters: {
             widget: '[data-test-id="standards-across-cluster"]',
             axisLinks: '[data-test-id="standards-across-cluster"] a',
-            barLabels: '[data-test-id="standards-across-cluster"] svg .rv-xy-plot__series text'
+            barLabels: '[data-test-id="standards-across-cluster"] .rv-xy-plot__series > text'
         },
         passingStandardsAcrossNamespaces: {
             axisLinks: '[data-test-id="standards-across-namespace"] a'

@@ -54,7 +54,8 @@ describe('Compliance dashboard page', () => {
             });
     });
 
-    it('should show the same values for a specific Standard in "Passing Standards Across Clusters" as displayed in "Controls in Compliance" for that Standard\'s list page', () => {
+    // TODO
+    xit('should show the same values for a specific Standard in "Passing Standards Across Clusters" as displayed in "Controls in Compliance" for that Standard\'s list page', () => {
         cy.get(selectors.widget.passingStandardsAcrossClusters.barLabels)
             .eq(0)
             .invoke('text')
