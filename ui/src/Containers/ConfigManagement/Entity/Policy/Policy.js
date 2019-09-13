@@ -2,8 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { Link } from 'react-router-dom';
-import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
-
+import appContexts from 'constants/appContextTypes';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -46,50 +45,63 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
         })
     };
 
-    const QUERY = gql`
-    query getPolicy($id: ID!${entityListType ? ', $query: String' : ''}) {
-        policy(id: $id) {
-            id
-            description
-            lifecycleStages
-            categories
-            disabled
-            enforcementActions
-            rationale
-            remediation
-            severity
-            whitelists {
-                name
-            }
-            ${
-                entityListType === entityTypes.DEPLOYMENT
-                    ? 'deployments(query: $query) { ...deploymentFields }'
-                    : 'deploymentCount'
-            }
-            alerts {
+    const defaultQuery = gql`
+        query getPolicy($id: ID!) {
+            policy(id: $id) {
                 id
-                deployment {
-                    id
+                description
+                lifecycleStages
+                categories
+                disabled
+                enforcementActions
+                rationale
+                remediation
+                severity
+                whitelists {
                     name
                 }
-                enforcement {
-                    action
-                    message
-                }
-                policy {
+                deploymentCount
+                alerts {
                     id
-                    severity
+                    deployment {
+                        id
+                        name
+                    }
+                    enforcement {
+                        action
+                        message
+                    }
+                    policy {
+                        id
+                        severity
+                    }
+                    time
                 }
-                time
             }
         }
-    }
-    ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
+    `;
 
-`;
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.POLICY,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query getPolicy_${entityListType}($id: ID!, $query: String) {
+                policy(id: $id) {
+                    id
+                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                }
+            }
+            ${fragment}
+        `;
+    }
 
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 const { policy: entity } = data;

@@ -3,7 +3,7 @@ import { Link, withRouter } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import URLService from 'modules/URLService';
-import contextTypes from 'constants/contextTypes';
+import appContexts from 'constants/appContextTypes';
 import entityTypes from 'constants/entityTypes';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import Loader from 'Components/Loader';
@@ -26,7 +26,7 @@ const DashboardCompliance = ({ match, location }) => {
             const percentagePassing =
                 Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
             const link = URLService.getURL(match, location)
-                .base(entityTypes.CONTROL, null, contextTypes.COMPLIANCE)
+                .base(entityTypes.CONTROL, null, appContexts.COMPLIANCE)
                 .query({ [searchContexts.page]: { standard: standardLabels[standard.id] } })
                 .url();
             const modifiedResult = {
@@ -93,7 +93,7 @@ const DashboardCompliance = ({ match, location }) => {
 
     function renderScanButton() {
         const link = URLService.getURL()
-            .base(null, null, contextTypes.COMPLIANCE)
+            .base(null, null, appContexts.COMPLIANCE)
             .url();
         return (
             <div className="flex flex-col items-center justify-center p-4 w-full">

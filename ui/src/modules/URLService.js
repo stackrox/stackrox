@@ -1,6 +1,6 @@
 import qs from 'qs';
 import pageTypes from 'constants/pageTypes';
-import contextTypes from 'constants/contextTypes';
+import appContexts from 'constants/appContextTypes';
 import { generatePath } from 'react-router-dom';
 import { entityParamNames, listParamNames } from 'constants/url';
 import entityTypes from 'constants/entityTypes';
@@ -44,7 +44,7 @@ function getPageType(urlParams) {
 
 function getTabsPerEntity(entityType, context) {
     const contextRelationships = {
-        [contextTypes.CONFIG_MANAGEMENT]: configMgmtEntityRelationship
+        [appContexts.CONFIG_MANAGEMENT]: configMgmtEntityRelationship
     };
     if (!contextRelationships[context] || !contextRelationships[context][entityType]) return [];
     return contextRelationships[context][entityType];
@@ -61,17 +61,17 @@ function getPath(urlParams) {
     };
 
     const legacyPathMap = {
-        [contextTypes.RISK]: {
+        [appContexts.RISK]: {
             [pageTypes.ENTITY]: riskPath,
             [pageTypes.LIST]: '/main/risk',
             [pageTypes.DASHBOARD]: '/main/risk'
         },
-        [contextTypes.SECRET]: {
+        [appContexts.SECRET]: {
             [pageTypes.ENTITY]: secretsPath,
             [pageTypes.LIST]: '/main/configmanagement/secrets',
             [pageTypes.DASHBOARD]: '/main/configmanagement/secrets'
         },
-        [contextTypes.POLICY]: {
+        [appContexts.POLICY]: {
             [pageTypes.ENTITY]: policiesPath,
             [pageTypes.LIST]: '/main/policies',
             [pageTypes.DASHBOARD]: '/main/policies'
@@ -87,9 +87,9 @@ function getPath(urlParams) {
     const params = { ...urlParams };
 
     // Patching url params for legacy contexts
-    if (context === contextTypes.SECRET) {
+    if (context === appContexts.SECRET) {
         params.secretId = params.pageEntityId;
-    } else if (context === contextTypes.RISK) {
+    } else if (context === appContexts.RISK) {
         params.deploymentId = params.pageEntityId;
     }
 

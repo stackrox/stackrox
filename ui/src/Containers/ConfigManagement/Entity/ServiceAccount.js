@@ -1,10 +1,7 @@
 import React, { useContext } from 'react';
-import { ROLE_FRAGMENT } from 'queries/role';
-
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
-
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -16,7 +13,7 @@ import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/R
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
-import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
+import appContexts from 'constants/appContextTypes';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import EntityList from '../List/EntityList';
@@ -34,8 +31,8 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
         })
     };
 
-    const QUERY = gql`
-        query getServiceAccount($id: ID!${entityListType ? ', $query: String' : ''}) {
+    const defaultQuery = gql`
+        query getServiceAccount($id: ID!) {
             serviceAccount(id: $id) {
                 id
                 name
@@ -45,18 +42,10 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                         name
                     }
                 }
-                clusterId 
+                clusterId
                 clusterName
-                ${
-                    entityListType === entityTypes.DEPLOYMENT
-                        ? 'deployments(query: $query) { ...deploymentFields }'
-                        : 'deploymentCount'
-                }
-                ${
-                    entityListType === entityTypes.ROLE
-                        ? 'k8sroles: roles(query: $query) { ...k8roleFields }'
-                        : 'roleCount'
-                }
+                deploymentCount
+                roleCount
                 automountToken
                 createdAt
                 labels {
@@ -80,24 +69,45 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                 }
             }
         }
-        ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
-        ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
     `;
 
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.SERVICE_ACCOUNT,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query getServiceAccount_${entityListType}($id: ID!, $query: String) {
+                serviceAccount(id: $id) {
+                    id
+                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                }
+            }
+            ${fragment}
+        `;
+    }
+
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 const { serviceAccount: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
 
                 if (entityListType) {
+                    const listData =
+                        entityListType === entityTypes.ROLE
+                            ? entity.roles
+                            : getSubListFromEntity(entity, entityListType);
                     return (
                         <EntityList
                             entityListType={entityListType}
                             entityId={entityId1}
                             entityContext={{ ...entityContext, [entityTypes.SERVICE_ACCOUNT]: id }}
-                            data={getSubListFromEntity(entity, entityListType)}
+                            data={listData}
                             query={query}
                         />
                     );

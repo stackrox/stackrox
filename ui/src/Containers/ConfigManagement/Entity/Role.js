@@ -15,8 +15,7 @@ import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import { SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
-import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
+import appContexts from 'constants/appContextTypes';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import EntityList from '../List/EntityList';
 
@@ -29,7 +28,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
         query: queryService.objectToWhereClause(query[searchParam])
     };
 
-    const QUERY = gql`
+    const defaultQuery = gql`
         query k8sRole($id: ID!${entityListType ? ', $query: String' : ''}) {
             clusters {
                 id
@@ -49,17 +48,8 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
                         }
                     }`
                     }
-                    
-                    ${
-                        entityListType === entityTypes.SERVICE_ACCOUNT
-                            ? 'serviceAccounts(query: $query) {...serviceAccountFields}'
-                            : 'serviceAccountCount'
-                    }
-                    ${
-                        entityListType === entityTypes.SUBJECT
-                            ? 'subjects(query: $query) {...subjectWithClusterFields}'
-                            : 'subjectCount'
-                    }
+                    serviceAccountCount
+                    subjectCount
                     rules {
                         apiGroups
                         nonResourceUrls
@@ -71,14 +61,31 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
                 }
             }
         }
-
-    ${entityListType === entityTypes.SUBJECT ? SUBJECT_WITH_CLUSTER_FRAGMENT : ''}
-    ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
-
-
     `;
+
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.ROLE,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query getRole_${entityListType}($id: ID!, $query: String) {
+                clusters {
+                    id
+                    k8srole(role: $id) {
+                        id
+                        ${listFieldName}(query: $query) { ...${fragmentName} }
+                    }
+                }
+            }
+            ${fragment}
+        `;
+    }
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 const { clusters } = data;

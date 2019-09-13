@@ -3,12 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 import queryService from 'modules/queryService';
-import { SECRET_FRAGMENT } from 'queries/secret';
-import { POLICY_FRAGMENT } from 'queries/policy';
-import { SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
-import { ROLE_FRAGMENT } from 'queries/role';
-import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
-
+import appContexts from 'constants/appContextTypes';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -19,8 +14,6 @@ import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import DeploymentsWithFailedPolicies from 'Containers/ConfigManagement/Entity/widgets/DeploymentsWithFailedPolicies';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
-import { IMAGE_FRAGMENT } from 'queries/image';
-import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import EntityList from '../List/EntityList';
@@ -37,84 +30,80 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
         })
     };
 
-    const QUERY = gql`
-    query getNamespace($id: ID!, $query: String) {
-        entity: namespace(id: $id) {
-            metadata {
-                name
-                id
-                labels {
-                    key
-                    value
+    const defaultQuery = gql`
+        query getNamespace($id: ID!, $query: String) {
+            namespace(id: $id) {
+                metadata {
+                    name
+                    id
+                    labels {
+                        key
+                        value
+                    }
+                    creationTime
                 }
-                creationTime
-            }
-            cluster { id name }
-            ${
-                entityListType === entityTypes.IMAGE
-                    ? 'images(query: $query) {...imageFields}'
-                    : 'imageCount'
-            }
-            ${
-                entityListType === entityTypes.DEPLOYMENT
-                    ? 'deployments(query: $query) { ...deploymentFields }'
-                    : 'deploymentCount'
-            }
-            ${
-                entityListType === entityTypes.SUBJECT
-                    ? 'subjects {...subjectWithClusterFields}'
-                    : 'subjectCount'
-            }
-            ${
-                entityListType === entityTypes.ROLE
-                    ? 'k8sroles(query: $query) {...k8roleFields}'
-                    : 'k8sroleCount'
-            }
-            ${
-                entityListType === entityTypes.SERVICE_ACCOUNT
-                    ? 'serviceAccounts(query: $query) {...serviceAccountFields}'
-                    : 'serviceAccountCount'
-            }
-            ${
-                entityListType === entityTypes.SECRET
-                    ? 'secrets(query: $query) { ...secretFields }'
-                    : 'secretCount'
-            }
-            ${
-                entityListType === entityTypes.POLICY
-                    ? 'policies(query: $query) {...policyFields}'
-                    : 'policyCount(query: $query)'
+                cluster {
+                    id
+                    name
+                }
+                imageCount
+                deploymentCount
+                subjectCount
+                k8sroleCount
+                serviceAccountCount
+                secretCount
+                policyCount(query: $query)
             }
         }
+    `;
+
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.NAMESPACE,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query getNamespace_${entityListType}($id: ID!, $query: String) {
+                namespace(id: $id) {
+                    metadata {
+                        id
+                    }
+                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                }
+            }
+            ${fragment}
+        `;
     }
-    ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
-    ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
-    ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
-    ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
-    ${entityListType === entityTypes.SUBJECT ? SUBJECT_WITH_CLUSTER_FRAGMENT : ''}
-    ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
-    ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
-`;
 
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
-                const { entity } = data;
-                if (!entity) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
+                const { namespace } = data;
+                if (!namespace) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
 
                 if (entityListType) {
                     return (
                         <EntityList
                             entityListType={entityListType}
                             entityId={entityId1}
-                            data={getSubListFromEntity(entity, entityListType)}
+                            data={getSubListFromEntity(namespace, entityListType)}
                             entityContext={{ ...entityContext, [entityTypes.NAMESPACE]: id }}
                         />
                     );
                 }
 
-                const { metadata = {}, cluster, deploymentCount, secretCount, imageCount } = entity;
+                const {
+                    metadata = {},
+                    cluster,
+                    deploymentCount,
+                    secretCount,
+                    imageCount,
+                    serviceAccountCount
+                } = namespace;
 
                 const { name, creationTime, labels = [] } = metadata;
 
@@ -160,6 +149,12 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     name="Images"
                                     value={imageCount}
                                     entityType={entityTypes.IMAGE}
+                                />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    name="Service Accounts"
+                                    value={serviceAccountCount}
+                                    entityType={entityTypes.SERVICE_ACCOUNT}
                                 />
                             </div>
                         </CollapsibleSection>

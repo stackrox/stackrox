@@ -4,7 +4,7 @@ import LinkListWidget from 'Components/LinkListWidget';
 import URLService from 'modules/URLService';
 import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
-import contextTypes from 'constants/contextTypes';
+import appContexts from 'constants/appContextTypes';
 import { resourceLabels } from 'messages/common';
 import { RELATED_SECRETS, RELATED_DEPLOYMENTS, ALL_NAMESPACES } from 'queries/namespace';
 import queryService from 'modules/queryService';
@@ -23,11 +23,11 @@ const queryMap = {
 function getPageContext(entityType) {
     switch (entityType) {
         case entityTypes.DEPLOYMENT:
-            return contextTypes.RISK;
+            return appContexts.RISK;
         case entityTypes.SECRET:
-            return contextTypes.SECRET;
+            return appContexts.SECRET;
         default:
-            return contextTypes.COMPLIANCE;
+            return appContexts.COMPLIANCE;
     }
 }
 

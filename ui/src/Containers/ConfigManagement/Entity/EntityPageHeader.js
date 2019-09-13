@@ -33,7 +33,7 @@ const EntityPageHeader = ({ entityType, entityId, urlParams }) => {
     return (
         <Query query={query} variables={variables}>
             {({ data }) => {
-                const header = getEntityName(entityType, data) || '-';
+                const header = getEntityName(entityType, data, entityId) || '-';
                 const subHeader = entityLabels[entityType];
                 const exportFilename = `${startCase(subHeader)} Report: "${header}"`;
 

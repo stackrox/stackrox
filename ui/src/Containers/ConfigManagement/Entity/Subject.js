@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import isEmpty from 'lodash/isEmpty';
-import { ROLE_FRAGMENT } from 'queries/role';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -11,6 +10,7 @@ import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import gql from 'graphql-tag';
+import appContexts from 'constants/appContextTypes';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
@@ -20,17 +20,21 @@ const processSubjectDataByClusters = data => {
     const entity = data.clusters.reduce(
         (acc, curr) => {
             if (!curr.subjects.length) return acc;
-            const { subject, type, clusterAdmin, roles, ...rest } = curr.subjects[0];
+            const { subject, type, clusterAdmin, roles, roleCount, ...rest } = curr.subjects[0];
             const { id: clusterId, name: clusterName } = curr;
+            let allRoles = [...acc.roles];
+            if (roles) allRoles = allRoles.concat(roles);
+            const totalRoles = acc.roleCount + roleCount ? roleCount : 0;
             return {
                 subject,
                 type,
                 clusterAdmin,
-                roles: [...acc.roles, ...roles],
+                roles: allRoles,
+                roleCount: totalRoles,
                 clusters: [...acc.clusters, { ...rest, clusterId, clusterName }]
             };
         },
-        { roles: [], clusters: [] }
+        { roles: [], clusters: [], roleCount: 0 }
     );
     return entity;
 };
@@ -56,8 +60,8 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
         query: queryService.objectToWhereClause(query[searchParam])
     };
 
-    const QUERY = gql`
-        query subject($subjectQuery: String!, $query: String) {
+    const defaultQuery = gql`
+        query subject($subjectQuery: String!) {
             clusters {
                 id
                 name
@@ -77,24 +81,44 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                         }
                     }
                     clusterAdmin
-                    clusterID
-                    roles(query: $query) {
-                        ${entityListType === entityTypes.ROLE ? '...k8roleFields' : 'id'}
-                    }
+                    roleCount
                 }
             }
         }
-    ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
     `;
 
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { fragment } = queryService.getFragmentInfo(
+            entityTypes.SUBJECT,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query subject_roles($subjectQuery: String!, $query: String) {
+                clusters {
+                    id
+                    subjects(query: $subjectQuery) {
+                        name
+                        roles(query: $query) {
+                            ...k8roleFields
+                        }
+                    }
+                }
+            }
+            ${fragment}
+        `;
+    }
+
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 if (!data.clusters || !data.clusters.length)
                     return <PageNotFound resourceType={entityTypes.SUBJECT} />;
                 const entity = processSubjectDataByClusters(data);
-                const { type, clusterAdmin, clusters = [] } = entity;
+                const { type, clusterAdmin, clusters = [], roleCount } = entity;
 
                 if (entityListType) {
                     let listData;
@@ -142,7 +166,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Roles"
-                                    value={entity.roles.length}
+                                    value={roleCount}
                                     entityType={entityTypes.ROLE}
                                 />
                             </div>

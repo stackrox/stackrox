@@ -23,20 +23,22 @@ const entityNameKeyMap = {
     },
     [entityTypes.IMAGE]: data => resolvePath(data, 'image.name.fullName'),
     [entityTypes.POLICY]: data => resolvePath(data, 'policy.name'),
-    [entityTypes.SUBJECT]: data => {
+    [entityTypes.SUBJECT]: (data, id) => {
         if (!data || !data.clusters || !data.clusters.length) return null;
-        const result = data.clusters.reduce((acc, curr) => {
-            if (!curr.subjects.length) return acc;
-            return curr.subjects[0].subject.name;
-        }, null);
-        return result;
+        let found = null;
+        data.clusters.forEach(cluster => {
+            if (found || !cluster.subjects.length) return;
+            const match = cluster.subjects.find(subject => subject.id === id);
+            if (match) found = match.id;
+        });
+        return found;
     }
 };
 
-const getEntityName = (entityType, data) => {
+const getEntityName = (entityType, data, id) => {
     if (isEmpty(data)) return null;
     try {
-        return entityNameKeyMap[entityType](data);
+        return entityNameKeyMap[entityType](data, id);
     } catch (error) {
         throw new Error(
             `Entity (${entityType}) is not mapped correctly in the "entityToNameResolverMapping"`

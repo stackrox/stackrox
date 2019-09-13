@@ -11,17 +11,8 @@ import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import searchContext from 'Containers/searchContext';
-import { NODE_FRAGMENT } from 'queries/node';
-import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
-import { NAMESPACE_FRAGMENT } from 'queries/namespace';
-import { SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
-import { ROLE_FRAGMENT } from 'queries/role';
-import { SECRET_FRAGMENT } from 'queries/secret';
-import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
-import { CONTROL_FRAGMENT } from 'queries/controls';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import { POLICY_FRAGMENT } from 'queries/policy';
-import { IMAGE_FRAGMENT } from 'queries/image';
+import appContexts from 'constants/appContextTypes';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
@@ -37,67 +28,31 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
     if (!queryObject.Standard) queryObject.Standard = 'CIS';
 
     const variables = {
-        id,
         cacheBuster: new Date().getUTCMilliseconds(),
+        id,
         query: queryService.objectToWhereClause(queryObject)
     };
 
-    const QUERY = gql`
-        query getCluster($id: ID!${entityListType ? ', $query: String' : ''}) {
+    const defaultQuery = gql`
+        query getCluster($id: ID!) {
             cluster(id: $id) {
                 id
                 name
                 admissionController
                 centralApiEndpoint
-                ${
-                    entityListType === entityTypes.IMAGE
-                        ? 'images(query: $query) { ...imageFields }'
-                        : 'imageCount'
-                }
-                ${
-                    entityListType === entityTypes.NODE
-                        ? 'nodes(query: $query) { ...nodeFields }'
-                        : 'nodeCount'
-                }
-                ${
-                    entityListType === entityTypes.DEPLOYMENT
-                        ? 'deployments(query: $query) { ...deploymentFields }'
-                        : 'deploymentCount'
-                }
-                ${
-                    entityListType === entityTypes.NAMESPACE
-                        ? 'namespaces(query: $query) { ...namespaceFields }'
-                        : 'namespaceCount'
-                }
-                ${
-                    entityListType === entityTypes.SUBJECT
-                        ? 'subjects(query: $query) { ...subjectWithClusterFields }'
-                        : 'subjectCount'
-                }
-                ${
-                    entityListType === entityTypes.ROLE
-                        ? 'k8sroles(query: $query) { ...k8roleFields }'
-                        : 'k8sroleCount'
-                }
-                ${
-                    entityListType === entityTypes.SECRET
-                        ? 'secrets(query: $query) { ...secretFields }'
-                        : 'secretCount'
-                }
-                ${
-                    entityListType === entityTypes.POLICY
-                        ? 'policies(query: $query) { ...policyFields }'
-                        : 'policyCount(query: "Lifecycle Stage:DEPLOY")'
-                }
-                ${
-                    entityListType === entityTypes.SERVICE_ACCOUNT
-                        ? 'serviceAccounts(query: $query) { ...serviceAccountFields }'
-                        : 'serviceAccountCount'
-                }
-                ${
-                    entityListType === entityTypes.CONTROL
-                        ? 'complianceResults(query: $query) { ...controlFields }'
-                        : 'complianceControlCount(query: "Standard:CIS") { passingCount failingCount unknownCount}'
+                imageCount
+                nodeCount
+                deploymentCount
+                namespaceCount
+                subjectCount
+                k8sroleCount
+                secretCount
+                policyCount(query: "Lifecycle Stage:DEPLOY")
+                serviceAccountCount
+                complianceControlCount(query: "Standard:CIS") {
+                    passingCount
+                    failingCount
+                    unknownCount
                 }
                 status {
                     orchestratorMetadata {
@@ -107,20 +62,29 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                 }
             }
         }
-        ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
-        ${entityListType === entityTypes.NODE ? NODE_FRAGMENT : ''}
-        ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
-        ${entityListType === entityTypes.NAMESPACE ? NAMESPACE_FRAGMENT : ''}
-        ${entityListType === entityTypes.SUBJECT ? SUBJECT_WITH_CLUSTER_FRAGMENT : ''}
-        ${entityListType === entityTypes.ROLE ? ROLE_FRAGMENT : ''}
-        ${entityListType === entityTypes.SERVICE_ACCOUNT ? SERVICE_ACCOUNT_FRAGMENT : ''}
-        ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
-        ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
-        ${entityListType === entityTypes.CONTROL ? CONTROL_FRAGMENT : ''}
     `;
 
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.CLUSTER,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query getCluster_${entityListType}($id: ID!, $query: String) {
+                cluster(id: $id) {
+                    id
+                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                }
+            }
+            ${fragment}
+        `;
+    }
+
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading || !data) return <Loader transparent />;
                 const { cluster: entity } = data;

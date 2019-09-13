@@ -102,15 +102,13 @@ const buildTableColumns = (match, location, entityContext) => {
                 const { serviceAccounts, subjects } = original;
                 const { length: serviceAccountsLength } = serviceAccounts;
                 const { length: subjectsLength } = subjects;
-                if (
-                    (!serviceAccountsLength ||
-                        (serviceAccountsLength === 1 && serviceAccounts[0].message)) &&
-                    !subjectsLength
-                ) {
-                    return <LabelChip text="No Users & Groups" type="alert" />;
-                }
                 if (!subjectsLength) {
-                    return 'No Users & Groups';
+                    return !serviceAccountsLength ||
+                        (serviceAccountsLength === 1 && serviceAccounts[0].message) ? (
+                        <LabelChip text="No Users & Groups" type="alert" />
+                    ) : (
+                        'No Users & Groups'
+                    );
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)

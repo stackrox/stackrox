@@ -16,7 +16,7 @@ import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import CVETable from 'Containers/Images/CVETable';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
-import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
+import appContexts from 'constants/appContextTypes';
 import EntityList from '../List/EntityList';
 import TableWidget from './widgets/TableWidget';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
@@ -33,18 +33,12 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
         })
     };
 
-    const deploymentsQuery = `${
-        entityListType === entityTypes.DEPLOYMENT
-            ? 'deployments(query: $query) {...deploymentFields}'
-            : 'deploymentCount'
-    }`;
-
-    const QUERY = gql`
-        query image($id: ID!${entityListType ? ', $query: String' : ''}) {
+    const defaultQuery = gql`
+        query getImage($id: ID!${entityListType ? ', $query: String' : ''}) {
             image(sha: $id) {
                 id
                 lastUpdated
-                ${entityContext[entityTypes.DEPLOYMENT] ? '' : deploymentsQuery}
+                ${entityContext[entityTypes.DEPLOYMENT] ? '' : 'deploymentCount'}
                 metadata {
                     layerShas
                     v1 {
@@ -85,11 +79,29 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
                 }
             }
         }
-        ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}    
     `;
 
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.IMAGE,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query getImage_${entityListType}($id: ID!, $query: String) {
+                image(sha: $id) {
+                    id
+                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                }
+            }
+            ${fragment}
+        `;
+    }
+
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 const { image: entity } = data;

@@ -16,7 +16,7 @@ import CollapsibleRow from 'Components/CollapsibleRow';
 import Widget from 'Components/Widget';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
-import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
+import appContexts from 'constants/appContextTypes';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import EntityList from '../List/EntityList';
@@ -153,8 +153,8 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
         })
     };
 
-    const QUERY = gql`
-        query getSecret($id: ID!, $query: String) {
+    const defaultQuery = gql`
+        query getSecret($id: ID!) {
             secret(id: $id) {
                 id
                 name
@@ -187,9 +187,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                     }
                 }
                 namespace
-                deployments(query: $query) {
-                    ${entityListType === entityTypes.DEPLOYMENT ? '...deploymentFields' : 'id'}   
-                }
+                deploymentCount
                 labels {
                     key
                     value
@@ -201,10 +199,28 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                 ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
             }
         }
-        ${entityListType === entityTypes.DEPLOYMENT ? DEPLOYMENT_FRAGMENT : ''}
     `;
+
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.SECRET,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query getSecret_${entityListType}($id: ID!, $query: String) {
+                secret(id: $id) {
+                    id
+                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                }
+            }
+            ${fragment}
+        `;
+    }
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 if (!data || !data.secret)
@@ -227,7 +243,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                     createdAt,
                     labels = [],
                     annotations = [],
-                    deployments = [],
+                    deploymentCount,
                     clusterName,
                     clusterId,
                     files
@@ -262,7 +278,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 h-48 mb-4"
                                     name="Deployments"
-                                    value={deployments.length}
+                                    value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                             </div>

@@ -3,7 +3,7 @@
  */
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
-import contextTypes from 'constants/contextTypes';
+import appContexts from 'constants/appContextTypes';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -50,7 +50,7 @@ export const urlEntityListTypes = {
  */
 
 export const urlContextTypes = {
-    [contextTypes.CONFIG_MANAGEMENT]: 'configmanagement'
+    [appContexts.CONFIG_MANAGEMENT]: 'configmanagement'
 };
 
 export const urlEntityTypes = {

@@ -2,8 +2,6 @@ import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
-import { POLICY_FRAGMENT } from 'queries/policy';
-
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -15,8 +13,7 @@ import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
-import { IMAGE_FRAGMENT } from 'queries/image';
-import { SECRET_FRAGMENT } from 'queries/secret';
+import appContexts from 'constants/appContextTypes';
 import EntityList from '../../List/EntityList';
 import getSubListFromEntity from '../../List/utilities/getSubListFromEntity';
 import DeploymentFindings from './DeploymentFindings';
@@ -29,7 +26,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
         query: queryService.objectToWhereClause(query[searchParam])
     };
 
-    const QUERY = gql`
+    const defaultQuery = gql`
         query getDeployment($id: ID!, $query: String) {
             deployment(id: $id) {
                 id
@@ -71,11 +68,8 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                         ? ''
                         : 'serviceAccount serviceAccountID'
                 }
-                ${
-                    entityListType === entityTypes.POLICY
-                        ? 'failingPolicies(query: $query) { ...policyFields }'
-                        : 'failingPolicyCount(query: $query)'
-                }
+                failingPolicyCount(query: $query)
+            
                 tolerations {
                     key
                     operator
@@ -84,25 +78,33 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                 }
                 type
                 created
-                ${
-                    entityListType === entityTypes.SECRET
-                        ? 'secrets(query: $query) { ...secretFields }'
-                        : 'secretCount'
-                }
-                ${
-                    entityListType === entityTypes.IMAGE
-                        ? 'images(query: $query) { ...imageFields }'
-                        : 'imageCount'
-                }
+                secretCount
+                imageCount
             }
         }
-    ${entityListType === entityTypes.POLICY ? POLICY_FRAGMENT : ''}
-    ${entityListType === entityTypes.IMAGE ? IMAGE_FRAGMENT : ''}
-    ${entityListType === entityTypes.SECRET ? SECRET_FRAGMENT : ''}
     `;
 
+    function getQuery() {
+        if (!entityListType) return defaultQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.DEPLOYMENT,
+            entityListType,
+            appContexts.CONFIG_MANAGEMENT
+        );
+
+        return gql`
+            query getDeployment${entityListType}($id: ID!, $query: String) {
+                deployment(id: $id) {
+                    id
+                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                }
+            }
+            ${fragment}
+        `;
+    }
+
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (loading) return <Loader transparent />;
                 if (!data || !data.deployment)
