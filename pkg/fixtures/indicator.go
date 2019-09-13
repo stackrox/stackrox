@@ -10,6 +10,7 @@ func GetProcessIndicator() *storage.ProcessIndicator {
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
 		Signal: &storage.ProcessSignal{
+			ContainerId:  "containerid",
 			Name:         "apt-get",
 			Args:         "install nmap",
 			ExecFilePath: "bin",

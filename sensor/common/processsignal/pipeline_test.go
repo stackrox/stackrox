@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +15,7 @@ func TestProcessPipeline(t *testing.T) {
 	sensorEvents := make(chan *central.SensorEvent)
 	actualEvents := make(chan *central.SensorEvent)
 	mockStore := clusterentities.NewStore()
-	p := NewProcessPipeline(sensorEvents, mockStore)
+	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, []int{10, 10, 10}))
 	closeChan := make(chan bool)
 
 	go consumeEnrichedSignals(sensorEvents, actualEvents, closeChan)

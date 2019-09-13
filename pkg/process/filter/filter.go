@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -29,8 +30,10 @@ const (
 )
 
 // Filter takes in a process indicator via add and determines if should be filtered or not
+//go:generate mockgen-wrapper
 type Filter interface {
 	Add(indicator *storage.ProcessIndicator) bool
+	Update(deployment *storage.Deployment)
 	Delete(deploymentID string)
 }
 
@@ -118,6 +121,25 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
+}
+
+func (f *filterImpl) Update(deployment *storage.Deployment) {
+	f.rootLock.Lock()
+	defer f.rootLock.Unlock()
+
+	liveContainerSet := set.NewStringSet()
+	for _, c := range deployment.GetContainers() {
+		for _, inst := range c.GetInstances() {
+			liveContainerSet.Add(inst.InstanceId.Id)
+		}
+	}
+
+	containersMap := f.containersInDeployment[deployment.GetId()]
+	for k := range containersMap {
+		if !liveContainerSet.Contains(k) {
+			delete(containersMap, k)
+		}
+	}
 }
 
 func (f *filterImpl) Delete(deploymentID string) {

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	v1 "k8s.io/api/core/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
@@ -36,10 +37,12 @@ type deploymentHandler struct {
 	endpointManager *endpointManager
 	namespaceStore  *namespaceStore
 	roxMetadata     roxmetadata.Metadata
+	processFilter   filter.Filter
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
-func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager, namespaceStore *namespaceStore, roxMetadata roxmetadata.Metadata, podLister v1listers.PodLister) *deploymentHandler {
+func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager, namespaceStore *namespaceStore,
+	roxMetadata roxmetadata.Metadata, podLister v1listers.PodLister, processFilter filter.Filter) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:       podLister,
 		serviceStore:    serviceStore,
@@ -47,6 +50,7 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymen
 		endpointManager: endpointManager,
 		namespaceStore:  namespaceStore,
 		roxMetadata:     roxMetadata,
+		processFilter:   processFilter,
 	}
 }
 
@@ -60,9 +64,11 @@ func (d *deploymentHandler) processWithType(obj interface{}, action central.Reso
 		d.deploymentStore.addOrUpdateDeployment(wrap)
 		d.endpointManager.OnDeploymentCreateOrUpdate(wrap)
 		d.roxMetadata.AddDeployment(wrap.GetDeployment())
+		d.processFilter.Update(wrap.GetDeployment())
 	} else {
 		d.deploymentStore.removeDeployment(wrap)
 		d.endpointManager.OnDeploymentRemove(wrap)
+		d.processFilter.Delete(wrap.GetId())
 	}
 	return []*central.SensorEvent{wrap.toEvent(action)}
 }

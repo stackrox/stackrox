@@ -101,6 +101,13 @@ func LightweightDeployment() *storage.Deployment {
 						Path: "/var/lib/stackrox",
 					},
 				},
+				Instances: []*storage.ContainerInstance{
+					{
+						InstanceId: &storage.ContainerInstanceID{
+							Id: "containerid",
+						},
+					},
+				},
 			},
 		},
 	}

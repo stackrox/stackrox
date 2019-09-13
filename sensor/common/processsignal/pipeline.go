@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -20,10 +21,11 @@ type Pipeline struct {
 	enrichedIndicators chan *storage.ProcessIndicator
 	deduper            *deduper
 	enricher           *enricher
+	processFilter      filter.Filter
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *central.SensorEvent, clusterEntities *clusterentities.Store) *Pipeline {
+func NewProcessPipeline(indicators chan *central.SensorEvent, clusterEntities *clusterentities.Store, processFilter filter.Filter) *Pipeline {
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
 	p := &Pipeline{
 		clusterEntities:    clusterEntities,
@@ -31,6 +33,7 @@ func NewProcessPipeline(indicators chan *central.SensorEvent, clusterEntities *c
 		deduper:            newDeduper(),
 		enricher:           newEnricher(clusterEntities, enrichedIndicators),
 		enrichedIndicators: enrichedIndicators,
+		processFilter:      processFilter,
 	}
 	go p.sendIndicatorEvent()
 	return p
@@ -65,6 +68,9 @@ func (p *Pipeline) sendIndicatorEvent() {
 	for indicator := range p.enrichedIndicators {
 		// determine whether or not we should send the event
 		if !p.deduper.Allow(indicator) {
+			continue
+		}
+		if !p.processFilter.Add(indicator) {
 			continue
 		}
 		p.indicators <- &central.SensorEvent{

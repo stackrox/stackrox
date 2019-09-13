@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	testutils2 "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -104,6 +105,9 @@ func TestLabelsMap(t *testing.T) {
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).AnyTimes()
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
+	mockFilter := filterMocks.NewMockFilter(mockCtrl)
+	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
+
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			badgerDB := testutils2.BadgerDBForT(t)
@@ -112,7 +116,7 @@ func TestLabelsMap(t *testing.T) {
 			bleveIndex, err := globalindex.MemOnlyIndex()
 			require.NoError(t, err)
 
-			deploymentsDS, err := datastore.NewBadger(badgerDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, nil)
+			deploymentsDS, err := datastore.NewBadger(badgerDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {

@@ -25,6 +25,7 @@ import (
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
+	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -101,7 +102,10 @@ func TestAutocomplete(t *testing.T) {
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	deploymentDS, err := deploymentDatastore.NewBadger(testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil, nil)
+
+	mockFilter := filterMocks.NewMockFilter(mockCtrl)
+	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
+	deploymentDS, err := deploymentDatastore.NewBadger(testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil, mockFilter)
 	require.NoError(t, err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())

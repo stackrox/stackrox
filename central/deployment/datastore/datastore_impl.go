@@ -210,6 +210,8 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		return errors.New("permission denied")
 	}
 
+	ds.processFilter.Update(deployment)
+
 	ds.keyedMutex.Lock(deployment.GetId())
 	defer ds.keyedMutex.Unlock(deployment.GetId())
 	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {

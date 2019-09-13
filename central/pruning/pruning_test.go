@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
+	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -113,10 +114,15 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
 
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
+
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
-	deployments, err := deploymentDatastore.NewBadger(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, nil)
+
+	mockFilter := filterMocks.NewMockFilter(ctrl)
+	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
+
+	deployments, err := deploymentDatastore.NewBadger(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter)
 	require.NoError(t, err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments
@@ -140,10 +146,15 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockImageDatastore := imageDatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
+
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
-	deployments, err := deploymentDatastore.NewBadger(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, nil)
+
+	mockFilter := filterMocks.NewMockFilter(ctrl)
+	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
+
+	deployments, err := deploymentDatastore.NewBadger(db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter)
 	require.NoError(t, err)
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments

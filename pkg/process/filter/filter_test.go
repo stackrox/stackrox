@@ -102,3 +102,28 @@ func TestMultiProcessFilter(t *testing.T) {
 	assert.True(t, filter.Add(pi))
 	assert.False(t, filter.Add(pi))
 }
+
+func TestDeploymentUpdate(t *testing.T) {
+	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
+
+	pi := fixtures.GetProcessIndicator()
+	filter.Add(pi)
+
+	assert.Len(t, filter.containersInDeployment, 1)
+	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
+
+	dep := fixtures.GetDeployment()
+	assert.Equal(t, dep.GetId(), pi.GetDeploymentId())
+
+	filter.Update(dep)
+	// The container id of the process and the deployment match so there should be no change
+	assert.Len(t, filter.containersInDeployment, 1)
+	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
+
+	// The container id has changed so the container reference should be removed, but the deployment reference should remain
+	filter.Add(pi)
+	dep.Containers[0].Instances[0].InstanceId.Id = "newcontainerid"
+	filter.Update(dep)
+	assert.Len(t, filter.containersInDeployment, 1)
+	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 0)
+}

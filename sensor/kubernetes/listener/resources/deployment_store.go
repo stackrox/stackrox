@@ -1,6 +1,8 @@
 package resources
 
-import "k8s.io/apimachinery/pkg/labels"
+import (
+	"k8s.io/apimachinery/pkg/labels"
+)
 
 // deploymentStore stores deployments (by namespace and id).
 type deploymentStore struct {

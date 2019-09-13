@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 )
 
@@ -21,7 +22,7 @@ func newService() Service {
 	return &serviceImpl{
 		queue:           make(chan *v1.Signal, maxBufferSize),
 		indicators:      indicators,
-		processPipeline: processsignal.NewProcessPipeline(indicators, clusterentities.StoreInstance()),
+		processPipeline: processsignal.NewProcessPipeline(indicators, clusterentities.StoreInstance(), processfilter.Singleton()),
 	}
 }
 

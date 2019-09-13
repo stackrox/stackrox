@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
@@ -34,7 +35,7 @@ type DispatcherRegistry interface {
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusterentities.Store, roxMetadata roxmetadata.Metadata) DispatcherRegistry {
+func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusterentities.Store, roxMetadata roxmetadata.Metadata, processFilter filter.Filter) DispatcherRegistry {
 	serviceStore := newServiceStore()
 	deploymentStore := newDeploymentStore()
 	nodeStore := newNodeStore()
@@ -43,7 +44,7 @@ func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusteren
 	rbacUpdater := newRBACUpdater()
 
 	return &registryImpl{
-		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore, roxMetadata, podLister),
+		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore, roxMetadata, podLister, processFilter),
 
 		roleDispatcher:           newRoleDispatcher(rbacUpdater),
 		bindingDispatcher:        newBindingDispatcher(rbacUpdater),
