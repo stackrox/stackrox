@@ -38,11 +38,9 @@ const renderDeploymentsList = deployments => {
                 <div className="text-base-600">{deployment.name}</div>
                 <div className="text-base-500 font-600">
                     <span className="pr-1 border-r inline-block">
-                        {dateFns.format(deployment.updatedAt, 'MM/DD')}
+                        {dateFns.format(deployment.created, 'MM/DD')}
                     </span>
-                    <span className="pl-1">
-                        {dateFns.format(deployment.updatedAt, 'h:mm:ss A')}
-                    </span>
+                    <span className="pl-1">{dateFns.format(deployment.created, 'h:mm:ss A')}</span>
                 </div>
             </Link>
         </li>
