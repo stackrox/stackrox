@@ -69,7 +69,7 @@ describe('Compliance dashboard page', () => {
             });
     });
 
-    it('should link from Passing Standards Across Clusters widget to standards grouped by clusters list', () => {
+    xit('should link from Passing Standards Across Clusters widget to standards grouped by clusters list', () => {
         cy.get(selectors.widget.passingStandardsAcrossClusters.axisLinks)
             .first()
             .click();
