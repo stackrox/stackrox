@@ -288,7 +288,7 @@ func (resolver *namespaceResolver) PolicyStatus(ctx context.Context) (*policySta
 	}
 
 	if len(alerts) == 0 {
-		return &policyStatusResolver{"pass", nil}, nil
+		return &policyStatusResolver{resolver.root, "pass", nil}, nil
 	}
 
 	policyIDs := set.NewStringSet()
@@ -296,14 +296,7 @@ func (resolver *namespaceResolver) PolicyStatus(ctx context.Context) (*policySta
 		policyIDs.Add(alert.GetPolicy().GetId())
 	}
 
-	policies, err := resolver.root.wrapPolicies(
-		resolver.root.PolicyDataStore.SearchRawPolicies(ctx, search.NewQueryBuilder().AddDocIDs(policyIDs.AsSlice()...).ProtoQuery()))
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &policyStatusResolver{"fail", policies}, nil
+	return &policyStatusResolver{resolver.root, "fail", policyIDs.AsSlice()}, nil
 }
 
 func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {

@@ -1,10 +1,15 @@
 package resolvers
 
-import "context"
+import (
+	"context"
+
+	"github.com/stackrox/rox/pkg/search"
+)
 
 type policyStatusResolver struct {
-	status          string
-	failingPolicies []*policyResolver
+	root             *Resolver
+	status           string
+	failingPolicyIds []string
 }
 
 func (resolver *policyStatusResolver) Status(ctx context.Context) (string, error) {
@@ -12,5 +17,13 @@ func (resolver *policyStatusResolver) Status(ctx context.Context) (string, error
 }
 
 func (resolver *policyStatusResolver) FailingPolicies(ctx context.Context) ([]*policyResolver, error) {
-	return resolver.failingPolicies, nil
+	if len(resolver.failingPolicyIds) == 0 {
+		return nil, nil
+	}
+	return resolver.root.wrapPolicies(
+		resolver.root.PolicyDataStore.SearchRawPolicies(
+			ctx,
+			search.NewQueryBuilder().AddDocIDs(resolver.failingPolicyIds...).ProtoQuery(),
+		),
+	)
 }

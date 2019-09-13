@@ -499,7 +499,7 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatu
 	}
 
 	if len(alerts) == 0 {
-		return &policyStatusResolver{"pass", nil}, nil
+		return &policyStatusResolver{resolver.root, "pass", nil}, nil
 	}
 
 	policyIDs := set.NewStringSet()
@@ -507,14 +507,7 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatu
 		policyIDs.Add(alert.GetPolicy().GetId())
 	}
 
-	policies, err := resolver.root.wrapPolicies(
-		resolver.root.PolicyDataStore.SearchRawPolicies(ctx, search.NewQueryBuilder().AddDocIDs(policyIDs.AsSlice()...).ProtoQuery()))
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &policyStatusResolver{"fail", policies}, nil
+	return &policyStatusResolver{resolver.root, "fail", policyIDs.AsSlice()}, nil
 }
 
 func (resolver *clusterResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
