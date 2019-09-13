@@ -20,7 +20,7 @@ const maxFileSize = 5 * 1024
 var filesWithContents = []string{
 	"/etc/audit",
 	"/etc/docker",
-	"/etc/fstab",
+	"/proc/mounts",
 }
 
 var filesWithoutContents = []string{

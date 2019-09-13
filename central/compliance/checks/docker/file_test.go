@@ -22,15 +22,15 @@ func TestAuditCheck(t *testing.T) {
 		status framework.Status
 	}{
 		{
-			name: "CIS_Docker_v1_1_0:1_5",
+			name: "CIS_Docker_v1_2_0:1_2_3",
 			file: &compliance.File{
 				Path:    auditFile,
-				Content: []byte("/usr/bin/docker.service\n/usr/bin/docker"),
+				Content: []byte("/usr/bin/docker.service\n/usr/bin/dockerd"),
 			},
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:1_5",
+			name: "CIS_Docker_v1_2_0:1_2_3",
 			file: &compliance.File{
 				Path:    auditFile,
 				Content: []byte("/etc/default/docker"),
@@ -69,7 +69,7 @@ func TestAuditCheck(t *testing.T) {
 
 			allFiles := map[string]*compliance.File{
 				"/usr/bin/docker.service": {Path: "/usr/bin/docker.service"},
-				"/usr/bin/docker":         {Path: "/usr/bin/docker"},
+				"/usr/bin/dockerd":        {Path: "/usr/bin/dockerd"},
 				"/etc/default/docker":     {Path: "/etc/default/docker"},
 				c.file.Path:               c.file,
 			}

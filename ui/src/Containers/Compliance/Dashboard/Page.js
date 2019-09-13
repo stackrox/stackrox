@@ -71,7 +71,7 @@ const ComplianceDashboardPage = () => {
                         className="pdf-page"
                     />
                     <ComplianceByStandard
-                        standardType={standardTypes.CIS_Docker_v1_1_0}
+                        standardType={standardTypes.CIS_Docker_v1_2_0}
                         className="pdf-page"
                     />
                     <ComplianceByStandard

@@ -14,6 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
+const dockerDaemonFile = "/etc/docker/daemon.json"
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -21,36 +23,35 @@ var (
 func init() {
 	framework.MustRegisterChecks(
 		networkRestrictionCheck(),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_2", "log-level", "info", "info", common.Matches),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_3", "iptables", "false", "true", common.Matches),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_2", "log-level", "info", "info", common.Matches),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_3", "iptables", "false", "true", common.NotMatches),
 		framework.NewCheckFromFunc(
 			framework.CheckMetadata{
-				ID:                 "CIS_Docker_v1_1_0:2_4",
+				ID:                 "CIS_Docker_v1_2_0:2_4",
 				Scope:              framework.NodeKind,
 				DataDependencies:   []string{"HostScraped"},
 				InterpretationText: `StackRox checks that no insecure Docker Registries are configured on any host, except for those with an IP in a private subnet (such as 127.0.0.0/8 or 10.0.0.0/8)`,
 			},
 			common.CheckNoInsecureRegistries),
-		dockerInfoCheck("CIS_Docker_v1_1_0:2_5", aufs),
-		tlsVerifyCheck("CIS_Docker_v1_1_0:2_6"),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_7", "default-ulimit", "", "", common.Set),
-		dockerInfoCheck("CIS_Docker_v1_1_0:2_8", userNamespaceInfo),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_9", "cgroup-parent", "", "", common.Matches),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_10", "storage-opt", "dm.basesize", "", common.Contains),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_11", "authorization-plugin", "", "", common.Set),
-		dockerInfoCheck("CIS_Docker_v1_1_0:2_12", remoteLogging),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_13", "disable-legacy-registry", "", "", common.Set),
-		dockerInfoCheck("CIS_Docker_v1_1_0:2_14", liveRestoreEnabled),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_15", "userland-proxy", "false", "true", common.Matches),
-		dockerInfoCheck("CIS_Docker_v1_1_0:2_16", daemonSeccomp),
-		dockerInfoCheck("CIS_Docker_v1_1_0:2_17", disableExperimental),
-		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_18", "no-new-privileges", "", "", common.Set),
+		dockerInfoCheck("CIS_Docker_v1_2_0:2_5", aufs),
+		tlsVerifyCheck("CIS_Docker_v1_2_0:2_6"),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_7", "default-ulimit", "", "", common.Set),
+		dockerInfoCheck("CIS_Docker_v1_2_0:2_8", userNamespaceInfo),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_9", "cgroup-parent", "", "", common.Matches),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_10", "storage-opt", "dm.basesize", "", common.NotContains),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_11", "authorization-plugin", "", "", common.Set),
+		dockerInfoCheck("CIS_Docker_v1_2_0:2_12", remoteLogging),
+		dockerInfoCheck("CIS_Docker_v1_2_0:2_13", liveRestoreEnabled),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_14", "userland-proxy", "false", "true", common.Matches),
+		dockerInfoCheck("CIS_Docker_v1_2_0:2_15", daemonSeccomp),
+		dockerInfoCheck("CIS_Docker_v1_2_0:2_16", disableExperimental),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_17", "no-new-privileges", "", "", common.Set),
 	)
 }
 
 func networkRestrictionCheck() framework.Check {
 	md := framework.CheckMetadata{
-		ID:                 "CIS_Docker_v1_1_0:2_1",
+		ID:                 "CIS_Docker_v1_2_0:2_1",
 		Scope:              framework.NodeKind,
 		InterpretationText: "StackRox checks that ICC is not enabled for the bridge network",
 		DataDependencies:   []string{"HostScraped"},
@@ -166,6 +167,8 @@ func genericDockerCommandlineCheck(name string, key, target, defaultVal string, 
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
+			framework.Notef(ctx, "The contents of %q should also be reviewed to ensure %q setting is set appropriately.", dockerDaemonFile, key)
+
 			dockerdProcess, config, err := getDockerdProcess(ret)
 			if err != nil {
 				framework.FailNow(ctx, err.Error())

@@ -30,7 +30,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		status    framework.Status
 	}{
 		{
-			name: "CIS_Docker_v1_1_0:5_25",
+			name: "CIS_Docker_v1_2_0:5_25",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -41,7 +41,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_25",
+			name: "CIS_Docker_v1_2_0:5_25",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -52,7 +52,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_1",
+			name: "CIS_Docker_v1_2_0:5_1",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					AppArmorProfile: "default",
@@ -61,7 +61,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_1",
+			name: "CIS_Docker_v1_2_0:5_1",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					AppArmorProfile: "unconfined",
@@ -70,7 +70,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_13",
+			name: "CIS_Docker_v1_2_0:5_13",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					NetworkSettingsBase: types.NetworkSettingsBase{
@@ -83,7 +83,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_13",
+			name: "CIS_Docker_v1_2_0:5_13",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					NetworkSettingsBase: types.NetworkSettingsBase{
@@ -96,11 +96,11 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name:   "CIS_Docker_v1_1_0:5_29",
+			name:   "CIS_Docker_v1_2_0:5_29",
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_29",
+			name: "CIS_Docker_v1_2_0:5_29",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					Networks: map[string]struct{}{
@@ -111,7 +111,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_3",
+			name: "CIS_Docker_v1_2_0:5_3",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -122,7 +122,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.NoteStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_3",
+			name: "CIS_Docker_v1_2_0:5_3",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -133,7 +133,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_24",
+			name: "CIS_Docker_v1_2_0:5_24",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -146,7 +146,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_24",
+			name: "CIS_Docker_v1_2_0:5_24",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -159,7 +159,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_11",
+			name: "CIS_Docker_v1_2_0:5_11",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -172,7 +172,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_11",
+			name: "CIS_Docker_v1_2_0:5_11",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -185,7 +185,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_26",
+			name: "CIS_Docker_v1_2_0:5_26",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					State: &types.ContainerState{
@@ -196,7 +196,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_26",
+			name: "CIS_Docker_v1_2_0:5_26",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					State: &types.ContainerState{
@@ -209,7 +209,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_26",
+			name: "CIS_Docker_v1_2_0:5_26",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					State: &types.ContainerState{
@@ -222,7 +222,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_17",
+			name: "CIS_Docker_v1_2_0:5_17",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -235,7 +235,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_17",
+			name: "CIS_Docker_v1_2_0:5_17",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -252,7 +252,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_16",
+			name: "CIS_Docker_v1_2_0:5_16",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -263,7 +263,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_16",
+			name: "CIS_Docker_v1_2_0:5_16",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -274,7 +274,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_10",
+			name: "CIS_Docker_v1_2_0:5_10",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -287,7 +287,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_10",
+			name: "CIS_Docker_v1_2_0:5_10",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -300,7 +300,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_19",
+			name: "CIS_Docker_v1_2_0:5_19",
 			container: types.ContainerJSON{
 				Mounts: []types.MountPoint{
 					{
@@ -311,7 +311,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_19",
+			name: "CIS_Docker_v1_2_0:5_19",
 			container: types.ContainerJSON{
 				Mounts: []types.MountPoint{
 					{
@@ -322,7 +322,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_8",
+			name: "CIS_Docker_v1_2_0:5_8",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					NetworkSettingsBase: types.NetworkSettingsBase{
@@ -335,7 +335,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.NoteStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_31",
+			name: "CIS_Docker_v1_2_0:5_31",
 			container: types.ContainerJSON{
 				Mounts: []types.MountPoint{
 					{
@@ -346,7 +346,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_31",
+			name: "CIS_Docker_v1_2_0:5_31",
 			container: types.ContainerJSON{
 				Mounts: []types.MountPoint{
 					{
@@ -357,7 +357,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_15",
+			name: "CIS_Docker_v1_2_0:5_15",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -368,7 +368,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_15",
+			name: "CIS_Docker_v1_2_0:5_15",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -379,7 +379,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_28",
+			name: "CIS_Docker_v1_2_0:5_28",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -392,7 +392,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_28",
+			name: "CIS_Docker_v1_2_0:5_28",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -405,7 +405,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_4",
+			name: "CIS_Docker_v1_2_0:5_4",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -416,7 +416,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_4",
+			name: "CIS_Docker_v1_2_0:5_4",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -427,7 +427,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_7",
+			name: "CIS_Docker_v1_2_0:5_7",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					NetworkSettingsBase: types.NetworkSettingsBase{
@@ -440,7 +440,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_7",
+			name: "CIS_Docker_v1_2_0:5_7",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					NetworkSettingsBase: types.NetworkSettingsBase{
@@ -453,7 +453,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_12",
+			name: "CIS_Docker_v1_2_0:5_12",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -464,7 +464,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_12",
+			name: "CIS_Docker_v1_2_0:5_12",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -475,7 +475,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_14",
+			name: "CIS_Docker_v1_2_0:5_14",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -489,7 +489,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_14",
+			name: "CIS_Docker_v1_2_0:5_14",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -503,7 +503,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_21",
+			name: "CIS_Docker_v1_2_0:5_21",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -516,7 +516,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_21",
+			name: "CIS_Docker_v1_2_0:5_21",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -529,7 +529,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_2",
+			name: "CIS_Docker_v1_2_0:5_2",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -542,7 +542,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_2",
+			name: "CIS_Docker_v1_2_0:5_2",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -555,7 +555,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_5",
+			name: "CIS_Docker_v1_2_0:5_5",
 			container: types.ContainerJSON{
 				Mounts: []types.MountPoint{
 					{
@@ -566,7 +566,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_5",
+			name: "CIS_Docker_v1_2_0:5_5",
 			container: types.ContainerJSON{
 				Mounts: []types.MountPoint{
 					{
@@ -577,7 +577,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_9",
+			name: "CIS_Docker_v1_2_0:5_9",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -588,7 +588,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_9",
+			name: "CIS_Docker_v1_2_0:5_9",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -599,7 +599,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_18",
+			name: "CIS_Docker_v1_2_0:5_18",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -612,7 +612,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_18",
+			name: "CIS_Docker_v1_2_0:5_18",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -631,7 +631,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_30",
+			name: "CIS_Docker_v1_2_0:5_30",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -642,7 +642,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_30",
+			name: "CIS_Docker_v1_2_0:5_30",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -653,7 +653,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_20",
+			name: "CIS_Docker_v1_2_0:5_20",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -664,7 +664,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:5_20",
+			name: "CIS_Docker_v1_2_0:5_20",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
@@ -675,7 +675,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:4_1",
+			name: "CIS_Docker_v1_2_0:4_1",
 			container: types.ContainerJSON{
 				Config: &types.Config{
 					User: "stackrox",
@@ -684,7 +684,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:4_1",
+			name: "CIS_Docker_v1_2_0:4_1",
 			container: types.ContainerJSON{
 				Config: &types.Config{
 					User: "root",

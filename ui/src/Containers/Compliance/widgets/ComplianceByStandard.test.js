@@ -50,7 +50,7 @@ const testQueryForEntityType = standardType => {
 };
 
 it('renders for Compliance By CIS Docker', () => {
-    testQueryForEntityType(standardTypes.CIS_Docker_v1_1_0);
+    testQueryForEntityType(standardTypes.CIS_Docker_v1_2_0);
 });
 
 it('renders for Compliance By CIS K8s', () => {

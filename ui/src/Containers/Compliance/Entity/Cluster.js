@@ -122,7 +122,7 @@ const ClusterPage = ({
                                     className={pdfClassName}
                                 />
                                 <ComplianceByStandard
-                                    standardType={entityTypes.CIS_Docker_v1_1_0}
+                                    standardType={entityTypes.CIS_Docker_v1_2_0}
                                     entityName={name}
                                     entityId={id}
                                     entityType={entityTypes.CLUSTER}

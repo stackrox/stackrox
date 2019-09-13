@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -11,22 +12,23 @@ import (
 
 func init() {
 	framework.MustRegisterChecks(
-		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_1_0:1_1", Scope: framework.NodeKind}, containerPartition),
-		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:1_2", "Ensure the host is hardened with the latest kernel"),
-		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:1_3", "Ensure that Docker is updated"),
-		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:1_4", "Ensure that only trusted users can access the Docker daemon"),
-		auditCheck("CIS_Docker_v1_1_0:1_5", "/usr/bin/docker"),
-		auditCheck("CIS_Docker_v1_1_0:1_6", "/var/lib/docker"),
-		auditCheck("CIS_Docker_v1_1_0:1_7", "/etc/docker"),
-		auditCheck("CIS_Docker_v1_1_0:1_8", "docker.service"),
-		auditCheck("CIS_Docker_v1_1_0:1_9", "docker.socket"),
-		auditCheck("CIS_Docker_v1_1_0:1_10", "/etc/default/docker"),
-		auditCheck("CIS_Docker_v1_1_0:1_11", "/etc/docker/daemon.json"),
-		auditCheck("CIS_Docker_v1_1_0:1_12", "/usr/bin/docker-containerd"),
-		auditCheck("CIS_Docker_v1_1_0:1_13", "/usr/bin/docker-runc"),
+		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:1_1_1", "Ensure the container host has been Hardened"),
+		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:1_1_2", " Ensure that the version of Docker is up to date"),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:1_2_1", Scope: framework.NodeKind}, containerPartition),
+		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:1_2_2", "Ensure only trusted users are allowed to control Docker daemon"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_3", "/usr/bin/dockerd"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_4", "/var/lib/docker"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_5", "/etc/docker"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_6", "docker.service"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_7", "docker.socket"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_8", "/etc/default/docker"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_9", "/etc/sysconfig/docker"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_10", "/etc/docker/daemon.json"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_11", "/usr/bin/containerd"),
+		auditCheck("CIS_Docker_v1_2_0:1_2_12", "/usr/sbin/runc"),
 
-		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_1_0:5_22", Scope: framework.NodeKind}, privilegedDockerExec),
-		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_1_0:5_23", Scope: framework.NodeKind}, userDockerExec),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:5_22", Scope: framework.NodeKind}, privilegedDockerExec),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:5_23", Scope: framework.NodeKind}, userDockerExec),
 	)
 }
 
@@ -58,19 +60,19 @@ func auditCheckFunc(file string) framework.CheckFunc {
 	})
 }
 
-const fstabPath = "/etc/fstab"
+const procMountsPath = "/proc/mounts"
 
 func containerPartition(funcCtx framework.ComplianceContext) {
-	fileByte := []byte("/var/lib/docker")
+	r := regexp.MustCompile(`/var/lib/docker\s`)
 	common.PerNodeCheck(func(ctx framework.ComplianceContext, returnData *compliance.ComplianceReturn) {
-		f, ok := returnData.Files[fstabPath]
+		f, ok := returnData.Files[procMountsPath]
 		if !ok {
-			framework.FailNowf(ctx, "FStab file %q does not exist", fstabPath)
+			framework.FailNowf(ctx, "File %q does not exist", procMountsPath)
 		}
-		if !bytes.Contains(f.GetContent(), fileByte) {
-			framework.FailNowf(ctx, "FStab file %q does not contain file /var/lib/docker", fstabPath)
+		if !r.Match(f.GetContent()) {
+			framework.FailNowf(ctx, "File %q does not contain file /var/lib/docker", procMountsPath)
 		}
-		framework.PassNowf(ctx, "FStab file %q contains file %q", fstabPath, "/var/lib/docker")
+		framework.PassNowf(ctx, "File %q contains file %q", procMountsPath, "/var/lib/docker")
 	})(funcCtx)
 }
 

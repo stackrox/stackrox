@@ -30,7 +30,7 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 		status framework.Status
 	}{
 		{
-			name: "CIS_Docker_v1_1_0:3_1",
+			name: "CIS_Docker_v1_2_0:3_1",
 			file: &compliance.File{
 				Path:      "docker.service",
 				GroupName: "root",
@@ -39,7 +39,7 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:3_1",
+			name: "CIS_Docker_v1_2_0:3_1",
 			file: &compliance.File{
 				Path:      "docker.service",
 				GroupName: "docker",
@@ -48,7 +48,7 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:3_1",
+			name: "CIS_Docker_v1_2_0:3_1",
 			file: &compliance.File{
 				Path:      "docker.service",
 				GroupName: "root",
@@ -57,7 +57,7 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:3_2",
+			name: "CIS_Docker_v1_2_0:3_2",
 			file: &compliance.File{
 				Path:        "docker.service",
 				Permissions: 0644,
@@ -65,7 +65,7 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:3_2",
+			name: "CIS_Docker_v1_2_0:3_2",
 			file: &compliance.File{
 				Path:        "docker.service",
 				Permissions: 0643,
@@ -73,7 +73,7 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:3_2",
+			name: "CIS_Docker_v1_2_0:3_2",
 			file: &compliance.File{
 				Path:        "docker.service",
 				Permissions: 0645,

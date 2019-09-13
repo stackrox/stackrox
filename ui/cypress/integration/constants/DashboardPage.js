@@ -22,7 +22,7 @@ export const selectors = {
         lowSeverityBar: `g.recharts-bar-rectangle path[fill="${severityColorMap.LOW_SEVERITY}"]`,
         medSeveritySector: `g.recharts-pie-sector path[fill="${severityColorMap.MEDIUM_SEVERITY}"]`,
         legendItem: `span.recharts-legend-item-text`,
-        legendLink: '[data-test-id="CIS Docker v1.1.0"]'
+        legendLink: '[data-test-id="CIS Docker v1.2.0"]'
     },
     timeseries: 'svg.recharts-surface',
     searchInput: '.react-select__input > input'

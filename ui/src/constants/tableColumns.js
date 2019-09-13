@@ -8,9 +8,9 @@ const getNameCell = name => <div data-test-id="table-row-name">{name}</div>;
 
 const complianceColumns = [
     {
-        accessor: standardTypes.CIS_Docker_v1_1_0,
+        accessor: standardTypes.CIS_Docker_v1_2_0,
         Header: 'CIS Docker',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Docker_v1_1_0)
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Docker_v1_2_0)
     },
     {
         accessor: standardTypes.CIS_Kubernetes_v1_4_1,
@@ -93,9 +93,9 @@ const nodeColumns = [
         Header: 'Cluster'
     },
     {
-        accessor: standardTypes.CIS_Docker_v1_1_0,
+        accessor: standardTypes.CIS_Docker_v1_2_0,
         Header: 'CIS Docker',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Docker_v1_1_0)
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Docker_v1_2_0)
     },
     {
         accessor: standardTypes.CIS_Kubernetes_v1_4_1,
@@ -222,7 +222,7 @@ const entityToColumns = {
     [standardTypes.NIST_800_190]: getStandardColumns('NIST'),
     [standardTypes.HIPAA_164]: getStandardColumns('HIPAA'),
     [standardTypes.CIS_Kubernetes_v1_4_1]: getStandardColumns('CIS Kubernetes'),
-    [standardTypes.CIS_Docker_v1_1_0]: getStandardColumns('CIS Docker'),
+    [standardTypes.CIS_Docker_v1_2_0]: getStandardColumns('CIS Docker'),
     [resourceTypes.NODE]: nodeColumns,
     [resourceTypes.NAMESPACE]: namespaceColumns,
     [resourceTypes.DEPLOYMENT]: deploymentColumns,

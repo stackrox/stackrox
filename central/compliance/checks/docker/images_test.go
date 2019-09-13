@@ -28,7 +28,7 @@ func TestDockerImagesChecks(t *testing.T) {
 		status framework.Status
 	}{
 		{
-			name: "CIS_Docker_v1_1_0:4_6",
+			name: "CIS_Docker_v1_2_0:4_6",
 			image: types.ImageWrap{
 				Image: types.ImageInspect{
 					Config: &types.Config{},
@@ -37,7 +37,7 @@ func TestDockerImagesChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:4_6",
+			name: "CIS_Docker_v1_2_0:4_6",
 			image: types.ImageWrap{
 				Image: types.ImageInspect{
 					Config: &types.Config{
@@ -48,7 +48,7 @@ func TestDockerImagesChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:4_9",
+			name: "CIS_Docker_v1_2_0:4_9",
 			image: types.ImageWrap{
 				History: []image.HistoryResponseItem{
 					{
@@ -62,7 +62,7 @@ func TestDockerImagesChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:4_9",
+			name: "CIS_Docker_v1_2_0:4_9",
 			image: types.ImageWrap{
 				History: []image.HistoryResponseItem{
 					{
@@ -73,7 +73,7 @@ func TestDockerImagesChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:4_7",
+			name: "CIS_Docker_v1_2_0:4_7",
 			image: types.ImageWrap{
 				History: []image.HistoryResponseItem{
 					{
@@ -84,7 +84,7 @@ func TestDockerImagesChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:4_7",
+			name: "CIS_Docker_v1_2_0:4_7",
 			image: types.ImageWrap{
 				History: []image.HistoryResponseItem{
 					{

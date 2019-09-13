@@ -35,7 +35,7 @@ describe('Compliance list page', () => {
     });
 
     it('should be sorted by version in standards list', () => {
-        cy.visit(url.list.standards.CIS_Docker_v1_1_0);
+        cy.visit(url.list.standards.CIS_Docker_v1_2_0);
         cy.get(selectors.list.table.firstRowName)
             .invoke('text')
             .then(text1 => {
@@ -69,7 +69,7 @@ describe('Compliance list page', () => {
     });
 
     it('should show the proper percentage value in the gauge in the Standards List page', () => {
-        cy.visit(url.list.standards.CIS_Docker_v1_1_0);
+        cy.visit(url.list.standards.CIS_Docker_v1_2_0);
         cy.get(selectors.widget.controlsInCompliance.centerLabel)
             .invoke('text')
             .then(labelPercentage => {
@@ -94,7 +94,7 @@ describe('Compliance list page', () => {
     });
 
     it('should go to the specific control when User clicks an item from the "Controls Most Failed" widget', () => {
-        cy.visit(url.list.standards.CIS_Docker_v1_1_0);
+        cy.visit(url.list.standards.CIS_Docker_v1_2_0);
         cy.get(selectors.widget.controlsMostFailed.listItems, { timeout: 10000 })
             .eq(0)
             .invoke('text')

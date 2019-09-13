@@ -35,44 +35,44 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 		status framework.Status
 	}{
 		{
-			name: "CIS_Docker_v1_1_0:2_5",
+			name: "CIS_Docker_v1_2_0:2_5",
 			info: types.Info{
 				Driver: "aufs",
 			},
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:2_5",
+			name: "CIS_Docker_v1_2_0:2_5",
 			info: types.Info{
 				Driver: "overlay2",
 			},
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:2_16",
+			name: "CIS_Docker_v1_2_0:2_15",
 			info: types.Info{
 				SecurityOptions: []string{"hello", "seccomp=default"},
 			},
 			status: framework.NoteStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:2_17",
+			name: "CIS_Docker_v1_2_0:2_16",
 			info: types.Info{
 				ExperimentalBuild: true,
 			},
 			status: framework.FailStatus,
 		},
 		{
-			name:   "CIS_Docker_v1_1_0:2_17",
+			name:   "CIS_Docker_v1_2_0:2_16",
 			info:   types.Info{},
 			status: framework.PassStatus,
 		},
 		{
-			name:   "CIS_Docker_v1_1_0:2_4",
+			name:   "CIS_Docker_v1_2_0:2_4",
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:2_4",
+			name: "CIS_Docker_v1_2_0:2_4",
 			info: types.Info{
 				RegistryConfig: &registry.ServiceConfig{
 					InsecureRegistryCIDRs: []*registry.NetIPNet{&localIPNet},
@@ -81,7 +81,7 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:2_4",
+			name: "CIS_Docker_v1_2_0:2_4",
 			info: types.Info{
 				RegistryConfig: &registry.ServiceConfig{
 					InsecureRegistryCIDRs: []*registry.NetIPNet{&localIPNet, &nonLocalIPNet},
@@ -90,25 +90,25 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:2_14",
+			name: "CIS_Docker_v1_2_0:2_13",
 			info: types.Info{
 				LiveRestoreEnabled: true,
 			},
 			status: framework.PassStatus,
 		},
 		{
-			name:   "CIS_Docker_v1_1_0:2_14",
+			name:   "CIS_Docker_v1_2_0:2_13",
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:2_12",
+			name: "CIS_Docker_v1_2_0:2_12",
 			info: types.Info{
 				LoggingDriver: "json-file",
 			},
 			status: framework.FailStatus,
 		},
 		{
-			name:   "CIS_Docker_v1_1_0:2_12",
+			name:   "CIS_Docker_v1_2_0:2_12",
 			status: framework.PassStatus,
 		},
 	}
