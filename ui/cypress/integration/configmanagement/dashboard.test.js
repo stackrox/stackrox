@@ -150,7 +150,7 @@ describe('Config Management Dashboard Page', () => {
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "View All" button should take you to the controls list', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('CIS'))
+        cy.get(selectors.cisStandardsAcrossClusters.widget)
             .find(selectors.viewStandardButton)
             .click();
         cy.url().should('contain', url.list.controls);
@@ -226,7 +226,7 @@ describe('Config Management Dashboard Page', () => {
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('CIS'))
+        cy.get(selectors.cisStandardsAcrossClusters.widget)
             .find(selectors.cisStandardsAcrossClusters.passingControlsLink)
             .click();
         cy.url().should('contain', url.list.controls);
@@ -235,7 +235,7 @@ describe('Config Management Dashboard Page', () => {
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "failing controls" link should take you to the controls list and filter by failing controls', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('CIS'))
+        cy.get(selectors.cisStandardsAcrossClusters.widget)
             .find(selectors.cisStandardsAcrossClusters.failingControlsLinks)
             .click();
         cy.url().should('contain', url.list.controls);
@@ -253,14 +253,14 @@ describe('Config Management Dashboard Page', () => {
 
     it('switching clusters in the "CIS Standard Across Clusters" widget\'s should change the data', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('CIS'))
-            .find('select')
-            .should('contain', 'CIS Docker');
-        cy.get(selectors.getWidget('CIS'))
-            .find('select')
-            .select('CIS Kubernetes v1.4.1');
-        cy.get(selectors.getWidget('CIS'))
-            .find('select')
-            .should('contain', 'CIS Kubernetes');
+        cy.get(selectors.cisStandardsAcrossClusters.select.value).should('contain', 'CIS Docker');
+        cy.get(selectors.cisStandardsAcrossClusters.select.input).click();
+        cy.get(selectors.cisStandardsAcrossClusters.select.options)
+            .last()
+            .click();
+        cy.get(selectors.cisStandardsAcrossClusters.select.value).should(
+            'contain',
+            'CIS Kubernetes'
+        );
     });
 });

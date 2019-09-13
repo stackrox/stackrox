@@ -60,6 +60,12 @@ export const dashboardSelectors = {
         }
     },
     cisStandardsAcrossClusters: {
+        widget: '[data-test-id="compliance-by-controls"]',
+        select: {
+            input: '[data-test-id="compliance-by-controls"] .react-select__control',
+            value: '[data-test-id="compliance-by-controls"] .react-select__single-value',
+            options: '[data-test-id="compliance-by-controls"] .react-select__option'
+        },
         passingControlsLink: 'a:contains("Controls Passing")',
         failingControlsLinks: 'a:contains("Controls Failing")'
     },

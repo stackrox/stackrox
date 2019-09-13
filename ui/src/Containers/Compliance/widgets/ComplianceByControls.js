@@ -16,7 +16,7 @@ import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
 import Sunburst from 'Components/visuals/Sunburst';
-import Select from 'Components/Select';
+import Select from 'Components/ReactSelect';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 const passingColor = 'var(--tertiary-400)';
@@ -236,7 +236,8 @@ const ComplianceByControls = ({
     const [selectedStandard, selectStandard] = useState(options[0]);
 
     function onChange(datum) {
-        selectStandard(datum);
+        const standard = options.find(option => option.value === datum);
+        selectStandard(standard);
     }
 
     const variables = {
@@ -245,15 +246,33 @@ const ComplianceByControls = ({
         where: queryService.objectToWhereClause({ Standard: selectedStandard.value })
     };
 
+    const selectStyles = {
+        valueContainer: base => ({
+            ...base,
+            'padding-left': '0'
+        }),
+        control: base => ({
+            ...base,
+            border: 'none',
+            'letter-spacing': '.03125rem',
+            'text-transform': 'uppercase',
+            'font-weight': '700!important',
+            color: 'var(--base-600)',
+            'font-size': '.6875rem'
+        }),
+        indicatorSeparator: base => ({ ...base, display: 'none' })
+    };
+
     return (
         <Query query={QUERY} variables={variables}>
             {({ data, networkStatus }) => {
                 const titleComponents = (
                     <Select
-                        className="bg-base-100 w-full focus:outline-none text-sm text-base-600 uppercase tracking-wide leading-normal font-700"
+                        styles={selectStyles}
                         value={selectedStandard.value}
                         onChange={onChange}
                         options={options}
+                        isSearchable={false}
                     />
                 );
 
@@ -295,7 +314,7 @@ const ComplianceByControls = ({
                                 rootData={sunburstRootData}
                                 legendData={sunburstLegendData}
                                 totalValue={totalPassing}
-                                key={selectedStandard.label}
+                                key={selectedStandard.value}
                             />
                         );
                     } else {
@@ -307,6 +326,7 @@ const ComplianceByControls = ({
                 return (
                     <Widget
                         className={`s-2 ${className}`}
+                        id="compliance-by-controls"
                         titleComponents={titleComponents}
                         headerComponents={headerComponents}
                     >
