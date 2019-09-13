@@ -76,7 +76,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         Set<String> receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
         def sleepTime = 0L
-        while (!receivedProcessPaths.equals(expectedFilePaths) && sleepTime < MAX_SLEEP_TIME) {
+        while (!receivedProcessPaths.containsAll(expectedFilePaths) && sleepTime < MAX_SLEEP_TIME) {
             println "Didn't find all the expected processes, retrying..."
             sleep(SLEEP_INCREMENT)
             sleepTime += SLEEP_INCREMENT
