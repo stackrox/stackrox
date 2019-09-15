@@ -514,6 +514,7 @@ func TestConvert(t *testing.T) {
 								Tag:      "latest",
 								FullName: "docker.io/stackrox/kafka:latest",
 							},
+							NotPullable: true,
 						},
 						Secrets: []*storage.EmbeddedSecret{
 							{
@@ -590,7 +591,7 @@ func TestConvert(t *testing.T) {
 								Tag:      "1.3",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
 							},
-							Pullable: true,
+							NotPullable: false,
 						},
 						Secrets: []*storage.EmbeddedSecret{
 							{

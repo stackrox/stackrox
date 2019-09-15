@@ -23,8 +23,8 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 	}
 
 	image := &storage.ContainerImage{
-		Name:     imageName,
-		Pullable: true, // default pullable to true
+		Name:        imageName,
+		NotPullable: false,
 	}
 
 	digest, ok := ref.(reference.Digested)

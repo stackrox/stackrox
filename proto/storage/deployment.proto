@@ -51,7 +51,7 @@ message ContainerImage {
     // These tags maintain backwards compatibiltiy with the previously embedded storage.Image
     string id = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName name = 1;
-    bool pullable  = 10;
+    bool not_pullable  = 10;
 }
 
 message Container {

@@ -22,7 +22,7 @@ func TestNewImage(t *testing.T) {
 					Tag:      "latest",
 					FullName: "docker.io/library/nginx:latest@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 				},
-				Pullable: true,
+				NotPullable: false,
 			},
 		},
 		{
@@ -35,7 +35,7 @@ func TestNewImage(t *testing.T) {
 					Tag:      "1.0",
 					FullName: "stackrox.io/main:1.0@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 				},
-				Pullable: true,
+				NotPullable: false,
 			},
 		},
 		{
@@ -47,7 +47,7 @@ func TestNewImage(t *testing.T) {
 					Tag:      "latest",
 					FullName: "docker.io/library/nginx:latest",
 				},
-				Pullable: true,
+				NotPullable: false,
 			},
 		},
 	}
