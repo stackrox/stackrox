@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
@@ -63,7 +64,18 @@ func RecursiveOwnershipCheck(name, dir, user, group string) framework.Check {
 		InterpretationText: fmt.Sprintf("StackRox checks that all files under the path %s are owned by user %q and group %q", dir, user, group),
 		DataDependencies:   []string{"HostScraped"},
 	}
-	return framework.NewCheckFromFunc(md, recursiveOwnershipCheckFunc(dir, user, group))
+	return framework.NewCheckFromFunc(md, recursiveOwnershipCheckFunc(dir, user, group, false))
+}
+
+// RecursiveOwnershipCheckIfDirExists is a framework Check for recursively checking the ownership
+func RecursiveOwnershipCheckIfDirExists(name, dir, user, group string) framework.Check {
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that all files under the path %s are owned by user %q and group %q", dir, user, group),
+		DataDependencies:   []string{"HostScraped"},
+	}
+	return framework.NewCheckFromFunc(md, recursiveOwnershipCheckFunc(dir, user, group, true))
 }
 
 // CheckRecursiveOwnership checks the files against the passed user and group
@@ -74,10 +86,12 @@ func CheckRecursiveOwnership(ctx framework.ComplianceContext, f *compliance.File
 	}
 }
 
-func recursiveOwnershipCheckFunc(path, user, group string) framework.CheckFunc {
+func recursiveOwnershipCheckFunc(path, user, group string, optional bool) framework.CheckFunc {
 	return PerNodeCheck(func(ctx framework.ComplianceContext, returnData *compliance.ComplianceReturn) {
 		f, ok := returnData.Files[path]
-		if !ok {
+		if !ok && optional {
+			framework.PassNowf(ctx, "File %q does not exist on host, therefore check is not applicable", path)
+		} else if !ok {
 			framework.FailNowf(ctx, "File %q could not be found in scraped data", path)
 		}
 		CheckRecursiveOwnership(ctx, f, user, group)
@@ -211,4 +225,37 @@ func recursivePermissionCheckFunc(path string, permissions uint32) framework.Che
 		}
 		CheckRecursivePermissions(ctx, f, permissions)
 	})
+}
+
+// RecursivePermissionCheckWithFileExtIfDirExists recursively checks the permissions of the file with given extension
+func RecursivePermissionCheckWithFileExtIfDirExists(name, dir, ext string, permissions uint32) framework.Check {
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the permissions of files with extension %s under the path %s on each node are set to '%#o'", ext, dir, permissions),
+		DataDependencies:   []string{"HostScraped"},
+	}
+	return framework.NewCheckFromFunc(md, recursivePermissionCheckWithFileExtFunc(dir, ext, permissions, true))
+}
+
+func recursivePermissionCheckWithFileExtFunc(path, fileExtension string, permissions uint32, optional bool) framework.CheckFunc {
+	return PerNodeCheck(func(ctx framework.ComplianceContext, returnData *compliance.ComplianceReturn) {
+		f, ok := returnData.Files[path]
+		if !ok && optional {
+			framework.PassNowf(ctx, "File %q does not exist on host, therefore check is not applicable", path)
+		} else if !ok {
+			framework.FailNowf(ctx, "File %q could not be found in scraped data", path)
+		}
+		CheckRecursivePermissionWithFileExt(ctx, f, fileExtension, permissions)
+	})
+}
+
+// CheckRecursivePermissionWithFileExt does the actual checking of the files
+func CheckRecursivePermissionWithFileExt(ctx framework.ComplianceContext, f *compliance.File, fileExtension string, permissions uint32) {
+	if filepath.Ext(f.GetPath()) == fileExtension {
+		permissionCheck(ctx, f, permissions)
+	}
+	for _, child := range f.Children {
+		CheckRecursivePermissionWithFileExt(ctx, child, fileExtension, permissions)
+	}
 }

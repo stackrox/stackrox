@@ -35,9 +35,9 @@ func init() {
 		common.OptionalPermissionCheck("CIS_Kubernetes_v1_4_1:1_4_17", "/etc/kubernetes/controller-manager.conf", 0644),
 		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_18", "/etc/kubernetes/controller-manager.conf", "root", "root"),
 
-		common.RecursiveOwnershipCheck("CIS_Kubernetes_v1_4_1:1_4_19", "/etc/kubernetes/pki", "root", "root"),
-		common.PerNodeNoteCheck("CIS_Kubernetes_v1_4_1:1_4_20", "Ensure that the Kubernetes PKI certificate file permissions are set to 644 or more restrictive"),
-		common.PerNodeNoteCheck("CIS_Kubernetes_v1_4_1:1_4_21", "Ensure that the Kubernetes PKI key file permissions are set to 600"),
+		common.RecursiveOwnershipCheckIfDirExists("CIS_Kubernetes_v1_4_1:1_4_19", "/etc/kubernetes/pki", "root", "root"),
+		common.RecursivePermissionCheckWithFileExtIfDirExists("CIS_Kubernetes_v1_4_1:1_4_20", "/etc/kubernetes/pki", "crt", 0644),
+		common.RecursivePermissionCheckWithFileExtIfDirExists("CIS_Kubernetes_v1_4_1:1_4_21", "/etc/kubernetes/pki", "key", 0600),
 	)
 }
 
