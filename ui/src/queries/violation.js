@@ -7,6 +7,8 @@ const VIOLATIONS = gql`
             deployment {
                 id
                 name
+                clusterName
+                namespace
             }
             policy {
                 id

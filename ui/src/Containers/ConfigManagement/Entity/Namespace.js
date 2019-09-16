@@ -166,6 +166,10 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                                         Namespace: name
                                     })}
                                     message="No deployments violating policies in this namespace"
+                                    entityContext={{
+                                        ...entityContext,
+                                        [entityTypes.NAMESPACE]: id
+                                    }}
                                 />
                             </div>
                         </CollapsibleSection>

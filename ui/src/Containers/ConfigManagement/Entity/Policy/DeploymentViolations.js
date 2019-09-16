@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { entityViolationsColumns } from 'constants/listColumns';
 import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
+import { entityViolationsColumns } from 'constants/listColumns';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 
-const DeploymentViolations = ({ className, alerts }) => {
+const DeploymentViolations = ({ className, alerts, entityContext }) => {
     if (!alerts || !alerts.length)
         return (
             <NoResultsMessage
@@ -17,14 +17,14 @@ const DeploymentViolations = ({ className, alerts }) => {
             />
         );
     const rows = alerts;
-    const columns = entityViolationsColumns[entityTypes.DEPLOYMENT];
+    const columns = entityViolationsColumns[entityTypes.DEPLOYMENT](entityContext);
     return (
         <TableWidget
             header={`${rows.length} ${pluralize('Deployment', rows.length)} with Violation(s)`}
             entityType={entityTypes.DEPLOYMENT}
             columns={columns}
             rows={rows}
-            idAttribute="deployment.id"
+            idAttribute="id"
             noDataText="No Deployments with Violation(s)"
             className={className}
         />
@@ -33,12 +33,14 @@ const DeploymentViolations = ({ className, alerts }) => {
 
 DeploymentViolations.propTypes = {
     className: PropTypes.string,
-    alerts: PropTypes.arrayOf(PropTypes.shape({}))
+    alerts: PropTypes.arrayOf(PropTypes.shape({})),
+    entityContext: PropTypes.shape({})
 };
 
 DeploymentViolations.defaultProps = {
     className: '',
-    alerts: []
+    alerts: [],
+    entityContext: {}
 };
 
 export default DeploymentViolations;

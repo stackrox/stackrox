@@ -210,6 +210,10 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                                                 Cluster: name
                                             })}
                                             message="No deployments violating policies in this cluster"
+                                            entityContext={{
+                                                ...entityContext,
+                                                [entityTypes.CLUSTER]: id
+                                            }}
                                         />
                                     </TabContent>
                                     <TabContent>

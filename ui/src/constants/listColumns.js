@@ -1,6 +1,6 @@
 import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName, wrapClassName } from 'Components/Table';
-import { resourceTypes } from 'constants/entityTypes';
+import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { sortVersion } from 'sorters/sorters';
 import LabelChip from 'Components/LabelChip';
@@ -122,30 +122,53 @@ const imageColumns = [
     }
 ];
 
-const deploymentViolationsColumns = [
-    {
-        Header: 'Id',
-        headerClassName: 'hidden',
-        className: 'hidden',
-        accessor: 'deployment.id'
-    },
-    {
-        Header: `Deployment`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'deployment.name'
-    },
-    {
-        Header: `Time`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'time',
-        Cell: ({ original }) => {
-            const { time } = original;
-            return format(time, dateTimeFormat);
+const getDeploymentViolationsColumns = entityContext => {
+    const columns = [
+        {
+            Header: 'Id',
+            headerClassName: 'hidden',
+            className: 'hidden',
+            accessor: 'id'
+        },
+        {
+            Header: `Deployment`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'name'
+        },
+        entityContext &&
+        (entityContext[entityTypes.CLUSTER] || entityContext[entityTypes.NAMESPACE])
+            ? null
+            : {
+                  Header: `Cluster`,
+                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'clusterName'
+              },
+        entityContext && entityContext[entityTypes.NAMESPACE]
+            ? null
+            : {
+                  Header: `Namespace`,
+                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  className: `w-1/8 ${defaultColumnClassName}`,
+                  accessor: 'namespace'
+              },
+        {
+            Header: `Policy Status`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            Cell: () => <LabelChip text="Fail" type="alert" />
+        },
+        {
+            Header: `Violation Time`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'violationTime',
+            Cell: ({ original }) => format(original.time, dateTimeFormat)
         }
-    }
-];
+    ];
+    return columns.filter(col => col);
+};
 
 export const entityToColumns = {
     [resourceTypes.CONTROL]: controlColumns,
@@ -157,5 +180,5 @@ export const entityAcrossControlsColumns = {
 };
 
 export const entityViolationsColumns = {
-    [resourceTypes.DEPLOYMENT]: deploymentViolationsColumns
+    [resourceTypes.DEPLOYMENT]: getDeploymentViolationsColumns
 };

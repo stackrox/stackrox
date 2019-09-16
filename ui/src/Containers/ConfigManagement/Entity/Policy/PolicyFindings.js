@@ -11,12 +11,17 @@ const PolicyFindings = ({ entityContext = {}, policyId, alerts }) => {
             <ViolationsAcrossThisDeployment
                 deploymentID={entityContext[entityTypes.DEPLOYMENT]}
                 policyID={policyId}
+                entityContext={entityContext}
             />
         );
     }
     return (
         <div className="mx-4 w-full">
-            <DeploymentViolations className="bg-base-100" alerts={alerts} />
+            <DeploymentViolations
+                className="bg-base-100"
+                alerts={alerts}
+                entityContext={entityContext}
+            />
         </div>
     );
 };

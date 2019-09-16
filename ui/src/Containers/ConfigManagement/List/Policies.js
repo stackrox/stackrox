@@ -131,6 +131,10 @@ const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
             idAttribute="id"
             defaultSorted={[
                 {
+                    id: 'policyStatus',
+                    desc: false
+                },
+                {
                     id: 'severity',
                     desc: false
                 }

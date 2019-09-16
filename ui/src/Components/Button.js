@@ -55,7 +55,7 @@ Button.propTypes = {
     text: PropTypes.string,
     textCondensed: PropTypes.string,
     textClass: PropTypes.string,
-    onClick: PropTypes.func.isRequired,
+    onClick: PropTypes.func,
     disabled: PropTypes.bool,
     isLoading: PropTypes.bool,
     loaderSize: PropTypes.number
@@ -68,6 +68,7 @@ Button.defaultProps = {
     text: null,
     textCondensed: null,
     textClass: null,
+    onClick: () => {},
     disabled: false,
     isLoading: false,
     loaderSize: 20

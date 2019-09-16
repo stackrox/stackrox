@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import VIOLATIONS from 'queries/violation';
-import { format } from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import resolvePath from 'object-resolve-path';
 import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
@@ -13,6 +11,8 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
+import { entityViolationsColumns } from 'constants/listColumns';
+
 import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import SeverityLabel from 'Components/SeverityLabel';
 import TableWidget from './TableWidget';
@@ -32,33 +32,9 @@ const getDeploymentsGroupedByPolicies = data => {
     return Object.values(groups);
 };
 
-const Deployments = ({ original: policy, match, location, history }) => {
+const Deployments = ({ original: policy, match, location, history, entityContext }) => {
     const { deployments } = policy;
-    const columns = [
-        {
-            Header: 'Id',
-            headerClassName: 'hidden',
-            className: 'hidden',
-            accessor: 'id'
-        },
-        {
-            Header: `Deployment`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'name'
-        },
-        {
-            Header: `Last Updated`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'time',
-            Cell: ({ original }) => {
-                const { time } = original;
-                if (!time) return null;
-                return format(time, dateTimeFormat);
-            }
-        }
-    ];
+    const columns = entityViolationsColumns[entityTypes.DEPLOYMENT](entityContext);
     function onRowClick(row) {
         const id = resolvePath(row, 'id');
         const url = URLService.getURL(match, location)
@@ -79,89 +55,93 @@ const Deployments = ({ original: policy, match, location, history }) => {
 
 Deployments.propTypes = {
     original: PropTypes.shape({}).isRequired,
-    match: PropTypes.string.isRequired,
-    location: PropTypes.string.isRequired,
-    history: PropTypes.string.isRequired
+    match: PropTypes.shape({}).isRequired,
+    location: PropTypes.shape({}).isRequired,
+    history: PropTypes.shape({}).isRequired,
+    entityContext: PropTypes.shape({})
+};
+
+Deployments.defaultProps = {
+    entityContext: {}
 };
 
 const DeploymentsWithRouter = withRouter(Deployments);
 
-const DeploymentsWithFailedPolicies = ({ query, message }) => {
-    return (
-        <Query query={VIOLATIONS} variables={{ query }}>
-            {({ loading, data }) => {
-                if (loading) return <Loader />;
-                if (!data) return null;
-                const groups = getDeploymentsGroupedByPolicies(data);
-                const numDeployments = uniq(data.violations.map(violation => violation.deployment))
-                    .length;
-                if (numDeployments === 0)
-                    return (
-                        <NoResultsMessage message={message} className="p-6 shadow" icon="info" />
-                    );
-                const header = `${numDeployments} deployments failed across ${
-                    groups.length
-                } policies`;
-                const columns = [
-                    {
-                        Header: `Policy`,
-                        headerClassName: `${defaultHeaderClassName} hidden`,
-                        className: `${defaultColumnClassName} hidden`,
-                        accessor: 'name',
-                        Cell: ({ original }) => {
-                            const { severity, categories, name } = original;
+const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
+    <Query query={VIOLATIONS} variables={{ query }}>
+        {({ loading, data }) => {
+            if (loading) return <Loader />;
+            if (!data) return null;
+            const groups = getDeploymentsGroupedByPolicies(data);
+            const numDeployments = uniq(data.violations.map(violation => violation.deployment))
+                .length;
+            if (numDeployments === 0)
+                return <NoResultsMessage message={message} className="p-6 shadow" icon="info" />;
+            const header = `${numDeployments} deployments failed across ${groups.length} policies`;
+            const columns = [
+                {
+                    Header: `Policy`,
+                    headerClassName: `${defaultHeaderClassName} hidden`,
+                    className: `${defaultColumnClassName} hidden`,
+                    accessor: 'name',
+                    Cell: ({ original }) => {
+                        const { severity, categories, name } = original;
 
-                            const groupHeader = (
-                                <div className="flex flex-1">
-                                    <div className="flex flex-1">{name}</div>
-                                    <div>
-                                        <span>
-                                            Severity: <SeverityLabel severity={severity} />
-                                        </span>
-                                        <span className="pl-2 pr-2">|</span>
-                                        <span>Categories: {categories.join(',')}</span>
-                                    </div>
+                        const groupHeader = (
+                            <div className="flex flex-1">
+                                <div className="flex flex-1">{name}</div>
+                                <div>
+                                    <span>
+                                        Severity: <SeverityLabel severity={severity} />
+                                    </span>
+                                    <span className="pl-2 pr-2">|</span>
+                                    <span>Categories: {categories.join(',')}</span>
                                 </div>
-                            );
-                            const group = (
-                                <CollapsibleRow
-                                    key={name}
-                                    header={groupHeader}
-                                    isCollapsibleOpen={false}
-                                    className="z-20"
-                                    hasTitleBorder={false}
-                                >
-                                    <DeploymentsWithRouter original={original} />
-                                </CollapsibleRow>
-                            );
-                            return group;
-                        }
+                            </div>
+                        );
+                        const group = (
+                            <CollapsibleRow
+                                key={name}
+                                header={groupHeader}
+                                isCollapsibleOpen={false}
+                                className="z-20"
+                                hasTitleBorder={false}
+                            >
+                                <DeploymentsWithRouter
+                                    original={original}
+                                    entityContext={entityContext}
+                                />
+                            </CollapsibleRow>
+                        );
+                        return group;
                     }
-                ];
-                return (
-                    <TableWidget
-                        header={header}
-                        rows={groups}
-                        noDataText="No Nodes"
-                        className="bg-base-100 w-full"
-                        columns={columns}
-                        idAttribute="id"
-                        hasNestedTable
-                    />
-                );
-            }}
-        </Query>
-    );
-};
+                }
+            ];
+            return (
+                <TableWidget
+                    header={header}
+                    rows={groups}
+                    noDataText="No Nodes"
+                    className="bg-base-100 w-full"
+                    columns={columns}
+                    idAttribute="id"
+                    hasNestedTable
+                />
+            );
+        }}
+    </Query>
+);
 
 DeploymentsWithFailedPolicies.propTypes = {
     query: PropTypes.string,
-    message: PropTypes.string
+    message: PropTypes.string,
+    entityContext: PropTypes.shape({})
 };
 
 DeploymentsWithFailedPolicies.defaultProps = {
     query: '',
-    message: ''
+    message: '',
+    entityContext: {}
 };
 
 export default DeploymentsWithFailedPolicies;

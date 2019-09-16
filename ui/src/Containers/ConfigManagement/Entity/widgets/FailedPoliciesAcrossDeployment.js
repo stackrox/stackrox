@@ -6,6 +6,8 @@ import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import { sortSeverity } from 'sorters/sorters';
+import { format } from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
@@ -26,13 +28,18 @@ const QUERY = gql`
                 categories
                 lifecycleStages
             }
+            time
         }
     }
 `;
 
 const createTableRows = data => {
     const failedPolicies = data.violations.reduce((acc, curr) => {
-        return [...acc, curr.policy];
+        const row = {
+            time: curr.time,
+            ...curr.policy
+        };
+        return [...acc, row];
     }, []);
     return failedPolicies;
 };
@@ -121,6 +128,13 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                             ));
                         },
                         accessor: 'lifecycleStages'
+                    },
+                    {
+                        Header: 'Violation Time',
+                        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                        className: `w-1/8 ${defaultColumnClassName}`,
+                        Cell: ({ original }) => format(original.time, dateTimeFormat),
+                        accessor: 'time'
                     }
                 ];
                 return (

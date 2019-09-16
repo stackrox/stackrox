@@ -66,6 +66,8 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                     deployment {
                         id
                         name
+                        clusterName
+                        namespace
                     }
                     enforcement {
                         action
@@ -157,6 +159,14 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                     }
                 ];
 
+                const alertsData = alerts.reduce((acc, curr) => {
+                    const datum = {
+                        time: curr.time,
+                        ...curr.deployment
+                    };
+                    return [...acc, datum];
+                }, []);
+
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection
@@ -209,7 +219,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 <PolicyFindings
                                     entityContext={entityContext}
                                     policyId={id}
-                                    alerts={alerts}
+                                    alerts={alertsData}
                                 />
                             </div>
                         </CollapsibleSection>
