@@ -147,23 +147,26 @@ function addResponseInterceptor(authHttpErrorHandler) {
     axios.interceptors.response.use(
         response => response,
         error => {
-            const {
-                response: { status },
-                config
-            } = error;
-            if (status === 401 || status === 403) {
-                const requestToken = parseAuthTokenFromHeaders(config.headers);
-                const currentToken = getAccessToken();
-                if (currentToken !== requestToken) {
-                    // backend auth was enabled, but the request was made with old / empty token (e.g. multiple browser tabs open)
-                    // in this case retry the request with a new token instead of failing
-                    return axios.request(setAuthHeader(config, currentToken));
+            if (error.response) {
+                const {
+                    response: { status },
+                    config
+                } = error;
+                if (status && (status === 401 || status === 403)) {
+                    const requestToken = parseAuthTokenFromHeaders(config.headers);
+                    const currentToken = getAccessToken();
+                    if (currentToken !== requestToken) {
+                        // backend auth was enabled, but the request was made with old / empty token (e.g. multiple browser tabs open)
+                        // in this case retry the request with a new token instead of failing
+                        return axios.request(setAuthHeader(config, currentToken));
+                    }
+                    // we used the current / latest token and it failed
+                    const authError = new AuthHttpError('Authentication Error', status, error);
+                    if (authError.isInvalidAuth()) clearAccessToken(); // clear token since it's not valid
+                    authHttpErrorHandler(authError);
                 }
-                // we used the current / latest token and it failed
-                const authError = new AuthHttpError('Authentication Error', status, error);
-                if (authError.isInvalidAuth()) clearAccessToken(); // clear token since it's not valid
-                authHttpErrorHandler(authError);
             }
+
             return Promise.reject(error);
         }
     );

@@ -196,7 +196,12 @@ function* saveAuthProvider(action) {
         yield put(actions.setAuthProviderEditingState(false));
     } catch (error) {
         yield put(actions.setAuthProviderEditingState(true));
-        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(
+            notificationActions.addNotification(
+                (error.response && error.response.data && error.response.data.error) ||
+                    'AuthProvider request timed out'
+            )
+        );
         yield put(notificationActions.removeOldestNotification());
         Raven.captureException(error);
     }
@@ -208,7 +213,12 @@ function* deleteAuthProvider(action) {
         yield call(AuthService.deleteAuthProvider, id);
         yield put(actions.fetchAuthProviders.request());
     } catch (error) {
-        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(
+            notificationActions.addNotification(
+                (error.response && error.response.data && error.response.data.error) ||
+                    'AuthProvider request timed out'
+            )
+        );
         yield put(notificationActions.removeOldestNotification());
         Raven.captureException(error);
     }
