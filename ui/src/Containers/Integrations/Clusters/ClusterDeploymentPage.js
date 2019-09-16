@@ -45,7 +45,7 @@ const WaitingForCheckinMessage = () => (
         <div className="text-center px-4">
             <ClipLoader color="currentColor" loading size={20} />
         </div>
-        <div className="flex-3 pl-2">Waiting for the cluster to check-in successfully...</div>
+        <div className="flex-3 pl-2">Waiting for the cluster to check in successfully...</div>
     </div>
 );
 

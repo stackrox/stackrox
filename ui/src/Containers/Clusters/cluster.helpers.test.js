@@ -3,7 +3,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 
 import {
     formatClusterType,
-    formatEnabledDisabledField,
+    formatConfiguredField,
     formatCollectionMethod,
     formatLastCheckIn,
     formatSensorVersion,
@@ -66,25 +66,25 @@ describe('cluster helpers', () => {
         });
     });
 
-    describe('formatEnabledDisabledField', () => {
-        it('should return the string "Disabled" if passed a value of false', () => {
+    describe('formatConfiguredField', () => {
+        it('should return the string "Not configured" if passed a value of false', () => {
             const testCluster = {
                 admissionController: false
             };
 
-            const displayValue = formatEnabledDisabledField(testCluster.admissionController);
+            const displayValue = formatConfiguredField(testCluster.admissionController);
 
-            expect(displayValue).toEqual('Disabled');
+            expect(displayValue).toEqual('Not configured');
         });
 
-        it('should return the string "Enabled" if passed a value of false', () => {
+        it('should return the string "Configured" if passed a value of false', () => {
             const testCluster = {
                 admissionController: true
             };
 
-            const displayValue = formatEnabledDisabledField(testCluster.admissionController);
+            const displayValue = formatConfiguredField(testCluster.admissionController);
 
-            expect(displayValue).toEqual('Enabled');
+            expect(displayValue).toEqual('Configured');
         });
     });
 
@@ -556,7 +556,7 @@ describe('cluster helpers', () => {
             expect(displayValue).toEqual(expected);
         });
 
-        it('should return "Indeterminate upgrade state!" if upgradeState does not match known progress', () => {
+        it('should return "Unknown upgrade state. Contact Support." if upgradeState does not match known progress', () => {
             const testUpgradeStatus = {
                 upgradability: 'AUTO_UPGRADE_POSSIBLE',
                 mostRecentProcess: {
@@ -569,7 +569,10 @@ describe('cluster helpers', () => {
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
-            const expected = { displayValue: 'Indeterminate upgrade state!', type: 'intervention' };
+            const expected = {
+                displayValue: 'Unknown upgrade state. Contact Support.',
+                type: 'intervention'
+            };
             expect(displayValue).toEqual(expected);
         });
     });

@@ -48,7 +48,7 @@ import {
     clusterTablePollingInterval,
     formatClusterType,
     formatCollectionMethod,
-    formatEnabledDisabledField,
+    formatConfiguredField,
     formatLastCheckIn,
     formatSensorVersion,
     parseUpgradeStatus,
@@ -320,25 +320,25 @@ const ClustersPage = ({
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
-            Header: 'Type',
+            Header: 'Orchestrator',
             Cell: ({ original }) => formatClusterType(original.type),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
-            Header: 'Runtime Support',
+            Header: 'Runtime collection',
             Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
-            Header: 'Admission Controller Webhook',
-            Cell: ({ original }) => formatEnabledDisabledField(original.admissionController),
+            Header: 'Admission Controller created',
+            Cell: ({ original }) => formatConfiguredField(original.admissionController),
             headerClassName: `w-1/4 ${defaultHeaderClassName}`,
             className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
-            Header: 'Last Check-In',
+            Header: 'Last check-in',
             Cell: ({ original }) => formatLastCheckIn(original.status),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
@@ -350,7 +350,7 @@ const ClustersPage = ({
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
-            Header: 'Current Sensor Version',
+            Header: 'Current Sensor version',
             Cell: ({ original }) => formatSensorVersion(original.status),
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`

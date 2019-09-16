@@ -72,6 +72,30 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                         </div>
                     </div>
                     <div className="mb-4">
+                        <label htmlFor="clusterType" className="block py-2 text-base-600 font-700">
+                            Cluster Type{' '}
+                            <span
+                                aria-label="Required"
+                                data-test-id="required"
+                                className="text-alert-500 ml-1"
+                            >
+                                *
+                            </span>
+                        </label>
+                        <div className="flex">
+                            <Select
+                                id="clusterType"
+                                options={clusterTypeOptions}
+                                placeholder="Select a cluster type"
+                                onChange={onClusterTypeChange}
+                                className="block w-full border-r bg-base-100 border-base-300 text-base-600 p-3 pr-8 z-1 focus:border-base-500"
+                                wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full font-600 text-base-600 hover:border-base-400"
+                                triggerClass="border-l border-base-300"
+                                value={selectedCluster.type}
+                            />
+                        </div>
+                    </div>
+                    <div className="mb-4">
                         <label htmlFor="mainImage" className="block py-2 text-base-600 font-700">
                             Main Image Repository{' '}
                             <span
@@ -170,23 +194,6 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             />
                         </div>
                     </div>
-                    <div className="mb-4">
-                        <label htmlFor="clusterType" className="block py-2 text-base-600 font-700">
-                            Cluster Type
-                        </label>
-                        <div className="flex">
-                            <Select
-                                id="clusterType"
-                                options={clusterTypeOptions}
-                                placeholder="Select a cluster type"
-                                onChange={onClusterTypeChange}
-                                className="block w-full border-r bg-base-100 border-base-300 text-base-600 p-3 pr-8 z-1 focus:border-base-500"
-                                wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full font-600 text-base-600 hover:border-base-400"
-                                triggerClass="border-l border-base-300"
-                                value={selectedCluster.type}
-                            />
-                        </div>
-                    </div>
                     {selectedCluster.type === 'KUBERNETES_CLUSTER' && (
                         <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label
@@ -208,7 +215,6 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
             {selectedCluster.type === 'KUBERNETES_CLUSTER' && (
                 <CollapsibleCard
-                    open={false}
                     title="Dynamic Configuration (syncs with Sensor)"
                     titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
                 >

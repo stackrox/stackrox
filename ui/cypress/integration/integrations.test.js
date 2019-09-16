@@ -163,7 +163,7 @@ xdescribe('Cluster Creation Flow', () => {
                 cy.get(selectors.buttons.downloadYAML).click();
                 cy.wait('@download');
 
-                cy.get('div:contains("Waiting for the cluster to check-in successfully...")');
+                cy.get('div:contains("Waiting for the cluster to check in successfully...")');
 
                 // make cluster to "check-in" by adding "lastContact"
                 cy.route('GET', `${api.clusters.list}/${clusterId}`, {

@@ -73,7 +73,7 @@ class Form extends Component {
                     </CollapsibleCard>
                     <div className="mt-4">
                         <CollapsibleCard
-                            // Use the "type" here becuase the user usually hasn't typed a name yet.
+                            // Use the "type" here because the user usually hasn't typed a name yet.
                             title={`2. Assign StackRox roles to your ${initialValues.type} users`}
                             titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                         >

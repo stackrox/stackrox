@@ -5,17 +5,17 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 
 export const runtimeOptions = [
     {
-        label: 'No Runtime Support',
+        label: 'No Runtime Collection',
         tableDisplay: 'None',
         value: 'NO_COLLECTION'
     },
     {
-        label: 'Kernel Module Support',
+        label: 'Kernel Module',
         tableDisplay: 'Kernel Module',
         value: 'KERNEL_MODULE'
     },
     {
-        label: 'eBPF Support',
+        label: 'eBPF Program',
         tableDisplay: 'eBPF',
         value: 'EBPF'
     }
@@ -151,7 +151,7 @@ const upgradeStates = {
         }
     },
     unknown: {
-        displayValue: 'Indeterminate upgrade state!',
+        displayValue: 'Unknown upgrade state. Contact Support.',
         type: 'intervention'
     }
 };
@@ -172,8 +172,8 @@ export function formatCollectionMethod(value) {
     return match.tableDisplay;
 }
 
-export function formatEnabledDisabledField(value) {
-    return value ? 'Enabled' : 'Disabled';
+export function formatConfiguredField(value) {
+    return value ? 'Configured' : 'Not configured';
 }
 export function formatLastCheckIn(status) {
     if (status && status.lastContact) {
@@ -298,7 +298,7 @@ export default {
     newClusterDefault,
     formatClusterType,
     formatCollectionMethod,
-    formatEnabledDisabledField,
+    formatConfiguredField,
     formatLastCheckIn,
     formatUpgradeMessage,
     parseUpgradeStatus,

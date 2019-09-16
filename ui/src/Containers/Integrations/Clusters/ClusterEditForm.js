@@ -14,15 +14,15 @@ import InlineToggleField from './InlineToggleField';
 
 const runtimeOptions = [
     {
-        label: 'No Runtime Support',
+        label: 'No Runtime Collection',
         value: 'NO_COLLECTION'
     },
     {
-        label: 'Kernel Module Support',
+        label: 'Kernel Module',
         value: 'KERNEL_MODULE'
     },
     {
-        label: 'eBPF Support',
+        label: 'eBPF Program',
         value: 'EBPF'
     }
 ];
