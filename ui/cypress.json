@@ -4,5 +4,10 @@
     "chromeWebSecurity": false,
     "ignoreTestFiles": ["**/constants/**/*", "**/helpers/**/*"],
     "viewportWidth": 1440,
-    "viewportHeight": 850
+    "viewportHeight": 850,
+    "reporter": "junit",
+    "reporterOptions": {
+        "mochaFile": "cypress-report.xml",
+        "toConsole": true
+    }
 }
