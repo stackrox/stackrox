@@ -16,6 +16,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
+		schema.AddQuery("imageCount(query: String): Int!"),
 		schema.AddQuery("image(sha:ID!): Image"),
 		schema.AddExtraResolver("Image", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Image", "deploymentCount: Int!"),
@@ -36,6 +37,23 @@ func (resolver *Resolver) Images(ctx context.Context, args paginatedQuery) ([]*i
 	}
 	return resolver.wrapImages(
 		resolver.ImageDataStore.SearchRawImages(ctx, q))
+}
+
+// ImageCount returns count of all images across deployments
+func (resolver *Resolver) ImageCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCount")
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.ImageDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 // Image returns a graphql resolver for the identified image, if it exists

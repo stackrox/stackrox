@@ -24,6 +24,7 @@ func init() {
 		schema.AddType("SubjectWithClusterID", []string{"clusterID: String!", "subject: Subject!"}),
 		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),
 		schema.AddQuery("clusters(query: String): [Cluster!]!"),
+		schema.AddQuery("clusterCount(query: String): Int!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Cluster", `alertCount: Int!`),
@@ -83,6 +84,23 @@ func (resolver *Resolver) Clusters(ctx context.Context, args rawQuery) ([]*clust
 		return resolver.wrapClusters(resolver.ClusterDataStore.GetClusters(ctx))
 	}
 	return resolver.wrapClusters(resolver.ClusterDataStore.SearchRawClusters(ctx, query))
+}
+
+// ClusterCount returns count of all clusters across infrastructure
+func (resolver *Resolver) ClusterCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterCount")
+	if err := readClusters(ctx); err != nil {
+		return 0, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.ClusterDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 // Alerts returns GraphQL resolvers for all alerts on this cluster

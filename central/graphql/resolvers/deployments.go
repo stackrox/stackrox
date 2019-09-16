@@ -22,6 +22,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String, pagination: Pagination): [Deployment!]!"),
+		schema.AddQuery("deploymentCount(query: String): Int!"),
 		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
 		schema.AddExtraResolver("Deployment", `namespaceObject: Namespace`),
 		schema.AddExtraResolver("Deployment", `serviceAccountObject: ServiceAccount`),
@@ -61,6 +62,23 @@ func (resolver *Resolver) Deployments(ctx context.Context, args paginatedQuery) 
 	}
 	return resolver.wrapDeployments(
 		resolver.DeploymentDataStore.SearchRawDeployments(ctx, q))
+}
+
+// DeploymentCount returns count all deployments across infrastructure
+func (resolver *Resolver) DeploymentCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "DeploymentCount")
+	if err := readDeployments(ctx); err != nil {
+		return 0, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.DeploymentDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs

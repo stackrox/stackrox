@@ -23,6 +23,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("node(id:ID!): Node"),
 		schema.AddQuery("nodes(query: String): [Node!]!"),
+		schema.AddQuery("nodeCount(query: String): Int!"),
 		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddType("ComplianceControlCount", []string{"failingCount: Int!", "passingCount: Int!", "unknownCount: Int!"}),
 		schema.AddExtraResolver("Node", "nodeComplianceControlCount(query: String) : ComplianceControlCount!"),
@@ -87,6 +88,23 @@ func (resolver *Resolver) Nodes(ctx context.Context, args rawQuery) ([]*nodeReso
 	}
 
 	return nodeResolvers, nil
+}
+
+// NodeCount returns count of nodes across clusters
+func (resolver *Resolver) NodeCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeCount")
+	if err := readNodes(ctx); err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.NodeGlobalDataStore.Search(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, error) {

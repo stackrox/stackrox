@@ -16,6 +16,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("violations(query: String, pagination: Pagination): [Alert!]!"),
+		schema.AddQuery("violationCount(query: String): Int!"),
 		schema.AddQuery("violation(id: ID!): Alert"),
 	)
 }
@@ -35,6 +36,23 @@ func (resolver *Resolver) Violations(ctx context.Context, args paginatedQuery) (
 	}
 	return resolver.wrapListAlerts(
 		resolver.ViolationsDataStore.SearchListAlerts(ctx, q))
+}
+
+// ViolationCount returns count of all violations, or those that match the requested query
+func (resolver *Resolver) ViolationCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ViolationCount")
+	if err := readAlerts(ctx); err != nil {
+		return 0, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.ViolationsDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 // Violation returns the violation with the requested ID
