@@ -47,17 +47,20 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
             return newSubjects;
         }, {});
 
-        return Object.entries(subjectCounts).map(entry => {
-            return {
-                y: entry[0],
-                x: entry[1],
-                hint: {
-                    title: entry[0],
-                    body: entry[1]
-                },
-                link: `${linkTo}/${entry[0]}`
-            };
-        });
+        return Object.entries(subjectCounts)
+            .map(entry => {
+                return {
+                    y: entry[0],
+                    x: entry[1],
+                    hint: {
+                        title: entry[0],
+                        body: entry[1]
+                    },
+                    link: `${linkTo}/${entry[0]}`
+                };
+            })
+            .sort((a, b) => b.x - a.x)
+            .slice(0, 6);
     }
 
     return (
