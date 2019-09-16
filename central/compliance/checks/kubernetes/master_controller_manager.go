@@ -7,11 +7,11 @@ import (
 
 func init() {
 	framework.MustRegisterChecks(
-		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_1", "terminated-pod-gc-threshold", "", "", common.Set),
-		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_2", "profiling", "", "", common.Set),
-		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_3", "use-service-account-credentials", "", "", common.Set),
+		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_1", "terminated-pod-gc-threshold", "", "12500", common.Set),
+		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_2", "profiling", "false", "true", common.Matches),
+		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_3", "use-service-account-credentials", "true", "true", common.Matches),
 		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_4", "service-account-private-key-file", "", "", common.Set),
-		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_5", "root-ca-file", "", "", common.Set),
+		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_5", "root-ca-file", "", "/etc/kubernetes/pki/ca.crt", common.Set),
 		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_6", "feature-gates", "RotateKubeletServerCertificate=true", "", common.Contains),
 		masterControllerManagerCommandLine("CIS_Kubernetes_v1_4_1:1_3_7", "address", "127.0.0.1", "127.0.0.1", common.Matches),
 	)
