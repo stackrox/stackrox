@@ -29,6 +29,7 @@ var flagsWithFiles = set.NewStringSet(
 	"client-ca-file",
 	"cni-conf-dir",
 	"cni-bin-dir",
+	"config",
 	"data-dir",
 	"tlscacert",
 	"tlscert",
@@ -101,15 +102,15 @@ func getCommandLine(pid int) (string, error) {
 	return string(cmdline), err
 }
 
-func newArg(k, v string) *compliance.CommandLine_Args {
+func newArg(k string, values ...string) *compliance.CommandLine_Args {
 	k = strings.TrimLeft(k, "-")
 	return &compliance.CommandLine_Args{
-		Key:   k,
-		Value: v,
+		Key:    k,
+		Values: values,
 	}
 }
 
-func parseArg(arg, nextArg string) (string, string, bool) {
+func parseArg(arg, nextArg string) (string, []string, bool) {
 	// If arg containers = then it must be an individual argument and not require the next argument
 	// e.g. --security-opt=seccomp as a opposed to --security-opt seccomp
 	if strings.Contains(arg, "=") {
@@ -119,11 +120,11 @@ func parseArg(arg, nextArg string) (string, string, bool) {
 	// If the string is a flag and relies on the next value then consolidate
 	// e.g. --no-new-privileges true as opposed to --no-new-privileges --selinux-enabled
 	if strings.HasPrefix(arg, "-") && !strings.HasPrefix(nextArg, "-") {
-		return arg, nextArg, true
+		return arg, []string{nextArg}, true
 	}
 
 	// This is the case where the string is standalone like --no-new-privileges
-	return arg, "", false
+	return arg, nil, false
 }
 
 func parseArgs(args []string) []*compliance.CommandLine_Args {
@@ -137,13 +138,14 @@ func parseArgs(args []string) []*compliance.CommandLine_Args {
 		if i+1 < len(args) {
 			nextArg = args[i+1]
 		}
-		key, value, skip := parseArg(args[i], nextArg)
+		key, values, skip := parseArg(args[i], nextArg)
 		if skip {
 			i++
 		}
-		// Try to see if key or value is a file path and if so then try to read it and add it to the arg
-		arg := newArg(key, value)
 
+		arg := newArg(key, values...)
+
+		// Try to see if key or value is a file path and if so then try to read it and add it to the arg
 		if flagsWithFiles.Contains(key) {
 			f, exists, err := file.EvaluatePath(key, false)
 			if exists && err == nil {
@@ -168,10 +170,11 @@ func getCommandLineArgs(commandLine string) (string, []string) {
 	return args[0], args[1:]
 }
 
-func getKeyValueFromArg(arg string) (string, string) {
+func getKeyValueFromArg(arg string) (string, []string) {
 	argSplit := strings.Split(arg, "=")
 	if len(argSplit) == 1 {
-		return arg, ""
+		return arg, nil
 	}
-	return argSplit[0], argSplit[1]
+	values := strings.Split(argSplit[1], ",")
+	return argSplit[0], values
 }

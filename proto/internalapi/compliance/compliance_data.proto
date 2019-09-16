@@ -30,9 +30,9 @@ message CommandLine {
     string process     = 1;
 
     message Args {
-        string key          = 1;
-        string value        = 2;
-        File   file         = 3; // This will be set if it looks like the value defines a file and we found the file
+        string key                  = 1;
+        repeated string values      = 2;
+        File   file                 = 3; // This will be set if it looks like the value defines a file and we found the file
     }
     repeated Args args  = 2;
 }

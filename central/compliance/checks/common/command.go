@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	pkgSet "github.com/stackrox/rox/pkg/set"
 )
 
 // GetProcess returns the commandline object that matches the process name
@@ -34,7 +35,7 @@ func GetValuesForFlag(args []*compliance.CommandLine_Args, key string) []string 
 	var values []string
 	for _, a := range args {
 		if a.Key == key {
-			values = append(values, a.GetValue())
+			values = append(values, a.GetValues()...)
 		}
 	}
 	return values
@@ -80,6 +81,11 @@ func Unset(ctx framework.ComplianceContext, values []string, key, target, defaul
 // Matches checks whether or not a value matches the target value exactly
 func Matches(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
 	resultWrapper(ctx, values, key, target, defaultVal, matches)
+}
+
+// OnlyContains checks whether or not a value contains only the target values (where target values are delimited by ",")
+func OnlyContains(ctx framework.ComplianceContext, values []string, key, targets, defaultVal string) {
+	resultWrapper(ctx, values, key, targets, defaultVal, onlyContains)
 }
 
 // NotMatches checks where or not a value matches the target value exactly
@@ -160,6 +166,48 @@ func notMatches(values []string, key, target, defaultStr string) (string, bool) 
 	} else {
 		return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), true
 	}
+}
+
+func onlyContains(values []string, key, targets, defaults string) (string, bool) {
+	var matchingValues []string
+	var nonMatchingValues []string
+
+	targetSet := pkgSet.NewStringSet(strings.Split(targets, ",")...)
+	for _, v := range values {
+		if targetSet.Contains(v) {
+			matchingValues = append(matchingValues, v)
+		} else {
+			nonMatchingValues = append(nonMatchingValues, v)
+		}
+	}
+
+	if len(nonMatchingValues) > 0 {
+		return fmt.Sprintf("%q is set to %s which contains values other than target values in %q", key, msgfmt.FormatStrings(nonMatchingValues...), targets), false
+	} else if len(matchingValues) > 0 {
+		numMatches := "some"
+		if len(matchingValues) == targetSet.Cardinality() {
+			numMatches = "all"
+		}
+		return fmt.Sprintf("%q is set to %s which contains %s target values in %q", key, msgfmt.FormatStrings(matchingValues...), numMatches, targets), true
+	}
+
+	defaultSet := pkgSet.NewStringSet(strings.Split(defaults, ";")...)
+	for _, t := range targetSet.AsSlice() {
+		if defaultSet.Contains(t) {
+			matchingValues = append(matchingValues, t)
+		} else {
+			nonMatchingValues = append(nonMatchingValues, t)
+		}
+	}
+
+	if len(nonMatchingValues) > 0 {
+		return fmt.Sprintf("%q has a default values %q which contains values other than target values in %q", key, msgfmt.FormatStrings(nonMatchingValues...), targets), false
+	}
+	numMatches := "some"
+	if len(matchingValues) == targetSet.Cardinality() {
+		numMatches = "all"
+	}
+	return fmt.Sprintf("%q has a default values %q which contains %s target values in %q", key, msgfmt.FormatStrings(matchingValues...), numMatches, targets), true
 }
 
 func contains(values []string, key, target, defaultStr string) (string, bool) {

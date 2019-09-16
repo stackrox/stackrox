@@ -124,3 +124,58 @@ func TestContainsFunctions(t *testing.T) {
 		})
 	}
 }
+
+func TestOnlyContainsFunction(t *testing.T) {
+	t.Parallel()
+
+	var cases = []struct {
+		name       string
+		values     []string
+		target     string
+		defaultVal string
+		pass       bool
+	}{
+		{
+			name:   "No values",
+			target: "random1,and,random2",
+			pass:   false,
+		},
+		{
+			name:   "Only contains",
+			target: "random1,and,random2",
+			values: []string{
+				"random1",
+				"random2",
+			},
+			pass: true,
+		},
+		{
+			name:   "Contain alien",
+			target: "random1,and,random2",
+			values: []string{
+				"random1",
+				"notrandom2",
+			},
+			pass: false,
+		},
+		{
+			name:       "Default contains target",
+			target:     "random1",
+			defaultVal: "random1",
+			pass:       true,
+		},
+		{
+			name:       "Does not contain default",
+			target:     "random1",
+			defaultVal: "notrandom1",
+			pass:       false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name+"-onlycontains", func(t *testing.T) {
+			_, pass := onlyContains(c.values, "key", c.target, c.defaultVal)
+			assert.Equal(t, c.pass, pass)
+		})
+	}
+}

@@ -20,7 +20,7 @@ func init() {
 		common.PerNodeDeprecatedCheck("CIS_Kubernetes_v1_4_1:2_1_11", "The --cadvisor-port parameter was deprecated in Kubernetes 1.12."),
 		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_12", "rotate-certificates", "false", "true", common.NotMatches),
 		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_13", "feature-gates", "RotateKubeletServerCertificate=false", "RotateKubeletServerCertificate=true", common.NotContains),
-		common.PerNodeNoteCheck("CIS_Kubernetes_v1_4_1:2_1_14", "Ensure that the Kubelet only makes use of Strong Cryptographic Ciphers"),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_14", "tls-cipher-suites", tlsCiphers, "", common.OnlyContains),
 	)
 }
 

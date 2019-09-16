@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
+	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"gopkg.in/yaml.v2"
@@ -9,6 +10,15 @@ import (
 )
 
 const kubeAPIProcessName = "kube-apiserver"
+
+const tlsCiphers = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
+	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
+	"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305," +
+	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384," +
+	"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305," +
+	"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384," +
+	"TLS_RSA_WITH_AES_256_GCM_SHA384," +
+	"TLS_RSA_WITH_AES_128_GCM_SHA256"
 
 func init() {
 	framework.MustRegisterChecks(
@@ -42,7 +52,7 @@ func init() {
 		multipleFlagsSetCheck("CIS_Kubernetes_v1_4_1:1_1_28", "kube-apiserver", "tls-cert-file", "tls-private-key-file"),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_4_1:1_1_29", "client-ca-file", "", "", common.Set),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_4_1:1_1_30", "etcd-cafile", "", "", common.Set),
-		common.PerNodeNoteCheck("CIS_Kubernetes_v1_4_1:1_1_31", "Ensure that the API Server only makes use of Strong Cryptographic Ciphers"),
+		masterAPIServerCommandLine("CIS_Kubernetes_v1_4_1:1_1_31", "tls-cipher-suites", tlsCiphers, "", common.OnlyContains),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_4_1:1_1_32", "authorization-mode", "Node", "AlwaysAllow", common.Contains),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_4_1:1_1_33", "enable-admission-plugins", "NodeRestriction", "AlwaysAllow", common.Contains),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_4_1:1_1_34", "encryption-provider-config", "", "", common.Set),
@@ -75,7 +85,7 @@ func encryptionProvider() framework.Check {
 			if arg == nil {
 				framework.FailNowf(ctx, "experimental-encryption-provider-config is not set, which means that aescbc is not in use")
 			} else if arg.GetFile() == nil {
-				framework.FailNowf(ctx, "No file was found experimental-encryption-provider-config value of %q", arg.Value)
+				framework.FailNowf(ctx, "No file was found experimental-encryption-provider-config value of %q", msgfmt.FormatStrings(arg.GetValues()...))
 			}
 
 			var config encryptionconfig.EncryptionConfig

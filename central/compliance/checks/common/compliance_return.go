@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 
+	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
@@ -39,7 +40,7 @@ func CommandLineFileOwnership(name string, processName, flag, user, group string
 			if arg == nil {
 				framework.FailNowf(ctx, "Could not find flag %q in process %q", flag, processName)
 			} else if arg.GetFile() == nil {
-				framework.FailNowf(ctx, "Could not find file %q for flag %q", arg.Value, flag)
+				framework.FailNowf(ctx, "Could not find file %q for flag %q", msgfmt.FormatStrings(arg.GetValues()...), flag)
 			}
 			CheckRecursiveOwnership(ctx, arg.GetFile(), user, group)
 		}))
@@ -62,7 +63,7 @@ func CommandLineFilePermissions(name string, processName, flag string, perms uin
 			if arg == nil {
 				framework.PassNowf(ctx, "Flag %q was not found in process %q", flag, processName)
 			} else if arg.GetFile() == nil {
-				framework.FailNowf(ctx, "File %q has not been specified for flag %q", arg.Value, flag)
+				framework.FailNowf(ctx, "File %q has not been specified for flag %q", msgfmt.FormatStrings(arg.GetValues()...), flag)
 			}
 			CheckRecursivePermissions(ctx, arg.GetFile(), perms)
 		}))
