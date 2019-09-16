@@ -141,7 +141,7 @@ const buildTableColumns = (match, location, entityContext) => {
             accessor: 'serviceAccountCount'
         },
         {
-            Header: `Roles granted`,
+            Header: `Roles`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
