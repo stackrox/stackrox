@@ -7,7 +7,7 @@ import { createStructuredSelector } from 'reselect';
 
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import severityColorMap from 'constants/severityColors';
-import { severityPropType } from 'Containers/Dashboard/DashboardPage';
+import severityPropType from './severityPropTypes';
 
 const EnvironmentRisk = ({ globalViolationsCounts }) => {
     const counts = {
@@ -22,6 +22,7 @@ const EnvironmentRisk = ({ globalViolationsCounts }) => {
             counts[d.severity] += count;
         });
     });
+
     const severities = Object.keys(counts);
     const totalViolations = Object.values(counts).reduce((a, b) => a + b);
     return (

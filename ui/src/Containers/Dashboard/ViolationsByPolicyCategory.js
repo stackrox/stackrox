@@ -7,10 +7,10 @@ import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 
 import * as Icon from 'react-feather';
-import { severityPropType } from 'Containers/Dashboard/DashboardPage';
 import { severityLabels } from 'messages/common';
 import severityColorMap from 'constants/severityColors';
 import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
+import severityPropType from './severityPropTypes';
 
 const ViolationsByPolicyCategory = ({ data, history }) => {
     if (!data) return '';

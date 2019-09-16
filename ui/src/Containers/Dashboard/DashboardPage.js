@@ -15,13 +15,6 @@ import ViolationsByClusterChart from './ViolationsByClusterChart';
 import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
 import EnvironmentRisk from './EnvironmentRisk';
 
-export const severityPropType = PropTypes.oneOf([
-    'CRITICAL_SEVERITY',
-    'HIGH_SEVERITY',
-    'MEDIUM_SEVERITY',
-    'LOW_SEVERITY'
-]);
-
 const DashboardPage = props => {
     const subHeader = props.isViewFiltered ? 'Filtered view' : 'Default view';
     return (

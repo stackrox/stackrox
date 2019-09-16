@@ -3,7 +3,8 @@ export const alerts = {
     countsByCategory: '/v1/alerts/summary/counts?*group_by=CATEGORY*',
     alerts: '/v1/alerts?*',
     alertById: '/v1/alerts/*',
-    resolveAlert: '/v1/alerts/*/resolve'
+    resolveAlert: '/v1/alerts/*/resolve',
+    alertscount: '/v1/alertscount?*'
 };
 
 export const clusters = {

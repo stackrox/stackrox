@@ -11,10 +11,15 @@ describe('Violations page', () => {
 
     beforeEach(() => {
         cy.server();
-        cy.fixture('alerts/alerts.json').as('alerts');
-        cy.route('GET', api.alerts.alerts, '@alerts').as('alerts');
+        cy.fixture('alerts/alerts.json').as('alertsJson');
+        cy.route('GET', api.alerts.alerts, '@alertsJson').as('alerts');
+
+        cy.fixture('alerts/alertsCount.json').as('alertsCountJson');
+        cy.route('GET', api.alerts.alertscount, '@alertsCountJson').as('alertsCount');
+
         cy.visit(violationsUrl);
         cy.wait('@alerts');
+        cy.wait('@alertsCount');
     });
 
     const mockGetAlert = () => {
@@ -213,7 +218,6 @@ describe('Violations page', () => {
 
     it('should close side panel after resolving violation', () => {
         mockGetAlert();
-        cy.get(ViolationsPageSelectors.panels).should('not.be.visible');
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
         cy.get(ViolationsPageSelectors.panels).should('be.visible');

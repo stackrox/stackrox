@@ -5,11 +5,11 @@ import apiTokens from './apiTokenSagas';
 import authProviders from './authSagas';
 import clusters from './clusterSagas';
 import deployments from './deploymentSagas';
+import featureFlags from './featureFlagSagas';
 import images from './imageSagas';
 import policies from './policiesSagas';
 import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
-import featureFlags from './featureFlagSagas';
 import roles from './roleSagas';
 import searches from './searchSagas';
 import searchAutoComplete from './searchAutocompleteSagas';
@@ -35,8 +35,8 @@ export default function* root() {
         fork(deployments),
         fork(images),
         fork(policies),
-        fork(integrations),
         fork(featureFlags),
+        fork(integrations),
         fork(globalSearch),
         fork(roles),
         fork(searches),
