@@ -171,14 +171,12 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label
-                            htmlFor="admissionController"
-                            className="block py-2 text-base-600 font-700"
-                        >
+                        <label htmlFor="clusterType" className="block py-2 text-base-600 font-700">
                             Cluster Type
                         </label>
                         <div className="flex">
                             <Select
+                                id="clusterType"
                                 options={clusterTypeOptions}
                                 placeholder="Select a cluster type"
                                 onChange={onClusterTypeChange}
@@ -218,7 +216,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                         <h3>Admission Controller</h3>
                         <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label
-                                htmlFor="admissionController"
+                                htmlFor="dynamicConfig.admissionControllerConfig.enabled"
                                 className="block py-2 text-base-600 font-700"
                             >
                                 Enable Admission Controller
@@ -253,7 +251,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                         </div>
                         <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label
-                                htmlFor="admissionController"
+                                htmlFor="dynamicConfig.admissionControllerConfig.scanInline"
                                 className="block py-2 text-base-600 font-700"
                             >
                                 Contact Image Scanners
@@ -270,7 +268,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                         </div>
                         <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label
-                                htmlFor="admissionController"
+                                htmlFor="dynamicConfig.admissionControllerConfig.disableBypass"
                                 className="block py-2 text-base-600 font-700"
                             >
                                 Disable Use of Bypass Annotation
