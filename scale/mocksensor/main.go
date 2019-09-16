@@ -52,18 +52,27 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	deploymentInterval := flag.Duration("deployment-interval", 2000*time.Millisecond, "interval for sending deployments")
 	maxDeployments := flag.Int("max-deployments", 200, "maximum number of deployments to send")
+
 	admissionInterval := flag.Duration("admission-interval", 2000*time.Millisecond, "interval for sending admission controller requests")
 	maxAdmissionRequests := flag.Int("max-admission-requests", 0, "maximum number of admission controller requests to send")
+
 	deploymentUpdateInterval := flag.Duration("deployment-update-interval", 2000*time.Millisecond, "interval for sending deployment updates")
 	maxDeploymentUpdates := flag.Int("max-deployment-updates", 0, "maximum number of deployment updates to send")
+
 	indicatorInterval := flag.Duration("indicator-interval", 1000*time.Millisecond, "interval for sending indicators")
 	maxIndicators := flag.Int("max-indicators", 5000, "maximum number of indicators to send")
+
 	networkFlowInterval := flag.Duration("network-flow-interval", 30*time.Second, "interval for sending network flow diffs")
 	maxNetworkFlows := flag.Int("max-network-flows", 1000, "maximum number of network flows to send at once")
 	maxUpdates := flag.Int("max-updates", 40, "total number of network flows updates to send")
 	flowDeleteRate := flag.Float64("flow-delete-rate", 0.03, "fraction of flows that will be marked removed in each network flow update")
+
 	centralEndpoint := flag.String("central", "central.stackrox:443", "central endpoint")
 	bigDepRate := flag.Float64("big-dep-rate", 0.01, "fraction of giant deployments to send")
+
+	maxNodes := flag.Int("max-nodes", 500, "total number of nodes to send")
+	nodeInterval := flag.Duration("node-interval", 10*time.Millisecond, "interval for sending nodes")
+
 	flag.Parse()
 
 	if *maxNetworkFlows > int(math.Pow(float64(*maxDeployments), 2)) {
@@ -99,6 +108,8 @@ func main() {
 		stream: communicateStream,
 	}
 
+	go stream.StartReceiving()
+
 	deploymentSignal := concurrency.NewSignal()
 	go sendDeployments(stream, *maxDeployments, *deploymentInterval, *bigDepRate, deploymentSignal)
 
@@ -116,9 +127,12 @@ func main() {
 	go sendAdmissionControllerRequests(ctx, clusterClient, admissionClient, *admissionInterval, *maxAdmissionRequests, &admissionControllerSignal)
 
 	deploymentUpdateSignal := concurrency.NewSignal()
-
 	go sendDeploymentUpdates(stream, *deploymentUpdateInterval, *maxDeploymentUpdates, &deploymentUpdateSignal)
 
+	nodeSignal := concurrency.NewSignal()
+	go sendNodes(stream, *maxNodes, *nodeInterval, nodeSignal)
+
+	nodeSignal.Wait()
 	deploymentSignal.Wait()
 	indicatorSignal.Wait()
 	networkFlowSignal.Wait()
@@ -158,6 +172,37 @@ func deploymentSensorEventForNum(depNum int, deployment *storage.Deployment) *ce
 			Deployment: deployment,
 		},
 	}
+}
+
+func nodeSensorEvent(name string) *central.SensorEvent {
+	id := uuid.NewV4().String()
+	return &central.SensorEvent{
+		Id:     id,
+		Action: central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_Node{
+			Node: &storage.Node{
+				Id:   id,
+				Name: name,
+			},
+		},
+	}
+}
+
+func sendNodes(stream *threadSafeStream, maxNodes int, nodeInterval time.Duration, signal concurrency.Signal) {
+	ticker := time.NewTicker(nodeInterval)
+	defer ticker.Stop()
+
+	var nodeCount int
+	for nodeCount < maxNodes {
+		<-ticker.C
+		nodeName := fmt.Sprintf("node-%d", nodeCount)
+		if err := stream.SendEvent(nodeSensorEvent(nodeName)); err != nil {
+			logger.Errorf("Error: %v", err)
+		}
+		nodeCount++
+	}
+	logger.Infof("Finished writing %d nodes", nodeCount)
+	signal.Signal()
 }
 
 func sendDeployments(stream *threadSafeStream, maxDeployments int, deploymentInterval time.Duration, bigDepRate float64, signal concurrency.Signal) {

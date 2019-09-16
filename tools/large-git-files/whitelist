@@ -11,3 +11,4 @@ qa-tests-backend/artifacts/upgrade-tests/v2.4.16.4/stackrox_db_2019_03_01_03_48_
 central/compliance/checks/fixtures/scraped.go
 image/restricted-ui/index.html
 qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy
+scale/image/fixtures/scrape.json

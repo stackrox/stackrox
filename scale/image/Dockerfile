@@ -16,3 +16,5 @@ COPY ./profiler/entrypoint.sh /profiler-entrypoint.sh
 RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-258.0.0-linux-x86_64.tar.gz && \
     tar zxvf google-cloud-sdk-258.0.0-linux-x86_64.tar.gz google-cloud-sdk && \
     ./google-cloud-sdk/install.sh
+
+COPY ./image/fixtures/scrape.json /files/scrape.json
