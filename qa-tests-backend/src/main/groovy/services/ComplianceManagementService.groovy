@@ -8,7 +8,6 @@ import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.DeleteComp
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetComplianceRunSchedulesRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetComplianceRunStatusesRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetRecentComplianceRunsRequest
-import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.TriggerComplianceRunRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.TriggerComplianceRunsRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.UpdateComplianceRunScheduleRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRun
@@ -17,34 +16,6 @@ import io.stackrox.proto.storage.ComplianceManagement.ComplianceRunSchedule
 class ComplianceManagementService extends BaseService {
     static getComplianceManagementClient() {
         return ComplianceManagementServiceGrpc.newBlockingStub(getChannel())
-    }
-
-    static triggerComplianceRun(String standardId, String clusterId) {
-        try {
-            return getComplianceManagementClient().triggerRun(
-                    TriggerComplianceRunRequest.newBuilder()
-                            .setStandardId(standardId)
-                            .setClusterId(clusterId)
-                            .build()
-            ).startedRun
-        } catch (Exception e) {
-            println "Error triggering compliance run: ${e.toString()}"
-        }
-    }
-
-    static triggerComplianceRunAndWait(String standardId, String clusterId) {
-        ComplianceRun complianceRun = triggerComplianceRun(standardId, clusterId)
-        println "triggered ${standardId} compliance run"
-        println "waiting for the run to finish..."
-        Long startTime = System.currentTimeMillis()
-        while (complianceRun.state != ComplianceRun.State.FINISHED &&
-                (System.currentTimeMillis() - startTime) < 30000) {
-            sleep 1000
-            complianceRun = getRecentRuns(standardId).find { it.id == complianceRun.id }
-        }
-        assert complianceRun.state == ComplianceRun.State.FINISHED
-        println "${standardId} run completed! Run took ${(System.currentTimeMillis() - startTime) / 1000}s"
-        return complianceRun.id
     }
 
     static triggerComplianceRuns(String standardId = null, String clusterId = null) {

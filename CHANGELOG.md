@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [30.0]
+- `TriggerRun(/v1/complianceManagement/runs)` endpoint is removed. All clients should use `TriggerRuns(/v1/compliancemanagement/runs)` to start a compliance run.
+
 ## [28.0]
 ### Changed
 - The Prometheus scrape endpoint has been moved from localhost:9090 to :9090 so users can use their own Prometheus installations and pull StackRox metrics.

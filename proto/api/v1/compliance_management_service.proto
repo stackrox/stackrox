@@ -169,13 +169,6 @@ service ComplianceManagementService {
         };
     }
 
-    rpc TriggerRun(TriggerComplianceRunRequest) returns (TriggerComplianceRunResponse) {
-        option (google.api.http) = {
-            post: "/v1/complianceManagement/runs"
-            body: "*"
-        };
-    }
-
     // END EXPERIMENTAL/UNSTABLE API
 
     rpc TriggerRuns(TriggerComplianceRunsRequest) returns (TriggerComplianceRunsResponse) {
