@@ -23,15 +23,13 @@ const entityNameKeyMap = {
     },
     [entityTypes.IMAGE]: data => resolvePath(data, 'image.name.fullName'),
     [entityTypes.POLICY]: data => resolvePath(data, 'policy.name'),
-    [entityTypes.SUBJECT]: (data, id) => {
+    [entityTypes.SUBJECT]: data => {
         if (!data || !data.clusters || !data.clusters.length) return null;
-        let found = null;
-        data.clusters.forEach(cluster => {
-            if (found || !cluster.subjects.length) return;
-            const match = cluster.subjects.find(subject => subject.id === id);
-            if (match) found = match.id;
-        });
-        return found;
+        const result = data.clusters.reduce((acc, curr) => {
+            if (!curr.subject) return acc;
+            return curr.subject.subject.name;
+        }, null);
+        return result;
     }
 };
 

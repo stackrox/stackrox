@@ -12,7 +12,6 @@ import { ChevronRight } from 'react-feather';
 import Query from 'Components/ThrowingQuery';
 import BackButton from 'Containers/ConfigManagement/SidePanel/buttons/BackButton';
 import entityTypes from 'constants/entityTypes';
-import queryService from 'modules/queryService';
 
 const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />
@@ -109,7 +108,7 @@ BreadCrumbLinks.defaultProps = {
 
 const getEntityVariables = (type, id) => {
     if (type === entityTypes.SUBJECT) {
-        return { subjectQuery: queryService.objectToWhereClause({ Subject: id }) };
+        return { name: id };
     }
     return { id };
 };

@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
-import isEmpty from 'lodash/isEmpty';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -19,8 +18,8 @@ import EntityList from '../List/EntityList';
 const processSubjectDataByClusters = data => {
     const entity = data.clusters.reduce(
         (acc, curr) => {
-            if (!curr.subjects.length) return acc;
-            const { subject, type, clusterAdmin, roles, roleCount, ...rest } = curr.subjects[0];
+            if (!curr.subject) return acc;
+            const { subject, type, clusterAdmin, roles, roleCount, ...rest } = curr.subject;
             const { id: clusterId, name: clusterName } = curr;
             let allRoles = [...acc.roles];
             if (roles) allRoles = allRoles.concat(roles);
@@ -39,16 +38,13 @@ const processSubjectDataByClusters = data => {
     return entity;
 };
 
-const getSubjectQuery = (id, entityContext) => {
-    const queryObject = {
-        Subject: id
-    };
-    if (!isEmpty(entityContext)) {
-        Object.keys(entityContext).forEach(entityType => {
-            queryObject[`${entityType} ID`] = entityContext[entityType];
+const getClustersQuery = entityContext => {
+    if (entityContext && entityContext[entityTypes.CLUSTER]) {
+        return queryService.objectToWhereClause({
+            [`${entityTypes.CLUSTER} ID`]: entityContext[entityTypes.CLUSTER]
         });
     }
-    return queryService.objectToWhereClause(queryObject);
+    return null;
 };
 
 const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
@@ -56,16 +52,17 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
 
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
-        subjectQuery: getSubjectQuery(id, entityContext),
+        clustersQuery: getClustersQuery(entityContext),
+        name: id,
         query: queryService.objectToWhereClause(query[searchParam])
     };
 
     const defaultQuery = gql`
-        query subject($subjectQuery: String!) {
-            clusters {
+        query subject($clustersQuery: String, $name: String!) {
+            clusters(query: $clustersQuery) {
                 id
                 name
-                subjects(query: $subjectQuery) {
+                subject(name: $name) {
                     id: name
                     subject {
                         name
@@ -96,10 +93,11 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
         );
 
         return gql`
-            query subject_roles($subjectQuery: String!, $query: String) {
-                clusters {
+            query subject($clustersQuery: String, $name: String!, $query: String) {
+                clusters(query: $clustersQuery) {
                     id
-                    subjects(query: $subjectQuery) {
+                    subject(name: $name) {
+                        id: name
                         name
                         roles(query: $query) {
                             ...k8roleFields

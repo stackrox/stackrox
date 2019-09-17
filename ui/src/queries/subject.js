@@ -51,10 +51,10 @@ export const SUBJECTS_QUERY = gql`
 `;
 
 export const SUBJECT_NAME = gql`
-    query getSubjectName($id: String!) {
-        clusters {
+    query getSubjectName($clustersQuery: String, $name: String!) {
+        clusters(query: $clustersQuery) {
             id
-            subjects(query: $id) {
+            subject(name: $name) {
                 id: name
                 subject {
                     name
