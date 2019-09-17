@@ -98,7 +98,7 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
             {({ loading, data }) => {
                 let contents;
                 const headerText = `Passing standards across ${entityType}s`;
-                if (!loading || data.complianceStandards) {
+                if (!loading && (data && data.complianceStandards)) {
                     const results = processData(data, entityType);
                     if (!results.length) {
                         contents = (

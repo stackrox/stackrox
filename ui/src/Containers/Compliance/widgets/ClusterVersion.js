@@ -29,7 +29,10 @@ const ClusterVersion = ({ clusterId }) => {
                         headerText = clusterVersionLabels[type];
                         contents = (
                             <div className="py-8 w-full flex flex-col items-center justify-between">
-                                <div className="text-4xl text-primary-700 font-500">
+                                <div
+                                    className="text-4xl text-primary-700 font-500"
+                                    data-testid="cluster-version"
+                                >
                                     {orchestratorMetadata.version}
                                 </div>
                                 <div className="text-base-500">
