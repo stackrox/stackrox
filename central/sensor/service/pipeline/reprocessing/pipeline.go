@@ -4,13 +4,14 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/enrichanddetect"
+	"github.com/stackrox/rox/central/detection/lifecycle"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -21,11 +22,11 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(datastore.Singleton(), enrichanddetect.Singleton(), riskManager.Singleton())
+	return NewPipeline(datastore.Singleton(), lifecycle.SingletonManager(), riskManager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(deployments datastore.DataStore, manager enrichanddetect.EnricherAndDetector, riskManager riskManager.Manager) pipeline.Fragment {
+func NewPipeline(deployments datastore.DataStore, manager lifecycle.Manager, riskManager riskManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		riskManager: riskManager,
 		manager:     manager,
@@ -36,7 +37,7 @@ func NewPipeline(deployments datastore.DataStore, manager enrichanddetect.Enrich
 type pipelineImpl struct {
 	deployments datastore.DataStore
 	riskManager riskManager.Manager
-	manager     enrichanddetect.EnricherAndDetector
+	manager     lifecycle.Manager
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, _ *reconciliation.StoreMap) error {
@@ -62,7 +63,11 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if reprocessMsg.RiskOnly {
 		s.riskManager.ReprocessDeploymentRisk(deployment)
 	} else {
-		return s.manager.EnrichAndDetect(deployment)
+		return s.manager.DeploymentUpdated(
+			enricher.EnrichmentContext{IgnoreExisting: true, UseNonBlockingCallsWherePossible: true},
+			deployment,
+			nil,
+		)
 	}
 	return nil
 }
