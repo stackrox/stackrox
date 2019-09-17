@@ -50,14 +50,16 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
         setSelectedCluster(envAwareClusterDefault);
         setMessageState(null);
         setWizardStep(wizardSteps.FORM);
+        setPollingDelay(null);
     }
 
     useEffect(
         () => {
-            if (selectedClusterId && selectedClusterId !== 'new') {
+            const clusterIdToRetrieve = selectedCluster.id || selectedClusterId;
+            if (clusterIdToRetrieve && clusterIdToRetrieve !== 'new') {
                 setMessageState(null);
                 // don't want to cache or memoize, because we always want the latest real-time data
-                getClusterById(selectedClusterId)
+                getClusterById(clusterIdToRetrieve)
                     .then(cluster => {
                         // TODO: refactor to use useReducer effect
                         setSelectedCluster(cluster);
