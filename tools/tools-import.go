@@ -12,6 +12,7 @@ import (
 	_ "github.com/golang/mock/mockgen"
 	_ "github.com/jstemmer/go-junit-report"
 	_ "github.com/mailru/easyjson/easyjson"
+	_ "github.com/mattn/goveralls"
 	_ "github.com/mauricelam/genny"
 	_ "github.com/nilslice/protolock"
 	_ "golang.org/x/lint/golint"

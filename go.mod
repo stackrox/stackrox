@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.12
+go 1.13
 
 require (
 	cloud.google.com/go v0.38.0
@@ -86,6 +86,7 @@ require (
 	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329
 	github.com/mattn/go-shellwords v1.0.5 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
+	github.com/mattn/goveralls v0.0.2
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
 	github.com/mitchellh/go-wordwrap v1.0.0
 	github.com/mitchellh/hashstructure v1.0.0
@@ -129,7 +130,7 @@ require (
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190802220118-1d1727260058
+	golang.org/x/tools v0.0.0-20190917162342-3b4f30a44f3b
 	google.golang.org/api v0.9.0
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873
@@ -138,7 +139,7 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.2.2
-	honnef.co/go/tools v0.0.0-20190530104931-c6fa781e6257
+	honnef.co/go/tools v0.0.1-2019.2.3
 	k8s.io/api v0.0.0-20180308224125-73d903622b73
 	k8s.io/apimachinery v0.0.0-20180228050457-302974c03f7e
 	k8s.io/apiserver v0.0.0-20180327025904-5ae41ac86efd
@@ -156,5 +157,6 @@ replace (
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20190220010025-a81e5c3a5053
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20181115184320-3d98b2b79d1b
+	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
 )

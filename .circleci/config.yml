@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-34-gd4c412a947
+    - image: docker.io/stackrox/apollo-ci:0.2.0
       auth:
         username: $DOCKER_IO_PULL_USERNAME
         password: $DOCKER_IO_PULL_PASSWORD
@@ -1199,7 +1199,7 @@ jobs:
 
       - run:
           name: Generate JUnit reports
-          command: scripts/generate-junit-reports.sh
+          command: make generate-junit-reports
           when: always
 
       - store_test_results:

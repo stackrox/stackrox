@@ -5,10 +5,10 @@
 
 package set
 
-import "github.com/stackrox/rox/generated/storage"
-
 import (
 	"sort"
+
+	"github.com/stackrox/rox/generated/storage"
 
 	mapset "github.com/deckarep/golang-set"
 )

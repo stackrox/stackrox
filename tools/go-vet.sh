@@ -24,9 +24,9 @@ while read -r line; do
     line_to_echo="${line}"
     if [[ "$line" != \#* ]]; then # Ignore comment lines
         total=$((total + 1))
-        if [[ "$line" =~ ^([^:]+):([[:digit:]]+): ]]; then
-            filename="${BASH_REMATCH[1]}"
-            lineno="${BASH_REMATCH[2]}"
+        if [[ "$line" =~ ^(vet: )?([^:]+):([[:digit:]]+): ]]; then
+            filename="${BASH_REMATCH[2]}"
+            lineno="${BASH_REMATCH[3]}"
             line_in_file=$(tail -n+"$lineno" "$filename" | head -n1)
             if [[ "$line_in_file" =~ //\ NOVET$ ]]; then
                 line_to_echo="(${line} -- IGNORED due to NOVET annotation)"

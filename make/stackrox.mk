@@ -47,8 +47,13 @@ test-integration:
 .PHONY: test-all
 test-all: test-integration
 
+GO_JUNIT_REPORT_BIN := $(GOPATH)/bin/go-junit-report
+$(GO_JUNIT_REPORT_BIN):
+	@echo "+ $@"
+	go install github.com/jstemmer/go-junit-report
+
 .PHONY: report
-report:
+report: $(GO_JUNIT_REPORT_BIN)
 	@echo "+ $@"
 	@cat test.log | go-junit-report > report.xml
 	@echo
