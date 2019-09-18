@@ -32,6 +32,7 @@ const List = ({
     defaultSearchOptions,
     data,
     autoFocusSearchInput,
+    noDataText,
     match,
     location,
     history
@@ -63,7 +64,7 @@ const List = ({
                     idAttribute={idAttribute}
                     id="capture-list"
                     selectedRowId={selectedRowId}
-                    noDataText="No results found. Please refine your search."
+                    noDataText={noDataText}
                     page={page}
                     defaultSorted={defaultSorted}
                 />
@@ -138,6 +139,7 @@ List.propTypes = {
     defaultSearchOptions: PropTypes.arrayOf(PropTypes.string),
     data: PropTypes.arrayOf(PropTypes.shape({})),
     autoFocusSearchInput: PropTypes.bool,
+    noDataText: PropTypes.string,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired
@@ -151,7 +153,8 @@ List.defaultProps = {
     defaultSorted: [],
     defaultSearchOptions: [],
     data: null,
-    autoFocusSearchInput: true
+    autoFocusSearchInput: true,
+    noDataText: 'No results found. Please refine your search.'
 };
 
 export default withRouter(List);

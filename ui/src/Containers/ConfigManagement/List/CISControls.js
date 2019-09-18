@@ -124,6 +124,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
             query={QUERY}
             variables={variables}
             headerText="CIS Controls"
+            noDataText="No control results available. Please run a scan."
             entityType={entityTypes.CONTROL}
             tableColumns={tableColumns}
             createTableRows={createTableRowsFilteredByComplianceState}
