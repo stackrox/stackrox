@@ -57,7 +57,7 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 			log.Errorf("Error handling sensor message: %v", err)
 		}
 	}
-	w.waitGroup.Done()
+	w.waitGroup.Add(-1)
 }
 
 func (w *workerQueue) run(ctx context.Context, stopSig *concurrency.ErrorSignal, handler func(context.Context, *central.MsgFromSensor) error) {
@@ -65,5 +65,7 @@ func (w *workerQueue) run(ctx context.Context, stopSig *concurrency.ErrorSignal,
 	for i := 0; i < w.totalSize; i++ {
 		go w.runWorker(ctx, i, stopSig, handler)
 	}
-	w.waitGroup.Done()
+
+	// Wait for all of the workers to complete (they will get stopped on the stop signal)
+	<-w.waitGroup.Done()
 }
