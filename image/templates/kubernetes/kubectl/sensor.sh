@@ -99,6 +99,9 @@ ${KUBE_COMMAND} apply -f "${DIR}/upgrader-serviceaccount.yaml" || print_rbac_ins
 
 {{if .AdmissionController}}
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
+{{- else}}
+echo "Deleting admission controller webhook, if it exists"
+${KUBE_COMMAND} delete -f "$DIR/admission-controller.yaml" || true
 {{- end}}
 
 {{if .MonitoringEndpoint}}
