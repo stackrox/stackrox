@@ -24,7 +24,8 @@ class Table extends Component {
         setTableRef: PropTypes.func,
         page: PropTypes.number,
         trClassName: PropTypes.string,
-        showThead: PropTypes.bool
+        showThead: PropTypes.bool,
+        defaultSorted: PropTypes.arrayOf(PropTypes.object)
     };
 
     static defaultProps = {
@@ -35,7 +36,8 @@ class Table extends Component {
         setTableRef: null,
         page: 0,
         trClassName: '',
-        showThead: true
+        showThead: true,
+        defaultSorted: []
     };
 
     getTheadProps = () => {
@@ -78,7 +80,7 @@ class Table extends Component {
     getHeaderClassName = column => column.headerClassName || defaultHeaderClassName;
 
     render() {
-        const { rows, columns, ...rest } = this.props;
+        const { rows, columns, defaultSorted, ...rest } = this.props;
         if (!columns || !columns.length) return null;
         columns.forEach(column =>
             Object.assign(column, {
@@ -95,6 +97,7 @@ class Table extends Component {
                 getTrProps={this.getTrProps}
                 getTheadProps={this.getTheadProps}
                 defaultPageSize={pageSize}
+                defaultSorted={defaultSorted}
                 className="flex flex-1 overflow-auto border-0 w-full h-full"
                 resizable={false}
                 sortable

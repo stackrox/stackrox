@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { standardLabels } from 'messages/standards';
 import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import { CONTROL_QUERY as QUERY } from 'queries/controls';
 import ControlDetails from 'Components/ControlDetails';
 import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRelatedResourceList';
@@ -13,6 +13,7 @@ import Loader from 'Components/Loader';
 import ResourceTabs from 'Components/ResourceTabs';
 import PageNotFound from 'Components/PageNotFound';
 import searchContext from 'Containers/searchContext';
+import isGQLLoading from 'utils/gqlLoading';
 import Header from './Header';
 
 const ControlPage = ({
@@ -30,7 +31,8 @@ const ControlPage = ({
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ data, loading }) => {
-                if (loading) return <Loader />;
+                if (isGQLLoading(loading, data)) return <Loader />;
+
                 if (!data || !data.results)
                     return <PageNotFound resourceType={entityTypes.CONTROL} />;
 

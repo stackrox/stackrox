@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import URLSearchInput from 'Components/URLSearchInput';
 
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';

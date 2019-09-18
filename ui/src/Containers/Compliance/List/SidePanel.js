@@ -8,7 +8,7 @@ import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import getEntityName from 'modules/getEntityName';
 import { entityNameQueryMap } from 'modules/queryMap';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import * as Icon from 'react-feather';
 import NamespacePage from '../Entity/Namespace';
 import ClusterPage from '../Entity/Cluster';

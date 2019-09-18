@@ -2,8 +2,7 @@ import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
-import { entityToColumns } from 'constants/listColumns';
-
+import { sortVersion } from 'sorters/sorters';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -19,6 +18,8 @@ import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import { standardLabels } from 'messages/standards';
 import { CONTROL_FRAGMENT } from 'queries/controls';
+import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import isGQLLoading from 'utils/gqlLoading';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import EntityList from '../List/EntityList';
 
@@ -66,7 +67,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 if (!data || !data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
                 const { node } = data;
 
@@ -117,11 +118,32 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                     .filter(cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
                     .map(cr => ({
                         ...cr,
-                        control: {
-                            ...cr.control,
-                            standard: standardLabels[cr.control.standardId]
-                        }
+                        standard: standardLabels[cr.control.standardId],
+                        controlName: `${cr.control.name} - ${cr.control.description}`
                     }));
+
+                const controlColumns = [
+                    {
+                        accessor: 'id',
+                        Header: 'id',
+                        headerClassName: 'hidden',
+                        className: 'hidden'
+                    },
+                    {
+                        accessor: 'standard',
+                        sortMethod: sortVersion,
+                        Header: 'Standard',
+                        headerClassName: `w-1/5 ${defaultHeaderClassName}`,
+                        className: `w-1/5 ${defaultColumnClassName}`
+                    },
+                    {
+                        accessor: 'controlName',
+                        sortMethod: sortVersion,
+                        Header: 'Control',
+                        headerClassName: `w-1/2 ${defaultHeaderClassName}`,
+                        className: `w-1/2 ${defaultColumnClassName}`
+                    }
+                ];
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
@@ -169,8 +191,18 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                                             rows={failedComplianceResults}
                                             noDataText="No Controls"
                                             className="bg-base-100"
-                                            columns={entityToColumns[entityTypes.CONTROL]}
+                                            columns={controlColumns}
                                             idAttribute="control.id"
+                                            defaultSorted={[
+                                                {
+                                                    id: 'standard',
+                                                    desc: false
+                                                },
+                                                {
+                                                    id: 'controlName',
+                                                    desc: false
+                                                }
+                                            ]}
                                         />
                                     )}
                                 </div>

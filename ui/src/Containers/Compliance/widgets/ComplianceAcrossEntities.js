@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import Gauge from 'Components/visuals/GaugeWithDetail';

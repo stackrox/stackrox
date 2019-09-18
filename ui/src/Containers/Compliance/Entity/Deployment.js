@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENT_QUERY } from 'queries/deployment';
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import { withRouter } from 'react-router-dom';
@@ -16,6 +16,7 @@ import IconWidget from 'Components/IconWidget';
 import pluralize from 'pluralize';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
+import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 
 import Header from './Header';
@@ -44,7 +45,7 @@ const DeploymentPage = ({
     return (
         <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (loading || !data) return <Loader />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 const deployment = processData(data);
                 const {
                     name,

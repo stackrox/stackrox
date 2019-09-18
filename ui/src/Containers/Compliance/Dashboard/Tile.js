@@ -4,7 +4,7 @@ import { resourceLabels } from 'messages/common';
 import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import TileLink from 'Components/TileLink';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import gql from 'graphql-tag';

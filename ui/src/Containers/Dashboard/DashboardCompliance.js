@@ -9,6 +9,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import Loader from 'Components/Loader';
 import Query from 'Components/ThrowingQuery';
 import { standardLabels } from 'messages/standards';
+import isGQLLoading from 'utils/gqlLoading';
 import searchContexts from 'constants/searchContexts';
 
 const standardsResultsMap = {
@@ -129,7 +130,8 @@ const DashboardCompliance = ({ match, location }) => {
                     }}
                 >
                     {({ loading, data }) => {
-                        if (loading) return <Loader transparent />;
+                        if (isGQLLoading(loading, data)) return <Loader transparent />;
+
                         const results = processData(data);
                         if (!results.length) return renderScanButton();
                         return (

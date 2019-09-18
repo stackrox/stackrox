@@ -8,6 +8,7 @@ import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/R
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
+import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import appContexts from 'constants/appContextTypes';
 import queryService from 'modules/queryService';
@@ -112,7 +113,8 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
+
                 if (!data.clusters || !data.clusters.length)
                     return <PageNotFound resourceType={entityTypes.SUBJECT} />;
                 const entity = processSubjectDataByClusters(data);

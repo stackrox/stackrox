@@ -12,7 +12,7 @@ import networkStatuses from 'constants/networkStatuses';
 import COMPLIANCE_STATES from 'constants/complianceStates';
 
 import ScanButton from 'Containers/Compliance/ScanButton';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
 import Sunburst from 'Components/visuals/Sunburst';

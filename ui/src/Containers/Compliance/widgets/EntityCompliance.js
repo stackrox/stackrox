@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
 import VerticalBarChart from 'Components/visuals/VerticalBar';
 import ArcSingle from 'Components/visuals/ArcSingle';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';

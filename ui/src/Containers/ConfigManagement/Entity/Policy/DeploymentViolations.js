@@ -27,6 +27,12 @@ const DeploymentViolations = ({ className, alerts, entityContext }) => {
             idAttribute="id"
             noDataText="No Deployments with Violation(s)"
             className={className}
+            defaultSorted={[
+                {
+                    id: 'name',
+                    desc: false
+                }
+            ]}
         />
     );
 };

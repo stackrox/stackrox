@@ -8,6 +8,7 @@ import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ControlDetails from 'Components/ControlDetails';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
+import isGQLLoading from 'utils/gqlLoading';
 import Widget from 'Components/Widget';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
@@ -58,7 +59,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
     return (
         <Query query={QUERY} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
 
                 if (!data || !data.results)
                     return <PageNotFound resourceType={entityTypes.CONTROL} />;

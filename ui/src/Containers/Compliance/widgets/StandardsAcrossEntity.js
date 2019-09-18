@@ -9,7 +9,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import merge from 'lodash/merge';
 
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';

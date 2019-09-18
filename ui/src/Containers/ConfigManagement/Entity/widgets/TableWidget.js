@@ -20,6 +20,7 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
         showThead,
         SubComponent,
         hasNestedTable,
+        defaultSorted,
         ...widgetProps
     } = { ...rest };
     const headerComponents = (
@@ -52,6 +53,7 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
                 showThead={showThead}
                 SubComponent={SubComponent}
                 page={page}
+                defaultSorted={defaultSorted}
             />
         </Widget>
     );

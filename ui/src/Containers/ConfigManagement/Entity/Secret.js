@@ -14,6 +14,7 @@ import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/R
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import CollapsibleRow from 'Components/CollapsibleRow';
 import Widget from 'Components/Widget';
+import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import appContexts from 'constants/appContextTypes';
@@ -222,7 +223,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 if (!data || !data.secret)
                     return <PageNotFound resourceType={entityTypes.SECRET} />;
                 const { secret } = data;

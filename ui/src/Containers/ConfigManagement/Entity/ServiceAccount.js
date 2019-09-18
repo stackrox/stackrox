@@ -11,6 +11,7 @@ import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widge
 import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
+import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import appContexts from 'constants/appContextTypes';
@@ -93,7 +94,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 const { serviceAccount: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
 

@@ -13,7 +13,7 @@ import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
 import TableGroup from 'Components/TableGroup';
 import entityToColumns from 'constants/tableColumns';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 import createPDFTable from 'utils/pdfUtils';

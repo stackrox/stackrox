@@ -1,50 +1,9 @@
 import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName, wrapClassName } from 'Components/Table';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
-import { standardLabels } from 'messages/standards';
-import { sortVersion } from 'sorters/sorters';
 import LabelChip from 'Components/LabelChip';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-
-const getNameCell = name => <div data-test-id="table-row-name">{name}</div>;
-
-const controlColumns = [
-    {
-        accessor: 'id',
-        Header: 'id',
-        headerClassName: 'hidden',
-        className: 'hidden'
-    },
-    {
-        accessor: 'control.standard',
-        sortMethod: sortVersion,
-        Header: 'Standard',
-        headerClassName: `w-1/5 ${defaultHeaderClassName}`,
-        className: `w-1/5 ${defaultColumnClassName}`,
-        Cell: ({ original }) => standardLabels[original.control.standardId]
-    },
-    {
-        accessor: 'control',
-        sortMethod: sortVersion,
-        Header: 'Control',
-        headerClassName: `w-1/2 ${defaultHeaderClassName}`,
-        className: `w-1/2 ${defaultColumnClassName}`,
-        Cell: ({ original }) =>
-            getNameCell(`${original.control.name} - ${original.control.description}`)
-    },
-    {
-        accessor: 'value.overallState',
-        Header: 'State',
-        headerClassName: `w-1/5 ${defaultHeaderClassName}`,
-        className: `w-1/5 ${defaultColumnClassName}`,
-        // eslint-disable-next-line react/prop-types
-        Cell: ({ original }) => {
-            const text = original.value.overallState === 'COMPLIANCE_STATE_FAILURE' && 'Fail';
-            return <LabelChip text={text} type="alert" />;
-        }
-    }
-];
 
 const nodesAcrossControlsColumns = [
     {
@@ -171,7 +130,6 @@ const getDeploymentViolationsColumns = entityContext => {
 };
 
 export const entityToColumns = {
-    [resourceTypes.CONTROL]: controlColumns,
     [resourceTypes.IMAGE]: imageColumns
 };
 

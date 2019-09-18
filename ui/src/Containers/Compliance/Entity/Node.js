@@ -10,7 +10,7 @@ import Hostname from 'images/hostname.svg';
 import ContainerRuntime from 'images/container-runtime.svg';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import IconWidget from 'Components/IconWidget';
 import InfoWidget from 'Components/InfoWidget';
 import Labels from 'Containers/Compliance/widgets/Labels';
@@ -20,6 +20,7 @@ import ResourceTabs from 'Components/ResourceTabs';
 import ComplianceList from 'Containers/Compliance/List/List';
 import PageNotFound from 'Components/PageNotFound';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
+import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 import Header from './Header';
 
@@ -53,7 +54,8 @@ const NodePage = ({
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
+                if (isGQLLoading(loading, data)) return <Loader />;
+
                 if (!data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
                 const node = processData(data);
                 const {

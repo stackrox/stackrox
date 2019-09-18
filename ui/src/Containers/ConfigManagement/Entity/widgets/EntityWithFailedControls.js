@@ -52,6 +52,12 @@ const EntityWithFailedControls = ({ entityType, entities, relatedEntities }) => 
             className="bg-base-100 w-full"
             columns={entityAcrossControlsColumns[entityType]}
             idAttribute="id"
+            defaultSorted={[
+                {
+                    id: 'name',
+                    desc: false
+                }
+            ]}
         />
     );
 };

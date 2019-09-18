@@ -5,6 +5,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityToColumns } from 'constants/listColumns';
 import cloneDeep from 'lodash/cloneDeep';
 import { format } from 'date-fns';
+import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -103,7 +104,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 const { image: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.IMAGE} />;
 

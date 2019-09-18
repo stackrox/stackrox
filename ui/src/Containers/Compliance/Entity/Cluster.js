@@ -3,7 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
 import ComplianceList from 'Containers/Compliance/List/List';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
@@ -12,6 +12,7 @@ import { withRouter } from 'react-router-dom';
 import ResourceTabs from 'Components/ResourceTabs';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
+import isGQLLoading from 'utils/gqlLoading';
 import Header from './Header';
 
 function processData(data) {
@@ -34,7 +35,7 @@ const ClusterPage = ({
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 const cluster = processData(data);
                 const { name, id } = cluster;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';

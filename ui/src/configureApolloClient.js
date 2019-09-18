@@ -23,6 +23,12 @@ const fragmentMatcher = new IntrospectionFragmentMatcher({
     introspectionQueryResultData
 });
 
+const defaultOptions = {
+    watchQuery: {
+        fetchPolicy: 'cache-and-network'
+    }
+};
+
 const authLink = setContext((_, { headers }) => {
     // get the authentication token from local storage if it exists
     const token = getAccessToken();
@@ -38,6 +44,7 @@ const authLink = setContext((_, { headers }) => {
 export default function() {
     return new ApolloClient({
         link: authLink.concat(httpLink),
+        defaultOptions,
         cache: new InMemoryCache({
             fragmentMatcher,
             dataIdFromObject: object => {

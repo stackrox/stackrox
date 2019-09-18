@@ -17,6 +17,7 @@ import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import isGQLLoading from 'utils/gqlLoading';
 
 const List = ({
     className,
@@ -110,7 +111,7 @@ const List = ({
         <section className="h-full w-full bg-base-100" id="capture-list">
             <Query query={query} variables={variables}>
                 {({ loading, data: queryData }) => {
-                    if (loading) return <Loader />;
+                    if (isGQLLoading(loading, data)) return <Loader />;
                     if (!queryData) return <PageNotFound resourceType={entityType} />;
                     const tableRows = createTableRows(queryData) || [];
                     const headerComponents = getHeaderComponents(tableRows.length);

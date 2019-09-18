@@ -7,14 +7,14 @@ import capitalize from 'lodash/capitalize';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
-import networkStatuses from 'constants/networkStatuses';
 import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
 import { Link, withRouter } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';
 import ReactSelect from 'Components/ReactSelect';
+import isGQLLoading from 'utils/gqlLoading';
 
 const colors = [
     'var(--tertiary-400)',
@@ -155,8 +155,7 @@ const ComplianceByStandard = ({
     const where = {
         Standard: standardLabels[standardType]
     };
-    if (entityType) where[`${entityType} ID`] = entityId;
-
+    if (entityType && entityId) where[`${entityType} ID`] = entityId;
     const variables = {
         groupBy,
         where: queryService.objectToWhereClause(where)
@@ -214,13 +213,13 @@ const ComplianceByStandard = ({
 
     return (
         <Query query={QUERY} variables={variables}>
-            {({ loading, data, networkStatus }) => {
-                let contents = <Loader />;
+            {({ loading, data }) => {
+                let contents;
                 const titleComponent = getTitleComponent();
                 const headerText = getHeaderText();
                 let viewStandardLink = null;
-
-                if (!loading && data && networkStatus === networkStatuses.READY) {
+                if (isGQLLoading(loading, data)) contents = <Loader />;
+                else {
                     const { sunburstData, totalPassing } = processSunburstData(
                         match,
                         location,

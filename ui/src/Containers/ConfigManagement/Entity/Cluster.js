@@ -13,6 +13,7 @@ import TabContent from 'Components/TabContent';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import appContexts from 'constants/appContextTypes';
+import isGQLLoading from 'utils/gqlLoading';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
@@ -86,7 +87,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (loading || !data) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 const { cluster: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.CLUSTER} />;
 

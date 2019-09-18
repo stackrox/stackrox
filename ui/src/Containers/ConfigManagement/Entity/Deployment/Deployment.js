@@ -9,6 +9,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
 import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
+import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
@@ -106,7 +107,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 if (!data || !data.deployment)
                     return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
                 const { deployment: entity } = data;

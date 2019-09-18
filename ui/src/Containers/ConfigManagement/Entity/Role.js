@@ -11,6 +11,7 @@ import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/R
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import Rules from 'Containers/ConfigManagement/Entity/widgets/Rules';
 import RulePermissions from 'Containers/ConfigManagement/Entity/widgets/RulePermissions';
+import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import searchContext from 'Containers/searchContext';
@@ -87,7 +88,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 const { clusters } = data;
                 if (!clusters || !clusters.length)
                     return <PageNotFound resourceType={entityTypes.ROLE} />;

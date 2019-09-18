@@ -5,7 +5,7 @@ import URLService from 'modules/URLService';
 import { resourceLabels } from 'messages/common';
 import capitalize from 'lodash/capitalize';
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import CountWidget from 'Components/CountWidget';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';

@@ -6,7 +6,7 @@ import { format as dateFormat } from 'date-fns';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 
 const ClusterVersion = ({ clusterId }) => {

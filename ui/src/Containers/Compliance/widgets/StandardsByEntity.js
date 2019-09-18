@@ -7,7 +7,7 @@ import capitalize from 'lodash/capitalize';
 import sortBy from 'lodash/sortBy';
 import chunk from 'lodash/chunk';
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import NoResultsMessage from 'Components/NoResultsMessage';

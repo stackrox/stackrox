@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
-import Query from 'Components/ThrowingQuery';
+import Query from 'Components/CacheFirstQuery';
 import IconWidget from 'Components/IconWidget';
 import CountWidget from 'Components/CountWidget';
 import pluralize from 'pluralize';
@@ -11,6 +11,7 @@ import ComplianceList from 'Containers/Compliance/List/List';
 import ResourceTabs from 'Components/ResourceTabs';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import PageNotFound from 'Components/PageNotFound';
+import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
@@ -51,7 +52,7 @@ const NamespacePage = ({
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 if (!data.results) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
                 const namespace = processData(data);
                 const { name, id, clusterName, labels, numNetworkPolicies } = namespace;

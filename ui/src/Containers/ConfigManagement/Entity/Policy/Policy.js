@@ -12,6 +12,7 @@ import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 import Widget from 'Components/Widget';
 import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import Button from 'Components/Button';
+import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
@@ -105,7 +106,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader transparent />;
                 const { policy: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.POLICY} />;
 
