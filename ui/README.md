@@ -31,7 +31,7 @@ API calls. Set up your environment as follows:
 _Note: Similar instructions apply when using [Minikube](https://kubernetes.io/docs/setup/minikube/)._
 
 1. **Docker for Mac** - Make sure you have Kubernetes enabled in your Docker for Mac and `kubectl` is
-pointing to `docker-for-deskop` (see [docker docs](https://docs.docker.com/docker-for-mac/#kubernetes)).  
+pointing to `docker-desktop` (see [docker docs](https://docs.docker.com/docker-for-mac/#kubernetes)).
 
 1. **Deploy** - Run `yarn deploy-local` (wraps `../deploy/k8s/deploy-local.sh`) to deploy the StackRox software. Make sure that your git working directory is clean and that the branch that you're on has a corresponding tag from CI (see Roxbot comment in a PR). Alternatively, you can check out master before deploying or specify the image tag you want to deploy by setting the `MAIN_IMAGE_TAG` var in your shell.
 
@@ -41,17 +41,32 @@ _Note: to redeploy a newer version of StackRox, currently the easiest way is by
 deleting the whole `stackrox` namespace via `kubectl delete ns stackrox`, and
 repeating the steps above._
 
-#### Using Remote StackRox Deployment
+#### Using a Remote StackRox Deployment
 
-1. **Provision back end infrastructure** - Navigate to the [Stackrox setup tool](https://setup.rox.systems/). This tool lets you provision a temporary, self destructing infrastructure in GCloud you will connect to during your development session. Hit the `+` button near the top left. Use the default form settings and provide a "Setup Name" (e.g. `yourname-dev`). Choose the number of hours you would like the cluster to remain active (This should be set to the expected hours of your development session). After you click `run` it may take up to 5 minutes to provision the new cluster. Once the status of your cluster shows as `The cluster is ready`, copy the name of the 'Resource Group' and move on to step 2.  
+1. **Provision back end cluster** - Navigate to the [Stackrox setup tool](https://setup.rox.systems/). This tool lets you provision a temporary, self destructing cluster in GCloud you will connect to during your development session. Hit the `+` button near the top left. Use the default form settings and provide a "Setup Name" (e.g. `yourname-dev`). Choose the number of hours you would like the cluster to remain active (This should be set to the expected hours of your development session). After you click `run` it may take up to 5 minutes to provision the new cluster. Once the status of your cluster shows as `The cluster is ready`, copy the name of the 'Resource Group' and move on to step 2.
 
-1. **Connect local machine to infrastructure** - Your local machine needs to be made aware of the cloud infrastructure you just created. run `yarn run connect [rg-name]` where `[rg-name]` is the name found in the 'Resource Group` you created in the previous step. This name can be found by going to  https://setup.rox.systems/ and selecting your setup name from the dropdown list.
+1. **Connect local machine to cluster** - Your local machine needs to be made aware of the cloud cluster you just created. Run `yarn connect [rg-name]` where `[rg-name]` is the name found in **Resource Group** you created in the previous step. This name can be found by going to  https://setup.rox.systems/ and selecting your setup name from the dropdown list.
 
-1. **Deploy StackRox** - Deploy a fresh copy of the StackRox software to your new infrastructure by running `yarn run deploy`. During the deployment process, you may be asked for your Dockerhub credentials. In addition to deploying, this command will set up port forwarding from port 8000 to 3000 on your machine.
+1. **Deploy StackRox** - Deploy a fresh copy of the StackRox software to your new cluster. During the deployment process, you may be asked for your Dockerhub credentials. In addition to deploying, this command will set up port forwarding from port 8000 to 3000 on your machine.
+    * Set up a load balancer by setting the env. variable by running `export LOAD_BALANCER=lb` (optional, if you want to add multiple clusters)
+    * Set up persistent storage by setting the env. variable by running `export STORAGE=pvc` (optional, but if you need to bounce central during testing, then your changes will be saved)
+    * Run `yarn deploy`
 
-1. **Run local server** - Start your local server by running `yarn start`. This will open your web browser to [https://localhost:3000](https://localhost:3000)
+1. **Run local server** - Start your local server.
+    * Ensure port forwarding is working by running `yarn forward` (The deploy script tries to do this, but it is flakey.)
+    * Start the front-end by running `yarn start`.
+    * This will open your web browser to [https://localhost:3000](https://localhost:3000)
 
-_If your machine goes into sleep mode, you may lose the port forwarding set up during the deploy step. If this happens, run `yarn run forward` to restart port forwarding._
+_If your machine goes into sleep mode, you may lose the port forwarding set up during the deploy step. If this happens, run `yarn forward` to restart port forwarding._
+
+#### Using an Existing StackRox Deployment with a Local Frontend
+
+If you want to connect your local frontend app to a Stackrox deployment that is already running, you can use one of the following, depending on whether it has a public IP. For both, start by visiting [https://setup.rox.systems/](https://setup.rox.systems/).
+
+* If it has a public IP, find that IP by looking in the **nodes/pods** section in the center-right panel. Copy the **External IP** value. Export that in the `YARN_START_TARGET` env. var and start the front-end by running, `export YARN_START_TARGET=<external_IP>; yarn start`
+* If it does not have a public IP, you can steps 2 and 4 from the section above, **Using Remote StackRox Deployment**.
+    1. Run `yarn connect [rg-name]` where `[rg-name]` is the name found in the 'Resource Group' found in the existing cluster’s page in Setup.
+    1. Run `yarn forward` in one terminal, and `yarn start` in another.
 
 ### Testing
 
@@ -67,8 +82,7 @@ To run all end-to-end tests in a headless mode use `yarn test-e2e-local`.
 ### IDEs
 
 This project is IDE agnostic. For the best dev experience, it's recommended to
-add / configure support for [ESLint](https://eslint.org/) and [Prettier](https://prettier.io/)
-in the IDE of your choice.
+add / configure support for [ESLint](https://eslint.org/) and [Prettier](https://prettier.io/) in the IDE of your choice.
 
 Examples of configuration for some IDEs:
 
