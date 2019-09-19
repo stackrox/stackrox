@@ -1,0 +1,325 @@
+package compound
+
+import (
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+	searchMocks "github.com/stackrox/rox/pkg/search/mocks"
+	"github.com/stretchr/testify/suite"
+)
+
+func TestCondenseRequest(t *testing.T) {
+	suite.Run(t, new(CondenseRequestTestSuite))
+}
+
+type CondenseRequestTestSuite struct {
+	suite.Suite
+
+	mockCtrl *gomock.Controller
+
+	mockSearcher1 *searchMocks.MockSearcher
+	mockSearcher2 *searchMocks.MockSearcher
+}
+
+func (suite *CondenseRequestTestSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+
+	suite.mockSearcher1 = searchMocks.NewMockSearcher(suite.mockCtrl)
+	suite.mockSearcher2 = searchMocks.NewMockSearcher(suite.mockCtrl)
+}
+
+func (suite *CondenseRequestTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+}
+
+func (suite *CondenseRequestTestSuite) TestCondenseAnd() {
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+		},
+		{
+			Searcher: suite.mockSearcher2,
+		},
+	}
+
+	input := &searchRequestSpec{
+		and: []*searchRequestSpec{
+			{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: &v1.Query{},
+				},
+			},
+			{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: &v1.Query{},
+				},
+			},
+		},
+	}
+
+	expected := &searchRequestSpec{
+		base: &baseRequestSpec{
+			Spec: &searcherSpecs[0],
+			Query: search.NewConjunctionQuery(
+				&v1.Query{},
+				&v1.Query{},
+			),
+		},
+	}
+
+	actual, err := condense(input)
+	suite.Nil(err)
+	suite.Equal(expected, actual)
+}
+
+func (suite *CondenseRequestTestSuite) TestCondenseOr() {
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+		},
+		{
+			Searcher: suite.mockSearcher2,
+		},
+	}
+
+	input := &searchRequestSpec{
+		or: []*searchRequestSpec{
+			{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: &v1.Query{},
+				},
+			},
+			{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: &v1.Query{},
+				},
+			},
+		},
+	}
+
+	expected := &searchRequestSpec{
+		base: &baseRequestSpec{
+			Spec: &searcherSpecs[0],
+			Query: search.NewDisjunctionQuery(
+				&v1.Query{},
+				&v1.Query{},
+			),
+		},
+	}
+
+	actual, err := condense(input)
+	suite.Nil(err)
+	suite.Equal(expected, actual)
+}
+
+func (suite *CondenseRequestTestSuite) TestCondenseBoolean() {
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+		},
+		{
+			Searcher: suite.mockSearcher2,
+		},
+	}
+
+	input := &searchRequestSpec{
+		boolean: &booleanRequestSpec{
+			must: &searchRequestSpec{
+				and: []*searchRequestSpec{
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[0],
+							Query: &v1.Query{},
+						},
+					},
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[0],
+							Query: &v1.Query{},
+						},
+					},
+				},
+			},
+			mustNot: &searchRequestSpec{
+				or: []*searchRequestSpec{
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[1],
+							Query: &v1.Query{},
+						},
+					},
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[1],
+							Query: &v1.Query{},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	expected := &searchRequestSpec{
+		boolean: &booleanRequestSpec{
+			must: &searchRequestSpec{
+				base: &baseRequestSpec{
+					Spec: &searcherSpecs[0],
+					Query: search.NewConjunctionQuery(
+						&v1.Query{},
+						&v1.Query{},
+					),
+				},
+			},
+			mustNot: &searchRequestSpec{
+				base: &baseRequestSpec{
+					Spec: &searcherSpecs[1],
+					Query: search.NewDisjunctionQuery(
+						&v1.Query{},
+						&v1.Query{},
+					),
+				},
+			},
+		},
+	}
+
+	actual, err := condense(input)
+	suite.Nil(err)
+	suite.Equal(expected, actual)
+}
+
+func (suite *CondenseRequestTestSuite) TestCondenseComplex() {
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+		},
+		{
+			Searcher: suite.mockSearcher2,
+		},
+	}
+
+	input := &searchRequestSpec{
+		and: []*searchRequestSpec{
+			{
+				boolean: &booleanRequestSpec{
+					must: &searchRequestSpec{
+						and: []*searchRequestSpec{
+							{
+								base: &baseRequestSpec{
+									Spec:  &searcherSpecs[0],
+									Query: &v1.Query{},
+								},
+							},
+							{
+								base: &baseRequestSpec{
+									Spec:  &searcherSpecs[0],
+									Query: &v1.Query{},
+								},
+							},
+						},
+					},
+					mustNot: &searchRequestSpec{
+						or: []*searchRequestSpec{
+							{
+								base: &baseRequestSpec{
+									Spec:  &searcherSpecs[1],
+									Query: &v1.Query{},
+								},
+							},
+							{
+								base: &baseRequestSpec{
+									Spec:  &searcherSpecs[0],
+									Query: &v1.Query{},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: &v1.Query{},
+				},
+			},
+			{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: &v1.Query{},
+				},
+			},
+			{
+				or: []*searchRequestSpec{
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[0],
+							Query: &v1.Query{},
+						},
+					},
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[0],
+							Query: &v1.Query{},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	expected := &searchRequestSpec{
+		and: []*searchRequestSpec{
+			{
+				boolean: &booleanRequestSpec{
+					must: &searchRequestSpec{
+						base: &baseRequestSpec{
+							Spec: &searcherSpecs[0],
+							Query: search.NewConjunctionQuery(
+								&v1.Query{},
+								&v1.Query{},
+							),
+						},
+					},
+					mustNot: &searchRequestSpec{
+						or: []*searchRequestSpec{
+							{
+								base: &baseRequestSpec{
+									Spec:  &searcherSpecs[1],
+									Query: &v1.Query{},
+								},
+							},
+							{
+								base: &baseRequestSpec{
+									Spec:  &searcherSpecs[0],
+									Query: &v1.Query{},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				base: &baseRequestSpec{
+					Spec: &searcherSpecs[0],
+					Query: search.ConjunctionQuery(
+						&v1.Query{},
+						&v1.Query{},
+						search.DisjunctionQuery(
+							&v1.Query{},
+							&v1.Query{},
+						),
+					),
+				},
+			},
+		},
+	}
+
+	actual, err := condense(input)
+	suite.Nil(err)
+	suite.Equal(expected, actual)
+}
