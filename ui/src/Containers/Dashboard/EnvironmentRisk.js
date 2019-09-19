@@ -69,7 +69,7 @@ EnvironmentRisk.propTypes = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    globalViolationsCounts: selectors.getGlobalAlertCounts
+    globalViolationsCounts: selectors.getAlertCountsByCluster
 });
 
 export default connect(

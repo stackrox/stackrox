@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, withRouter } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
-import { AGGREGATED_RESULTS } from 'queries/controls';
+import { AGGREGATED_RESULTS_ACROSS_ENTITY } from 'queries/controls';
 import URLService from 'modules/URLService';
 import appContexts from 'constants/appContextTypes';
 import entityTypes from 'constants/entityTypes';
@@ -123,7 +123,7 @@ const DashboardCompliance = ({ match, location }) => {
             </h2>
             <div className="flex">
                 <Query
-                    query={AGGREGATED_RESULTS}
+                    query={AGGREGATED_RESULTS_ACROSS_ENTITY}
                     variables={{
                         unit: entityTypes.CONTROL,
                         groupBy: [entityTypes.STANDARD]

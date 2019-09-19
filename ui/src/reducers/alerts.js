@@ -12,7 +12,6 @@ import {
 // Action types
 
 export const types = {
-    FETCH_GLOBAL_ALERT_COUNTS: createFetchingActionTypes('alerts/FETCH_GLOBAL_ALERT_COUNTS'),
     FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES: createFetchingActionTypes(
         'alerts/FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES'
     ),
@@ -26,7 +25,6 @@ export const types = {
 // Actions
 
 export const actions = {
-    fetchGlobalAlertCounts: createFetchingActions(types.FETCH_GLOBAL_ALERT_COUNTS),
     fetchAlertCountsByPolicyCategories: createFetchingActions(
         types.FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES
     ),
@@ -36,14 +34,6 @@ export const actions = {
 };
 
 // Reducers
-
-const globalAlertCounts = (state = [], action) => {
-    if (action.type === types.FETCH_GLOBAL_ALERT_COUNTS.SUCCESS) {
-        const { groups } = action.response;
-        return isEqual(groups, state) ? state : groups;
-    }
-    return state;
-};
 
 const alertCountsByPolicyCategories = (state = [], action) => {
     if (action.type === types.FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES.SUCCESS) {
@@ -70,7 +60,6 @@ const alertsByTimeseries = (state = [], action) => {
 };
 
 const reducer = combineReducers({
-    globalAlertCounts,
     alertCountsByPolicyCategories,
     alertCountsByCluster,
     alertsByTimeseries,
@@ -81,13 +70,11 @@ export default reducer;
 
 // Selectors
 
-const getGlobalAlertCounts = state => state.globalAlertCounts;
 const getAlertCountsByPolicyCategories = state => state.alertCountsByPolicyCategories;
 const getAlertCountsByCluster = state => state.alertCountsByCluster;
 const getAlertsByTimeseries = state => state.alertsByTimeseries;
 
 export const selectors = {
-    getGlobalAlertCounts,
     getAlertCountsByPolicyCategories,
     getAlertCountsByCluster,
     getAlertsByTimeseries,

@@ -1,23 +1,12 @@
 import { all, takeLatest, call, fork, put, select } from 'redux-saga/effects';
 
 import { dashboardPath } from 'routePaths';
-import { takeEveryLocation } from 'utils/sagaEffects';
+import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import * as service from 'services/AlertsService';
 import { actions } from 'reducers/alerts';
 import { types as dashboardTypes } from 'reducers/dashboard';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
-
-function* getGlobalAlertCounts(filters) {
-    try {
-        const newFilters = { ...filters };
-        newFilters.group_by = 'CLUSTER';
-        const result = yield call(service.fetchSummaryAlertCounts, newFilters);
-        yield put(actions.fetchGlobalAlertCounts.success(result.response));
-    } catch (error) {
-        yield put(actions.fetchGlobalAlertCounts.failure(error));
-    }
-}
 
 function* getAlertCountsByPolicyCategories(filters) {
     try {
@@ -61,7 +50,6 @@ function* filterDashboardPageBySearch() {
     const nestedFilter = {
         'request.query': searchOptionsToQuery(searchOptions)
     };
-    yield fork(getGlobalAlertCounts, nestedFilter);
     yield fork(getAlertCountsByCluster, nestedFilter);
     yield fork(getAlertsByTimeseries, filters);
     yield fork(getAlertCountsByPolicyCategories, nestedFilter);
@@ -77,7 +65,7 @@ function* watchDashboardSearchOptions() {
 
 export default function* alertsSaga() {
     yield all([
-        takeEveryLocation(dashboardPath, loadDashboardPage),
+        takeEveryNewlyMatchedLocation(dashboardPath, loadDashboardPage),
         fork(watchDashboardSearchOptions)
     ]);
 }
