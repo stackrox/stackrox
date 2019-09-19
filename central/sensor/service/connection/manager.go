@@ -25,7 +25,7 @@ type Manager interface {
 	Start(mgr ClusterManager, autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.
-	HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer) error
+	HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error
 	GetConnection(clusterID string) SensorConnection
 	GetActiveConnections() []SensorConnection
 

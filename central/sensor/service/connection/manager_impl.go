@@ -146,11 +146,8 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 	return oldConnection, nil
 }
 
-func (m *manager) HandleConnection(ctx context.Context, clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer) error {
-	conn, err := newConnection(ctx, clusterID, pf, m.clusters)
-	if err != nil {
-		return errors.Wrap(err, "creating sensor connection")
-	}
+func (m *manager) HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
+	conn := newConnection(clusterID, eventPipeline, m.clusters)
 
 	oldConnection, err := m.replaceConnection(ctx, clusterID, conn)
 	if err != nil {

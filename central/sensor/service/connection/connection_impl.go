@@ -38,12 +38,7 @@ type sensorConnection struct {
 	clusterMgr ClusterManager
 }
 
-func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, clusterMgr ClusterManager) (*sensorConnection, error) {
-	eventPipeline, err := pf.PipelineForCluster(ctx, clusterID)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating event pipeline")
-	}
-
+func newConnection(clusterID string, eventPipeline pipeline.ClusterPipeline, clusterMgr ClusterManager) *sensorConnection {
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
 		stoppedSig:    concurrency.NewErrorSignal(),
@@ -57,11 +52,10 @@ func newConnection(ctx context.Context, clusterID string, pf pipeline.Factory, c
 
 	// Need a reference to conn for injector
 	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig)
-
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 
-	return conn, nil
+	return conn
 }
 
 func (c *sensorConnection) Terminate(err error) bool {

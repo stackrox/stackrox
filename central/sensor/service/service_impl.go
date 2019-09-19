@@ -71,5 +71,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if !exists {
 		return status.Errorf(codes.NotFound, "cluster %q not found in DB; it was possibly deleted", clusterID)
 	}
-	return s.manager.HandleConnection(server.Context(), clusterID, s.pf, server)
+
+	// Generate a pipeline for the cluster to use.
+	eventPipeline, err := s.pf.PipelineForCluster(server.Context(), clusterID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "unable to generate a pipeline for cluster %q", clusterID)
+	}
+
+	return s.manager.HandleConnection(server.Context(), clusterID, eventPipeline, server)
 }
