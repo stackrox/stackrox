@@ -1,5 +1,5 @@
-This bundle contains archives of the images supplemental to the StackRox
-Container Security Platform.
+This bundle contains archives of the Collector image which integrates with
+the StackRox Kubernetes Security Platform.
 
 To install, first reimport the image:
     ./import.sh

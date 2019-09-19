@@ -28,6 +28,15 @@ main() {
     scanner_image_local="stackrox.io/scanner:${scanner_tag}"
     scanner_image_remote="${registry_prefix}/scanner:${scanner_tag}"
 
+    echo "Loading scanner v2 images..."
+    scanner_v2_tag="$(docker load -i scanner_v2.img | tag)"
+    scanner_v2_image_local="stackrox.io/scanner-v2:${scanner_v2_tag}"
+    scanner_v2_image_remote="${registry_prefix}/scanner-v2:${scanner_v2_tag}"
+
+    scanner_v2_db_tag="$(docker load -i scanner_v2_db.img | tag)"
+    scanner_v2_db_image_local="stackrox.io/scanner-v2-db:${scanner_v2_db_tag}"
+    scanner_v2_db_image_remote="${registry_prefix}/scanner-v2-db:${scanner_v2_db_tag}"
+
     if [[ -z "$registry_prefix" ]]; then
         echo "No registry prefix given, all done!"
         return
@@ -44,6 +53,14 @@ main() {
     echo "Pushing image: ${scanner_image_local} as ${scanner_image_remote}"
     docker tag "${scanner_image_local}" "${scanner_image_remote}"
     docker push "${scanner_image_remote}" | cat
+
+    echo "Pushing image: ${scanner_v2_image_local} as ${scanner_v2_image_remote}"
+    docker tag "${scanner_v2_image_local}" "${scanner_v2_image_remote}"
+    docker push "${scanner_v2_image_remote}" | cat
+
+    echo "Pushing image: ${scanner_v2_db_image_local} as ${scanner_v2_db_image_remote}"
+    docker tag "${scanner_v2_db_image_local}" "${scanner_v2_db_image_remote}"
+    docker push "${scanner_v2_db_image_remote}" | cat
 
     echo "All done!"
 }
