@@ -350,9 +350,22 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"useSTARTTLS: Boolean!",
 		"username: String!",
 	}))
+	utils.Must(builder.AddType("EmbeddedImageScanComponent", []string{
+		"license: License",
+		"name: String!",
+		"version: String!",
+		"vulns: [EmbeddedVulnerability]!",
+	}))
 	utils.Must(builder.AddType("EmbeddedSecret", []string{
 		"name: String!",
 		"path: String!",
+	}))
+	utils.Must(builder.AddType("EmbeddedVulnerability", []string{
+		"cve: String!",
+		"cvss: Float!",
+		"cvssV2: CVSSV2",
+		"link: String!",
+		"summary: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
@@ -427,14 +440,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"username: String!",
 	}))
 	utils.Must(builder.AddType("ImageScan", []string{
-		"components: [ImageScanComponent]!",
+		"components: [EmbeddedImageScanComponent]!",
 		"scanTime: Time",
-	}))
-	utils.Must(builder.AddType("ImageScanComponent", []string{
-		"license: License",
-		"name: String!",
-		"version: String!",
-		"vulns: [Vulnerability]!",
 	}))
 	utils.Must(builder.AddType("Jira", []string{
 		"issueType: String!",
@@ -898,13 +905,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"source: String!",
 		"type: String!",
-	}))
-	utils.Must(builder.AddType("Vulnerability", []string{
-		"cve: String!",
-		"cvss: Float!",
-		"cvssV2: CVSSV2",
-		"link: String!",
-		"summary: String!",
 	}))
 	utils.Must(builder.AddType("Whitelist", []string{
 		"deployment: Whitelist_Deployment",
@@ -3491,6 +3491,49 @@ func (resolver *emailResolver) Username(ctx context.Context) string {
 	return value
 }
 
+type embeddedImageScanComponentResolver struct {
+	root *Resolver
+	data *storage.EmbeddedImageScanComponent
+}
+
+func (resolver *Resolver) wrapEmbeddedImageScanComponent(value *storage.EmbeddedImageScanComponent, ok bool, err error) (*embeddedImageScanComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &embeddedImageScanComponentResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapEmbeddedImageScanComponents(values []*storage.EmbeddedImageScanComponent, err error) ([]*embeddedImageScanComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*embeddedImageScanComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &embeddedImageScanComponentResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *embeddedImageScanComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
+	value := resolver.data.GetLicense()
+	return resolver.root.wrapLicense(value, true, nil)
+}
+
+func (resolver *embeddedImageScanComponentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *embeddedImageScanComponentResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
+}
+
+func (resolver *embeddedImageScanComponentResolver) Vulns(ctx context.Context) ([]*embeddedVulnerabilityResolver, error) {
+	value := resolver.data.GetVulns()
+	return resolver.root.wrapEmbeddedVulnerabilities(value, nil)
+}
+
 type embeddedSecretResolver struct {
 	root *Resolver
 	data *storage.EmbeddedSecret
@@ -3521,6 +3564,54 @@ func (resolver *embeddedSecretResolver) Name(ctx context.Context) string {
 
 func (resolver *embeddedSecretResolver) Path(ctx context.Context) string {
 	value := resolver.data.GetPath()
+	return value
+}
+
+type embeddedVulnerabilityResolver struct {
+	root *Resolver
+	data *storage.EmbeddedVulnerability
+}
+
+func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulnerability, ok bool, err error) (*embeddedVulnerabilityResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &embeddedVulnerabilityResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapEmbeddedVulnerabilities(values []*storage.EmbeddedVulnerability, err error) ([]*embeddedVulnerabilityResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*embeddedVulnerabilityResolver, len(values))
+	for i, v := range values {
+		output[i] = &embeddedVulnerabilityResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *embeddedVulnerabilityResolver) Cve(ctx context.Context) string {
+	value := resolver.data.GetCve()
+	return value
+}
+
+func (resolver *embeddedVulnerabilityResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *embeddedVulnerabilityResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
+	value := resolver.data.GetCvssV2()
+	return resolver.root.wrapCVSSV2(value, true, nil)
+}
+
+func (resolver *embeddedVulnerabilityResolver) Link(ctx context.Context) string {
+	value := resolver.data.GetLink()
+	return value
+}
+
+func (resolver *embeddedVulnerabilityResolver) Summary(ctx context.Context) string {
+	value := resolver.data.GetSummary()
 	return value
 }
 
@@ -4130,57 +4221,14 @@ func (resolver *Resolver) wrapImageScans(values []*storage.ImageScan, err error)
 	return output, nil
 }
 
-func (resolver *imageScanResolver) Components(ctx context.Context) ([]*imageScanComponentResolver, error) {
+func (resolver *imageScanResolver) Components(ctx context.Context) ([]*embeddedImageScanComponentResolver, error) {
 	value := resolver.data.GetComponents()
-	return resolver.root.wrapImageScanComponents(value, nil)
+	return resolver.root.wrapEmbeddedImageScanComponents(value, nil)
 }
 
 func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
-}
-
-type imageScanComponentResolver struct {
-	root *Resolver
-	data *storage.ImageScanComponent
-}
-
-func (resolver *Resolver) wrapImageScanComponent(value *storage.ImageScanComponent, ok bool, err error) (*imageScanComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageScanComponentResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapImageScanComponents(values []*storage.ImageScanComponent, err error) ([]*imageScanComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageScanComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &imageScanComponentResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *imageScanComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
-	value := resolver.data.GetLicense()
-	return resolver.root.wrapLicense(value, true, nil)
-}
-
-func (resolver *imageScanComponentResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *imageScanComponentResolver) Version(ctx context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
-}
-
-func (resolver *imageScanComponentResolver) Vulns(ctx context.Context) ([]*vulnerabilityResolver, error) {
-	value := resolver.data.GetVulns()
-	return resolver.root.wrapVulnerabilities(value, nil)
 }
 
 type jiraResolver struct {
@@ -7598,54 +7646,6 @@ func (resolver *volumePolicyResolver) Source(ctx context.Context) string {
 
 func (resolver *volumePolicyResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
-	return value
-}
-
-type vulnerabilityResolver struct {
-	root *Resolver
-	data *storage.Vulnerability
-}
-
-func (resolver *Resolver) wrapVulnerability(value *storage.Vulnerability, ok bool, err error) (*vulnerabilityResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &vulnerabilityResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapVulnerabilities(values []*storage.Vulnerability, err error) ([]*vulnerabilityResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*vulnerabilityResolver, len(values))
-	for i, v := range values {
-		output[i] = &vulnerabilityResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *vulnerabilityResolver) Cve(ctx context.Context) string {
-	value := resolver.data.GetCve()
-	return value
-}
-
-func (resolver *vulnerabilityResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
-}
-
-func (resolver *vulnerabilityResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
-	value := resolver.data.GetCvssV2()
-	return resolver.root.wrapCVSSV2(value, true, nil)
-}
-
-func (resolver *vulnerabilityResolver) Link(ctx context.Context) string {
-	value := resolver.data.GetLink()
-	return value
-}
-
-func (resolver *vulnerabilityResolver) Summary(ctx context.Context) string {
-	value := resolver.data.GetSummary()
 	return value
 }
 

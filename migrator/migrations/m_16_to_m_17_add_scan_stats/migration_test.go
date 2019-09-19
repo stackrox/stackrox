@@ -57,12 +57,12 @@ func (suite *migrationTestSuite) TestPurgeDebugMetricsMigration() {
 		{
 			Id: "sha1",
 			Scan: &storage.ImageScan{
-				Components: []*storage.ImageScanComponent{
+				Components: []*storage.EmbeddedImageScanComponent{
 					{
-						Vulns: []*storage.Vulnerability{
+						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve: "derp",
-								SetFixedBy: &storage.Vulnerability_FixedBy{
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "v1.2",
 								},
 							},
@@ -77,12 +77,12 @@ func (suite *migrationTestSuite) TestPurgeDebugMetricsMigration() {
 		{
 			Id: "sha2",
 			Scan: &storage.ImageScan{
-				Components: []*storage.ImageScanComponent{
+				Components: []*storage.EmbeddedImageScanComponent{
 					{
-						Vulns: []*storage.Vulnerability{
+						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve: "derp",
-								SetFixedBy: &storage.Vulnerability_FixedBy{
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "v1.2",
 								},
 							},
@@ -100,18 +100,18 @@ func (suite *migrationTestSuite) TestPurgeDebugMetricsMigration() {
 		{
 			Id: "sha3",
 			Scan: &storage.ImageScan{
-				Components: []*storage.ImageScanComponent{
+				Components: []*storage.EmbeddedImageScanComponent{
 					{
-						Vulns: []*storage.Vulnerability{
+						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve: "derp0",
-								SetFixedBy: &storage.Vulnerability_FixedBy{
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "v1.2",
 								},
 							},
 							{
 								Cve: "derp",
-								SetFixedBy: &storage.Vulnerability_FixedBy{
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "v1.2",
 								},
 							},
@@ -129,12 +129,12 @@ func (suite *migrationTestSuite) TestPurgeDebugMetricsMigration() {
 		{
 			Id: "sha1",
 			Scan: &storage.ImageScan{
-				Components: []*storage.ImageScanComponent{
+				Components: []*storage.EmbeddedImageScanComponent{
 					{
-						Vulns: []*storage.Vulnerability{
+						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve: "derp",
-								SetFixedBy: &storage.Vulnerability_FixedBy{
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "v1.2",
 								},
 							},
@@ -158,12 +158,12 @@ func (suite *migrationTestSuite) TestPurgeDebugMetricsMigration() {
 		{
 			Id: "sha2",
 			Scan: &storage.ImageScan{
-				Components: []*storage.ImageScanComponent{
+				Components: []*storage.EmbeddedImageScanComponent{
 					{
-						Vulns: []*storage.Vulnerability{
+						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve: "derp",
-								SetFixedBy: &storage.Vulnerability_FixedBy{
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "v1.2",
 								},
 							},
@@ -190,18 +190,18 @@ func (suite *migrationTestSuite) TestPurgeDebugMetricsMigration() {
 		{
 			Id: "sha3",
 			Scan: &storage.ImageScan{
-				Components: []*storage.ImageScanComponent{
+				Components: []*storage.EmbeddedImageScanComponent{
 					{
-						Vulns: []*storage.Vulnerability{
+						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve: "derp0",
-								SetFixedBy: &storage.Vulnerability_FixedBy{
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "v1.2",
 								},
 							},
 							{
 								Cve: "derp",
-								SetFixedBy: &storage.Vulnerability_FixedBy{
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "v1.2",
 								},
 							},

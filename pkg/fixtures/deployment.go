@@ -27,10 +27,10 @@ func LightweightDeploymentImage() *storage.Image {
 		},
 		Scan: &storage.ImageScan{
 			ScanTime: types.TimestampNow(),
-			Components: []*storage.ImageScanComponent{
+			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name: "name",
-					Vulns: []*storage.Vulnerability{
+					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve:     "cve",
 							Cvss:    5,

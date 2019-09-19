@@ -6,7 +6,7 @@ import (
 )
 
 // GetTestVulns returns test clair vulns and also the expected converted proto vulns
-func GetTestVulns() ([]clairV1.Vulnerability, []*storage.Vulnerability) {
+func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) {
 	quayVulns := []clairV1.Vulnerability{
 		{
 			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-16231",
@@ -27,11 +27,11 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.Vulnerability) {
 			},
 		},
 	}
-	protoVulns := []*storage.Vulnerability{
+	protoVulns := []*storage.EmbeddedVulnerability{
 		{
 			Cve:  "CVE-2017-16231",
 			Link: "https://security-tracker.debian.org/tracker/CVE-2017-16231",
-			SetFixedBy: &storage.Vulnerability_FixedBy{
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 				FixedBy: "fixedby",
 			},
 		},
@@ -40,7 +40,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.Vulnerability) {
 			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-7246",
 			Summary: "Stack-based buffer overflow in the pcre32_copy_substring...",
 			Cvss:    6.8,
-			SetFixedBy: &storage.Vulnerability_FixedBy{
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 				FixedBy: "",
 			},
 			CvssV2: &storage.CVSSV2{
@@ -58,7 +58,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.Vulnerability) {
 }
 
 // GetTestFeatures returns test clair features and also the expected converted proto components
-func GetTestFeatures() ([]clairV1.Feature, []*storage.ImageScanComponent) {
+func GetTestFeatures() ([]clairV1.Feature, []*storage.EmbeddedImageScanComponent) {
 	quayVulns, protoVulns := GetTestVulns()
 	quayFeatures := []clairV1.Feature{
 		{
@@ -71,11 +71,11 @@ func GetTestFeatures() ([]clairV1.Feature, []*storage.ImageScanComponent) {
 			Vulnerabilities: quayVulns,
 		},
 	}
-	protoComponents := []*storage.ImageScanComponent{
+	protoComponents := []*storage.EmbeddedImageScanComponent{
 		{
 			Name:    "nginx-module-geoip",
 			Version: "1.10.3-1~jessie",
-			Vulns:   []*storage.Vulnerability{},
+			Vulns:   []*storage.EmbeddedVulnerability{},
 		},
 		{
 			Name:    "pcre3",

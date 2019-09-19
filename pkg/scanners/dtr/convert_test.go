@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestVulns() ([]*vulnerabilityDetails, []*storage.Vulnerability) {
+func getTestVulns() ([]*vulnerabilityDetails, []*storage.EmbeddedVulnerability) {
 	dockerVulnDetails := []*vulnerabilityDetails{
 		{
 			Vulnerability: &vulnerability{
@@ -27,7 +27,7 @@ func getTestVulns() ([]*vulnerabilityDetails, []*storage.Vulnerability) {
 			},
 		},
 	}
-	v1Vulns := []*storage.Vulnerability{
+	v1Vulns := []*storage.EmbeddedVulnerability{
 		{
 			Cve:     "CVE-2016-0682",
 			Cvss:    6.9,
@@ -59,7 +59,7 @@ func getTestLicense() (*license, *storage.License) {
 	return dockerLicense, v1License
 }
 
-func getTestComponents() ([]*component, []*storage.ImageScanComponent) {
+func getTestComponents() ([]*component, []*storage.EmbeddedImageScanComponent) {
 	dockerLicense, v1License := getTestLicense()
 	dockerVulns, v1Vulns := getTestVulns()
 
@@ -71,7 +71,7 @@ func getTestComponents() ([]*component, []*storage.ImageScanComponent) {
 			Vulnerabilities: dockerVulns,
 		},
 	}
-	v1Components := []*storage.ImageScanComponent{
+	v1Components := []*storage.EmbeddedImageScanComponent{
 		{
 			Name:    "berkeleydb",
 			Version: "5.3.28-9",
@@ -82,7 +82,7 @@ func getTestComponents() ([]*component, []*storage.ImageScanComponent) {
 	return dockerComponents, v1Components
 }
 
-func getTestLayers() ([]*detailedSummary, []*storage.ImageScanComponent) {
+func getTestLayers() ([]*detailedSummary, []*storage.EmbeddedImageScanComponent) {
 	dockerComponents, v1Components := getTestComponents()
 
 	dockerLayers := []*detailedSummary{

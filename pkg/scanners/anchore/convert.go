@@ -36,8 +36,8 @@ func convertImageScan(i *anchoreClient.AnchoreImage, packages []anchoreClient.Co
 	}
 }
 
-func convertPackageToComponent(pkg anchoreClient.ContentPackageResponseContent) *storage.ImageScanComponent {
-	return &storage.ImageScanComponent{
+func convertPackageToComponent(pkg anchoreClient.ContentPackageResponseContent) *storage.EmbeddedImageScanComponent {
+	return &storage.EmbeddedImageScanComponent{
 		Name:    pkg.Package_,
 		Version: pkg.Version,
 		License: &storage.License{
@@ -46,16 +46,16 @@ func convertPackageToComponent(pkg anchoreClient.ContentPackageResponseContent) 
 	}
 }
 
-func convertVulnToProtoVuln(vuln anchoreClient.Vulnerability) *storage.Vulnerability {
+func convertVulnToProtoVuln(vuln anchoreClient.Vulnerability) *storage.EmbeddedVulnerability {
 	if strings.EqualFold(vuln.Fix, "none") {
 		vuln.Fix = ""
 	}
-	return &storage.Vulnerability{
+	return &storage.EmbeddedVulnerability{
 		Cve:     vuln.Vuln,
 		Cvss:    getSeverity(vuln.Severity),
 		Summary: "Follow the link for CVE summary",
 		Link:    vuln.Url,
-		SetFixedBy: &storage.Vulnerability_FixedBy{
+		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: vuln.Fix,
 		},
 	}
@@ -65,8 +65,8 @@ type componentKey struct {
 	pkg, version string
 }
 
-func stitchPackagesAndVulns(packages []anchoreClient.ContentPackageResponseContent, vulns []anchoreClient.Vulnerability) []*storage.ImageScanComponent {
-	componentMap := make(map[componentKey]*storage.ImageScanComponent)
+func stitchPackagesAndVulns(packages []anchoreClient.ContentPackageResponseContent, vulns []anchoreClient.Vulnerability) []*storage.EmbeddedImageScanComponent {
+	componentMap := make(map[componentKey]*storage.EmbeddedImageScanComponent)
 	for _, p := range packages {
 		componentMap[componentKey{pkg: p.Package_, version: p.Version}] = convertPackageToComponent(p)
 	}
@@ -75,7 +75,7 @@ func stitchPackagesAndVulns(packages []anchoreClient.ContentPackageResponseConte
 		key := componentKey{pkg: v.PackageName, version: v.PackageVersion}
 		_, ok := componentMap[key]
 		if !ok {
-			componentMap[key] = &storage.ImageScanComponent{
+			componentMap[key] = &storage.EmbeddedImageScanComponent{
 				Name:    v.PackageName,
 				Version: v.PackageVersion,
 			}
@@ -83,7 +83,7 @@ func stitchPackagesAndVulns(packages []anchoreClient.ContentPackageResponseConte
 		component := componentMap[key]
 		component.Vulns = append(component.Vulns, convertVulnToProtoVuln(v))
 	}
-	components := make([]*storage.ImageScanComponent, 0, len(componentMap))
+	components := make([]*storage.EmbeddedImageScanComponent, 0, len(componentMap))
 	for _, v := range componentMap {
 		components = append(components, v)
 	}

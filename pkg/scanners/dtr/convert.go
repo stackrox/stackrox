@@ -9,11 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
-func convertVulns(dockerVulnDetails []*vulnerabilityDetails) []*storage.Vulnerability {
-	vulns := make([]*storage.Vulnerability, len(dockerVulnDetails))
+func convertVulns(dockerVulnDetails []*vulnerabilityDetails) []*storage.EmbeddedVulnerability {
+	vulns := make([]*storage.EmbeddedVulnerability, len(dockerVulnDetails))
 	for i, vulnDetails := range dockerVulnDetails {
 		vuln := vulnDetails.Vulnerability
-		vulns[i] = &storage.Vulnerability{
+		vulns[i] = &storage.EmbeddedVulnerability{
 			Cve:     vuln.CVE,
 			Cvss:    vuln.CVSS,
 			Summary: stringutils.Truncate(vuln.Summary, 64, stringutils.WordOriented{}),
@@ -34,18 +34,18 @@ func convertLicense(license *license) *storage.License {
 	}
 }
 
-func convertComponents(layerIdx *int32, dockerComponents []*component) []*storage.ImageScanComponent {
-	components := make([]*storage.ImageScanComponent, len(dockerComponents))
+func convertComponents(layerIdx *int32, dockerComponents []*component) []*storage.EmbeddedImageScanComponent {
+	components := make([]*storage.EmbeddedImageScanComponent, len(dockerComponents))
 	for i, component := range dockerComponents {
 		convertedVulns := convertVulns(component.Vulnerabilities)
-		components[i] = &storage.ImageScanComponent{
+		components[i] = &storage.EmbeddedImageScanComponent{
 			Name:    component.Component,
 			Version: component.Version,
 			License: convertLicense(component.License),
 			Vulns:   convertedVulns,
 		}
 		if layerIdx != nil {
-			components[i].HasLayerIndex = &storage.ImageScanComponent_LayerIndex{
+			components[i].HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
 				LayerIndex: *layerIdx,
 			}
 		}
@@ -53,14 +53,14 @@ func convertComponents(layerIdx *int32, dockerComponents []*component) []*storag
 	return components
 }
 
-func convertLayers(image *storage.Image, layerDetails []*detailedSummary) []*storage.ImageScanComponent {
+func convertLayers(image *storage.Image, layerDetails []*detailedSummary) []*storage.EmbeddedImageScanComponent {
 	var nonEmptyLayers []int32
 	for i, l := range image.GetMetadata().GetV1().GetLayers() {
 		if !l.GetEmpty() {
 			nonEmptyLayers = append(nonEmptyLayers, int32(i))
 		}
 	}
-	components := make([]*storage.ImageScanComponent, 0, len(layerDetails))
+	components := make([]*storage.EmbeddedImageScanComponent, 0, len(layerDetails))
 	for i, layerDetail := range layerDetails {
 		var layerIdx *int32
 		if i >= len(nonEmptyLayers) {
@@ -74,7 +74,7 @@ func convertLayers(image *storage.Image, layerDetails []*detailedSummary) []*sto
 	return components
 }
 
-func compareComponent(c1, c2 *storage.ImageScanComponent) int {
+func compareComponent(c1, c2 *storage.EmbeddedImageScanComponent) int {
 	if c1.GetName() < c2.GetName() {
 		return -1
 	} else if c1.GetName() > c2.GetName() {

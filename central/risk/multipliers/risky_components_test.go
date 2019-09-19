@@ -15,31 +15,31 @@ func TestRiskyComponentCountScore(t *testing.T) {
 	// Add some risky components to the deployment
 	images := getMockImages()
 	components := images[0].Scan.Components
-	components = append(components, &storage.ImageScanComponent{
+	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "apk",
 		Version: "1.0",
 	})
-	components = append(components, &storage.ImageScanComponent{
+	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "apk",
 		Version: "1.2",
 	})
-	components = append(components, &storage.ImageScanComponent{
+	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "tcsh",
 		Version: "1.0",
 	})
-	components = append(components, &storage.ImageScanComponent{
+	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "curl",
 		Version: "1.0",
 	})
-	components = append(components, &storage.ImageScanComponent{
+	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "wget",
 		Version: "1.0",
 	})
-	components = append(components, &storage.ImageScanComponent{
+	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "telnet",
 		Version: "1.0",
 	})
-	components = append(components, &storage.ImageScanComponent{
+	components = append(components, &storage.EmbeddedImageScanComponent{
 		Name:    "yum",
 		Version: "1.0",
 	})

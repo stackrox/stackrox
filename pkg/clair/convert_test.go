@@ -22,14 +22,14 @@ func TestConvertFeatures(t *testing.T) {
 	assert.Equal(t, protoComponents, ConvertFeatures(nil, clairFeatures))
 }
 
-func componentWithLayerIndex(name string, idx int32) *storage.ImageScanComponent {
-	c := &storage.ImageScanComponent{
+func componentWithLayerIndex(name string, idx int32) *storage.EmbeddedImageScanComponent {
+	c := &storage.EmbeddedImageScanComponent{
 		Name: name,
 
-		Vulns: []*storage.Vulnerability{},
+		Vulns: []*storage.EmbeddedVulnerability{},
 	}
 	if idx != -1 {
-		c.HasLayerIndex = &storage.ImageScanComponent_LayerIndex{
+		c.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
 			LayerIndex: idx,
 		}
 	}
@@ -41,7 +41,7 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 		name               string
 		metadata           *storage.ImageMetadata
 		features           []clairV1.Feature
-		expectedComponents []*storage.ImageScanComponent
+		expectedComponents []*storage.EmbeddedImageScanComponent
 	}{
 		{
 			name: "Nil metadata",
@@ -68,7 +68,7 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 					AddedBy: "B",
 				},
 			},
-			expectedComponents: []*storage.ImageScanComponent{
+			expectedComponents: []*storage.EmbeddedImageScanComponent{
 				componentWithLayerIndex("a-name", 0),
 				componentWithLayerIndex("b-name", 1),
 			},
@@ -87,7 +87,7 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 					AddedBy: "B",
 				},
 			},
-			expectedComponents: []*storage.ImageScanComponent{
+			expectedComponents: []*storage.EmbeddedImageScanComponent{
 				componentWithLayerIndex("b-name", 1),
 			},
 		},
@@ -106,7 +106,7 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 					AddedBy: "B",
 				},
 			},
-			expectedComponents: []*storage.ImageScanComponent{
+			expectedComponents: []*storage.EmbeddedImageScanComponent{
 				componentWithLayerIndex("b-name", 1),
 			},
 		},
@@ -125,7 +125,7 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 					AddedBy: "B",
 				},
 			},
-			expectedComponents: []*storage.ImageScanComponent{
+			expectedComponents: []*storage.EmbeddedImageScanComponent{
 				componentWithLayerIndex("b-name", 2),
 			},
 		},

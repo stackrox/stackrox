@@ -187,7 +187,7 @@ func getPackageAndVersion(installation *_package.Installation) packageAndVersion
 	return pv
 }
 
-func (c *googleScanner) processComponent(pv packageAndVersion, vulns []*grafeas.Occurrence, convertChan chan *storage.ImageScanComponent) {
+func (c *googleScanner) processComponent(pv packageAndVersion, vulns []*grafeas.Occurrence, convertChan chan *storage.EmbeddedImageScanComponent) {
 	component := c.convertComponentFromPackageAndVersion(pv)
 	component.Vulns = c.convertVulnsFromOccurrences(vulns)
 	convertChan <- component
@@ -231,8 +231,8 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 	}
 
 	// Parallelize this as it makes a bunch of calls to the API
-	convertChan := make(chan *storage.ImageScanComponent)
-	components := make([]*storage.ImageScanComponent, 0, len(componentsToVulns))
+	convertChan := make(chan *storage.EmbeddedImageScanComponent)
+	components := make([]*storage.EmbeddedImageScanComponent, 0, len(componentsToVulns))
 	for pv, occurrences := range componentsToVulns {
 		go c.processComponent(pv, occurrences, convertChan)
 	}

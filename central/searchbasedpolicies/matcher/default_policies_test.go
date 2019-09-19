@@ -145,7 +145,7 @@ func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *storage
 	suite.NoError(suite.imageIndexer.AddImages(images))
 }
 
-func imageWithComponents(components []*storage.ImageScanComponent) *storage.Image {
+func imageWithComponents(components []*storage.EmbeddedImageScanComponent) *storage.Image {
 	return &storage.Image{
 		Id:   uuid.NewV4().String(),
 		Name: &storage.ImageName{FullName: "ASFASF"},
@@ -297,14 +297,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	oldImageDep := deploymentWithImage("oldimagedep", oldCreatedImage)
 	suite.mustIndexDepAndImages(oldImageDep, oldCreatedImage)
 
-	apkImage := imageWithComponents([]*storage.ImageScanComponent{
+	apkImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
 		{Name: "apk", Version: "1.2"},
 		{Name: "asfa", Version: "1.5"},
 	})
 	apkDep := deploymentWithImageAnyID(apkImage)
 	suite.mustIndexDepAndImages(apkDep, apkImage)
 
-	curlImage := imageWithComponents([]*storage.ImageScanComponent{
+	curlImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
 		{Name: "curl", Version: "1.3"},
 		{Name: "curlwithextra", Version: "0.9"},
 	})
@@ -313,7 +313,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	componentDeps := make(map[string]*storage.Deployment)
 	for _, component := range []string{"apt", "dnf", "wget"} {
-		img := imageWithComponents([]*storage.ImageScanComponent{
+		img := imageWithComponents([]*storage.EmbeddedImageScanComponent{
 			{Name: component},
 		})
 		dep := deploymentWithImageAnyID(img)
@@ -333,16 +333,16 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.mustIndexDepAndImages(heartbleedDep, &storage.Image{
 		Id: "HEARTBLEEDDEPSHA",
 		Scan: &storage.ImageScan{
-			Components: []*storage.ImageScanComponent{
-				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.Vulnerability{
-					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.Vulnerability_FixedBy{FixedBy: "v1.2"}},
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"}},
 				}},
 			},
 		},
 	})
 
-	shellshockImage := imageWithComponents([]*storage.ImageScanComponent{
-		{Name: "shellshock", Version: "1.2", Vulns: []*storage.Vulnerability{
+	shellshockImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "shellshock", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
 			{Cve: "CVE-2014-6271", Link: "https://shellshock", Cvss: 6},
 			{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"},
 		}},
@@ -350,19 +350,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	shellshockDep := deploymentWithImageAnyID(shellshockImage)
 	suite.mustIndexDepAndImages(shellshockDep, shellshockImage)
 
-	strutsImage := imageWithComponents([]*storage.ImageScanComponent{
-		{Name: "struts", Version: "1.2", Vulns: []*storage.Vulnerability{
-			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8, SetFixedBy: &storage.Vulnerability_FixedBy{FixedBy: "v1.3"}},
+	strutsImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
 		}},
-		{Name: "OTHER", Version: "1.3", Vulns: []*storage.Vulnerability{
+		{Name: "OTHER", Version: "1.3", Vulns: []*storage.EmbeddedVulnerability{
 			{Cve: "CVE-1223-451", Link: "https://cvefake"},
 		}},
 	})
 	strutsDep := deploymentWithImageAnyID(strutsImage)
 	suite.mustIndexDepAndImages(strutsDep, strutsImage)
 
-	depWithNonSeriousVulnsImage := imageWithComponents([]*storage.ImageScanComponent{
-		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*storage.Vulnerability{
+	depWithNonSeriousVulnsImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
 			{Cve: "CVE-1234-5678", Link: "https://abcdefgh"},
 			{Cve: "CVE-5678-1234", Link: "https://lmnopqrst"},
 		}},

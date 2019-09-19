@@ -70,6 +70,6 @@ func (c *componentCountMultiplier) Score(_ context.Context, deployment *storage.
 	}
 }
 
-func componentKey(comp *storage.ImageScanComponent) string {
+func componentKey(comp *storage.EmbeddedImageScanComponent) string {
 	return fmt.Sprintf("%s:%s", comp.GetName(), comp.GetVersion())
 }

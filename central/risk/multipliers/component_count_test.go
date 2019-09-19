@@ -17,7 +17,7 @@ func TestComponentCountScore(t *testing.T) {
 	images := getMockImages()
 	components := images[0].Scan.Components
 	for i := 0; i < 14; i++ {
-		components = append(components, &storage.ImageScanComponent{
+		components = append(components, &storage.EmbeddedImageScanComponent{
 			Name:    string(i),
 			Version: "1.0",
 		})

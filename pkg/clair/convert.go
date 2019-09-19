@@ -25,15 +25,15 @@ type cvss struct {
 }
 
 // ConvertVulnerability converts a clair vulnerability to a proto vulnerability
-func ConvertVulnerability(v clairV1.Vulnerability) *storage.Vulnerability {
+func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerability {
 	if v.Link == "" {
 		v.Link = scans.GetVulnLink(v.Name)
 	}
-	vul := &storage.Vulnerability{
+	vul := &storage.EmbeddedVulnerability{
 		Cve:     v.Name,
 		Summary: stringutils.Truncate(v.Description, 64, stringutils.WordOriented{}),
 		Link:    v.Link,
-		SetFixedBy: &storage.Vulnerability_FixedBy{
+		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: v.FixedBy,
 		},
 	}
@@ -54,12 +54,12 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.Vulnerability {
 	return vul
 }
 
-func convertFeature(feature clairV1.Feature) *storage.ImageScanComponent {
-	component := &storage.ImageScanComponent{
+func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent {
+	component := &storage.EmbeddedImageScanComponent{
 		Name:    feature.Name,
 		Version: feature.Version,
 	}
-	component.Vulns = make([]*storage.Vulnerability, 0, len(feature.Vulnerabilities))
+	component.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(feature.Vulnerabilities))
 	for _, v := range feature.Vulnerabilities {
 		component.Vulns = append(component.GetVulns(), ConvertVulnerability(v))
 	}
@@ -96,14 +96,14 @@ func buildSHAToIndexMap(image *storage.Image) map[string]int32 {
 }
 
 // ConvertFeatures converts clair features to proto components
-func ConvertFeatures(image *storage.Image, features []clairV1.Feature) (components []*storage.ImageScanComponent) {
+func ConvertFeatures(image *storage.Image, features []clairV1.Feature) (components []*storage.EmbeddedImageScanComponent) {
 	layerSHAToIndex := buildSHAToIndexMap(image)
 
-	components = make([]*storage.ImageScanComponent, 0, len(features))
+	components = make([]*storage.EmbeddedImageScanComponent, 0, len(features))
 	for _, feature := range features {
 		convertedComponent := convertFeature(feature)
 		if val, ok := layerSHAToIndex[feature.AddedBy]; ok {
-			convertedComponent.HasLayerIndex = &storage.ImageScanComponent_LayerIndex{
+			convertedComponent.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
 				LayerIndex: val,
 			}
 		}

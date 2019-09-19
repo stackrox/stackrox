@@ -95,12 +95,12 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithScanStats() {
 	newImage := &storage.Image{
 		Id: "sha1",
 		Scan: &storage.ImageScan{
-			Components: []*storage.ImageScanComponent{
+			Components: []*storage.EmbeddedImageScanComponent{
 				{
-					Vulns: []*storage.Vulnerability{
+					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve: "derp",
-							SetFixedBy: &storage.Vulnerability_FixedBy{
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "v1.2",
 							},
 						},
@@ -115,12 +115,12 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithScanStats() {
 	upsertedImage := &storage.Image{
 		Id: "sha1",
 		Scan: &storage.ImageScan{
-			Components: []*storage.ImageScanComponent{
+			Components: []*storage.EmbeddedImageScanComponent{
 				{
-					Vulns: []*storage.Vulnerability{
+					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve: "derp",
-							SetFixedBy: &storage.Vulnerability_FixedBy{
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "v1.2",
 							},
 						},

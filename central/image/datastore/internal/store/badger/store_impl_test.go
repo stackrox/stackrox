@@ -131,17 +131,17 @@ func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 					},
 				},
 				Scan: &storage.ImageScan{
-					Components: []*storage.ImageScanComponent{
+					Components: []*storage.EmbeddedImageScanComponent{
 						{
-							Vulns: []*storage.Vulnerability{
+							Vulns: []*storage.EmbeddedVulnerability{
 								{},
 							},
 						},
 						{
-							Vulns: []*storage.Vulnerability{
+							Vulns: []*storage.EmbeddedVulnerability{
 								{},
 								{
-									SetFixedBy: &storage.Vulnerability_FixedBy{
+									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 										FixedBy: "hi",
 									},
 								},

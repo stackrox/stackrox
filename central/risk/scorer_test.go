@@ -123,9 +123,9 @@ func getMockImage() *storage.Image {
 			Tag:      "1.10",
 		},
 		Scan: &storage.ImageScan{
-			Components: []*storage.ImageScanComponent{
+			Components: []*storage.EmbeddedImageScanComponent{
 				{
-					Vulns: []*storage.Vulnerability{
+					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cvss: 5,
 						},

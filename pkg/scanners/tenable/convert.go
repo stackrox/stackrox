@@ -10,15 +10,15 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
-func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []pkg) (components []*storage.ImageScanComponent) {
-	packagesToVulnerabilities := make(map[pkg][]*storage.Vulnerability)
+func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []pkg) (components []*storage.EmbeddedImageScanComponent) {
+	packagesToVulnerabilities := make(map[pkg][]*storage.EmbeddedVulnerability)
 	for _, finding := range findings {
 		// If there's an error then we are going to take the default value of 0.0 anyways
 		cvssScore, err := strconv.ParseFloat(finding.NVDFinding.CVSSScore, 32)
 		if err != nil {
 			log.Warn(err)
 		}
-		vulnerability := &storage.Vulnerability{
+		vulnerability := &storage.EmbeddedVulnerability{
 			Cvss:    float32(cvssScore),
 			Cve:     finding.NVDFinding.CVE,
 			Summary: stringutils.Truncate(finding.NVDFinding.Description, 64, stringutils.WordOriented{}),
@@ -35,7 +35,7 @@ func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []p
 		}
 	}
 	for p, vulns := range packagesToVulnerabilities {
-		components = append(components, &storage.ImageScanComponent{
+		components = append(components, &storage.EmbeddedImageScanComponent{
 			Name:    p.Name,
 			Version: p.Version,
 			Vulns:   vulns,

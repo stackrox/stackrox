@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getFindingsAndPackages() ([]*finding, []pkg, []*storage.ImageScanComponent) {
+func getFindingsAndPackages() ([]*finding, []pkg, []*storage.EmbeddedImageScanComponent) {
 	findings := []*finding{
 		{
 			NVDFinding: nvdFinding{
@@ -97,11 +97,11 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*storage.ImageScanComponent)
 		},
 	}
 
-	components := []*storage.ImageScanComponent{
+	components := []*storage.EmbeddedImageScanComponent{
 		{
 			Name:    "libssl1.0.0",
 			Version: "1.0.1t-1+deb8u6",
-			Vulns: []*storage.Vulnerability{
+			Vulns: []*storage.EmbeddedVulnerability{
 				{
 					Cve:     "CVE-2016-2109",
 					Cvss:    10.0,
@@ -121,7 +121,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*storage.ImageScanComponent)
 		{
 			Name:    "openssl",
 			Version: "1.0.1t-1+deb8u6",
-			Vulns: []*storage.Vulnerability{
+			Vulns: []*storage.EmbeddedVulnerability{
 				{
 					Cve:     "CVE-2016-2109",
 					Cvss:    10.0,
@@ -141,7 +141,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*storage.ImageScanComponent)
 		{
 			Name:    "libtiff5",
 			Version: "4.0.3-12.3+deb8u2",
-			Vulns: []*storage.Vulnerability{
+			Vulns: []*storage.EmbeddedVulnerability{
 				{
 					Cve:     "CVE-2017-9936",
 					Cvss:    5.0,
@@ -166,7 +166,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*storage.ImageScanComponent)
 	return findings, packages, components
 }
 
-func sortComponents(c []*storage.ImageScanComponent) {
+func sortComponents(c []*storage.EmbeddedImageScanComponent) {
 	sort.SliceStable(c, func(i, j int) bool { return c[i].Name < c[j].Name })
 }
 

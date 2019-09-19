@@ -39,7 +39,7 @@ func TestImageStitch(t *testing.T) {
 					V1: &storage.V1Metadata{
 						Layers: []*storage.ImageLayer{
 							{
-								DEPRECATEDComponents: []*storage.ImageScanComponent{
+								DEPRECATEDComponents: []*storage.EmbeddedImageScanComponent{
 									{
 										Name: "name1",
 									},
@@ -49,7 +49,7 @@ func TestImageStitch(t *testing.T) {
 								},
 							},
 							{
-								DEPRECATEDComponents: []*storage.ImageScanComponent{
+								DEPRECATEDComponents: []*storage.EmbeddedImageScanComponent{
 									{
 										Name: "name3",
 									},
@@ -70,22 +70,22 @@ func TestImageStitch(t *testing.T) {
 					},
 				},
 				Scan: &storage.ImageScan{
-					Components: []*storage.ImageScanComponent{
+					Components: []*storage.EmbeddedImageScanComponent{
 						{
 							Name: "name1",
-							HasLayerIndex: &storage.ImageScanComponent_LayerIndex{
+							HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 								LayerIndex: 0,
 							},
 						},
 						{
 							Name: "name2",
-							HasLayerIndex: &storage.ImageScanComponent_LayerIndex{
+							HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 								LayerIndex: 0,
 							},
 						},
 						{
 							Name: "name3",
-							HasLayerIndex: &storage.ImageScanComponent_LayerIndex{
+							HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 								LayerIndex: 1,
 							},
 						},

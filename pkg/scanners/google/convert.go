@@ -13,22 +13,22 @@ const (
 	noteNamePrefix = "projects/goog-vulnz/notes/"
 )
 
-func (c *googleScanner) convertComponentFromPackageAndVersion(pv packageAndVersion) *storage.ImageScanComponent {
-	component := &storage.ImageScanComponent{
+func (c *googleScanner) convertComponentFromPackageAndVersion(pv packageAndVersion) *storage.EmbeddedImageScanComponent {
+	component := &storage.EmbeddedImageScanComponent{
 		Name:    pv.name,
 		Version: pv.version,
 	}
 	return component
 }
 
-func (c *googleScanner) processOccurrences(o *grafeas.Occurrence, convertChan chan *storage.Vulnerability) {
+func (c *googleScanner) processOccurrences(o *grafeas.Occurrence, convertChan chan *storage.EmbeddedVulnerability) {
 	convertChan <- c.convertVulnsFromOccurrence(o)
 }
 
-func (c *googleScanner) convertVulnsFromOccurrences(occurrences []*grafeas.Occurrence) []*storage.Vulnerability {
+func (c *googleScanner) convertVulnsFromOccurrences(occurrences []*grafeas.Occurrence) []*storage.EmbeddedVulnerability {
 	// Parallelize this as it makes a bunch of calls to the API
-	convertChan := make(chan *storage.Vulnerability)
-	vulns := make([]*storage.Vulnerability, 0, len(occurrences))
+	convertChan := make(chan *storage.EmbeddedVulnerability)
+	vulns := make([]*storage.EmbeddedVulnerability, 0, len(occurrences))
 	for _, o := range occurrences {
 		go c.processOccurrences(o, convertChan)
 	}
@@ -59,7 +59,7 @@ func getCVEName(occ *grafeas.Occurrence) string {
 	return strings.TrimPrefix(occ.GetNoteName(), noteNamePrefix)
 }
 
-func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrence) *storage.Vulnerability {
+func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrence) *storage.EmbeddedVulnerability {
 	vulnerability := occurrence.GetVulnerability()
 
 	packageIssues := vulnerability.GetPackageIssue()
@@ -78,12 +78,12 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 		return nil
 	}
 
-	vuln := &storage.Vulnerability{
+	vuln := &storage.EmbeddedVulnerability{
 		Cve:     cveName,
 		Link:    link,
 		Cvss:    vulnerability.GetCvssScore(),
 		Summary: stringutils.Truncate(c.getSummary(occurrence), 64, stringutils.WordOriented{}),
-		SetFixedBy: &storage.Vulnerability_FixedBy{
+		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
 		},
 	}

@@ -28,10 +28,10 @@ func stitchImageComponents(image *storage.Image) bool {
 		return false
 	}
 
-	var components []*storage.ImageScanComponent
+	var components []*storage.EmbeddedImageScanComponent
 	for i, l := range image.GetMetadata().GetV1().GetLayers() {
 		for _, c := range l.DEPRECATEDComponents {
-			c.HasLayerIndex = &storage.ImageScanComponent_LayerIndex{
+			c.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
 				LayerIndex: int32(i),
 			}
 			components = append(components, c)

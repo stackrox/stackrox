@@ -28,21 +28,21 @@ message Image {
 
     google.protobuf.Timestamp last_updated = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
 
-    bool not_pullable                       = 10;
+    bool not_pullable = 10;
 
     reserved 6;  // was map<string,string> clusterns_scopes
 }
 
 message ImageScan {
-    google.protobuf.Timestamp   scan_time  = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
-    repeated ImageScanComponent components = 2;
+    google.protobuf.Timestamp           scan_time  = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
+    repeated EmbeddedImageScanComponent components = 2;
 }
 
-message ImageScanComponent {
-    string name                  = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
-    string version               = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
-    License license              = 3;
-    repeated Vulnerability vulns = 4;
+message EmbeddedImageScanComponent {
+    string                         name    = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
+    string                         version = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
+    License                        license = 3;
+    repeated EmbeddedVulnerability vulns   = 4;
     oneof has_layer_index {
         int32 layer_index        = 5;
     }
@@ -54,7 +54,7 @@ message License {
     string url  = 3;
 }
 
-message Vulnerability {
+message EmbeddedVulnerability {
     string cve          = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
     float  cvss         = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     string summary      = 3;
@@ -127,7 +127,7 @@ message ImageLayer {
     string value                           = 2 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Value,store\""];
     google.protobuf.Timestamp created      = 3;
     string author                          = 4;
-    repeated ImageScanComponent DEPRECATED_components = 5; // replaced by layer index reference in Scan
+    repeated EmbeddedImageScanComponent DEPRECATED_components = 5; // replaced by layer index reference in Scan
     bool empty                             = 6;
 }
 

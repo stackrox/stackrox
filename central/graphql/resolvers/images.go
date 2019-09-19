@@ -20,7 +20,7 @@ func init() {
 		schema.AddQuery("image(sha:ID!): Image"),
 		schema.AddExtraResolver("Image", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Image", "deploymentCount: Int!"),
-		schema.AddExtraResolver("ImageScanComponent", "layerIndex: Int"),
+		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
 	)
 }
 
@@ -106,8 +106,8 @@ func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Imag
 	return alert
 }
 
-func (resolver *imageScanComponentResolver) LayerIndex() *int32 {
-	w, ok := resolver.data.GetHasLayerIndex().(*storage.ImageScanComponent_LayerIndex)
+func (resolver *embeddedImageScanComponentResolver) LayerIndex() *int32 {
+	w, ok := resolver.data.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
 	if !ok {
 		return nil
 	}
