@@ -45,8 +45,11 @@ func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployme
 		if imgToProcess.GetId() != "" && imgToProcess.GetNotPullable() {
 			continue
 		}
-		enrichmentResult := e.imageEnricher.EnrichImage(ctx, imgToProcess)
-		if enrichmentResult.ImageUpdated && imgToProcess.GetId() != "" {
+		enrichmentResult, err := e.imageEnricher.EnrichImage(ctx, imgToProcess)
+		if err != nil {
+			log.Error(err)
+		}
+		if enrichmentResult.ImageUpdated {
 			updatedIndices = append(updatedIndices, i)
 		}
 		if enrichmentResult.ScanResult == enricher.ScanTriggered {

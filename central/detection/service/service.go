@@ -8,6 +8,7 @@ import (
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -23,10 +24,11 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnricher, deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, detector deploytime.Detector, policySet detection.PolicySet) Service {
+func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnricher, imageDatastore imageDatastore.DataStore, deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, detector deploytime.Detector, policySet detection.PolicySet) Service {
 	return &serviceImpl{
 		clusters:           clusters,
 		imageEnricher:      imageEnricher,
+		imageDatastore:     imageDatastore,
 		deploymentEnricher: deploymentEnricher,
 		buildTimeDetector:  buildTimeDetector,
 		detector:           detector,

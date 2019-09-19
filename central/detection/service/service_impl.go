@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -55,6 +57,7 @@ var (
 type serviceImpl struct {
 	policySet          detection.PolicySet
 	imageEnricher      enricher.ImageEnricher
+	imageDatastore     imageDatastore.DataStore
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
@@ -96,7 +99,18 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 
 	img := types.ToImage(req.GetImage())
-	s.imageEnricher.EnrichImage(enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}, img)
+	enrichResult, err := s.imageEnricher.EnrichImage(enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}, img)
+	if err != nil {
+		return nil, err
+	}
+	if enrichResult.ImageUpdated {
+		img.Id = stringutils.FirstNonEmpty(img.GetId(), img.GetMetadata().GetV2().GetDigest(), img.GetMetadata().GetV1().GetDigest())
+		if img.GetId() != "" {
+			if err := s.imageDatastore.UpsertImage(ctx, img); err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	alerts, err := s.buildTimeDetector.Detect(img)
 	if err != nil {
@@ -107,14 +121,26 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}, nil
 }
 
-func (s *serviceImpl) enrichAndDetect(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
-	images, _, _, err := s.deploymentEnricher.EnrichDeployment(ctx, deployment)
+// getImageID looks for any possible IDs from the image including from the fetched metadata
+func getImageID(image *storage.Image) string {
+	return stringutils.FirstNonEmpty(image.GetId(), image.GetMetadata().GetV2().GetDigest(), image.GetMetadata().GetV1().GetDigest())
+}
+
+func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
+	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(enrichmentContext, deployment)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	for _, idx := range updatedIndices {
+		img := images[idx]
+		img.Id = getImageID(img)
+		if err := s.imageDatastore.UpsertImage(ctx, images[idx]); err != nil {
+			return nil, err
+		}
+	}
 
 	detectionCtx := deploytime.DetectionContext{
-		EnforcementOnly: ctx.EnforcementOnly,
+		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
 	alerts, err := s.detector.Detect(detectionCtx, deployment, images)
@@ -128,7 +154,7 @@ func (s *serviceImpl) enrichAndDetect(ctx enricher.EnrichmentContext, deployment
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(ctx enricher.EnrichmentContext, obj k8sRuntime.Object) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.EnrichmentContext, obj k8sRuntime.Object) (*apiV1.DeployDetectionResponse_Run, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
@@ -137,7 +163,7 @@ func (s *serviceImpl) runDeployTimeDetect(ctx enricher.EnrichmentContext, obj k8
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Could not convert to deployment from resource: %v", err)
 	}
-	return s.enrichAndDetect(ctx, deployment)
+	return s.enrichAndDetect(ctx, eCtx, deployment)
 }
 
 func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
@@ -198,9 +224,10 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		NoExternalMetadata: req.GetNoExternalMetadata(),
 		EnforcementOnly:    req.GetEnforcementOnly(),
 	}
+
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
-		run, err := s.runDeployTimeDetect(eCtx, r)
+		run, err := s.runDeployTimeDetect(ctx, eCtx, r)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Unable to convert object: %v", err)
 		}
@@ -274,7 +301,7 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 		EnforcementOnly:    req.GetEnforcementOnly(),
 	}
 
-	run, err := s.enrichAndDetect(enrichmentCtx, req.GetDeployment())
+	run, err := s.enrichAndDetect(ctx, enrichmentCtx, req.GetDeployment())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

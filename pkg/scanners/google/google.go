@@ -254,3 +254,7 @@ func (c *googleScanner) Match(image *storage.Image) bool {
 func (c *googleScanner) Type() string {
 	return typeString
 }
+
+func (c *googleScanner) Name() string {
+	return c.protoIntegration.GetName()
+}

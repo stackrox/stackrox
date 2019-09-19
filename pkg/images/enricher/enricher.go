@@ -35,7 +35,10 @@ type EnrichmentContext struct {
 type EnrichmentResult struct {
 	// ImageUpdated returns whether or not the image was updated, either with metadata or with a scan.
 	ImageUpdated bool
-	ScanResult   ScanResult
+	ImageError   error
+
+	ScanResult ScanResult
+	ScanError  error
 }
 
 // A ScanResult denotes the result of an attempt to scan an image.
@@ -54,7 +57,7 @@ const (
 
 // ImageEnricher provides functions for enriching images with integrations.
 type ImageEnricher interface {
-	EnrichImage(ctx EnrichmentContext, image *storage.Image) EnrichmentResult
+	EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
 }
 
 // New returns a new ImageEnricher instance for the given subsystem.

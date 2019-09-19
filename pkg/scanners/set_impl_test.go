@@ -31,6 +31,10 @@ func (*fakeScanner) Test() error {
 	panic("implement me")
 }
 
+func (*fakeScanner) Name() string {
+	panic("implement me")
+}
+
 func (f *fakeScanner) Type() string {
 	if f.typ != "" {
 		return f.typ

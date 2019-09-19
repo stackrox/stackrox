@@ -320,3 +320,7 @@ func (a *anchore) Match(image *storage.Image) bool {
 func (a *anchore) Type() string {
 	return typeString
 }
+
+func (a *anchore) Name() string {
+	return a.protoImageIntegration.GetName()
+}

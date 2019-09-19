@@ -4,6 +4,7 @@
   "description": "Alert on deployments with images that haven't been updated in 90 days",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
+    "BUILD",
     "DEPLOY"
   ],
   "categories": [

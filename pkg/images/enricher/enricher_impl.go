@@ -2,8 +2,11 @@ package enricher
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -24,22 +27,33 @@ type enricherImpl struct {
 }
 
 // EnrichImage enriches an image with the integration set present.
-func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) EnrichmentResult {
-	updatedMetadata := e.enrichWithMetadata(ctx, image)
-	scanResult := e.enrichWithScan(ctx, image)
+func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
+	errorList := errorhelpers.NewErrorList("image enrichment")
+
+	updatedMetadata, err := e.enrichWithMetadata(ctx, image)
+	errorList.AddError(err)
+
+	scanResult, err := e.enrichWithScan(ctx, image)
+	errorList.AddError(err)
 	return EnrichmentResult{
 		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone),
 		ScanResult:   scanResult,
-	}
+	}, errorList.ToError()
 }
 
-func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.Image) bool {
+func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.Image) (bool, error) {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error getting metadata for image: %s", image.GetName().GetFullName()))
 	for _, registry := range e.integrations.RegistrySet().GetAll() {
-		if updated := e.enrichImageWithRegistry(ctx, image, registry); updated {
-			return true
+		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
+		if err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		if updated {
+			return true, nil
 		}
 	}
-	return false
+	return false, errorList.ToError()
 }
 
 func getRef(image *storage.Image) string {
@@ -49,36 +63,35 @@ func getRef(image *storage.Image) string {
 	return image.GetName().GetFullName()
 }
 
-func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *storage.Image, registry registryTypes.ImageRegistry) bool {
+func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
 	if !registry.Global() {
-		return false
+		return false, nil
 	}
 	if !registry.Match(image) {
-		return false
+		return false, nil
 	}
 
 	if !ctx.IgnoreExisting && image.GetMetadata() != nil {
-		return false
+		return false, nil
 	}
 
 	ref := getRef(image)
 	if metadataValue := e.metadataCache.Get(ref); metadataValue != nil {
 		e.metrics.IncrementMetadataCacheHit()
 		image.Metadata = metadataValue.(*storage.ImageMetadata)
-		return true
+		return true, nil
 	}
 	e.metrics.IncrementMetadataCacheMiss()
 
 	if ctx.NoExternalMetadata {
-		return false
+		return false, nil
 	}
 
 	// Wait until limiter allows entrance
 	_ = e.metadataLimiter.Wait(context.Background())
 	metadata, err := registry.Metadata(image)
 	if err != nil {
-		log.Error(err)
-		return false
+		return false, errors.Wrapf(err, "error getting metadata from registry: %q", registry.Name())
 	}
 	image.Metadata = metadata
 	e.metadataCache.Add(ref, metadata)
@@ -90,26 +103,31 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 			e.metadataCache.Add(digest, metadata)
 		}
 	}
-	return true
+	return true, nil
 }
 
-func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) ScanResult {
+func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) (ScanResult, error) {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
 	for _, scanner := range e.integrations.ScannerSet().GetAll() {
-		result := e.enrichImageWithScanner(ctx, image, scanner)
+		result, err := e.enrichImageWithScanner(ctx, image, scanner)
+		if err != nil {
+			errorList.AddError(err)
+			continue
+		}
 		if result != ScanNotDone {
-			return result
+			return result, nil
 		}
 	}
-	return ScanNotDone
+	return ScanNotDone, errorList.ToError()
 }
 
-func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) ScanResult {
+func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
 	if !scanner.Match(image) {
-		return ScanNotDone
+		return ScanNotDone, nil
 	}
 
 	if !ctx.IgnoreExisting && image.GetScan() != nil {
-		return ScanNotDone
+		return ScanNotDone, nil
 	}
 
 	ref := getRef(image)
@@ -117,12 +135,12 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		e.metrics.IncrementScanCacheHit()
 		image.Scan = scanValue.(*storage.ImageScan)
 		FillScanStats(image)
-		return ScanSucceeded
+		return ScanSucceeded, nil
 	}
 	e.metrics.IncrementScanCacheMiss()
 
 	if ctx.NoExternalMetadata {
-		return ScanNotDone
+		return ScanNotDone, nil
 	}
 
 	// Wait until limiter allows entrance
@@ -134,21 +152,19 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		var err error
 		scan, err = asyncScanner.GetOrTriggerScan(image)
 		if err != nil {
-			log.Errorf("Error triggering scan for %q: %v", image.GetName().GetFullName(), err)
-			return ScanNotDone
+			return ScanNotDone, errors.Wrapf(err, "Error triggering scan for %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
 		}
 		if scan == nil {
-			return ScanTriggered
+			return ScanTriggered, nil
 		}
 	} else {
 		var err error
 		scan, err = scanner.GetScan(image)
 		if err != nil {
-			log.Errorf("Error scanning %q: %v", image.GetName().GetFullName(), err)
-			return ScanNotDone
+			return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
 		}
 		if scan == nil {
-			return ScanNotDone
+			return ScanNotDone, nil
 		}
 	}
 
@@ -167,7 +183,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 			e.scanCache.Add(digest, scan)
 		}
 	}
-	return ScanSucceeded
+	return ScanSucceeded, nil
 }
 
 // FillScanStats fills in the higher level stats from the scan data.

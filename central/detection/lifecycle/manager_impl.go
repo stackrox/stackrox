@@ -297,6 +297,9 @@ func (m *managerImpl) processDeploymentUpdate(ctx enricher.EnrichmentContext, de
 	if len(updatedIndices) > 0 {
 		for _, idx := range updatedIndices {
 			img := images[idx]
+			if img.GetId() == "" {
+				continue
+			}
 			if err := m.imageDataStore.UpsertImage(lifecycleMgrCtx, img); err != nil {
 				log.Errorf("Error persisting image %s: %s", img.GetName().GetFullName(), err)
 			}

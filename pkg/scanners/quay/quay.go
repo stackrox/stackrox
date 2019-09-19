@@ -140,3 +140,7 @@ func (q *quay) Match(image *storage.Image) bool {
 func (q *quay) Type() string {
 	return typeString
 }
+
+func (q *quay) Name() string {
+	return q.protoImageIntegration.GetName()
+}

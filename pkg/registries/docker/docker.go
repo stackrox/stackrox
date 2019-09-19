@@ -162,3 +162,8 @@ func (r *Registry) Config() *types.Config {
 		RegistryHostname: r.registry,
 	}
 }
+
+// Name returns the name of the registry
+func (r *Registry) Name() string {
+	return r.protoImageIntegration.GetName()
+}

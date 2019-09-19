@@ -4,6 +4,7 @@
   "description": "Alert on deployments with compoenents of the Red Hat/Fedora/CentOS package management system.",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
+    "BUILD",
     "DEPLOY"
   ],
   "categories": [

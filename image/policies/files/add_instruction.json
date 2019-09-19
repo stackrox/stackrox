@@ -4,6 +4,7 @@
   "description": "Alert on deployments using a ADD command",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
+    "BUILD",
     "DEPLOY"
   ],
   "categories": [

@@ -19,6 +19,10 @@ message CountImagesResponse {
     int32 count = 1;
 }
 
+message ScanImageRequest {
+    string image_name = 1;
+}
+
 // ImageService APIs manages image metadata.
 service ImageService {
 
@@ -40,6 +44,14 @@ service ImageService {
     rpc ListImages (RawQuery) returns (ListImagesResponse) {
         option (google.api.http) = {
             get: "/v1/images"
+        };
+    }
+
+    // ScanImage scans a single image and returns the result
+    rpc ScanImage (ScanImageRequest) returns (storage.Image) {
+        option (google.api.http) = {
+            post: "/v1/images/scan"
+            body: "*"
         };
     }
 

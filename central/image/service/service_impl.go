@@ -13,9 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,6 +35,9 @@ var (
 			"/v1.ImageService/CountImages",
 			"/v1.ImageService/ListImages",
 		},
+		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
+			"/v1.ImageService/ScanImage",
+		},
 		user.With(permissions.View(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/InvalidateScanAndRegistryCaches",
 		},
@@ -44,6 +50,8 @@ type serviceImpl struct {
 
 	metadataCache expiringcache.Cache
 	scanCache     expiringcache.Cache
+
+	enricher enricher.ImageEnricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -120,4 +128,36 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	s.metadataCache.RemoveAll()
 	s.scanCache.RemoveAll()
 	return &v1.Empty{}, nil
+}
+
+// ScanImage scans an image and returns the result
+func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
+	if request.GetImageName() == "" {
+		return nil, status.Error(codes.InvalidArgument, "image name must be specified")
+	}
+	containerImage, err := utils.GenerateImageFromString(request.GetImageName())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	img := types.ToImage(containerImage)
+
+	enrichmentResult, err := s.enricher.EnrichImage(enricher.EnrichmentContext{
+		NoExternalMetadata: false,
+		IgnoreExisting:     true,
+	}, img)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
+		return nil, status.Error(codes.Internal, "scan could not be completed. Please check that an applicable registry and scanner is integrated")
+	}
+
+	// Save the image
+	img.Id = stringutils.FirstNonEmpty(img.GetId(), img.GetMetadata().GetV2().GetDigest(), img.GetMetadata().GetV1().GetDigest())
+	if img.GetId() != "" {
+		if err := s.datastore.UpsertImage(ctx, img); err != nil {
+			return nil, err
+		}
+	}
+	return img, nil
 }

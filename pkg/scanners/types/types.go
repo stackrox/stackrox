@@ -13,6 +13,7 @@ type ImageScanner interface {
 	Match(image *storage.Image) bool
 	Test() error
 	Type() string
+	Name() string
 }
 
 // AsyncImageScanner is an image scanner that can be accessed asynchronously.

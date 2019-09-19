@@ -205,3 +205,7 @@ func (d *dtr) Match(image *storage.Image) bool {
 func (d *dtr) Type() string {
 	return typeString
 }
+
+func (d *dtr) Name() string {
+	return d.protoImageIntegration.GetName()
+}

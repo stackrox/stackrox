@@ -13,7 +13,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), enrichment.ImageMetadataCacheSingleton(), enrichment.ImageScanCacheSingleton())
+	as = New(datastore.Singleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton(), enrichment.ImageScanCacheSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

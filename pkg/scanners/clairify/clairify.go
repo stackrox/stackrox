@@ -173,3 +173,7 @@ func (c *clairify) Match(image *storage.Image) bool {
 func (c *clairify) Type() string {
 	return typeString
 }
+
+func (c *clairify) Name() string {
+	return c.protoImageIntegration.GetName()
+}

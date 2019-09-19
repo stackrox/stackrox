@@ -20,6 +20,7 @@ type ImageRegistry interface {
 	Test() error
 	Global() bool
 	Config() *Config
+	Name() string
 }
 
 // DockerfileInstructionSet are the set of acceptable keywords in a Dockerfile

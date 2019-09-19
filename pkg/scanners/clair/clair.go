@@ -152,3 +152,7 @@ func (c *clair) Match(image *storage.Image) bool {
 func (c *clair) Type() string {
 	return typeString
 }
+
+func (c *clair) Name() string {
+	return c.protoImageIntegration.GetName()
+}

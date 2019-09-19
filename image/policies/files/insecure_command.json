@@ -4,6 +4,7 @@
   "description": "Alert on deployments using 'insecure' in the command",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
+    "BUILD",
     "DEPLOY"
   ],
   "categories": [

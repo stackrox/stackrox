@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -24,9 +25,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore, metadataCache, scanCache expiringcache.Cache) Service {
+func New(datastore datastore.DataStore, enricher enricher.ImageEnricher, metadataCache, scanCache expiringcache.Cache) Service {
 	return &serviceImpl{
 		datastore:     datastore,
+		enricher:      enricher,
 		metadataCache: metadataCache,
 		scanCache:     scanCache,
 	}

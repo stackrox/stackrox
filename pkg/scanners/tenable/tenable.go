@@ -48,6 +48,8 @@ type tenable struct {
 	config *storage.TenableConfig
 
 	reg *dockerRegistry.Registry
+
+	integration *storage.ImageIntegration
 }
 
 func validate(config *storage.TenableConfig) error {
@@ -83,9 +85,10 @@ func newScanner(integration *storage.ImageIntegration) (*tenable, error) {
 		Timeout: requestTimeout,
 	}
 	scanner := &tenable{
-		client: client,
-		reg:    reg,
-		config: config,
+		client:      client,
+		reg:         reg,
+		config:      config,
+		integration: integration,
 	}
 	return scanner, nil
 }
@@ -163,4 +166,8 @@ func (d *tenable) Match(image *storage.Image) bool {
 
 func (d *tenable) Type() string {
 	return typeString
+}
+
+func (d *tenable) Name() string {
+	return d.integration.GetName()
 }

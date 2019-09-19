@@ -5,6 +5,7 @@ import (
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -16,6 +17,7 @@ var (
 
 func initialize() {
 	as = New(clusterDatastore.Singleton(), enrichment.ImageEnricherSingleton(),
+		imageDatastore.Singleton(),
 		enrichment.Singleton(),
 		buildTimeDetection.SingletonDetector(),
 		deploytime.SingletonDetector(),

@@ -4,6 +4,7 @@
   "description": "Alert on deployments with components of the Debian/Ubuntu package management system in the image.",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
+    "BUILD",
     "DEPLOY"
   ],
   "categories": [
