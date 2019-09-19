@@ -24,7 +24,7 @@ func init() {
 			},
 			validator.SigningKeyRestrictions{
 				EarliestNotValidBefore:        buildinfo.BuildTimestamp(),
-				LatestNotValidAfter:           buildinfo.BuildTimestamp().Add(48 * time.Hour),
+				LatestNotValidAfter:           buildinfo.BuildTimestamp().Add(ciSigningKeyLatestNotValidAfterOffset),
 				MaxDuration:                   6 * time.Hour,
 				AllowOffline:                  true,
 				MaxNodeLimit:                  10,
