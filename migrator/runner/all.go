@@ -12,6 +12,7 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_16_to_m_17_add_scan_stats"
 	_ "github.com/stackrox/rox/migrator/migrations/m_17_to_m_18_alert_retention_config"
 	_ "github.com/stackrox/rox/migrator/migrations/m_18_to_m_19_badger_migration"
+	_ "github.com/stackrox/rox/migrator/migrations/m_19_to_m_20_badgerdb_duplication"
 	_ "github.com/stackrox/rox/migrator/migrations/m_1_to_2_alert_violation"
 	_ "github.com/stackrox/rox/migrator/migrations/m_2_to_3_network_flows_in_badger"
 	_ "github.com/stackrox/rox/migrator/migrations/m_3_to_4_cluster_spec_to_status"

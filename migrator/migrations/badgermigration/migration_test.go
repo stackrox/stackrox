@@ -1,4 +1,4 @@
-package m18to19
+package badgermigration
 
 import (
 	"strconv"

@@ -1,4 +1,4 @@
-package m18to19
+package m19to20
 
 import (
 	"github.com/dgraph-io/badger"
@@ -11,8 +11,8 @@ import (
 )
 
 var migration = types.Migration{
-	StartingSeqNum: 18,
-	VersionAfter:   storage.Version{SeqNum: 19},
+	StartingSeqNum: 19,
+	VersionAfter:   storage.Version{SeqNum: 20},
 	Run: func(db *bolt.DB, badgerDB *badger.DB) error {
 		if !features.BadgerDB.Enabled() {
 			return nil
