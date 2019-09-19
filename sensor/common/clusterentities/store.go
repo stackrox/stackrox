@@ -1,6 +1,7 @@
 package clusterentities
 
 import (
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
@@ -13,6 +14,7 @@ type ContainerMetadata struct {
 	ContainerName string
 	ContainerID   string
 	Namespace     string
+	StartTime     *types.Timestamp
 }
 
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by

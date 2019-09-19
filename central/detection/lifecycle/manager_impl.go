@@ -242,8 +242,9 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 			return
 		}
 	}
+
 	userWhitelist = processwhitelist.IsUserLocked(whitelist)
-	roxWhitelist = processwhitelist.IsRoxLocked(whitelist)
+	roxWhitelist = processwhitelist.IsRoxLocked(whitelist) && !processwhitelist.IsStartupProcess(indicator)
 	if userWhitelist || roxWhitelist {
 		return
 	}

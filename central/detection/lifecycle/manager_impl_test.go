@@ -63,7 +63,6 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 		DeploymentId:  uuid.NewV4().String(),
 		ContainerName: uuid.NewV4().String(),
 		PodId:         uuid.NewV4().String(),
-		EmitTimestamp: types.TimestampNow(),
 		Signal:        signal,
 	}
 	key := &storage.ProcessWhitelistKey{

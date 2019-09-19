@@ -44,6 +44,7 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 	indicator.ContainerName = cachedContainer.ContainerName
 	indicator.PodId = cachedContainer.PodID
 	indicator.Namespace = cachedContainer.Namespace
+	indicator.ContainerStartTime = cachedContainer.StartTime
 }
 
 // Process defines processes to process a ProcessIndicator

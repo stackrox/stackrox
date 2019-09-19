@@ -18,13 +18,15 @@ message ProcessIndicator {
     string pod_id         = 4;
 
     // The emit timestamp of the message. Used for measuring latency
-    google.protobuf.Timestamp emit_timestamp = 5;
+    reserved 5;
 
     // A process signal message passed from Collector to Sensor
     ProcessSignal signal = 6;
 
     string cluster_id = 7 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
     string namespace  = 8 [(gogoproto.moretags) = "search:\"Namespace,store,hidden\""];
+
+    google.protobuf.Timestamp container_start_time = 9;
 }
 
 // This is the unique key we store process indicators under in Bolt.

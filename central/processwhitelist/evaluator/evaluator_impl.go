@@ -54,7 +54,7 @@ func (e *evaluator) persistResults(ctx context.Context, deployment *storage.Depl
 }
 
 func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deployment) (violatingProcesses []*storage.ProcessIndicator, err error) {
-	containerNameToWhitelistedProcesses := make(map[string]set.StringSet)
+	containerNameToWhitelistedProcesses := make(map[string]*set.StringSet)
 	containerNameToWhitelistResults := make(map[string]*storage.ContainerNameAndWhitelistStatus)
 	for _, container := range deployment.GetContainers() {
 		whitelist, err := e.whitelists.GetProcessWhitelist(evaluatorCtx, &storage.ProcessWhitelistKey{
@@ -75,7 +75,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 		}
 		processSet := processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked)
 		if processSet != nil {
-			containerNameToWhitelistedProcesses[container.GetName()] = *processSet
+			containerNameToWhitelistedProcesses[container.GetName()] = processSet
 		}
 
 	}
@@ -93,6 +93,9 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 		}
 		whitelistItem := processwhitelist.WhitelistItemFromProcess(process)
 		if whitelistItem == "" {
+			continue
+		}
+		if processwhitelist.IsStartupProcess(process) {
 			continue
 		}
 		if !processSet.Contains(processwhitelist.WhitelistItemFromProcess(process)) {

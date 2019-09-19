@@ -70,7 +70,6 @@ func TestGetDeploymentProcessGroup(t *testing.T) {
 			Id:            "processId",
 			ContainerName: "container_name",
 			DeploymentId:  testDeploymentID,
-			EmitTimestamp: &types.Timestamp{Seconds: 100},
 			PodId:         "podId",
 			Signal: &storage.ProcessSignal{
 				Id:           "signalId",

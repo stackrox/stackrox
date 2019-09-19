@@ -302,6 +302,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"containerIps: [String!]!",
 		"containingPodId: String!",
 		"instanceId: ContainerInstanceID",
+		"started: Time",
 	}))
 	utils.Must(builder.AddType("ContainerInstanceID", []string{
 		"containerRuntime: ContainerRuntime!",
@@ -668,8 +669,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ProcessIndicator", []string{
 		"clusterId: String!",
 		"containerName: String!",
+		"containerStartTime: Time",
 		"deploymentId: String!",
-		"emitTimestamp: Time",
 		"id: ID!",
 		"namespace: String!",
 		"podId: String!",
@@ -3123,6 +3124,11 @@ func (resolver *containerInstanceResolver) ContainingPodId(ctx context.Context) 
 func (resolver *containerInstanceResolver) InstanceId(ctx context.Context) (*containerInstanceIDResolver, error) {
 	value := resolver.data.GetInstanceId()
 	return resolver.root.wrapContainerInstanceID(value, true, nil)
+}
+
+func (resolver *containerInstanceResolver) Started(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetStarted()
+	return timestamp(value)
 }
 
 type containerInstanceIDResolver struct {
@@ -5854,14 +5860,14 @@ func (resolver *processIndicatorResolver) ContainerName(ctx context.Context) str
 	return value
 }
 
+func (resolver *processIndicatorResolver) ContainerStartTime(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetContainerStartTime()
+	return timestamp(value)
+}
+
 func (resolver *processIndicatorResolver) DeploymentId(ctx context.Context) string {
 	value := resolver.data.GetDeploymentId()
 	return value
-}
-
-func (resolver *processIndicatorResolver) EmitTimestamp(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetEmitTimestamp()
-	return timestamp(value)
 }
 
 func (resolver *processIndicatorResolver) Id(ctx context.Context) graphql.ID {

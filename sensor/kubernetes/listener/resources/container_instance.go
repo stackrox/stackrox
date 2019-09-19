@@ -3,6 +3,7 @@ package resources
 import (
 	"strings"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -24,6 +25,14 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 			InstanceId:      instID,
 			ContainingPodId: podID,
 			ContainerIps:    ips,
+		}
+
+		if c.State.Running != nil {
+			startTime, err := types.TimestampProto(c.State.Running.StartedAt.Time)
+			if err != nil {
+				log.Error(err)
+			}
+			result[i].Started = startTime
 		}
 	}
 	return result

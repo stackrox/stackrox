@@ -95,6 +95,43 @@ class ProcessWhiteListsTest extends BaseSpecification {
         //need to  delete whitelists for the container deployed after each test
     }
 
+    @Unroll
+    @Category(BAT)
+    def "Verify processes risk indicators for the given key after soft-lock "() {
+        when:
+        "exec into the container and run a process and wait for soft lock to kick in"
+        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        assert deployment != null
+        String deploymentId = deployment.getDeploymentUid()
+        String containerName = deployment.getName()
+        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+                    getProcessWhitelist(clusterId, deployment, containerName)
+        assert (whitelist != null)
+        assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
+                    (whitelist.key.containerName.equalsIgnoreCase(containerName)))
+        assert whitelist.elementsList.find { it.element.processName == processName } != null
+        // Check that startup processes are not impacted
+        Thread.sleep(10000)
+        orchestrator.execInContainer(deployment, "ls")
+        Thread.sleep(50000)
+        orchestrator.execInContainer(deployment, "pwd")
+
+        then:
+        "verify for suspicious process in risk indicator"
+        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 60)
+        assert (result != null)
+        // Check that ls doesn't exist as a risky process
+        RiskOuterClass.Risk.Result.Factor lsFactor =  result.factorsList.find { it.message.contains("ls") }
+        assert lsFactor == null
+        // Check that pwd is a risky process
+        RiskOuterClass.Risk.Result.Factor pwdFactor =  result.factorsList.find { it.message.contains("pwd") }
+        assert pwdFactor != null
+        where:
+        "Data inputs are :"
+        deploymentName                      |   processName
+        DEPLOYMENTNGINX_SOFTLOCK            |   "/usr/sbin/nginx"
+    }
+
     /* TODO(ROX-3108)
     @Unroll
     @Category(BAT)
@@ -208,35 +245,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION | "/usr/sbin/nginx"      | true             | 0
      }
-    @Unroll
-    @Category(BAT)
-    def "Verify processes risk indicators for the given key after soft-lock "() {
-        when:
-        "exec into the container and run a process and wait for soft lock to kick in"
-        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
-        assert deployment != null
-        String deploymentId = deployment.getDeploymentUid()
-        String containerName = deployment.getName()
-        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                    getProcessWhitelist(clusterId, deployment, containerName)
-        assert (whitelist != null)
-        assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
-                    (whitelist.key.containerName.equalsIgnoreCase(containerName)))
-        assert whitelist.elementsList.find { it.element.processName == processName } != null
-        Thread.sleep(60000)
-        orchestrator.execInContainer(deployment, "pwd")
-
-        then:
-        "verify for suspicious process in risk indicator"
-        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 60)
-        assert (result != null)
-        RiskOuterClass.Risk.Result.Factor factor =  result.factorsList.find { it.message.contains("pwd") }
-        assert factor != null
-        where:
-        "Data inputs are :"
-        deploymentName                      |   processName
-        DEPLOYMENTNGINX_SOFTLOCK            |   "/usr/sbin/nginx"
-    }
 
     @Unroll
     @Category(BAT)

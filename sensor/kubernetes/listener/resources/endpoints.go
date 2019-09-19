@@ -105,6 +105,7 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 				ContainerName: c.GetName(),
 				ContainerID:   id,
 				Namespace:     w.GetNamespace(),
+				StartTime:     inst.Started,
 			})
 		}
 	}

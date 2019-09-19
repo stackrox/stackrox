@@ -2,7 +2,9 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [30.0]
+### Changed
 - `TriggerRun(/v1/complianceManagement/runs)` endpoint is removed. All clients should use `TriggerRuns(/v1/compliancemanagement/runs)` to start a compliance run.
+- The EmitTimestamp field that was unset in the ProcessIndicator resource has been removed
 
 ## [28.0]
 ### Changed

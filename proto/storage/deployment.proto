@@ -94,6 +94,9 @@ message ContainerInstance {
 
     // The IP addresses of this container.
     repeated string container_ips      = 3;
+
+    // The start time of the container
+    google.protobuf.Timestamp started  = 4;
 }
 
 message ContainerInstanceID {

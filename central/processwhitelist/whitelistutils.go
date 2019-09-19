@@ -1,9 +1,13 @@
 package processwhitelist
 
 import (
+	"time"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -16,6 +20,12 @@ const (
 	UserLocked
 	RoxOrUserLocked
 	RoxAndUserLocked
+
+	ContainerStartupDuration = time.Minute
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // locked checks whether a timestamp represents a locked whitelist true = locked, false = unlocked
@@ -67,4 +77,15 @@ func Processes(whitelist *storage.ProcessWhitelist, mode EvaluationMode) *set.St
 // It exists to make sure that we're using the same thing in every place (name vs execfilepath).
 func WhitelistItemFromProcess(process *storage.ProcessIndicator) string {
 	return process.GetSignal().GetExecFilePath()
+}
+
+// IsStartupProcess determines if the process is a startup process
+// A process is considered a startup process if it happens within the first ContainerStartupDuration and was not scraped
+// but instead pulled from exec
+func IsStartupProcess(process *storage.ProcessIndicator) bool {
+	if process.ContainerStartTime == nil {
+		return false
+	}
+	durationBetweenProcessAndContainerStart := protoutils.Sub(process.GetSignal().GetTime(), process.GetContainerStartTime())
+	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
 }
