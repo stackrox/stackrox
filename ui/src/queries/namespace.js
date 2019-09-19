@@ -49,8 +49,6 @@ export const NAMESPACE_NO_POLICIES_FRAGMENT = gql`
             }
         }
         numSecrets
-        imageCount
-        policyCount
         k8sroleCount
         serviceAccountCount
         subjectCount
