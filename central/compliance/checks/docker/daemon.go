@@ -14,8 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const dockerDaemonFile = "/etc/docker/daemon.json"
-
 var (
 	log = logging.LoggerForModule()
 )
@@ -37,7 +35,7 @@ func init() {
 		tlsVerifyCheck("CIS_Docker_v1_2_0:2_6"),
 		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_7", "default-ulimit", "", "", common.Set),
 		dockerInfoCheck("CIS_Docker_v1_2_0:2_8", userNamespaceInfo),
-		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_9", "cgroup-parent", "", "", common.Matches),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_9", "cgroup-parent", "", "", common.Set),
 		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_10", "storage-opt", "dm.basesize", "", common.NotContains),
 		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_11", "authorization-plugin", "", "", common.Set),
 		dockerInfoCheck("CIS_Docker_v1_2_0:2_12", remoteLogging),
@@ -45,7 +43,7 @@ func init() {
 		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_14", "userland-proxy", "false", "true", common.Matches),
 		dockerInfoCheck("CIS_Docker_v1_2_0:2_15", daemonSeccomp),
 		dockerInfoCheck("CIS_Docker_v1_2_0:2_16", disableExperimental),
-		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_17", "no-new-privileges", "", "", common.Set),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_17", "no-new-privileges", "false", "false", common.NotMatches),
 	)
 }
 
@@ -86,7 +84,7 @@ func dockerInfoCheck(name string, f func(ctx framework.ComplianceContext, info t
 
 func aufs(ctx framework.ComplianceContext, info types.Info) {
 	if strings.Contains(info.Driver, "aufs") {
-		framework.FailNow(ctx, "aufs is currently configured as the storage driver")
+		framework.FailNow(ctx, "'aufs' is currently configured as the storage driver")
 	}
 	framework.Passf(ctx, "Storage driver is set to %q", info.Driver)
 }
@@ -167,8 +165,6 @@ func genericDockerCommandlineCheck(name string, key, target, defaultVal string, 
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
-			framework.Notef(ctx, "The contents of %q should also be reviewed to ensure %q setting is set appropriately.", dockerDaemonFile, key)
-
 			dockerdProcess, config, err := getDockerdProcess(ret)
 			if err != nil {
 				framework.FailNow(ctx, err.Error())
@@ -207,15 +203,15 @@ func tlsVerifyCheck(name string) framework.Check {
 				evidence = append(evidence, "tlsverify is not set")
 			}
 			tlscacert := common.GetValuesForCommandFromFlagsAndConfig(args, config, "tlscacert")
-			if len(tlsVerify) == 0 {
+			if len(tlscacert) == 0 {
 				evidence = append(evidence, "tlscacert is not set")
 			}
 			tlscert := common.GetValuesForCommandFromFlagsAndConfig(args, config, "tlscert")
-			if len(tlsVerify) == 0 {
+			if len(tlscert) == 0 {
 				evidence = append(evidence, "tlscert is not set")
 			}
 			tlskey := common.GetValuesForCommandFromFlagsAndConfig(args, config, "tlskey")
-			if len(tlsVerify) == 0 {
+			if len(tlskey) == 0 {
 				evidence = append(evidence, "tlskey is not set")
 			}
 			if len(evidence) == 0 {

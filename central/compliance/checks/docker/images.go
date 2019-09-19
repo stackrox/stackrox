@@ -79,6 +79,7 @@ func noUpdateInstruction(ctx framework.ComplianceContext, wrap types.ImageWrap) 
 		cmd := strings.ToLower(h.CreatedBy)
 		cmd = strings.Replace(cmd, "\t", "", -1)
 		cmd = strings.TrimPrefix(cmd, "/bin/sh -c #(nop)")
+		cmd = strings.TrimPrefix(cmd, "/bin/sh -c #")
 		cmd = strings.TrimPrefix(cmd, "/bin/sh -c")
 		cmd = strings.TrimSpace(cmd)
 		for _, updateCmd := range updateCmds {

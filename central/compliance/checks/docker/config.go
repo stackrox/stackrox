@@ -16,8 +16,8 @@ func init() {
 		common.OwnershipCheck("CIS_Docker_v1_2_0:3_5", "/etc/docker", "root", "root"),
 		common.PermissionCheck("CIS_Docker_v1_2_0:3_6", "/etc/docker", 0755),
 
-		common.OwnershipCheck("CIS_Docker_v1_2_0:3_7", "/etc/docker/certs.d", "root", "root"),
-		common.PermissionCheck("CIS_Docker_v1_2_0:3_8", "/etc/docker/certs.d", 0444),
+		common.RecursiveOwnershipCheck("CIS_Docker_v1_2_0:3_7", "/etc/docker/certs.d", "root", "root"),
+		common.RecursivePermissionCheck("CIS_Docker_v1_2_0:3_8", "/etc/docker/certs.d", 0444),
 
 		common.CommandLineFileOwnership("CIS_Docker_v1_2_0:3_9", "dockerd", "tlscacert", "root", "root"),
 		common.CommandLineFilePermissions("CIS_Docker_v1_2_0:3_10", "dockerd", "tlscacert", 0444),

@@ -339,7 +339,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			container: types.ContainerJSON{
 				Mounts: []types.MountPoint{
 					{
-						Source: "/var/run/types.sock",
+						Source: "/var/run/docker.sock",
 					},
 				},
 			},

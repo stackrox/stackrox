@@ -226,13 +226,13 @@ func necessaryPorts(ctx framework.ComplianceContext, container types.ContainerJS
 func noDockerSocket(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	var failed bool
 	for _, containerMount := range container.Mounts {
-		if strings.Contains(containerMount.Source, "types.sock") {
+		if strings.Contains(containerMount.Source, "docker.sock") {
 			failed = true
-			framework.Failf(ctx, "Container %q has mounted types.sock", container.Name)
+			framework.Failf(ctx, "Container %q has mounted docker.sock", container.Name)
 		}
 	}
 	if !failed {
-		framework.Passf(ctx, "Container %q has not mounted types.sock", container.Name)
+		framework.Passf(ctx, "Container %q has not mounted docker.sock", container.Name)
 	}
 }
 
@@ -288,10 +288,14 @@ func readonlyFS(ctx framework.ComplianceContext, container types.ContainerJSON) 
 }
 
 func restartPolicy(ctx framework.ComplianceContext, container types.ContainerJSON) {
-	if container.HostConfig.RestartPolicy.Name != "on-failure" || container.HostConfig.RestartPolicy.MaximumRetryCount != 5 {
-		framework.Failf(ctx, "Container %q has a restart policy %q with max retries '%d'", container.Name, container.HostConfig.RestartPolicy.Name, container.HostConfig.RestartPolicy.MaximumRetryCount)
+	if container.HostConfig.RestartPolicy.Name == "always" {
+		framework.Failf(ctx, "Container %q has a restart policy %q", container.Name, container.HostConfig.RestartPolicy.Name)
+	} else if container.HostConfig.RestartPolicy.Name == "" || container.HostConfig.RestartPolicy.Name == "no" {
+		framework.Passf(ctx, "Container %q has no restart policy or restart policy 'no'", container.Name)
+	} else if container.HostConfig.RestartPolicy.Name == "on-failure" && container.HostConfig.RestartPolicy.MaximumRetryCount <= 5 {
+		framework.Passf(ctx, "Container %q has a restart policy %q with max retries '%d'", container.Name, container.HostConfig.RestartPolicy.Name, container.HostConfig.RestartPolicy.MaximumRetryCount)
 	} else {
-		framework.Passf(ctx, "Container %q has the 'on-failure' restart policy with 5 maximum retries", container.Name)
+		framework.Failf(ctx, "Container %q has a restart policy %q with max retries '%d'", container.Name, container.HostConfig.RestartPolicy.Name, container.HostConfig.RestartPolicy.MaximumRetryCount)
 	}
 }
 
