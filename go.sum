@@ -373,8 +373,8 @@ github.com/stackrox/anchore-client v0.0.0-20190307200411-608e0af2c0b4 h1:HlrLAlO
 github.com/stackrox/anchore-client v0.0.0-20190307200411-608e0af2c0b4/go.mod h1:IQ+la5xoJ8ximpsg3wcYFqcD70Hvsai1TX8uZx6VewM=
 github.com/stackrox/badger v1.6.1-0.20190917050531-b23b7e1b1e94 h1:zcjQwTfVn4/zLHBLKraKEv9JlxGKPla+X+T30aZ/brc=
 github.com/stackrox/badger v1.6.1-0.20190917050531-b23b7e1b1e94/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
-github.com/stackrox/bleve v0.0.0-20190829140129-c63d163aba71 h1:ybaFwKKecuDuhSJBjanEiZJ5Kbu9gzjiNyXLX4XfGXM=
-github.com/stackrox/bleve v0.0.0-20190829140129-c63d163aba71/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
+github.com/stackrox/bleve v0.0.0-20190918030150-5ebdc2278ffe h1:s0i+H9vGPFj3GaPGfAZZm+jVFFqnN0gSI/PEYzlOK0E=
+github.com/stackrox/bleve v0.0.0-20190918030150-5ebdc2278ffe/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
 github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5 h1:rxb7uVQNtqO6D9s6cz7Il6dZ32tQDDjzg5d9qnnInhk=
 github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5/go.mod h1:WEQ9k54XQ6lpPUwqpIuLYjZN6P28o56QIxp6K5PWP30=
 github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e h1:tehRH8Wf03sV5pnp17+WNNHzkUgX30p2bxMOv9hFHb8=

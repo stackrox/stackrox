@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type workerQueue struct {
@@ -13,7 +14,8 @@ type workerQueue struct {
 	totalSize int
 
 	queues    []*dedupingQueue
-	waitGroup concurrency.WaitGroup
+	waitGroup sync.WaitGroup
+	sync.WaitGroup
 }
 
 func newWorkerQueue(poolSize int, typ string) *workerQueue {
@@ -66,6 +68,5 @@ func (w *workerQueue) run(ctx context.Context, stopSig *concurrency.ErrorSignal,
 		go w.runWorker(ctx, i, stopSig, handler)
 	}
 
-	// Wait for all of the workers to complete (they will get stopped on the stop signal)
-	<-w.waitGroup.Done()
+	w.waitGroup.Wait()
 }

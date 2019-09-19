@@ -42,8 +42,8 @@ func getNormalAlert(id string) *storage.Alert {
 	return &storage.Alert{
 		Id: id,
 		Violations: []*storage.Alert_Violation{
-			{Message: "Blah", Link: "baaa"},
-			{Message: "Blah2", Link: "baaaa2"},
+			{Message: "Blah"},
+			{Message: "Blah2"},
 		},
 	}
 }

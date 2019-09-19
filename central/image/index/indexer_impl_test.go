@@ -4,8 +4,10 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/document"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -86,4 +88,19 @@ func (suite *ImageIndexTestSuite) TestSearchImages() {
 	results, err = suite.indexer.Search(q)
 	suite.NoError(err)
 	suite.Len(results, 2)
+}
+
+func (suite *ImageIndexTestSuite) TestMapping() {
+	wrapper := &imageWrapper{
+		Image: fixtures.GetImage(),
+		Type:  v1.SearchCategory_IMAGES.String(),
+	}
+
+	doc := document.NewDocument(wrapper.GetId())
+	suite.NoError(suite.bleveIndex.Mapping().MapDocument(doc, wrapper))
+
+	docNew, err := suite.indexer.(*indexerImpl).optimizedMapDocument(wrapper)
+	suite.NoError(err)
+
+	suite.ElementsMatch(doc.Fields, docNew.Fields)
 }

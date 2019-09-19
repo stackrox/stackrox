@@ -63,7 +63,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"processes: [ProcessIndicator]!",
 	}))
 	utils.Must(builder.AddType("Alert_Violation", []string{
-		"link: String!",
 		"message: String!",
 	}))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
@@ -1318,11 +1317,6 @@ func (resolver *Resolver) wrapAlert_Violations(values []*storage.Alert_Violation
 		output[i] = &alert_ViolationResolver{resolver, v}
 	}
 	return output, nil
-}
-
-func (resolver *alert_ViolationResolver) Link(ctx context.Context) string {
-	value := resolver.data.GetLink()
-	return value
 }
 
 func (resolver *alert_ViolationResolver) Message(ctx context.Context) string {

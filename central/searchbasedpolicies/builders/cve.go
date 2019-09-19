@@ -34,34 +34,20 @@ func (c CVEQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		err = errors.Wrapf(err, "%s", c.Name())
 		return
 	}
-	cveLinkSearchField, err := getSearchField(search.CVELink, optionsMap)
-	if err != nil {
-		err = errors.Wrapf(err, "%s", c.Name())
-		return
-	}
 
 	q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(
-		[]search.FieldLabel{search.CVE, search.CVELink},
-		[]string{search.RegexQueryString(cve), search.WildcardString}).
+		[]search.FieldLabel{search.CVE},
+		[]string{search.RegexQueryString(cve)}).
 		ProtoQuery()
 	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
-		cveLinkMatches := result.Matches[cveLinkSearchField.GetFieldPath()]
-		if len(cveMatches) != len(cveLinkMatches) {
-			log.Errorf("Got different number of matches for CVEs and links: %+v %+v", cveMatches, cveLinkMatches)
-		}
 		if len(cveMatches) == 0 {
 			return searchbasedpolicies.Violations{}
 		}
 		violations := make([]*storage.Alert_Violation, 0, len(cveMatches))
-		for i, cveMatch := range cveMatches {
-			var link string
-			if len(cveLinkMatches) > i {
-				link = cveLinkMatches[i]
-			}
+		for _, cveMatch := range cveMatches {
 			violations = append(violations, &storage.Alert_Violation{
 				Message: fmt.Sprintf("CVE %s matched regex '%s'", cveMatch, cve),
-				Link:    link,
 			})
 		}
 		return searchbasedpolicies.Violations{

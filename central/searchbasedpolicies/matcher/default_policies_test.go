@@ -811,14 +811,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				shellshockDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-(6271|6277|6278|7169|7186|7187)'",
-						Link:    "https://shellshock",
 					},
 				},
 				},
 				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-(6271|6277|6278|7169|7186|7187)'",
-						Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
 					},
 				},
 				},
@@ -830,7 +828,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				strutsDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2017-5638 matched regex 'CVE-2017-5638'",
-						Link:    "https://struts",
 					},
 				},
 				},
@@ -842,7 +839,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				heartbleedDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-0160 matched regex 'CVE-2014-0160'",
-						Link:    "https://heartbleed",
 					},
 				},
 				},
@@ -1210,14 +1206,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suite.imageIDFromDep(shellshockDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-(6271|6277|6278|7169|7186|7187)'",
-						Link:    "https://shellshock",
 					},
 				},
 				},
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-(6271|6277|6278|7169|7186|7187)'",
-						Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
 					},
 				},
 				},
@@ -1229,7 +1223,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suite.imageIDFromDep(strutsDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2017-5638 matched regex 'CVE-2017-5638'",
-						Link:    "https://struts",
 					},
 				},
 				},
@@ -1241,7 +1234,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suite.imageIDFromDep(heartbleedDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-0160 matched regex 'CVE-2014-0160'",
-						Link:    "https://heartbleed",
 					},
 				},
 				},

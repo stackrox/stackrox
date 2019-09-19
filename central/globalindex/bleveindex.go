@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 
@@ -58,9 +59,17 @@ func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
 	return initializeIndices(filepath.Join(tmpDir, scorchPath))
 }
 
+func kvConfigForMoss() map[string]interface{} {
+	return map[string]interface{}{
+		"mossCollectionOptions": map[string]interface{}{
+			"MaxPreMergerBatches": math.MaxInt32,
+		},
+	}
+}
+
 // MemOnlyIndex returns a temporary mem-only index.
 func MemOnlyIndex() (bleve.Index, error) {
-	return bleve.NewUsing("", mapping.GetIndexMapping(), upsidedown.Name, moss.Name, nil)
+	return bleve.NewUsing("", mapping.GetIndexMapping(), upsidedown.Name, moss.Name, kvConfigForMoss())
 }
 
 // InitializeIndices initializes the index in the specified path.

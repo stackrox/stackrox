@@ -151,7 +151,7 @@ require (
 )
 
 replace (
-	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20190829140129-c63d163aba71
+	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20190918030150-5ebdc2278ffe
 	github.com/dgraph-io/badger => github.com/stackrox/badger v1.6.1-0.20190917050531-b23b7e1b1e94
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0

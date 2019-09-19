@@ -29,7 +29,6 @@ var (
 	Disabled       = newFieldLabel("Disabled")
 
 	CVE                          = newFieldLabel("CVE")
-	CVELink                      = newFieldLabel("CVE Link")
 	CVECount                     = newFieldLabel("CVE Count")
 	CVSS                         = newFieldLabel("CVSS")
 	Component                    = newFieldLabel("Component")

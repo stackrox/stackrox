@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -16,6 +17,8 @@ func DocumentMappingFromOptionsMap(optionsMap map[search.FieldLabel]*v1.SearchFi
 		path := strings.Split(field.FieldPath, ".")
 		addToDocumentMapping(path, field, rootDocumentMapping)
 	}
+	disabledSection := bleve.NewDocumentDisabledMapping()
+	rootDocumentMapping.AddSubDocumentMapping("_all", disabledSection)
 	// This allows us to index the type field, which is present on the wrap struct we create for every
 	// searchable type. It is necessary to index this field since we store all documents in the same
 	// index, so we can add a query matching the "type" field to the document type if we want to restrict

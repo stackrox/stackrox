@@ -41,7 +41,7 @@ message Alert {
 
     message Violation {
         string message                                 = 1;
-        string link                                    = 2;
+        reserved 2; // formerly link
         repeated ProcessIndicator DEPRECATED_processes = 3 [(gogoproto.moretags) = "search:\"-\""];
     }
     repeated Violation violations            = 5;
