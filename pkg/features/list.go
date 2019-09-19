@@ -31,4 +31,8 @@ var (
 
 	// SensorAutoUpgrade controls the sensor autoupgrade feature.
 	SensorAutoUpgrade = registerFeature("Enable Sensor Autoupgrades", "ROX_SENSOR_AUTOUPGRADE", true)
+
+	// VulnMgmtUI enables the vulnerability management UI.
+	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
+	VulnMgmtUI = registerFeature("Enable Vulnerability Management UI", "ROX_VULN_MGMT_UI", false)
 )

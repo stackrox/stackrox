@@ -5,6 +5,7 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { connect } from 'react-redux';
 
+import { knownBackendFlags } from 'utils/featureFlags';
 import { filterLinksByFeatureFlag } from './navHelpers';
 
 const iconClassName = 'h-4 w-4 mb-1';
@@ -29,6 +30,12 @@ export const navLinks = [
         text: 'Compliance',
         to: '/main/compliance',
         renderIcon: () => <Icon.CheckSquare className={iconClassName} />
+    },
+    {
+        text: 'Vulnerability Management',
+        to: '/main/vulnerability-management',
+        renderIcon: () => <Icon.ShieldOff className={iconClassName} />,
+        featureFlag: knownBackendFlags.ROX_VULN_MGMT_UI
     },
     {
         text: 'Config Management',

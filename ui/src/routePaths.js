@@ -3,7 +3,6 @@
  */
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
-import appContexts from 'constants/appContextTypes';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -26,7 +25,9 @@ export const licensePath = `${mainPath}/license`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
 export const configManagementPath = `${mainPath}/configmanagement`;
+export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const dataRetentionPath = `${mainPath}/retention`;
+
 /**
  * New Framwork-related route paths
  */
@@ -43,14 +44,6 @@ export const urlEntityListTypes = {
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccounts',
     [rbacConfigTypes.SUBJECT]: 'subjects',
     [rbacConfigTypes.ROLE]: 'roles'
-};
-
-/**
- * New Framwork-related route paths
- */
-
-export const urlContextTypes = {
-    [appContexts.CONFIG_MANAGEMENT]: 'configmanagement'
 };
 
 export const urlEntityTypes = {

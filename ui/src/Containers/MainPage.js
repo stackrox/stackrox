@@ -21,6 +21,7 @@ import {
     accessControlPath,
     licensePath,
     systemConfigPath,
+    vulnManagementPath,
     configManagementPath
 } from 'routePaths';
 import { selectors } from 'reducers';
@@ -59,6 +60,9 @@ const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessCon
 const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
+const AsyncVulnManagementPage = asyncComponent(() =>
+    import('Containers/VulnManagement/VulnManagementLayout')
+);
 
 class MainPage extends Component {
     static propTypes = {
@@ -133,6 +137,15 @@ class MainPage extends Component {
                         requiredPermission="Licenses"
                     />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
+                    <ProtectedRoute
+                        path={vulnManagementPath}
+                        component={AsyncVulnManagementPage}
+                        featureFlagEnabled={isBackendFeatureFlagEnabled(
+                            this.props.featureFlags,
+                            knownBackendFlags.ROX_VULN_MGMT_UI,
+                            false
+                        )}
+                    />
                     <ProtectedRoute
                         path={configManagementPath}
                         component={AsyncConfigManagementPage}
