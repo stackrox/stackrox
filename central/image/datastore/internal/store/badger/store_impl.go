@@ -68,6 +68,11 @@ func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool,
 	return
 }
 
+// Exists returns if the if image exists in the store
+func (b *storeImpl) Exists(id string) (bool, error) {
+	return b.imageCRUD.Exists(id)
+}
+
 // ListImages returns all ListImages
 func (b *storeImpl) ListImages() ([]*storage.ListImage, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "ListImage")

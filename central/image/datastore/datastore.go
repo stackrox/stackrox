@@ -32,6 +32,7 @@ type DataStore interface {
 	UpsertImage(ctx context.Context, image *storage.Image) error
 
 	DeleteImages(ctx context.Context, ids ...string) error
+	Exists(ctx context.Context, id string) (bool, error)
 }
 
 func newDatastore(storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool) (DataStore, error) {

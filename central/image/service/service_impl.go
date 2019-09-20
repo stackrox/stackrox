@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"math"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/image/datastore"
@@ -37,6 +39,7 @@ var (
 		},
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/ScanImage",
+			"/v1.ImageService/DeleteImages",
 		},
 		user.With(permissions.View(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/InvalidateScanAndRegistryCaches",
@@ -160,4 +163,37 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		}
 	}
 	return img, nil
+}
+
+// DeleteImages deletes images based on query
+func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImagesRequest) (*v1.DeleteImagesResponse, error) {
+	if request.GetQuery() == nil {
+		return nil, fmt.Errorf("a scoping query is required")
+	}
+
+	query, err := search.ParseRawQueryOrEmpty(request.GetQuery().GetQuery())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "error parsing query: %v", err)
+	}
+	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
+
+	results, err := s.datastore.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &v1.DeleteImagesResponse{
+		NumDeleted: uint32(len(results)),
+		DryRun:     !request.GetConfirm(),
+	}
+
+	if !request.GetConfirm() {
+		return response, nil
+	}
+
+	idSlice := search.ResultsToIDs(results)
+	if err := s.datastore.DeleteImages(ctx, idSlice...); err != nil {
+		return nil, err
+	}
+	return response, nil
 }

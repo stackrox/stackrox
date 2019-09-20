@@ -10,6 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
+const (
+	defaultDockerRegistry = "docker.io"
+)
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -89,6 +93,27 @@ func NormalizeImageFullNameNoSha(name *storage.ImageName) *storage.ImageName {
 // there was an issue parsing it
 func GenerateImageFromString(imageStr string) (*storage.ContainerImage, error) {
 	return GenerateImageFromStringWithDefaultTag(imageStr, "latest")
+}
+
+// GenerateImageFromStringWithOverride will override the default value of docker.io if it was not specified in the full image name
+// e.g. nginx:latest -> <registry override>/library/nginx;latest
+func GenerateImageFromStringWithOverride(imageStr, registryOverride string) (*storage.ContainerImage, error) {
+	image, err := GenerateImageFromString(imageStr)
+	if err != nil {
+		return nil, err
+	}
+	if registryOverride == "" {
+		return image, err
+	}
+
+	// Only dockerhub can be mirrored: https://docs.docker.com/registry/recipes/mirror/
+	if image.GetName().GetRegistry() == defaultDockerRegistry {
+		image.Name.Registry = registryOverride
+
+		trimmedFullName := strings.TrimPrefix(image.GetName().GetFullName(), defaultDockerRegistry)
+		image.Name.FullName = fmt.Sprintf("%s%s", registryOverride, trimmedFullName)
+	}
+	return image, nil
 }
 
 // GetSHA returns the SHA of the image if it exists

@@ -54,10 +54,11 @@ func getK8sComponentID(component string) string {
 
 type deploymentWrap struct {
 	*storage.Deployment
-	original    interface{}
-	portConfigs map[portRef]*storage.PortConfig
-	pods        []*v1.Pod
-	podSelector labels.Selector
+	registryOverride string
+	original         interface{}
+	portConfigs      map[portRef]*storage.PortConfig
+	pods             []*v1.Pod
+	podSelector      labels.Selector
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -65,8 +66,9 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
-func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType string, lister v1listers.PodLister, namespaceStore *namespaceStore) *deploymentWrap {
-	wrap := newWrap(obj, deploymentType)
+func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType string,
+	lister v1listers.PodLister, namespaceStore *namespaceStore, registryOverride string) *deploymentWrap {
+	wrap := newWrap(obj, deploymentType, registryOverride)
 	if wrap == nil {
 		return nil
 	}
@@ -79,13 +81,14 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	return wrap
 }
 
-func newWrap(obj interface{}, kind string) *deploymentWrap {
-	deployment, err := resources.NewDeploymentFromStaticResource(obj, kind)
+func newWrap(obj interface{}, kind, registryOverride string) *deploymentWrap {
+	deployment, err := resources.NewDeploymentFromStaticResource(obj, kind, registryOverride)
 	if err != nil || deployment == nil {
 		return nil
 	}
 	return &deploymentWrap{
-		Deployment: deployment,
+		Deployment:       deployment,
+		registryOverride: registryOverride,
 	}
 }
 
@@ -222,7 +225,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 				return false, err
 			}
 			if updated := checkIfNewPodSpecRequired(&podSpec, pods); updated {
-				resources.NewDeploymentWrap(w.Deployment).PopulateDeploymentFromPodSpec(podSpec)
+				resources.NewDeploymentWrap(w.Deployment, w.registryOverride).PopulateDeploymentFromPodSpec(podSpec)
 			}
 			w.populatePorts()
 			w.populateDataFromPods(pods...)
@@ -368,7 +371,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 				continue
 			}
 
-			parsedName, err := imageUtils.GenerateImageFromString(p.Spec.Containers[i].Image)
+			parsedName, err := imageUtils.GenerateImageFromStringWithOverride(p.Spec.Containers[i].Image, w.registryOverride)
 			if err != nil {
 				// This error will only happen if we could not parse the image, this is possible if the image in kubernetes is malformed
 				// e.g. us.gcr.io/$PROJECT/xyz:latest is an example that we have seen

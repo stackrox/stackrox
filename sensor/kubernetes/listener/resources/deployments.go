@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	v1 "k8s.io/api/core/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
@@ -38,11 +39,12 @@ type deploymentHandler struct {
 	namespaceStore  *namespaceStore
 	roxMetadata     roxmetadata.Metadata
 	processFilter   filter.Filter
+	config          config.Handler
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager, namespaceStore *namespaceStore,
-	roxMetadata roxmetadata.Metadata, podLister v1listers.PodLister, processFilter filter.Filter) *deploymentHandler {
+	roxMetadata roxmetadata.Metadata, podLister v1listers.PodLister, processFilter filter.Filter, config config.Handler) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:       podLister,
 		serviceStore:    serviceStore,
@@ -51,11 +53,12 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymen
 		namespaceStore:  namespaceStore,
 		roxMetadata:     roxMetadata,
 		processFilter:   processFilter,
+		config:          config,
 	}
 }
 
 func (d *deploymentHandler) processWithType(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	wrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.podLister, d.namespaceStore)
+	wrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.podLister, d.namespaceStore, d.config.GetConfig().GetRegistryOverride())
 	if wrap == nil {
 		return d.maybeProcessPod(obj)
 	}

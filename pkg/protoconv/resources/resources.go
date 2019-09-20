@@ -31,12 +31,14 @@ var (
 // DeploymentWrap is a wrapper around a deployment to help convert the static fields
 type DeploymentWrap struct {
 	*storage.Deployment
+	registryOverride string
 }
 
 // NewDeploymentWrap creates a deployment wrap from an existing deployment
-func NewDeploymentWrap(d *storage.Deployment) *DeploymentWrap {
+func NewDeploymentWrap(d *storage.Deployment, registryOverride string) *DeploymentWrap {
 	return &DeploymentWrap{
-		Deployment: d,
+		Deployment:       d,
+		registryOverride: registryOverride,
 	}
 }
 
@@ -54,7 +56,7 @@ func isTrackedOwnerReference(reference metav1.OwnerReference) bool {
 }
 
 // NewDeploymentFromStaticResource returns a storage.Deployment from a k8s object
-func NewDeploymentFromStaticResource(obj interface{}, deploymentType string) (*storage.Deployment, error) {
+func NewDeploymentFromStaticResource(obj interface{}, deploymentType, registryOverride string) (*storage.Deployment, error) {
 	objMeta, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not access metadata of object of type %T", obj)
@@ -78,7 +80,7 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType string) (*s
 		}
 	}
 
-	wrap := newWrap(objMeta, kind)
+	wrap := newWrap(objMeta, kind, registryOverride)
 	wrap.populateFields(obj)
 	return wrap.Deployment, nil
 
@@ -95,12 +97,13 @@ func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, str
 	return &dc.MetaData, dc.Kind, err
 }
 
-func newWrap(meta metav1.Object, kind string) *DeploymentWrap {
+func newWrap(meta metav1.Object, kind, registryOverride string) *DeploymentWrap {
 	createdTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
 	if err != nil {
 		log.Error(err)
 	}
 	return &DeploymentWrap{
+		registryOverride: registryOverride,
 		Deployment: &storage.Deployment{
 			Id:          string(meta.GetUID()),
 			Name:        meta.GetName(),
@@ -307,7 +310,8 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 
 func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-		parsedImage, err := imageUtils.GenerateImageFromString(c.Image)
+		parsedImage, err := imageUtils.GenerateImageFromStringWithOverride(c.Image, w.registryOverride)
+
 		if err != nil {
 			log.Error(err)
 			parsedImage = &storage.ContainerImage{

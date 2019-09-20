@@ -110,6 +110,21 @@ func (mr *MockStoreMockRecorder) GetImagesBatch(shas interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBatch", reflect.TypeOf((*MockStore)(nil).GetImagesBatch), shas)
 }
 
+// Exists mocks base method
+func (m *MockStore) Exists(id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists
+func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), id)
+}
+
 // UpsertImage mocks base method
 func (m *MockStore) UpsertImage(image *storage.Image) error {
 	m.ctrl.T.Helper()

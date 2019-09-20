@@ -82,3 +82,95 @@ func TestExtractImageSha(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerateImageFromStringWithOverride(t *testing.T) {
+	cases := []struct {
+		name         string
+		image        string
+		override     string
+		expectedName *storage.ImageName
+	}{
+		{
+			name:  "no remote - no override",
+			image: "nginx:latest",
+			expectedName: &storage.ImageName{
+				Registry: "docker.io",
+				Remote:   "library/nginx",
+				Tag:      "latest",
+				FullName: "docker.io/library/nginx:latest",
+			},
+		},
+		{
+			name:  "no registry - no override",
+			image: "library/nginx:latest",
+			expectedName: &storage.ImageName{
+				Registry: "docker.io",
+				Remote:   "library/nginx",
+				Tag:      "latest",
+				FullName: "docker.io/library/nginx:latest",
+			},
+		},
+		{
+			name:  "full registry - no override",
+			image: "docker.io/library/nginx:latest",
+			expectedName: &storage.ImageName{
+				Registry: "docker.io",
+				Remote:   "library/nginx",
+				Tag:      "latest",
+				FullName: "docker.io/library/nginx:latest",
+			},
+		},
+		{
+			name:     "full registry - not docker - override",
+			image:    "quay.io/library/nginx:latest",
+			override: "override.io",
+			expectedName: &storage.ImageName{
+				Registry: "quay.io",
+				Remote:   "library/nginx",
+				Tag:      "latest",
+				FullName: "quay.io/library/nginx:latest",
+			},
+		},
+		{
+			name:     "no remote - override",
+			image:    "nginx:latest",
+			override: "override.io",
+			expectedName: &storage.ImageName{
+				Registry: "override.io",
+				Remote:   "library/nginx",
+				Tag:      "latest",
+				FullName: "override.io/library/nginx:latest",
+			},
+		},
+		{
+			name:     "no registry - override",
+			image:    "library/nginx:latest",
+			override: "override.io",
+			expectedName: &storage.ImageName{
+				Registry: "override.io",
+				Remote:   "library/nginx",
+				Tag:      "latest",
+				FullName: "override.io/library/nginx:latest",
+			},
+		},
+		{
+			name:     "full registry - override",
+			image:    "docker.io/library/nginx:latest",
+			override: "override.io",
+			expectedName: &storage.ImageName{
+				Registry: "override.io",
+				Remote:   "library/nginx",
+				Tag:      "latest",
+				FullName: "override.io/library/nginx:latest",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			img, err := GenerateImageFromStringWithOverride(c.image, c.override)
+			assert.NoError(t, err)
+			assert.Equal(t, c.expectedName, img.Name)
+		})
+	}
+}

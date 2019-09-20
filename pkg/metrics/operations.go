@@ -13,6 +13,8 @@ const (
 
 	Dedupe
 
+	Exists
+
 	Get
 	GetAll
 	GetMany

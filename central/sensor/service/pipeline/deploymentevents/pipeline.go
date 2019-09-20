@@ -163,7 +163,13 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	// If it exists, check to see if we can dedupe it
 	if exists {
 		if oldDeployment.GetHash() == deployment.GetHash() {
-			return s.rewriteInstancesAndPersist(ctx, oldDeployment, deployment)
+			hasUnsavedImages, err := s.updateImages.HasUnsavedImages(ctx, deployment)
+			if err != nil {
+				return err
+			}
+			if !hasUnsavedImages {
+				return s.rewriteInstancesAndPersist(ctx, oldDeployment, deployment)
+			}
 		}
 		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 	}

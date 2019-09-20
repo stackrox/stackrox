@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
@@ -14,14 +15,14 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.SharedInformerFactory, output chan<- *central.SensorEvent, stopSignal *concurrency.Signal) {
+func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.SharedInformerFactory, output chan<- *central.SensorEvent, stopSignal *concurrency.Signal, config config.Handler) {
 	// We want creates to be treated as updates while existing objects are loaded.
 	var treatCreatesAsUpdates concurrency.Flag
 	treatCreatesAsUpdates.Set(true)
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := sif.Core().V1().Pods()
-	dispatchers := resources.NewDispatcherRegistry(podInformer.Lister(), clusterentities.StoreInstance(), roxmetadata.Singleton(), processfilter.Singleton())
+	dispatchers := resources.NewDispatcherRegistry(podInformer.Lister(), clusterentities.StoreInstance(), roxmetadata.Singleton(), processfilter.Singleton(), config)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
 	secretInformer := sif.Core().V1().Secrets().Informer()

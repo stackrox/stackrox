@@ -35,3 +35,20 @@ func (s *updateImagesImpl) do(ctx context.Context, deployment *storage.Deploymen
 		}
 	}
 }
+
+func (s *updateImagesImpl) HasUnsavedImages(ctx context.Context, deployment *storage.Deployment) (bool, error) {
+	for _, c := range deployment.GetContainers() {
+		image := c.GetImage()
+		if image.GetId() == "" {
+			continue
+		}
+		exists, err := s.images.Exists(ctx, image.GetId())
+		if err != nil {
+			return false, err
+		}
+		if !exists {
+			return true, nil
+		}
+	}
+	return false, nil
+}

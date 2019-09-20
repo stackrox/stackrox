@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func TestConvertDifferentContainerNumbers(t *testing.T) {
+func TestConvertWithRegistryOverride(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
@@ -25,14 +25,12 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 		action             central.ResourceAction
 		podLister          *mockPodLister
 		expectedDeployment *storage.Deployment
+		registryOverride   string
 	}{
 		{
-			name: "Deployment",
+			registryOverride: "hello.io",
+			name:             "Deployment",
 			inputObj: &v1beta1.Deployment{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1beta1",
-					Kind:       "Deployment",
-				},
 				ObjectMeta: metav1.ObjectMeta{
 					UID:               types.UID("FooID"),
 					Name:              "deployment",
@@ -48,7 +46,11 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 							Containers: []v1.Container{
 								{
 									Name:  "container1",
-									Image: "docker.io/stackrox/kafka:latest",
+									Image: "stackrox/kafka:latest",
+								},
+								{
+									Name:  "container2",
+									Image: "stackrox/policy-engine:1.3",
 								},
 							},
 						},
@@ -73,27 +75,29 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 						Status: v1.PodStatus{
 							ContainerStatuses: []v1.ContainerStatus{
 								{
-									Name:  "container1",
-									Image: "docker.io/stackrox/kafka:latest",
+									Name:    "container1",
+									Image:   "stackrox/kafka:latest",
+									ImageID: "docker://docker.io/stackrox/kafka@sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 								},
 								{
 									Name:        "container2",
-									Image:       "docker.io/stackrox/policy-engine:1.3",
+									Image:       "stackrox/policy-engine:1.3",
 									ImageID:     "docker-pullable://docker.io/stackrox/policy-engine@sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 									ContainerID: "docker://35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
 								},
 							},
 						},
 						Spec: v1.PodSpec{
-							NodeName: "mynode",
+							NodeName:                     "mynode",
+							AutomountServiceAccountToken: &[]bool{true}[0],
 							Containers: []v1.Container{
 								{
 									Name:  "container1",
-									Image: "docker.io/stackrox/kafka:latest",
+									Image: "stackrox/kafka:latest",
 								},
 								{
 									Name:  "container2",
-									Image: "docker.io/stackrox/policy-engine:1.3",
+									Image: "stackrox/policy-engine:1.3",
 								},
 							},
 						},
@@ -110,28 +114,29 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 					MatchLabels: map[string]string{},
 				},
 				Created:                      &timestamp.Timestamp{Seconds: 1000},
-				ImagePullSecrets:             []string{},
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",
 				AutomountServiceAccountToken: true,
+				ImagePullSecrets:             []string{},
 				Containers: []*storage.Container{
 					{
 						Id:   "FooID:container1",
 						Name: "container1",
-						Image: &storage.ContainerImage{
-							Name: &storage.ImageName{
-								Registry: "docker.io",
-								Remote:   "stackrox/kafka",
-								Tag:      "latest",
-								FullName: "docker.io/stackrox/kafka:latest",
-							},
-							NotPullable: false,
-						},
 						Config: &storage.ContainerConfig{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
 						},
 						SecurityContext: &storage.SecurityContext{},
 						Resources:       &storage.Resources{},
+						Image: &storage.ContainerImage{
+							Id: "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
+							Name: &storage.ImageName{
+								Registry: "hello.io",
+								Remote:   "stackrox/kafka",
+								Tag:      "latest",
+								FullName: "hello.io/stackrox/kafka:latest",
+							},
+							NotPullable: true,
+						},
 						Instances: []*storage.ContainerInstance{
 							{
 								InstanceId: &storage.ContainerInstanceID{
@@ -144,18 +149,17 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 					{
 						Id:   "FooID:container2",
 						Name: "container2",
+						Config: &storage.ContainerConfig{
+							Env: []*storage.ContainerConfig_EnvironmentConfig{},
+						},
 						Image: &storage.ContainerImage{
 							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 							Name: &storage.ImageName{
-								Registry: "docker.io",
+								Registry: "hello.io",
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",
-								FullName: "docker.io/stackrox/policy-engine:1.3",
+								FullName: "hello.io/stackrox/policy-engine:1.3",
 							},
-							NotPullable: false,
-						},
-						Config: &storage.ContainerConfig{
-							Env: []*storage.ContainerConfig_EnvironmentConfig{},
 						},
 						SecurityContext: &storage.SecurityContext{},
 						Resources:       &storage.Resources{},
@@ -177,7 +181,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, "").GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, c.registryOverride).GetDeployment()
 			assert.Equal(t, c.expectedDeployment, actual)
 		})
 	}

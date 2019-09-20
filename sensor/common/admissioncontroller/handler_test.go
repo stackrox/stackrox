@@ -106,7 +106,7 @@ func TestDeploymentReview(t *testing.T) {
 	err := json.Unmarshal([]byte(deploymentReview), &admissionReview)
 	require.NoError(t, err)
 
-	d, err := parseIntoDeployment(&admissionReview)
+	d, err := parseIntoDeployment(&admissionReview, "")
 	require.NoError(t, err)
 	require.NotNil(t, d)
 }

@@ -190,3 +190,18 @@ func (mr *MockDataStoreMockRecorder) DeleteImages(ctx interface{}, ids ...interf
 	varargs := append([]interface{}{ctx}, ids...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImages", reflect.TypeOf((*MockDataStore)(nil).DeleteImages), varargs...)
 }
+
+// Exists mocks base method
+func (m *MockDataStore) Exists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists
+func (mr *MockDataStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
+}

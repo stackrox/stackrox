@@ -61,7 +61,7 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", nil, mockNamespaceStore)
+		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", nil, mockNamespaceStore, "")
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
@@ -634,7 +634,7 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore).GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, "").GetDeployment()
 			assert.Equal(t, c.expectedDeployment, actual)
 		})
 	}

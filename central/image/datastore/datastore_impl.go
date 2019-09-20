@@ -199,6 +199,13 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 	return errorList.ToError()
 }
 
+func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
+	if ok, err := ds.canReadImage(ctx, id); err != nil || !ok {
+		return false, err
+	}
+	return ds.storage.Exists(id)
+}
+
 // merge adds the most up to date data from the two inputs to the first input.
 func merge(mergeTo *storage.Image, mergeWith *storage.Image) (updated bool) {
 	// If the image currently in the DB has more up to date info, swap it out.

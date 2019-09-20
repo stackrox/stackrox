@@ -50,15 +50,17 @@ func main() {
 	upgradeCmdHandler, err := k8sUpgrade.NewCommandHandler()
 	utils.Must(err)
 
+	configHandler := config.NewCommandHandler()
+
 	s := sensor.NewSensor(
-		listener.New(),
+		listener.New(configHandler),
 		enforcer.MustCreate(),
 		orchestrator.MustCreate(sensorInstanceID),
 		manager.Singleton(),
 		roxmetadata.Singleton(),
 		networkpolicies.NewCommandHandler(),
 		clusterstatus.NewUpdater(),
-		config.NewCommandHandler(),
+		configHandler,
 		upgradeCmdHandler,
 	)
 	s.Start()

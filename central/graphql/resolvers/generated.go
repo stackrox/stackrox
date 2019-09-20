@@ -339,6 +339,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("DynamicClusterConfig", []string{
 		"admissionControllerConfig: AdmissionControllerConfig",
+		"registryOverride: String!",
 	}))
 	utils.Must(builder.AddType("Email", []string{
 		"disableTLS: Boolean!",
@@ -3425,6 +3426,11 @@ func (resolver *Resolver) wrapDynamicClusterConfigs(values []*storage.DynamicClu
 func (resolver *dynamicClusterConfigResolver) AdmissionControllerConfig(ctx context.Context) (*admissionControllerConfigResolver, error) {
 	value := resolver.data.GetAdmissionControllerConfig()
 	return resolver.root.wrapAdmissionControllerConfig(value, true, nil)
+}
+
+func (resolver *dynamicClusterConfigResolver) RegistryOverride(ctx context.Context) string {
+	value := resolver.data.GetRegistryOverride()
+	return value
 }
 
 type emailResolver struct {

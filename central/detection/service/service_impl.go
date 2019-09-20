@@ -159,7 +159,7 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.Enr
 		return nil, nil
 	}
 
-	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind)
+	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "")
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Could not convert to deployment from resource: %v", err)
 	}

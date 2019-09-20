@@ -219,6 +219,28 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                     titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
                 >
                     <div className="p-3">
+                        <div className="mb-4">
+                            <label
+                                htmlFor="dynamicConfig.registryOverride"
+                                className="block py-2 text-base-600 font-700"
+                            >
+                                Custom default image registry
+                            </label>
+                            <div className="flex py-1 pl-2 italic">
+                                Set a value if the default registry is not docker.io in this cluster
+                            </div>
+                            <div className="flex">
+                                <input
+                                    id="dynamicConfig.registryOverride"
+                                    name="dynamicConfig.registryOverride"
+                                    onChange={handleChange}
+                                    value={selectedCluster.dynamicConfig.registryOverride}
+                                    className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                                    placeholder="image-mirror.example.com"
+                                />
+                            </div>
+                        </div>
+
                         <h3>Admission Controller</h3>
                         <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label

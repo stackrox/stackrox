@@ -14,6 +14,8 @@ type Store interface {
 	GetImage(sha string) (*storage.Image, bool, error)
 	GetImagesBatch(shas []string) ([]*storage.Image, error)
 
+	Exists(id string) (bool, error)
+
 	UpsertImage(image *storage.Image) error
 	DeleteImage(id string) error
 

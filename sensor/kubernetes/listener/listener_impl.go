@@ -4,6 +4,7 @@ import (
 	"github.com/openshift/client-go/apps/informers/externalversions"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/common/config"
 	"k8s.io/client-go/informers"
 )
 
@@ -17,6 +18,8 @@ type listenerImpl struct {
 	clients *clientSet
 	eventsC chan *central.SensorEvent
 	stopSig concurrency.Signal
+
+	configHandler config.Handler
 }
 
 func (k *listenerImpl) Start() {
@@ -32,7 +35,7 @@ func (k *listenerImpl) Start() {
 	patchNamespaces(k.clients.k8s, &k.stopSig)
 
 	// Start handling resource events.
-	handleAllEvents(k8sFactory, osFactory, k.eventsC, &k.stopSig)
+	handleAllEvents(k8sFactory, osFactory, k.eventsC, &k.stopSig, k.configHandler)
 }
 
 func (k *listenerImpl) Stop() {

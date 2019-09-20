@@ -129,6 +129,16 @@ func (b *storeImpl) UpsertImage(image *storage.Image) error {
 	})
 }
 
+func (b *storeImpl) Exists(id string) (exists bool, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Exists, "Image")
+	err = b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(listImageBucket)
+		exists = bucket.Get([]byte(id)) != nil
+		return nil
+	})
+	return
+}
+
 // DeleteImage deletes an image an all it's data (but maintains the orch sha to registry sha mapping).
 func (b *storeImpl) DeleteImage(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Image")

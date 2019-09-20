@@ -23,6 +23,16 @@ message ScanImageRequest {
     string image_name = 1;
 }
 
+message DeleteImagesRequest {
+    RawQuery query   = 1;
+    bool     confirm = 2;
+}
+
+message DeleteImagesResponse {
+    uint32 num_deleted = 1;
+    bool   dry_run     = 2;
+}
+
 // ImageService APIs manages image metadata.
 service ImageService {
 
@@ -59,6 +69,13 @@ service ImageService {
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
         option (google.api.http) = {
             get: "/v1/images/cache/invalidate"
+        };
+    }
+
+    // DeleteImage removes the images based on a query
+    rpc DeleteImages (DeleteImagesRequest) returns (DeleteImagesResponse) {
+        option (google.api.http) = {
+            delete: "/v1/images"
         };
     }
 

@@ -22,6 +22,8 @@ type Crud interface {
 	Create(msg proto.Message) error
 	CreateBatch(msg []proto.Message) error
 
+	Exists(id string) (bool, error)
+
 	Read(id string) (proto.Message, bool, error)
 	ReadPartial(id string) (proto.Message, bool, error)
 

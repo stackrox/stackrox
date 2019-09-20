@@ -64,6 +64,8 @@ message AdmissionControllerConfig {
 
 message DynamicClusterConfig {
     AdmissionControllerConfig admission_controller_config = 1;
+
+    string registry_override = 2;
 }
 
 message Cluster {

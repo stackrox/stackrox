@@ -110,6 +110,18 @@ func (s *CRUDTestSuite) TestRead() {
 	}
 }
 
+func (s *CRUDTestSuite) TestExists() {
+	exists, err := s.crud.Exists(alert1ID)
+	s.NoError(err)
+	s.False(exists)
+
+	s.NoError(s.crud.Upsert(alert1))
+
+	exists, err = s.crud.Exists(alert1ID)
+	s.NoError(err)
+	s.True(exists)
+}
+
 func (s *CRUDTestSuite) TestReadMany() {
 	msgs, indices, err := s.crud.ReadBatch([]string{})
 	s.NoError(err)

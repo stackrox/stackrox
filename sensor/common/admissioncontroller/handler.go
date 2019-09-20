@@ -113,7 +113,7 @@ func writeResponse(w http.ResponseWriter, id types.UID, allowed bool, reason str
 	}
 }
 
-func parseIntoDeployment(ar *admission.AdmissionReview) (*storage.Deployment, error) {
+func parseIntoDeployment(ar *admission.AdmissionReview, registryOverride string) (*storage.Deployment, error) {
 	var objType interface{}
 	if ar.Request == nil {
 		return nil, nil
@@ -139,7 +139,7 @@ func parseIntoDeployment(ar *admission.AdmissionReview) (*storage.Deployment, er
 		return nil, err
 	}
 
-	return resources.NewDeploymentFromStaticResource(objType, ar.Request.Kind.Kind)
+	return resources.NewDeploymentFromStaticResource(objType, ar.Request.Kind.Kind, registryOverride)
 }
 
 // ServeHTTP serves the admission controller endpoint
@@ -176,7 +176,7 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deployment, err := parseIntoDeployment(&admissionReview)
+	deployment, err := parseIntoDeployment(&admissionReview, s.configHandler.GetConfig().GetRegistryOverride())
 	if err != nil {
 		log.Errorf("error parsing into deployment: %v", err)
 		admissionPass(w, admissionReview.Request.UID)

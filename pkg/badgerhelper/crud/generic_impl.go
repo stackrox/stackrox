@@ -94,6 +94,22 @@ func (c *crudImpl) ReadPartial(id string) (proto.Message, bool, error) {
 	return c.read(id, c.partialPrefix, c.partialDeserializeFunc)
 }
 
+func (c *crudImpl) Exists(id string) (exists bool, err error) {
+	err = c.db.View(func(tx *badger.Txn) error {
+		key := badgerhelper.GetBucketKey(c.prefix, []byte(id))
+		_, err := tx.Get(key)
+		if err == nil {
+			exists = true
+			return nil
+		}
+		if err == badger.ErrKeyNotFound {
+			return nil
+		}
+		return err
+	})
+	return
+}
+
 func (c *crudImpl) readBatch(prefix []byte, deserializer Deserializer, ids []string) (msgs []proto.Message, indices []int, err error) {
 	err = c.db.View(func(tx *badger.Txn) error {
 		for idx := range ids {
