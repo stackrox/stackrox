@@ -39,7 +39,7 @@ func deserialize(key, value []byte) (*storage.Group, error) {
 
 func deserializeKey(key []byte) (*storage.GroupProperties, error) {
 	str := string(key)
-	props := strings.Split(str, ":")
+	props := strings.Split(str, serializePkg.KeySeparator)
 	if len(props) != 3 {
 		return nil, fmt.Errorf("unable to deserialize key: %s", str)
 	}

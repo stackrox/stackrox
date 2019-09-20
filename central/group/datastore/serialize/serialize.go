@@ -1,10 +1,13 @@
 package serialize
 
 import (
-	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 )
+
+// KeySeparator is the separator between the group key
+const KeySeparator = "\x00"
 
 // PropsKey is the key function for GroupProperties objects
 func PropsKey(props *storage.GroupProperties) string {
@@ -13,5 +16,5 @@ func PropsKey(props *storage.GroupProperties) string {
 
 // StringKey is the key function for GroupProperties objects with direct input values.
 func StringKey(authProviderID, attrKey, attrValue string) string {
-	return fmt.Sprintf("%s:%s:%s", authProviderID, attrKey, attrValue)
+	return strings.Join([]string{authProviderID, attrKey, attrValue}, KeySeparator)
 }
