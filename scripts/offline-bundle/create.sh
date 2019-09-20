@@ -4,7 +4,7 @@ IFS=$'\n\t'
 
 main() {
     # Main uses the version reported by make tag.
-    local main_tag="$(make tag)"
+    local main_tag="$(make --no-print-directory tag)"
     local main_image="stackrox.io/main:${main_tag}"
 
     # Monitoring uses the same exact version as main.
