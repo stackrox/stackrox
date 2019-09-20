@@ -12,7 +12,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import Widget from 'Components/Widget';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import EntityWithFailedControls from './widgets/EntityWithFailedControls';
+import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import Nodes from '../List/Nodes';
 
 const QUERY = gql`
@@ -128,9 +128,9 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                         {!(entityContext && entityContext[entityTypes.NODE]) && (
                             <CollapsibleSection title="Control Findings">
                                 <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                                    <EntityWithFailedControls
-                                        entityType={entityTypes.NODE}
-                                        relatedEntities={nodes}
+                                    <NodesWithFailedControls
+                                        entityType={entityTypes.CONTROL}
+                                        entityContext={entityContext}
                                     />
                                 </div>
                             </CollapsibleSection>

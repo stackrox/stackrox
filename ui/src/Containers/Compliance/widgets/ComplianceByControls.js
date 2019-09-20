@@ -43,6 +43,18 @@ const QUERY = gql`
                 }
                 numFailing
                 numPassing
+                keys {
+                    ... on ComplianceControlGroup {
+                        id
+                        name
+                        description
+                    }
+                    ... on ComplianceControl {
+                        id
+                        name
+                        description
+                    }
+                }
             }
         }
     }
@@ -55,10 +67,19 @@ const getPercentagePassing = (numPassing, numFailing) => {
 
 const getCategoryControlMapping = data => {
     const categoryMapping = data.aggregatedResults.results.reduce((acc, curr) => {
-        const categoryID = curr.aggregationKeys[0].id;
-        const controlID = curr.aggregationKeys[1].id;
         const { numPassing, numFailing } = curr;
-        acc[categoryID] = [...(acc[categoryID] || []), { controlID, numPassing, numFailing }];
+        const [category, control] = curr.keys;
+        if (acc[category.id]) {
+            acc[category.id].controls = [
+                ...acc[category.id].controls,
+                { control, numPassing, numFailing }
+            ];
+        } else {
+            acc[category.id] = {
+                category,
+                controls: [{ control, numPassing, numFailing }]
+            };
+        }
         return acc;
     }, {});
     return categoryMapping;
@@ -76,8 +97,8 @@ const getColor = (numPassing, numFailing) => {
 
 const getSunburstData = (categoryMapping, urlBuilder) => {
     const categories = Object.keys(categoryMapping);
-    const data = categories.map(category => {
-        const controls = categoryMapping[category];
+    const data = categories.map(categoryId => {
+        const { category, controls } = categoryMapping[categoryId];
         const { totalPassing, totalFailing } = controls.reduce(
             (acc, curr) => {
                 acc.totalPassing += curr.numPassing;
@@ -88,14 +109,14 @@ const getSunburstData = (categoryMapping, urlBuilder) => {
         );
         const categoryValue = getPercentagePassing(totalPassing, totalFailing);
         return {
-            name: category,
+            name: `${category.name}. ${category.description}`,
             color: getColor(totalPassing, totalFailing),
             value: categoryValue,
-            children: controls.map(({ numPassing, numFailing, controlID }) => {
+            children: controls.map(({ control, numPassing, numFailing, controlID }) => {
                 const value = getPercentagePassing(numPassing, numFailing);
                 const link = urlBuilder.base(entityTypes.CONTROL, controlID).url();
                 return {
-                    name: controlID,
+                    name: `${control.name} - ${control.description}`,
                     color: getColor(numPassing, numFailing),
                     value,
                     link
