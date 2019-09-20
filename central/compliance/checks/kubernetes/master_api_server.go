@@ -81,11 +81,11 @@ func encryptionProvider() framework.Check {
 			if !exists {
 				framework.NoteNowf(ctx, "Process %q not found on host therefore check is not applicable", kubeAPIProcessName)
 			}
-			arg := common.GetArgForFlag(process.Args, "experimental-encryption-provider-config")
+			arg := common.GetArgForFlag(process.Args, "encryption-provider-config")
 			if arg == nil {
-				framework.FailNowf(ctx, "experimental-encryption-provider-config is not set, which means that aescbc is not in use")
+				framework.FailNowf(ctx, "encryption-provider-config is not set, which means that aescbc is not in use")
 			} else if arg.GetFile() == nil {
-				framework.FailNowf(ctx, "No file was found experimental-encryption-provider-config value of %q", msgfmt.FormatStrings(arg.GetValues()...))
+				framework.FailNowf(ctx, "No file was found encryption-provider-config value of %q", msgfmt.FormatStrings(arg.GetValues()...))
 			}
 
 			var config encryptionconfig.EncryptionConfig

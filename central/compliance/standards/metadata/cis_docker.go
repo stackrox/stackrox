@@ -417,7 +417,7 @@ var cisDocker = Standard{
 				{
 					ID:          "5_11",
 					Name:        "5.11",
-					Description: "Ensure taht CPU priority is set appropriately on the container",
+					Description: "Ensure that CPU priority is set appropriately on the container",
 				},
 				{
 					ID:          "5_12",
