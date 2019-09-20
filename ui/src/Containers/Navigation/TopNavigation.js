@@ -5,14 +5,14 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import * as Icon from 'react-feather';
+import { actions as authActions } from 'reducers/auth';
 
 import Logo from 'Components/icons/logo';
 import Menu from 'Components/Menu';
 import ThemeToggleButton from 'Components/ThemeToggleButton';
 import CLIDownloadButton from 'Components/CLIDownloadButton';
 import GlobalSearchButton from 'Components/GlobalSearchButton';
-import SummaryCounts from 'Components/SummaryCounts';
-import { actions as authActions } from 'reducers/auth';
+import SummaryCounts from './SummaryCounts';
 
 export const topNavBtnTextClass = 'sm:hidden md:flex uppercase text-sm tracking-wide';
 export const topNavBtnSvgClass = 'sm:mr-0 md:mr-3 h-4 w-4';
