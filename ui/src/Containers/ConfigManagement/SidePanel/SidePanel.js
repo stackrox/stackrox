@@ -102,7 +102,7 @@ const SidePanel = ({
                 bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : ''}`}
                 headerTextComponent={
                     <BreadCrumbs
-                        className="font-700 leading-normal text-base-600 tracking-wide"
+                        className="font-700 leading-normal text-base-600 tracking-wide truncate"
                         entityType1={entityType1 || entityListType1}
                         entityId1={entityId1}
                         entityType2={entityType2}

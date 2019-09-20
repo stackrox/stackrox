@@ -100,7 +100,7 @@ const Panel = props => (
                 )}
 
                 <div
-                    className={`flex flex-1 items-center justify-end relative ${
+                    className={`flex items-center justify-end relative flex-1 ${
                         props.onClose ? 'pl-3' : 'px-3'
                     }`}
                 >

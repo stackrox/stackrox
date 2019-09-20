@@ -60,22 +60,28 @@ const BreadCrumbLinks = props => {
     const { entityType1, entityId1, entityListType2, entityId2 } = params;
     if (!entityId1) return null;
     const breadCrumbStates = getBreadCrumbStates(params);
+    let maxWidthClass = 'max-w-full';
+    if (breadCrumbStates.length > 1) maxWidthClass = `max-w-1/${breadCrumbStates.length}`;
     const breadCrumbLinks = breadCrumbStates.map((state, i, { length }) => {
         const icon = i !== length - 1 ? Icon : null;
         const link = getLink(match, location, i, length);
         const content = link ? (
-            <Link className="text-primary-700 truncate uppercase" to={link}>
+            <Link
+                className="text-primary-700 truncate uppercase truncate"
+                title={state.name}
+                to={link}
+            >
                 {state.name}
             </Link>
         ) : (
-            <span className="w-full">
+            <span className="w-full truncate" title={state.name}>
                 <span className="truncate uppercase">{state.name}</span>
             </span>
         );
         if (!state) return null;
         return (
-            <div key={`${state.name}--${state.type}`} className="flex">
-                <span className="flex flex-col max-w-64" data-test-id="breadcrumb-link-text">
+            <div key={`${state.name}--${state.type}`} className={`flex ${maxWidthClass} truncate`}>
+                <span className="flex flex-col max-w-full" data-test-id="breadcrumb-link-text">
                     {content}
                     <span className="capitalize italic font-600">{state.type.toLowerCase()}</span>
                 </span>
@@ -84,7 +90,7 @@ const BreadCrumbLinks = props => {
         );
     });
     return (
-        <span className={`flex items-center ${className}`}>
+        <span style={{ flex: '10 1' }} className={`flex items-center ${className}`}>
             <BackButton
                 entityType1={entityType1}
                 entityListType2={entityListType2}
