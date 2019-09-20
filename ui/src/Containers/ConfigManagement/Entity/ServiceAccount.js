@@ -124,11 +124,11 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                     saNamespace,
                     scopedPermissions = [],
                     annotations,
-                    clusterName,
-                    clusterId
+                    clusterName = '',
+                    clusterId = ''
                 } = entity;
 
-                let namespaceName;
+                let namespaceName = '';
                 let namespaceId;
                 if (saNamespace) {
                     const { metadata } = saNamespace;

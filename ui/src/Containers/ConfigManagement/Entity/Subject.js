@@ -141,12 +141,11 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                 }
 
                 const scopedPermissionsAcrossAllClusters = clusters.reduce(
-                    (acc, { clusterId, clusterName, scopedPermissions }) => {
+                    (acc, { clusterId = '', clusterName = '', scopedPermissions = [] }) => {
                         return [...acc, { clusterId, clusterName, scopedPermissions }];
                     },
                     []
                 );
-
                 const metadataKeyValuePairs = [
                     { key: 'Role type', value: type },
                     {

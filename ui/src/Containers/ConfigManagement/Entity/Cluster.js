@@ -108,6 +108,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                         />
                     );
                 }
+                if (!entity.status) return null;
 
                 const {
                     name,

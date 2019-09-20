@@ -247,7 +247,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                     deploymentCount,
                     clusterName,
                     clusterId,
-                    files
+                    files = []
                 } = secret;
 
                 const metadataKeyValuePairs = [

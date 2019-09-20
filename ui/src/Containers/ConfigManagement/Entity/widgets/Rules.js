@@ -4,30 +4,31 @@ import { ArrowRight } from 'react-feather';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 const Rules = ({ rules, ...rest }) => {
-    const header = `${rules.length > 0 ? rules.length : ''} Rules`;
-    const verbs = rules.map((rule, i) => {
-        return (
-            <li className="flex items-center" key={i}>
-                <div className="min-w-48 text-sm bg-base-200 border border-base-400 my-3 p-3 rounded w-full leading-normal">
-                    {rule.verbs.includes('*') ? '* (All verbs)' : rule.verbs.join(', ')}
-                </div>
-                <ArrowRight className="h-4 w-4 text-base-500 mx-4" />
-            </li>
-        );
-    });
-    const resourcesAndNonResourcesURL = rules.map((rule, i) => {
-        const { nonResourceUrls, resources } = rule;
-        const urls = [...resources, ...nonResourceUrls];
-        return (
-            <li className="flex items-center" key={i}>
-                <div className="text-sm bg-base-200 border border-base-400 my-3 p-3 rounded leading-normal">
-                    {urls.includes('*') ? '* (All resources)' : urls.join(', ')}
-                </div>
-            </li>
-        );
-    });
     let content = <NoResultsMessage message="No rules" className="p-6" />;
-    if (rules.length) {
+    let header = '0 Rules';
+    if (rules && rules.length > 0) {
+        header = `${rules.length > 0 ? rules.length : ''} Rules`;
+        const verbs = rules.map((rule, i) => {
+            return (
+                <li className="flex items-center" key={i}>
+                    <div className="min-w-48 text-sm bg-base-200 border border-base-400 my-3 p-3 rounded w-full leading-normal">
+                        {rule.verbs.includes('*') ? '* (All verbs)' : rule.verbs.join(', ')}
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-base-500 mx-4" />
+                </li>
+            );
+        });
+        const resourcesAndNonResourcesURL = rules.map((rule, i) => {
+            const { nonResourceUrls, resources } = rule;
+            const urls = [...resources, ...nonResourceUrls];
+            return (
+                <li className="flex items-center" key={i}>
+                    <div className="text-sm bg-base-200 border border-base-400 my-3 p-3 rounded leading-normal">
+                        {urls.includes('*') ? '* (All resources)' : urls.join(', ')}
+                    </div>
+                </li>
+            );
+        });
         content = (
             <div className="flex">
                 <div>
@@ -45,6 +46,7 @@ const Rules = ({ rules, ...rest }) => {
             </div>
         );
     }
+
     return (
         <Widget header={header} {...rest}>
             {content}

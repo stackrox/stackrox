@@ -99,7 +99,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
 
                 const {
                     metadata = {},
-                    cluster,
+                    cluster = {},
                     deploymentCount,
                     secretCount,
                     imageCount,

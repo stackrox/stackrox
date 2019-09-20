@@ -20,6 +20,7 @@ const RelatedEntity = ({
     ...rest
 }) => {
     function onClick() {
+        if (!entityId) return;
         history.push(
             URLService.getURL(match, location)
                 .push(entityType, entityId)
@@ -62,10 +63,10 @@ const RelatedEntity = ({
 };
 
 RelatedEntity.propTypes = {
-    name: PropTypes.string.isRequired,
+    name: PropTypes.string,
     entityType: PropTypes.string.isRequired,
-    entityId: PropTypes.string.isRequired,
-    value: PropTypes.string.isRequired,
+    entityId: PropTypes.string,
+    value: PropTypes.string,
     link: PropTypes.string,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
@@ -73,7 +74,10 @@ RelatedEntity.propTypes = {
 };
 
 RelatedEntity.defaultProps = {
-    link: null
+    link: null,
+    value: '',
+    entityId: null,
+    name: null
 };
 
 export default withRouter(RelatedEntity);

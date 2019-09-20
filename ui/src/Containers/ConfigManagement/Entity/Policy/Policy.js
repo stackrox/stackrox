@@ -121,12 +121,11 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                         />
                     );
                 }
-
                 const {
                     lifecycleStages = [],
                     categories = [],
-                    severity,
-                    description,
+                    severity = '',
+                    description = '',
                     rationale,
                     remediation,
                     disabled,

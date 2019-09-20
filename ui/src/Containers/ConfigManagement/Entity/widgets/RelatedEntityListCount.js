@@ -52,11 +52,15 @@ const RelatedEntityListCount = ({
 
 RelatedEntityListCount.propTypes = {
     name: PropTypes.string.isRequired,
-    value: PropTypes.number.isRequired,
+    value: PropTypes.number,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
     entityType: PropTypes.string.isRequired
+};
+
+RelatedEntityListCount.defaultProps = {
+    value: 0
 };
 
 export default withRouter(RelatedEntityListCount);
