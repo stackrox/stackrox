@@ -32,6 +32,21 @@ describe('Images page', () => {
         });
     });
 
+    it('Should show zero results with unmatched search', () => {
+        cy.route('GET', api.images.list, { images: [] }).as('noimages');
+        cy.route('GET', api.images.count, { count: 0 }).as('zerocount');
+
+        cy.visit(imagesUrl);
+        cy.wait('@noimages');
+        cy.wait('@zerocount');
+
+        cy.get(selectors.pageSearchInput).type('Cluster:hello{enter}', { force: true });
+
+        // No results found
+        cy.get(imageSelectors.matchedHeader).contains('0 Images Matched');
+        cy.get(imageSelectors.noResults).contains('No results found');
+    });
+
     it('Should show image in panel header', () => {
         cy.fixture('images/image.json').as('imageJson');
         cy.route('GET', api.images.get, '@imageJson').as('image');

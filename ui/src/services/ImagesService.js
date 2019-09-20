@@ -46,6 +46,9 @@ export function fetchImages(options, sortOption, page, pageSize) {
         .get(`${imagesUrl}?${params}`)
         .then(response => ({ response: normalize(response.data.images, [imageSchema]) }))
         .then(obj => {
+            if (obj.response.entities.image === undefined) {
+                return [];
+            }
             return Object.values(obj.response.entities.image);
         });
 }

@@ -8,6 +8,7 @@ const icons = {
 
 const NoResultsMessage = props => (
     <div
+        data-test-id="results-message"
         className={`flex flex-1 items-center bg-base-100 justify-center w-full leading-loose text-center h-full ${
             props.className
         }`}

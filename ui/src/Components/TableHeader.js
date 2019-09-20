@@ -18,7 +18,7 @@ const TableHeader = props => {
         }
     `;
     }
-    let component = <TooltipDiv header={headerText} isUpperCase />;
+    let component = <TooltipDiv header={headerText} data-test-id="filtered-header" isUpperCase />;
     if (props.length >= maxSize) {
         component = (
             <div className="pt-2">

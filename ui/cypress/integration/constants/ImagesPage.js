@@ -6,5 +6,7 @@ export const selectors = {
     cvesColumn: 'div.rt-tr > div.rt-td:nth-child(4)',
     firstTableRow: 'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd',
     panelHeader: 'div[data-test-id="panel-header"]',
-    viewDeploymentsButton: 'button:contains("View Deployments")'
+    viewDeploymentsButton: 'button:contains("View Deployments")',
+    matchedHeader: 'div[data-test-id="panel-header"] > div > div',
+    noResults: 'div[data-test-id="results-message"]'
 };
