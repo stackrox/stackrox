@@ -18,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
-	"github.com/stackrox/rox/pkg/features"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -131,26 +130,15 @@ func (s *searcherSuite) TestNoAccess() {
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
 	s.NoError(err)
-	if features.ScopedAccessControl.Enabled() {
-		s.Empty(results)
-	} else {
-		s.Len(results, 1)
-	}
+	s.Empty(results)
 
 	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), search.EmptyQuery())
 	s.NoError(err)
-	if features.ScopedAccessControl.Enabled() {
-		s.Empty(results)
-	} else {
-		s.Len(results, 1)
-	}
+	s.Empty(results)
+
 	results, err = s.searcher.Search(s.nsReadContext("clusterB", "ns2"), search.EmptyQuery())
 	s.NoError(err)
-	if features.ScopedAccessControl.Enabled() {
-		s.Empty(results)
-	} else {
-		s.Len(results, 1)
-	}
+	s.Empty(results)
 
 	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns2"), search.EmptyQuery())
 	s.NoError(err)
@@ -166,10 +154,6 @@ func (s *searcherSuite) TestNoAccess() {
 }
 
 func (s *searcherSuite) TestHasAccess() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().SkipNow()
-	}
-
 	mockCtrl := gomock.NewController(s.T())
 	defer mockCtrl.Finish()
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
@@ -221,11 +205,7 @@ func (s *searcherSuite) TestHasAccess() {
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
 	s.NoError(err)
-	if features.ScopedAccessControl.Enabled() {
-		s.Empty(results)
-	} else {
-		s.Len(results, 1)
-	}
+	s.Empty(results)
 
 	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), search.EmptyQuery())
 	s.NoError(err)
@@ -237,10 +217,6 @@ func (s *searcherSuite) TestHasAccess() {
 }
 
 func (s *searcherSuite) TestPagination() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().SkipNow()
-	}
-
 	mockCtrl := gomock.NewController(s.T())
 	defer mockCtrl.Finish()
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
@@ -363,10 +339,6 @@ func (s *searcherSuite) TestPagination() {
 }
 
 func (s *searcherSuite) TestNoClusterNSScopes() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().SkipNow()
-	}
-
 	img := &storage.Image{
 		Id: "img1",
 	}
@@ -376,27 +348,15 @@ func (s *searcherSuite) TestNoClusterNSScopes() {
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
 	s.NoError(err)
-	if features.ScopedAccessControl.Enabled() {
-		s.Empty(results)
-	} else {
-		s.Len(results, 1)
-	}
+	s.Empty(results)
 
 	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns1"), search.EmptyQuery())
 	s.NoError(err)
-	if features.ScopedAccessControl.Enabled() {
-		s.Empty(results)
-	} else {
-		s.Len(results, 1)
-	}
+	s.Empty(results)
 
 	results, err = s.searcher.Search(s.nsReadContext("clusterA", "ns2"), search.EmptyQuery())
 	s.NoError(err)
-	if features.ScopedAccessControl.Enabled() {
-		s.Empty(results)
-	} else {
-		s.Len(results, 1)
-	}
+	s.Empty(results)
 
 	results, err = s.searcher.Search(s.fullReadAccessCtx, search.EmptyQuery())
 	s.NoError(err)

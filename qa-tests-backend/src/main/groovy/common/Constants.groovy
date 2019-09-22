@@ -31,6 +31,4 @@ class Constants {
 
         We need to manually maintain this list here
      */
-    static final String K8SRBAC_FEATURE_FLAG = "ROX_K8S_RBAC"
-    static final String CLIENT_CA_AUTH_FEATURE_FLAG = "ROX_CLIENT_CA_AUTH"
 }

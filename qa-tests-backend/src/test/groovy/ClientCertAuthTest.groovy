@@ -1,12 +1,9 @@
-import common.Constants
 import groups.BAT
 import io.grpc.StatusRuntimeException
-import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AuthProviderService
 import services.AuthService
 import services.BaseService
-import services.FeatureFlagService
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
@@ -25,10 +22,6 @@ class ClientCertAuthTest extends BaseSpecification {
     private String certToken
 
     def setupSpec() {
-        Assume.assumeTrue(
-            FeatureFlagService.isFeatureFlagEnabled(Constants.CLIENT_CA_AUTH_FEATURE_FLAG)
-        )
-
         BaseService.useBasicAuth()
         disableAuthzPlugin()
 

@@ -14,7 +14,6 @@ import (
 	mocks2 "github.com/stackrox/rox/central/node/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -121,11 +120,7 @@ func (s *testSuite) TestCount() {
 	count, err := s.globalDataStore.CountAllNodes(s.ctx)
 	s.NoError(err)
 
-	if features.ScopedAccessControl.Enabled() {
-		s.Equal(7, count)
-	} else {
-		s.Equal(9, count)
-	}
+	s.Equal(7, count)
 }
 
 func (s *testSuite) TestSearch() {
@@ -135,9 +130,6 @@ func (s *testSuite) TestSearch() {
 	ids := search.ResultsToIDs(results)
 
 	expected := []string{"2-1", "2-2", "2-3", "3-1", "3-2", "3-3", "3-4"}
-	if !features.ScopedAccessControl.Enabled() {
-		expected = append(expected, "1-1", "1-2")
-	}
 	s.ElementsMatch(ids, expected)
 }
 
@@ -151,9 +143,6 @@ func (s *testSuite) TestGetAllClusterNodeStores_Read() {
 	}
 
 	expected := []string{"cluster-2-read-access", "cluster-3-full-access"}
-	if !features.ScopedAccessControl.Enabled() {
-		expected = append(expected, "cluster-1-no-access")
-	}
 
 	s.ElementsMatch(ids, expected)
 }
@@ -168,9 +157,6 @@ func (s *testSuite) TestGetAllClusterNodeStores_Write() {
 	}
 
 	expected := []string{"cluster-3-full-access"}
-	if !features.ScopedAccessControl.Enabled() {
-		expected = append(expected, "cluster-1-no-access", "cluster-2-read-access")
-	}
 
 	s.ElementsMatch(ids, expected)
 }
@@ -187,14 +173,9 @@ func (s *testSuite) TestGetClusterNodeStore_Read_NonExisting() {
 }
 
 func (s *testSuite) TestGetClusterNodeStore_Read_PermissionDenied() {
-	store, err := s.globalDataStore.GetClusterNodeStore(s.ctx, "cluster-1-no-access", false)
+	_, err := s.globalDataStore.GetClusterNodeStore(s.ctx, "cluster-1-no-access", false)
 
-	if features.ScopedAccessControl.Enabled() {
-		s.Error(err)
-	} else {
-		s.NoError(err)
-		s.NotNil(store)
-	}
+	s.Error(err)
 }
 
 func (s *testSuite) TestGetClusterNodeStore_Write_OK() {
@@ -204,13 +185,8 @@ func (s *testSuite) TestGetClusterNodeStore_Write_OK() {
 }
 
 func (s *testSuite) TestGetClusterNodeStore_Write_NonExisting() {
-	store, err := s.globalDataStore.GetClusterNodeStore(s.ctx, "cluster-0-non-existing", true)
-	if !features.ScopedAccessControl.Enabled() {
-		s.NoError(err)
-		s.NotNil(store)
-	} else {
-		s.Error(err)
-	}
+	_, err := s.globalDataStore.GetClusterNodeStore(s.ctx, "cluster-0-non-existing", true)
+	s.Error(err)
 }
 
 func (s *testSuite) TestGetClusterNodeStore_Write_NonExisting_WithGlobalAccess() {
@@ -222,12 +198,7 @@ func (s *testSuite) TestGetClusterNodeStore_Write_NonExisting_WithGlobalAccess()
 }
 
 func (s *testSuite) TestGetClusterNodeStore_Write_PermissionDenied() {
-	store, err := s.globalDataStore.GetClusterNodeStore(s.ctx, "cluster-2-read-access", true)
+	_, err := s.globalDataStore.GetClusterNodeStore(s.ctx, "cluster-2-read-access", true)
 
-	if features.ScopedAccessControl.Enabled() {
-		s.Error(err)
-	} else {
-		s.NoError(err)
-		s.NotNil(store)
-	}
+	s.Error(err)
 }

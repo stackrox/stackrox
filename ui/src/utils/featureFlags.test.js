@@ -7,11 +7,6 @@ const backendFeatureFlags = [
         enabled: false
     },
     {
-        name: 'Enable Scanner V2',
-        envVar: 'ROX_SCANNER_V2',
-        enabled: true
-    },
-    {
         name: 'Enable Sensor Autoupgrades',
         envVar: 'ROX_SENSOR_AUTOUPGRADE',
         enabled: true
@@ -70,7 +65,7 @@ describe('featureFlags utils', () => {
         });
 
         it('should return the current value of the given flag when matched and disabled', () => {
-            const flagToFind = 'ROX_SCANNER_V2'; // backendFeatureFlags[1].name
+            const flagToFind = 'ROX_SENSOR_AUTOUPGRADE'; // backendFeatureFlags[1].name
             const defaultVal = false;
 
             const isEnabled = isBackendFeatureFlagEnabled(

@@ -8,16 +8,12 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	storeMocks "github.com/stackrox/rox/central/user/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestUserDataStore(t *testing.T) {
 	t.Parallel()
-	if !features.ScopedAccessControl.Enabled() {
-		t.Skip()
-	}
 	suite.Run(t, new(userDataStoreTestSuite))
 }
 

@@ -29,7 +29,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -65,20 +64,17 @@ type SearchFunc func(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, erro
 
 func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	searchfuncs := map[v1.SearchCategory]SearchFunc{
-		v1.SearchCategory_ALERTS:      s.alerts.SearchAlerts,
-		v1.SearchCategory_DEPLOYMENTS: s.deployments.SearchDeployments,
-		v1.SearchCategory_IMAGES:      s.images.SearchImages,
-		v1.SearchCategory_POLICIES:    s.policies.SearchPolicies,
-		v1.SearchCategory_SECRETS:     s.secrets.SearchSecrets,
-		v1.SearchCategory_NAMESPACES:  s.namespaces.SearchResults,
-		v1.SearchCategory_NODES:       s.nodes.SearchResults,
-		v1.SearchCategory_CLUSTERS:    s.clusters.SearchResults,
-	}
-
-	if features.K8sRBAC.Enabled() {
-		searchfuncs[v1.SearchCategory_SERVICE_ACCOUNTS] = s.serviceaccounts.SearchServiceAccounts
-		searchfuncs[v1.SearchCategory_ROLES] = s.roles.SearchRoles
-		searchfuncs[v1.SearchCategory_ROLEBINDINGS] = s.bindings.SearchRoleBindings
+		v1.SearchCategory_ALERTS:           s.alerts.SearchAlerts,
+		v1.SearchCategory_DEPLOYMENTS:      s.deployments.SearchDeployments,
+		v1.SearchCategory_IMAGES:           s.images.SearchImages,
+		v1.SearchCategory_POLICIES:         s.policies.SearchPolicies,
+		v1.SearchCategory_SECRETS:          s.secrets.SearchSecrets,
+		v1.SearchCategory_NAMESPACES:       s.namespaces.SearchResults,
+		v1.SearchCategory_NODES:            s.nodes.SearchResults,
+		v1.SearchCategory_CLUSTERS:         s.clusters.SearchResults,
+		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts.SearchServiceAccounts,
+		v1.SearchCategory_ROLES:            s.roles.SearchRoles,
+		v1.SearchCategory_ROLEBINDINGS:     s.bindings.SearchRoleBindings,
 	}
 
 	return searchfuncs
@@ -86,22 +82,19 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 
 func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:      s.alerts,
-		v1.SearchCategory_DEPLOYMENTS: s.deployments,
-		v1.SearchCategory_IMAGES:      s.images,
-		v1.SearchCategory_POLICIES:    s.policies,
-		v1.SearchCategory_SECRETS:     s.secrets,
-		v1.SearchCategory_NAMESPACES:  s.namespaces,
-		v1.SearchCategory_NODES:       s.nodes,
-		v1.SearchCategory_COMPLIANCE:  s.aggregator,
-		v1.SearchCategory_RISKS:       s.risks,
-		v1.SearchCategory_CLUSTERS:    s.clusters,
-	}
-
-	if features.K8sRBAC.Enabled() {
-		searchers[v1.SearchCategory_SERVICE_ACCOUNTS] = s.serviceaccounts
-		searchers[v1.SearchCategory_ROLES] = s.roles
-		searchers[v1.SearchCategory_ROLEBINDINGS] = s.bindings
+		v1.SearchCategory_ALERTS:           s.alerts,
+		v1.SearchCategory_DEPLOYMENTS:      s.deployments,
+		v1.SearchCategory_IMAGES:           s.images,
+		v1.SearchCategory_POLICIES:         s.policies,
+		v1.SearchCategory_SECRETS:          s.secrets,
+		v1.SearchCategory_NAMESPACES:       s.namespaces,
+		v1.SearchCategory_NODES:            s.nodes,
+		v1.SearchCategory_COMPLIANCE:       s.aggregator,
+		v1.SearchCategory_RISKS:            s.risks,
+		v1.SearchCategory_CLUSTERS:         s.clusters,
+		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts,
+		v1.SearchCategory_ROLES:            s.roles,
+		v1.SearchCategory_ROLEBINDINGS:     s.bindings,
 	}
 
 	return searchers
@@ -131,19 +124,16 @@ func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.Res
 		// Policies are the only search resource with a global scope. With SAC enabled, we check SAC permissions for
 		// legacy auth restrictions for globally-scoped resources. This would break search, so exempt policies from this
 		// in search contexts.
-		v1.SearchCategory_POLICIES:   permissions.WithLegacyAuthForSAC(resources.Policy, false),
-		v1.SearchCategory_SECRETS:    resources.Secret,
-		v1.SearchCategory_COMPLIANCE: resources.Compliance,
-		v1.SearchCategory_NODES:      resources.Node,
-		v1.SearchCategory_NAMESPACES: resources.Namespace,
-		v1.SearchCategory_RISKS:      resources.Risk,
-		v1.SearchCategory_CLUSTERS:   resources.Cluster,
-	}
-
-	if features.K8sRBAC.Enabled() {
-		searchCategoryToResource[v1.SearchCategory_SERVICE_ACCOUNTS] = resources.ServiceAccount
-		searchCategoryToResource[v1.SearchCategory_ROLES] = resources.K8sRole
-		searchCategoryToResource[v1.SearchCategory_ROLEBINDINGS] = resources.K8sRoleBinding
+		v1.SearchCategory_POLICIES:         permissions.WithLegacyAuthForSAC(resources.Policy, false),
+		v1.SearchCategory_SECRETS:          resources.Secret,
+		v1.SearchCategory_COMPLIANCE:       resources.Compliance,
+		v1.SearchCategory_NODES:            resources.Node,
+		v1.SearchCategory_NAMESPACES:       resources.Namespace,
+		v1.SearchCategory_RISKS:            resources.Risk,
+		v1.SearchCategory_CLUSTERS:         resources.Cluster,
+		v1.SearchCategory_SERVICE_ACCOUNTS: resources.ServiceAccount,
+		v1.SearchCategory_ROLES:            resources.K8sRole,
+		v1.SearchCategory_ROLEBINDINGS:     resources.K8sRoleBinding,
 	}
 
 	return searchCategoryToResource
@@ -161,14 +151,10 @@ func GetGlobalSearchCategories() set.V1SearchCategorySet {
 		v1.SearchCategory_NODES,
 		v1.SearchCategory_NAMESPACES,
 		v1.SearchCategory_CLUSTERS,
+		v1.SearchCategory_SERVICE_ACCOUNTS,
+		v1.SearchCategory_ROLES,
+		v1.SearchCategory_ROLEBINDINGS,
 	)
-
-	if features.K8sRBAC.Enabled() {
-		globalSearchCategories.Add(v1.SearchCategory_SERVICE_ACCOUNTS)
-		globalSearchCategories.Add(v1.SearchCategory_ROLES)
-		globalSearchCategories.Add(v1.SearchCategory_ROLEBINDINGS)
-
-	}
 
 	return globalSearchCategories
 

@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -79,11 +78,7 @@ func main() {
 		logger.Fatalf("Unable to generate specified flows. Increase maxDeployments or decrease maxNetworkFlows")
 	}
 
-	var opts []clientconn.ConnectionOption
-	if features.PlaintextExposure.Enabled() {
-		opts = append(opts, clientconn.UseServiceCertToken(true))
-	}
-	conn, err := clientconn.AuthenticatedGRPCConnection(*centralEndpoint, mtls.CentralSubject, opts...)
+	conn, err := clientconn.AuthenticatedGRPCConnection(*centralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
 	if err != nil {
 		panic(err)
 	}

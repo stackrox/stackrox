@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/central/searchbasedpolicies/fields"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -51,14 +50,12 @@ func NewRegistry(processIndicators processDataStore.DataStore,
 		builders.PortExposureQueryBuilder{},
 		builders.ProcessWhitelistingBuilder{},
 		builders.HostMountQueryBuilder{},
-	}
-	if features.K8sRBAC.Enabled() {
-		reg = append(reg, builders.K8sRBACQueryBuilder{
+		builders.K8sRBACQueryBuilder{
 			Clusters:        clusters,
 			K8sRoles:        k8sRoles,
 			K8sBindings:     k8sBindings,
 			ServiceAccounts: serviceAccounts,
-		})
+		},
 	}
 	return reg
 }

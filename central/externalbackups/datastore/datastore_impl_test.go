@@ -8,7 +8,6 @@ import (
 	storeMocks "github.com/stackrox/rox/central/externalbackups/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -93,9 +92,6 @@ func (s *extBkpDataStoreTestSuite) TestUpsertExtBkps() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestEnforcesList() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().ListBackups().Times(0)
 
 	result, err := s.dataStore.ListBackups(s.hasNoneCtx)
@@ -104,9 +100,6 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesList() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsList() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().ListBackups().Return(NewFakeListExtBkps(), nil)
 
 	result, err := s.dataStore.ListBackups(s.hasReadCtx)
@@ -115,9 +108,6 @@ func (s *extBkpDataStoreTestSuite) TestAllowsList() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestEnforcesGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().GetBackup(gomock.Any()).Times(0)
 
 	config, err := s.dataStore.GetBackup(s.hasNoneCtx, FakeID)
@@ -126,9 +116,6 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().GetBackup(gomock.Any()).Return(nil, nil)
 
 	_, err := s.dataStore.GetBackup(s.hasReadCtx, FakeID)
@@ -136,9 +123,6 @@ func (s *extBkpDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestEnforcesUpsert() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().UpsertBackup(gomock.Any()).Times(0)
 
 	err := s.dataStore.UpsertBackup(s.hasNoneCtx, &storage.ExternalBackup{})
@@ -149,9 +133,6 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesUpsert() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsUpsert() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().UpsertBackup(gomock.Any()).Return(nil)
 
 	err := s.dataStore.UpsertBackup(s.hasWriteCtx, &storage.ExternalBackup{})
@@ -159,9 +140,6 @@ func (s *extBkpDataStoreTestSuite) TestAllowsUpsert() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestEnforcesRemove() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().RemoveBackup(gomock.Any()).Times(0)
 
 	err := s.dataStore.RemoveBackup(s.hasNoneCtx, FakeID)
@@ -172,9 +150,6 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsRemove() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().RemoveBackup(gomock.Any()).Return(nil)
 
 	err := s.dataStore.RemoveBackup(s.hasWriteCtx, FakeID)

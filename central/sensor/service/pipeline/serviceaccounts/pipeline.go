@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -75,10 +74,6 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	if !features.K8sRBAC.Enabled() {
-		return nil
-	}
-
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ServiceAccount)
 
 	event := msg.GetEvent()

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	storeMocks "github.com/stackrox/rox/central/serviceidentities/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -69,9 +68,6 @@ func (s *serviceIdentityDataStoreTestSuite) TestAddSrvId() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestEnforcesGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().GetServiceIdentities().Times(0)
 
 	group, err := s.dataStore.GetServiceIdentities(s.hasNoneCtx)
@@ -80,9 +76,6 @@ func (s *serviceIdentityDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().GetServiceIdentities().Return(nil, nil)
 
 	_, err := s.dataStore.GetServiceIdentities(s.hasReadCtx)
@@ -90,9 +83,6 @@ func (s *serviceIdentityDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestEnforcesAdd() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().AddServiceIdentity(gomock.Any()).Times(0)
 
 	err := s.dataStore.AddServiceIdentity(s.hasNoneCtx, &storage.ServiceIdentity{})
@@ -103,9 +93,6 @@ func (s *serviceIdentityDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsAdd() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().AddServiceIdentity(gomock.Any()).Return(nil)
 
 	err := s.dataStore.AddServiceIdentity(s.hasWriteCtx, &storage.ServiceIdentity{})

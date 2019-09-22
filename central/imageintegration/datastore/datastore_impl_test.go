@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -188,9 +187,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) storeIntegration(name string) *
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	group, exists, err := suite.datastore.GetImageIntegration(suite.hasNoneCtx, "Some ID")
 	suite.NoError(err, "expected no error, should return nil without access")
 	suite.False(exists, "expected exists to be false as access was denied and bools can't be nil")
@@ -198,9 +194,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	integration := suite.storeIntegration("Joseph Rules")
 
 	gotInt, exists, err := suite.datastore.GetImageIntegration(suite.hasReadCtx, integration.GetId())
@@ -215,18 +208,12 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesGetBatch() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	integrations, err := suite.datastore.GetImageIntegrations(suite.hasNoneCtx, &v1.GetImageIntegrationsRequest{})
 	suite.NoError(err, "expected no error, should return nil without access")
 	suite.Nil(integrations, "expected return value to be nil")
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGetBatch() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	integration := suite.storeIntegration("Some Integration")
 	integrationList := []*storage.ImageIntegration{integration}
 
@@ -242,9 +229,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGetBatch() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesAdd() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	integrationOne := getIntegration("some kinda name")
 	id, err := suite.datastore.AddImageIntegration(suite.hasNoneCtx, integrationOne)
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -257,18 +241,12 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsAdd() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	id, err := suite.datastore.AddImageIntegration(suite.hasWriteCtx, getIntegration("namenamenamename"))
 	suite.NoError(err, "expected no error trying to write with permissions")
 	suite.NotEmpty(id)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesUpdate() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	integration := suite.storeIntegration("name")
 
 	err := suite.datastore.UpdateImageIntegration(suite.hasNoneCtx, integration)
@@ -279,9 +257,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsUpdate() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	integration := suite.storeIntegration("joseph is the best")
 
 	err := suite.datastore.UpdateImageIntegration(suite.hasWriteCtx, integration)
@@ -289,9 +264,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsUpdate() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesRemove() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	err := suite.datastore.RemoveImageIntegration(suite.hasNoneCtx, "blerk")
 	suite.Error(err, "expected an error trying to write without permissions")
 
@@ -300,9 +272,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	integration := suite.storeIntegration("jdgbfdkjh")
 
 	err := suite.datastore.RemoveImageIntegration(suite.hasWriteCtx, integration.GetId())

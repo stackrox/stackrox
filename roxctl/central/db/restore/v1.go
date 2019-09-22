@@ -1,19 +1,16 @@
 package restore
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 func restoreV1(file *os.File, deadline time.Time) error {
@@ -36,23 +33,4 @@ func restoreV1(file *os.File, deadline time.Time) error {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	return httputil.ResponseToError(resp)
-}
-
-// V1Command defines the legacy db restore command
-func V1Command() *cobra.Command {
-	var file string
-	c := &cobra.Command{
-		Use:   "restore",
-		Short: "Restore the Central DB from a local file.",
-		Long:  "Restore the Central DB from a local file.",
-		RunE: func(c *cobra.Command, _ []string) error {
-			if file == "" {
-				return fmt.Errorf("file to restore from must be specified")
-			}
-			return restore(file, flags.Timeout(c), restoreV1)
-		},
-	}
-
-	c.Flags().StringVar(&file, "file", "", "file to restore the DB from")
-	return c
 }

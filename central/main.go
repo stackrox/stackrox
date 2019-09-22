@@ -128,10 +128,10 @@ var (
 	log = logging.LoggerForModule()
 
 	authProviderBackendFactories = map[string]authproviders.BackendFactoryCreator{
-		oidc.TypeName: oidc.NewFactory,
-		"auth0":       oidc.NewFactory, // legacy
-		saml.TypeName: saml.NewFactory,
-		// authProviderUserpki.TypeName: authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance()),
+		oidc.TypeName:                oidc.NewFactory,
+		"auth0":                      oidc.NewFactory, // legacy
+		saml.TypeName:                saml.NewFactory,
+		authProviderUserpki.TypeName: authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance()),
 	}
 
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -296,6 +296,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		userService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
+		backupRestoreService.Singleton(),
 	}
 
 	var autoTriggerUpgrades *concurrency.Flag
@@ -308,10 +309,6 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
-	}
-
-	if features.DBBackupRestoreV2.Enabled() {
-		servicesToRegister = append(servicesToRegister, backupRestoreService.Singleton())
 	}
 
 	if features.SensorAutoUpgrade.Enabled() {
@@ -357,10 +354,6 @@ func startGRPCServer(factory serviceFactory) {
 		log.Panicf("Could not create auth provider registry: %v", err)
 	}
 
-	if features.ClientCAAuth.Enabled() {
-		authProviderBackendFactories[authProviderUserpki.TypeName] = authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance())
-	}
-
 	for typeName, factoryCreator := range authProviderBackendFactories {
 		if err := registry.RegisterBackendFactory(authProviderRegisteringCtx, typeName, factoryCreator); err != nil {
 			log.Panicf("Could not register %s auth provider factory: %v", typeName, err)
@@ -376,29 +369,23 @@ func startGRPCServer(factory serviceFactory) {
 	if err != nil {
 		log.Panicf("Could not create mTLS-based service identity extractor: %v", err)
 	}
+
+	serviceTokenExtractor, err := servicecerttoken.NewExtractor(maxServiceCertTokenLeeway)
+	if err != nil {
+		log.Panicf("Could not create ServiceCert token-based identity extractor: %v", err)
+	}
+
 	idExtractors := []authn.IdentityExtractor{
 		serviceMTLSExtractor, // internal services
 		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
 		userpass.IdentityExtractorOrPanic(basicAuthProvider),
-	}
-
-	if features.PlaintextExposure.Enabled() {
-		serviceTokenExtractor, err := servicecerttoken.NewExtractor(maxServiceCertTokenLeeway)
-		if err != nil {
-			log.Panicf("Could not create ServiceCert token-based identity extractor: %v", err)
-		}
-		idExtractors = append(idExtractors, serviceTokenExtractor)
-	}
-
-	tlsConfigurer := tlsconfig.NewCentralTLSConfigurer()
-	if features.ClientCAAuth.Enabled() {
-		idExtractors = append(idExtractors, authnUserpki.NewExtractor(tlsconfig.ManagerInstance()))
-		tlsConfigurer = tlsconfig.ManagerInstance().TLSConfigurer()
+		serviceTokenExtractor,
+		authnUserpki.NewExtractor(tlsconfig.ManagerInstance()),
 	}
 
 	config := pkgGRPC.Config{
 		CustomRoutes:          factory.CustomRoutes(),
-		TLS:                   tlsConfigurer,
+		TLS:                   tlsconfig.ManagerInstance().TLSConfigurer(),
 		IdentityExtractors:    idExtractors,
 		AuthProviders:         registry,
 		InsecureLocalEndpoint: insecureLocalEndpoint,
@@ -406,12 +393,9 @@ func startGRPCServer(factory serviceFactory) {
 		Auditor:               audit.New(processor.Singleton()),
 	}
 
-	log.Infof("Scoped access control enabled: %v", features.ScopedAccessControl.Enabled())
-	if features.ScopedAccessControl.Enabled() {
-		// When sac is enabled, this helps validate that it is being use correctly. Should be removed with feature flag.
-		if devbuild.IsEnabled() {
-			config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
-		}
+	// This helps validate that SAC is being used correctly.
+	if devbuild.IsEnabled() {
+		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
 
 	// The below enrichers handle SAC being off or on.
@@ -424,13 +408,11 @@ func startGRPCServer(factory serviceFactory) {
 		centralSAC.GetEnricher().PostAuthContextEnricher,
 	)
 
-	if features.PlaintextExposure.Enabled() {
-		if err := config.PlaintextEndpoints.AddFromParsedSpec(env.PlaintextEndpoints.Setting()); err != nil {
-			log.Panicf("Could not parse plaintext endpoints specification: %v", err)
-		}
-		if err := config.PlaintextEndpoints.Validate(); err != nil {
-			log.Panicf("Could not validate plaintext endpoints specificaton: %v", err)
-		}
+	if err := config.PlaintextEndpoints.AddFromParsedSpec(env.PlaintextEndpoints.Setting()); err != nil {
+		log.Panicf("Could not parse plaintext endpoints specification: %v", err)
+	}
+	if err := config.PlaintextEndpoints.Validate(); err != nil {
+		log.Panicf("Could not validate plaintext endpoints specificaton: %v", err)
 	}
 
 	server := pkgGRPC.NewAPI(config)
@@ -555,22 +537,16 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: dump.DebugHandler(),
 			Compression:   false,
 		},
-	}
-
-	if features.DBBackupRestoreV2.Enabled() {
-		svc := backupRestoreService.Singleton()
-		customRoutes = append(customRoutes, []routes.CustomRoute{
-			{
-				Route:         "/db/v2/restore",
-				Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-				ServerHandler: svc.RestoreHandler(),
-			},
-			{
-				Route:         "/db/v2/resumerestore",
-				Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-				ServerHandler: svc.ResumeRestoreHandler(),
-			},
-		}...)
+		{
+			Route:         "/db/v2/restore",
+			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
+			ServerHandler: backupRestoreService.Singleton().RestoreHandler(),
+		},
+		{
+			Route:         "/db/v2/resumerestore",
+			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
+			ServerHandler: backupRestoreService.Singleton().ResumeRestoreHandler(),
+		},
 	}
 
 	logImbueRoute := "/api/logimbue"

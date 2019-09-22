@@ -7,7 +7,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 	. "github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -80,10 +79,8 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 	searchResults, err := h.Apply(mockSearchFunc)(ctx, search.EmptyQuery())
 	require.NoError(t, err)
 
-	if features.ScopedAccessControl.Enabled() {
-		resultIDs := search.ResultsToIDs(searchResults)
-		assert.ElementsMatch(t, resultIDs, []string{"1", "2", "3"})
-	}
+	resultIDs := search.ResultsToIDs(searchResults)
+	assert.ElementsMatch(t, resultIDs, []string{"1", "2", "3"})
 }
 
 func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {

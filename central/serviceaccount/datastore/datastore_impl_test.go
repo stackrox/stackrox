@@ -13,7 +13,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -74,10 +73,6 @@ func (suite *ServiceAccountDataStoreTestSuite) assertSearchResults(q *v1.Query, 
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
-	if !features.K8sRBAC.Enabled() {
-		return
-	}
-
 	sa := fixtures.GetServiceAccount()
 	err := suite.datastore.UpsertServiceAccount(suite.ctx, sa)
 	suite.Require().NoError(err)

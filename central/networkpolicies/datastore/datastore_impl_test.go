@@ -9,7 +9,6 @@ import (
 	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -73,9 +72,6 @@ func (s *netPolDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforceGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
 
 	netPol, found, err := s.dataStore.GetNetworkPolicy(s.hasNoneCtx, FakeID1)
@@ -85,9 +81,6 @@ func (s *netPolDataStoreTestSuite) TestEnforceGet() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforcesAdd() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().AddNetworkPolicy(gomock.Any()).Times(0)
 
 	err := s.dataStore.AddNetworkPolicy(s.hasNoneCtx, &storage.NetworkPolicy{})
@@ -98,10 +91,6 @@ func (s *netPolDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
-
 	netPolNm1 := &storage.NetworkPolicy{
 		Id:        FakeID1,
 		Name:      FakeName1,
@@ -146,9 +135,6 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforcesUpdate() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.storage.EXPECT().UpdateNetworkPolicy(gomock.Any()).Times(0)
 
 	err := s.dataStore.UpdateNetworkPolicy(s.hasNoneCtx, &storage.NetworkPolicy{})
@@ -166,9 +152,6 @@ func (s *netPolDataStoreTestSuite) TestAllowsUpdate() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforcesRemove() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	// None should be removed...
 	s.storage.EXPECT().RemoveNetworkPolicy(gomock.Any()).Times(0)
 
@@ -194,9 +177,6 @@ func (s *netPolDataStoreTestSuite) TestAllowsRemove() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforceGetUndo() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.undoStorage.EXPECT().GetUndoRecord(gomock.Any()).Times(0)
 
 	_, found, err := s.dataStore.GetUndoRecord(s.hasNoneCtx, FakeID1)
@@ -217,9 +197,6 @@ func (s *netPolDataStoreTestSuite) TestAllowGetUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforceUpdateUndo() {
-	if !features.ScopedAccessControl.Enabled() {
-		s.T().Skip()
-	}
 	s.undoStorage.EXPECT().UpsertUndoRecord(gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.UpsertUndoRecord(s.hasNoneCtx, FakeClusterID, &storage.NetworkPolicyApplicationUndoRecord{})

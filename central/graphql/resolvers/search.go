@@ -6,7 +6,6 @@ import (
 
 	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
@@ -141,18 +140,15 @@ func (r rawQuery) String() string {
 
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:      resolver.ViolationsDataStore,
-		v1.SearchCategory_DEPLOYMENTS: resolver.DeploymentDataStore,
-		v1.SearchCategory_IMAGES:      resolver.ImageDataStore,
-		v1.SearchCategory_POLICIES:    resolver.PolicyDataStore,
-		v1.SearchCategory_SECRETS:     resolver.SecretsDataStore,
-		v1.SearchCategory_NAMESPACES:  resolver.NamespaceDataStore,
-		v1.SearchCategory_NODES:       resolver.NodeGlobalDataStore,
-		v1.SearchCategory_COMPLIANCE:  resolver.ComplianceAggregator,
-	}
-
-	if features.K8sRBAC.Enabled() {
-		searchers[v1.SearchCategory_SERVICE_ACCOUNTS] = resolver.ServiceAccountsDataStore
+		v1.SearchCategory_ALERTS:           resolver.ViolationsDataStore,
+		v1.SearchCategory_DEPLOYMENTS:      resolver.DeploymentDataStore,
+		v1.SearchCategory_IMAGES:           resolver.ImageDataStore,
+		v1.SearchCategory_POLICIES:         resolver.PolicyDataStore,
+		v1.SearchCategory_SECRETS:          resolver.SecretsDataStore,
+		v1.SearchCategory_NAMESPACES:       resolver.NamespaceDataStore,
+		v1.SearchCategory_NODES:            resolver.NodeGlobalDataStore,
+		v1.SearchCategory_COMPLIANCE:       resolver.ComplianceAggregator,
+		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore,
 	}
 
 	return searchers
@@ -161,17 +157,14 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.SearchFunc {
 
 	searchfuncs := map[v1.SearchCategory]searchService.SearchFunc{
-		v1.SearchCategory_ALERTS:      resolver.ViolationsDataStore.SearchAlerts,
-		v1.SearchCategory_DEPLOYMENTS: resolver.DeploymentDataStore.SearchDeployments,
-		v1.SearchCategory_IMAGES:      resolver.ImageDataStore.SearchImages,
-		v1.SearchCategory_POLICIES:    resolver.PolicyDataStore.SearchPolicies,
-		v1.SearchCategory_SECRETS:     resolver.SecretsDataStore.SearchSecrets,
-		v1.SearchCategory_NAMESPACES:  resolver.NamespaceDataStore.SearchResults,
-		v1.SearchCategory_NODES:       resolver.NodeGlobalDataStore.SearchResults,
-	}
-
-	if features.K8sRBAC.Enabled() {
-		searchfuncs[v1.SearchCategory_SERVICE_ACCOUNTS] = resolver.ServiceAccountsDataStore.SearchServiceAccounts
+		v1.SearchCategory_ALERTS:           resolver.ViolationsDataStore.SearchAlerts,
+		v1.SearchCategory_DEPLOYMENTS:      resolver.DeploymentDataStore.SearchDeployments,
+		v1.SearchCategory_IMAGES:           resolver.ImageDataStore.SearchImages,
+		v1.SearchCategory_POLICIES:         resolver.PolicyDataStore.SearchPolicies,
+		v1.SearchCategory_SECRETS:          resolver.SecretsDataStore.SearchSecrets,
+		v1.SearchCategory_NAMESPACES:       resolver.NamespaceDataStore.SearchResults,
+		v1.SearchCategory_NODES:            resolver.NodeGlobalDataStore.SearchResults,
+		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore.SearchServiceAccounts,
 	}
 
 	return searchfuncs

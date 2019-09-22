@@ -18,7 +18,6 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -132,9 +131,6 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.clusters.EXPECT().GetCluster(gomock.Any()).Times(0)
 
 	cluster, exists, err := suite.clusterDataStore.GetCluster(suite.hasNoneCtx, "hkjddjhk")
@@ -156,9 +152,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.clusters.EXPECT().GetSelectedClusters([]string{}).Return(nil, nil, nil)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
@@ -180,9 +173,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsGetAll() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesCount() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.clusters.EXPECT().CountClusters().Times(0)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
@@ -204,9 +194,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsCount() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesAdd() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.clusters.EXPECT().AddCluster(gomock.Any()).Times(0)
 
 	_, err := suite.clusterDataStore.AddCluster(suite.hasNoneCtx, &storage.Cluster{})
@@ -225,9 +212,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsAdd() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdate() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.clusters.EXPECT().UpdateCluster(gomock.Any()).Times(0)
 
 	err := suite.clusterDataStore.UpdateCluster(suite.hasNoneCtx, &storage.Cluster{})
@@ -247,9 +231,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsUpdate() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesRemove() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.clusters.EXPECT().RemoveCluster(gomock.Any()).Times(0)
 
 	err := suite.clusterDataStore.RemoveCluster(suite.hasNoneCtx, "jiogserlksd", nil)
@@ -276,9 +257,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterContactTime() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.clusters.EXPECT().UpdateCluster(gomock.Any()).Times(0)
 
 	err := suite.clusterDataStore.UpdateClusterContactTimes(suite.hasNoneCtx, time.Now(), "F")
@@ -296,9 +274,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsUpdateClusterContactTime() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterStatus() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.clusters.EXPECT().UpdateCluster(gomock.Any()).Times(0)
 
 	err := suite.clusterDataStore.UpdateClusterStatus(suite.hasNoneCtx, "F", &storage.ClusterStatus{})
@@ -316,9 +291,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsUpdateClusterStatus() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesSearch() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
 	clusters, err := suite.clusterDataStore.Search(suite.hasNoneCtx, search.EmptyQuery())

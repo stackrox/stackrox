@@ -18,7 +18,6 @@ import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
 import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 const integrationsList = {
     authProviders: [
@@ -44,8 +43,7 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: logo,
-            disabled: false,
-            dependsOnFeatureFlag: knownBackendFlags.ROX_SCANNER_V2
+            disabled: false
         },
         {
             label: 'Generic Docker Registry',

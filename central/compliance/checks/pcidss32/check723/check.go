@@ -3,15 +3,11 @@ package check723
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const checkID = "PCI_DSS_3_2:7_2_3"
 
 func init() {
-	if !features.K8sRBAC.Enabled() {
-		return
-	}
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 checkID,

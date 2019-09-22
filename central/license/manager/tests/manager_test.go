@@ -15,7 +15,6 @@ import (
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	validatorMocks "github.com/stackrox/rox/pkg/license/validator/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -53,9 +52,6 @@ var (
 
 func TestManager(t *testing.T) {
 	t.Parallel()
-	if !features.ScopedAccessControl.Enabled() {
-		t.Skip()
-	}
 	suite.Run(t, new(managerTestSuite))
 }
 

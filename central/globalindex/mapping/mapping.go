@@ -24,7 +24,6 @@ import (
 	secretOptions "github.com/stackrox/rox/central/secret/mappings"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/sync"
@@ -98,15 +97,10 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_NODES:               nodeMapping.OptionsMap,
 		v1.SearchCategory_PROCESS_WHITELISTS:  processWhitelistMapping.OptionsMap,
 		v1.SearchCategory_RISKS:               riskMappings.OptionsMap,
-	}
-
-	if features.K8sRBAC.Enabled() {
-		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_SERVICE_ACCOUNTS] = serviceAccountOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.OptionsMap
-		entityOptionsMap[v1.SearchCategory_SUBJECTS] = subjectMapping.OptionsMap
+		v1.SearchCategory_ROLES:               roleOptions.OptionsMap,
+		v1.SearchCategory_ROLEBINDINGS:        roleBindingOptions.OptionsMap,
+		v1.SearchCategory_SERVICE_ACCOUNTS:    serviceAccountOptions.OptionsMap,
+		v1.SearchCategory_SUBJECTS:            subjectMapping.OptionsMap,
 	}
 
 	return entityOptionsMap

@@ -256,21 +256,19 @@ func Command() *cobra.Command {
 		c.PersistentFlags().SetAnnotation("default-tls-key", flags.MandatoryKey, []string{"true"}),
 	)
 
-	if features.PlaintextExposure.Enabled() {
-		c.PersistentFlags().VarPF(
-			flags.ForSettingWithOptions(env.PlaintextEndpoints, flags.SettingVarOpts{
-				Validator: func(spec string) error {
-					cfg := grpc.EndpointsConfig{}
-					if err := cfg.AddFromParsedSpec(spec); err != nil {
-						return err
-					}
-					return cfg.Validate()
-				},
-			}), "plaintext-endpoints", "",
-			"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list.")
-		utils.Must(
-			c.PersistentFlags().SetAnnotation("plaintext-endpoints", flags.NoInteractiveKey, []string{"true"}))
-	}
+	c.PersistentFlags().VarPF(
+		flags.ForSettingWithOptions(env.PlaintextEndpoints, flags.SettingVarOpts{
+			Validator: func(spec string) error {
+				cfg := grpc.EndpointsConfig{}
+				if err := cfg.AddFromParsedSpec(spec); err != nil {
+					return err
+				}
+				return cfg.Validate()
+			},
+		}), "plaintext-endpoints", "",
+		"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list.")
+	utils.Must(
+		c.PersistentFlags().SetAnnotation("plaintext-endpoints", flags.NoInteractiveKey, []string{"true"}))
 
 	c.AddCommand(interactive())
 

@@ -24,15 +24,12 @@ export const availableAuthProviders = [
     {
         label: 'SAML 2.0',
         value: 'saml'
-    }
-];
-
-if (process.env.REACT_APP_ROX_CLIENT_CA_AUTH !== 'false') {
-    availableAuthProviders.push({
+    },
+    {
         label: 'User Certificates',
         value: 'userpki'
-    });
-}
+    }
+];
 
 export const defaultMinimalReadAccessResources = [
     'Alert',

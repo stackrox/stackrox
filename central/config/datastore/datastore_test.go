@@ -8,16 +8,12 @@ import (
 	storeMocks "github.com/stackrox/rox/central/config/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestConfigDataStore(t *testing.T) {
 	t.Parallel()
-	if !features.ScopedAccessControl.Enabled() {
-		t.Skip()
-	}
 	suite.Run(t, new(configDataStoreTestSuite))
 }
 

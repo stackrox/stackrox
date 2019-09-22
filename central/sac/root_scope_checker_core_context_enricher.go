@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	sacClient "github.com/stackrox/rox/pkg/sac/client"
@@ -22,7 +21,7 @@ var (
 )
 
 func initialize() {
-	enricher = newEnricher(features.ScopedAccessControl.Enabled())
+	enricher = newEnricher()
 }
 
 // GetEnricher returns the singleton Enricher object.
@@ -33,17 +32,14 @@ func GetEnricher() *Enricher {
 
 // Enricher returns a object which will enrich a context with a cached root scope checker core
 type Enricher struct {
-	sacEnabled bool
-
 	// In a perfect world we would clear this cache when SAC gets disabled
 	cacheLock     sync.Mutex
 	clientCaches  expiringcache.Cache
 	clientManager AuthPluginClientManger
 }
 
-func newEnricher(sacEnabled bool) *Enricher {
+func newEnricher() *Enricher {
 	return &Enricher{
-		sacEnabled:    sacEnabled,
 		clientCaches:  newConfiguredCache(),
 		clientManager: AuthPluginClientManagerSingleton(),
 	}
@@ -51,10 +47,6 @@ func newEnricher(sacEnabled bool) *Enricher {
 
 // PreAuthContextEnricher adds the client in use at the time of request to the context for use in scope checking.
 func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context, error) {
-	if !se.sacEnabled {
-		return ctx, nil
-	}
-
 	client := se.clientManager.GetClient()
 	if client == nil {
 		return ctx, nil

@@ -10,7 +10,6 @@ import (
 	storeMocks "github.com/stackrox/rox/central/sac/datastore/internal/store/mocks"
 	sacMocks "github.com/stackrox/rox/central/sac/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -233,9 +232,6 @@ func (s *authzDataStoreTestSuite) TestDeleteEnabled() {
 ////////////////////////////////////////////////////////////////
 func TestAuthzConfigDatatStoreAccess(t *testing.T) {
 	t.Parallel()
-	if !features.ScopedAccessControl.Enabled() {
-		t.Skip()
-	}
 	suite.Run(t, new(authzDataStoreAccessTestSuite))
 }
 

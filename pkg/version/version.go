@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version/internal"
 )
 
@@ -55,9 +54,7 @@ func GetAllVersions() Versions {
 		MainVersion:      GetMainVersion(),
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
 		ScannerVersion:   GetScannerVersion(),
-	}
-	if features.ScannerV2.Enabled() {
-		v.ScannerV2Version = GetScannerV2Version()
+		ScannerV2Version: GetScannerV2Version(),
 	}
 	return v
 }

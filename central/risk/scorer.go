@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/risk/multipliers"
 	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -39,12 +38,8 @@ func NewScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindi
 			multipliers.NewRiskyComponents(),
 			multipliers.NewComponentCount(),
 			multipliers.NewImageAge(),
+			multipliers.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts),
 		},
-	}
-
-	if features.K8sRBAC.Enabled() {
-		scoreImpl.ConfiguredMultipliers = append(scoreImpl.ConfiguredMultipliers,
-			multipliers.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts))
 	}
 
 	return scoreImpl

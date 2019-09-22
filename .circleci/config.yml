@@ -1179,8 +1179,6 @@ jobs:
 
   unit-tests:
     <<: *defaults
-    environment:
-      - ROX_SCOPED_ACCESS_CONTROL: true
     resource_class: xlarge
     steps:
       - checkout
@@ -1311,9 +1309,6 @@ jobs:
       - SCANNER_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
-      - ROX_SCOPED_ACCESS_CONTROL: true
-      - ROX_CLIENT_CA_AUTH: true
-      - ROX_PLAINTEXT_EXPOSURE: true
       - ROX_PLAINTEXT_ENDPOINTS: "http@8080,grpc@8081"
       - ROX_CONFIG_MGMT_UI: true
       - ROX_BADGER_DB: true
@@ -1453,10 +1448,7 @@ jobs:
       - GCP_IMAGE_TYPE: "COS"
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - ROX_K8S_RBAC: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SCOPED_ACCESS_CONTROL: true
-      - ROX_CLIENT_CA_AUTH: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
@@ -1487,10 +1479,7 @@ jobs:
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - ROX_K8S_RBAC: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SCOPED_ACCESS_CONTROL: true
-      - ROX_CLIENT_CA_AUTH: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
@@ -1515,7 +1504,6 @@ jobs:
     environment:
       - STORAGE: pvc
       - LOAD_BALANCER: lb
-      - ROX_DB_BACKUP_RESTORE_V2: true
       - ROX_SENSOR_AUTOUPGRADE: true
 
     steps:
@@ -1569,8 +1557,7 @@ jobs:
             new_image="stackrox/main:$(make tag)"
             central_patch='[
               {"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "'"$new_image"'"},
-              {"op": "replace", "path": "/spec/template/spec/containers/0/ports", "value": [{"name": "api", "containerPort": 8443}]},
-              {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "ROX_DB_BACKUP_RESTORE_V2", "value": "true"}}
+              {"op": "replace", "path": "/spec/template/spec/containers/0/ports", "value": [{"name": "api", "containerPort": 8443}]}
             ]'
             kubectl -n stackrox patch deploy/central --type json -p "$central_patch"
             kubectl -n stackrox describe deploy/central
@@ -1867,10 +1854,7 @@ jobs:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
-      - ROX_K8S_RBAC: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SCOPED_ACCESS_CONTROL: true
-      - ROX_CLIENT_CA_AUTH: true
 
     steps:
       - checkout
@@ -2063,10 +2047,7 @@ jobs:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
-      - ROX_K8S_RBAC: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SCOPED_ACCESS_CONTROL: true
-      - ROX_CLIENT_CA_AUTH: true
 
     steps:
       - checkout

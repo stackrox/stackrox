@@ -10,11 +10,6 @@ const mockFeatureFlags = [
         enabled: false
     },
     {
-        name: 'Enable Scanner V2',
-        envVar: 'ROX_SCANNER_V2',
-        enabled: true
-    },
-    {
         name: 'Enable Sensor Autoupgrades',
         envVar: 'ROX_SENSOR_AUTOUPGRADE',
         enabled: true

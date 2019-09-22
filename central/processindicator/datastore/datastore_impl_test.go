@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -362,9 +361,6 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	mockStore, _, _ := suite.setupDataStoreWithMocks()
 	mockStore.EXPECT().GetProcessIndicator(gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
 
@@ -392,9 +388,6 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().AddProcessIndicator(gomock.Any()).Times(0)
 	indexMock.EXPECT().AddProcessIndicator(gomock.Any()).Times(0)
@@ -416,9 +409,6 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsAdd() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
 	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
@@ -440,9 +430,6 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByDeployment() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Times(0)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)
@@ -465,9 +452,6 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByDeployment() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByStaleContainers() {
-	if !features.ScopedAccessControl.Enabled() {
-		suite.T().Skip()
-	}
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().RemoveProcessIndicators(gomock.Any()).Times(0)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)

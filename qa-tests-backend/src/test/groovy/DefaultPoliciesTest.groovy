@@ -229,7 +229,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "RBAC Configuration"              | 1.0f     |
                 "Deployment is configured to automatically mount a token for service account \"default\"" | null |
-                [Constants.K8SRBAC_FEATURE_FLAG]
+                []
     }
 
     @Category(BAT)

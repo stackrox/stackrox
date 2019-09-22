@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -123,11 +122,7 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 	var err error
-	var opts []clientconn.ConnectionOption
-	if features.PlaintextExposure.Enabled() {
-		opts = append(opts, clientconn.UseServiceCertToken(true))
-	}
-	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, opts...)
+	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
 	if err != nil {
 		log.Fatalf("Error connecting to central: %s", err)
 	}

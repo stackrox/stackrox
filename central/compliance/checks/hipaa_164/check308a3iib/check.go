@@ -3,7 +3,6 @@ package check308a3iib
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -11,9 +10,6 @@ const (
 )
 
 func init() {
-	if !features.K8sRBAC.Enabled() {
-		return
-	}
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,

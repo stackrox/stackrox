@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/risk/multipliers"
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
@@ -87,9 +86,7 @@ func TestScore(t *testing.T) {
 		},
 	}
 
-	if features.K8sRBAC.Enabled() {
-		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-	}
+	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
 
 	actualRisk := scorer.Score(ctx, deployment, getMockImages())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
@@ -97,9 +94,7 @@ func TestScore(t *testing.T) {
 
 	expectedRiskScore = 9.016
 
-	if features.K8sRBAC.Enabled() {
-		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-	}
+	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
 
 	actualRisk = scorer.Score(ctx, deployment, getMockImages())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())

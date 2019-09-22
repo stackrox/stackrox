@@ -11,8 +11,7 @@ const featureFlags = {
 export const knownBackendFlags = {
     ROX_SENSOR_AUTOUPGRADE: 'ROX_SENSOR_AUTOUPGRADE',
     ROX_CONFIG_MGMT_UI: 'ROX_CONFIG_MGMT_UI',
-    ROX_VULN_MGMT_UI: 'ROX_VULN_MGMT_UI',
-    ROX_SCANNER_V2: 'ROX_SCANNER_V2'
+    ROX_VULN_MGMT_UI: 'ROX_VULN_MGMT_UI'
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

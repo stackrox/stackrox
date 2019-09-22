@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,10 +15,6 @@ import (
 
 func TestClientCARequested(t *testing.T) {
 	t.Parallel()
-
-	if !features.ClientCAAuth.Enabled() {
-		t.SkipNow()
-	}
 
 	clientCAFile := os.Getenv("CLIENT_CA_PATH")
 	require.NotEmpty(t, clientCAFile, "no client CA file path set")
