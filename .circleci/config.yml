@@ -2365,6 +2365,35 @@ jobs:
             git checkout "$CIRCLE_BRANCH"
             scripts/ci/create-dev-license-update-pr.sh "roxbot/regenerate-dev-license-${CIRCLE_BUILD_NUM}"
 
+  roxctl-windows-test:
+    <<: *defaults
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: "Install Wine"
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y wine64
+
+      - run:
+          name: "Generate a K8s/OpenShift bundles using roxctl.exe"
+          command: |
+            wine64 ./bin/windows/roxctl.exe central generate k8s none --output-dir 'Z:\home\circleci\rox-k8s-bundle'
+            wine64 ./bin/windows/roxctl.exe central generate openshift none --output-dir 'Z:\home\circleci\rox-openshift-bundle'
+
+      - run:
+          name: "Verify contents of generated bundles"
+          command: |
+            ls /home/circleci/rox-k8s-bundle
+            test -f /home/circleci/rox-k8s-bundle/README
+
+            ls /home/circleci/rox-openshift-bundle
+            test -f /home/circleci/rox-openshift-bundle/README
+
 workflows:
   version: 2
   build_all:
@@ -2534,6 +2563,13 @@ workflows:
           requires:
             - build
             - provision-kops
+          filters:
+            tags:
+              only: /.*/
+      - roxctl-windows-test:
+          context: docker-io-pull
+          requires:
+            - pre-build-cli
           filters:
             tags:
               only: /.*/
