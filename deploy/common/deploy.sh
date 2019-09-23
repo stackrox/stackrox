@@ -3,7 +3,7 @@
 export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-stackrox/main}"
 echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
 
-export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make tag)}"
+export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make -C "$(git rev-parse --show-toplevel)" tag)}"
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 
 export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
