@@ -449,7 +449,7 @@ commands:
             <</ parameters.docker-login >>
             cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
             cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
-            cci-export MAIN_IMAGE_TAG "$(make tag)"
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
             cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
               cci-export MAIN_IMAGE_REPO stackrox/main-rhel
@@ -1025,7 +1025,7 @@ jobs:
           name: Push new Docker image
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker push "docker.io/stackrox/main:$(make tag)" | cat
+            docker push "docker.io/stackrox/main:$(make --quiet tag)" | cat
 
       - *saveGoModCache
 
@@ -1043,7 +1043,7 @@ jobs:
             wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
             sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
 
-            export TAG=$(make tag)
+            export TAG=$(make --quiet tag)
             hub-comment -template-file .circleci/comment-template.tpl
 
       - cleanup-clusters-on-fail
@@ -1118,7 +1118,7 @@ jobs:
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
 
-            TAG="$(make tag)"
+            TAG="$(make --quiet tag)"
             docker push "docker.io/stackrox/main-rhel:${TAG}" | cat
 
       - cleanup-clusters-on-fail
@@ -1141,7 +1141,7 @@ jobs:
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
 
-            TAG="$(make tag)"
+            TAG="$(make --quiet tag)"
             docker push "docker.io/stackrox/deployer:${TAG}" | cat
 
       - cleanup-clusters-on-fail
@@ -1169,7 +1169,7 @@ jobs:
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
 
-            TAG=$(make tag)
+            TAG=$(make --quiet tag)
 
             for img in scale grpc-server monitoring; do
               docker push "docker.io/stackrox/${img}:${TAG}" | cat
@@ -1380,7 +1380,7 @@ jobs:
           command: |
             version="$(curl --retry 5 --retry-connrefused --retry-delay 1 --retry-max-time 10 -f 'http://localhost:10080/v1/metadata' | jq -r '.version')"
             echo "Got version ${version} from server"
-            [[ "$version" == "$(make tag)" ]]
+            [[ "$version" == "$(make --quiet tag)" ]]
 
       - run:
           name: Test HTTPS access to multiplexed TLS proxy
@@ -1392,7 +1392,7 @@ jobs:
                 -f \
                 'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.version')"
             echo "Got version ${version} from server"
-            [[ "$version" == "$(make tag)" ]]
+            [[ "$version" == "$(make --quiet tag)" ]]
 
       - run:
           name: Test roxctl access to multiplexed TLS proxy
@@ -1520,7 +1520,7 @@ jobs:
       - run:
           name: Launch Central only
           command: |
-            cci-export MAIN_IMAGE_TAG "$(make tag)"
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
             ./deploy/k8s/central.sh
 
             central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
@@ -1549,7 +1549,7 @@ jobs:
       - run:
           name: Do the upgrade
           command: |
-            new_image="stackrox/main:$(make tag)"
+            new_image="stackrox/main:$(make --quiet tag)"
             central_patch='[
               {"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "'"$new_image"'"},
               {"op": "replace", "path": "/spec/template/spec/containers/0/ports", "value": [{"name": "api", "containerPort": 8443}]}
@@ -1881,7 +1881,7 @@ jobs:
             cci-export CLAIRIFY_IMAGE_TAG 0.5.2
             cci-export OPENSHIFT_HOST "$(cat openshift/master)"
             cci-export ROX_IMAGE_REGISTRY docker.io
-            cci-export MAIN_IMAGE_TAG "$(make tag)"
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
             cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
             cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
@@ -2078,7 +2078,7 @@ jobs:
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
             cci-export KOPS_HOST "$(cat kops/master)"
             cci-export ROX_IMAGE_REGISTRY docker.io
-            cci-export MAIN_IMAGE_TAG "$(make tag)"
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
             cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
             cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
 
@@ -2200,8 +2200,8 @@ jobs:
             docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" stackrox.io
             docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
-            MAIN_TAG=$(make tag)
-            COLLECTOR_TAG=$(make collector-tag)
+            MAIN_TAG=$(make --quiet tag)
+            COLLECTOR_TAG=$(make --quiet collector-tag)
 
             docker pull docker.io/stackrox/main:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/main:$MAIN_TAG stackrox.io/main:$MAIN_TAG
@@ -2220,7 +2220,7 @@ jobs:
           command: |
             gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
             gcloud auth list
-            MAIN_TAG=$(make tag)
+            MAIN_TAG=$(make --quiet tag)
 
             cd bin
             for release in "${MAIN_TAG}" latest; do
@@ -2240,8 +2240,8 @@ jobs:
           command: |
             docker login -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER" https://gcr.io
 
-            MAIN_TAG=$(make tag)
-            SCANNER_TAG=$(make scanner-tag)
+            MAIN_TAG=$(make --quiet tag)
+            SCANNER_TAG=$(make --quiet scanner-tag)
 
             # Deployer was pushed up in build-deployer, so must be pulled back down here.
             docker pull docker.io/stackrox/deployer:$MAIN_TAG | cat
@@ -2269,7 +2269,7 @@ jobs:
 
             make offline-bundle
 
-            for release in "$(make tag)" latest; do
+            for release in "$(make --quiet tag)" latest; do
               gsutil cp scripts/offline-bundle/image-bundle.tgz           gs://sr-roxc/${release}/image-bundle.tgz
               gsutil cp scripts/offline-bundle/image-collector-bundle.tgz gs://sr-roxc/${release}/image-collector-bundle.tgz
             done
