@@ -26,7 +26,7 @@ func Run(boltDB *bolt.DB, badgerDB *badger.DB) error {
 		log.WriteToStderr("DB is up to date. Nothing to do here.")
 		return nil
 	}
-	log.WriteToStderr("Found DB at version %d, which is less than what we expect (%d). Running migrations...",
+	log.WriteToStderrf("Found DB at version %d, which is less than what we expect (%d). Running migrations...",
 		dbSeqNum, currSeqNum)
 	return runMigrations(boltDB, badgerDB, dbSeqNum)
 }
@@ -45,7 +45,7 @@ func runMigrations(boltDB *bolt.DB, badgerDB *badger.DB, startingSeqNum int) err
 		if err != nil {
 			return errors.Wrapf(err, "failed to update version after migration %d", startingSeqNum)
 		}
-		log.WriteToStderr("Successfully updated DB from version %d to %d", seqNum, migration.VersionAfter.GetSeqNum())
+		log.WriteToStderrf("Successfully updated DB from version %d to %d", seqNum, migration.VersionAfter.GetSeqNum())
 	}
 	return nil
 }

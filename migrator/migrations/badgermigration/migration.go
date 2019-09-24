@@ -62,14 +62,14 @@ func RewriteData(db *bolt.DB, badgerDB *badger.DB) error {
 }
 
 func rewrite(db *bolt.DB, badgerDB *badger.DB, bucketName []byte) error {
-	log.WriteToStderr("Rewriting Bucket %q", string(bucketName))
+	log.WriteToStderrf("Rewriting Bucket %q", string(bucketName))
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
 		if bucket == nil {
 			return nil
 		}
 		totalKeys := bucket.Stats().KeyN
-		log.WriteToStderr("Total keys in bucket: %d", totalKeys)
+		log.WriteToStderrf("Total keys in bucket: %d", totalKeys)
 
 		keysWritten := 0
 		batch := badgerDB.NewWriteBatch()
@@ -92,7 +92,7 @@ func rewrite(db *bolt.DB, badgerDB *badger.DB, bucketName []byte) error {
 				if err := batch.Flush(); err != nil {
 					return err
 				}
-				log.WriteToStderr("Written %d/%d keys for bucket %q", keysWritten, totalKeys, string(bucketName))
+				log.WriteToStderrf("Written %d/%d keys for bucket %q", keysWritten, totalKeys, string(bucketName))
 				batch = badgerDB.NewWriteBatch()
 			}
 			return nil
@@ -101,15 +101,15 @@ func rewrite(db *bolt.DB, badgerDB *badger.DB, bucketName []byte) error {
 		if err != nil {
 			return err
 		}
-		log.WriteToStderr("Running final flush for %s into BadgerDB", string(bucketName))
+		log.WriteToStderrf("Running final flush for %s into BadgerDB", string(bucketName))
 		if err := batch.Flush(); err != nil {
 			return errors.Wrapf(err, "error flushing BadgerDB for bucket %q", string(bucketName))
 		}
-		log.WriteToStderr("Wrote %s into BadgerDB. Deleting Bucket from Bolt", string(bucketName))
+		log.WriteToStderrf("Wrote %s into BadgerDB. Deleting Bucket from Bolt", string(bucketName))
 		if err := tx.DeleteBucket(bucketName); err != nil {
 			return errors.Wrapf(err, "error deleting bucket %q from Bolt", string(bucketName))
 		}
-		log.WriteToStderr("Successfully deleted bucket %q", string(bucketName))
+		log.WriteToStderrf("Successfully deleted bucket %q", string(bucketName))
 		return nil
 	})
 }

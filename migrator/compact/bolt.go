@@ -20,7 +20,7 @@ func compact(dst, src *bolt.DB, fillPercent float64) error {
 	}
 	defer func() {
 		if err := tx.Rollback(); err != nil && err != bolt.ErrTxClosed {
-			log.WriteToStderr("error rolling back: %v", err)
+			log.WriteToStderrf("error rolling back: %v", err)
 		}
 	}()
 
@@ -33,7 +33,7 @@ func compact(dst, src *bolt.DB, fillPercent float64) error {
 			if err := tx.Commit(); err != nil {
 				return err
 			}
-			log.WriteToStderr("Took %0.2f seconds to commit", time.Since(t).Seconds())
+			log.WriteToStderrf("Took %0.2f seconds to commit", time.Since(t).Seconds())
 
 			// Start new transaction.
 			tx, err = dst.Begin(true)
@@ -82,7 +82,7 @@ func compact(dst, src *bolt.DB, fillPercent float64) error {
 
 		totalKeysWritten++
 		if totalKeysWritten%5000 == 0 {
-			log.WriteToStderr("Compaction has written %d keys", totalKeysWritten)
+			log.WriteToStderrf("Compaction has written %d keys", totalKeysWritten)
 		}
 		// Otherwise treat it as a key/value pair.
 		return b.Put(k, v)

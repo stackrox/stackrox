@@ -72,7 +72,7 @@ func checkIfCompactionIsNeeded() (*config.Config, error) {
 }
 
 func transferFromScratchToDevice(dst, src string) error {
-	log.WriteToStderr("writing scratch file %q to device file %q", src, dst)
+	log.WriteToStderrf("writing scratch file %q to device file %q", src, dst)
 	dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil {
 		return errors.Wrapf(err, "error creating file at %q", dst)
@@ -106,10 +106,10 @@ func checkCompactionThreshold(config *config.Config, dbSize uint64, db *bolt.DB)
 	dbFreeAllocBytes := os.Getpagesize() * db.Stats().FreePageN
 	freeFraction := float64(dbFreeAllocBytes) / float64(dbSize)
 	if freeFraction > *threshold {
-		log.WriteToStderr("Free fraction of %0.4f (%d/%d) is > %0.4f. Continuing with compaction", freeFraction, dbFreeAllocBytes, dbSize, *threshold)
+		log.WriteToStderrf("Free fraction of %0.4f (%d/%d) is > %0.4f. Continuing with compaction", freeFraction, dbFreeAllocBytes, dbSize, *threshold)
 		return true
 	}
-	log.WriteToStderr("Free fraction of %0.4f (%d/%d) is < %0.4f. Will not compact", freeFraction, dbFreeAllocBytes, dbSize, *threshold)
+	log.WriteToStderrf("Free fraction of %0.4f (%d/%d) is < %0.4f. Will not compact", freeFraction, dbFreeAllocBytes, dbSize, *threshold)
 	return false
 }
 
@@ -170,13 +170,13 @@ func Compact() error {
 
 	if err := compact(compactedDB, oldDB, *config.Maintenance.Compaction.BucketFillFraction); err != nil {
 		if err := compactedDB.Close(); err != nil {
-			log.WriteToStderr("error closing compacted DB: %v", err)
+			log.WriteToStderrf("error closing compacted DB: %v", err)
 		}
 		if err := oldDB.Close(); err != nil {
-			log.WriteToStderr("error closing old DB: %v", err)
+			log.WriteToStderrf("error closing old DB: %v", err)
 		}
 		if err := os.RemoveAll(compactedBoltDBFilePath); err != nil {
-			log.WriteToStderr("error removing compacted DB: %v", err)
+			log.WriteToStderrf("error removing compacted DB: %v", err)
 		}
 		return errors.Wrap(err, "error executing compaction")
 	}

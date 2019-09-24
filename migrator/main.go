@@ -16,7 +16,7 @@ import (
 func main() {
 	startProfilingServer()
 	if err := run(); err != nil {
-		log.WriteToStderr("Migrator failed: %s", err)
+		log.WriteToStderrf("Migrator failed: %s", err)
 		os.Exit(1)
 	}
 }
@@ -29,14 +29,14 @@ func startProfilingServer() {
 	srv := &http.Server{Addr: ":6060", Handler: handler}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			log.WriteToStderr("Closing profiling server: %v", err)
+			log.WriteToStderrf("Closing profiling server: %v", err)
 		}
 	}()
 }
 
 func run() error {
 	if err := compact.Compact(); err != nil {
-		log.WriteToStderr("error compacting DB: %v", err)
+		log.WriteToStderrf("error compacting DB: %v", err)
 	}
 
 	boltDB, err := bolthelpers.Load()
@@ -55,10 +55,10 @@ func run() error {
 
 	defer func() {
 		if err := boltDB.Close(); err != nil {
-			log.WriteToStderr("Error closing DB: %v", err)
+			log.WriteToStderrf("Error closing DB: %v", err)
 		}
 		if err := badgerDB.Close(); err != nil {
-			log.WriteToStderr("Error closing badger DB: %v", err)
+			log.WriteToStderrf("Error closing badger DB: %v", err)
 		}
 	}()
 	err = runner.Run(boltDB, badgerDB)
