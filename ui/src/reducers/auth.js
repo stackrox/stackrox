@@ -65,12 +65,12 @@ const authProviders = (state = [], action) => {
 };
 
 const selectedAuthProvider = (state = null, action) => {
-    if (action.type === types.FETCH_AUTH_PROVIDERS.SUCCESS && !state) {
+    if (action.type === types.FETCH_AUTH_PROVIDERS.SUCCESS) {
         const providers = filterAuthProviders(action.response);
         if (providers.length) {
-            return providers[0];
+            return state || providers[0];
         }
-        return state;
+        return null;
     }
     if (action.type === types.SELECTED_AUTH_PROVIDER && action.authProvider) {
         return isEqual(action.authProvider, state) ? state : action.authProvider;
