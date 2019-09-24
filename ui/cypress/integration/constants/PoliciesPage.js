@@ -28,7 +28,7 @@ export const selectors = {
     configurationField: {
         select: '#policyConfigurationSelect',
         selectArrow: '#policyConfigurationSelect .react-select__dropdown-indicator',
-        options: '#policyConfigurationSelect div[role="option"]',
+        options: '#policyConfigurationSelect .react-select__option',
         numericInput: '[data-test-id="policyConfiguration"] .react-numeric-input input'
     },
     imageRegistry: {

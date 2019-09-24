@@ -43,7 +43,7 @@ describe('Integrations page', () => {
         cy.get(
             `${selectors.dockerRegistryForm.typesSelect} .react-select__dropdown-indicator`
         ).click();
-        cy.get('div[role="option"]:contains("Registry")').click();
+        cy.get('.react-select__menu-list > div:contains("Registry")').click();
 
         // test that validation error happens when form is incomplete
         cy.get(selectors.buttons.test).click();
@@ -86,7 +86,7 @@ describe('API Token Creation Flow', () => {
         cy.get(selectors.buttons.generate).click();
         cy.get(selectors.apiTokenForm.nameInput).type(randomTokenName);
         cy.get(`${selectors.apiTokenForm.roleSelect} .react-select__dropdown-indicator`).click();
-        cy.get('div[role="option"]:contains("Admin")').click();
+        cy.get('.react-select__menu-list > div:contains("Admin")').click();
         cy.get(selectors.buttons.generate).click();
         cy.get(selectors.apiTokenBox);
         cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
