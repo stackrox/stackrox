@@ -49,7 +49,7 @@ const renderKeyValues = ({ fields }) => (
 );
 
 renderKeyValues.propTypes = {
-    fields: PropTypes.shape({}).isRequired
+    fields: PropTypes.arrayOf(PropTypes.shape({})).isRequired
 };
 
 export default renderKeyValues;

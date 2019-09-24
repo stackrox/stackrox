@@ -67,7 +67,8 @@ DataRetentionDetailWidget.propTypes = {
     config: PropTypes.shape({
         publicConfig: PropTypes.shape({
             loginNotice: PropTypes.shape({})
-        })
+        }),
+        privateConfig: PropTypes.shape({})
     }).isRequired
 };
 

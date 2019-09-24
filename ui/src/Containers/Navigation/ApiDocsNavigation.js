@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import { Manager, Target, Popper, Arrow } from 'react-popper';
 import onClickOutside from 'react-onclickoutside';
 
-import { darkModeLinkClassName } from 'Containers/Navigation/LeftNavigation';
+import { getDarkModeLinkClassName } from './navHelpers';
 
 const modifiers = {
     customStyle: {
@@ -56,7 +56,7 @@ const ApiDocsNavigation = ({ onClick }) => {
     const [toggleMenu, setToggleMenu] = useState(false);
     const { isDarkMode } = useTheme();
 
-    const linkClassName = `${darkModeLinkClassName(
+    const linkClassName = `${getDarkModeLinkClassName(
         isDarkMode
     )} w-full font-condensed font-700 text-primary-400 px-3 no-underline justify-center h-18 items-center border-b`;
 

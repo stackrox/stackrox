@@ -5,6 +5,8 @@ import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
 import Query from 'Components/CacheFirstQuery';
 import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
+// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
+/* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import Loader from 'Components/Loader';

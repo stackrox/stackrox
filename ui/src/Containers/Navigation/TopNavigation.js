@@ -14,9 +14,9 @@ import CLIDownloadButton from 'Components/CLIDownloadButton';
 import GlobalSearchButton from 'Components/GlobalSearchButton';
 import SummaryCounts from './SummaryCounts';
 
-export const topNavBtnTextClass = 'sm:hidden md:flex uppercase text-sm tracking-wide';
-export const topNavBtnSvgClass = 'sm:mr-0 md:mr-3 h-4 w-4';
-export const topNavBtnClass =
+const topNavBtnTextClass = 'sm:hidden md:flex uppercase text-sm tracking-wide';
+const topNavBtnSvgClass = 'sm:mr-0 md:mr-3 h-4 w-4';
+const topNavBtnClass =
     'flex flex-end px-4 no-underline pt-3 pb-2 text-base-600 hover:bg-base-200 items-center cursor-pointer';
 const topNavMenuBtnClass =
     'no-underline text-base-600 hover:bg-base-200 items-center cursor-pointer';
@@ -48,8 +48,16 @@ const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
                 <SummaryCounts />
             </div>
             <div className="flex" data-test-id="top-nav-btns">
-                <GlobalSearchButton />
-                <CLIDownloadButton />
+                <GlobalSearchButton
+                    topNavBtnTextClass={topNavBtnTextClass}
+                    topNavBtnSvgClass={topNavBtnSvgClass}
+                    topNavBtnClass={topNavBtnClass}
+                />
+                <CLIDownloadButton
+                    topNavBtnTextClass={topNavBtnTextClass}
+                    topNavBtnSvgClass={topNavBtnSvgClass}
+                    topNavBtnClass={topNavBtnClass}
+                />
                 <ThemeToggleButton />
                 {renderNavBarMenu()}
             </div>

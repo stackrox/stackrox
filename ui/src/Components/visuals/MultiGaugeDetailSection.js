@@ -6,7 +6,13 @@ class MultiGaugeDetailSection extends Component {
     static propTypes = {
         onClick: PropTypes.func.isRequired,
         data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        selectedData: PropTypes.shape({}),
+        selectedData: PropTypes.shape({
+            passing: PropTypes.bool,
+            failing: PropTypes.shape({
+                selected: PropTypes.bool
+            }),
+            index: PropTypes.number
+        }),
         colors: PropTypes.arrayOf(PropTypes.string)
     };
 

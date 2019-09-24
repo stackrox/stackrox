@@ -7,13 +7,13 @@ import { actions as CLIDownloadActions } from 'reducers/cli';
 import * as Icon from 'react-feather';
 import Tooltip from 'rc-tooltip';
 import 'rc-tooltip/assets/bootstrap.css';
-import {
+
+const CLIDownloadButton = ({
+    toggleCLIDownloadView,
     topNavBtnTextClass,
     topNavBtnSvgClass,
     topNavBtnClass
-} from 'Containers/Navigation/TopNavigation';
-
-const CLIDownloadButton = ({ toggleCLIDownloadView }) => (
+}) => (
     <Tooltip
         placement="bottom"
         overlay={<div>CLI</div>}
@@ -32,7 +32,10 @@ const CLIDownloadButton = ({ toggleCLIDownloadView }) => (
 );
 
 CLIDownloadButton.propTypes = {
-    toggleCLIDownloadView: PropTypes.func.isRequired
+    toggleCLIDownloadView: PropTypes.func.isRequired,
+    topNavBtnTextClass: PropTypes.string.isRequired,
+    topNavBtnSvgClass: PropTypes.string.isRequired,
+    topNavBtnClass: PropTypes.string.isRequired
 };
 
 const mapDispatchToProps = dispatch => ({

@@ -1,4 +1,6 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import ScopedPermissions from './ScopedPermissions';
@@ -29,6 +31,14 @@ const RulePermissions = ({ rules, ...rest }) => {
             <div className="w-full">{content}</div>
         </Widget>
     );
+};
+
+RulePermissions.propTypes = {
+    rules: PropTypes.arrayOf({})
+};
+
+RulePermissions.defaultProps = {
+    rules: null
 };
 
 export default RulePermissions;

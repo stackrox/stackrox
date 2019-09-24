@@ -12,6 +12,7 @@ lint
 # production
 /build
 index.css
+storybook-static/
 
 # IDE
 /.vscode

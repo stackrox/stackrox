@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import capitalize from 'lodash/capitalize';
 import ColorPicker from 'Components/ColorPicker';
-import { keyClassName } from './Page';
+import { keyClassName } from './SystemConfig.constants';
 
 const ConfigBannerDetailWidget = ({ type, config }) => {
     const { publicConfig } = config;

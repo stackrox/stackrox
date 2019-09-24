@@ -3,7 +3,7 @@ import React from 'react';
 import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
 
-import { keyClassName } from './Page';
+import { keyClassName } from './SystemConfig.constants';
 
 const ConfigLoginFormWidget = () => (
     <div className="bg-base-100 border-base-200 shadow" data-test-id="login-notice-config">

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import ConfigBannerDetailWidget from './ConfigBannerDetailWidget';
 import ConfigLoginDetailWidget from './ConfigLoginDetailWidget';
 import ConfigDataRetentionDetailWidget from './ConfigDataRetentionDetailWidget';
-import { pageLayoutClassName } from './Page';
+import { pageLayoutClassName } from './SystemConfig.constants';
 
 const Detail = ({ config }) => (
     <div className={pageLayoutClassName}>

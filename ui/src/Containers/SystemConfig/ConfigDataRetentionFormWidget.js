@@ -5,7 +5,7 @@ import pluralize from 'pluralize';
 
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 
-import { keyClassName } from './Page';
+import { keyClassName } from './SystemConfig.constants';
 
 const DataRetentionFormWidget = ({ privateConfig }) => (
     <div className="bg-base-100 border-base-200 shadow" data-test-id="login-notice-config">
@@ -91,7 +91,11 @@ const DataRetentionFormWidget = ({ privateConfig }) => (
 
 DataRetentionFormWidget.propTypes = {
     privateConfig: PropTypes.shape({
-        alertConfig: PropTypes.shape({}),
+        alertConfig: PropTypes.shape({
+            allRuntimeRetentionDurationDays: PropTypes.number,
+            deletedRuntimeRetentionDurationDays: PropTypes.number,
+            resolvedDeployRetentionDurationDays: PropTypes.number
+        }),
         imageRetentionDurationDays: PropTypes.number
     }).isRequired
 };

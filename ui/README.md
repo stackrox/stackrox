@@ -79,6 +79,14 @@ To run tests and continously watch for changes use `yarn test-watch`.
 To bring up [Cypress](https://www.cypress.io/) UI use `yarn cypress-open`.
 To run all end-to-end tests in a headless mode use `yarn test-e2e-local`.
 
+### Documentation
+
+To start a local server with live-reloading documentation:
+
+```
+yarn storybook
+```
+
 ### IDEs
 
 This project is IDE agnostic. For the best dev experience, it's recommended to

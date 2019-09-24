@@ -6,16 +6,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
 
 // @TODO We should try to use this component for Compliance as well
-const RelatedEntityListCount = ({
-    match,
-    location,
-    history,
-    name,
-    value,
-    entityType,
-    link,
-    ...rest
-}) => {
+const RelatedEntityListCount = ({ match, location, history, name, value, entityType, ...rest }) => {
     function onClick() {
         history.push(
             URLService.getURL(match, location)

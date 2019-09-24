@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.2.0
+    - image: docker.io/stackrox/apollo-ci:0.2.1
       auth:
         username: $DOCKER_IO_PULL_USERNAME
         password: $DOCKER_IO_PULL_PASSWORD
@@ -55,13 +55,13 @@ restoreGradle: &restoreGradle
       - *gradleCacheKey
       - v1-rox-gradle
 
-uiCacheKey: &uiCacheKey 'v3-rox-ui-deps-{{ checksum "ui/package.json" }}-{{ checksum "ui/yarn.lock" }}'
+uiCacheKey: &uiCacheKey 'v4-rox-ui-deps-{{ checksum "ui/package.json" }}-{{ checksum "ui/yarn.lock" }}'
 restoreUI: &restoreUI
   restore_cache:
     keys:
       - *uiCacheKey
-      - v3-rox-ui-deps-{{ checksum "ui/package.json" }}-
-      - v3-rox-ui-deps-
+      - v4-rox-ui-deps-{{ checksum "ui/package.json" }}-
+      - v4-rox-ui-deps-
 
 setupHelm: &setupHelm
   run:

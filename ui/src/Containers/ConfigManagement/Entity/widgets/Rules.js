@@ -1,4 +1,6 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+
 import Widget from 'Components/Widget';
 import { ArrowRight } from 'react-feather';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -52,6 +54,14 @@ const Rules = ({ rules, ...rest }) => {
             {content}
         </Widget>
     );
+};
+
+Rules.propTypes = {
+    rules: PropTypes.arrayOf({})
+};
+
+Rules.defaultProps = {
+    rules: null
 };
 
 export default Rules;

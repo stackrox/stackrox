@@ -6,8 +6,7 @@ import ReduxTextField from 'Components/forms/ReduxTextField';
 import PermissionsMatrix from 'Containers/AccessControl/Roles/Permissions/PermissionsMatrix/PermissionsMatrix';
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
 
-const Form = props => {
-    const { handleSubmit, initialValues, onSubmit } = props;
+const Form = ({ handleSubmit, initialValues, onSubmit }) => {
     const disableNameField = !!initialValues && !!initialValues.name;
     return (
         <form
@@ -47,6 +46,7 @@ Form.propTypes = {
     handleSubmit: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
     initialValues: PropTypes.shape({
+        name: PropTypes.string,
         resourceToAccess: PropTypes.shape({})
     })
 };

@@ -7,6 +7,8 @@ import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import searchContexts from 'constants/searchContexts';
 import ListTable from './Table';
+// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
+/* eslint-disable-next-line import/no-cycle */
 import SidePanel from './SidePanel';
 import SearchInput from '../SearchInput';
 

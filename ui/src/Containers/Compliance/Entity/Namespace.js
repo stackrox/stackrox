@@ -7,6 +7,8 @@ import pluralize from 'pluralize';
 import Cluster from 'images/cluster.svg';
 import { NAMESPACE_QUERY as QUERY } from 'queries/namespace';
 import Widget from 'Components/Widget';
+// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
+/* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import ResourceTabs from 'Components/ResourceTabs';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';

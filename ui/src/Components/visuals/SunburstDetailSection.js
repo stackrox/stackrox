@@ -18,7 +18,14 @@ class SunburstDetailSection extends Component {
                 className: PropTypes.string
             })
         ).isRequired,
-        selectedDatum: PropTypes.shape({}),
+        selectedDatum: PropTypes.shape({
+            parent: PropTypes.shape({
+                data: PropTypes.shape({
+                    name: PropTypes.string
+                })
+            }),
+            name: PropTypes.string
+        }),
         clicked: PropTypes.bool.isRequired,
         units: PropTypes.string
     };

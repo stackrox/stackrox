@@ -72,6 +72,10 @@ UploadLicense.propTypes = {
     isStartUpScreen: PropTypes.bool
 };
 
+UploadLicense.defaultProps = {
+    licenseUploadStatus: {},
+    isStartUpScreen: false
+};
 const mapStateToProps = createStructuredSelector({
     licenseUploadStatus: selectors.getLicenseUploadStatus
 });

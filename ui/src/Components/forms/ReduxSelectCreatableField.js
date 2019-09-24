@@ -22,6 +22,7 @@ const ReduxSelectCreatable = ({
 
 ReduxSelectCreatable.propTypes = {
     input: PropTypes.shape({
+        name: PropTypes.string,
         value: PropTypes.string,
         onChange: PropTypes.func
     }).isRequired,

@@ -8,6 +8,8 @@ import ControlDetails from 'Components/ControlDetails';
 import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRelatedResourceList';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import { withRouter } from 'react-router-dom';
+// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
+/* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import Loader from 'Components/Loader';
 import ResourceTabs from 'Components/ResourceTabs';

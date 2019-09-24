@@ -15,7 +15,9 @@ class Form extends Component {
     static propTypes = {
         handleSubmit: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
-        initialValues: PropTypes.shape({}),
+        initialValues: PropTypes.shape({
+            type: PropTypes.string
+        }),
         selectedAuthProvider: PropTypes.shape({}),
         roles: PropTypes.arrayOf(
             PropTypes.shape({

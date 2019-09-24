@@ -100,7 +100,8 @@ Field.defaultProps = {
 
 Details.propTypes = {
     authProvider: PropTypes.shape({
-        name: PropTypes.string
+        name: PropTypes.string,
+        type: PropTypes.string
     }).isRequired,
     groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     defaultRole: PropTypes.string

@@ -321,7 +321,10 @@ const ListTable = ({
 ListTable.propTypes = {
     searchComponent: PropTypes.node,
     entityType: PropTypes.string,
-    query: PropTypes.shape({}),
+    query: PropTypes.shape({
+        standardId: PropTypes.string,
+        groupBy: PropTypes.string
+    }),
     selectedRowId: PropTypes.string,
     updateSelectedRow: PropTypes.func.isRequired,
     pdfId: PropTypes.string

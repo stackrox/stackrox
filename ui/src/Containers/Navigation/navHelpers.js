@@ -7,6 +7,10 @@ export function filterLinksByFeatureFlag(flagsToUse, navLinks, defaultVal = fals
     });
 }
 
+export const getDarkModeLinkClassName = isDarkMode =>
+    isDarkMode ? 'hover:bg-primary-100' : 'border-primary-900 hover:bg-base-700';
+
 export default {
-    filterLinksByFeatureFlag
+    filterLinksByFeatureFlag,
+    getDarkModeLinkClassName
 };

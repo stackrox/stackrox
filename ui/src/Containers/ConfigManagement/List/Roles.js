@@ -37,7 +37,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Permissions`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
+            // eslint-disable-next-line react/prop-types
             Cell: ({ original }) => {
                 const { verbs: permissions } = original;
                 if (!permissions.length) return 'No Permissions';
@@ -50,6 +50,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Created`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line react/prop-types
             Cell: ({ original }) => {
                 const { createdAt } = original;
                 return format(createdAt, dateTimeFormat);
@@ -64,8 +65,8 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
-                  // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+                  // eslint-disable-next-line react/prop-types
+                  Cell: ({ original, pdf }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
@@ -78,7 +79,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Namespace Scope`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
+            // eslint-disable-next-line react/prop-types
             Cell: ({ original, pdf }) => {
                 const { roleNamespace, id } = original;
                 if (!roleNamespace) return 'Cluster-wide';
@@ -97,7 +98,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Users & Groups`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
+            // eslint-disable-next-line react/prop-types
             Cell: ({ original, pdf }) => {
                 const { serviceAccounts, subjects } = original;
                 const { length: serviceAccountsLength } = serviceAccounts;
@@ -136,7 +137,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
+            // eslint-disable-next-line react/prop-types
             Cell: ({ original, pdf }) => {
                 const { serviceAccounts, subjects, id } = original;
                 const { length: serviceAccountsLength } = serviceAccounts;

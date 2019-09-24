@@ -62,7 +62,9 @@ class BasicSunburst extends React.Component {
         ).isRequired,
         totalValue: PropTypes.number.isRequired,
         legendData: PropTypes.arrayOf(PropTypes.object).isRequired,
-        sunburstProps: PropTypes.shape({}),
+        sunburstProps: PropTypes.shape({
+            style: PropTypes.string
+        }),
         onValueMouseOver: PropTypes.func,
         onValueMouseOut: PropTypes.func,
         onValueSelect: PropTypes.func,

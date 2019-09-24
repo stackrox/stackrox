@@ -64,7 +64,9 @@ const EntityPageHeader = ({ entityType, entityId, urlParams }) => {
 EntityPageHeader.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
-    urlParams: PropTypes.shape({})
+    urlParams: PropTypes.shape({
+        entityListType1: PropTypes.string
+    })
 };
 
 EntityPageHeader.defaultProps = {

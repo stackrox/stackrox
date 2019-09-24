@@ -38,6 +38,10 @@ Panel.propTypes = {
     wizardStage: PropTypes.string.isRequired
 };
 
+Panel.defaultProps = {
+    wizardPolicy: null
+};
+
 const mapStateToProps = createStructuredSelector({
     isFetchingPolicy: state => selectors.getLoadingStatus(state, types.FETCH_POLICY),
     wizardPolicy: selectors.getWizardPolicy,

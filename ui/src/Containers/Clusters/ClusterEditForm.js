@@ -319,7 +319,26 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
 }
 
 ClusterEditForm.propTypes = {
-    selectedCluster: PropTypes.shape({}).isRequired,
+    selectedCluster: PropTypes.shape({
+        id: PropTypes.string,
+        name: PropTypes.string,
+        type: PropTypes.string,
+        mainImage: PropTypes.string,
+        centralApiEndpoint: PropTypes.string,
+        monitoringEndpoint: PropTypes.string,
+        collectionMethod: PropTypes.string,
+        collectorImage: PropTypes.string,
+        admissionController: PropTypes.string,
+        dynamicConfig: PropTypes.shape({
+            registryOverride: PropTypes.string,
+            admissionControllerConfig: PropTypes.shape({
+                enabled: PropTypes.bool,
+                timeoutSeconds: PropTypes.number,
+                scanInline: PropTypes.bool,
+                disableBypass: PropTypes.bool
+            })
+        })
+    }).isRequired,
     handleChange: PropTypes.func.isRequired
 };
 

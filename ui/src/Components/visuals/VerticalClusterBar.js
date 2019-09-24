@@ -8,15 +8,18 @@ import {
     VerticalBarSeries
 } from 'react-vis';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter, Link } from 'react-router-dom';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import merge from 'deepmerge';
+
 import { standardBaseTypes } from 'constants/entityTypes';
 import colors from 'constants/visuals/colors';
 import HoverHint from './HoverHint';
 
 class BarChart extends Component {
     static propTypes = {
+        history: ReactRouterPropTypes.history.isRequired,
         data: PropTypes.shape({}).isRequired,
         colors: PropTypes.arrayOf(PropTypes.string),
         containerProps: PropTypes.shape({}),

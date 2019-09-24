@@ -111,9 +111,12 @@ Details.propTypes = {
     wizardStage: PropTypes.string.isRequired,
 
     deployment: PropTypes.shape({
-        name: PropTypes.string
+        name: PropTypes.string,
+        deployment: PropTypes.shape({})
     }).isRequired,
-    selectedNode: PropTypes.shape({}),
+    selectedNode: PropTypes.shape({
+        edges: PropTypes.arrayOf(PropTypes.shape({}))
+    }),
     selectedNamespace: PropTypes.shape({}),
     isFetchingNode: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,

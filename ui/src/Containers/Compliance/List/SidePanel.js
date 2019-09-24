@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
-import ControlPage from 'Containers/Compliance/Entity/Control';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { Link, withRouter } from 'react-router-dom';
@@ -10,10 +9,14 @@ import getEntityName from 'modules/getEntityName';
 import { entityNameQueryMap } from 'modules/queryMap';
 import Query from 'Components/CacheFirstQuery';
 import * as Icon from 'react-feather';
+// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
+/* eslint-disable import/no-cycle */
+import ControlPage from 'Containers/Compliance/Entity/Control';
 import NamespacePage from '../Entity/Namespace';
 import ClusterPage from '../Entity/Cluster';
 import NodePage from '../Entity/Node';
 import DeploymentPage from '../Entity/Deployment';
+/* eslint-enable import/no-cycle */
 
 const ComplianceListSidePanel = ({ entityType, entityId, match, location, history }) => {
     function getEntityPage() {

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
@@ -59,4 +61,15 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
     );
 };
 
+TableWidget.propTypes = {
+    header: PropTypes.element.isRequired,
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
+    entityType: PropTypes.shape({})
+};
+
+TableWidget.defaultProps = {
+    entityType: {}
+};
 export default withRouter(TableWidget);

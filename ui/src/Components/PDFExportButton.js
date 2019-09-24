@@ -28,7 +28,11 @@ const defaultPagePotraitWidth = 210;
 class PDFExportButton extends Component {
     static propTypes = {
         id: PropTypes.string,
-        options: PropTypes.shape({}),
+        options: PropTypes.shape({
+            paperSize: PropTypes.string,
+            mode: PropTypes.string,
+            marginType: PropTypes.string
+        }),
         fileName: PropTypes.string,
         setPDFRequestState: PropTypes.func,
         setPDFSuccessState: PropTypes.func,

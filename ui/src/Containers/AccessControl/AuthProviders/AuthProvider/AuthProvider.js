@@ -11,7 +11,11 @@ import formDescriptor from './Form/formDescriptor';
 
 class AuthProvider extends Component {
     static propTypes = {
-        selectedAuthProvider: PropTypes.shape({}),
+        selectedAuthProvider: PropTypes.shape({
+            name: PropTypes.string,
+            id: PropTypes.string,
+            type: PropTypes.string
+        }),
         isEditing: PropTypes.bool.isRequired,
         onSave: PropTypes.func.isRequired,
         onEdit: PropTypes.func.isRequired,

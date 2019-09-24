@@ -111,13 +111,17 @@ const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...
     );
 };
 
-PropTypes.propTypes = {
+Metadata.propTypes = {
     keyValuePairs: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string.isRequired,
             value: PropTypes.oneOf([PropTypes.string.isRequired, PropTypes.element.isRequired])
         })
-    )
+    ).isRequired,
+    labels: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    annotations: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    whitelists: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    secrets: PropTypes.arrayOf(PropTypes.shape({})).isRequired
 };
 
 export default Metadata;

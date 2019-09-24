@@ -11,6 +11,7 @@ import { selectors } from 'reducers';
 import NavigationPanel from './NavigationPanel';
 import ApiDocsNavigation from './ApiDocsNavigation';
 import LeftSideNavLinks, { navLinks } from './LeftSideNavLinks';
+import { getDarkModeLinkClassName } from './navHelpers';
 
 const versionString = metadata => {
     let result = `v${metadata.version}`;
@@ -20,9 +21,6 @@ const versionString = metadata => {
     return result;
 };
 
-export const darkModeLinkClassName = isDarkMode =>
-    isDarkMode ? 'hover:bg-primary-100' : 'border-primary-900 hover:bg-base-700';
-
 const LeftNavigation = ({ location, metadata }) => {
     const { isDarkMode } = useTheme();
 
@@ -30,7 +28,7 @@ const LeftNavigation = ({ location, metadata }) => {
     const [clickOnPanelItem, setClickOnPanelItem] = useState(false);
     const [selectedPanel, setSelectedPanel] = useState('');
 
-    const linkClassName = `flex flex-col font-condensed font-700 text-primary-400 px-3 no-underline justify-center h-18 items-center border-b ${darkModeLinkClassName(
+    const linkClassName = `flex flex-col font-condensed font-700 text-primary-400 px-3 no-underline justify-center h-18 items-center border-b ${getDarkModeLinkClassName(
         isDarkMode
     )}`;
 

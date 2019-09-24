@@ -21,7 +21,10 @@ const LoginNotice = ({ publicConfig }) => {
 
 LoginNotice.propTypes = {
     publicConfig: PropTypes.shape({
-        loginNotice: PropTypes.shape({})
+        loginNotice: PropTypes.shape({
+            enabled: PropTypes.bool,
+            text: PropTypes.string
+        })
     })
 };
 

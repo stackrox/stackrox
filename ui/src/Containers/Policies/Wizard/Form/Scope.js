@@ -80,7 +80,7 @@ const renderScopes = ({ fields, clusters }) => {
 };
 
 renderScopes.propTypes = {
-    fields: PropTypes.shape({}).isRequired,
+    fields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     clusters: PropTypes.arrayOf(PropTypes.shape({})).isRequired
 };
 

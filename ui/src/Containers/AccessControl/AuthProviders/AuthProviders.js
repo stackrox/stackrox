@@ -99,7 +99,9 @@ const AuthProviders = ({
 
 AuthProviders.propTypes = {
     authProviders: PropTypes.arrayOf(PropTypes.shape({})),
-    selectedAuthProvider: PropTypes.shape({}),
+    selectedAuthProvider: PropTypes.shape({
+        id: PropTypes.string
+    }),
     selectAuthProvider: PropTypes.func.isRequired,
     saveAuthProvider: PropTypes.func.isRequired,
     deleteAuthProvider: PropTypes.func.isRequired,

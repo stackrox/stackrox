@@ -10,6 +10,7 @@ import {
 } from 'react-vis';
 import { withRouter, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import merge from 'deepmerge';
 import BarGradient from './BarGradient';
 
@@ -35,7 +36,8 @@ class HorizontalBarChart extends Component {
         valueGradientColorEnd: PropTypes.string,
         onValueMouseOver: PropTypes.func,
         onValueMouseOut: PropTypes.func,
-        minimal: PropTypes.bool
+        minimal: PropTypes.bool,
+        history: ReactRouterPropTypes.history.isRequired
     };
 
     static defaultProps = {

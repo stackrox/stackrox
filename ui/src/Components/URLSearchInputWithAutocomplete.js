@@ -1,11 +1,12 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import { components } from 'react-select';
 import queryString from 'qs';
 import { connect } from 'react-redux';
-import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
-
 import * as Icon from 'react-feather';
+
+import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
 import { Creatable } from 'Components/ReactSelect';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import searchContext from 'Containers/searchContext';
@@ -269,6 +270,8 @@ URLSearchInputWithAutocomplete.propTypes = {
     placeholder: PropTypes.string,
     categoryOptions: PropTypes.arrayOf(PropTypes.string),
     autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
+    location: ReactRouterPropTypes.location.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
     fetchAutocomplete: PropTypes.func,
     clearAutocomplete: PropTypes.func,
     setAllSearchOptions: PropTypes.func.isRequired,

@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { keyClassName } from './Page';
+import { keyClassName } from './SystemConfig.constants';
 
 const ConfigLoginDetailWidget = ({ config }) => {
     const { publicConfig } = config;
@@ -31,7 +31,10 @@ const ConfigLoginDetailWidget = ({ config }) => {
 ConfigLoginDetailWidget.propTypes = {
     config: PropTypes.shape({
         publicConfig: PropTypes.shape({
-            loginNotice: PropTypes.shape({})
+            loginNotice: PropTypes.shape({
+                enabled: PropTypes.bool,
+                text: PropTypes.string
+            })
         })
     }).isRequired
 };

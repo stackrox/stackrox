@@ -27,7 +27,24 @@ const MenuList = ({ toggleModal, ...props }) => (
 
 class RuleGroups extends Component {
     static propTypes = {
-        fields: PropTypes.shape({}).isRequired,
+        initialValues: PropTypes.shape({
+            id: PropTypes.string,
+            groups: PropTypes.arrayOf(
+                PropTypes.shape({
+                    props: PropTypes.shape({
+                        key: PropTypes.any
+                    })
+                })
+            )
+        }),
+        groups: PropTypes.arrayOf(
+            PropTypes.shape({
+                props: PropTypes.shape({
+                    key: PropTypes.any
+                })
+            })
+        ).isRequired,
+        fields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         toggleModal: PropTypes.func.isRequired,
         roles: PropTypes.arrayOf(
             PropTypes.shape({

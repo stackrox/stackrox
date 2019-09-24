@@ -1,5 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
+
 import VIOLATIONS from 'queries/violation';
 import resolvePath from 'object-resolve-path';
 import URLService from 'modules/URLService';
@@ -55,9 +57,9 @@ const Deployments = ({ original: policy, match, location, history, entityContext
 
 Deployments.propTypes = {
     original: PropTypes.shape({}).isRequired,
-    match: PropTypes.shape({}).isRequired,
-    location: PropTypes.shape({}).isRequired,
-    history: PropTypes.shape({}).isRequired,
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
     entityContext: PropTypes.shape({})
 };
 

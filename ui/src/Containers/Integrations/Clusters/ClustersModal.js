@@ -34,7 +34,8 @@ class ClustersModal extends Component {
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedCluster: PropTypes.shape({
             id: PropTypes.string.isRequired,
-            name: PropTypes.string.isRequired
+            name: PropTypes.string.isRequired,
+            type: PropTypes.string.isRequired
         }),
         onRequestClose: PropTypes.func.isRequired,
         isWizardActive: PropTypes.bool.isRequired,

@@ -28,7 +28,10 @@ class NamespaceDetails extends Component {
         wizardStage: PropTypes.string.isRequired,
         isFetchingNamespace: PropTypes.bool,
         onClose: PropTypes.func.isRequired,
-        namespace: PropTypes.shape({}),
+        namespace: PropTypes.shape({
+            id: PropTypes.string,
+            deployments: PropTypes.arrayOf(PropTypes.shape({}))
+        }),
         networkGraphRef: PropTypes.shape({
             setSelectedNode: PropTypes.func,
             selectedNode: PropTypes.shape({}),

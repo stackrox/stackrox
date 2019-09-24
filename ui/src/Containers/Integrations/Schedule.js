@@ -98,7 +98,11 @@ const Schedule = ({ formData }) => {
 };
 
 Schedule.propTypes = {
-    formData: PropTypes.shape({}).isRequired
+    formData: PropTypes.shape({
+        schedule: {
+            intervalType: PropTypes.string
+        }
+    }).isRequired
 };
 
 const getFormFieldKeys = () => ['schedule.intervalType', 'schedule.hour', 'schedule.weekly.day'];

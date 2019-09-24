@@ -57,7 +57,9 @@ const DockerfileButton = ({ image, openModal }) => {
 
 DockerfileButton.propTypes = {
     image: PropTypes.shape({
-        metadata: PropTypes.shape({})
+        metadata: PropTypes.shape({
+            v1: PropTypes.any
+        })
     }).isRequired,
     openModal: PropTypes.func.isRequired
 };
@@ -162,8 +164,16 @@ const ImageDetails = ({
 ImageDetails.propTypes = {
     image: PropTypes.shape({
         name: PropTypes.string.isRequired,
-        scan: PropTypes.shape({}),
-        fixableCves: PropTypes.number
+        scan: PropTypes.shape({
+            scanTime: PropTypes.string
+        }),
+        fixableCves: PropTypes.number,
+        metadata: PropTypes.shape({
+            v1: PropTypes.any
+        }),
+        id: PropTypes.string,
+        components: PropTypes.any,
+        cves: PropTypes.any
     }).isRequired,
     loading: PropTypes.bool.isRequired,
     history: ReactRouterPropTypes.history.isRequired,

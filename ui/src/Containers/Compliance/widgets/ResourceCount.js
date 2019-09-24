@@ -97,7 +97,11 @@ ResourceCount.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string,
     relatedToResourceType: PropTypes.string.isRequired,
-    relatedToResource: PropTypes.shape({}),
+    relatedToResource: PropTypes.shape({
+        id: PropTypes.string,
+        name: PropTypes.string,
+        clusterName: PropTypes.string
+    }),
     count: PropTypes.number
 };
 

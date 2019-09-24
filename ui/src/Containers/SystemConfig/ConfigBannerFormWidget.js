@@ -6,7 +6,7 @@ import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import ReduxColorPickerField from 'Components/forms/ReduxColorPickerField';
 
-import { keyClassName } from './Page';
+import { keyClassName } from './SystemConfig.constants';
 
 const sizeOptions = [
     {

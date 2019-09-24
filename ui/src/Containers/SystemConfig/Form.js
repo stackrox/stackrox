@@ -6,7 +6,7 @@ import { reduxForm } from 'redux-form';
 import ConfigBannerFormWidget from './ConfigBannerFormWidget';
 import ConfigDataRetentionFormWidget from './ConfigDataRetentionFormWidget';
 import ConfigLoginFormWidget from './ConfigLoginFormWidget';
-import { pageLayoutClassName } from './Page';
+import { pageLayoutClassName } from './SystemConfig.constants';
 
 const Form = ({ initialValues, onSubmit, config }) => (
     <>
