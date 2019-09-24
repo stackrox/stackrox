@@ -1416,11 +1416,6 @@ jobs:
 
       - teardown-gke
 
-      - run:
-          name:  Print cypress results??
-          command: |
-            cat ui/cypress/reports/*.xml
-
       - *storeCypressResults
       - *storeCypressScreenshots
       - *storeCypressVideos
