@@ -20,11 +20,11 @@ const processSubjectDataByClusters = data => {
     const entity = data.clusters.reduce(
         (acc, curr) => {
             if (!curr.subject) return acc;
-            const { subject, type, clusterAdmin, roles, roleCount, ...rest } = curr.subject;
+            const { subject, type, clusterAdmin, roles, roleCount = 0, ...rest } = curr.subject;
             const { id: clusterId, name: clusterName } = curr;
             let allRoles = [...acc.roles];
             if (roles) allRoles = allRoles.concat(roles);
-            const totalRoles = acc.roleCount + roleCount ? roleCount : 0;
+            const totalRoles = acc.roleCount + roleCount;
             return {
                 subject,
                 type,
