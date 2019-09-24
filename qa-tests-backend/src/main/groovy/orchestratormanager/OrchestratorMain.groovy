@@ -68,6 +68,7 @@ interface OrchestratorMain {
     def deleteNamespace(String ns)
     def waitForNamespaceDeletion(String ns)
     def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated)
+    List<Namespace> getNamespaceDetails()
 
     //NetworkPolicies
     String applyNetworkPolicy(NetworkPolicy policy)
@@ -78,9 +79,6 @@ interface OrchestratorMain {
     def getNodeCount()
     List<Node> getNodeDetails()
     def supportsNetworkPolicies()
-
-    //Namespaces
-    List<Namespace> getNamespaceDetails()
 
     //Service Accounts
     List<K8sServiceAccount> getServiceAccounts()
@@ -106,6 +104,9 @@ interface OrchestratorMain {
     List<K8sRoleBinding> getClusterRoleBindings()
     def createClusterRoleBinding(K8sRoleBinding roleBinding)
     def deleteClusterRoleBinding(K8sRoleBinding roleBinding)
+
+    //Jobs
+    def getJobCount()
 
     //Misc
     def execInContainer(Deployment deployment, String cmd)

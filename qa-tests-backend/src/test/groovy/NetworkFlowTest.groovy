@@ -2,6 +2,7 @@ import static com.jayway.restassured.RestAssured.given
 
 import orchestratormanager.OrchestratorTypes
 import util.Env
+import util.Timer
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.NetworkGraphOuterClass
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
@@ -25,6 +26,7 @@ import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkGraph
 import com.google.protobuf.util.Timestamps
+import com.jayway.restassured.response.Response
 
 class NetworkFlowTest extends BaseSpecification {
 
@@ -255,7 +257,16 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "ping the target deployment"
-        def response = given().get("http://${deploymentIP}")
+        Response response
+        Timer t = new Timer(12, 5)
+        while (response?.statusCode() != 200 && t.IsValid()) {
+            try {
+                response = given().get("http://${deploymentIP}")
+            } catch (Exception e) {
+                println "Failure calling http://${deploymentIP}. Trying again in 5 sec..."
+            }
+        }
+        Assume.assumeTrue(response?.getStatusCode() == 200)
         println response.asString()
 
         then:

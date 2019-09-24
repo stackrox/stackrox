@@ -29,7 +29,8 @@ class SummaryTest extends BaseSpecification {
             deployments = orchestrator.getDeploymentCount() +
                 orchestrator.getDaemonSetCount() +
                 orchestrator.getStaticPodCount() +
-                orchestrator.getStatefulSetCount()
+                orchestrator.getStatefulSetCount() +
+                orchestrator.getJobCount()
         }
 
         def deploymentNames = Services.getDeployments()*.name

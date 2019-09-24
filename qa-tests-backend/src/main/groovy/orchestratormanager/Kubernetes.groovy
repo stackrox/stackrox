@@ -710,7 +710,8 @@ class Kubernetes implements OrchestratorMain {
                     deploymentCount: getDeploymentCount(it.metadata.name) +
                             getDaemonSetCount(it.metadata.name) +
                             getStaticPodCount(it.metadata.name) +
-                            getStatefulSetCount(it.metadata.name),
+                            getStatefulSetCount(it.metadata.name) +
+                            getJobCount(it.metadata.name),
                     secretsCount: getSecretCount(it.metadata.name),
                     networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
             )
@@ -1018,6 +1019,14 @@ class Kubernetes implements OrchestratorMain {
     }
 
     /*
+        Jobs
+     */
+
+    def getJobCount(String ns = null) {
+        return client.batch().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+    }
+
+    /*
         Misc/Helper Methods
     */
 
@@ -1098,7 +1107,8 @@ class Kubernetes implements OrchestratorMain {
         return getDeploymentCount(ns).size() +
                 getDaemonSetCount(ns).size() +
                 getStaticPodCount(ns).size() +
-                getStatefulSetCount(ns).size()
+                getStatefulSetCount(ns).size() +
+                getJobCount(ns).size()
     }
 
     /*

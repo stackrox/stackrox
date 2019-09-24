@@ -2043,6 +2043,7 @@ jobs:
       - SCANNER_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - ADMISSION_CONTROLLER: true
 
     steps:
       - checkout
