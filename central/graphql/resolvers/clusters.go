@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"net/url"
 	"strings"
 	"time"
 
@@ -401,9 +402,13 @@ func (resolver *clusterResolver) SubjectCount(ctx context.Context) (int32, error
 func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectWithClusterIDResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Subject")
 
+	subjectName, err := url.QueryUnescape(args.Name)
+	if err != nil {
+		return nil, err
+	}
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetId()).
-		AddExactMatches(search.SubjectName, args.Name).
+		AddExactMatches(search.SubjectName, subjectName).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_GROUP.String(), storage.SubjectKind_USER.String()).
 		ProtoQuery()
 
@@ -412,10 +417,10 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 		return nil, err
 	}
 	if len(bindings) == 0 {
-		log.Errorf("Subject: %q not found on Cluster: %q", args.Name, resolver.data.GetName())
+		log.Errorf("Subject: %q not found on Cluster: %q", subjectName, resolver.data.GetName())
 		return nil, nil
 	}
-	subject, err := resolver.root.wrapSubject(k8srbac.GetSubject(args.Name, bindings))
+	subject, err := resolver.root.wrapSubject(k8srbac.GetSubject(subjectName, bindings))
 	if err != nil {
 		return nil, err
 	}
