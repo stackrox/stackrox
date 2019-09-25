@@ -14,6 +14,7 @@ package storage;
 enum ContainerRuntime {
     UNKNOWN_CONTAINER_RUNTIME = 0;
     DOCKER_CONTAINER_RUNTIME  = 1;
+    CRIO_CONTAINER_RUNTIME    = 2;
 }
 
 // Next available tag: 26
