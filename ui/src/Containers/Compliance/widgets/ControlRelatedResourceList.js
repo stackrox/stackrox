@@ -4,7 +4,7 @@ import LinkListWidget from 'Components/LinkListWidget';
 import URLService from 'modules/URLService';
 import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import queryService from 'modules/queryService';
@@ -22,7 +22,7 @@ const ControlRelatedEntitiesList = ({
     standard,
     className
 }) => {
-    const linkContext = appContexts.COMPLIANCE;
+    const linkContext = useCases.COMPLIANCE;
     const searchParam = useContext(searchContext);
 
     function processData(data) {

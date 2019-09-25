@@ -3,7 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 import queryService from 'modules/queryService';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -63,7 +63,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.NAMESPACE,
             entityListType,
-            appContexts.CONFIG_MANAGEMENT
+            useCases.CONFIG_MANAGEMENT
         );
 
         return gql`

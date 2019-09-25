@@ -12,7 +12,7 @@ import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import isGQLLoading from 'utils/gqlLoading';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
@@ -70,7 +70,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.CLUSTER,
             entityListType,
-            appContexts.CONFIG_MANAGEMENT
+            useCases.CONFIG_MANAGEMENT
         );
 
         return gql`

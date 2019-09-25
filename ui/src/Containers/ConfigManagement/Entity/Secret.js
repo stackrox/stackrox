@@ -17,7 +17,7 @@ import Widget from 'Components/Widget';
 import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import EntityList from '../List/EntityList';
@@ -207,7 +207,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.SECRET,
             entityListType,
-            appContexts.CONFIG_MANAGEMENT
+            useCases.CONFIG_MANAGEMENT
         );
 
         return gql`

@@ -1,5 +1,6 @@
-const contexts = {
+const useCaseTypes = {
     CONFIG_MANAGEMENT: 'configmanagement',
+    VULN_MANAGEMENT: 'vulnmanagement',
     COMPLIANCE: 'compliance',
     RISK: 'risk',
     SECRET: 'secrets',
@@ -8,4 +9,4 @@ const contexts = {
     DEPLOYMENT: 'risk'
 };
 
-export default contexts;
+export default useCaseTypes;

@@ -1,6 +1,6 @@
 import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import { NODE_FRAGMENT } from 'queries/node';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
 import { NAMESPACE_FRAGMENT } from 'queries/namespace';
@@ -103,7 +103,7 @@ function getFragmentName(entityType) {
 }
 
 function getFragment(entityType, appContext) {
-    const standardFields = [appContexts.CONFIG_MANAGEMENT, appContexts.COMPLIANCE];
+    const standardFields = [useCases.CONFIG_MANAGEMENT, useCases.COMPLIANCE];
 
     if (standardFields.includes(appContext)) {
         switch (entityType) {

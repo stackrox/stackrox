@@ -1,5 +1,5 @@
 import entityTypes from 'constants/entityTypes';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import { mainPath, urlEntityListTypes, urlEntityTypes } from '../routePaths';
 import URLService, { getTypeKeyFromParamValue } from './URLService';
 
@@ -105,14 +105,14 @@ it('Incrementally pushes list_entity path', () => {
 
     url.push(entityTypes.CLUSTER);
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER
     });
     expect(url.url()).toEqual(`${mainPath}/configmanagement/clusters`);
 
     url.push('entityId1');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: 'entityId1'
     });
@@ -120,7 +120,7 @@ it('Incrementally pushes list_entity path', () => {
 
     url.push(entityTypes.DEPLOYMENT);
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: 'entityId1',
         entityListType2: entityTypes.DEPLOYMENT
@@ -129,7 +129,7 @@ it('Incrementally pushes list_entity path', () => {
 
     url.push('entityId2');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: 'entityId1',
         entityListType2: entityTypes.DEPLOYMENT,
@@ -148,7 +148,7 @@ it('Incrementally pushes list_list path', () => {
         .push(entityTypes.DEPLOYMENT, 'entityId2');
 
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: 'entityId1',
         entityType2: entityTypes.DEPLOYMENT,
@@ -165,7 +165,7 @@ it('incrementally pushes entity_entity path', () => {
 
     url.push(entityTypes.CLUSTER, 'pageEntityId');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER
     });
@@ -173,7 +173,7 @@ it('incrementally pushes entity_entity path', () => {
 
     url.push(entityTypes.DEPLOYMENT);
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT
@@ -182,7 +182,7 @@ it('incrementally pushes entity_entity path', () => {
 
     url.push('entityId1');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -194,7 +194,7 @@ it('incrementally pushes entity_entity path', () => {
 
     url.push(entityTypes.NAMESPACE);
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -207,7 +207,7 @@ it('incrementally pushes entity_entity path', () => {
 
     url.push('entityId2');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -229,7 +229,7 @@ it('incrementally pushes entity_list path', () => {
         .push(entityTypes.NAMESPACE, 'entityId2');
 
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -249,7 +249,7 @@ it('pops entity_entity path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityType: entityTypes.CLUSTER,
         pageEntityId: ENTITY_ENTITY_PARAMS.pageEntityId,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -261,7 +261,7 @@ it('pops entity_entity path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: ENTITY_ENTITY_PARAMS.pageEntityId,
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.DEPLOYMENT
@@ -270,7 +270,7 @@ it('pops entity_entity path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: ENTITY_ENTITY_PARAMS.pageEntityId,
         pageEntityType: entityTypes.CLUSTER
     });
@@ -278,7 +278,7 @@ it('pops entity_entity path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT
+        context: useCases.CONFIG_MANAGEMENT
     });
     expect(url.url()).toEqual(`${mainPath}/configmanagement`);
 });
@@ -289,7 +289,7 @@ it('pops entity_list path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityType: entityTypes.CLUSTER,
         pageEntityId: ENTITY_ENTITY_PARAMS.pageEntityId,
         entityListType1: entityTypes.DEPLOYMENT,
@@ -306,7 +306,7 @@ it('pops list_entity path', () => {
     const url = URLService.getURL(match);
 
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: LIST_ENTITY_PARAMS.entityId1,
         entityType2: entityTypes.NAMESPACE,
@@ -318,7 +318,7 @@ it('pops list_entity path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: LIST_ENTITY_PARAMS.entityId1
     });
@@ -326,7 +326,7 @@ it('pops list_entity path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER
     });
     expect(url.url()).toEqual(`${mainPath}/configmanagement/clusters`);
@@ -338,7 +338,7 @@ it('pops list_list path', () => {
 
     url.pop();
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.CLUSTER,
         entityId1: LIST_ENTITY_PARAMS.entityId1,
         entityListType2: entityTypes.NAMESPACE
@@ -354,7 +354,7 @@ it('replaces entity_entity path', () => {
         .push(entityTypes.DEPLOYMENT)
         .push(entityTypes.NAMESPACE);
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.NAMESPACE
@@ -363,7 +363,7 @@ it('replaces entity_entity path', () => {
 
     url.push('entityId1').push('entityId1-1');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.NAMESPACE,
@@ -375,7 +375,7 @@ it('replaces entity_entity path', () => {
 
     url.push(entityTypes.DEPLOYMENT, 'entityId2');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.NAMESPACE,
@@ -399,7 +399,7 @@ it('replaces entity_list path', () => {
         .push(entityTypes.DEPLOYMENT)
         .push(entityTypes.NODE);
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityId: 'pageEntityId',
         pageEntityType: entityTypes.CLUSTER,
         entityListType1: entityTypes.NAMESPACE,
@@ -415,20 +415,20 @@ it('replaces list_entity path', () => {
         .push(entityTypes.NAMESPACE);
 
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.NAMESPACE
     });
 
     url.push('entityId1').push('entityId1-1');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.NAMESPACE,
         entityId1: 'entityId1-1'
     });
 
     url.push(entityTypes.DEPLOYMENT).push(entityTypes.NODE);
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityListType: entityTypes.NAMESPACE,
         entityId1: 'entityId1-1',
         entityListType2: entityTypes.NODE
@@ -442,7 +442,7 @@ it('overflows all paths', () => {
         let url = URLService.getURL(match);
         url.push(entityTypes.DEPLOYMENT);
         expect(url.urlParams).toEqual({
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.NAMESPACE,
             pageEntityId: ENTITY_ENTITY_PARAMS.entityId2,
             entityListType1: entityTypes.DEPLOYMENT
@@ -451,7 +451,7 @@ it('overflows all paths', () => {
         url = URLService.getURL(match);
         url.push(entityTypes.DEPLOYMENT, 'overflowId');
         expect(url.urlParams).toEqual({
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.NAMESPACE,
             pageEntityId: ENTITY_ENTITY_PARAMS.entityId2,
             entityListType1: entityTypes.DEPLOYMENT,
@@ -473,7 +473,7 @@ it('overflows a parent entity', () => {
     const url = URLService.getURL(match);
     url.push(entityTypes.CLUSTER, 'clusterId');
     expect(url.urlParams).toEqual({
-        context: appContexts.CONFIG_MANAGEMENT,
+        context: useCases.CONFIG_MANAGEMENT,
         pageEntityType: entityTypes.CLUSTER,
         pageEntityId: 'clusterId'
     });

@@ -17,7 +17,7 @@ import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import CVETable from 'Containers/Images/CVETable';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import EntityList from '../List/EntityList';
 import TableWidget from './widgets/TableWidget';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
@@ -87,7 +87,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.IMAGE,
             entityListType,
-            appContexts.CONFIG_MANAGEMENT
+            useCases.CONFIG_MANAGEMENT
         );
 
         return gql`

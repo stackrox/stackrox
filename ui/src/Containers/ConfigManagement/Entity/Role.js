@@ -16,7 +16,7 @@ import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 import EntityList from '../List/EntityList';
 
@@ -69,7 +69,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.ROLE,
             entityListType,
-            appContexts.CONFIG_MANAGEMENT
+            useCases.CONFIG_MANAGEMENT
         );
 
         return gql`

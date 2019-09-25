@@ -13,7 +13,7 @@ import queryService from 'modules/queryService';
 import { getResourceCountFromAggregatedResults } from 'modules/complianceUtils';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 
 const ResourceCount = ({
@@ -28,7 +28,7 @@ const ResourceCount = ({
     function getUrl() {
         if (entityType === entityTypes.SECRET) {
             return URLService.getURL(match, location)
-                .set('context', appContexts.SECRET)
+                .set('context', useCases.SECRET)
                 .query({
                     [searchParam]: {
                         [`${capitalize(relatedToResourceType)}`]: relatedToResource.name

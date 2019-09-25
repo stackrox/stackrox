@@ -14,7 +14,7 @@ import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import EntityList from '../../List/EntityList';
 import getSubListFromEntity from '../../List/utilities/getSubListFromEntity';
 import DeploymentFindings from './DeploymentFindings';
@@ -90,7 +90,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.DEPLOYMENT,
             entityListType,
-            appContexts.CONFIG_MANAGEMENT
+            useCases.CONFIG_MANAGEMENT
         );
 
         return gql`

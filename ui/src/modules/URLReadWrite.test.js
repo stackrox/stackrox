@@ -1,5 +1,5 @@
 import entityTypes from 'constants/entityTypes';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import { urlEntityListTypes, urlEntityTypes } from '../routePaths';
 import { parseURL, generateURL } from './URLReadWrite';
 
@@ -31,7 +31,7 @@ const searchParams = {
 describe('ParseURL', () => {
     it('reads workflow state params from url', () => {
         const URLParams = {
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: urlEntityTypes.CLUSTER,
             pageEntityId: 'pageEntityId',
             entityListType1: urlEntityListTypes.DEPLOYMENT,
@@ -56,7 +56,7 @@ describe('GenerateURL', () => {
     // TODO: use workflowStateManager to get a real workflow state objects
     it('generates an entity<>entity<>entity page url from workflowState', () => {
         const workflowState = {
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.CLUSTER,
             pageEntityId: 'pageEntityId',
             entityType1: entityTypes.DEPLOYMENT,
@@ -77,7 +77,7 @@ describe('GenerateURL', () => {
 
     it('generates an entity<>list<>entity page url from workflowState', () => {
         const workflowState = {
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.CLUSTER,
             pageEntityId: 'pageEntityId',
             entityListType1: entityTypes.DEPLOYMENT,
@@ -93,7 +93,7 @@ describe('GenerateURL', () => {
 
     it('generates an entity<>entity<>list page url from workflowState', () => {
         const workflowState = {
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.CLUSTER,
             pageEntityId: 'pageEntityId',
             entityType1: entityTypes.DEPLOYMENT,
@@ -109,7 +109,7 @@ describe('GenerateURL', () => {
 
     it('generates an entity<>list<>list page url from workflowState', () => {
         const workflowState = {
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.CLUSTER,
             pageEntityId: 'pageEntityId',
             entityListType1: entityTypes.DEPLOYMENT,
@@ -125,7 +125,7 @@ describe('GenerateURL', () => {
 
     it('generates an list<>entity page url from workflowState', () => {
         const workflowState = {
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityListType: entityTypes.CLUSTER,
             entityId1: 'entityId1',
             entityType2: entityTypes.NAMESPACE,
@@ -137,7 +137,7 @@ describe('GenerateURL', () => {
 
     it('generates an list<>list page url from workflowState', () => {
         const workflowState = {
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityListType: entityTypes.CLUSTER,
             entityId1: 'entityId1',
             entityListType2: entityTypes.NAMESPACE,
@@ -149,7 +149,7 @@ describe('GenerateURL', () => {
 
     it('generates a query string from searchParams', () => {
         const workflowState = {
-            context: appContexts.CONFIG_MANAGEMENT,
+            context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: entityTypes.CLUSTER,
             pageEntityId: 'pageEntityId',
             entityType1: entityTypes.DEPLOYMENT,

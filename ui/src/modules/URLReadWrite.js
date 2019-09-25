@@ -1,5 +1,5 @@
 import pageTypes from 'constants/pageTypes';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import { generatePath } from 'react-router-dom';
 import qs from 'qs';
 import {
@@ -22,7 +22,7 @@ function isListType(value) {
     return Object.values(urlEntityListTypes).includes(value);
 }
 
-function getPageType(workflowState) {
+export function getPageType(workflowState) {
     if (workflowState.pageEntityListType) {
         return pageTypes.LIST;
     }
@@ -43,17 +43,17 @@ export function generateURL(workflowState, queryParams) {
     };
 
     const legacyPathMap = {
-        [appContexts.RISK]: {
+        [useCases.RISK]: {
             [pageTypes.ENTITY]: riskPath,
             [pageTypes.LIST]: '/main/risk',
             [pageTypes.DASHBOARD]: '/main/risk'
         },
-        [appContexts.SECRET]: {
+        [useCases.SECRET]: {
             [pageTypes.ENTITY]: secretsPath,
             [pageTypes.LIST]: '/main/configmanagement/secrets',
             [pageTypes.DASHBOARD]: '/main/configmanagement/secrets'
         },
-        [appContexts.POLICY]: {
+        [useCases.POLICY]: {
             [pageTypes.ENTITY]: policiesPath,
             [pageTypes.LIST]: '/main/policies',
             [pageTypes.DASHBOARD]: '/main/policies'
@@ -73,9 +73,9 @@ export function generateURL(workflowState, queryParams) {
     const params = { ...workflowState };
 
     // Patching url params for legacy contexts
-    if (context === appContexts.SECRET) {
+    if (context === useCases.SECRET) {
         params.secretId = params.pageEntityId;
-    } else if (context === appContexts.RISK) {
+    } else if (context === useCases.RISK) {
         params.deploymentId = params.pageEntityId;
     }
 

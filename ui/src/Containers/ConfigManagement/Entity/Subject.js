@@ -10,7 +10,7 @@ import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
-import appContexts from 'constants/appContextTypes';
+import useCases from 'constants/useCaseTypes';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
@@ -90,7 +90,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
         const { fragment } = queryService.getFragmentInfo(
             entityTypes.SUBJECT,
             entityListType,
-            appContexts.CONFIG_MANAGEMENT
+            useCases.CONFIG_MANAGEMENT
         );
 
         return gql`

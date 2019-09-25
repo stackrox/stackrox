@@ -6,6 +6,8 @@ export const resourceTypes = {
     NETWORK_POLICY: 'NETWORK_POLICY',
     SECRET: 'SECRET',
     IMAGE: 'IMAGE',
+    COMPONENT: 'COMPONENT',
+    CVE: 'CVE',
     POLICY: 'POLICY',
     CONTROL: 'CONTROL'
 };
