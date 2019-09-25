@@ -5,11 +5,25 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/retry"
+)
+
+const (
+	colorCriticalAlert = "#FF2C4D"
+	colorHighAlert     = "#FF634E"
+	colorMediumAlert   = "#FF9365"
+	colorLowAlert      = "#FFC780"
+	colorDefault       = "warning"
+
+	// YAMLNotificationColor is color of YAML notification used by slack, teams etc.
+	YAMLNotificationColor = "#FF9365"
+	// Timeout is timeout for HTTP requests sent to various integrations such as slack, teams etc.
+	Timeout = 10 * time.Second
 )
 
 const (
@@ -81,4 +95,20 @@ func wrapError(notifier string, resp *http.Response) error {
 		return errors.Errorf("Received error response from %s: %d. Check central logs for full error.", notifier, resp.StatusCode)
 	}
 	return nil
+}
+
+// GetAttachmentColor returns the corresponding color for each severity.
+func GetAttachmentColor(s storage.Severity) string {
+	switch s {
+	case storage.Severity_LOW_SEVERITY:
+		return colorLowAlert
+	case storage.Severity_MEDIUM_SEVERITY:
+		return colorMediumAlert
+	case storage.Severity_HIGH_SEVERITY:
+		return colorHighAlert
+	case storage.Severity_CRITICAL_SEVERITY:
+		return colorCriticalAlert
+	default:
+		return colorDefault
+	}
 }

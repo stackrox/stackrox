@@ -10,4 +10,5 @@ import (
 	_ "github.com/stackrox/rox/central/notifiers/slack"
 	_ "github.com/stackrox/rox/central/notifiers/splunk"
 	_ "github.com/stackrox/rox/central/notifiers/sumologic"
+	_ "github.com/stackrox/rox/central/notifiers/teams"
 )

@@ -22,16 +22,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-const (
-	colorCriticalAlert = "#FF2C4D"
-	colorHighAlert     = "#FF634E"
-	colorMediumAlert   = "#FF9365"
-	colorLowAlert      = "#FFC780"
-	colorDefault       = "warning"
-
-	timeout = 10 * time.Second
-)
-
 // slack notifier plugin
 type slack struct {
 	*storage.Notifier
@@ -95,7 +85,7 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 	attachments := []attachment{
 		{
 			FallBack:       body,
-			Color:          GetAttachmentColor(alert.GetPolicy().GetSeverity()),
+			Color:          notifiers.GetAttachmentColor(alert.GetPolicy().GetSeverity()),
 			Pretext:        tagLine,
 			Text:           body,
 			MarkDownFields: []string{"pretext", "text", "fields"},
@@ -153,7 +143,7 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	attachments := []attachment{
 		{
 			FallBack:       body,
-			Color:          colorMediumAlert,
+			Color:          notifiers.YAMLNotificationColor,
 			Pretext:        tagLine,
 			Text:           body,
 			MarkDownFields: []string{"pretext", "text", "fields"},
@@ -231,7 +221,7 @@ func postMessage(url string, jsonPayload []byte) error {
 	}
 
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout: notifiers.Timeout,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -241,22 +231,6 @@ func postMessage(url string, jsonPayload []byte) error {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	return notifiers.CreateError("Slack", resp)
-}
-
-// GetAttachmentColor returns the corresponding color for each severity.
-func GetAttachmentColor(s storage.Severity) string {
-	switch s {
-	case storage.Severity_LOW_SEVERITY:
-		return colorLowAlert
-	case storage.Severity_MEDIUM_SEVERITY:
-		return colorMediumAlert
-	case storage.Severity_HIGH_SEVERITY:
-		return colorHighAlert
-	case storage.Severity_CRITICAL_SEVERITY:
-		return colorCriticalAlert
-	default:
-		return colorDefault
-	}
 }
 
 func init() {
