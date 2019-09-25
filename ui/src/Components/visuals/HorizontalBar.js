@@ -60,7 +60,7 @@ class HorizontalBarChart extends Component {
         };
     }
 
-    showLabel = value => value >= 7;
+    showLabel = value => value >= 10;
 
     setHintData = val => {
         if (val.hint) {
@@ -92,7 +92,7 @@ class HorizontalBarChart extends Component {
             }
             const { minimal } = this.props;
             const val = {
-                x: minimal ? -14 : -3.2,
+                x: item.x - 5,
                 y: item.y,
                 yOffset: minimal ? -6 : -3,
                 label
