@@ -55,6 +55,8 @@ function ViolationsPage({
                 <ViolationsPageHeader
                     currentPage={currentPage}
                     sortOption={sortOption}
+                    selectedAlertId={selectedAlertId}
+                    currentAlerts={currentAlerts}
                     setCurrentAlerts={setCurrentAlerts}
                     setSelectedAlertId={setSelectedAlertId}
                     setAlertCount={setAlertCount}

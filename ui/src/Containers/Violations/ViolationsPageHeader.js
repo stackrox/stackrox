@@ -26,6 +26,8 @@ function ViolationsPageHeader({
     setCurrentAlerts,
     setAlertCount,
     setSelectedAlertId,
+    currentAlerts,
+    selectedAlertId,
     searchOptions,
     searchModifiers,
     searchSuggestions,
@@ -46,7 +48,11 @@ function ViolationsPageHeader({
     } else if (hasNoFilter && isViewFiltered) {
         setIsViewFiltered(false);
     }
-    if (hasExecutableFilter) {
+    if (
+        hasExecutableFilter &&
+        selectedAlertId &&
+        !currentAlerts.find(alert => alert.id === selectedAlertId)
+    ) {
         setSelectedAlertId(null);
     }
 
@@ -70,15 +76,7 @@ function ViolationsPageHeader({
                 setPollEpoch(pollEpoch + 1);
             });
         },
-        [
-            searchOptions,
-            currentPage,
-            sortOption,
-            setCurrentAlerts,
-            setAlertCount,
-            pollEpoch,
-            setPollEpoch
-        ]
+        [searchOptions, currentPage, sortOption, pollEpoch, setCurrentAlerts, setAlertCount]
     );
 
     // Render.
@@ -107,9 +105,11 @@ ViolationsPageHeader.propTypes = {
     setIsViewFiltered: PropTypes.func.isRequired,
     currentPage: PropTypes.number.isRequired,
     sortOption: PropTypes.shape({}).isRequired,
+    currentAlerts: PropTypes.arrayOf(PropTypes.object),
     setCurrentAlerts: PropTypes.func.isRequired,
     setAlertCount: PropTypes.func.isRequired,
     setSelectedAlertId: PropTypes.func.isRequired,
+    selectedAlertId: PropTypes.string,
 
     searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
     searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -117,6 +117,11 @@ ViolationsPageHeader.propTypes = {
     setSearchOptions: PropTypes.func.isRequired,
     setSearchModifiers: PropTypes.func.isRequired,
     setSearchSuggestions: PropTypes.func.isRequired
+};
+
+ViolationsPageHeader.defaultProps = {
+    currentAlerts: [],
+    selectedAlertId: null
 };
 
 const mapStateToProps = createStructuredSelector({

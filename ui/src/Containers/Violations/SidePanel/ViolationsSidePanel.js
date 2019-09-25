@@ -65,7 +65,7 @@ const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
     return (
         <Panel
             header={header}
-            className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t min-w-72 md:w-1/2 md:relative"
+            className="bg-primary-200 z-1 w-full h-full absolute pin-r pin-t min-w-72 md:w-1/2 md:relative"
             onClose={unselectAlert}
         >
             {content}
