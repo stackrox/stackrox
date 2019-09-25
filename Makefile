@@ -400,8 +400,15 @@ generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 .PHONY: image
 image: main-image
 
+monitoring/static-bin/%: image/static-bin/%
+	mkdir -p "$(dir $@)"
+	cp -fLp $< $@
+
+.PHONY: monitoring-build-context
+monitoring-build-context: monitoring/static-bin/save-dir-contents monitoring/static-bin/restore-all-dir-contents
+
 .PHONY: monitoring-image
-monitoring-image:
+monitoring-image: monitoring-build-context
 	docker build -t stackrox/monitoring:$(TAG) monitoring
 
 .PHONY: all-builds

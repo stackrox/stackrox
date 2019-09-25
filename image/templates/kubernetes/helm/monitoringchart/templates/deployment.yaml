@@ -118,6 +118,8 @@ spec:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
         volumeMounts:
+          - name: grafana-config-volume
+            mountPath: /etc/grafana
           - name: monitoring-ui-volume
             mountPath: /run/secrets/stackrox.io/monitoring/certs/
             readOnly: true
@@ -127,6 +129,8 @@ spec:
           - name: {{.Values.persistence.name}}
             mountPath: /var/lib/grafana
       volumes:
+      - name: grafana-config-volume
+        emptyDir: {}
       - name: monitoring-db-volume
         secret:
           secretName: monitoring

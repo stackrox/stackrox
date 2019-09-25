@@ -10,17 +10,22 @@ RUN wget https://github.com/connorgorman/telegraf/releases/download/1.8.3.1%2B17
 
 FROM grafana/grafana:6.3.3
 
+USER root
+
 COPY --from=0 /influx /influx
 COPY --from=0 /influxd /influxd
 COPY --from=0 /telegraf /telegraf
 
-COPY ./influxdb/influx-post-start.sh /influx-post-start.sh
+COPY ./static-bin/* /usr/bin/
 
-VOLUME /etc/grafana
+COPY ./influxdb/influx-post-start.sh /influx-post-start.sh
 
 COPY ./grafana/dashboard-config.yaml /etc/grafana/provisioning/dashboards/dashboard-config.yaml
 COPY ./grafana/dashboards/* /etc/grafana/dashboards/
 COPY ./grafana/datasources/* /etc/grafana/provisioning/datasources/
+
+RUN save-dir-contents /etc/grafana
+VOLUME /etc/grafana
+
 COPY ./grafana/entrypoint.sh /grafana-entrypoint.sh
 
-USER root

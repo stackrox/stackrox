@@ -1,5 +1,7 @@
 #! /bin/sh
 
+restore-all-dir-contents
+
 PASSWORD=$(cat /run/secrets/stackrox.io/monitoring/secrets/password)
 
 cat <<EOF > /etc/grafana/grafana.ini
@@ -26,4 +28,4 @@ admin_password = $PASSWORD
 
 EOF
 
-exec $@
+exec "$@"
