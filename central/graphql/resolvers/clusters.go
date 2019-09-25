@@ -44,7 +44,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
 		schema.AddExtraResolver("Cluster", `serviceAccountCount: Int!`),
 		schema.AddExtraResolver("Cluster", `subjects(query: String): [SubjectWithClusterID!]!`),
-		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID!`),
+		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID`),
 		schema.AddExtraResolver("Cluster", `subjectCount: Int!`),
 		schema.AddExtraResolver("Cluster", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Cluster", `imageCount: Int!`),
@@ -407,9 +407,13 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_GROUP.String(), storage.SubjectKind_USER.String()).
 		ProtoQuery()
 
-	bindings, err := resolver.getRoleBindings(ctx, resolver.getConjunctionQuery(q))
+	bindings, err := resolver.getRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
+	}
+	if len(bindings) == 0 {
+		log.Errorf("Subject: %q not found on Cluster: %q", args.Name, resolver.data.GetName())
+		return nil, nil
 	}
 	subject, err := resolver.root.wrapSubject(k8srbac.GetSubject(args.Name, bindings))
 	if err != nil {
