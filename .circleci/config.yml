@@ -336,17 +336,6 @@ storeQASpockReports: &storeQASpockReports
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
-checkOpenshiftLabel: &checkOpenshiftLabel
-  run:
-    name: Determine whether to run OpenShift tests
-    command: |
-      set +e
-      .circleci/pr_has_label.sh ci-openshift-tests
-      if [ $? -eq 1 ]; then
-        echo "Skipping tests because we're on a PR. Apply the ci-openshift-tests label to your PR if you want to run them."
-        circleci step halt
-      fi
-
 checkKopsLabel: &checkKopsLabel
   run:
     name: Determine whether to run kops tests
@@ -433,6 +422,25 @@ commands:
               echo "Skipping tests because of the presence of the << parameters.label >> label..."
               circleci step halt
             fi
+
+  check-label-exists-or-skip:
+    description: "Checks GitHub for the given label, and skips the test if we're on a PR and the label is NOT present."
+    parameters:
+      label:
+        type: string
+    steps:
+      - when:
+          condition: << parameters.label >>
+          steps:
+            - run:
+                name: Determine whether to run tests
+                command: |
+                  set +e
+                  .circleci/pr_has_label.sh "<< parameters.label >>"
+                  if [ $? -eq 1 ]; then
+                    echo "Skipping tests because we're on a PR. Apply the << parameters.label >> label to your PR if you want to run them."
+                    circleci step halt
+                  fi
 
   setup-gcp:
     parameters:
@@ -732,6 +740,238 @@ commands:
 
       - teardown-gke
 
+  provision-openshift-cluster:
+    parameters:
+      suffix:
+        type: string
+        default: ""
+      gate-label:
+        type: string
+        default: ""
+      provision-extra-args:
+        type: string
+        default: ""
+
+    steps:
+      - checkout
+      - check-backend-changes
+
+      - check-label-exists-or-skip:
+          label: << parameters.gate-label >>
+
+      - run:
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+
+      - run:
+          name: Install kubectl
+          working_directory: /tmp
+          command: |
+            wget https://storage.googleapis.com/kubernetes-release/release/v1.11.2/bin/linux/amd64/kubectl
+            sudo install kubectl /usr/bin
+
+      - run:
+          name: Generate ephemeral SSH key
+          command: |
+            mkdir -p openshift
+            ssh-keygen -t rsa -f openshift/id_rsa -C packer -N ''
+            chmod 0400 openshift/id_rsa openshift/id_rsa.pub
+            cat openshift/id_rsa.pub
+
+      - run:
+          name: Create cloud resources
+          command: |
+            extra_args=(<< parameters.provision-extra-args >>)
+
+            docker run --rm -t \
+              -v $PWD/openshift:/data \
+              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
+              "stackrox/openshift-automation:terraform-${OPENSHIFT_AUTOMATION_VERSION}" create "${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>" "${extra_args[@]}"
+
+      - store_artifacts:
+          path: openshift
+          destination: openshift
+
+      - run:
+          name: Create Openshift cluster
+          command: |
+            docker run --rm -t \
+            -v $PWD/openshift:/data \
+            stackrox/openshift-automation:ansible-$OPENSHIFT_AUTOMATION_VERSION
+
+      - run:
+          name: Configure Kubeconfig
+          command: |
+            ls -lh $PWD/openshift
+            export KUBECONFIG=$PWD/openshift/config
+            kubectl get nodes
+
+      - store_artifacts:
+          path: openshift
+          destination: openshift
+
+      - when:
+          condition: << parameters.suffix >>
+          steps:
+            - run:
+                name: Create alias for OpenShift data directory
+                command: |
+                  cp -r openshift/ openshift<< parameters.suffix >>/
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - openshift<< parameters.suffix >>
+
+      - run:
+          name: Destroy Openshift cluster
+          command: |
+            docker run --rm -t \
+              -v $PWD/openshift:/data \
+              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
+              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>"
+          when: on_fail
+
+  run-openshift-tests:
+    parameters:
+      suffix:
+        type: string
+        default: ""
+      gate-label:
+        type: string
+        default: ""
+
+    steps:
+      - checkout
+      - check-backend-changes
+
+      - check-label-exists-or-skip:
+          label: << parameters.gate-label >>
+
+      - setup_remote_docker
+
+      - run:
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - when:
+          condition: << parameters.suffix >>
+          steps:
+            - run:
+                name: Copy openshift data directory to canonical location
+                command: |
+                  [[ ! -d openshift ]] || rm -rf openshift
+                  cp -r "openshift<< parameters.suffix >>" openshift
+
+      - run:
+          name: Sanity check OpenShift Env
+          command: |
+            pwd
+            ls -lh $PWD/openshift
+            export KUBECONFIG=$PWD/openshift/config
+            oc get nodes
+
+      - *setupRoxctl
+
+      - run:
+          name: Configure Deployment Environment
+          command: |
+            cci-export KUBECONFIG "$PWD/openshift/config"
+            cci-export CLAIRIFY_IMAGE_TAG 0.5.2
+            cci-export OPENSHIFT_HOST "$(cat openshift/master)"
+            cci-export ROX_IMAGE_REGISTRY docker.io
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
+            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
+            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
+            if .circleci/pr_has_label.sh ci-run-against-rhel; then
+              cci-export MAIN_IMAGE_REPO stackrox/main-rhel
+            fi
+
+            ./scripts/ci/openshift-gcr-secrets.sh
+
+      - *setupGoogleAppCreds
+      - *setupLicense
+
+      - *setupDefaultTLSCerts
+
+      - deploy-stackrox:
+          orchestrator-flavor: openshift
+          validate-autoupgrade-label: true
+          post-central-deploy-steps:
+            - *setupClientTLSCerts
+
+      - deploy-webhook-server
+      - deploy-authz-plugin
+
+      - *restoreGradle
+      - run:
+          name: QA Automation Platform Part 1
+          command: |
+            if .circleci/pr_has_label.sh ci-no-qa-tests; then
+              echo "Skipping QA tests because of the presence of the ci-no-qa-tests label..."
+            else
+              export CLUSTER=OPENSHIFT
+              export HOSTNAME=localhost
+              export PORT=${LOCAL_PORT}
+              if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
+                echo "On master, running all QA tests..."
+                make -C qa-tests-backend test
+              elif .circleci/pr_has_label.sh ci-all-qa-tests; then
+                echo "ci-all-qa-tests label was specified, so running all QA tests..."
+                make -C qa-tests-backend test
+              else
+                echo "On a PR branch, running BAT tests only..."
+                make -C qa-tests-backend bat-test
+              fi
+            fi
+
+      - *collectK8sLogs
+      - copy-gradle-files:
+          target-dir: openshift-part1
+
+      - run:
+          name: QA Automation Platform Part 2
+          command: |
+            export CLUSTER=OPENSHIFT
+            export HOSTNAME=localhost
+            export PORT="${LOCAL_PORT}"
+            make -C qa-tests-backend sensor-bounce-test
+
+      - *storeQATestResults
+      - *storeQASpockReports
+      - copy-gradle-files:
+          target-dir: openshift-part2
+
+      - *updateTestRail
+
+      - *backupDB
+      - *storeDBBackupArtifact
+
+      - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
+      - *storeK8sLogs
+
+      - run:
+          name: Pack openshift volume
+          command: |
+            docker create -v /data --name openshift alpine:3.9 /bin/true
+            docker cp openshift/id_rsa            openshift:/data
+            docker cp openshift/id_rsa.pub        openshift:/data
+            docker cp openshift/terraform.tfstate openshift:/data
+          when: always
+
+      - run:
+          name: Destroy Openshift cluster
+          command: |
+            docker run --rm -t \
+              --volumes-from openshift \
+              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
+              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>"
+
+          when: always
 
   deploy-stackrox:
     parameters:
@@ -1772,73 +2012,18 @@ jobs:
     environment:
       - OPENSHIFT_AUTOMATION_VERSION: snapshot-0.4.2-7-g6255c49
     steps:
-      - checkout
-      - check-backend-changes
-      - *checkOpenshiftLabel
+      - provision-openshift-cluster:
+          gate-label: "ci-openshift-tests"
 
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
-
-      - run:
-          name: Install kubectl
-          working_directory: /tmp
-          command: |
-            wget https://storage.googleapis.com/kubernetes-release/release/v1.11.2/bin/linux/amd64/kubectl
-            sudo install kubectl /usr/bin
-
-      - run:
-          name: Generate ephemeral SSH key
-          command: |
-            mkdir -p openshift
-            ssh-keygen -t rsa -f openshift/id_rsa -C packer -N ''
-            chmod 0400 openshift/id_rsa openshift/id_rsa.pub
-            cat openshift/id_rsa.pub
-
-      - run:
-          name: Create cloud resources
-          command: |
-            docker run --rm -t \
-              -v $PWD/openshift:/data \
-              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
-
-      - store_artifacts:
-          path: openshift
-          destination: openshift
-
-      - run:
-          name: Create Openshift cluster
-          command: |
-            docker run --rm -t \
-            -v $PWD/openshift:/data \
-            stackrox/openshift-automation:ansible-$OPENSHIFT_AUTOMATION_VERSION
-
-      - run:
-          name: Configure Kubeconfig
-          command: |
-            ls -lh $PWD/openshift
-            export KUBECONFIG=$PWD/openshift/config
-            kubectl get nodes
-
-      - store_artifacts:
-          path: openshift
-          destination: openshift
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - openshift
-
-      - run:
-          name: Destroy Openshift cluster
-          command: |
-            docker run --rm -t \
-              -v $PWD/openshift:/data \
-              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
-
+  provision-openshift-crio:
+    machine: true
+    environment:
+      - OPENSHIFT_AUTOMATION_VERSION: 0.4.3
+    steps:
+      - provision-openshift-cluster:
+          suffix: "-crio"
+          gate-label: "ci-openshift-crio"
+          provision-extra-args: "true"
 
   openshift-tests:
     <<: *defaults
@@ -1852,123 +2037,24 @@ jobs:
       - ROX_WHITELIST_GENERATION_DURATION: 1m
 
     steps:
-      - checkout
-      - check-backend-changes
-      - *checkOpenshiftLabel
-      - setup_remote_docker
+      - run-openshift-tests:
+          gate-label: "ci-openshift-tests"
 
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+  openshift-crio-tests:
+    <<: *defaults
+    environment:
+      - OPENSHIFT_AUTOMATION_VERSION: 0.4.3
+      - LOCAL_PORT: 8000
+      - RUNTIME_SUPPORT: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
 
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: Sanity check OpenShift Env
-          command: |
-            pwd
-            ls -lh $PWD/openshift
-            export KUBECONFIG=$PWD/openshift/config
-            oc get nodes
-
-      - *setupRoxctl
-
-      - run:
-          name: Configure Deployment Environment
-          command: |
-            cci-export KUBECONFIG "$PWD/openshift/config"
-            cci-export CLAIRIFY_IMAGE_TAG 0.5.2
-            cci-export OPENSHIFT_HOST "$(cat openshift/master)"
-            cci-export ROX_IMAGE_REGISTRY docker.io
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
-            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
-            if .circleci/pr_has_label.sh ci-run-against-rhel; then
-              cci-export MAIN_IMAGE_REPO stackrox/main-rhel
-            fi
-
-            ./scripts/ci/openshift-gcr-secrets.sh
-
-      - *setupGoogleAppCreds
-      - *setupLicense
-
-      - *setupDefaultTLSCerts
-
-      - deploy-stackrox:
-          orchestrator-flavor: openshift
-          validate-autoupgrade-label: true
-          post-central-deploy-steps:
-            - *setupClientTLSCerts
-
-      - deploy-webhook-server
-      - deploy-authz-plugin
-
-      - *restoreGradle
-      - run:
-          name: QA Automation Platform Part 1
-          command: |
-            if .circleci/pr_has_label.sh ci-no-qa-tests; then
-              echo "Skipping QA tests because of the presence of the ci-no-qa-tests label..."
-            else
-              export CLUSTER=OPENSHIFT
-              export HOSTNAME=localhost
-              export PORT=${LOCAL_PORT}
-              if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
-                echo "On master, running all QA tests..."
-                make -C qa-tests-backend test
-              elif .circleci/pr_has_label.sh ci-all-qa-tests; then
-                echo "ci-all-qa-tests label was specified, so running all QA tests..."
-                make -C qa-tests-backend test
-              else
-                echo "On a PR branch, running BAT tests only..."
-                make -C qa-tests-backend bat-test
-              fi
-            fi
-
-      - *collectK8sLogs
-      - copy-gradle-files:
-          target-dir: openshift-part1
-
-      - run:
-          name: QA Automation Platform Part 2
-          command: |
-            export CLUSTER=OPENSHIFT
-            export HOSTNAME=localhost
-            export PORT="${LOCAL_PORT}"
-            make -C qa-tests-backend sensor-bounce-test
-
-      - *storeQATestResults
-      - *storeQASpockReports
-      - copy-gradle-files:
-          target-dir: openshift-part2
-
-      - *updateTestRail
-
-      - *backupDB
-      - *storeDBBackupArtifact
-
-      - *collectK8sLogs
-      - *verifyNoStackRoxRestarts
-      - *storeK8sLogs
-
-      - run:
-          name: Pack openshift volume
-          command: |
-            docker create -v /data --name openshift alpine:3.9 /bin/true
-            docker cp openshift/id_rsa            openshift:/data
-            docker cp openshift/id_rsa.pub        openshift:/data
-            docker cp openshift/terraform.tfstate openshift:/data
-          when: always
-
-      - run:
-          name: Destroy Openshift cluster
-          command: |
-            docker run --rm -t \
-              --volumes-from openshift \
-              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: always
+    steps:
+      - run-openshift-tests:
+          suffix: "-crio"
+          gate-label: "ci-openshift-crio"
 
   provision-kops:
     machine: true
@@ -2521,6 +2607,11 @@ workflows:
             tags:
               only:
               - /.*/
+      - provision-openshift-crio:
+          context: docker-io-pull
+          filters:
+            branches:
+              ignore: /^master$/  # TODO(ROX-3375): Remove & add for tags
       - openshift-tests:
           context: docker-io-pull
           requires:
@@ -2530,6 +2621,14 @@ workflows:
             tags:
               only:
               - /.*/
+      - openshift-crio-tests:
+          context: docker-io-pull
+          requires:
+            - build
+            - provision-openshift-crio
+          filters:
+            branches:
+              ignore: /^master$/  # TODO(ROX-3375): Remove & add for tags
       - provision-kops:
           context: docker-io-pull
           filters:
