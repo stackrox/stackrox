@@ -20,12 +20,13 @@ const SummaryTileCount = ({ label, value, loading }) => {
 
 SummaryTileCount.propTypes = {
     label: PropTypes.string.isRequired,
-    value: PropTypes.number.isRequired,
+    value: PropTypes.number,
     loading: PropTypes.bool
 };
 
 SummaryTileCount.defaultProps = {
-    loading: false
+    loading: false,
+    value: 0
 };
 
 export default SummaryTileCount;

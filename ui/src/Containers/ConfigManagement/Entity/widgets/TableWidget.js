@@ -62,14 +62,14 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
 };
 
 TableWidget.propTypes = {
-    header: PropTypes.element.isRequired,
+    header: PropTypes.oneOfType([PropTypes.element, PropTypes.string]).isRequired,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    entityType: PropTypes.shape({})
+    entityType: PropTypes.string
 };
 
 TableWidget.defaultProps = {
-    entityType: {}
+    entityType: ''
 };
 export default withRouter(TableWidget);

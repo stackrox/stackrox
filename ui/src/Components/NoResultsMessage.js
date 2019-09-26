@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 const icons = {
-    info: <Icon.CheckCircle className="h-8 w-8 mr-4 text-success-500" />
+    info: <Icon.CheckCircle className="h-8 w-8 mr-4 text-success-500" />,
+    warn: <Icon.AlertTriangle className="h-8 w-8 mr-4 text-warning-500" />
 };
 
 const NoResultsMessage = props => (

@@ -95,7 +95,7 @@ const getColor = (numPassing, numFailing) => {
     return failingColor;
 };
 
-const getSunburstData = (categoryMapping, urlBuilder) => {
+const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType) => {
     const categories = Object.keys(categoryMapping);
     const data = categories.map(categoryId => {
         const { category, controls } = categoryMapping[categoryId];
@@ -112,9 +112,18 @@ const getSunburstData = (categoryMapping, urlBuilder) => {
             name: `${category.name}. ${category.description}`,
             color: getColor(totalPassing, totalFailing),
             value: categoryValue,
-            children: controls.map(({ control, numPassing, numFailing, controlID }) => {
+            children: controls.map(({ control, numPassing, numFailing }) => {
                 const value = getPercentagePassing(numPassing, numFailing);
-                const link = urlBuilder.base(entityTypes.CONTROL, controlID).url();
+                const link = urlBuilder
+                    .base(entityTypes.CONTROL)
+                    .push(control.id)
+                    .query({
+                        [searchParam]: {
+                            standard: standardLabels[standardType],
+                            'Compliance State': undefined
+                        }
+                    })
+                    .url();
                 return {
                     name: `${control.name} - ${control.description}`,
                     color: getColor(numPassing, numFailing),
@@ -211,7 +220,7 @@ const getSunburstProps = (data, urlBuilder, standardType, searchParam) => {
         standardType,
         searchParam
     );
-    const sunburstData = getSunburstData(categoryMapping, urlBuilder);
+    const sunburstData = getSunburstData(categoryMapping, urlBuilder, searchParam, standardType);
     return {
         sunburstData,
         sunburstRootData,

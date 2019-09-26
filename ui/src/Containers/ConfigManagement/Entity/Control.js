@@ -97,6 +97,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                         passing: !nodeComplianceControlCount.failingCount
                     };
                 });
+
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection title="Control Details">
@@ -130,7 +131,10 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                                 <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                     <NodesWithFailedControls
                                         entityType={entityTypes.CONTROL}
-                                        entityContext={entityContext}
+                                        entityContext={{
+                                            ...entityContext,
+                                            [entityTypes.CONTROL]: id
+                                        }}
                                     />
                                 </div>
                             </CollapsibleSection>

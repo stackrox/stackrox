@@ -33,9 +33,14 @@ export const getRelatedEntities = (data, entityType) => {
         if (!relatedEntities[id]) {
             relatedEntities[id] = {
                 ...keys[entityKey],
-                passing: numFailing === 0 && numPassing !== 0
+                passing: numPassing,
+                failing: numFailing
             };
-        } else if (numFailing) relatedEntities[id].passing = false;
+        } else {
+            const { passing: totalPassing, failing: totalFailing } = relatedEntities[id];
+            relatedEntities[id].passing = totalPassing + numPassing;
+            relatedEntities[id].failing = totalFailing + numFailing;
+        }
     });
 
     return Object.values(relatedEntities);
@@ -71,10 +76,14 @@ const NodesWithFailedControls = props => {
 
     const localRelatedEntities = getRelatedEntities(entities, entityTypes.NODE);
     const failingRelatedEntities = localRelatedEntities.filter(
-        relatedEntity => !relatedEntity.passing
+        relatedEntity => relatedEntity.failing
     );
-    const count = failingRelatedEntities.length;
-    if (count === 0)
+    const passingRelatedEntities = localRelatedEntities.filter(
+        relatedEntity => relatedEntity.passing && !relatedEntity.failing
+    );
+    const numFailing = failingRelatedEntities.length;
+    const numPassing = passingRelatedEntities.length;
+    if (numPassing && !numFailing)
         return (
             <NoResultsMessage
                 message={`No nodes failing ${
@@ -84,7 +93,18 @@ const NodesWithFailedControls = props => {
                 icon="info"
             />
         );
-    const tableHeader = `${count} ${count === 1 ? 'node is' : 'nodes are'} ${
+    if (!numPassing && !numFailing) {
+        return (
+            <NoResultsMessage
+                message={`Findings ${
+                    entityContext[entityTypes.CONTROL] ? 'for this control' : 'across controls'
+                } could not be assessed`}
+                className="p-6 shadow"
+                icon="warn"
+            />
+        );
+    }
+    const tableHeader = `${numFailing} ${numFailing === 1 ? 'node is' : 'nodes are'} ${
         entityType === entityTypes.CONTROL ? 'failing this control' : 'failing controls'
     }`;
     return (

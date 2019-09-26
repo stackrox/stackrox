@@ -221,7 +221,10 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     <TabContent>
                                         <NodesWithFailedControls
                                             entityType={entityTypes.CLUSTER}
-                                            entityContext={entityContext}
+                                            entityContext={{
+                                                ...entityContext,
+                                                [entityTypes.CLUSTER]: id
+                                            }}
                                         />
                                     </TabContent>
                                 </Tabs>
