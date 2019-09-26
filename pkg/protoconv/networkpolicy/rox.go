@@ -42,7 +42,7 @@ func (np RoxNetworkPolicyWrap) ToYaml() (string, error) {
 func (np RoxNetworkPolicyWrap) ToKubernetesNetworkPolicy() *k8sV1.NetworkPolicy {
 	sel := np.convertSelector(np.GetSpec().GetPodSelector())
 	if sel == nil {
-		log.Errorf("Warning: network policy defines nil pod selector. Defaulting to empty (match-all) label selector")
+		log.Error("Warning: network policy defines nil pod selector. Defaulting to empty (match-all) label selector")
 		sel = &k8sMetaV1.LabelSelector{}
 	}
 

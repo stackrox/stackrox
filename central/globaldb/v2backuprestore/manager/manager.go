@@ -138,7 +138,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 	defer m.activeProcessMutex.Unlock()
 
 	if m.activeProcess != nil {
-		return nil, errors.Errorf("an active restore process currently exists; cancel it before initiating a new restore process")
+		return nil, errors.New("an active restore process currently exists; cancel it before initiating a new restore process")
 	}
 
 	attemptDone, err := process.Launch(tempOutputDir, finalOutputDir)
@@ -157,7 +157,7 @@ func (m *manager) waitForRestore(process *restoreProcess) {
 	err := concurrency.WaitForError(process.Completion())
 	if err == nil {
 		log.Infof("Database restore process %s succeeded!", process.Metadata().GetId())
-		log.Infof("Bouncing central to pick up newly imported DB")
+		log.Info("Bouncing central to pick up newly imported DB")
 		time.Sleep(restartGracePeriod)
 		osutils.Restart()
 		return

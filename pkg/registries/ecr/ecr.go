@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -124,7 +125,7 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Image
 func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 	ecrConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Ecr)
 	if !ok {
-		return nil, fmt.Errorf("ECR configuration required")
+		return nil, errors.New("ECR configuration required")
 	}
 	conf := ecrConfig.Ecr
 	if err := validate(conf); err != nil {

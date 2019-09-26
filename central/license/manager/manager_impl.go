@@ -129,7 +129,7 @@ func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.Licen
 	m.checkLicensesNoLock(false)
 
 	if m.activeLicense == nil && m.licenseStatus != v1.Metadata_NONE {
-		log.Infof("No valid license found, but invalid licenses exist. Retrying after getting valid deployment environment information...")
+		log.Info("No valid license found, but invalid licenses exist. Retrying after getting valid deployment environment information...")
 		m.checkLicensesNoLock(true)
 	}
 
@@ -168,7 +168,7 @@ func (m *manager) populateLicenseFromSecretNoLock() {
 	_, err = m.addLicenseNoLock(deploymentEnvsByClusterID, license, false)
 	status, statusReason := statusFromError(err)
 	if status == v1.LicenseInfo_VALID {
-		log.Infof("License successfully imported from orchestrator secret")
+		log.Info("License successfully imported from orchestrator secret")
 	} else {
 		log.Errorf("Imported license but not valid: %s: %s", status, statusReason)
 	}

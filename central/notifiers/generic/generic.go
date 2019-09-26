@@ -12,6 +12,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -113,7 +114,7 @@ func newGeneric(notifier *storage.Notifier) (*generic, error) {
 	}
 	if conf.GetCaCert() != "" {
 		if ok := rootCAs.AppendCertsFromPEM([]byte(conf.GetCaCert())); !ok {
-			return nil, fmt.Errorf("could not add CA Cert passed in configuration")
+			return nil, errors.New("could not add CA Cert passed in configuration")
 		}
 	}
 	extraFieldsJSON, err := getExtraFieldJSON(conf.ExtraFields)

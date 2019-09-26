@@ -61,7 +61,7 @@ func (c config) validate() error {
 func newScanner(protoImageIntegration *storage.ImageIntegration) (*dtr, error) {
 	dtrConfig, ok := protoImageIntegration.IntegrationConfig.(*storage.ImageIntegration_Dtr)
 	if !ok {
-		return nil, fmt.Errorf("DTR configuration required")
+		return nil, errors.New("DTR configuration required")
 	}
 	conf := config(*dtrConfig.Dtr)
 	if err := conf.validate(); err != nil {
@@ -161,15 +161,15 @@ func (d *dtr) getScan(image *storage.Image) (*storage.ImageScan, error) {
 func errorFromStatusCode(status int) error {
 	switch status {
 	case 400:
-		return fmt.Errorf("HTTP 400: Scanning is not enabled")
+		return errors.New("HTTP 400: Scanning is not enabled")
 	case 401:
-		return fmt.Errorf("HTTP 401: The client is not authenticated")
+		return errors.New("HTTP 401: The client is not authenticated")
 	case 405:
-		return fmt.Errorf("HTTP 405: Method Not Allowed")
+		return errors.New("HTTP 405: Method Not Allowed")
 	case 406:
-		return fmt.Errorf("HTTP 406: Not Acceptable")
+		return errors.New("HTTP 406: Not Acceptable")
 	case 415:
-		return fmt.Errorf("HTTP 415: Unsupported Media Type")
+		return errors.New("HTTP 415: Unsupported Media Type")
 	case 200:
 	default:
 		return nil

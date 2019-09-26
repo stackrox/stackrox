@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -49,7 +50,7 @@ type quay struct {
 func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) {
 	quayConfig, ok := protoImageIntegration.IntegrationConfig.(*storage.ImageIntegration_Quay)
 	if !ok {
-		return nil, fmt.Errorf("Quay config must be specified")
+		return nil, errors.New("Quay config must be specified")
 	}
 	config := quayConfig.Quay
 

@@ -95,7 +95,7 @@ func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
 			log.Errorf("unable to close badger DB: %v", err)
 		}
 
-		log.Infof("Bouncing Central to pick up newly imported DB")
+		log.Info("Bouncing Central to pick up newly imported DB")
 		deferredRestart(req.Context())
 	})
 }

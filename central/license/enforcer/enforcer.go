@@ -46,7 +46,7 @@ func (e *enforcer) OnInitialize(mgr manager.LicenseManager, initialLicense *lice
 
 func (e *enforcer) OnActiveLicenseChanged(newLicenseInfo, oldLicenseInfo *v1.LicenseInfo) {
 	if e.licenseMgr == nil {
-		log.Panicf("License enforcer got triggered due to a license change but had not been initialized!")
+		log.Panic("License enforcer got triggered due to a license change but had not been initialized!")
 	}
 
 	log.Debugf("License change detected: %+v vs %+v", newLicenseInfo, oldLicenseInfo)
@@ -71,11 +71,11 @@ func (e *enforcer) OnActiveLicenseChanged(newLicenseInfo, oldLicenseInfo *v1.Lic
 
 func (e *enforcer) enforce() {
 	log.Info("Central restart due to license state change is going into effect now.")
-	log.Infof("Shutting down license manager ...")
+	log.Info("Shutting down license manager ...")
 	if !concurrency.WaitWithTimeout(e.licenseMgr.Stop(), managerGracePeriod) {
 		log.Warnf("License manager did not stop within %v", managerGracePeriod)
 	}
-	log.Infof("Closing databases ...")
+	log.Info("Closing databases ...")
 	globaldb.Close()
 	log.Info("Central is restarting.")
 	osutils.Restart()

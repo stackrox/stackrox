@@ -137,7 +137,7 @@ func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string,
 	case storage.SubjectKind_GROUP:
 		return "Group", nil
 	default:
-		return "", errors.Errorf("invalid subject type")
+		return "", errors.New("invalid subject type")
 	}
 }
 

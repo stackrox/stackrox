@@ -74,7 +74,7 @@ func basicAuth(username, password string) string {
 func newScanner(ii *storage.ImageIntegration, activeRegistries registries.Set) (*anchore, error) {
 	anchoreConfig, ok := ii.IntegrationConfig.(*storage.ImageIntegration_Anchore)
 	if !ok {
-		return nil, fmt.Errorf("anchore configuration required")
+		return nil, errors.New("anchore configuration required")
 	}
 	conf := anchoreConfig.Anchore
 	if err := validateConfig(conf); err != nil {

@@ -455,7 +455,7 @@ func (l *Logger) selfRef() *weakLoggerRef {
 func LoggerForModule() *Logger {
 	module := getCallingModule(1)
 	if module == "" {
-		rootLogger.Errorf("Could not determine calling module! Returning <unknown>")
+		rootLogger.Error("Could not determine calling module! Returning <unknown>")
 		module = "<unknown>"
 	}
 	return newOrGet(module)

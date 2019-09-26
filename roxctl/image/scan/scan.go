@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/roxctl/common"
@@ -23,7 +24,7 @@ func Command() *cobra.Command {
 		Long:  "Scan an image and return the result.",
 		RunE: func(c *cobra.Command, _ []string) error {
 			if image == "" {
-				return fmt.Errorf("--image must be set")
+				return errors.New("--image must be set")
 			}
 			return scanImage(image, flags.Timeout(c))
 		},

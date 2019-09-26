@@ -201,7 +201,7 @@ func (c *cscc) AlertNotify(alert *storage.Alert) error {
 func newCSCC(protoNotifier *storage.Notifier) (*cscc, error) {
 	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
 	if !ok {
-		return nil, fmt.Errorf("Cloud SCC config is required")
+		return nil, errors.New("Cloud SCC config is required")
 	}
 	conf := csccConfig.Cscc
 

@@ -68,7 +68,7 @@ func (k *kubernetesOrchestrator) logEvents(ds *v1beta1.DaemonSet) error {
 		MatchLabels: ds.GetLabels(),
 	})
 	if err != nil {
-		return errors.Wrapf(err, "error creating label selector")
+		return errors.Wrap(err, "error creating label selector")
 	}
 	eventList, err := k.client.CoreV1().Events(namespace).List(metav1.ListOptions{
 		LabelSelector: selector.String(),
@@ -122,7 +122,7 @@ func (k *kubernetesOrchestrator) LaunchDaemonSet(service orchestrators.SystemSer
 
 	actual, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Create(ds)
 	if err != nil {
-		return "", 0, errors.Wrapf(err, "error creating compliance daemonset")
+		return "", 0, errors.Wrap(err, "error creating compliance daemonset")
 	}
 
 	desired, err := k.waitForDesired(actual.GetName())

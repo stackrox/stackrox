@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
@@ -119,7 +120,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 func (s *pipelineImpl) validateInput(binding *storage.K8SRoleBinding) error {
 	// validate input.
 	if binding == nil {
-		return fmt.Errorf("role binding must not be empty")
+		return errors.New("role binding must not be empty")
 	}
 	return nil
 }

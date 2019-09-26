@@ -1,8 +1,9 @@
 package common
 
 import (
-	"fmt"
 	"reflect"
+
+	"github.com/pkg/errors"
 )
 
 // Label key used for unsatisfiable node constraint enforcement.
@@ -15,27 +16,27 @@ const (
 func ApplyNodeConstraintToObj(obj interface{}, alertID string) (err error) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	if !objValue.IsValid() || objValue.Kind() != reflect.Struct {
-		return fmt.Errorf("input must have Spec field")
+		return errors.New("input must have Spec field")
 	}
 
 	specValue := objValue.FieldByName("Spec")
 	if !specValue.IsValid() || specValue.Kind() != reflect.Struct {
-		return fmt.Errorf("input.Spec must have Template field")
+		return errors.New("input.Spec must have Template field")
 	}
 
 	templateValue := reflect.Indirect(specValue.FieldByName("Template"))
 	if !templateValue.IsValid() || specValue.Kind() != reflect.Struct {
-		return fmt.Errorf("input.Spec.Template must have Spec field")
+		return errors.New("input.Spec.Template must have Spec field")
 	}
 
 	podSpecValue := templateValue.FieldByName("Spec")
 	if !podSpecValue.IsValid() || podSpecValue.Kind() != reflect.Struct {
-		return fmt.Errorf("input.Spec.Template.Spec must have NodeSelector field")
+		return errors.New("input.Spec.Template.Spec must have NodeSelector field")
 	}
 
 	nodeSelector := podSpecValue.FieldByName("NodeSelector")
 	if nodeSelector.Kind() != reflect.Map {
-		return fmt.Errorf("input.Spec.Template.Spec.NodeSelector must be map type")
+		return errors.New("input.Spec.Template.Spec.NodeSelector must be map type")
 	}
 	if nodeSelector.IsNil() {
 		nodeSelector.Set(reflect.MakeMap(nodeSelector.Type()))

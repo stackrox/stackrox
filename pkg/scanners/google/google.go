@@ -9,6 +9,7 @@ import (
 
 	containeranalysis "cloud.google.com/go/containeranalysis/apiv1beta1"
 	gogoTypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -67,7 +68,7 @@ func validate(google *storage.GoogleConfig) error {
 func newScanner(integration *storage.ImageIntegration) (*googleScanner, error) {
 	googleConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Google)
 	if !ok {
-		return nil, fmt.Errorf("Google Container Analysis configuration required")
+		return nil, errors.New("Google Container Analysis configuration required")
 	}
 	config := googleConfig.Google
 	if err := validate(config); err != nil {

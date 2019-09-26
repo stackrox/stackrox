@@ -19,7 +19,7 @@ func (cli *Client) Info(ctx context.Context) (types.Info, error) {
 	defer ensureReaderClosed(serverResp)
 
 	if err := json.NewDecoder(serverResp.body).Decode(&info); err != nil {
-		return info, errors.Wrapf(err, "error reading remote info")
+		return info, errors.Wrap(err, "error reading remote info")
 	}
 
 	return info, nil

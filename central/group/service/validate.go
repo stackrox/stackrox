@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -12,7 +13,7 @@ func validate(group *storage.Group) error {
 		return err
 	}
 	if group.GetRoleName() == "" {
-		return fmt.Errorf("groups must match to roles")
+		return errors.New("groups must match to roles")
 	}
 	return nil
 }

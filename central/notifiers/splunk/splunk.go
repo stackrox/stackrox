@@ -9,6 +9,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
@@ -160,7 +161,7 @@ func init() {
 func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 	splunkConfig, ok := notifier.GetConfig().(*storage.Notifier_Splunk)
 	if !ok {
-		return nil, fmt.Errorf("Splunk configuration required")
+		return nil, errors.New("Splunk configuration required")
 	}
 	conf := splunkConfig.Splunk
 	if err := validate(conf); err != nil {
@@ -180,10 +181,10 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 
 func validate(conf *storage.Splunk) error {
 	if len(conf.HttpToken) == 0 {
-		return fmt.Errorf("Splunk HTTP Event Collector(HEC) token must be specified")
+		return errors.New("Splunk HTTP Event Collector(HEC) token must be specified")
 	}
 	if len(conf.HttpEndpoint) == 0 {
-		return fmt.Errorf("Splunk HTTP endpoint must be specified")
+		return errors.New("Splunk HTTP endpoint must be specified")
 	}
 	if conf.GetTruncate() == 0 {
 		conf.Truncate = splunkHECDefaultDataLimit

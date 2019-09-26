@@ -280,7 +280,7 @@ func (ds *datastoreImpl) Wait(cancelWhen concurrency.Waitable) bool {
 
 func (ds *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
-	log.Infof("[STARTUP] Determining if process indicator db/indexer reconciliation is needed")
+	log.Info("[STARTUP] Determining if process indicator db/indexer reconciliation is needed")
 
 	dbTxNum, err := ds.storage.GetTxnCount()
 	if err != nil {
@@ -289,7 +289,7 @@ func (ds *datastoreImpl) buildIndex() error {
 	indexerTxNum := ds.indexer.GetTxnCount()
 
 	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
-		log.Infof("[STARTUP] Reconciliation for process indicators is not needed")
+		log.Info("[STARTUP] Reconciliation for process indicators is not needed")
 		return nil
 	}
 

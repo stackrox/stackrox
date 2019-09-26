@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -486,7 +485,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id3",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier(suite.requestContext, "id3").Return((*storage.Notifier)(nil), true, fmt.Errorf("oh noes"))
+	suite.nStorage.EXPECT().GetNotifier(suite.requestContext, "id3").Return((*storage.Notifier)(nil), true, errors.New("oh noes"))
 	err = suite.validator.validateNotifiers(suite.requestContext, policy)
 	suite.Error(err, "should fail when an error is thrown")
 }

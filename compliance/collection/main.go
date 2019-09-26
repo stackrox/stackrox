@@ -45,35 +45,35 @@ func main() {
 
 	log.Infof("Running compliance scrape %q for node %q", thisScrapeID, thisNodeName)
 
-	log.Infof("Starting to collect Docker data")
+	log.Info("Starting to collect Docker data")
 	var err error
 	msgReturn.DockerData, err = docker.GetDockerData()
 	if err != nil {
 		log.Error(err)
 	}
 
-	log.Infof("Successfully collected relevant Docker data")
+	log.Info("Successfully collected relevant Docker data")
 
-	log.Infof("Starting to collect systemd files")
+	log.Info("Starting to collect systemd files")
 	msgReturn.SystemdFiles, err = file.CollectSystemdFiles()
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("Successfully collected relevant systemd files")
+	log.Info("Successfully collected relevant systemd files")
 
-	log.Infof("Starting to collect configuration files")
+	log.Info("Starting to collect configuration files")
 	msgReturn.Files, err = file.CollectFiles()
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("Successfully collected relevant configuration files")
+	log.Info("Successfully collected relevant configuration files")
 
-	log.Infof("Starting to collect command lines")
+	log.Info("Starting to collect command lines")
 	msgReturn.CommandLines, err = command.RetrieveCommands()
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("Successfully collected relevant command lines")
+	log.Info("Successfully collected relevant command lines")
 
 	msgReturn.Time = types.TimestampNow()
 
@@ -82,7 +82,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Infof("Initialized Sensor gRPC connection")
+	log.Info("Initialized Sensor gRPC connection")
 	defer func() {
 		if err := conn.Close(); err != nil {
 			log.Errorf("Failed to close connection: %v", err)
@@ -93,7 +93,7 @@ func main() {
 	// Communicate with sensor, pushing the scraped data.
 	if err := retry.WithRetry(
 		func() error { // Try to push the data to sensor, time out after 5 seconds.
-			log.Infof("Trying to push return to sensor")
+			log.Info("Trying to push return to sensor")
 			ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 			defer cancel()
 
@@ -111,7 +111,7 @@ func main() {
 	); err != nil {
 		log.Fatalf("Couldn't post data to sensor despite retries: %v", err)
 	}
-	log.Infof("Successfully pushed data to sensor")
+	log.Info("Successfully pushed data to sensor")
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)

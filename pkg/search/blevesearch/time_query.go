@@ -1,13 +1,13 @@
 package blevesearch
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/tkuchiki/go-timezone"
 )
@@ -36,7 +36,7 @@ func newTimeQuery(_ v1.SearchCategory, field string, value string, modifiers ...
 		// < the timestamp of 3 days ago.
 		prefix = invertNumericPrefix(prefix)
 	} else {
-		return nil, fmt.Errorf("Invalid time query. Must be of the format (01/02/2006 or 1d)")
+		return nil, errors.New("Invalid time query. Must be of the format (01/02/2006 or 1d)")
 	}
 	floatSeconds := float64(seconds)
 	return createNumericQuery(field, prefix, &floatSeconds), nil

@@ -2,11 +2,11 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
@@ -98,7 +98,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 // Test that when we cannot fetch a cluster, we return the error from the DB.
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 	// Return an error trying to fetch the cluster.
-	expectedErr := fmt.Errorf("issues need tissues")
+	expectedErr := errors.New("issues need tissues")
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), true, expectedErr)
 
 	// run removal.

@@ -100,7 +100,7 @@ func validate(email *storage.Email) error {
 func newEmail(notifier *storage.Notifier) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
-		return nil, fmt.Errorf("Email configuration required")
+		return nil, errors.New("Email configuration required")
 	}
 	conf := emailConfig.Email
 	if err := validate(conf); err != nil {

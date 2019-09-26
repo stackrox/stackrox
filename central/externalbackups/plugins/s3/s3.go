@@ -137,7 +137,7 @@ func (s *s3) prefixKey(key string) string {
 }
 
 func (s *s3) Backup(reader io.ReadCloser) error {
-	log.Infof("Starting S3 Backup")
+	log.Info("Starting S3 Backup")
 	formattedTime := time.Now().Format("2006-01-02T15:04:05")
 	key := fmt.Sprintf("backup_%s.zip", formattedTime)
 	formattedKey := s.prefixKey(key)
@@ -152,7 +152,7 @@ func (s *s3) Backup(reader io.ReadCloser) error {
 		}
 		return errors.Wrapf(err, "error creating backup in bucket %q with key %q", s.integration.GetS3().GetBucket(), formattedKey)
 	}
-	log.Infof("Successfully backed up to S3")
+	log.Info("Successfully backed up to S3")
 	return s.pruneBackupsIfNecessary()
 }
 

@@ -37,10 +37,10 @@ func (c *Compaction) applyDefaults() {
 func (c *Compaction) validate() error {
 	errorList := errorhelpers.NewErrorList("validating compaction")
 	if *c.BucketFillFraction <= 0 || *c.BucketFillFraction > 1.0 {
-		errorList.AddStringf("fill fraction must be greater than 0 and less than or equal to 1")
+		errorList.AddString("fill fraction must be greater than 0 and less than or equal to 1")
 	}
 	if c.FreeFractionThreshold != nil && (*c.FreeFractionThreshold <= 0 || *c.FreeFractionThreshold > 1.0) {
-		errorList.AddStringf("compaction threshold fraction must be greater than 0 and less than or equal to 1")
+		errorList.AddString("compaction threshold fraction must be greater than 0 and less than or equal to 1")
 	}
 	return errorList.ToError()
 }

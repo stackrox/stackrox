@@ -181,7 +181,7 @@ func (a *aggregatorImpl) filterOnRunResult(runResults *storage.ComplianceRunResu
 	for d, controlResults := range runResults.GetDeploymentResults() {
 		deployment, ok := domain.Deployments[d]
 		if !ok {
-			log.Errorf("Okay that's not good, we have a result for a deployment that isn't even in the domain?")
+			log.Error("Okay that's not good, we have a result for a deployment that isn't even in the domain?")
 			continue
 		}
 		for control, r := range controlResults.GetControlResults() {
@@ -338,7 +338,7 @@ func (a *aggregatorImpl) getFlatChecksFromRunResult(runResults *storage.Complian
 	for d, controlResults := range runResults.GetDeploymentResults() {
 		deployment, ok := domain.Deployments[d]
 		if !ok {
-			log.Errorf("Okay that's not good, we have a result for a deployment that isn't even in the domain?")
+			log.Error("Okay that's not good, we have a result for a deployment that isn't even in the domain?")
 			continue
 		}
 		for control, r := range controlResults.GetControlResults() {

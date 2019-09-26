@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	mocks2 "github.com/stackrox/rox/central/logimbue/handler/mocks"
 	"github.com/stackrox/rox/central/logimbue/store/mocks"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -66,7 +66,7 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesDbError() {
 		Body:   mockReadCloseMessage(loggedMessage),
 	}
 
-	dbErr := fmt.Errorf("the deebee has failed you")
+	dbErr := errors.New("the deebee has failed you")
 	suite.logsStorage.EXPECT().AddLog(loggedMessage).Return(dbErr)
 
 	recorder := httptest.NewRecorder()
@@ -77,7 +77,7 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesDbError() {
 func (suite *LogImbueHandlerTestSuite) TestPostHandlesReadError() {
 	req := &http.Request{
 		Method: http.MethodPost,
-		Body:   mockReadCloseReadError(fmt.Errorf("something when wrong reading input body")),
+		Body:   mockReadCloseReadError(errors.New("something went wrong reading input body")),
 	}
 
 	recorder := httptest.NewRecorder()
@@ -89,7 +89,7 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesCloseError() {
 	loggedMessage := `{ Log: "Something exploded" & % # @ * () derp }`
 	req := &http.Request{
 		Method: http.MethodPost,
-		Body:   mockReadCloseCloseError(loggedMessage, fmt.Errorf("can't close bro")),
+		Body:   mockReadCloseCloseError(loggedMessage, errors.New("can't close bro")),
 	}
 
 	recorder := httptest.NewRecorder()
@@ -124,7 +124,7 @@ func (suite *LogImbueHandlerTestSuite) TestGetReturnsLogsFromDb() {
 
 func (suite *LogImbueHandlerTestSuite) TestGetHandlesDBError() {
 	// Fail to read the logs from the db.
-	dbErr := fmt.Errorf("no db logs for you bro")
+	dbErr := errors.New("no db logs for you bro")
 	suite.logsStorage.EXPECT().GetLogs().Return(([]string)(nil), dbErr)
 
 	recorder := httptest.NewRecorder()
@@ -141,7 +141,7 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionInitializationEr
 	suite.logsStorage.EXPECT().GetLogs().Return(loggedMessages, nil)
 
 	// Our compressor provider will error out and give us nothing
-	suite.compressorProvider.err = fmt.Errorf("you get no compressor buddy")
+	suite.compressorProvider.err = errors.New("you get no compressor buddy")
 
 	recorder := httptest.NewRecorder()
 	req := &http.Request{
@@ -161,7 +161,7 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionWriteError() {
 	suite.compressorProvider.compressor = mc
 
 	// Then we will use the compressor to compress all of the logs, but fail with all of them.
-	writeErr := fmt.Errorf("cant write dude")
+	writeErr := errors.New("cant write dude")
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[0])).Return(len(loggedMessages[0]), writeErr)
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[1])).Return(len(loggedMessages[1]), writeErr)
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[2])).Return(len(loggedMessages[2]), writeErr)
@@ -185,7 +185,7 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesPartialCompressionWriteErro
 	suite.compressorProvider.compressor = mc
 
 	// Then we will use the compressor to compress all of the logs, but will fail to compress some of them.
-	writeErr := fmt.Errorf("cant write dude")
+	writeErr := errors.New("cant write dude")
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[0])).Return(len(loggedMessages[0]), nil)
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[1])).Return(len(loggedMessages[1]), writeErr)
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[2])).Return(len(loggedMessages[2]), nil)
@@ -214,7 +214,7 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionCloseError() {
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[0])).Return(len(loggedMessages[0]), nil)
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[1])).Return(len(loggedMessages[1]), nil)
 	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[2])).Return(len(loggedMessages[2]), nil)
-	closeErr := fmt.Errorf("cant close the compression home slice")
+	closeErr := errors.New("cant close the compression home slice")
 	mc.EXPECT().Close().Return(closeErr)
 
 	recorder := httptest.NewRecorder()

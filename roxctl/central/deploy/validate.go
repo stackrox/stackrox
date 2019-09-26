@@ -2,8 +2,8 @@ package deploy
 
 import (
 	"crypto/tls"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/renderer"
 )
 
@@ -26,7 +26,7 @@ func validateHostPath(hostpath *renderer.HostPathPersistence) error {
 		return nil
 	}
 	if (hostpath.NodeSelectorKey == "") != (hostpath.NodeSelectorValue == "") {
-		return fmt.Errorf("Both node selector key and node selector value must be specified when using a hostpath")
+		return errors.New("Both node selector key and node selector value must be specified when using a hostpath")
 	}
 	return nil
 }

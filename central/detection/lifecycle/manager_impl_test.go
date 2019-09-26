@@ -90,7 +90,7 @@ func (suite *ManagerTestSuite) TestWhitelistNotFound() {
 	suite.mockCtrl.Finish()
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	expectedError := errors.Errorf("Expected error")
+	expectedError := errors.New("Expected error")
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, expectedError)
 	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(indicator.GetDeploymentId())
 	_, _, err = suite.manager.checkWhitelist(indicator)
@@ -115,7 +115,7 @@ func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
-	expectedError := errors.Errorf("Expected error")
+	expectedError := errors.New("Expected error")
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
 	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(gomock.Any(), key, elements, nil, true).Return(nil, expectedError)
 	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(indicator.GetDeploymentId())

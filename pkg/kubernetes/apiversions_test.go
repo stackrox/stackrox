@@ -1,7 +1,6 @@
 package kubernetes
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,7 +32,7 @@ func TestIsNativeAPI(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		t.Run(fmt.Sprintf(c.apiVersion), func(t *testing.T) {
+		t.Run(c.apiVersion, func(t *testing.T) {
 			assert.Equal(t, IsNativeAPI(c.apiVersion), c.isTracked)
 		})
 	}

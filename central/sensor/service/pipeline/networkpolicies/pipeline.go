@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -118,7 +119,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 func (s *pipelineImpl) validateInput(np *storage.NetworkPolicy) error {
 	// validate input.
 	if np == nil {
-		return fmt.Errorf("network policy must not be empty")
+		return errors.New("network policy must not be empty")
 	}
 	return nil
 }

@@ -1,7 +1,7 @@
 package tenable
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -35,7 +35,7 @@ func validate(config *storage.TenableConfig) error {
 func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
 	tenableConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Tenable)
 	if !ok {
-		return nil, fmt.Errorf("tenable configuration required")
+		return nil, errors.New("tenable configuration required")
 	}
 	config := tenableConfig.Tenable
 	if err := validate(config); err != nil {

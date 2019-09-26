@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
@@ -142,7 +142,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSANotExists() {
 func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSAFailure() {
 	saID := "id1"
 
-	expectedErr := fmt.Errorf("failure")
+	expectedErr := errors.New("failure")
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
@@ -167,7 +167,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccount() {
 
 // Test that when searching fails, that error is returned.
 func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccountFailure() {
-	expectedError := fmt.Errorf("failure")
+	expectedError := errors.New("failure")
 
 	suite.mockServiceAccountStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, expectedError)
 

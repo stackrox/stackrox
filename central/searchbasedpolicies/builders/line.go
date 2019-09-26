@@ -17,7 +17,7 @@ type dockerFileLineFieldQueryBuilder struct {
 }
 
 func (c *dockerFileLineFieldQueryBuilder) Name() string {
-	return fmt.Sprintf("query builder for docker file lines")
+	return "query builder for docker file lines"
 }
 
 func (c *dockerFileLineFieldQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {

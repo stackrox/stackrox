@@ -197,7 +197,7 @@ func Compact() error {
 		// If it does not then we may need manual intervention otherwise, we could cause data loss
 		fi, err = os.Stat(compactedBoltDBFilePath)
 		if err != nil {
-			return errors.Wrapf(err, "error running stat on the compacted path")
+			return errors.Wrap(err, "error running stat on the compacted path")
 		}
 
 		availableOnMountPath, err := availableBytes(migrations.DBMountPath)

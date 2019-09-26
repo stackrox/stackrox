@@ -1,7 +1,7 @@
 package dtr
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -19,7 +19,7 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Image
 func newRegistry(integration *storage.ImageIntegration) (*docker.Registry, error) {
 	dtrConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Dtr)
 	if !ok {
-		return nil, fmt.Errorf("DTR configuration required")
+		return nil, errors.New("DTR configuration required")
 	}
 	cfg := docker.Config{
 		Username: dtrConfig.Dtr.GetUsername(),

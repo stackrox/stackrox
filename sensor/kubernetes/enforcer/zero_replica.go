@@ -3,6 +3,7 @@ package enforcer
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
@@ -16,7 +17,7 @@ import (
 func (e *enforcerImpl) scaleToZero(enforcement *central.SensorEnforcement) (err error) {
 	deploymentInfo := enforcement.GetDeployment()
 	if deploymentInfo == nil {
-		return fmt.Errorf("unable to apply constraint to non-deployment")
+		return errors.New("unable to apply constraint to non-deployment")
 	}
 
 	// Set enforcement function based on deployment type.

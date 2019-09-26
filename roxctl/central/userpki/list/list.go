@@ -89,7 +89,7 @@ func PrintProviderDetails(p *storage.AuthProvider, defaultRoles map[string]strin
 		return
 	}
 	if len(certs) == 0 {
-		fmt.Printf("  Certificates: none\n")
+		fmt.Print("  Certificates: none\n")
 	}
 	for i, cert := range certs {
 		fmt.Printf("  Certificate %d:\n", i+1)

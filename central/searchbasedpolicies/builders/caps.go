@@ -34,7 +34,7 @@ func (c addCapQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[s
 }
 
 func (c addCapQueryBuilder) Name() string {
-	return fmt.Sprintf("query builder for add capabilities")
+	return "query builder for add capabilities"
 }
 
 // addCapQueryBuilder builds queries for add and drop capability queries.
@@ -62,7 +62,7 @@ func (c dropCapQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 
 // Name implements the PolicyQueryBuilder interface.
 func (c dropCapQueryBuilder) Name() string {
-	return fmt.Sprintf("query builder for drop capabilities")
+	return "query builder for drop capabilities"
 }
 
 // NewAddCapQueryBuilder returns a ready-to-use query builder for the add capabilities field in policies.

@@ -99,7 +99,7 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 func NewDockerRegistry(integration *storage.ImageIntegration) (*Registry, error) {
 	dockerConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Docker)
 	if !ok {
-		return nil, fmt.Errorf("Docker configuration required")
+		return nil, errors.New("Docker configuration required")
 	}
 	cfg := Config{
 		Endpoint: dockerConfig.Docker.GetEndpoint(),

@@ -136,7 +136,7 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 
 // Name implements the PolicyQueryBuilder interface.
 func (p ProcessQueryBuilder) Name() string {
-	return fmt.Sprintf("query builder for process policy")
+	return "query builder for process policy"
 }
 
 // UpdateRuntimeAlertViolationMessage updates the violation message for a violation in-place
@@ -174,7 +174,7 @@ func UpdateRuntimeAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 		if arg != "" {
 			argsMessage = fmt.Sprintf(" with arguments '%s'", processes[0].GetSignal().GetArgs())
 		} else {
-			argsMessage = fmt.Sprintf(" without arguments")
+			argsMessage = " without arguments"
 		}
 	} else if argsSet.Cardinality() > 0 {
 		argsMessage = fmt.Sprintf(" with %d different arguments", argsSet.Cardinality())

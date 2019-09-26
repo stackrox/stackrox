@@ -131,7 +131,7 @@ func NewRequestInfoHandler(signer cryptoutils.Signer) *Handler {
 func NewDefaultRequestInfoHandler() *Handler {
 	_, pk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		log.Panicf("Could not generate an ED25519 private key!")
+		log.Panic("Could not generate an ED25519 private key!")
 	}
 	return NewRequestInfoHandler(cryptoutils.NewED25519Signer(pk))
 }

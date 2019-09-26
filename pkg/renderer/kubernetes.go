@@ -135,7 +135,7 @@ func postProcessConfig(c *Config, mode mode) error {
 		}
 		monitoringImage, err := generateMonitoringImage(c.K8sConfig.MainImage, c.K8sConfig.MonitoringImage)
 		if err != nil {
-			return errors.Wrapf(err, "error parsing monitoring image: ")
+			return errors.Wrap(err, "error parsing monitoring image: ")
 		}
 		c.K8sConfig.Monitoring.Image = monitoringImage
 		c.K8sConfig.Monitoring.Endpoint = netutil.WithDefaultPort(c.K8sConfig.Monitoring.Endpoint, defaultMonitoringPort)

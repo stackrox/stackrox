@@ -157,7 +157,7 @@ func (r *runner) preflightChecks() error {
 
 func (r *runner) preflightChecksNoFail() error {
 	if err := preflight.PerformChecks(r.ctx, r.executionPlan); err != nil {
-		log.Errorf("Attempting to continue despite errors in preflight checks")
+		log.Error("Attempting to continue despite errors in preflight checks")
 	}
 	return nil
 }

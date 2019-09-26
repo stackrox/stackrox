@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,7 +26,7 @@ func Command() *cobra.Command {
 		Long:  "Delete removes the Sensor from Central, but does not delete any Kubernetes objects.",
 		RunE: func(c *cobra.Command, _ []string) error {
 			if name == "" {
-				return fmt.Errorf("--name is required")
+				return errors.New("--name is required")
 			}
 			return deleteCluster(name)
 		},

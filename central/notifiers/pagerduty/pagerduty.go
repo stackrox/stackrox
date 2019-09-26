@@ -52,7 +52,7 @@ func init() {
 func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
 	pagerDutyConfig, ok := notifier.GetConfig().(*storage.Notifier_Pagerduty)
 	if !ok {
-		return nil, fmt.Errorf("PagerDuty configuration required")
+		return nil, errors.New("PagerDuty configuration required")
 	}
 	conf := pagerDutyConfig.Pagerduty
 	if err := validate(conf); err != nil {
@@ -65,7 +65,7 @@ func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
 
 func validate(conf *storage.PagerDuty) error {
 	if len(conf.ApiKey) == 0 {
-		return fmt.Errorf("PagerDuty API key must be specified")
+		return errors.New("PagerDuty API key must be specified")
 	}
 	return nil
 }

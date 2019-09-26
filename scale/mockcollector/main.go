@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -69,7 +70,7 @@ func getShortID() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("No containerID found in /proc/self/cgroup")
+	return "", errors.New("No containerID found in /proc/self/cgroup")
 }
 
 func getStream(sensorEndpoint string) (sensor.SignalService_PushSignalsClient, context.CancelFunc, error) {

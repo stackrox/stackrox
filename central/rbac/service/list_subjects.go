@@ -76,7 +76,7 @@ func GetFilteredSubjects(query *v1.Query, subjectsToFilter []*storage.Subject) (
 	defer utils.IgnoreError(tempIndex.Close)
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "initializing temp index")
+		return nil, errors.Wrap(err, "initializing temp index")
 	}
 	tempIndexer := indexerImpl{index: tempIndex}
 
@@ -85,14 +85,14 @@ func GetFilteredSubjects(query *v1.Query, subjectsToFilter []*storage.Subject) (
 	for _, subject := range subjectsToFilter {
 		subjectsByName[subject.GetName()] = subject
 		if err := tempIndexer.Add(subject); err != nil {
-			return nil, errors.Wrapf(err, "inserting into temp index")
+			return nil, errors.Wrap(err, "inserting into temp index")
 		}
 	}
 
 	// Run the search.
 	resultNames, err := tempIndexer.Search(query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "searching temp index")
+		return nil, errors.Wrap(err, "searching temp index")
 	}
 
 	// Collect the resulting subjects of the search.

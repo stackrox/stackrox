@@ -123,7 +123,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not determine network flow access for deployments")
+		return nil, errors.Wrap(err, "could not determine network flow access for deployments")
 	}
 	relevantDeployments := filteredSlice.([]*storage.Deployment)
 	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)

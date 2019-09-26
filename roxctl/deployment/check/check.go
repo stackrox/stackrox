@@ -2,7 +2,6 @@ package check
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -33,7 +32,7 @@ func Command() *cobra.Command {
 		Long:  "Check images for build time policy violations.",
 		RunE: func(c *cobra.Command, _ []string) error {
 			if file == "" {
-				return fmt.Errorf("--file must be set")
+				return errors.New("--file must be set")
 			}
 			return checkDeployment(file, json, flags.Timeout(c))
 		},

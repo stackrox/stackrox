@@ -66,7 +66,7 @@ func validate(config *storage.TenableConfig) error {
 func newScanner(integration *storage.ImageIntegration) (*tenable, error) {
 	tenableConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Tenable)
 	if !ok {
-		return nil, fmt.Errorf("Tenable configuration required")
+		return nil, errors.New("Tenable configuration required")
 	}
 	config := tenableConfig.Tenable
 	if err := validate(config); err != nil {

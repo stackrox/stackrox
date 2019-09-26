@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -94,7 +94,7 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretNotExists() {
 func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 	secretID := "id1"
 
-	expectedErr := fmt.Errorf("failure")
+	expectedErr := errors.New("failure")
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return((*storage.Secret)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
@@ -143,7 +143,7 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 		AddExactMatches(search.SecretName, "secretname").
 		ProtoQuery()
 
-	expectedErr := fmt.Errorf("failure")
+	expectedErr := errors.New("failure")
 	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), psr).Return(([]*v1.SearchResult)(nil), expectedErr)
 
 	_, actualErr := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
@@ -168,7 +168,7 @@ func (suite *SecretServiceTestSuite) TestSearchSecret() {
 
 // Test that when searching fails, that error is returned.
 func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
-	expectedError := fmt.Errorf("failure")
+	expectedError := errors.New("failure")
 
 	emptyWithPag := search.EmptyQuery()
 	emptyWithPag.Pagination = &v1.QueryPagination{

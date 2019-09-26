@@ -55,9 +55,9 @@ func checkRestrictionsAreWellFormed(restr *licenseproto.License_Restrictions, er
 	if restr.GetMaxNodes() < 0 {
 		errs.AddStringf("MaxNodes is negative (%d)", restr.GetMaxNodes())
 	} else if restr.GetNoNodeRestriction() && restr.GetMaxNodes() != 0 {
-		errs.AddStringf("license has no node count restriction, but MaxNodes is nonzero")
+		errs.AddString("license has no node count restriction, but MaxNodes is nonzero")
 	} else if !restr.GetNoNodeRestriction() && restr.GetMaxNodes() == 0 {
-		errs.AddStringf("license does not allow unrestricted node count, but MaxNodes is zero")
+		errs.AddString("license does not allow unrestricted node count, but MaxNodes is zero")
 	}
 
 	if restr.GetAllowOffline() && restr.GetEnforcementUrl() != "" {

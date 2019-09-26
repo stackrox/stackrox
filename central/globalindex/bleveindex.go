@@ -106,7 +106,7 @@ func initializeIndices(scorchPath string) (bleve.Index, error) {
 		// This implies that the index mapping has changed and therefore we should reindex everything
 		// This can only happen on upgrades
 		if !compareMappings(globalIndex.Mapping(), mapping.GetIndexMapping()) {
-			log.Infof("[STARTUP] Found new index mapping. Removing index and rebuilding")
+			log.Info("[STARTUP] Found new index mapping. Removing index and rebuilding")
 			if err := globalIndex.Close(); err != nil {
 				log.Errorf("error closing global index: %v", err)
 			}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,7 +32,7 @@ func New(config *storage.HTTPEndpointConfig) (Client, error) {
 	if config.GetCaCert() != "" {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM([]byte(config.GetCaCert())); !ok {
-			return nil, fmt.Errorf("no certificates found in PEM data")
+			return nil, errors.New("no certificates found in PEM data")
 		}
 		tlsConfig.RootCAs = caCertPool
 	}

@@ -126,12 +126,12 @@ func backupBadger(ctx context.Context, db *badger.DB, out io.Writer) error {
 	// Write backup version out to writer as first 4 bytes
 	magic := binenc.BigEndian.EncodeUint32(badgerutils.MagicNumber)
 	if _, err := out.Write(magic); err != nil {
-		return errors.Wrapf(err, "error writing magic to output")
+		return errors.Wrap(err, "error writing magic to output")
 	}
 
 	version := binenc.BigEndian.EncodeUint32(backupVersion)
 	if _, err := out.Write(version); err != nil {
-		return errors.Wrapf(err, "error writing version to output")
+		return errors.Wrap(err, "error writing version to output")
 	}
 
 	stream := db.NewStream()

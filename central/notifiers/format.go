@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/readable"
@@ -100,7 +101,7 @@ var requiredFunctions = map[string]struct{}{
 // FormatPolicy takes in an alert, a link and funcMap that must define specific formatting functions
 func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncMap) (string, error) {
 	if funcMap == nil {
-		return "", fmt.Errorf("Function map passed to FormatPolicy cannot be nil")
+		return "", errors.New("Function map passed to FormatPolicy cannot be nil")
 	}
 	for k := range requiredFunctions {
 		if _, ok := funcMap[k]; !ok {

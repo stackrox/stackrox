@@ -319,7 +319,7 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 
 func (ds *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
-	log.Infof("[STARTUP] Determining if deployment db/indexer reconciliation is needed")
+	log.Info("[STARTUP] Determining if deployment db/indexer reconciliation is needed")
 
 	dbTxNum, err := ds.deploymentStore.GetTxnCount()
 	if err != nil {
@@ -328,7 +328,7 @@ func (ds *datastoreImpl) buildIndex() error {
 	indexerTxNum := ds.deploymentIndexer.GetTxnCount()
 
 	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
-		log.Infof("[STARTUP] Reconciliation for deployments is not needed")
+		log.Info("[STARTUP] Reconciliation for deployments is not needed")
 		return nil
 	}
 

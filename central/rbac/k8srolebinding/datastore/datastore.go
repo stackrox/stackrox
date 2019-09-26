@@ -32,7 +32,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		searcher: searcher,
 	}
 	if err := d.buildIndex(); err != nil {
-		return nil, errors.Wrapf(err, "failed to build index from existing store")
+		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil
 }

@@ -121,7 +121,7 @@ func (u *updaterImpl) getAPIVersions() []string {
 func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.ProviderMetadata {
 	m := providers.GetMetadata(ctx)
 	if m == nil {
-		log.Infof("No Cloud Provider metadata is found")
+		log.Info("No Cloud Provider metadata is found")
 	}
 	return m
 }

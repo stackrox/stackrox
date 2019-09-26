@@ -225,7 +225,7 @@ func merge(mergeTo *storage.Image, mergeWith *storage.Image) (updated bool) {
 
 func (ds *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
-	log.Infof("[STARTUP] Determining if image db/indexer reconciliation is needed")
+	log.Info("[STARTUP] Determining if image db/indexer reconciliation is needed")
 
 	dbTxNum, err := ds.storage.GetTxnCount()
 	if err != nil {
@@ -234,7 +234,7 @@ func (ds *datastoreImpl) buildIndex() error {
 	indexerTxNum := ds.indexer.GetTxnCount()
 
 	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
-		log.Infof("[STARTUP] Reconciliation for images is not needed")
+		log.Info("[STARTUP] Reconciliation for images is not needed")
 		return nil
 	}
 	log.Info("[STARTUP] Indexing images")

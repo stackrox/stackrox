@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
@@ -114,7 +115,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 func (s *pipelineImpl) validateInput(np *storage.NamespaceMetadata) error {
 	// validate input.
 	if np == nil {
-		return fmt.Errorf("namespace must not be empty")
+		return errors.New("namespace must not be empty")
 	}
 	return nil
 }

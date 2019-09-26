@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -91,7 +90,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		}
 	}
 	if image.GetName() == nil {
-		return nil, fmt.Errorf("image or image_name must be specified")
+		return nil, errors.New("image or image_name must be specified")
 	}
 	// This is a workaround for those who post the full image, but don't fill in fullname
 	if name := req.GetImage().GetName(); name != nil && name.GetFullName() == "" {

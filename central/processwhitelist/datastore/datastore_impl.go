@@ -84,7 +84,7 @@ func (ds *datastoreImpl) addProcessWhitelistUnlocked(id string, whitelist *stora
 		err = errors.Wrapf(err, "inserting whitelist %q into index", whitelist.GetId())
 		subErr := ds.storage.DeleteWhitelist(id)
 		if subErr != nil {
-			err = errors.Wrapf(err, "error rolling back process whitelist addition")
+			err = errors.Wrap(err, "error rolling back process whitelist addition")
 		}
 		return id, err
 	}

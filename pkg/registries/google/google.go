@@ -1,7 +1,7 @@
 package google
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -35,7 +35,7 @@ func validate(google *storage.GoogleConfig) error {
 func newRegistry(integration *storage.ImageIntegration) (*docker.Registry, error) {
 	googleConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Google)
 	if !ok {
-		return nil, fmt.Errorf("Google configuration required")
+		return nil, errors.New("Google configuration required")
 	}
 	config := googleConfig.Google
 	if err := validate(config); err != nil {

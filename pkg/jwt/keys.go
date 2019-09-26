@@ -83,7 +83,7 @@ func (s *singleKeyStore) Key(id string) interface{} {
 	if id == s.keyID {
 		return s.key
 	}
-	log.Errorf("not found")
+	log.Error("not found")
 	return nil
 }
 

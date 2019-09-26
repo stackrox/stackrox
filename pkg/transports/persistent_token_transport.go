@@ -2,11 +2,11 @@ package transports
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -58,7 +58,7 @@ func (t *PersistentTokenTransport) refreshToken() error {
 	}
 
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		return fmt.Errorf(resp.Status)
+		return errors.New(resp.Status)
 	}
 
 	defer utils.IgnoreError(resp.Body.Close)

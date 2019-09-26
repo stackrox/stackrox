@@ -40,7 +40,7 @@ func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storag
 
 	callbackChan := make(chan clusterentities.ContainerMetadata)
 	if oldC := clusterEntities.RegisterContainerMetadataCallbackChannel(callbackChan); oldC != nil {
-		log.Panicf("Multiple container metadata callback channels registered on cluster entities store!")
+		log.Panic("Multiple container metadata callback channels registered on cluster entities store!")
 	}
 	e := &enricher{
 		lru:                  lru,

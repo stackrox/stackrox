@@ -1,7 +1,6 @@
 package quay
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -38,7 +37,7 @@ type Quay struct {
 
 func validate(quay *storage.QuayConfig) error {
 	if quay.GetEndpoint() == "" {
-		return fmt.Errorf("Quay endpoint must be specified")
+		return errors.New("Quay endpoint must be specified")
 	}
 	// Note that the oauth token could be empty because there are public images
 	return nil
@@ -73,7 +72,7 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
 	quayConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Quay)
 	if !ok {
-		return nil, fmt.Errorf("Quay config must be specified")
+		return nil, errors.New("Quay config must be specified")
 	}
 	return NewRegistryFromConfig(quayConfig.Quay, integration)
 }

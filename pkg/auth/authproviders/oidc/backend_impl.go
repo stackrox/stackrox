@@ -204,7 +204,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) string {
 	nonce, err := p.noncePool.IssueNonce()
 	if err != nil {
-		log.Errorf("UNEXPECTED: could not issue nonce")
+		log.Error("UNEXPECTED: could not issue nonce")
 		return ""
 	}
 

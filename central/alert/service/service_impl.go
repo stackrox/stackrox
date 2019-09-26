@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/processwhitelist"
@@ -291,7 +292,7 @@ func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertReques
 // DeleteAlerts is a maintenance function that deletes alerts from the store
 func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlertsRequest) (*v1.DeleteAlertsResponse, error) {
 	if request.GetQuery() == nil {
-		return nil, fmt.Errorf("a scoping query is required")
+		return nil, errors.New("a scoping query is required")
 	}
 
 	query, err := search.ParseRawQueryOrEmpty(request.GetQuery().GetQuery())

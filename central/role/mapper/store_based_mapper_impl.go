@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
@@ -68,7 +67,7 @@ func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*st
 		roleNameSet.Add(group.GetRoleName())
 	}
 	if roleNameSet.Cardinality() == 0 {
-		return nil, fmt.Errorf("no roles can be found for user")
+		return nil, errors.New("no roles can be found for user")
 	}
 	roleNamesSlice := roleNameSet.AsSlice()
 

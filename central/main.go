@@ -331,7 +331,7 @@ func startMainServer(restartingFlag *concurrency.Flag) {
 func watchdog(signal *concurrency.Signal, timeout time.Duration) {
 	if !concurrency.WaitWithTimeout(signal, timeout) {
 		log.Errorf("API server failed to start within %v!", timeout)
-		log.Errorf("This usually means something is *very* wrong. Terminating ...")
+		log.Error("This usually means something is *very* wrong. Terminating ...")
 		if err := syscall.Kill(syscall.Getpid(), syscall.SIGABRT); err != nil {
 			panic(err)
 		}
@@ -462,7 +462,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 		}
 		time.Sleep(5 * time.Second)
 	}
-	log.Debugf("All dynamic integrations registered, exiting")
+	log.Debug("All dynamic integrations registered, exiting")
 }
 
 func uiRoute(uiHandler http.Handler) routes.CustomRoute {
@@ -606,9 +606,9 @@ func waitForTerminationSignal() {
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
 	reprocessor.Singleton().Stop()
-	log.Infof("Stopped reprocessor loop")
+	log.Info("Stopped reprocessor loop")
 	pruning.Singleton().Stop()
-	log.Infof("Stopped garbage collector")
+	log.Info("Stopped garbage collector")
 	globaldb.Close()
-	log.Infof("Central terminated")
+	log.Info("Central terminated")
 }

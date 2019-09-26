@@ -30,6 +30,7 @@ var (
 	// checking returned errors.
 	whitelist = map[string]set.FrozenStringSet{
 		"fmt": set.NewFrozenStringSet(
+			"Print",
 			"Println",
 			"Printf",
 			"Fprint",

@@ -36,7 +36,7 @@ func CheckConfirmation(c *cobra.Command) error {
 	if f {
 		return nil
 	}
-	fmt.Printf("Are you sure? [y/N] ")
+	fmt.Print("Are you sure? [y/N] ")
 	resp, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/secret/datastore"
@@ -110,7 +111,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 func (s *pipelineImpl) validateInput(secret *storage.Secret) error {
 	// validate input.
 	if secret == nil {
-		return fmt.Errorf("secret must not be empty")
+		return errors.New("secret must not be empty")
 	}
 	return nil
 }

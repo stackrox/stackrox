@@ -171,7 +171,7 @@ func getContainers(c *client.Client) ([]internalTypes.ContainerJSON, error) {
 		}
 		containers = append(containers, *containerJSON)
 	}
-	log.Infof("Successfully listed all containers")
+	log.Info("Successfully listed all containers")
 	return containers, nil
 }
 
@@ -228,7 +228,7 @@ func getImages(c *client.Client) ([]internalTypes.ImageWrap, error) {
 		}
 		images = append(images, internalTypes.ImageWrap{Image: *image, History: histories})
 	}
-	log.Infof("Successfully collected all images")
+	log.Info("Successfully collected all images")
 	return images, nil
 }
 

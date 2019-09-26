@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"io/ioutil"
 	"math/big"
 	"time"
@@ -95,7 +94,7 @@ func loadCACertDER() ([]byte, error) {
 	}
 	decoded, _ := pem.Decode(b)
 	if decoded == nil {
-		return nil, fmt.Errorf("invalid PEM")
+		return nil, errors.New("invalid PEM")
 	}
 	return decoded.Bytes, nil
 }

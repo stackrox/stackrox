@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"math"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -168,7 +168,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // DeleteImages deletes images based on query
 func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImagesRequest) (*v1.DeleteImagesResponse, error) {
 	if request.GetQuery() == nil {
-		return nil, fmt.Errorf("a scoping query is required")
+		return nil, errors.New("a scoping query is required")
 	}
 
 	query, err := search.ParseRawQueryOrEmpty(request.GetQuery().GetQuery())

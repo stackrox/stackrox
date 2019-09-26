@@ -71,7 +71,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 			log.Errorf("Failed to close stream cleanly: %v", err)
 		}
 	}()
-	log.Infof("Established connection to Central.")
+	log.Info("Established connection to Central.")
 
 	centralReachable.Set(true)
 	defer centralReachable.Set(false)
@@ -80,12 +80,12 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	////////////////////////////////////////////
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
 	s.sender.Start(stream, s.Stop, s.receiver.Stop)
-	log.Infof("Communication with central started.")
+	log.Info("Communication with central started.")
 
 	// Wait for stop.
 	/////////////////
 	_ = s.stopC.Wait()
-	log.Infof("Communication with central ended.")
+	log.Info("Communication with central ended.")
 }
 
 func runAll(err error, fs ...func(error)) {

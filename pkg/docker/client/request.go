@@ -82,11 +82,11 @@ func (cli *Client) doRequest(ctx context.Context, req *http.Request) (serverResp
 	resp, err := ctxhttp.Do(ctx, cli.client, req)
 	if err != nil {
 		if cli.scheme != "https" && strings.Contains(err.Error(), "malformed HTTP response") {
-			return serverResp, errors.Wrapf(err, "Are you trying to connect to a TLS-enabled daemon without TLS?")
+			return serverResp, errors.Wrap(err, "Are you trying to connect to a TLS-enabled daemon without TLS?")
 		}
 
 		if cli.scheme == "https" && strings.Contains(err.Error(), "bad certificate") {
-			return serverResp, errors.Wrapf(err, "The server probably has client authentication (--tlsverify) enabled. Please check your TLS client certification settings")
+			return serverResp, errors.Wrap(err, "The server probably has client authentication (--tlsverify) enabled. Please check your TLS client certification settings")
 		}
 
 		// Don't decorate context sentinel errors; users may be comparing to
@@ -162,7 +162,7 @@ func (cli *Client) checkResponseErr(serverResp serverResponse) error {
 	if (cli.version == "" || versions.GreaterThan(cli.version, "1.23")) && ct == "application/json" {
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(body, &errorResponse); err != nil {
-			return errors.Wrapf(err, "error reading JSON")
+			return errors.Wrap(err, "error reading JSON")
 		}
 		errorMessage = errorResponse.Message
 	} else {

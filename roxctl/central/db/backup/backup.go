@@ -140,7 +140,7 @@ func getBackup(timeout time.Duration, userProvidedOutput string) error {
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusUnauthorized, http.StatusForbidden:
-		return fmt.Errorf("Invalid credentials. Please add/fix your credentials")
+		return errors.New("Invalid credentials. Please add/fix your credentials")
 	default:
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {

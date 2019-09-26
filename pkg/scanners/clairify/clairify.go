@@ -1,7 +1,6 @@
 package clairify
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -50,7 +49,7 @@ type clairify struct {
 func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistries registries.Set) (*clairify, error) {
 	clairifyConfig, ok := protoImageIntegration.IntegrationConfig.(*storage.ImageIntegration_Clairify)
 	if !ok {
-		return nil, fmt.Errorf("Clairify configuration required")
+		return nil, errors.New("Clairify configuration required")
 	}
 	conf := clairifyConfig.Clairify
 	if err := validateConfig(conf); err != nil {
@@ -100,7 +99,7 @@ func (c *clairify) Test() error {
 
 func validateConfig(c *storage.ClairifyConfig) error {
 	if c.GetEndpoint() == "" {
-		return fmt.Errorf("endpoint parameter must be defined for Clairify")
+		return errors.New("endpoint parameter must be defined for Clairify")
 	}
 	return nil
 }

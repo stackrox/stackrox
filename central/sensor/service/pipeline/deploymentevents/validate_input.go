@@ -1,7 +1,7 @@
 package deploymentevents
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -15,7 +15,7 @@ type validateInputImpl struct{}
 func (s *validateInputImpl) do(deployment *storage.Deployment) error {
 	// validate input.
 	if deployment == nil {
-		return fmt.Errorf("deployment must not be empty")
+		return errors.New("deployment must not be empty")
 	}
 	return nil
 }

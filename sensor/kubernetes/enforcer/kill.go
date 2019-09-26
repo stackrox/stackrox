@@ -1,8 +1,7 @@
 package enforcer
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/pod"
@@ -12,7 +11,7 @@ func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) (err error) 
 	// Fetch the container info, fail if none present as we can only kill containers.
 	containerInfo := enforcement.GetContainerInstance()
 	if containerInfo == nil {
-		return fmt.Errorf("unable to apply constraint to non-deployment")
+		return errors.New("unable to apply constraint to non-deployment")
 	}
 
 	// Try to kill the pod containing the container instance.

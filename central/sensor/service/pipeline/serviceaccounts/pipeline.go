@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -136,7 +137,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 func (s *pipelineImpl) validateInput(sa *storage.ServiceAccount) error {
 	// validate input.
 	if sa == nil {
-		return fmt.Errorf("service account must not be empty")
+		return errors.New("service account must not be empty")
 	}
 	return nil
 }

@@ -71,7 +71,7 @@ func (s *threadSafeStream) StartReceiving() {
 		switch msg.Msg.(type) {
 		case *central.MsgToSensor_Enforcement:
 		case *central.MsgToSensor_ScrapeCommand:
-			logger.Infof("Received scrape message from Central")
+			logger.Info("Received scrape message from Central")
 			commandMsg := msg.Msg.(*central.MsgToSensor_ScrapeCommand)
 			switch scrape := commandMsg.ScrapeCommand.Command.(type) {
 			case *central.ScrapeCommand_StartScrape:

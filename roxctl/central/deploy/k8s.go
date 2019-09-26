@@ -3,6 +3,7 @@ package deploy
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,7 +52,7 @@ Output is a zip file printed to stdout.`, shortName, longName),
 			categoryAnnotation: "Enter orchestrator",
 		},
 		RunE: func(*cobra.Command, []string) error {
-			return fmt.Errorf("storage type must be specified")
+			return errors.New("storage type must be specified")
 		},
 	}
 	if !roxctl.InMainImage() {

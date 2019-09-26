@@ -710,7 +710,7 @@ func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx 
 
 func getResultNodesFromAggregationResults(results []*v1.ComplianceAggregation_Result, nodeType resultType, ds datastore.DataStore) ([]*storage.Node, error) {
 	if ds == nil {
-		return nil, errors.Wrapf(errors.New("empty node datastore encountered"), "argument ds is nil")
+		return nil, errors.Wrap(errors.New("empty node datastore encountered"), "argument ds is nil")
 	}
 	var nodes []*storage.Node
 	for _, r := range results {
@@ -740,14 +740,14 @@ const (
 
 func getScopeIDFromAggregationResult(result *v1.ComplianceAggregation_Result, scope v1.ComplianceAggregation_Scope) (string, error) {
 	if result == nil {
-		return "", errors.Errorf("empty aggregation result encountered: compliance aggregation result is nil")
+		return "", errors.New("empty aggregation result encountered: compliance aggregation result is nil")
 	}
 	for _, k := range result.GetAggregationKeys() {
 		if k.Scope == scope {
 			return k.GetId(), nil
 		}
 	}
-	return "", errors.Errorf("bad arguments: scope was not one of the aggregation keys")
+	return "", errors.New("bad arguments: scope was not one of the aggregation keys")
 }
 
 type complianceControlNodeCountResolver struct {

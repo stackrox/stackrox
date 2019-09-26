@@ -35,7 +35,7 @@ type pipelineImpl struct {
 // Reconcile passes through the reconciliation store to all the fragments and allows them to handle their reconciliation
 // This will only happen once per cluster because the pipeline is generated every time the streamer connects
 func (s *pipelineImpl) Reconcile(ctx context.Context, reconciliationStore *reconciliation.StoreMap) error {
-	log.Infof("Received Synced message from Sensor. Determining if there is any reconciliation to be done")
+	log.Info("Received Synced message from Sensor. Determining if there is any reconciliation to be done")
 	errList := errorhelpers.NewErrorList("Reconciling state")
 	for _, fragment := range s.fragments {
 		errList.AddError(fragment.Reconcile(ctx, s.clusterID, reconciliationStore))

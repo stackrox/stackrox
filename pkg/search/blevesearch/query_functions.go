@@ -103,7 +103,7 @@ func newBooleanQuery(category v1.SearchCategory) *query.BooleanQuery {
 
 func newStringQuery(category v1.SearchCategory, field string, value string, queryModifiers ...queryModifier) (query.Query, error) {
 	if len(value) == 0 {
-		return nil, fmt.Errorf("value in search query cannot be empty")
+		return nil, errors.New("value in search query cannot be empty")
 	}
 	if len(queryModifiers) == 0 {
 		return NewMatchPhrasePrefixQuery(field, value), nil

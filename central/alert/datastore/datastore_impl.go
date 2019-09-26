@@ -194,7 +194,7 @@ func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 func (ds *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
 
-	log.Infof("[STARTUP] Determining if alert db/indexer reconciliation is needed")
+	log.Info("[STARTUP] Determining if alert db/indexer reconciliation is needed")
 	indexerTxNum := ds.indexer.GetTxnCount()
 
 	dbTxNum, err := ds.storage.GetTxnCount()
@@ -203,7 +203,7 @@ func (ds *datastoreImpl) buildIndex() error {
 	}
 
 	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
-		log.Infof("[STARTUP] Reconciliation for alerts is not needed")
+		log.Info("[STARTUP] Reconciliation for alerts is not needed")
 		return nil
 	}
 

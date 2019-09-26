@@ -149,7 +149,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	alertRetention := config.GetAlertRetention()
 	if alertRetention == nil {
-		log.Infof("[Alert pruning] Alert pruning has been disabled.")
+		log.Info("[Alert pruning] Alert pruning has been disabled.")
 		return
 	}
 

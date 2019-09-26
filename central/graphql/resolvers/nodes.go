@@ -244,7 +244,7 @@ func (resolver *nodeResolver) Controls(ctx context.Context, args rawQuery) ([]*c
 
 func getComplianceControlsFromAggregationResults(results []*v1.ComplianceAggregation_Result, controlType resultType, cs complianceStandards.Repository) ([]*v1.ComplianceControl, error) {
 	if cs == nil {
-		return nil, errors.Errorf("empty compliance standards store encountered: argument cs is nil")
+		return nil, errors.New("empty compliance standards store encountered: argument cs is nil")
 	}
 	var controls []*v1.ComplianceControl
 	for _, r := range results {

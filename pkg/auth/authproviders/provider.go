@@ -1,7 +1,7 @@
 package authproviders
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -50,10 +50,10 @@ func applyOptions(provider *providerImpl, options ...ProviderOption) error {
 // Input provider must be locked when run.
 func validateProvider(provider *providerImpl) error {
 	if provider.storedInfo.Id == "" {
-		return fmt.Errorf("auth providers must have an id")
+		return errors.New("auth providers must have an id")
 	}
 	if provider.storedInfo.Name == "" {
-		return fmt.Errorf("auth providers must have a name")
+		return errors.New("auth providers must have a name")
 	}
 	return nil
 }

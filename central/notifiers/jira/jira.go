@@ -142,7 +142,7 @@ func validate(jira *storage.Jira) error {
 func newJira(notifier *storage.Notifier) (*jira, error) {
 	conf := notifier.GetJira()
 	if conf == nil {
-		return nil, fmt.Errorf("Jira configuration required")
+		return nil, errors.New("Jira configuration required")
 	}
 	if err := validate(conf); err != nil {
 		return nil, err

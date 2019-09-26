@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -68,7 +68,7 @@ func (suite *RbacServiceTestSuite) TestGetRolesWithStoreRoleNotExists() {
 func (suite *RbacServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 	secretID := "id1"
 
-	expectedErr := fmt.Errorf("failure")
+	expectedErr := errors.New("failure")
 	suite.mockRoleStore.EXPECT().GetRole(gomock.Any(), secretID).Return((*storage.K8SRole)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetRole((context.Context)(nil), &v1.ResourceByID{Id: secretID})
@@ -89,7 +89,7 @@ func (suite *RbacServiceTestSuite) TestSearchRole() {
 
 // Test that when searching fails, that error is returned.
 func (suite *RbacServiceTestSuite) TestSearchRoleFailure() {
-	expectedError := fmt.Errorf("failure")
+	expectedError := errors.New("failure")
 
 	suite.mockRoleStore.EXPECT().SearchRawRoles(gomock.Any(), gomock.Any()).Return(([]*storage.K8SRole)(nil), expectedError)
 
@@ -128,7 +128,7 @@ func (suite *RbacServiceTestSuite) TestGetRoleBindingsNotExists() {
 func (suite *RbacServiceTestSuite) TestGetRoleBindingFailure() {
 	bindingID := "id1"
 
-	expectedErr := fmt.Errorf("failure")
+	expectedErr := errors.New("failure")
 	suite.mockBindingsStore.EXPECT().GetRoleBinding(gomock.Any(), bindingID).Return((*storage.K8SRoleBinding)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetRoleBinding((context.Context)(nil), &v1.ResourceByID{Id: bindingID})
@@ -149,7 +149,7 @@ func (suite *RbacServiceTestSuite) TestSearchRoleBinding() {
 
 // Test that when searching fails, that error is returned.
 func (suite *RbacServiceTestSuite) TestSearchRoleBindingFailure() {
-	expectedError := fmt.Errorf("failure")
+	expectedError := errors.New("failure")
 
 	suite.mockBindingsStore.EXPECT().SearchRawRoleBindings(gomock.Any(), gomock.Any()).Return(([]*storage.K8SRoleBinding)(nil), expectedError)
 

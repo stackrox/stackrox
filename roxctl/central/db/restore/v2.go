@@ -2,7 +2,6 @@ package restore
 
 import (
 	"archive/zip"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -49,7 +48,7 @@ func V2Command() *cobra.Command {
 				if len(args) == 0 {
 					return c.Usage()
 				}
-				return fmt.Errorf("file to restore from must be specified")
+				return errors.New("file to restore from must be specified")
 			}
 			return restore(file, flags.Timeout(c), func(file *os.File, deadline time.Time) error {
 				return restoreV2(c, file, deadline)

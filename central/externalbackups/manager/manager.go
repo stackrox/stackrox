@@ -130,7 +130,7 @@ func (m *managerImpl) Backup(ctx context.Context, id string) error {
 	}
 
 	if m.inProgress.TestAndSet(true) {
-		return fmt.Errorf("backup already in progress")
+		return errors.New("backup already in progress")
 	}
 
 	defer m.inProgress.Set(false)

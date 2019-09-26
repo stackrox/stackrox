@@ -44,7 +44,7 @@ func (f *fakeScanner) Type() string {
 
 func TestSetOrdering(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := fmt.Fprintf(w, "{}")
+		_, err := fmt.Fprint(w, "{}")
 		assert.NoError(t, err)
 	}))
 	defer server.Close()

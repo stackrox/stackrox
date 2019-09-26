@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -118,7 +119,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 func (s *pipelineImpl) validateInput(role *storage.K8SRole) error {
 	// validate input.
 	if role == nil {
-		return fmt.Errorf("role must not be empty")
+		return errors.New("role must not be empty")
 	}
 	return nil
 }

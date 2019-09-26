@@ -9,7 +9,7 @@ func RetryableUpdate(db *badger.DB, fn func(tx *badger.Txn) error) error {
 		if err = db.Update(fn); err != badger.ErrConflict {
 			return err
 		}
-		log.Infof("Trying to run update again after conflict")
+		log.Info("Trying to run update again after conflict")
 	}
 	return err
 }

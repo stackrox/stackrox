@@ -1,9 +1,9 @@
 package retry
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,7 +24,7 @@ func (suite *RetryTestSuite) TestWithRetryable() {
 	suite.NoError(WithRetry(func() error {
 		runCount = runCount + 1
 		if runCount < 2 {
-			return MakeRetryable(fmt.Errorf("some error"))
+			return MakeRetryable(errors.New("some error"))
 		}
 		return nil
 	},
@@ -51,7 +51,7 @@ func (suite *RetryTestSuite) TestWithoutRetryable() {
 	// We should not retry, since the error is not wrapped with MakeRetryable.
 	suite.Error(WithRetry(func() error {
 		runCount = runCount + 1
-		return fmt.Errorf("some error")
+		return errors.New("some error")
 	},
 		Tries(3),
 		OnlyRetryableErrors(),
@@ -77,7 +77,7 @@ func (suite *RetryTestSuite) TestAlwaysRetryable() {
 	suite.NoError(WithRetry(func() error {
 		runCount = runCount + 1
 		if runCount < 2 {
-			return fmt.Errorf("some error")
+			return errors.New("some error")
 		}
 		return nil
 	},
@@ -103,7 +103,7 @@ func (suite *RetryTestSuite) TestLimitsTries() {
 	// We should retry the maximum number of times.
 	suite.Error(WithRetry(func() error {
 		runCount = runCount + 1
-		return fmt.Errorf("some error")
+		return errors.New("some error")
 	},
 		Tries(3),
 		OnFailedAttempts(func(e error) {
@@ -128,7 +128,7 @@ func (suite *RetryTestSuite) TestAlwaysRetryableNoTries() {
 	suite.Error(WithRetry(func() error {
 		runCount = runCount + 1
 		if runCount < 2 {
-			return fmt.Errorf("some error")
+			return errors.New("some error")
 		}
 		return nil
 	},

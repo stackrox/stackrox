@@ -74,7 +74,7 @@ func buildSHAToIndexMap(image *storage.Image) map[string]int32 {
 		for i, l := range image.GetMetadata().GetV1().GetLayers() {
 			if !l.Empty {
 				if layerIdx >= len(image.Metadata.LayerShas) {
-					log.Errorf("More layers than expected when correlating V2 instructions to V1 layers")
+					log.Error("More layers than expected when correlating V2 instructions to V1 layers")
 					break
 				}
 				sha := image.GetMetadata().LayerShas[layerIdx]
@@ -86,7 +86,7 @@ func buildSHAToIndexMap(image *storage.Image) map[string]int32 {
 		// If it's V1 then we should have a 1:1 mapping of layer SHAs to the layerOrdering slice
 		for i := range image.GetMetadata().GetV1().GetLayers() {
 			if i >= len(image.Metadata.LayerShas) {
-				log.Errorf("More layers than expected when correlating V1 instructions to V1 layers")
+				log.Error("More layers than expected when correlating V1 instructions to V1 layers")
 				break
 			}
 			layerSHAToIndex[image.Metadata.LayerShas[i]] = int32(i)

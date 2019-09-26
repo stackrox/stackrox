@@ -70,7 +70,7 @@ func (s *policyValidator) validateDescription(policy *storage.Policy) error {
 
 func (s *policyValidator) validateCompilableForLifecycle(policy *storage.Policy) error {
 	if len(policy.GetLifecycleStages()) == 0 {
-		return fmt.Errorf("a policy must apply to at least one lifecycle stage")
+		return errors.New("a policy must apply to at least one lifecycle stage")
 	}
 
 	errorList := errorhelpers.NewErrorList("error validating lifecycle stage")
@@ -185,7 +185,7 @@ func (s *policyValidator) validateWhitelist(policy *storage.Policy, whitelist *s
 			return errors.New("whitelisting an image is only valid during the BUILD lifecycle")
 		}
 		if whitelist.GetImage().GetName() == "" {
-			return fmt.Errorf("image whitelist must have nonempty name")
+			return errors.New("image whitelist must have nonempty name")
 		}
 	}
 	return nil
@@ -228,7 +228,7 @@ func (s *policyValidator) compilesForDeployTime(policy *storage.Policy) error {
 		return errors.Wrap(err, "policy configuration is invalid for deploy time")
 	}
 	if m == nil {
-		return fmt.Errorf("deploy time policy contains no constraints")
+		return errors.New("deploy time policy contains no constraints")
 	}
 	if policy.GetFields().GetProcessPolicy() != nil {
 		return errors.New("deploy time policy cannot contain runtime fields")

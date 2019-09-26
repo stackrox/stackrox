@@ -239,7 +239,7 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 			return nil
 		}
 
-		log.Infof("Found leftover upgrader deployment. Deleting ...")
+		log.Info("Found leftover upgrader deployment. Deleting ...")
 		err := deploymentsClient.Delete(upgraderDeployment.GetName(), &metav1.DeleteOptions{
 			Preconditions:     &metav1.Preconditions{UID: &upgraderDeployment.UID},
 			PropagationPolicy: &pkgKubernetes.DeletePolicyBackground,
@@ -250,7 +250,7 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		if err := p.waitForDeploymentDeletion(upgraderDeployment.GetName(), upgraderDeployment.GetUID()); err != nil {
 			return errors.Wrap(err, "deleting old upgrader deployment")
 		}
-		log.Infof("Deleted leftover upgrader deployment")
+		log.Info("Deleted leftover upgrader deployment")
 	}
 
 	serviceAccountName := p.chooseServiceAccount()

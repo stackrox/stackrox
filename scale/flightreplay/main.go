@@ -44,7 +44,7 @@ func main() {
 	stream, err := client.Communicate(context.Background())
 	utils.Must(err)
 
-	log.Infof("Connected to Central")
+	log.Info("Connected to Central")
 
 	_, err = stream.Header()
 	utils.Must(err)
@@ -64,7 +64,7 @@ func main() {
 	err = db.Load(f, 10)
 	utils.Must(err)
 
-	log.Infof("Loaded replay DB")
+	log.Info("Loaded replay DB")
 
 	var records []record
 	err = db.View(func(tx *badger.Txn) error {

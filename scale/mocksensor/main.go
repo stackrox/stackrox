@@ -75,7 +75,7 @@ func main() {
 	flag.Parse()
 
 	if *maxNetworkFlows > int(math.Pow(float64(*maxDeployments), 2)) {
-		logger.Fatalf("Unable to generate specified flows. Increase maxDeployments or decrease maxNetworkFlows")
+		logger.Fatal("Unable to generate specified flows. Increase maxDeployments or decrease maxNetworkFlows")
 	}
 
 	conn, err := clientconn.AuthenticatedGRPCConnection(*centralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
@@ -134,7 +134,7 @@ func main() {
 	admissionControllerSignal.Wait()
 	deploymentUpdateSignal.Wait()
 
-	logger.Infof("All sending done. The mock sensor will now just sleep forever.")
+	logger.Info("All sending done. The mock sensor will now just sleep forever.")
 	time.Sleep(365 * 24 * time.Hour)
 }
 

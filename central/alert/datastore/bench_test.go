@@ -44,7 +44,7 @@ func benchmarkLoad(b *testing.B, s store.Store) {
 		require.NoError(b, s.AddAlert(a))
 	}
 
-	log.Infof("Successfully loaded the DB")
+	log.Info("Successfully loaded the DB")
 
 	b.ResetTimer()
 	// Load the store with 15k alerts and then try to build index

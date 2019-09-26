@@ -2,10 +2,10 @@ package mapper
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	userMocks "github.com/stackrox/rox/central/user/datastore/mocks"
@@ -202,7 +202,7 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(fmt.Errorf("error that shouldnt matter"))
+	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(errors.New("error that shouldnt matter"))
 
 	// Expect the user to have a group mapping for a role.
 	expectedGroup := &storage.Group{
@@ -267,7 +267,7 @@ func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 		EXPECT().
 		Walk(s.requestContext, fakeAuthProvider, expectedAttributes).
 		Times(1).
-		Return([]*storage.Group{}, fmt.Errorf("error should be returned"))
+		Return([]*storage.Group{}, errors.New("error should be returned"))
 
 	// Call the mapper for a user.
 	userDescriptor := &permissions.UserDescriptor{
@@ -317,7 +317,7 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 		EXPECT().
 		GetRole(s.requestContext, "TeamAwesome").
 		Times(1).
-		Return(nil, fmt.Errorf("error should be returned"))
+		Return(nil, errors.New("error should be returned"))
 
 	// Call the mapper for a user.
 	userDescriptor := &permissions.UserDescriptor{

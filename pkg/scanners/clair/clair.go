@@ -53,7 +53,7 @@ func validate(clair *storage.ClairConfig) error {
 func newScanner(integration *storage.ImageIntegration) (*clair, error) {
 	clairConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Clair)
 	if !ok {
-		return nil, fmt.Errorf("Clair configuration required")
+		return nil, errors.New("Clair configuration required")
 	}
 	config := clairConfig.Clair
 	if err := validate(config); err != nil {

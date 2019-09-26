@@ -2,8 +2,9 @@ package dtr
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func parseDTRImageScans(data []byte) ([]*tagScanSummary, error) {
@@ -13,13 +14,13 @@ func parseDTRImageScans(data []byte) ([]*tagScanSummary, error) {
 }
 
 func parseDTRImageScanErrors(data []byte) (scanErrors, error) {
-	var errors scanErrors
+	var errs scanErrors
 	// If we fail to unmarshal, then just return the error string in its normal format
 	// e.g. 404 Not Found
-	if err := json.Unmarshal(data, &errors); err != nil {
-		return errors, fmt.Errorf(string(data))
+	if err := json.Unmarshal(data, &errs); err != nil {
+		return errs, errors.New(string(data))
 	}
-	return errors, nil
+	return errs, nil
 }
 
 // tagScanSummary implements the results of scan from DTR
