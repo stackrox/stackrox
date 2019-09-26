@@ -14,7 +14,7 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 standardID,
 			Scope:              framework.ClusterKind,
-			DataDependencies:   []string{"CISBenchmarks", "HostScraped"},
+			DataDependencies:   []string{"CISBenchmarks"},
 			InterpretationText: interpretationText,
 		},
 		clusterisCompliant)
