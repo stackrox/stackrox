@@ -1,10 +1,12 @@
 package testutils
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -44,7 +46,15 @@ func GRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
 	endpoint := RoxAPIEndpoint(t)
 	host, _, _, err := netutil.ParseEndpoint(endpoint)
 	require.NoError(t, err)
-	conn, err := clientconn.GRPCConnectionWithBasicAuth(endpoint, host, RoxUsername(t), RoxPassword(t))
+
+	opts := clientconn.Options{
+		TLS: clientconn.TLSConfigOptions{
+			InsecureSkipVerify: true,
+			ServerName:         host,
+		},
+	}
+	opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
+	conn, err := clientconn.GRPCConnection(context.Background(), mtls.CentralSubject, endpoint, opts)
 	require.NoError(t, err)
 	return conn
 }

@@ -19,9 +19,11 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
+	downgradingServer "github.com/stackrox/rox/pkg/grpc/http1downgrade/server"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -90,14 +92,14 @@ func (c *endpointServersConfig) Instantiate() (net.Addr, []serverAndListener, er
 	tlsConf := c.tlsConf
 	if tlsConf != nil {
 		if c.grpcServer != nil {
-			tlsConf = ApplyPureGRPCALPNConfig(tlsConf)
+			tlsConf = alpn.ApplyPureGRPCALPNConfig(tlsConf)
 		}
 		lis = tls.NewListener(lis, tlsConf)
 
 		if c.grpcServer != nil && c.httpHandler != nil {
 			protoMap := map[string]*net.Listener{
-				PureGRPCALPNString: &grpcLis,
-				"":                 &httpLis,
+				alpn.PureGRPCALPNString: &grpcLis,
+				"":                      &httpLis,
 			}
 			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{})
 		}
@@ -115,7 +117,7 @@ func (c *endpointServersConfig) Instantiate() (net.Addr, []serverAndListener, er
 	if httpLis != nil {
 		httpHandler := c.httpHandler
 		if c.grpcServer != nil {
-			httpHandler = wireOrJSONMuxer(c.grpcServer, httpHandler)
+			httpHandler = downgradingServer.CreateDowngradingHandler(c.grpcServer, c.httpHandler)
 		}
 
 		httpSrv := &http.Server{
@@ -416,16 +418,6 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	if err := <-errC; err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-}
-
-func wireOrJSONMuxer(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
-			grpcServer.ServeHTTP(w, r)
-		} else {
-			httpHandler.ServeHTTP(w, r)
-		}
-	})
 }
 
 func serveBlocking(srvAndLis serverAndListener, errC chan<- error) {

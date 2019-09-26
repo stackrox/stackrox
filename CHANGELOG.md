@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [31.0]
+### Changed
+- `roxctl` can now talk to Central instances exposed behind a non-gRPC-capable proxy (e.g., AWS ELB/ALB). To support
+  this, requests go through an ephemeral client-side reverse proxy. If you observe any issues with `roxctl` that you
+  suspect might be due to this change, pass the `--direct-grpc` flag to resort to the old connection behavior.
+
 ## [30.0]
 ### Changed
 - `TriggerRun(/v1/complianceManagement/runs)` endpoint is removed. All clients should use `TriggerRuns(/v1/compliancemanagement/runs)` to start a compliance run.

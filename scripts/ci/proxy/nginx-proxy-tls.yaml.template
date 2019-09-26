@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-proxy-tls-multiplexed
+  name: ${name}
   namespace: proxies
   labels:
-    app: nginx-proxy-tls-multiplexed
+    app: ${name}
     stackrox-proxies/central: "true"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nginx-proxy-tls-multiplexed
+      app: ${name}
   template:
     metadata:
       namespace: proxies
       labels:
-        app: nginx-proxy-tls-multiplexed
+        app: ${name}
         stackrox-proxies/central: "true"
     spec:
       containers:
@@ -31,20 +31,20 @@ spec:
       volumes:
         - name: config-volume
           configMap:
-            name: nginx-proxy-tls-multiplexed-conf
+            name: ${name}-conf
         - name: certs-volume
           secret:
-            secretName: nginx-proxy-tls-multiplexed-certs
+            secretName: nginx-proxy-tls-certs
 ---
 apiVersion: v1
 kind: Service
 metadata:
   namespace: proxies
-  name: nginx-proxy-tls-multiplexed
+  name: ${name}
 spec:
   type: ClusterIP
   selector:
-    app: nginx-proxy-tls-multiplexed
+    app: ${name}
   ports:
     - port: 443
       targetPort: 8443

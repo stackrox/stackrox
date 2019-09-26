@@ -1,6 +1,9 @@
 package common
 
 import (
+	http1DowngradeClient "github.com/stackrox/rox/pkg/grpc/http1downgrade/client"
+	"github.com/stackrox/rox/pkg/mtls"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
@@ -22,8 +25,21 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 		}
 	}
 
-	if token := env.TokenEnv.Setting(); token != "" {
-		return clientconn.GRPCConnectionWithToken(endpoint, serverName, token)
+	opts := clientconn.Options{
+		TLS: clientconn.TLSConfigOptions{
+			ServerName:         serverName,
+			InsecureSkipVerify: true,
+		},
 	}
-	return clientconn.GRPCConnectionWithBasicAuth(endpoint, serverName, basic.DefaultUsername, flags.Password())
+	if !flags.UseDirectGRPC() {
+		opts.DialTLS = http1DowngradeClient.ConnectViaProxy
+	}
+
+	if token := env.TokenEnv.Setting(); token != "" {
+		opts.ConfigureTokenAuth(token)
+	} else {
+		opts.ConfigureBasicAuth(basic.DefaultUsername, flags.Password())
+	}
+
+	return clientconn.GRPCConnection(Context(), mtls.CentralSubject, endpoint, opts)
 }
