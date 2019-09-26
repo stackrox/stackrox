@@ -103,6 +103,7 @@ const hasRelatedEntityFor = entity => {
 };
 
 const entityCountMatchesTableRows = (listEntity, context) => {
+    const contextSelector = `[data-test-id="${context === 'Page' ? 'panel' : 'side-panel'}"]`;
     cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
         .find(selectors.countWidgetValue)
         .invoke('text')
@@ -112,11 +113,8 @@ const entityCountMatchesTableRows = (listEntity, context) => {
                 .find('button')
                 .invoke('attr', 'disabled', false)
                 .click();
-            cy.get(
-                `[data-test-id="${
-                    context === 'Page' ? 'panel' : 'side-panel'
-                }"] [data-test-id="panel-header"]`
-            )
+            cy.get(`${contextSelector} .rt-tr-group`);
+            cy.get(`${contextSelector} [data-test-id="panel-header"]`)
                 .invoke('text')
                 .then(panelHeaderText => {
                     expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(count, 10));
@@ -180,7 +178,7 @@ describe('Config Management Entities', () => {
             hasTabsFor(['deployments']);
         });
 
-        xit('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
             context('Page', () => {
                 renderListAndSidePanel('policies');
                 navigateToSingleEntityPage('policy');
@@ -310,7 +308,7 @@ describe('Config Management Entities', () => {
             ]);
         });
 
-        xit('should have the same number of Nodes in the count widget as in the Nodes table', () => {
+        it('should have the same number of Nodes in the count widget as in the Nodes table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -323,7 +321,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Namespaces in the count widget as in the Namespaces table', () => {
+        it('should have the same number of Namespaces in the count widget as in the Namespaces table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -336,7 +334,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -349,7 +347,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Images in the count widget as in the Images table', () => {
+        it('should have the same number of Images in the count widget as in the Images table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -362,7 +360,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Users & Groups in the count widget as in the Users & Groups table', () => {
+        it('should have the same number of Users & Groups in the count widget as in the Users & Groups table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -375,7 +373,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Service Accounts in the count widget as in the Service Accounts table', () => {
+        it('should have the same number of Service Accounts in the count widget as in the Service Accounts table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -388,7 +386,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Roles in the count widget as in the Roles table', () => {
+        it('should have the same number of Roles in the count widget as in the Roles table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -401,7 +399,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Controls in the count widget as in the Controls table', () => {
+        it('should have the same number of Controls in the count widget as in the Controls table', () => {
             context('Page', () => {
                 renderListAndSidePanel('clusters');
                 navigateToSingleEntityPage('cluster');
@@ -473,7 +471,7 @@ describe('Config Management Entities', () => {
             hasTabsFor(['deployments', 'secrets', 'images']);
         });
 
-        xit('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
             context('Page', () => {
                 renderListAndSidePanel('namespaces');
                 navigateToSingleEntityPage('namespace');
@@ -486,7 +484,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Secrets in the count widget as in the Secrets table', () => {
+        it('should have the same number of Secrets in the count widget as in the Secrets table', () => {
             context('Page', () => {
                 renderListAndSidePanel('namespaces');
                 navigateToSingleEntityPage('namespace');
@@ -499,7 +497,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Images in the count widget as in the Images table', () => {
+        it('should have the same number of Images in the count widget as in the Images table', () => {
             context('Page', () => {
                 renderListAndSidePanel('namespaces');
                 navigateToSingleEntityPage('namespace');
@@ -625,7 +623,7 @@ describe('Config Management Entities', () => {
             clickOnCountWidget('images', 'entityList');
         });
 
-        xit('should have the same number of Images in the count widget as in the Images table', () => {
+        it('should have the same number of Images in the count widget as in the Images table', () => {
             context('Page', () => {
                 renderListAndSidePanel('deployments');
                 navigateToSingleEntityPage('deployment');
@@ -638,7 +636,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Secrets in the count widget as in the Secrets table', () => {
+        it('should have the same number of Secrets in the count widget as in the Secrets table', () => {
             context('Page', () => {
                 renderListAndSidePanel('deployments');
                 navigateToSingleEntityPage('deployment');
@@ -685,7 +683,7 @@ describe('Config Management Entities', () => {
             hasTabsFor(['deployments']);
         });
 
-        xit('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
             context('Page', () => {
                 renderListAndSidePanel('images');
                 navigateToSingleEntityPage('image');
@@ -752,7 +750,7 @@ describe('Config Management Entities', () => {
             clickOnCountWidget('deployments', 'entityList');
         });
 
-        xit('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
             context('Page', () => {
                 renderListAndSidePanel('secrets');
                 navigateToSingleEntityPage('secret');
@@ -794,7 +792,7 @@ describe('Config Management Entities', () => {
             hasTabsFor(['users and groups', 'service accounts']);
         });
 
-        xit('should have the same number of Users & Groups in the count widget as in the Users & Groups table', () => {
+        it('should have the same number of Users & Groups in the count widget as in the Users & Groups table', () => {
             context('Page', () => {
                 renderListAndSidePanel('roles');
                 navigateToSingleEntityPage('role');
@@ -807,7 +805,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Service Accounts in the count widget as in the Service Accounts table', () => {
+        it('should have the same number of Service Accounts in the count widget as in the Service Accounts table', () => {
             context('Page', () => {
                 renderListAndSidePanel('roles');
                 navigateToSingleEntityPage('role');
@@ -853,7 +851,7 @@ describe('Config Management Entities', () => {
             clickOnCountWidget('roles', 'entityList');
         });
 
-        xit('should have the same number of Roles in the count widget as in the Roles table', () => {
+        it('should have the same number of Roles in the count widget as in the Roles table', () => {
             context('Page', () => {
                 renderListAndSidePanel('subjects');
                 navigateToSingleEntityPage('subject');
@@ -904,7 +902,7 @@ describe('Config Management Entities', () => {
             hasTabsFor(['deployments', 'roles']);
         });
 
-        xit('should have the same number of Deployments in the count widget as in the Deployments table', () => {
+        it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
             context('Page', () => {
                 renderListAndSidePanel('serviceAccounts');
                 navigateToSingleEntityPage('serviceAccount');
@@ -917,7 +915,7 @@ describe('Config Management Entities', () => {
             });
         });
 
-        xit('should have the same number of Roles in the count widget as in the Roles table', () => {
+        it('should have the same number of Roles in the count widget as in the Roles table', () => {
             context('Page', () => {
                 renderListAndSidePanel('serviceAccounts');
                 navigateToSingleEntityPage('serviceAccount');
