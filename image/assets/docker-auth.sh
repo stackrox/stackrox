@@ -98,7 +98,8 @@ function mkauth() {
 	# Lots of registries have different auth mechanisms, but we know how to auth against stackrox.io, which is the most
 	# common case so verify it
 	if [[ "$registry_url" == "https://stackrox.io" || "$registry_url" == "https://collector.stackrox.io" ]]; then
-		STATUS_CODE=$(curl -o /dev/null -s "https://auth.stackrox.io/token/?scope=repository%3Amain%3Apull&service=auth.stackrox.io" -w "%{http_code}" -K - <<< "-u ${username}:${password}")
+		password_escaped="$(echo "$password" | sed 's/\(["\\]\)/\\\1/g')" # Escape double-quotes and backslash characters.
+		STATUS_CODE=$(curl -o /dev/null -s "https://auth.stackrox.io/token/?scope=repository%3Amain%3Apull&service=auth.stackrox.io" -w "%{http_code}" -K - <<< "-u \"${username}:${password_escaped}\"")
 		if [[ "$STATUS_CODE" != 200 ]]; then
 			echo >&2  "Unable authenticate against "$registry_url": HTTP Status $STATUS_CODE"
 			return 1
@@ -172,10 +173,10 @@ if [[ -f ~/.docker/config.json || ! -x "$(command -v jq)" ]]; then
 fi
 
 if [[ -z "$username" ]]; then
-	read -p "Enter username for docker registry at ${registry_url}: " username
+	read -r -p "Enter username for docker registry at ${registry_url}: " username
 fi
 [[ -n "$username" ]] || { echo >&2 "Aborted." ; exit 1 ; }
-read -s -p "Enter password for ${username} @ ${registry_url}: " password
+read -r -s -p "Enter password for ${username} @ ${registry_url}: " password
 [[ -n "$password" ]] || { echo >&2 "Aborted." ; exit 1 ; }
 
 print_auth "$(mkauth "$username" "$password")"
