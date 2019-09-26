@@ -2,6 +2,7 @@ package testrailupdater
 
 import com.codepine.api.testrail.TestRail
 import com.codepine.api.testrail.model.Case
+import com.codepine.api.testrail.model.Milestone
 import com.codepine.api.testrail.model.Result
 import com.codepine.api.testrail.model.Run
 import com.codepine.api.testrail.model.Section
@@ -26,6 +27,9 @@ class TestRailManager {
     private static caseFields
     private static resultFields
     private static List<Status> statuses
+    private static List<Milestone> milestones
+    private static milestoneName = IMAGE_TAG.find("(\\d{1,3}\\.){3}\\d{1,3}")
+    private static milestoneId
 
     private static run
     private static int projectId
@@ -58,6 +62,8 @@ class TestRailManager {
 
                 statuses = testRail.statuses().list().execute()
 
+                milestones = testRail.milestones().list(projectId).execute()
+
                 println "Setting PROJECT_ID=${projectId}, SUITE_ID=${suiteId}"
 
                 setup = true
@@ -85,6 +91,9 @@ class TestRailManager {
             }
         }
 
+        if (milestoneName != null) {
+            milestoneId = createMilestoneIfNotExists()
+        }
         createNewTestRun(false, allCaseIds)
 
         for (String spec : results.keySet()) {
@@ -150,12 +159,40 @@ class TestRailManager {
         return testCase
     }
 
+    static int createMilestoneIfNotExists() {
+        Milestone milestone = milestones.find { it.name == milestoneName }
+        if (milestone == null) {
+            println "milestone \"${milestoneName}\" not found in TestRail. Creating..."
+            def startTime = System.currentTimeMillis()
+            while (System.currentTimeMillis() - startTime < TESTRAIL_API_TIMEOUT) {
+                try {
+                    milestone = testRail.milestones().add(
+                            projectId,
+                            new Milestone().setName(milestoneName))
+                            .execute()
+                    milestones.add(milestone)
+                    return milestone.id
+                } catch (Exception e) {
+                    println "failed to create milestone: ${e.toString()}"
+                    println "Retrying in 5 seconds..."
+                    sleep 5000
+                }
+            }
+
+            println "API Timeout trying to create milestone. Milestone will not be used"
+        }
+        return milestone?.id
+    }
+
     static Run createNewTestRun(Boolean includeAllTestCases = true, List<Object> caseIds = []) {
         Run newRun = new Run()
                 .setSuiteId(suiteId)
                 .setName(TEST_RUN_NAME)
                 .setIncludeAll(includeAllTestCases)
                 .setCaseIds(caseIds)
+        if (milestoneId != null) {
+            newRun.setMilestoneId(milestoneId)
+        }
 
         def created = false
         def startTime = System.currentTimeMillis()
