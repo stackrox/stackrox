@@ -10,6 +10,7 @@ const renderListAndSidePanel = (entity, entityName = null) => {
         .find(selectors.tableCells)
         .eq(1)
         .click({ force: true });
+    cy.wait(500);
     cy.get(selectors.widgets);
 };
 

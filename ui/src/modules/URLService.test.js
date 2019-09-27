@@ -478,3 +478,24 @@ it('overflows a parent entity', () => {
         pageEntityId: 'clusterId'
     });
 });
+
+it('should properly encode entity ids with special characters', () => {
+    const match = getMatch({
+        context: baseContext
+    });
+
+    let url = URLService.getURL(match);
+    url.push(entityTypes.SUBJECT, "joe@example.com/~#$%^&*()_+|}{:?><-=][';/.,aws");
+    expect(url.urlParams).toEqual({
+        context: useCases.CONFIG_MANAGEMENT,
+        pageEntityType: entityTypes.SUBJECT,
+        pageEntityId:
+            "joe%40example.com%2F~%23%24%25%5E%26*()_%2B%7C%7D%7B%3A%3F%3E%3C-%3D%5D%5B'%3B%2F.%2Caws"
+    });
+
+    url = URLService.getURL(match);
+    url.base(entityTypes.SUBJECT, "joe@example.com/~#$%^&*()_+|}{:?><-=][';/.,aws");
+    expect(url.urlParams.pageEntityId).toEqual(
+        "joe%40example.com%2F~%23%24%25%5E%26*()_%2B%7C%7D%7B%3A%3F%3E%3C-%3D%5D%5B'%3B%2F.%2Caws"
+    );
+});

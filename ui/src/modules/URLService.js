@@ -6,6 +6,7 @@ import { entityParamNames, listParamNames } from 'constants/url';
 import entityTypes from 'constants/entityTypes';
 import merge from 'deepmerge';
 import configMgmtEntityRelationship from 'Containers/ConfigManagement/entityTabRelationships';
+import Raven from 'raven-js';
 
 import {
     nestedPaths,
@@ -21,6 +22,31 @@ export function getTypeKeyFromParamValue(value, listOnly) {
     const entityMatch = Object.entries(urlEntityTypes).find(entry => entry[1] === value);
     const match = listOnly ? listMatch : listMatch || entityMatch;
     return match ? match[0] : null;
+}
+
+function transcodeEntityIds(params, transcode) {
+    const newParams = { ...params };
+    Object.keys(params).forEach(key => {
+        if (key && key.includes('Id')) {
+            const value = params[key];
+            if (value) {
+                try {
+                    newParams[key] = transcode(value);
+                } catch (error) {
+                    Raven.captureException(error);
+                }
+            }
+        }
+    });
+    return newParams;
+}
+
+function encodeEntityIds(params) {
+    return transcodeEntityIds(params, encodeURIComponent);
+}
+
+function decodeEntityIds(params) {
+    return transcodeEntityIds(params, decodeURIComponent);
 }
 
 function isListType(value) {
@@ -106,7 +132,7 @@ function getPath(urlParams) {
 
 function getParams(match, location) {
     if (!match) return {};
-    const newParams = { ...match.params };
+    let newParams = { ...match.params };
 
     // Mapping from url to entity types
     if (newParams.pageEntityListType)
@@ -133,6 +159,8 @@ function getParams(match, location) {
     }
     if (newParams.pageEntityType)
         newParams.pageEntityType = getTypeKeyFromParamValue(newParams.pageEntityType);
+
+    newParams = decodeEntityIds(newParams);
 
     return {
         ...newParams,
@@ -199,7 +227,7 @@ class URL {
     constructor(match, location) {
         const { query, ...urlParams } = getParams(match, location);
         this.q = query;
-        this.urlParams = urlParams;
+        this.urlParams = encodeEntityIds(urlParams);
     }
 
     base(type, id, context) {
@@ -207,7 +235,7 @@ class URL {
         if (id) {
             // Entity path
             params.pageEntityType = type;
-            params.pageEntityId = id;
+            params.pageEntityId = encodeURIComponent(id);
         } else if (type) {
             // List path
             params.pageEntityListType = type;
@@ -252,23 +280,23 @@ class URL {
             }
             if (!isListPath && !urlParams.entityId1) {
                 newParams.entityType1 = val;
-                newParams.entityId1 = val2;
+                newParams.entityId1 = encodeURIComponent(val2);
             } else if (!urlParams.entityType2 && !urlParams.entityListType2) {
                 newParams.entityType2 = val;
-                newParams.entityId2 = val2;
+                newParams.entityId2 = encodeURIComponent(val2);
             } else {
                 newParams = tabs.includes(val)
                     ? {
                           context: urlParams.context,
                           pageEntityType: entityType2,
-                          pageEntityId: urlParams.entityId2,
+                          pageEntityId: encodeURIComponent(urlParams.entityId2),
                           entityListType1: val,
-                          entityId1: val2
+                          entityId1: encodeURIComponent(val2)
                       }
                     : (newParams = {
                           context: urlParams.context,
                           pageEntityType: val,
-                          pageEntityId: val2
+                          pageEntityId: encodeURIComponent(val2)
                       });
                 newQuery = null;
             }
@@ -277,9 +305,9 @@ class URL {
         // Id push: pushing an id value alone
         else if (!isType(val)) {
             if (!urlParams.entityId1) {
-                newParams.entityId1 = val;
+                newParams.entityId1 = encodeURIComponent(val);
             } else if (!urlParams.entityId2) {
-                newParams.entityId2 = val;
+                newParams.entityId2 = encodeURIComponent(val);
             } else {
                 // overflow:
                 throw new Error(`can't push id onto UI ${this.url()}`);
@@ -297,7 +325,7 @@ class URL {
                 ? {
                       context: urlParams.context,
                       pageEntityType: entityType2,
-                      pageEntityId: urlParams.entityId2,
+                      pageEntityId: encodeURIComponent(urlParams.entityId2),
                       entityListType1: val
                   }
                 : {

@@ -92,7 +92,8 @@ const NamespaceScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => 
     const header =
         scopedPermissionsByCluster.length > 1
             ? 'Namespace Permissions across all clusters'
-            : `Namespace Permissions in "${scopedPermissionsByCluster[0].clusterName}" cluster`;
+            : `Namespace Permissions in "${scopedPermissionsByCluster[0] &&
+                  scopedPermissionsByCluster[0].clusterName}" cluster`;
 
     return (
         <Widget header={header} {...rest}>

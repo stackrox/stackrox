@@ -45,7 +45,8 @@ const ClusterScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => {
     const header =
         scopedPermissionsByCluster.length > 1
             ? 'Cluster Permissions across all clusters'
-            : `Cluster Permissions in "${scopedPermissionsByCluster[0].clusterName}" cluster`;
+            : `Cluster Permissions in "${scopedPermissionsByCluster[0] &&
+                  scopedPermissionsByCluster[0].clusterName}" cluster`;
 
     return (
         <Widget header={header} {...rest}>
