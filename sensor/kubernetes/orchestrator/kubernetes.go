@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -11,11 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	coreV1Listers "k8s.io/client-go/listers/core/v1"
 )
 
 const (
@@ -29,8 +33,9 @@ var (
 )
 
 type kubernetesOrchestrator struct {
-	client    *kubernetes.Clientset
-	namespace string
+	client     *kubernetes.Clientset
+	nodeLister coreV1Listers.NodeLister
+	namespace  string
 
 	sensorInstanceID string
 }
@@ -46,8 +51,14 @@ func MustCreate(sensorInstanceID string) orchestrators.Orchestrator {
 
 // New returns a new kubernetes orchestrator client.
 func New(sensorInstanceID string) (orchestrators.Orchestrator, error) {
+	cs := client.MustCreateClientSet()
+	sif := informers.NewSharedInformerFactory(cs, 0)
+	nodeLister := sif.Core().V1().Nodes().Lister()
+	sif.Start(context.Background().Done())
+
 	return &kubernetesOrchestrator{
-		client:           client.MustCreateClientSet(),
+		client:           cs,
+		nodeLister:       nodeLister,
 		namespace:        namespace,
 		sensorInstanceID: sensorInstanceID,
 	}, nil
@@ -206,4 +217,8 @@ func (k *kubernetesOrchestrator) CleanUp(ownedByThisInstance bool) error {
 	}
 
 	return errList.ToError()
+}
+
+func (k *kubernetesOrchestrator) GetNode(nodeName string) (*v1.Node, error) {
+	return k.nodeLister.Get(nodeName)
 }

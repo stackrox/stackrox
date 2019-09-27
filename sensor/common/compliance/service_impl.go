@@ -12,7 +12,8 @@ import (
 
 // BenchmarkResultsService is the struct that manages the benchmark results API
 type serviceImpl struct {
-	output chan *compliance.ComplianceReturn
+	output     chan<- *compliance.ComplianceReturn
+	cmdHandler CommandHandler
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -30,14 +31,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, idcheck.BenchmarkOnly().Authorized(ctx, fullMethodName)
 }
 
-// Output returns the channel where the received messages are output.
-func (s *serviceImpl) Output() <-chan *compliance.ComplianceReturn {
-	return s.output
-}
-
 // PushComplianceReturn takes the compliance results and outputs them to the channel.
 func (s *serviceImpl) PushComplianceReturn(ctx context.Context, request *compliance.ComplianceReturn) (*v1.Empty, error) {
 	// Push a message to the output channel.
 	s.output <- request
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) GetScrapeConfig(ctx context.Context, request *sensor.GetScrapeConfigRequest) (*sensor.ScrapeConfig, error) {
+	return s.cmdHandler.GetScrapeConfig(ctx, request.GetNodeName(), request.GetScrapeId())
 }

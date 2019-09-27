@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	orchestrators "github.com/stackrox/rox/pkg/orchestrators"
+	v1 "k8s.io/api/core/v1"
 	reflect "reflect"
 	time "time"
 )
@@ -90,4 +91,19 @@ func (m *MockOrchestrator) CleanUp(ownedByThisInstance bool) error {
 func (mr *MockOrchestratorMockRecorder) CleanUp(ownedByThisInstance interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanUp", reflect.TypeOf((*MockOrchestrator)(nil).CleanUp), ownedByThisInstance)
+}
+
+// GetNode mocks base method
+func (m *MockOrchestrator) GetNode(nodeName string) (*v1.Node, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNode", nodeName)
+	ret0, _ := ret[0].(*v1.Node)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNode indicates an expected call of GetNode
+func (mr *MockOrchestratorMockRecorder) GetNode(nodeName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNode", reflect.TypeOf((*MockOrchestrator)(nil).GetNode), nodeName)
 }

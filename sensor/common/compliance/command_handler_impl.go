@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -8,9 +9,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/retry"
@@ -52,10 +55,12 @@ type commandHandlerImpl struct {
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal
+
+	resultsC chan *compliance.ComplianceReturn
 }
 
-func (c *commandHandlerImpl) Start(results <-chan *compliance.ComplianceReturn) {
-	go c.run(results)
+func (c *commandHandlerImpl) Start() {
+	go c.run()
 }
 
 func (c *commandHandlerImpl) Stop(err error) {
@@ -79,7 +84,7 @@ func (c *commandHandlerImpl) Output() <-chan *central.ScrapeUpdate {
 	return c.updates
 }
 
-func (c *commandHandlerImpl) run(results <-chan *compliance.ComplianceReturn) {
+func (c *commandHandlerImpl) run() {
 	defer c.stoppedC.Signal()
 
 	for {
@@ -100,7 +105,7 @@ func (c *commandHandlerImpl) run(results <-chan *compliance.ComplianceReturn) {
 				c.sendUpdate(update)
 			}
 
-		case result, ok := <-results:
+		case result, ok := <-c.resultsC:
 			if !ok {
 				c.stoppedC.SignalWithError(errors.New("compliance return input closed"))
 				return
@@ -110,6 +115,10 @@ func (c *commandHandlerImpl) run(results <-chan *compliance.ComplianceReturn) {
 			}
 		}
 	}
+}
+
+func (c *commandHandlerImpl) resultsChan() chan<- *compliance.ComplianceReturn {
+	return c.resultsC
 }
 
 func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) *central.ScrapeUpdate {
@@ -292,6 +301,20 @@ func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 	case c.updates <- update:
 		return
 	}
+}
+
+// GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
+func (c *commandHandlerImpl) GetScrapeConfig(ctx context.Context, nodeName, scrapeID string) (*sensor.ScrapeConfig, error) {
+	nodeInfo, err := c.orchestrator.GetNode(nodeName)
+	if err != nil {
+		return nil, err
+	}
+
+	rt, _ := k8sutil.ParseContainerRuntimeString(nodeInfo.Status.NodeInfo.ContainerRuntimeVersion)
+
+	return &sensor.ScrapeConfig{
+		ContainerRuntime: rt,
+	}, nil
 }
 
 // Helper functions.

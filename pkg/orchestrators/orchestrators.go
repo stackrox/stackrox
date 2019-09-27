@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Creator is a function stub that defined how to create a Orchestrator
@@ -41,4 +42,5 @@ type Orchestrator interface {
 	Kill(id string) error
 	WaitForCompletion(service string, timeout time.Duration) error
 	CleanUp(ownedByThisInstance bool) error
+	GetNode(nodeName string) (*v1.Node, error)
 }

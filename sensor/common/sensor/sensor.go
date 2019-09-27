@@ -177,11 +177,8 @@ func (s *Sensor) Start() {
 	if s.networkConnManager != nil {
 		go s.networkConnManager.Start()
 	}
-	if s.commandHandler != nil {
-		s.commandHandler.Start(compliance.Singleton().Output())
-	}
 
-	for _, toStart := range []startable{s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.upgradeCommandHandler} {
+	for _, toStart := range []startable{s.commandHandler, s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.upgradeCommandHandler} {
 		if toStart != nil {
 			toStart.Start()
 		}
@@ -242,7 +239,7 @@ func (s *Sensor) registerAPIServices() {
 	s.server.Register(
 		signalService.Singleton(),
 		networkFlowService.Singleton(),
-		compliance.Singleton(),
+		compliance.NewService(s.commandHandler),
 	)
 	log.Info("API services registered")
 }

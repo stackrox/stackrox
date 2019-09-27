@@ -13,8 +13,10 @@ import (
 	"github.com/stackrox/rox/compliance/collection/file"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/orchestrators"
@@ -38,6 +40,54 @@ func main() {
 	if thisScrapeID == "" {
 		log.Fatal("No scrape ID found in the environment")
 	}
+
+	// Create a connection with sensor to push scraped data.
+	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Info("Initialized Sensor gRPC connection")
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Errorf("Failed to close connection: %v", err)
+		}
+	}()
+	cli := sensor.NewComplianceServiceClient(conn)
+
+	log.Info("Querying sensor for scrape configuration")
+	getScrapeConfigReq := &sensor.GetScrapeConfigRequest{
+		NodeName: thisNodeName,
+		ScrapeId: thisScrapeID,
+	}
+
+	var scrapeConfig *sensor.ScrapeConfig
+	if err := retry.WithRetry(
+		func() error { // Try to query sensor, time out after 5 seconds.
+			log.Info("Trying to query sensor")
+			ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+			defer cancel()
+
+			var err error
+			scrapeConfig, err = cli.GetScrapeConfig(ctx, getScrapeConfigReq)
+			return err
+		},
+		retry.Tries(5), // 5 attempts.
+		retry.BetweenAttempts(func(_ int) { // Sleep for a second between attempts
+			log.Info("Sleeping between attempts to retrieve scrape config")
+			time.Sleep(time.Second)
+		}),
+		retry.OnFailedAttempts(func(err error) { // Log encountered errors.
+			log.Errorf("Error querying sensor for scrape config on %v: %v", env.AdvertisedEndpoint.Setting(), err)
+		}),
+	); err != nil {
+		log.Error("Couldn't query sensor for scrape config despite retries. Trying to infer container runtime from cgrouops ...")
+		scrapeConfig = &sensor.ScrapeConfig{}
+		scrapeConfig.ContainerRuntime, err = k8sutil.InferContainerRuntime()
+		if err != nil {
+			log.Errorf("Could not infer container runtime from cgroups: %v", err)
+		}
+	}
+
 	msgReturn := compliance.ComplianceReturn{
 		NodeName: thisNodeName,
 		ScrapeId: thisScrapeID,
@@ -45,14 +95,22 @@ func main() {
 
 	log.Infof("Running compliance scrape %q for node %q", thisScrapeID, thisNodeName)
 
-	log.Info("Starting to collect Docker data")
-	var err error
-	msgReturn.DockerData, err = docker.GetDockerData()
-	if err != nil {
-		log.Error(err)
+	log.Infof("Container runtime is %v", scrapeConfig.GetContainerRuntime())
+	if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME {
+		log.Info("Starting to collect Docker data")
+		msgReturn.DockerData, err = docker.GetDockerData()
+		if err != nil {
+			log.Error(err)
+		} else {
+			log.Info("Successfully collected relevant Docker data")
+		}
+	} else if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME {
+		log.Info("Collecting relevant CRI-O data")
+		// TODO(ROX-3372): Do something!
+		log.Info("Successfully collected relevant CRI-O data")
+	} else {
+		log.Info("Unknown container runtime, not collecting any data ...")
 	}
-
-	log.Info("Successfully collected relevant Docker data")
 
 	log.Info("Starting to collect systemd files")
 	msgReturn.SystemdFiles, err = file.CollectSystemdFiles()
@@ -76,19 +134,6 @@ func main() {
 	log.Info("Successfully collected relevant command lines")
 
 	msgReturn.Time = types.TimestampNow()
-
-	// Create a connection with sensor to push scraped data.
-	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Info("Initialized Sensor gRPC connection")
-	defer func() {
-		if err := conn.Close(); err != nil {
-			log.Errorf("Failed to close connection: %v", err)
-		}
-	}()
-	cli := sensor.NewComplianceServiceClient(conn)
 
 	// Communicate with sensor, pushing the scraped data.
 	if err := retry.WithRetry(
