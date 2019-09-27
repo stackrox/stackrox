@@ -9,7 +9,9 @@ export const resourceTypes = {
     COMPONENT: 'COMPONENT',
     CVE: 'CVE',
     POLICY: 'POLICY',
-    CONTROL: 'CONTROL'
+    CONTROL: 'CONTROL',
+    COMPONENT: 'COMPONENT',
+    CVE: 'CVE'
 };
 
 export const rbacConfigTypes = {

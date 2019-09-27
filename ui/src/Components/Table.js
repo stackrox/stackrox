@@ -69,7 +69,9 @@ class Table extends Component {
         classes.push(this.props.onRowClick ? '' : 'cursor-default');
         return {
             onClick: () => {
-                if (this.props.onRowClick) this.props.onRowClick(rowInfo.original);
+                if (this.props.onRowClick) {
+                    this.props.onRowClick(rowInfo.original);
+                }
             },
             className: classes.join(' ')
         };

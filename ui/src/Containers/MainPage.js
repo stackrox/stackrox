@@ -60,9 +60,7 @@ const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessCon
 const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
-const AsyncVulnManagementPage = asyncComponent(() =>
-    import('Containers/VulnManagement/VulnManagementLayout')
-);
+const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/VulnMgmt/VulnMgmtLayout'));
 
 class MainPage extends Component {
     static propTypes = {
@@ -139,7 +137,7 @@ class MainPage extends Component {
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
                     <ProtectedRoute
                         path={vulnManagementPath}
-                        component={AsyncVulnManagementPage}
+                        component={AsyncVulnMgmtPage}
                         featureFlagEnabled={isBackendFeatureFlagEnabled(
                             this.props.featureFlags,
                             knownBackendFlags.ROX_VULN_MGMT_UI,
