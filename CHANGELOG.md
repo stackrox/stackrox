@@ -6,6 +6,9 @@ All notable changes to this project that require documentation updates will be d
 - `roxctl` can now talk to Central instances exposed behind a non-gRPC-capable proxy (e.g., AWS ELB/ALB). To support
   this, requests go through an ephemeral client-side reverse proxy. If you observe any issues with `roxctl` that you
   suspect might be due to this change, pass the `--direct-grpc` flag to resort to the old connection behavior.
+- `roxctl` can now talk to Central instances exposed via plaintext (either directly, or via a plaintext proxy talking to
+  a plaintext or TLS-enabled backend). While we advise against this, this behavior can be enabled via the `--plaintext`
+  flag in conjunction with the `--insecure` flag.
 
 ## [30.0]
 ### Changed

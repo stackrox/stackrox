@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -27,8 +28,11 @@ var (
 
 // Options specifies options for establishing a gRPC client connection.
 type Options struct {
-	TLS         TLSConfigOptions
-	PerRPCCreds credentials.PerRPCCredentials
+	InsecureNoTLS bool
+	TLS           TLSConfigOptions
+
+	InsecureAllowCredsViaPlaintext bool
+	PerRPCCreds                    credentials.PerRPCCredentials
 
 	DialTLS DialTLSFunc
 }
@@ -235,14 +239,24 @@ func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConn
 
 // GRPCConnection establishes a gRPC connection to the given server, using the given connection options.
 func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint string, clientConnOpts Options, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	tlsConf, err := clientConnOpts.tlsConfig(server)
-	if err != nil {
-		return nil, errors.Wrap(err, "instantiating TLS config")
+	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+2)
+
+	var tlsConf *tls.Config
+	if !clientConnOpts.InsecureNoTLS {
+		var err error
+		tlsConf, err = clientConnOpts.tlsConfig(server)
+		if err != nil {
+			return nil, errors.Wrap(err, "instantiating TLS config")
+		}
+	} else {
+		allDialOpts = append(allDialOpts, grpc.WithInsecure())
 	}
 
-	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+1)
-	if clientConnOpts.PerRPCCreds != nil {
-		allDialOpts = append(allDialOpts, grpc.WithPerRPCCredentials(clientConnOpts.PerRPCCreds))
+	if perRPCCreds := clientConnOpts.PerRPCCreds; perRPCCreds != nil {
+		if clientConnOpts.InsecureNoTLS && clientConnOpts.InsecureAllowCredsViaPlaintext {
+			perRPCCreds = util.ForceInsecureCreds(perRPCCreds)
+		}
+		allDialOpts = append(allDialOpts, grpc.WithPerRPCCredentials(perRPCCreds))
 	}
 	allDialOpts = append(allDialOpts, dialOpts...)
 	return clientConnOpts.dialTLSFunc()(dialCtx, endpoint, tlsConf, allDialOpts...)

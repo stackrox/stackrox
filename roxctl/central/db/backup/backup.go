@@ -114,11 +114,10 @@ func getFilePath(respHeader http.Header, userProvidedOutput string) (string, err
 func getBackup(timeout time.Duration, userProvidedOutput string) error {
 	deadline := time.Now().Add(timeout)
 
-	req, err := http.NewRequest("GET", common.GetURL("/db/backup"), nil)
+	req, err := common.NewHTTPRequestWithAuth(http.MethodGet, "/db/backup", nil)
 	if err != nil {
 		return err
 	}
-	common.AddAuthToRequest(req)
 
 	reqCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()

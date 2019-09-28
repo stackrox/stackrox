@@ -1644,25 +1644,45 @@ jobs:
           name: Test roxctl access to proxies
           command: |
             proxies=(
+              "Plaintext proxy:10080:plaintext"
               "Multiplexed TLS proxy with plain backends:10443"
               "Multiplexed TLS proxy with TLS backends:11443"
+              "Multiplexed TLS proxy with plain backends (direct gRPC):10443:direct"
+              "Multiplexed TLS proxy with TLS backends (direct gRPC):11443:direct"
               "HTTP/1 proxy with TLS backends:12443"
               "HTTP/1 proxy with plain backends:13443"
               "HTTP/2 proxy with TLS backends:14443"
               "HTTP/2 proxy with plain backends:15443"
             )
 
+            failures=0
             for p in "${proxies[@]}"; do
               name="$(echo "$p" | cut -d: -f1)"
               port="$(echo "$p" | cut -d: -f2)"
-              mkdir -p "/tmp/proxy-test-${port}" && cd "/tmp/proxy-test-${port}"
+              opt="$(echo "$p" | cut -d: -f3)"
+              mkdir -p "/tmp/proxy-test-${port}-${opt}" && cd "/tmp/proxy-test-${port}-${opt}"
+
+              extra_args=()
+              case "$opt" in
+                plaintext)
+                  extra_args=(--plaintext --insecure)
+                  ;;
+                direct)
+                  extra_args=(--direct-grpc)
+                  ;;
+              esac
 
               echo "Testing roxctl access through ${name}..."
-              roxctl -e "localhost:${port}" -p "$ROX_PASSWORD" central debug log >/dev/null
-              roxctl -e "localhost:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists
-              echo "OK"
+              roxctl "${extra_args[@]}" -e "localhost:${port}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+                failures=$((failures + 1))
+              roxctl "${extra_args[@]}" -e "localhost:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
+                failures=$((failures + 1))
+              echo "Done."
               rm -rf "/tmp/proxy-test-${port}"
             done
+
+            echo "Total: ${failures} failures."
+            (( failures == 0 ))
 
       - *restoreUI
       - *determineWhetherToRunUIDevServer

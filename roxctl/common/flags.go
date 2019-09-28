@@ -31,6 +31,14 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 			InsecureSkipVerify: true,
 		},
 	}
+	if flags.UsePlaintext() {
+		if !flags.UseInsecure() {
+			return nil, errors.New("plaintext connection mode must be used in conjunction with --insecure")
+		}
+		opts.InsecureNoTLS = true
+		opts.InsecureAllowCredsViaPlaintext = true
+	}
+
 	if !flags.UseDirectGRPC() {
 		opts.DialTLS = http1DowngradeClient.ConnectViaProxy
 	}

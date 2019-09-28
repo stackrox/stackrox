@@ -18,11 +18,10 @@ func restoreV1(file *os.File, deadline time.Time) error {
 		return errors.Wrap(err, "could not rewind to beginning of file")
 	}
 
-	req, err := http.NewRequest("POST", common.GetURL("/db/restore"), file)
+	req, err := common.NewHTTPRequestWithAuth(http.MethodPost, "/db/restore", file)
 	if err != nil {
 		return err
 	}
-	common.AddAuthToRequest(req)
 
 	client := common.GetHTTPClient(0)
 

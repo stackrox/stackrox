@@ -48,12 +48,16 @@ func modifyResponse(resp *http.Response) error {
 	return nil
 }
 
-func createReverseProxy(endpoint string, transport http.RoundTripper) *httputil.ReverseProxy {
+func createReverseProxy(endpoint string, transport http.RoundTripper, insecure bool) *httputil.ReverseProxy {
+	scheme := "https"
+	if insecure {
+		scheme = "http"
+	}
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.Header.Add("Accept", "application/grpc")
 			req.Header.Add("Accept", "application/grpc-web")
-			req.URL.Scheme = "https"
+			req.URL.Scheme = scheme
 			req.URL.Host = endpoint
 		},
 		Transport:      transport,
@@ -64,14 +68,18 @@ func createReverseProxy(endpoint string, transport http.RoundTripper) *httputil.
 }
 
 func createTransport(tlsClientConf *tls.Config) (http.RoundTripper, error) {
-	transport := &http.Transport{}
+	transport := &http.Transport{
+		ForceAttemptHTTP2: true,
+	}
 
-	clientConfForTransport := tlsClientConf.Clone()
-	nextProtos := append([]string{}, clientconn.NextProtos...)
-	nextProtos = append(nextProtos, tlsClientConf.NextProtos...)
-	nextProtos = append(nextProtos, "http/1.1", "http/1.0")
-	clientConfForTransport.NextProtos = sliceutils.StringUnique(nextProtos)
-	transport.TLSClientConfig = clientConfForTransport
+	if tlsClientConf != nil {
+		clientConfForTransport := tlsClientConf.Clone()
+		nextProtos := append([]string{}, clientconn.NextProtos...)
+		nextProtos = append(nextProtos, tlsClientConf.NextProtos...)
+		nextProtos = append(nextProtos, "http/1.1", "http/1.0")
+		clientConfForTransport.NextProtos = sliceutils.StringUnique(nextProtos)
+		transport.TLSClientConfig = clientConfForTransport
+	}
 	if err := http2.ConfigureTransport(transport); err != nil {
 		return nil, errors.Wrap(err, "configuring transport for HTTP/2 use")
 	}
@@ -87,7 +95,7 @@ func createClientProxy(endpoint string, tlsClientConf *tls.Config) (*http.Server
 	if err != nil {
 		return nil, errors.Wrap(err, "creating transport")
 	}
-	proxy := createReverseProxy(endpoint, transport)
+	proxy := createReverseProxy(endpoint, transport, tlsClientConf == nil)
 
 	var http2srv http2.Server
 	srv := &http.Server{
@@ -119,7 +127,10 @@ func ConnectViaProxy(ctx context.Context, endpoint string, tlsClientConf *tls.Co
 		return nil, errors.Wrap(err, "creating client proxy")
 	}
 
-	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(newCredsFromSideChannel(endpoint, credentials.NewTLS(tlsClientConf)))}
+	dialOpts := make([]grpc.DialOption, 0, len(extraOpts)+1)
+	if tlsClientConf != nil {
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(newCredsFromSideChannel(endpoint, credentials.NewTLS(tlsClientConf))))
+	}
 	dialOpts = append(dialOpts, extraOpts...)
 
 	cc, err := grpc.DialContext(ctx, proxySrv.Addr, dialOpts...)

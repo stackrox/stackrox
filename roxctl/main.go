@@ -56,9 +56,7 @@ func main() {
 	)
 
 	flags.AddPassword(c)
-	flags.AddEndpoint(c)
-	flags.AddServerName(c)
-	flags.AddDirectGRPC(c)
+	flags.AddConnectionFlags(c)
 
 	if err := c.Execute(); err != nil {
 		os.Exit(1)
