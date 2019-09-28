@@ -26,6 +26,10 @@ var (
 )
 
 func modifyResponse(resp *http.Response) error {
+	if resp.ContentLength == 0 {
+		// Make sure headers do not get flushed, as otherwise the gRPC client will complain about missing trailers.
+		resp.Header.Set(dontFlushHeadersHeaderKey, "true")
+	}
 	contentType, contentSubType := stringutils.Split2(resp.Header.Get("Content-Type"), "+")
 	if contentType != "application/grpc-web" {
 		// No modification necessary if we aren't handling a gRPC web response.
@@ -54,7 +58,8 @@ func createReverseProxy(endpoint string, transport http.RoundTripper) *httputil.
 		},
 		Transport:      transport,
 		ModifyResponse: modifyResponse,
-		FlushInterval:  -1, // no buffering to handle streaming responses
+		// No need to set FlushInterval, as we force the writer to operate in unbuffered mode/flushing after every
+		// write.
 	}
 }
 
@@ -86,7 +91,7 @@ func createClientProxy(endpoint string, tlsClientConf *tls.Config) (*http.Server
 
 	var http2srv http2.Server
 	srv := &http.Server{
-		Handler: h2c.NewHandler(proxy, &http2srv),
+		Handler: h2c.NewHandler(nonBufferingHandler(proxy), &http2srv),
 	}
 	if err := http2.ConfigureServer(srv, &http2srv); err != nil {
 		return nil, errors.Wrap(err, "configuring HTTP/2 server")

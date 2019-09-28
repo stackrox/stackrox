@@ -1661,6 +1661,7 @@ jobs:
               roxctl -e "localhost:${port}" -p "$ROX_PASSWORD" central debug log >/dev/null
               roxctl -e "localhost:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists
               echo "OK"
+              rm -rf "/tmp/proxy-test-${port}"
             done
 
       - *restoreUI
