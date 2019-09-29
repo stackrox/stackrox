@@ -200,7 +200,8 @@ waitForUIDevServer: &waitForUIDevServer
     name: Wait for the UI dev server to be up
     command: |
       if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
-        curl -k --max-time 60 --retry 50 --retry-connrefused --retry-delay 5 --retry-max-time 300 https://127.0.0.1:3000/v1/ping
+        # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
+        curl -k --max-time 60 --retry 50 --retry-connrefused -4 --retry-delay 5 --retry-max-time 300 https://127.0.0.1:3000/v1/ping
       else
         echo "Not running the dev server, skipping..."
       fi
@@ -1635,16 +1636,18 @@ jobs:
       - run:
           name: Test HTTP access to plain HTTP proxy
           command: |
-            version="$(curl --retry 5 --retry-connrefused --retry-delay 1 --retry-max-time 10 -f 'http://localhost:10080/v1/metadata' | jq -r '.version')"
+            # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
+            version="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://localhost:10080/v1/metadata' | jq -r '.version')"
             echo "Got version ${version} from server"
             [[ "$version" == "$(make --quiet tag)" ]]
 
       - run:
           name: Test HTTPS access to multiplexed TLS proxy
           command: |
+            # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
             version="$(
               curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
-                --retry 5 --retry-connrefused --retry-delay 1 --retry-max-time 10 \
+                --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
                 --resolve "central-proxy.stackrox.local:10443:127.0.0.1" \
                 -f \
                 'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.version')"
