@@ -696,13 +696,13 @@ commands:
             export PORT="${API_PORT}"
             if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
-              make -C qa-tests-backend test
+              make -C qa-tests-backend test || touch FAIL
             elif .circleci/pr_has_label.sh ci-all-qa-tests; then
               echo "ci-all-qa-tests label was specified, so running all QA tests..."
-              make -C qa-tests-backend test
+              make -C qa-tests-backend test || touch FAIL
             else
               echo "On a PR branch, running BAT tests only..."
-              make -C qa-tests-backend bat-test
+              make -C qa-tests-backend bat-test || touch FAIL
             fi
 
       - *collectK8sLogs
@@ -716,6 +716,11 @@ commands:
             export HOSTNAME="${API_HOSTNAME}"
             export PORT="${API_PORT}"
             make -C qa-tests-backend sensor-bounce-test
+
+      - run:
+          name: Test for failure in Part 1
+          command: |
+            [[ ! -f FAIL ]]
 
       - save_cache:
           key: *gradleCacheKey
@@ -919,13 +924,13 @@ commands:
               export PORT=${LOCAL_PORT}
               if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
                 echo "On master, running all QA tests..."
-                make -C qa-tests-backend test
+                make -C qa-tests-backend test || touch FAIL
               elif .circleci/pr_has_label.sh ci-all-qa-tests; then
                 echo "ci-all-qa-tests label was specified, so running all QA tests..."
-                make -C qa-tests-backend test
+                make -C qa-tests-backend test || touch FAIL
               else
                 echo "On a PR branch, running BAT tests only..."
-                make -C qa-tests-backend bat-test
+                make -C qa-tests-backend bat-test || touch FAIL
               fi
             fi
 
@@ -940,6 +945,12 @@ commands:
             export HOSTNAME=localhost
             export PORT="${LOCAL_PORT}"
             make -C qa-tests-backend sensor-bounce-test
+
+
+      - run:
+          name: Check for failures in part 1
+          command: |
+            [[ ! -f FAIL ]]
 
       - *storeQATestResults
       - *storeQASpockReports

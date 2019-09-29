@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "sensor";
 
 import "internalapi/compliance/compliance_data.proto";
-import "storage/deployment.proto";
+import "storage/container_runtime.proto";
 import "api/v1/empty.proto";
 
 package sensor;

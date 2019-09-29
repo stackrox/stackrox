@@ -706,16 +706,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			testCluster := &storage.Cluster{
 				Id: uuid.NewV4().String(),
 			}
-			testNodes := []*storage.Node{
-				{
-					Id:   "A",
-					Name: "A",
-				},
-				{
-					Id:   "B",
-					Name: "B",
-				},
-			}
+			testNodes := createTestNodes("A", "B")
 
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()

@@ -173,7 +173,6 @@ func getImageIntegrationSensorEvents(secret *v1.Secret, action central.ResourceA
 	for registry, dce := range dockerConfig {
 		ii := dockerConfigToImageIntegration(registry, dce)
 		sensorEvents = append(sensorEvents, &central.SensorEvent{
-			Id:     ii.GetId(),
 			Action: central.ResourceAction_UPDATE_RESOURCE,
 			Resource: &central.SensorEvent_ImageIntegration{
 				ImageIntegration: ii,

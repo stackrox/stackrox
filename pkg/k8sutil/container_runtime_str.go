@@ -30,3 +30,16 @@ func ParseContainerRuntimeString(input string) (storage.ContainerRuntime, string
 	}
 	return runtime, rest
 }
+
+// ParseContainerRuntimeVersion parses a Kubernetes container runtime version string such as `docker://1.13` into a
+// ContainerRuntimeInfo object.
+func ParseContainerRuntimeVersion(versionString string) *storage.ContainerRuntimeInfo {
+	rt, version := ParseContainerRuntimeString(versionString)
+	if rt == storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME {
+		version = versionString // use the full string, e.g., `somert://1.2.3`
+	}
+	return &storage.ContainerRuntimeInfo{
+		Type:    rt,
+		Version: version,
+	}
+}

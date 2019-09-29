@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+enum ContainerRuntime {
+    UNKNOWN_CONTAINER_RUNTIME = 0;
+    DOCKER_CONTAINER_RUNTIME  = 1;
+    CRIO_CONTAINER_RUNTIME    = 2;
+}
+
+message ContainerRuntimeInfo {
+    ContainerRuntime type = 1;
+    string version        = 2;
+}

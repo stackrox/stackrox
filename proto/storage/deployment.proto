@@ -4,18 +4,13 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
+import "storage/container_runtime.proto";
 import "storage/labels.proto";
 import "storage/image.proto";
 import "storage/taints.proto";
 import "protobuf/gogoproto/gogo.proto";
 
 package storage;
-
-enum ContainerRuntime {
-    UNKNOWN_CONTAINER_RUNTIME = 0;
-    DOCKER_CONTAINER_RUNTIME  = 1;
-    CRIO_CONTAINER_RUNTIME    = 2;
-}
 
 // Next available tag: 26
 message Deployment {

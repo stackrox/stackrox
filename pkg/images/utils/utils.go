@@ -143,7 +143,18 @@ func Reference(img *storage.Image) string {
 
 // IsPullable returns whether or not Kubernetes things the image is pullable
 func IsPullable(imageStr string) bool {
-	return strings.HasPrefix(imageStr, "docker-pullable://")
+	parts := strings.SplitN(imageStr, "://", 2)
+	if len(parts) == 2 {
+		if parts[0] == "docker-pullable" {
+			return true
+		}
+		if parts[0] == "docker" {
+			return false
+		}
+		imageStr = parts[1]
+	}
+	_, err := GenerateImageFromString(imageStr)
+	return err == nil
 }
 
 // ExtractImageDigest returns the image sha if it exists within the string.

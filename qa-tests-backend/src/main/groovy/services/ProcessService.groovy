@@ -24,7 +24,7 @@ class ProcessService extends BaseService {
 
     // Returns a map of process path -> list of container id's for each container
     // the path was executed (this list may have duplicates)
-    static Map<String, List<String> > getProcessContainerMap(String deploymentID) {
+    static Map<String, List<String> > getProcessContainerMap(String deploymentID, Set<String> processes = null) {
         def response = getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
             .newBuilder()
             .setDeploymentId(deploymentID)
@@ -33,6 +33,9 @@ class ProcessService extends BaseService {
         Map<String, List<String> > pathContainerMap = new HashMap<>()
         for ( ProcessIndicator process : response.getProcessesList() ) {
             String path = process.getSignal().getExecFilePath()
+            if (processes != null && !processes.contains(path)) {
+                continue
+            }
             String containerId = process.getSignal().getContainerId()
             List<String> containerList = pathContainerMap.get(path)
             if (containerList == null) {

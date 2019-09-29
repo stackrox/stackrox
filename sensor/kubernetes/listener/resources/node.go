@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	v1 "k8s.io/api/core/v1"
 )
@@ -65,7 +66,7 @@ func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 		}
 	}
 
-	creation := (&node.CreationTimestamp).ProtoTime()
+	creation := node.CreationTimestamp.ProtoTime()
 	nodeResource := &storage.Node{
 		Id:                      string(node.UID),
 		Name:                    node.Name,
@@ -75,6 +76,7 @@ func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
 		InternalIpAddresses:     internal,
 		ExternalIpAddresses:     external,
+		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion(node.Status.NodeInfo.ContainerRuntimeVersion),
 		ContainerRuntimeVersion: node.Status.NodeInfo.ContainerRuntimeVersion,
 		KernelVersion:           node.Status.NodeInfo.KernelVersion,
 		OsImage:                 node.Status.NodeInfo.OSImage,

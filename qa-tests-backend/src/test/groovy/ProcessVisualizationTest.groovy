@@ -28,25 +28,25 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (CENTOSDEPLOYMENT)
-                .setImage ("centos@sha256:6f6d986d425aeabdc3a02cb61c02abb2e78e57357e92417d6d58332856024faf")
+                .setImage ("centos@sha256:fc2476ccae2a5186313f2d1dadb4a969d6d2d4c6b23fa98b6c7b0a1faad67685")
                 .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (FEDORADEPLOYMENT)
-                .setImage ("fedora@sha256:b41cd083421dd7aa46d619e958b75a026a5d5733f08f14ba6d53943d6106ea6d")
+                .setImage ("fedora@sha256:6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187")
                 .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ELASTICDEPLOYMENT)
-                .setImage ("elasticsearch@sha256:a8081d995ef3443dc6d077093172a5931e02cdb8ffddbf05c67e01d348a9770e")
+                .setImage ("elasticsearch@sha256:cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (REDISDEPLOYMENT)
-                .setImage ("redis@sha256:911f976312f503692709ad9534f15e2564a0967f2aa6dd08a74c684fb1e53e1a")
+                .setImage ("redis@sha256:96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (MONGODEPLOYMENT)
-                .setImage ("mongo@sha256:e9bab21970befb113734c6ec549a4cf90377961dbe0ec94fe65be2a0abbdcc30")
+                .setImage ("mongo@sha256:dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
                 .addLabel ("app", "test" ),
      ]
 

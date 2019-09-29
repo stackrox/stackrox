@@ -19,7 +19,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String DEPLOYMENTNAME = "runtimeviolationlifecycle"
     static final private Deployment DEPLOYMENT = new Deployment()
         .setName(DEPLOYMENTNAME)
-        .setImage ("nginx@sha256:9ad0746d8f2ea6df3a17ba89eca40b48c47066dfab55a75e08e2b70fc80d929e")
+        .setImage ("nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
         .addLabel ("app", DEPLOYMENTNAME)
         .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"])
 

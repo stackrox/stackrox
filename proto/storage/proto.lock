@@ -251,11 +251,6 @@
                     "type": "string"
                   },
                   {
-                    "id": 2,
-                    "name": "link",
-                    "type": "string"
-                  },
-                  {
                     "id": 3,
                     "name": "DEPRECATED_processes",
                     "type": "ProcessIndicator",
@@ -267,6 +262,9 @@
                       }
                     ]
                   }
+                ],
+                "reserved_ids": [
+                  2
                 ]
               },
               {
@@ -923,6 +921,11 @@
                 "id": 1,
                 "name": "admission_controller_config",
                 "type": "AdmissionControllerConfig"
+              },
+              {
+                "id": 2,
+                "name": "registry_override",
+                "type": "string"
               }
             ]
           },
@@ -1703,7 +1706,7 @@
       }
     },
     {
-      "protopath": "deployment.proto",
+      "protopath": "container_runtime.proto",
       "def": {
         "enums": [
           {
@@ -1715,9 +1718,40 @@
               {
                 "name": "DOCKER_CONTAINER_RUNTIME",
                 "integer": 1
+              },
+              {
+                "name": "CRIO_CONTAINER_RUNTIME",
+                "integer": 2
               }
             ]
-          },
+          }
+        ],
+        "messages": [
+          {
+            "name": "ContainerRuntimeInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "type",
+                "type": "ContainerRuntime"
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "deployment.proto",
+      "def": {
+        "enums": [
           {
             "name": "PortConfig.ExposureLevel",
             "enum_fields": [
@@ -2235,6 +2269,11 @@
                 "name": "container_ips",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "started",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -2640,6 +2679,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/container_runtime.proto"
           },
           {
             "path": "storage/labels.proto"
@@ -3145,13 +3187,7 @@
               {
                 "id": 4,
                 "name": "link",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CVE Link,store,hidden\\"
-                  }
-                ]
+                "type": "string"
               },
               {
                 "id": 5,
@@ -4532,7 +4568,18 @@
               {
                 "id": 10,
                 "name": "container_runtime_version",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 14,
+                "name": "container_runtime",
+                "type": "ContainerRuntimeInfo"
               },
               {
                 "id": 11,
@@ -4585,6 +4632,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/container_runtime.proto"
           },
           {
             "path": "storage/taints.proto"
@@ -5706,11 +5756,6 @@
                 "type": "string"
               },
               {
-                "id": 5,
-                "name": "emit_timestamp",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
                 "id": 6,
                 "name": "signal",
                 "type": "ProcessSignal"
@@ -5736,7 +5781,15 @@
                     "value": "search:\\\"Namespace,store,hidden\\"
                   }
                 ]
+              },
+              {
+                "id": 9,
+                "name": "container_start_time",
+                "type": "google.protobuf.Timestamp"
               }
+            ],
+            "reserved_ids": [
+              5
             ]
           },
           {

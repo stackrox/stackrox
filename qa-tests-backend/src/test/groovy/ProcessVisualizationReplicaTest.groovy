@@ -22,7 +22,7 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
             new Deployment()
                 .setName (MONGODEPLOYMENT)
                 .setReplicas(REPLICACOUNT)
-                .setImage ("mongo@sha256:e9bab21970befb113734c6ec549a4cf90377961dbe0ec94fe65be2a0abbdcc30")
+                .setImage ("mongo@sha256:dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
                 .addLabel ("app", "test" ),
      ]
 
@@ -68,13 +68,13 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
 
         def sleepTime = 0L
         def observedPathOnEachContainer = false
-        while ((!receivedProcessPaths.equals(expectedFilePaths) || !observedPathOnEachContainer)
+        while ((!receivedProcessPaths.containsAll(expectedFilePaths) || !observedPathOnEachContainer)
                && sleepTime < MAX_SLEEP_TIME) {
             println "Didn't find all the expected processes, retrying..."
             sleep(SLEEP_INCREMENT)
             sleepTime += SLEEP_INCREMENT
             receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
-            processContainerMap = ProcessService.getProcessContainerMap(uid)
+            processContainerMap = ProcessService.getProcessContainerMap(uid, expectedFilePaths)
 
             // check that every container list has k*REPLICACOUNT containerId's
             observedPathOnEachContainer = processContainerMap.every {
@@ -83,7 +83,9 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
         }
         println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 
-        processContainerMap = ProcessService.getProcessContainerMap(uid)
+        processContainerMap = ProcessService.getProcessContainerMap(uid, expectedFilePaths)
+
+        println processContainerMap
 
         processContainerMap.each { k, v ->
             // check that every path has k*REPLICACOUNT containerId's

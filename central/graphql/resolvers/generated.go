@@ -309,6 +309,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"node: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerRuntime(0)))
+	utils.Must(builder.AddType("ContainerRuntimeInfo", []string{
+		"type: ContainerRuntime!",
+		"version: String!",
+	}))
 	utils.Must(builder.AddType("Deployment", []string{
 		"annotations: [Label!]!",
 		"automountServiceAccountToken: Boolean!",
@@ -549,6 +553,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"annotations: [Label!]!",
 		"clusterId: String!",
 		"clusterName: String!",
+		"containerRuntime: ContainerRuntimeInfo",
 		"containerRuntimeVersion: String!",
 		"externalIpAddresses: [String!]!",
 		"id: ID!",
@@ -3182,6 +3187,39 @@ func toContainerRuntimes(values *[]string) []storage.ContainerRuntime {
 	return output
 }
 
+type containerRuntimeInfoResolver struct {
+	root *Resolver
+	data *storage.ContainerRuntimeInfo
+}
+
+func (resolver *Resolver) wrapContainerRuntimeInfo(value *storage.ContainerRuntimeInfo, ok bool, err error) (*containerRuntimeInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &containerRuntimeInfoResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapContainerRuntimeInfos(values []*storage.ContainerRuntimeInfo, err error) ([]*containerRuntimeInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*containerRuntimeInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &containerRuntimeInfoResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *containerRuntimeInfoResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+func (resolver *containerRuntimeInfoResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
+}
+
 type deploymentResolver struct {
 	root *Resolver
 	data *storage.Deployment
@@ -5035,6 +5073,11 @@ func (resolver *nodeResolver) ClusterId(ctx context.Context) string {
 func (resolver *nodeResolver) ClusterName(ctx context.Context) string {
 	value := resolver.data.GetClusterName()
 	return value
+}
+
+func (resolver *nodeResolver) ContainerRuntime(ctx context.Context) (*containerRuntimeInfoResolver, error) {
+	value := resolver.data.GetContainerRuntime()
+	return resolver.root.wrapContainerRuntimeInfo(value, true, nil)
 }
 
 func (resolver *nodeResolver) ContainerRuntimeVersion(ctx context.Context) string {

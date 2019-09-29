@@ -14,12 +14,12 @@ class RuntimePolicyTest extends BaseSpecification  {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName (DEPLOYMENTAPTGET)
-                    .setImage ("nginx@sha256:9ad0746d8f2ea6df3a17ba89eca40b48c47066dfab55a75e08e2b70fc80d929e")
+                    .setImage ("nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
                     .addLabel ( "app", "test" )
                     .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"]),
             new Deployment()
                     .setName (DEPLOYMENTAPT)
-                    .setImage ("redis@sha256:911f976312f503692709ad9534f15e2564a0967f2aa6dd08a74c684fb1e53e1a")
+                    .setImage ("redis@sha256:96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
                     .addLabel ( "app", "test" )
                     .setCommand(["sh" , "-c" , "apt -y update && sleep 600"]),
     ]
