@@ -32,6 +32,7 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 	cases := []struct {
 		name   string
 		info   types.Info
+		cri    *compliance.ContainerRuntimeInfo
 		status framework.Status
 	}{
 		{
@@ -70,12 +71,18 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 		{
 			name:   "CIS_Docker_v1_2_0:2_4",
 			status: framework.PassStatus,
+			cri:    &compliance.ContainerRuntimeInfo{},
 		},
 		{
 			name: "CIS_Docker_v1_2_0:2_4",
 			info: types.Info{
 				RegistryConfig: &registry.ServiceConfig{
 					InsecureRegistryCIDRs: []*registry.NetIPNet{&localIPNet},
+				},
+			},
+			cri: &compliance.ContainerRuntimeInfo{
+				InsecureRegistries: &compliance.InsecureRegistriesConfig{
+					InsecureCidrs: []string{localIPNet.String()},
 				},
 			},
 			status: framework.PassStatus,
@@ -142,10 +149,12 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 			require.NoError(t, gz.Close())
 
 			data.EXPECT().HostScraped(nodeNameMatcher("A")).AnyTimes().Return(&compliance.ComplianceReturn{
-				DockerData: &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
+				DockerData:           &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
+				ContainerRuntimeInfo: c.cri,
 			})
 			data.EXPECT().HostScraped(nodeNameMatcher("B")).AnyTimes().Return(&compliance.ComplianceReturn{
-				DockerData: &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
+				DockerData:           &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
+				ContainerRuntimeInfo: c.cri,
 			})
 
 			run, err := framework.NewComplianceRun(check)

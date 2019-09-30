@@ -3,9 +3,8 @@ package common
 import (
 	"net"
 
-	"github.com/docker/docker/api/types"
 	"github.com/stackrox/rox/central/compliance/framework"
-	internalTypes "github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/netutil"
 )
 
@@ -20,38 +19,42 @@ var (
 	}
 )
 
-func insecureRegistries(ctx framework.ComplianceContext, info types.Info) {
-	if info.RegistryConfig == nil {
-		framework.PassNow(ctx, "No insecure registries are configured")
+func insecureRegistries(ctx framework.ComplianceContext, info *compliance.ContainerRuntimeInfo) {
+	if info == nil {
+		framework.Fail(ctx, "No container runtime information is available to determine insecure registry configs")
+		return
 	}
+
 	var failed bool
-	for _, registry := range info.RegistryConfig.InsecureRegistryCIDRs {
+	for _, cidrStr := range info.GetInsecureRegistries().GetInsecureCidrs() {
+		_, cidr, _ := net.ParseCIDR(cidrStr)
 		isPrivate := false
-		for _, privateSubnet := range privateSubnets {
-			if netutil.IsIPNetSubset(privateSubnet, (*net.IPNet)(registry)) {
-				isPrivate = true
-				break
+		if cidr != nil {
+			for _, privateSubnets := range privateSubnets {
+				if netutil.IsIPNetSubset(privateSubnets, cidr) {
+					isPrivate = true
+					break
+				}
 			}
 		}
 		if !isPrivate {
 			failed = true
-			framework.Failf(ctx, "Insecure registry with CIDR %q is configured", registry.IP)
+			framework.Failf(ctx, "Insecure registry with CIDR %q is configured", cidrStr)
 		}
 	}
-	for indexName, indexConfig := range info.RegistryConfig.IndexConfigs {
-		if !indexConfig.Secure {
-			failed = true
-			framework.Failf(ctx, "Insecure registry %q is configured", indexName)
-		}
+	for _, registry := range info.GetInsecureRegistries().GetInsecureRegistries() {
+		framework.Failf(ctx, "Insecure registry %q configured", registry)
+		failed = true
 	}
+
 	if !failed {
-		framework.Pass(ctx, "Docker is not running with insecure registries")
+		framework.Pass(ctx, "No insecure registries in public networks are configured")
 	}
 }
 
 // CheckNoInsecureRegistries checks that only registries in private subnets are configured as insecure.
 func CheckNoInsecureRegistries(ctx framework.ComplianceContext) {
-	PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *internalTypes.Data) {
-		insecureRegistries(ctx, data.Info)
+	PerNodeCheck(func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
+		insecureRegistries(ctx, ret.GetContainerRuntimeInfo())
 	})(ctx)
 }

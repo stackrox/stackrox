@@ -9,7 +9,8 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/command"
-	"github.com/stackrox/rox/compliance/collection/docker"
+	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
+	"github.com/stackrox/rox/compliance/collection/containerruntimes/docker"
 	"github.com/stackrox/rox/compliance/collection/file"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -44,7 +45,7 @@ func main() {
 	// Create a connection with sensor to push scraped data.
 	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not establish a gRPC connection to Sensor: %v", err)
 	}
 	log.Info("Initialized Sensor gRPC connection")
 	defer func() {
@@ -98,16 +99,20 @@ func main() {
 	log.Infof("Container runtime is %v", scrapeConfig.GetContainerRuntime())
 	if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME {
 		log.Info("Starting to collect Docker data")
-		msgReturn.DockerData, err = docker.GetDockerData()
+		msgReturn.DockerData, msgReturn.ContainerRuntimeInfo, err = docker.GetDockerData()
 		if err != nil {
-			log.Error(err)
+			log.Errorf("Collecting Docker data failed: %v", err)
 		} else {
 			log.Info("Successfully collected relevant Docker data")
 		}
 	} else if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME {
 		log.Info("Collecting relevant CRI-O data")
-		// TODO(ROX-3372): Do something!
-		log.Info("Successfully collected relevant CRI-O data")
+		msgReturn.ContainerRuntimeInfo, err = crio.GetContainerRuntimeData()
+		if err != nil {
+			log.Errorf("Collecting CRI-O data failed: %v", err)
+		} else {
+			log.Info("Successfully collected relevant CRI-O data")
+		}
 	} else {
 		log.Info("Unknown container runtime, not collecting any data ...")
 	}
@@ -115,21 +120,21 @@ func main() {
 	log.Info("Starting to collect systemd files")
 	msgReturn.SystemdFiles, err = file.CollectSystemdFiles()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Collecting systemd files failed: %v", err)
 	}
 	log.Info("Successfully collected relevant systemd files")
 
 	log.Info("Starting to collect configuration files")
 	msgReturn.Files, err = file.CollectFiles()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Collecting configuration files failed: %v", err)
 	}
 	log.Info("Successfully collected relevant configuration files")
 
 	log.Info("Starting to collect command lines")
 	msgReturn.CommandLines, err = command.RetrieveCommands()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Collecting command lines failed: %v", err)
 	}
 	log.Info("Successfully collected relevant command lines")
 

@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.38.0
+	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f // indirect
@@ -22,6 +23,7 @@ require (
 	github.com/blevesearch/go-porterstemmer v1.0.2 // indirect
 	github.com/blevesearch/segment v0.0.0-20160915185041-762005e7a34f // indirect
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
+	github.com/containers/image v3.0.2+incompatible
 	github.com/coreos/clair v2.0.8+incompatible
 	github.com/coreos/go-oidc v2.0.0+incompatible
 	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142

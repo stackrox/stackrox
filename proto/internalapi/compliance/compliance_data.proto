@@ -37,6 +37,15 @@ message CommandLine {
     repeated Args args  = 2;
 }
 
+message InsecureRegistriesConfig {
+    repeated string insecure_registries = 1;
+    repeated string insecure_cidrs      = 2;
+}
+
+message ContainerRuntimeInfo {
+    InsecureRegistriesConfig insecure_registries = 1;
+}
+
 // Next Available Tag: 7
 message ComplianceReturn {
     string node_name = 1;
@@ -46,6 +55,8 @@ message ComplianceReturn {
     map<string, CommandLine> command_lines = 4;
     map<string, File>        files         = 5;
     map<string, File>        systemd_files = 6;
+
+    ContainerRuntimeInfo     container_runtime_info = 9;
 
     google.protobuf.Timestamp time = 7;
 }

@@ -69,49 +69,49 @@ func getClient() (*client.Client, error) {
 }
 
 // GetDockerData returns the marshaled JSON from scraping Docker
-func GetDockerData() (*compliance.GZIPDataChunk, error) {
+func GetDockerData() (*compliance.GZIPDataChunk, *compliance.ContainerRuntimeInfo, error) {
 	var dockerData internalTypes.Data
 
 	client, err := getClient()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dockerData.Info, err = getInfo(client)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dockerData.Containers, err = getContainers(client)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dockerData.Images, err = getImages(client)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dockerData.BridgeNetwork, err = getBridgeNetwork(client)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var buf bytes.Buffer
 	gz, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err := json.NewEncoder(gz).Encode(&dockerData); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err := gz.Close(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	return &compliance.GZIPDataChunk{
 		Gzip: buf.Bytes(),
-	}, nil
+	}, toStandardizedInfo(&dockerData), nil
 }
 
 func getInfo(c *client.Client) (types.Info, error) {
