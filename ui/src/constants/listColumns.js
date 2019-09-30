@@ -30,7 +30,7 @@ const nodesAcrossControlsColumns = [
         className: `w-1/8 ${defaultColumnClassName}`,
         // eslint-disable-next-line
         Cell: ({ original }) => {
-            return original.failing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
+            return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
         }
     }
 ];

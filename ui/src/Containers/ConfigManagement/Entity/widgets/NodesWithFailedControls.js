@@ -1,15 +1,38 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
-import { NODES_WITH_CONTROL } from 'queries/controls';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { useQuery } from 'react-apollo';
 import Raven from 'raven-js';
 import queryService from 'modules/queryService';
 import { entityAcrossControlsColumns } from 'constants/listColumns';
+import uniqBy from 'lodash/uniqBy';
 
 import Loader from 'Components/Loader';
 import TableWidget from './TableWidget';
+
+const NODES_WITH_FAILING_CONTROLS = gql`
+    query nodesWithFailingControls($query: String) {
+        executedControls(query: $query) {
+            complianceControl {
+                id
+                name
+                complianceControlFailingNodes {
+                    id
+                    name
+                    clusterName
+                }
+                complianceControlPassingNodes {
+                    id
+                    name
+                    clusterName
+                }
+            }
+            controlStatus
+        }
+    }
+`;
 
 const filterByEntityContext = entityContext => {
     const result = Object.keys(entityContext).reduce((acc, entityType) => {
@@ -20,39 +43,27 @@ const filterByEntityContext = entityContext => {
     return queryService.objectToWhereClause(result);
 };
 
-export const getRelatedEntities = (data, entityType) => {
-    const { results } = data;
-    if (!results.length) return [];
-    const relatedEntities = {};
-    let entityKey = 0;
-    results[0].aggregationKeys.forEach(({ scope }, idx) => {
-        if (scope === entityTypes[entityType]) entityKey = idx;
-    });
-    results.forEach(({ keys, numPassing, numFailing }) => {
-        const { id } = keys[entityKey];
-        if (!relatedEntities[id]) {
-            relatedEntities[id] = {
-                ...keys[entityKey],
-                passing: numPassing,
-                failing: numFailing
-            };
-        } else {
-            const { passing: totalPassing, failing: totalFailing } = relatedEntities[id];
-            relatedEntities[id].passing = totalPassing + numPassing;
-            relatedEntities[id].failing = totalFailing + numFailing;
-        }
-    });
+const getFailingNodes = executedControls => {
+    const failingNodes = executedControls.reduce((acc, curr) => {
+        return [...acc, ...curr.complianceControl.complianceControlFailingNodes];
+    }, []);
+    return uniqBy(failingNodes, 'id').map(node => ({ ...node, passing: false }));
+};
 
-    return Object.values(relatedEntities);
+const getPassingNodes = executedControls => {
+    const passingNodes = executedControls.reduce((acc, curr) => {
+        return [...acc, ...curr.complianceControl.complianceControlPassingNodes];
+    }, []);
+    return uniqBy(passingNodes, 'id').map(node => ({ ...node, passing: true }));
 };
 
 const NodesWithFailedControls = props => {
     const { entityType, entityContext } = props;
-    const { loading, error, data } = useQuery(NODES_WITH_CONTROL, {
+    const { loading, error, data } = useQuery(NODES_WITH_FAILING_CONTROLS, {
         variables: {
-            groupBy: [entityTypes.CONTROL, entityTypes.NODE],
-            where: filterByEntityContext(entityContext)
-        }
+            query: filterByEntityContext(entityContext)
+        },
+        fetchPolicy: 'no-cache'
     });
     if (loading)
         return (
@@ -62,8 +73,8 @@ const NodesWithFailedControls = props => {
         );
     if (error) Raven.captureException(error);
     if (!data) return null;
-    const { entities = [] } = data;
-    if (entities.length === 0)
+    const { executedControls = [] } = data;
+    if (executedControls.length === 0)
         return (
             <NoResultsMessage
                 message={`No nodes failing ${
@@ -74,15 +85,10 @@ const NodesWithFailedControls = props => {
             />
         );
 
-    const localRelatedEntities = getRelatedEntities(entities, entityTypes.NODE);
-    const failingRelatedEntities = localRelatedEntities.filter(
-        relatedEntity => relatedEntity.failing
-    );
-    const passingRelatedEntities = localRelatedEntities.filter(
-        relatedEntity => relatedEntity.passing && !relatedEntity.failing
-    );
-    const numFailing = failingRelatedEntities.length;
-    const numPassing = passingRelatedEntities.length;
+    const failingNodes = getFailingNodes(executedControls);
+    const passingNodes = getPassingNodes(executedControls);
+    const numFailing = failingNodes.length;
+    const numPassing = passingNodes.length;
     if (numPassing && !numFailing)
         return (
             <NoResultsMessage
@@ -111,7 +117,7 @@ const NodesWithFailedControls = props => {
         <TableWidget
             entityType={entityTypes.NODE}
             header={tableHeader}
-            rows={failingRelatedEntities}
+            rows={failingNodes}
             noDataText="No Nodes"
             className="bg-base-100 w-full"
             columns={entityAcrossControlsColumns[entityTypes.NODE]}

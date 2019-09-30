@@ -164,28 +164,6 @@ export const CONTROL_QUERY = gql`
     }
 `;
 
-export const NODES_WITH_CONTROL = gql`
-    query nodesWithControls($groupBy: [ComplianceAggregation_Scope!], $where: String) {
-        entities: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
-            results {
-                aggregationKeys {
-                    id
-                    scope
-                }
-                keys {
-                    ... on Node {
-                        clusterName
-                        id
-                        name
-                    }
-                }
-                numFailing
-                numPassing
-            }
-        }
-    }
-`;
-
 export const CONTROL_FRAGMENT = gql`
     fragment controlFields on ControlResult {
         resource {
