@@ -331,7 +331,7 @@ storeCypressScreenshots: &storeCypressScreenshots
 
 storeQATestResults: &storeQATestResults
   store_test_results:
-    path: qa-tests-backend/build/test-results/test
+    path: qa-tests-backend/aggregated-test-results
 
 storeQASpockReports: &storeQASpockReports
   store_artifacts:
@@ -707,6 +707,7 @@ commands:
             fi
 
       - *collectK8sLogs
+      - *storeQATestResults
       - copy-gradle-files:
           target-dir: ${CIRCLE_JOB}-part1
 
@@ -936,6 +937,7 @@ commands:
             fi
 
       - *collectK8sLogs
+      - *storeQATestResults
       - copy-gradle-files:
           target-dir: openshift-part1
 
@@ -2669,8 +2671,8 @@ workflows:
       - provision-openshift-crio:
           context: docker-io-pull
           filters:
-            branches:
-              ignore: /^master$/  # TODO(ROX-3375): Remove & add for tags
+            tags:
+              only: /.*/
       - openshift-tests:
           context: docker-io-pull
           requires:
@@ -2686,8 +2688,8 @@ workflows:
             - build
             - provision-openshift-crio
           filters:
-            branches:
-              ignore: /^master$/  # TODO(ROX-3375): Remove & add for tags
+            tags:
+              only: /.*/
       - provision-kops:
           context: docker-io-pull
           filters:
