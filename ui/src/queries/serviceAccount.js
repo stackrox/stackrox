@@ -13,6 +13,7 @@ export const SERVICE_ACCOUNT_FRAGMENT = gql`
         }
         clusterName
         clusterId
+        deploymentCount
         deployments {
             id
         }

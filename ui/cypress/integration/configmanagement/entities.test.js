@@ -114,6 +114,7 @@ const entityCountMatchesTableRows = (listEntity, context) => {
                 .find('button')
                 .invoke('attr', 'disabled', false)
                 .click();
+            cy.wait(1000);
             cy.get(`${contextSelector} .rt-tr-group`);
             cy.get(`${contextSelector} [data-test-id="panel-header"]`)
                 .invoke('text')
