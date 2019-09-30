@@ -113,7 +113,7 @@ require (
 	github.com/satori/go.uuid v1.1.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	github.com/stackrox/anchore-client v0.0.0-20190307200411-608e0af2c0b4
+	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
 	github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 // indirect

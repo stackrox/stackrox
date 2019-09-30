@@ -50,9 +50,17 @@ func convertVulnToProtoVuln(vuln anchoreClient.Vulnerability) *storage.EmbeddedV
 	if strings.EqualFold(vuln.Fix, "none") {
 		vuln.Fix = ""
 	}
+
+	cvss := getSeverity(vuln.Severity)
+	if len(vuln.NVDData) != 0 {
+		if cvssV2 := vuln.NVDData[0].CVSSV2; cvssV2 != nil && cvssV2.Base != -1 {
+			cvss = float32(vuln.NVDData[0].CVSSV2.Base)
+		}
+	}
+
 	return &storage.EmbeddedVulnerability{
 		Cve:     vuln.Vuln,
-		Cvss:    getSeverity(vuln.Severity),
+		Cvss:    cvss,
 		Summary: "Follow the link for CVE summary",
 		Link:    vuln.Url,
 		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{

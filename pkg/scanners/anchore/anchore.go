@@ -261,6 +261,7 @@ func getImageAnalysisRequest(image *storage.Image) (*anchoreClient.ImageAnalysis
 		iar.Digest = image.GetId()
 		// This is a strange construct of Anchore, but is required when scanning by tag and digest
 		iar.CreatedAt = time.Now().UTC().Format(time.RFC3339)
+		iar.Tag = "fake" // Anchore needs a fake tag to be passed, but it is disregarded
 	}
 	iar.Tag = image.GetName().GetFullName()
 	return &iar, nil
