@@ -8,7 +8,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs }) => {
             Header: 'CVE',
             accessor: 'cve',
             Cell: ci => (
-                <div className="truncate">
+                <div>
                     <a
                         href={ci.original.link}
                         target="_blank"
@@ -17,6 +17,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs }) => {
                     >
                         {ci.value}
                     </a>
+                    <div className="mt-2">{ci.original.summary}</div>
                 </div>
             ),
             headerClassName: 'font-600 border-b border-base-300 flex items-end bg-primary-300',
