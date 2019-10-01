@@ -100,7 +100,14 @@ func initializeIndices(scorchPath string) (bleve.Index, error) {
 	} else {
 		globalIndex, err = bleve.OpenUsing(scorchPath, kvconfig)
 		if err != nil {
-			return nil, err
+			log.Errorf("Error opening Bleve index: %v. Removing index and retrying from scratch...", err)
+			if globalIndex != nil {
+				_ = globalIndex.Close()
+			}
+			if err := os.RemoveAll(scorchPath); err != nil {
+				log.Panicf("error removing scorch path: %v", err)
+			}
+			return initializeIndices(scorchPath)
 		}
 
 		// This implies that the index mapping has changed and therefore we should reindex everything
