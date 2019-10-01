@@ -17,10 +17,10 @@ function createSortOptionFromTableState(columns, state) {
             reversed: state.sorted[0].desc
         };
     } else {
-        // Default to sorting by the first column.
+        // Default to sorting by the Time column.
         sortOption = {
-            field: columns[0].searchField,
-            reversed: false
+            field: columns.find(c => c.accessor === 'time').searchField,
+            reversed: true
         };
     }
     return sortOption;
