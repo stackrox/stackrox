@@ -54,12 +54,12 @@ $(ROXVET_BIN): deps
 	go install ./tools/roxvet
 
 STRINGER_BIN := $(GOPATH)/bin/stringer
-$(STRINGER_BIN):
+$(STRINGER_BIN): deps
 	@echo "+ $@"
 	go install golang.org/x/tools/cmd/stringer
 
 MOCKGEN_BIN := $(GOPATH)/bin/mockgen
-$(MOCKGEN_BIN):
+$(MOCKGEN_BIN): deps
 	@echo "+ $@"
 	go install github.com/golang/mock/mockgen
 
@@ -545,7 +545,7 @@ collector-tag:
 scanner-tag:
 	@cat SCANNER_VERSION
 
-GET_DEVTOOLS_CMD := $(MAKE) -qp | sed -e '/^\# Not a target:$$/{ N; d; }' | egrep -v '^(\s*(\#.*)?$$|\s|%|\(|\.)' | egrep '^[^[:space:]:]*: ' | cut -d: -f1 | sort | uniq | grep '^$(GOPATH)/bin/'
+GET_DEVTOOLS_CMD := $(MAKE) -qp | sed -e '/^\# Not a target:$$/{ N; d; }' | egrep -v '^(\s*(\#.*)?$$|\s|%|\(|\.)' | egrep '^[^[:space:]:]*:' | cut -d: -f1 | sort | uniq | grep '^$(GOPATH)/bin/'
 .PHONY: clean-dev-tools
 clean-dev-tools:
 	@echo "+ $@"
