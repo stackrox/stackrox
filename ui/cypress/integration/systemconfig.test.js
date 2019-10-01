@@ -1,5 +1,5 @@
-import selectors, { systemConfigUrl, text } from './constants/SystemConfigPage';
-import withAuth from './helpers/basicAuth';
+import selectors, { systemConfigUrl, text } from '../constants/SystemConfigPage';
+import withAuth from '../helpers/basicAuth';
 
 describe('System Config', () => {
     withAuth();

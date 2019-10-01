@@ -1,7 +1,7 @@
-import { selectors as RiskPageSelectors, url, errorMessages } from './constants/RiskPage';
-import selectors from './constants/SearchPage';
-import * as api from './constants/apiEndpoints';
-import withAuth from './helpers/basicAuth';
+import { selectors as RiskPageSelectors, url, errorMessages } from '../constants/RiskPage';
+import selectors from '../constants/SearchPage';
+import * as api from '../constants/apiEndpoints';
+import withAuth from '../helpers/basicAuth';
 
 describe('Risk page', () => {
     withAuth();
@@ -30,8 +30,8 @@ describe('Risk page', () => {
     });
 
     it('should sort priority in the table', () => {
-        cy.get(RiskPageSelectors.table.columns.priority).click({ force: true }); // ascending
-        cy.get(RiskPageSelectors.table.columns.priority).click({ force: true }); // descending
+        cy.get(RiskPageSelectors.table.column.priority).click({ force: true }); // ascending
+        cy.get(RiskPageSelectors.table.column.priority).click({ force: true }); // descending
         cy.get(RiskPageSelectors.table.row.firstRow).should('contain', '3');
     });
 

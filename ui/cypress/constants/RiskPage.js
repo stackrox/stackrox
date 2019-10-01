@@ -25,12 +25,20 @@ export const selectors = {
     },
     imageLink: 'div:contains("Image Name") + a',
     table: {
-        columns: {
+        column: {
             priority: 'div.rt-th div:contains("Priority")'
         },
         row: {
             firstRow: 'div.rt-tr-group:first-child div.rt-tr'
-        }
+        },
+        rows: 'div.rt-tr-group div.rt-tr',
+        columns: '.rt-td'
     },
+    collapsible: {
+        card: '.Collapsible',
+        header: '.Collapsible__trigger',
+        body: '.Collapsible__contentInner'
+    },
+    suspiciousProcesses: "[data-test-id='suspicious-process']",
     networkNodeLink: '[data-test-id="network-node-link"]'
 };

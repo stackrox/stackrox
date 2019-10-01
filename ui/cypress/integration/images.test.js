@@ -1,8 +1,8 @@
-import { url as imagesUrl, selectors as imageSelectors } from './constants/ImagesPage';
-import { url as riskUrl, selectors as riskSelectors } from './constants/RiskPage';
-import * as api from './constants/apiEndpoints';
-import selectors from './constants/SearchPage';
-import withAuth from './helpers/basicAuth';
+import { url as imagesUrl, selectors as imageSelectors } from '../constants/ImagesPage';
+import { url as riskUrl, selectors as riskSelectors } from '../constants/RiskPage';
+import * as api from '../constants/apiEndpoints';
+import selectors from '../constants/SearchPage';
+import withAuth from '../helpers/basicAuth';
 
 describe('Images page', () => {
     withAuth();

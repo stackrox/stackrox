@@ -1,6 +1,6 @@
 import capitalize from 'lodash/capitalize';
-import { url, selectors, controlStatus } from '../constants/ConfigManagementPage';
-import withAuth from '../helpers/basicAuth';
+import { url, selectors, controlStatus } from '../../constants/ConfigManagementPage';
+import withAuth from '../../helpers/basicAuth';
 
 // specifying an "entityName" will try to select that row in the table
 const renderListAndSidePanel = (entity, entityName = null) => {

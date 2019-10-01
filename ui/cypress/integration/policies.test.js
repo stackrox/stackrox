@@ -1,6 +1,6 @@
-import { selectors, text, url } from './constants/PoliciesPage';
-import * as api from './constants/apiEndpoints';
-import withAuth from './helpers/basicAuth';
+import { selectors, text, url } from '../constants/PoliciesPage';
+import * as api from '../constants/apiEndpoints';
+import withAuth from '../helpers/basicAuth';
 
 describe('Policies page', () => {
     withAuth();

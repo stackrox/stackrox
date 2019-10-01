@@ -1,4 +1,4 @@
-import { selectors, url } from './constants/Docs';
+import { selectors, url } from '../constants/Docs';
 
 describe('Documentation Access', () => {
     it('should load the documentation page', () => {

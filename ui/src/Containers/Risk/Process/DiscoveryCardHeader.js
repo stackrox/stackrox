@@ -39,7 +39,10 @@ function ProcessesDiscoveryCardHeader({
     const backgroundClass = suspicious ? suspiciousProcessClassName : headerClassName;
     const textClass = suspicious ? 'text-alert-800' : 'text-primary-800';
     return (
-        <div className={`${titleClassName} ${backgroundClass}`}>
+        <div
+            className={`${titleClassName} ${backgroundClass}`}
+            data-test-id={suspicious ? 'suspicious-process' : 'process'}
+        >
             <div className={`p-3 ${textClass} flex flex-col`}>
                 <h1 className="text-lg font-700">{trimmedName}</h1>
                 <h2 className="text-sm font-600 italic">{`in container ${containerName} `}</h2>

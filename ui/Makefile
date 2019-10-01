@@ -52,6 +52,16 @@ test-e2e-ci: deps $(SOURCES)
 	@echo "+ $@"
 	yarn test-e2e-ci --config baseUrl=$(UI_BASE_URL)
 
+.PHONY: test-e2e-demo-local
+test-e2e-demo-local: deps $(SOURCES)
+	@echo "+ $@"
+	yarn test-e2e-demo-local
+
+.PHONY: test-e2e-demo-ci
+test-e2e-demo-ci: deps $(SOURCES)
+	@echo "+ $@"
+	yarn test-e2e-demo-ci --config baseUrl=$(UI_BASE_URL)
+
 .PHONY: clean
 clean:
 	@echo "+ $@"

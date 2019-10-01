@@ -38,3 +38,6 @@ combined_coverage.dat
 
 # Openshift automation workspace artifacts
 /openshift/
+
+# Cypress
+cypress-report.xml

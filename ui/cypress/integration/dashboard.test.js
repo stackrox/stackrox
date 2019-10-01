@@ -1,9 +1,12 @@
-import { url as dashboardUrl, selectors } from './constants/DashboardPage';
+import { url as dashboardUrl, selectors } from '../constants/DashboardPage';
 
-import { url as violationsUrl } from './constants/ViolationsPage';
-import { url as complianceUrl, selectors as complianceSelectors } from './constants/CompliancePage';
-import * as api from './constants/apiEndpoints';
-import withAuth from './helpers/basicAuth';
+import { url as violationsUrl } from '../constants/ViolationsPage';
+import {
+    url as complianceUrl,
+    selectors as complianceSelectors
+} from '../constants/CompliancePage';
+import * as api from '../constants/apiEndpoints';
+import withAuth from '../helpers/basicAuth';
 
 describe('Dashboard page', () => {
     withAuth();

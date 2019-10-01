@@ -1,6 +1,6 @@
-import { url, selectors } from '../constants/ConfigManagementPage';
-import withAuth from '../helpers/basicAuth';
-import mockGraphQL from '../helpers/mockGraphQL';
+import { url, selectors } from '../../constants/ConfigManagementPage';
+import withAuth from '../../helpers/basicAuth';
+import mockGraphQL from '../../helpers/mockGraphQL';
 
 import subjects from '../../fixtures/subjects/subjects.json';
 

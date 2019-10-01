@@ -1,6 +1,6 @@
-import { selectors } from './constants/IntegrationsPage';
-import * as api from './constants/apiEndpoints';
-import withAuth from './helpers/basicAuth';
+import { selectors } from '../constants/IntegrationsPage';
+import * as api from '../constants/apiEndpoints';
+import withAuth from '../helpers/basicAuth';
 
 describe('Integrations page', () => {
     withAuth();

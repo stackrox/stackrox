@@ -1,10 +1,10 @@
 import {
     url as violationsUrl,
     selectors as ViolationsPageSelectors
-} from './constants/ViolationsPage';
-import * as api from './constants/apiEndpoints';
-import selectors from './constants/SearchPage';
-import withAuth from './helpers/basicAuth';
+} from '../constants/ViolationsPage';
+import * as api from '../constants/apiEndpoints';
+import selectors from '../constants/SearchPage';
+import withAuth from '../helpers/basicAuth';
 
 describe('Violations page', () => {
     withAuth();

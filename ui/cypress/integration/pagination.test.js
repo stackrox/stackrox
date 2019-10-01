@@ -1,5 +1,5 @@
-import { selectors } from './constants/TablePagination';
-import withAuth from './helpers/basicAuth';
+import { selectors } from '../constants/TablePagination';
+import withAuth from '../helpers/basicAuth';
 
 describe('Table pagination header in Policies page', () => {
     withAuth();

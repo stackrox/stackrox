@@ -1,6 +1,6 @@
-import { url as dashboardUrl } from './constants/DashboardPage';
-import selectors from './constants/GeneralPage';
-import withAuth from './helpers/basicAuth';
+import { url as dashboardUrl } from '../constants/DashboardPage';
+import selectors from '../constants/GeneralPage';
+import withAuth from '../helpers/basicAuth';
 
 //
 // Sanity / general checks for UI being up and running

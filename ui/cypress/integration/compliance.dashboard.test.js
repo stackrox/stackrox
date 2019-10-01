@@ -1,5 +1,5 @@
-import { url, selectors } from './constants/CompliancePage';
-import withAuth from './helpers/basicAuth';
+import { url, selectors } from '../constants/CompliancePage';
+import withAuth from '../helpers/basicAuth';
 
 describe('Compliance dashboard page', () => {
     withAuth();

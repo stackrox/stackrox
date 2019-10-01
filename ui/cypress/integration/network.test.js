@@ -1,6 +1,6 @@
-import { url as networkUrl, selectors as networkPageSelectors } from './constants/NetworkPage';
-import * as api from './constants/apiEndpoints';
-import withAuth from './helpers/basicAuth';
+import { url as networkUrl, selectors as networkPageSelectors } from '../constants/NetworkPage';
+import * as api from '../constants/apiEndpoints';
+import withAuth from '../helpers/basicAuth';
 
 const uploadFile = (fileName, selector) => {
     cy.get(selector).then(subject => {

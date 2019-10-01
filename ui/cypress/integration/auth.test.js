@@ -1,7 +1,7 @@
-import { url as loginUrl, selectors } from './constants/LoginPage';
-import { url as dashboardURL } from './constants/DashboardPage';
+import { url as loginUrl, selectors } from '../constants/LoginPage';
+import { url as dashboardURL } from '../constants/DashboardPage';
 
-import * as api from './constants/apiEndpoints';
+import * as api from '../constants/apiEndpoints';
 
 describe('Authentication', () => {
     const setupAuth = (landingUrl, authStatusValid = true) => {

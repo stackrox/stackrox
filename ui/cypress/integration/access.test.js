@@ -1,5 +1,5 @@
-import { selectors, url } from './constants/AccessPage';
-import withAuth from './helpers/basicAuth';
+import { selectors, url } from '../constants/AccessPage';
+import withAuth from '../helpers/basicAuth';
 
 describe('Access Control Page', () => {
     describe('Auth Provider Rules', () => {
