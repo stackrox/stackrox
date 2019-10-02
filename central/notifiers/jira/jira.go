@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"text/template"
 	"time"
 
@@ -24,12 +25,13 @@ var (
 	log = logging.LoggerForModule()
 
 	defaultPriorities = map[storage.Severity]string{
-		storage.Severity_CRITICAL_SEVERITY: "P0-Highest",
-		storage.Severity_HIGH_SEVERITY:     "P1-High",
-		storage.Severity_MEDIUM_SEVERITY:   "P2-Medium",
-		storage.Severity_LOW_SEVERITY:      "P3-Low",
-		storage.Severity_UNSET_SEVERITY:    "P4-Lowest",
+		storage.Severity_CRITICAL_SEVERITY: "P0",
+		storage.Severity_HIGH_SEVERITY:     "P1",
+		storage.Severity_MEDIUM_SEVERITY:   "P2",
+		storage.Severity_LOW_SEVERITY:      "P3",
+		storage.Severity_UNSET_SEVERITY:    "P4",
 	}
+	pattern = regexp.MustCompile(`^(P[0-9])\b`)
 )
 
 // Jira notifier plugin
@@ -219,15 +221,18 @@ func (j *jira) Test() error {
 }
 
 func mapPriorities(prios []jiraLib.Priority) map[storage.Severity]string {
+	shortened := make(map[string]string)
+	for _, prio := range prios {
+		match := pattern.FindString(prio.Name)
+		if len(match) > 0 {
+			shortened[match] = prio.Name
+		}
+	}
 	output := make(map[storage.Severity]string)
 	for k, name := range defaultPriorities {
-		for _, p := range prios {
-			if len(p.Name) < 3 {
-				continue
-			}
-			if name[:3] == p.Name[:3] {
-				name = p.Name
-			}
+		match, ok := shortened[name]
+		if ok {
+			name = match
 		}
 		output[k] = name
 	}
