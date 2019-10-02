@@ -235,5 +235,10 @@ func getImages(c *client.Client) ([]internalTypes.ImageWrap, error) {
 func getBridgeNetwork(c *client.Client) (types.NetworkResource, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
-	return c.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})
+
+	network, err := c.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})
+	if client.IsErrNotFound(err) {
+		return types.NetworkResource{}, nil
+	}
+	return network, err
 }
