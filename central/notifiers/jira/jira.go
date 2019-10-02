@@ -166,10 +166,10 @@ func newJira(notifier *storage.Notifier) (*jira, error) {
 	}
 
 	prios, _, err := client.Priority.GetList()
-
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("Retrieved priority list: %+v", prios)
 
 	return &jira{
 		client:     client,
@@ -222,6 +222,9 @@ func mapPriorities(prios []jiraLib.Priority) map[storage.Severity]string {
 	output := make(map[storage.Severity]string)
 	for k, name := range defaultPriorities {
 		for _, p := range prios {
+			if len(p.Name) < 3 {
+				continue
+			}
 			if name[:3] == p.Name[:3] {
 				name = p.Name
 			}
