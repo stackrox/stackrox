@@ -9,7 +9,9 @@ All notable changes to this project that require documentation updates will be d
 - `roxctl` can now talk to Central instances exposed via plaintext (either directly, or via a plaintext proxy talking to
   a plaintext or TLS-enabled backend). While we advise against this, this behavior can be enabled via the `--plaintext`
   flag in conjunction with the `--insecure` flag.
-
+- `roxctl` now has a `--tolerations` flag that is true by default, and can be set to false to disable tolerations for 
+tainted nodes from being added into `sensor.yaml`. If the flag is set to true, collectors will be deployed to and run on 
+all nodes of the cluster.
 ## [30.0]
 ### Changed
 - `TriggerRun(/v1/complianceManagement/runs)` endpoint is removed. All clients should use `TriggerRuns(/v1/compliancemanagement/runs)` to start a compliance run.

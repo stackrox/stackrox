@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
+import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
 
@@ -27,8 +28,9 @@ import {
 import CollapsibleCard from '../../Components/CollapsibleCard';
 
 function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, upgradeStatus }) {
+    const defaultCluster = cloneDeep(newClusterDefault);
     const envAwareClusterDefault = {
-        ...newClusterDefault,
+        ...defaultCluster,
         mainImage: metadata.releaseBuild ? 'stackrox.io/main' : 'stackrox/main',
         collectorImage: metadata.releaseBuild
             ? 'collector.stackrox.io/collector'

@@ -24,6 +24,9 @@ import (
 
 var (
 	cluster = storage.Cluster{
+		TolerationsConfig: &storage.TolerationsConfig{
+			Enabled: true,
+		},
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AdmissionControllerConfig: &storage.AdmissionControllerConfig{},
 		},
@@ -97,6 +100,8 @@ func Command() *cobra.Command {
 		// TODO(viswa/malte): Hash out the default here. Viswa thinks it should be true.
 		c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", false, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
 	}
+
+	c.PersistentFlags().BoolVar(&cluster.TolerationsConfig.Enabled, "tolerations", true, "whether or not to have tolerations for tainted nodes")
 
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())

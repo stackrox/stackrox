@@ -233,6 +233,10 @@ spec:
         app: collector
       namespace: stackrox
     spec:
+      {{if .TolerationsEnabled}}
+      tolerations:
+      - operator: "Exists"
+      {{- end}}
       serviceAccount: collector
       containers:
       - name: collector

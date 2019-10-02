@@ -94,6 +94,9 @@ func getBaseConfig() *storage.Cluster {
 		CentralApiEndpoint:  "central.stackrox:443",
 		CollectionMethod:    storage.CollectionMethod_KERNEL_MODULE,
 		AdmissionController: false,
+		TolerationsConfig: &storage.TolerationsConfig{
+			Enabled: false,
+		},
 	}
 }
 

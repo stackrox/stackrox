@@ -121,6 +121,7 @@ func fieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"MonitoringEndpoint": netutil.WithDefaultPort(c.MonitoringEndpoint, defaultMonitoringPort),
 		"ClusterType":        c.Type.String(),
 
+		"TolerationsEnabled":  c.TolerationsConfig.GetEnabled(),
 		"AdmissionController": c.AdmissionController,
 
 		"OfflineMode": env.OfflineModeEnv.Setting(),

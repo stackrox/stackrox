@@ -62,9 +62,12 @@ message AdmissionControllerConfig {
     bool                  disableBypass                        = 4;
 }
 
+message TolerationsConfig {
+    bool                  enabled                              = 1;
+}
+
 message DynamicClusterConfig {
     AdmissionControllerConfig admission_controller_config = 1;
-
     string registry_override = 2;
 }
 
@@ -88,6 +91,7 @@ message Cluster {
 
     ClusterStatus             status                      = 15;
     DynamicClusterConfig      dynamic_config              = 18;
+    TolerationsConfig         tolerations_config           = 19;
 }
 
 message ClusterStatus {

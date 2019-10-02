@@ -116,6 +116,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"runtimeSupport: Boolean!",
 		"status: ClusterStatus",
+		"tolerationsConfig: TolerationsConfig",
 		"type: ClusterType!",
 	}))
 	utils.Must(builder.AddType("ClusterStatus", []string{
@@ -878,6 +879,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"value: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
+	utils.Must(builder.AddType("TolerationsConfig", []string{
+		"enabled: Boolean!",
+	}))
 	utils.Must(builder.AddType("UpgradeProgress", []string{
 		"since: Time",
 		"upgradeState: UpgradeProgress_UpgradeState!",
@@ -1718,6 +1722,11 @@ func (resolver *clusterResolver) RuntimeSupport(ctx context.Context) bool {
 func (resolver *clusterResolver) Status(ctx context.Context) (*clusterStatusResolver, error) {
 	value := resolver.data.GetStatus()
 	return resolver.root.wrapClusterStatus(value, true, nil)
+}
+
+func (resolver *clusterResolver) TolerationsConfig(ctx context.Context) (*tolerationsConfigResolver, error) {
+	value := resolver.data.GetTolerationsConfig()
+	return resolver.root.wrapTolerationsConfig(value, true, nil)
 }
 
 func (resolver *clusterResolver) Type(ctx context.Context) string {
@@ -7434,6 +7443,34 @@ func toToleration_Operators(values *[]string) []storage.Toleration_Operator {
 		output[i] = toToleration_Operator(&v)
 	}
 	return output
+}
+
+type tolerationsConfigResolver struct {
+	root *Resolver
+	data *storage.TolerationsConfig
+}
+
+func (resolver *Resolver) wrapTolerationsConfig(value *storage.TolerationsConfig, ok bool, err error) (*tolerationsConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &tolerationsConfigResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapTolerationsConfigs(values []*storage.TolerationsConfig, err error) ([]*tolerationsConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*tolerationsConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &tolerationsConfigResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *tolerationsConfigResolver) Enabled(ctx context.Context) bool {
+	value := resolver.data.GetEnabled()
+	return value
 }
 
 type upgradeProgressResolver struct {

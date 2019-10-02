@@ -210,6 +210,25 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             />
                         </div>
                     )}
+                    <div className="mb-4 flex flex-col bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 justify-between">
+                        <div className="flex items-center justify-between">
+                            <label
+                                htmlFor="tolerationsConfig.enabled"
+                                className="block py-2 text-base-600 font-700"
+                            >
+                                Enable Taint Tolerations
+                            </label>
+                            <ToggleSwitch
+                                id="tolerationsConfig.enabled"
+                                name="tolerationsConfig.enabled"
+                                toggleHandler={handleChange}
+                                enabled={selectedCluster.tolerationsConfig.enabled}
+                            />
+                        </div>
+                        <div className="flex py-1 italic">
+                            Tolerate all taints to run on all nodes of this cluster
+                        </div>
+                    </div>
                 </div>
             </CollapsibleCard>
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
@@ -240,7 +259,6 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                                 />
                             </div>
                         </div>
-
                         <h3>Admission Controller</h3>
                         <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
                             <label
@@ -329,6 +347,9 @@ ClusterEditForm.propTypes = {
         collectionMethod: PropTypes.string,
         collectorImage: PropTypes.string,
         admissionController: PropTypes.string,
+        tolerationsConfig: PropTypes.shape({
+            enabled: PropTypes.bool
+        }),
         dynamicConfig: PropTypes.shape({
             registryOverride: PropTypes.string,
             admissionControllerConfig: PropTypes.shape({
