@@ -7,7 +7,7 @@ import (
 )
 
 // HandleV2ManifestList takes in a v2 manifest list ref and returns the image metadata
-func (r *Registry) HandleV2ManifestList(remote, ref string) (*storage.ImageMetadata, error) {
+func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
 	manifestList, err := r.Client.ManifestList(remote, ref)
 	if err != nil {
 		return nil, err
@@ -15,14 +15,14 @@ func (r *Registry) HandleV2ManifestList(remote, ref string) (*storage.ImageMetad
 	for _, manifest := range manifestList.Manifests {
 		// Default to linux arch
 		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
-			return r.HandleV2Manifest(remote, manifest.Digest)
+			return HandleV2Manifest(r, remote, manifest.Digest)
 		}
 	}
 	return nil, fmt.Errorf("could not find manifest in list for architecture linux:amd64: '%s'", ref)
 }
 
 // HandleV2Manifest takes in a v2 ref and returns the image metadata
-func (r *Registry) HandleV2Manifest(remote, ref string) (*storage.ImageMetadata, error) {
+func HandleV2Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
 	metadata, err := r.Client.ManifestV2(remote, ref)
 	if err != nil {
 		return nil, err

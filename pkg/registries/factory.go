@@ -8,9 +8,12 @@ import (
 	dtrFactory "github.com/stackrox/rox/pkg/registries/dtr"
 	ecrFactory "github.com/stackrox/rox/pkg/registries/ecr"
 	googleFactory "github.com/stackrox/rox/pkg/registries/google"
+	ibmFactory "github.com/stackrox/rox/pkg/registries/ibm"
 	nexusFactory "github.com/stackrox/rox/pkg/registries/nexus"
 	quayFactory "github.com/stackrox/rox/pkg/registries/quay"
+	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
 	tenableFactory "github.com/stackrox/rox/pkg/registries/tenable"
+
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
@@ -22,6 +25,8 @@ type Factory interface {
 	CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error)
 }
 
+type creatorWrapper func() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error))
+
 // NewFactory creates a new scanner factory.
 func NewFactory() Factory {
 	reg := &factoryImpl{
@@ -30,32 +35,25 @@ func NewFactory() Factory {
 
 	// Add registries to factory.
 	//////////////////////////////
-	artifactoryFactoryType, artifactoryFactoryCreator := artifactoryFactory.Creator()
-	reg.creators[artifactoryFactoryType] = artifactoryFactoryCreator
+	creatorFuncs := []creatorWrapper{
+		artifactoryFactory.Creator,
+		dockerFactory.Creator,
+		dtrFactory.Creator,
+		ecrFactory.Creator,
+		googleFactory.Creator,
+		quayFactory.Creator,
+		tenableFactory.Creator,
+		nexusFactory.Creator,
+		azureFactory.Creator,
+		rhelFactory.Creator,
+		ibmFactory.Creator,
+	}
 
-	dockerFactoryType, dockerFactoryCreator := dockerFactory.Creator()
-	reg.creators[dockerFactoryType] = dockerFactoryCreator
+	for _, creatorFunc := range creatorFuncs {
+		typ, creator := creatorFunc()
+		reg.creators[typ] = creator
 
-	dtrFactoryType, dtrFactoryCreator := dtrFactory.Creator()
-	reg.creators[dtrFactoryType] = dtrFactoryCreator
-
-	ecrFactoryType, ecrFactoryCreator := ecrFactory.Creator()
-	reg.creators[ecrFactoryType] = ecrFactoryCreator
-
-	googleFactoryType, googleFactoryCreator := googleFactory.Creator()
-	reg.creators[googleFactoryType] = googleFactoryCreator
-
-	quayFactoryType, quayFactoryCreator := quayFactory.Creator()
-	reg.creators[quayFactoryType] = quayFactoryCreator
-
-	tenableFactoryType, tenableFactoryCreator := tenableFactory.Creator()
-	reg.creators[tenableFactoryType] = tenableFactoryCreator
-
-	nexusFactoryType, nexusFactoryCreator := nexusFactory.Creator()
-	reg.creators[nexusFactoryType] = nexusFactoryCreator
-
-	azureFactoryType, azureFactoryCreator := azureFactory.Creator()
-	reg.creators[azureFactoryType] = azureFactoryCreator
+	}
 
 	return reg
 }

@@ -135,13 +135,13 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 
 	switch manifestType {
 	case manifestV1.MediaTypeManifest:
-		return r.HandleV1Manifest(remote, digest.String())
+		return HandleV1Manifest(r, remote, digest.String())
 	case manifestV1.MediaTypeSignedManifest:
-		return r.HandleV1SignedManifest(remote, digest.String())
+		return HandleV1SignedManifest(r, remote, digest.String())
 	case registry.MediaTypeManifestList:
-		return r.HandleV2ManifestList(remote, digest.String())
+		return HandleV2ManifestList(r, remote, digest.String())
 	case schema2.MediaTypeManifest:
-		return r.HandleV2Manifest(remote, digest.String())
+		return HandleV2Manifest(r, remote, digest.String())
 	default:
 		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
 	}

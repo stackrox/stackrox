@@ -19,9 +19,6 @@ func TestGetMetadataIntegration(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	/*
-		"k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.8"
-	*/
 	image := storage.Image{
 		Id: "sha256:93c827f018cf3322f1ff2aa80324a0306048b0a69bc274e423071fb0d2d29d8b",
 		Name: &storage.ImageName{

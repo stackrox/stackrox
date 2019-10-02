@@ -847,6 +847,67 @@ const formDescriptors = {
                 type: 'password',
                 placeholder: ''
             }
+        ],
+        ibm: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'IBM Registry'
+            },
+            {
+                label: 'Types',
+                jsonpath: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'REGISTRY', label: 'Registry', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                jsonpath: 'ibm.endpoint',
+                type: 'text',
+                placeholder: 'us.icr.io'
+            },
+            {
+                label: 'API Key',
+                jsonpath: 'ibm.apiKey',
+                type: 'text',
+                placeholder: ''
+            }
+        ],
+        rhel: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'RHEL Registry'
+            },
+            {
+                label: 'Types',
+                jsonpath: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'REGISTRY', label: 'Registry', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                jsonpath: 'docker.endpoint',
+                type: 'text',
+                placeholder: 'registry.access.redhat.com'
+            },
+            {
+                label: 'Username',
+                jsonpath: 'docker.username',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Password',
+                jsonpath: 'docker.password',
+                type: 'password',
+                placeholder: ''
+            },
+            skipTestIntegration
         ]
     },
     backups: {

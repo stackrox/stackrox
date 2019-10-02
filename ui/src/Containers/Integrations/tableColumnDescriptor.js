@@ -134,6 +134,15 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             { accessor: 'anchore.endpoint', Header: 'Endpoint' },
             { accessor: 'anchore.username', Header: 'Username' }
+        ],
+        ibm: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'ibm.endpoint', Header: 'Endpoint' }
+        ],
+        rhel: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'docker.endpoint', Header: 'Endpoint' },
+            { accessor: 'docker.username', Header: 'Username' }
         ]
     },
     backups: {

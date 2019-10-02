@@ -88,7 +88,7 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 }
 
 // HandleV1SignedManifest takes in a signed v1 ref and returns the image metadata
-func (r *Registry) HandleV1SignedManifest(remote, ref string) (*storage.ImageMetadata, error) {
+func HandleV1SignedManifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
 	manifest, err := r.Client.SignedManifest(remote, ref)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (r *Registry) HandleV1SignedManifest(remote, ref string) (*storage.ImageMet
 }
 
 // HandleV1Manifest takes in a v1 ref and returns the image metadata
-func (r *Registry) HandleV1Manifest(remote, ref string) (*storage.ImageMetadata, error) {
+func HandleV1Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
 	manifest, err := r.Client.Manifest(remote, ref)
 	if err != nil {
 		return nil, err

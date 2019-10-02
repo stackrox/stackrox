@@ -2,10 +2,10 @@ package nexus
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +15,11 @@ func TestNexus(t *testing.T) {
 	if endpoint == "" {
 		t.Skipf("ENDPOINT is required for Nexus integration test")
 	}
-	dockerHubClient, err := newRegistry(&storage.ImageIntegration{
+
+	typ, creator := Creator()
+	require.Equal(t, "nexus", typ)
+
+	reg, err := creator(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
 				Endpoint: endpoint,
@@ -26,8 +30,7 @@ func TestNexus(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	endpoint = strings.TrimPrefix(endpoint, "http://")
-	endpoint = strings.TrimPrefix(endpoint, "https://")
+	endpoint = urlfmt.TrimHTTPPrefixes(endpoint)
 	image := storage.Image{
 		Id: "sha256:e2847e35d4e0e2d459a7696538cbfea42ea2d3b8a1ee8329ba7e68694950afd3",
 		Name: &storage.ImageName{
@@ -36,6 +39,6 @@ func TestNexus(t *testing.T) {
 			Tag:      "latest",
 		},
 	}
-	_, err = dockerHubClient.Metadata(&image)
+	_, err = reg.Metadata(&image)
 	require.NoError(t, err)
 }
