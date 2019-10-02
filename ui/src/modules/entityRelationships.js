@@ -152,6 +152,10 @@ const isMatch = (entityType1, entityType2) =>
     !!getMatches(entityType1).find(m => m === entityType2);
 const isContained = (entityType1, entityType2) =>
     !!getContains(entityType1).find(c => c === entityType2);
+const isContainedInferred = (entityType1, entityType2) =>
+    entityType1 !== entityType2 &&
+    !!isContained(entityType1, entityType2) &&
+    !isChild(entityType1, entityType2);
 
 // wrapper function returns a list of entities, given an entitytype, relationship, and context
 // e.g.
@@ -179,5 +183,6 @@ export default {
     isChild,
     isParent,
     isMatch,
-    isContained
+    isContained,
+    isContainedInferred
 };

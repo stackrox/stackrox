@@ -2,6 +2,7 @@ import pageTypes from 'constants/pageTypes';
 import useCases from 'constants/useCaseTypes';
 import { generatePath } from 'react-router-dom';
 import qs from 'qs';
+
 import {
     nestedPaths as workflowPaths,
     riskPath,
@@ -11,6 +12,30 @@ import {
     policiesPath
 } from '../routePaths';
 
+const defaultPathMap = {
+    [pageTypes.DASHBOARD]: workflowPaths.DASHBOARD,
+    [pageTypes.ENTITY]: workflowPaths.ENTITY,
+    [pageTypes.LIST]: workflowPaths.LIST
+};
+
+const legacyPathMap = {
+    [useCases.RISK]: {
+        [pageTypes.ENTITY]: riskPath,
+        [pageTypes.LIST]: '/main/risk',
+        [pageTypes.DASHBOARD]: '/main/risk'
+    },
+    [useCases.SECRET]: {
+        [pageTypes.ENTITY]: secretsPath,
+        [pageTypes.LIST]: '/main/configmanagement/secrets',
+        [pageTypes.DASHBOARD]: '/main/configmanagement/secrets'
+    },
+    [useCases.POLICY]: {
+        [pageTypes.ENTITY]: policiesPath,
+        [pageTypes.LIST]: '/main/policies',
+        [pageTypes.DASHBOARD]: '/main/policies'
+    }
+};
+
 function getTypeKeyFromParamValue(value, listOnly) {
     const listMatch = Object.entries(urlEntityListTypes).find(entry => entry[1] === value);
     const entityMatch = Object.entries(urlEntityTypes).find(entry => entry[1] === value);
@@ -18,74 +43,47 @@ function getTypeKeyFromParamValue(value, listOnly) {
     return match ? match[0] : null;
 }
 
-function isListType(value) {
-    return Object.values(urlEntityListTypes).includes(value);
-}
+// Convert workflowState and searchState to URL;
+export function generateURL(workflowState, searchState) {
+    const { stateStack: originalStateStack, useCase } = workflowState;
+    const stateStack = [...originalStateStack];
 
-export function getPageType(workflowState) {
-    if (workflowState.pageEntityListType) {
-        return pageTypes.LIST;
-    }
-    if (workflowState.pageEntityType) {
-        return pageTypes.ENTITY;
-    }
-    return pageTypes.DASHBOARD;
-}
+    if (!useCase) throw new Error('Cannot generate a url from workflowState without a use case');
 
-export function generateURL(workflowState, queryParams) {
-    const pageType = getPageType(workflowState);
-    const { context } = workflowState;
+    // Find the path map for the use case
+    const pathMap = legacyPathMap[useCase] || defaultPathMap;
+    if (!pathMap) throw new Error(`Can't generate a URL. No paths found for context ${useCase}`);
 
-    const defaultPathMap = {
-        [pageTypes.DASHBOARD]: workflowPaths.DASHBOARD,
-        [pageTypes.ENTITY]: workflowPaths.ENTITY,
-        [pageTypes.LIST]: workflowPaths.LIST
-    };
+    const pageParams = stateStack.shift();
 
-    const legacyPathMap = {
-        [useCases.RISK]: {
-            [pageTypes.ENTITY]: riskPath,
-            [pageTypes.LIST]: '/main/risk',
-            [pageTypes.DASHBOARD]: '/main/risk'
-        },
-        [useCases.SECRET]: {
-            [pageTypes.ENTITY]: secretsPath,
-            [pageTypes.LIST]: '/main/configmanagement/secrets',
-            [pageTypes.DASHBOARD]: '/main/configmanagement/secrets'
-        },
-        [useCases.POLICY]: {
-            [pageTypes.ENTITY]: policiesPath,
-            [pageTypes.LIST]: '/main/policies',
-            [pageTypes.DASHBOARD]: '/main/policies'
-        }
-    };
+    // determine the page type
+    let pageType = pageTypes.DASHBOARD;
+    if (pageParams) pageType = pageParams.i ? pageTypes.ENTITY : pageTypes.LIST;
 
-    const contextPaths = legacyPathMap[context] || defaultPathMap;
-    if (!contextPaths)
-        throw new Error(`Can't generate a URL. No paths found for context ${context}`);
-
-    const path = contextPaths[pageType];
+    // determine the path
+    const path = pathMap[pageType];
     if (!path)
         throw new Error(
-            `Can't generate a URL. No path found for context ${context} and page type ${pageType}`
+            `Can't generate a URL. No path found for context ${useCase} and page type ${pageType}`
         );
 
-    const params = { ...workflowState };
+    // create url params
+    const params = { useCase, context: useCase }; // using legacy context url param. remove after paths are updated
+    if (pageParams) {
+        params.pageEntityId = pageParams.i;
+        params.pageEntityType = urlEntityTypes[pageParams.t];
+        params.pageEntityListType = urlEntityListTypes[pageParams.t];
+    }
 
-    // Patching url params for legacy contexts
-    if (context === useCases.SECRET) {
+    // Add url params for legacy contexts
+    if (useCase === useCases.SECRET) {
         params.secretId = params.pageEntityId;
-    } else if (context === useCases.RISK) {
+    } else if (useCase === useCases.RISK) {
         params.deploymentId = params.pageEntityId;
     }
 
-    // Mapping from entity types to url entityTypes
-    params.pageEntityListType = urlEntityListTypes[params.pageEntityListType];
-    params.entityType2 =
-        urlEntityTypes[params.entityType2] || urlEntityListTypes[params.entityListType2];
-    params.entityType1 =
-        urlEntityTypes[params.entityType1] || urlEntityListTypes[params.entityListType1];
-    params.pageEntityType = urlEntityTypes[params.pageEntityType];
+    // generate the querystring using remaining statestack params
+    const queryParams = { workflowState: stateStack, ...searchState };
 
     const queryString = queryParams
         ? qs.stringify(queryParams, {
@@ -98,42 +96,26 @@ export function generateURL(workflowState, queryParams) {
     return generatePath(path, params) + queryString;
 }
 
+// Convert URL to workflow state and search objects
 export function parseURL(match, location) {
     if (!match) return {};
     const params = { ...match.params };
-
-    // Mapping from url to entity types
-    if (params.pageEntityListType)
-        params.pageEntityListType = getTypeKeyFromParamValue(params.pageEntityListType);
-    if (params.entityListType2) {
-        params.entityListType2 = getTypeKeyFromParamValue(params.entityListType2, true);
-    } else if (params.entityType2) {
-        if (isListType(params.entityType2)) {
-            params.entityListType2 = getTypeKeyFromParamValue(params.entityType2, true);
-            delete params.entityType2;
-        } else {
-            params.entityType2 = getTypeKeyFromParamValue(params.entityType2);
-        }
-    }
-
-    if (params.entityListType1) {
-        params.entityListType1 = getTypeKeyFromParamValue(params.entityListType1);
-    } else if (params.entityType1) {
-        if (isListType(params.entityType1)) {
-            params.entityListType1 = getTypeKeyFromParamValue(params.entityType1, true);
-            delete params.entityType1;
-        } else {
-            params.entityType1 = getTypeKeyFromParamValue(params.entityType1);
-        }
-    }
-    if (params.pageEntityType)
-        params.pageEntityType = getTypeKeyFromParamValue(params.pageEntityType);
-
     const query =
         location && location.search ? qs.parse(location.search, { ignoreQueryPrefix: true }) : {};
+    const { workflowState: stateStack = {}, ...searchState } = query;
+    const workflowState = { stateStack, useCase: params.context };
 
+    // Convert URL parameter values to enum types
+    if (params.pageEntityListType) {
+        stateStack.unshift({ t: getTypeKeyFromParamValue(params.pageEntityListType) });
+    } else if (params.pageEntityType) {
+        stateStack.unshift({
+            t: getTypeKeyFromParamValue(params.pageEntityType),
+            i: params.pageEntityId
+        });
+    }
     return {
-        params,
-        query
+        workflowState,
+        searchState
     };
 }
