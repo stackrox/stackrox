@@ -39,6 +39,7 @@ interface OrchestratorMain {
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet)
     def getDaemonSetCount(String ns)
     def waitForDaemonSetDeletion(String name)
+    String getDaemonSetId(DaemonSet daemonSet)
 
     // StatefulSets
     def getStatefulSetCount()

@@ -14,6 +14,7 @@ import groups.BAT
 import groups.RUNTIME
 import groups.NetworkFlowVisualization
 import objects.Deployment
+import objects.DaemonSet
 import objects.Edge
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
@@ -169,6 +170,32 @@ class NetworkFlowTest extends BaseSpecification {
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
+        }
+    }
+
+    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    def "Verify connections between StackRox Services"() {
+        when:
+        "Fetch uIDs for the central, sensor, and collector services, if present"
+        String centralUid = orchestrator.getDeploymentId(new Deployment(name: "central", namespace: "stackrox"))
+        assert centralUid != null
+        String sensorUid = orchestrator.getDeploymentId(new Deployment(name: "sensor", namespace: "stackrox"))
+        assert sensorUid != null
+        String collectorUid = orchestrator.getDaemonSetId(new DaemonSet(name: "collector", namespace: "stackrox"))
+        // collector id *can* be null, so no assert
+
+        then:
+        "Check for edge between sensor and central"
+        println "Checking for edge between sensor and central"
+        List<Edge> edges = checkForEdge(sensorUid, centralUid)
+        assert edges
+
+        then:
+        "Check for edge between collector and sensor, if collector is installed"
+        if (collectorUid != null) {
+            println "Checking for edge between collector and sensor"
+            edges = checkForEdge(collectorUid, sensorUid)
+            assert edges
         }
     }
 

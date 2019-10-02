@@ -359,6 +359,12 @@ class Kubernetes implements OrchestratorMain {
         return this.daemonsets.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
+    String getDaemonSetId(DaemonSet daemonSet) {
+        return this.daemonsets.inNamespace(daemonSet.namespace)
+                .withName(daemonSet.name)
+                .get()?.metadata?.uid
+    }
+
     /*
         StatefulSet Methods
     */
