@@ -331,7 +331,7 @@ storeCypressScreenshots: &storeCypressScreenshots
 
 storeQATestResults: &storeQATestResults
   store_test_results:
-    path: qa-tests-backend/aggregated-test-results
+    path: qa-tests-backend/build/test-results/test
 
 storeQASpockReports: &storeQASpockReports
   store_artifacts:
