@@ -109,6 +109,7 @@
     "devDependencies": {
         "@apollo/react-testing": "^3.1.0",
         "@babel/core": "^7.0.1",
+        "@storybook/addon-info": "^5.2.1",
         "@storybook/react": "^5.2.1",
         "@testing-library/jest-dom": "^4.1.0",
         "@testing-library/react": "^9.1.4",
