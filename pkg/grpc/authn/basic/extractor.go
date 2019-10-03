@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
 	"strings"
+	"sync/atomic"
+	"unsafe"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -14,11 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
-type extractor struct {
-	hashFile     *htpasswd.HashFile
+// Extractor is the identity extractor for the basic auth identity.
+type Extractor struct {
+	hashFilePtr  unsafe.Pointer
 	userRole     *storage.Role
 	authProvider authproviders.Provider
 }
@@ -37,7 +38,18 @@ func parseBasicAuthToken(basicAuthToken string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-func (e *extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (e *Extractor) hashFile() *htpasswd.HashFile {
+	return (*htpasswd.HashFile)(atomic.LoadPointer(&e.hashFilePtr))
+}
+
+// SetHashFile sets the hash file to be used for basic auth.
+func (e *Extractor) SetHashFile(hashFile *htpasswd.HashFile) {
+	atomic.StorePointer(&e.hashFilePtr, unsafe.Pointer(hashFile))
+}
+
+// IdentityForRequest returns an identity for the given request if it contains valid basic auth credentials.
+// If non-nil, the returned identity implements `basic.Identity`.
+func (e *Extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	md := metautils.NiceMD(ri.Metadata)
 	authHeader := md.Get("Authorization")
 	if authHeader == "" {
@@ -54,7 +66,7 @@ func (e *extractor) IdentityForRequest(_ context.Context, ri requestinfo.Request
 		return nil, err
 	}
 
-	if !e.hashFile.Check(username, password) {
+	if !e.hashFile().Check(username, password) {
 		return nil, errors.New("invalid username and/or password")
 	}
 
@@ -65,21 +77,10 @@ func (e *extractor) IdentityForRequest(_ context.Context, ri requestinfo.Request
 	}, nil
 }
 
-// NewExtractor returns a new identity extractor for internal services.
-func NewExtractor(htpasswdFile string, userRole *storage.Role, authProvider authproviders.Provider) (authn.IdentityExtractor, error) {
-	f, err := os.Open(htpasswdFile)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not open htpasswd file %q", htpasswdFile)
-	}
-	defer utils.IgnoreError(f.Close)
-
-	hashFile, err := htpasswd.ReadHashFile(f)
-	if err != nil {
-		return nil, err
-	}
-
-	return &extractor{
-		hashFile:     hashFile,
+// NewExtractor returns a new identity extractor for basic auth.
+func NewExtractor(hashFile *htpasswd.HashFile, userRole *storage.Role, authProvider authproviders.Provider) (*Extractor, error) {
+	return &Extractor{
+		hashFilePtr:  unsafe.Pointer(hashFile),
 		userRole:     userRole,
 		authProvider: authProvider,
 	}, nil

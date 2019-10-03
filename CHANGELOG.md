@@ -10,8 +10,12 @@ All notable changes to this project that require documentation updates will be d
   a plaintext or TLS-enabled backend). While we advise against this, this behavior can be enabled via the `--plaintext`
   flag in conjunction with the `--insecure` flag.
 - `roxctl` now has a `--tolerations` flag that is true by default, and can be set to false to disable tolerations for 
-tainted nodes from being added into `sensor.yaml`. If the flag is set to true, collectors will be deployed to and run on 
-all nodes of the cluster.
+  tainted nodes from being added into `sensor.yaml`. If the flag is set to true, collectors will be deployed to and run on 
+  all nodes of the cluster.
+- Changes to default TLS cert and `htpasswd` secrets (`central-default-tls-cert` and `central-htpasswd`) are now picked
+  up automatically, without needing to restart Central. Note that Kubernetes secret changes may take up to a minute to
+  get propagated to the pod.
+
 ## [30.0]
 ### Changed
 - `TriggerRun(/v1/complianceManagement/runs)` endpoint is removed. All clients should use `TriggerRuns(/v1/compliancemanagement/runs)` to start a compliance run.

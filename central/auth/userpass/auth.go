@@ -2,6 +2,7 @@ package userpass
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/mapper"
@@ -9,11 +10,15 @@ import (
 	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	basicAuthn "github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
-	htpasswdFile = "/run/secrets/stackrox.io/htpasswd/htpasswd"
+	htpasswdDir  = "/run/secrets/stackrox.io/htpasswd"
+	htpasswdFile = "htpasswd"
+
+	watchInterval = 5 * time.Second
 )
 
 var (
@@ -43,16 +48,12 @@ func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Reg
 		}
 	}
 
-	config := map[string]string{
-		"htpasswd_file": htpasswdFile,
-	}
 	options := []authproviders.ProviderOption{
 		authproviders.WithType(basicAuthProvider.TypeName),
 		authproviders.WithName("Login with username/password"),
 		authproviders.WithID(basicAuthProviderID),
 		authproviders.WithEnabled(true),
 		authproviders.WithValidated(true),
-		authproviders.WithConfig(config),
 		authproviders.WithRoleMapper(mapper.AlwaysAdminRoleMapper()),
 		authproviders.DoNotStore(),
 	}
@@ -69,10 +70,22 @@ func IdentityExtractorOrPanic(authProvider authproviders.Provider) authn.Identit
 	if adminRole == nil {
 		log.Panic("Could not look up admin role")
 	}
-	extractor, err := basicAuthn.NewExtractor(htpasswdFile, adminRole, authProvider)
+	extractor, err := basicAuthn.NewExtractor(nil, adminRole, authProvider)
 	if err != nil {
 		log.Panicf("Could not create identity extractor for basic auth: %v", err)
 	}
+
+	wh := &watchHandler{
+		extractor: extractor,
+	}
+
+	watchOpts := k8scfgwatch.Options{
+		Interval: watchInterval,
+		Force:    true,
+	}
+
+	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), htpasswdDir, k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
+
 	return extractor
 }
 

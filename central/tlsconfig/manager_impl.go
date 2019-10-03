@@ -1,17 +1,24 @@
 package tlsconfig
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+const (
+	watchInterval = 5 * time.Second
 )
 
 var (
@@ -30,7 +37,7 @@ func newManager() (*managerImpl, error) {
 	}
 	trustRoots := []*x509.Certificate{ca}
 
-	serverCerts, err := serverCerts()
+	internalCert, err := getInternalCertificate()
 	if err != nil {
 		return nil, err
 	}
@@ -38,21 +45,48 @@ func newManager() (*managerImpl, error) {
 	mgr := &managerImpl{
 		providerIDToProviderData: make(map[string]providerData),
 		trustRoots:               trustRoots,
-		serverCerts:              serverCerts,
+		internalCerts:            []tls.Certificate{*internalCert},
 	}
+
 	mgr.updateTLSConfigNoLock()
+
+	wh := &defaultCertWatchHandler{
+		mgr: mgr,
+	}
+
+	watchOpts := k8scfgwatch.Options{
+		Interval: watchInterval,
+		Force:    true,
+	}
+	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), defaultCertPath, k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
+
 	return mgr, nil
 }
 
 type managerImpl struct {
 	mutex sync.RWMutex
 
-	cachedCfg   unsafe.Pointer
-	trustRoots  []*x509.Certificate
-	serverCerts []tls.Certificate
+	cachedCfg  unsafe.Pointer
+	trustRoots []*x509.Certificate
+
+	defaultCerts  []tls.Certificate
+	internalCerts []tls.Certificate
 
 	providerIDToProviderData  map[string]providerData
 	certFingerprintToProvider map[string]providerData
+}
+
+func (m *managerImpl) UpdateDefaultCert(defaultCert *tls.Certificate) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if defaultCert == nil {
+		m.defaultCerts = nil
+	} else {
+		m.defaultCerts = []tls.Certificate{*defaultCert}
+	}
+
+	m.updateTLSConfigNoLock()
 }
 
 func (m *managerImpl) GetProviderForFingerprint(fingerprint string) authproviders.Provider {
@@ -130,11 +164,15 @@ func (m *managerImpl) computeConfigNoLock() *tls.Config {
 
 	for _, pd := range m.providerIDToProviderData {
 		for _, cert := range pd.certs {
-			log.Debugf("Adding client CA cert to the TLS trust pool: %q", (cryptoutils.CertFingerprint(cert)))
+			log.Debugf("Adding client CA cert to the TLS trust pool: %q", cryptoutils.CertFingerprint(cert))
 			clientCAs.AddCert(cert)
 		}
 	}
-	cfg := verifier.DefaultTLSServerConfig(clientCAs, m.serverCerts)
+
+	serverCerts := make([]tls.Certificate, 0, len(m.defaultCerts)+len(m.internalCerts))
+	serverCerts = append(serverCerts, m.defaultCerts...)
+	serverCerts = append(serverCerts, m.internalCerts...)
+	cfg := verifier.DefaultTLSServerConfig(clientCAs, serverCerts)
 	return cfg
 }
 

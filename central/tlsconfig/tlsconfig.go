@@ -23,9 +23,9 @@ func NewCentralTLSConfigurer() verifier.TLSConfigurer {
 	return verifier.TLSConfigurerFunc(createTLSConfig)
 }
 
-func loadDefaultCertificate() (*tls.Certificate, error) {
-	certFile := filepath.Join(defaultCertPath, tlsCertFileName)
-	keyFile := filepath.Join(defaultCertPath, tlsKeyFileName)
+func loadDefaultCertificate(dir string) (*tls.Certificate, error) {
+	certFile := filepath.Join(dir, tlsCertFileName)
+	keyFile := filepath.Join(dir, tlsKeyFileName)
 
 	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
 		return nil, err
@@ -88,7 +88,7 @@ func getInternalCertificate() (*tls.Certificate, error) {
 func serverCerts() ([]tls.Certificate, error) {
 	var certs []tls.Certificate
 
-	defaultCert, err := loadDefaultCertificate()
+	defaultCert, err := loadDefaultCertificate(defaultCertPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading default certificate")
 	}

@@ -74,5 +74,8 @@ func ReadHashFile(r io.Reader) (*HashFile, error) {
 
 // Check compares the provided password with the known password for the user.
 func (hf *HashFile) Check(user, pass string) bool {
+	if hf == nil {
+		return false
+	}
 	return bcrypt.CompareHashAndPassword([]byte(hf.hashes[username(user)]), []byte(pass)) == nil
 }
