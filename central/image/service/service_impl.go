@@ -93,7 +93,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 // CountImages counts the number of images that match the input query.
 func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v1.CountImagesResponse, error) {
 	// Fill in Query.
-	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -108,7 +108,7 @@ func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v
 // ListImages retrieves all images in minimal form.
 func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1.ListImagesResponse, error) {
 	// Fill in Query.
-	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -171,7 +171,7 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 		return nil, errors.New("a scoping query is required")
 	}
 
-	query, err := search.ParseRawQueryOrEmpty(request.GetQuery().GetQuery())
+	query, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "error parsing query: %v", err)
 	}

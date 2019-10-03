@@ -84,7 +84,7 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 
 // ListServiceAccounts returns all service accounts that match the query.
 func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListServiceAccountResponse, error) {
-	q, err := search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
+	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

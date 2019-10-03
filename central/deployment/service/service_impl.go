@@ -122,7 +122,7 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 // CountDeployments counts the number of deployments that match the input query.
 func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery) (*v1.CountDeploymentsResponse, error) {
 	// Fill in Query.
-	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -137,7 +137,7 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 // ListDeployments returns ListDeployments according to the request.
 func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery) (*v1.ListDeploymentsResponse, error) {
 	// Fill in Query.
-	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

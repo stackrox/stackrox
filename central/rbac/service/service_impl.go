@@ -74,7 +74,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, request *v1.ResourceByID) (*v
 func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListRolesResponse, error) {
 	// TODO: Link policy rule fields? I.E. if query has Verbs:Get,Resource:Pods, we want the two linked so only
 	// roles that can get pods are returned, not roles that can get anything, and can do any operation on Pods.
-	q, err := search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
+	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -102,7 +102,7 @@ func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceBy
 
 // ListRoleBindings returns all role bindings that match the query.
 func (s *serviceImpl) ListRoleBindings(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListRoleBindingsResponse, error) {
-	q, err := search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
+	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

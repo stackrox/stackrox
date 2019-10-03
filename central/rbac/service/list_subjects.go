@@ -62,7 +62,7 @@ func getFilteredSubjectsByRoleBinding(rawQuery *v1.RawQuery, bindings []*storage
 
 	// Parse the query we will filter with.
 	var parsed *v1.Query
-	parsed, err := search.ParseRawQueryOrEmpty(subjectQuery.GetQuery())
+	parsed, err := search.ParseQuery(subjectQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

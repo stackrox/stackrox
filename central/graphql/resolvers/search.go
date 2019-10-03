@@ -83,7 +83,7 @@ func (r *paginatedQuery) AsV1Query() (*v1.Query, error) {
 	if r == nil || r.Query == nil {
 		return nil, nil
 	}
-	q, err := search.ParseRawQuery(*r.Query)
+	q, err := search.ParseQuery(*r.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (r *paginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 		paginated.FillPagination(q, r.Pagination.AsV1Pagination(), math.MaxInt32)
 		return q, nil
 	}
-	q, err := search.ParseRawQueryOrEmpty(*r.Query)
+	q, err := search.ParseQuery(*r.Query, search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, err
 	}
@@ -121,14 +121,14 @@ func (r rawQuery) AsV1Query() (*v1.Query, error) {
 	if r.Query == nil {
 		return nil, nil
 	}
-	return search.ParseRawQuery(*r.Query)
+	return search.ParseQuery(*r.Query)
 }
 
 func (r rawQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	if r.Query == nil {
 		return search.EmptyQuery(), nil
 	}
-	return search.ParseRawQueryOrEmpty(*r.Query)
+	return search.ParseQuery(*r.Query, search.MatchAllIfEmpty())
 }
 
 func (r rawQuery) String() string {

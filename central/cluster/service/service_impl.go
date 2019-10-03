@@ -179,7 +179,7 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 
 // GetClusters returns the currently defined clusters.
 func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
-	q, err := search.ParseRawQueryOrEmpty(req.GetQuery())
+	q, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid query %q: %v", req.GetQuery(), err)
 	}

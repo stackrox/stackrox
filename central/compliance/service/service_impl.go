@@ -95,7 +95,7 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 	q := search.EmptyQuery()
 	var err error
 	if query.GetQuery() != "" {
-		q, err = search.ParseRawQuery(query.GetQuery())
+		q, err = search.ParseQuery(query.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}

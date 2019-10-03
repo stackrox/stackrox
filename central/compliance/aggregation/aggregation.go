@@ -195,7 +195,7 @@ func (a *aggregatorImpl) filterOnRunResult(runResults *storage.ComplianceRunResu
 
 func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString string, flags complianceDSTypes.GetFlags) ([]*storage.ComplianceRunResults, []*v1.ComplianceAggregation_Source, [numScopes]set.StringSet, error) {
 	var mask [numScopes]set.StringSet
-	query, err := search.ParseRawQueryOrEmpty(queryString)
+	query, err := search.ParseQuery(queryString, search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, nil, mask, err
 	}

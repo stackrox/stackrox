@@ -138,7 +138,7 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 		}
 		resp.Policies = convertPoliciesToListPolicies(policies)
 	} else {
-		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
+		parsedQuery, err := search.ParseQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}

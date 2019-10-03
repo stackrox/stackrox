@@ -193,7 +193,7 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namesp
 }
 
 func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
-	parsedQuery, err := search.ParseRawQueryOrEmpty(req.GetQuery())
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not parse query")
 	}

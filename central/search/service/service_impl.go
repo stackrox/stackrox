@@ -231,7 +231,7 @@ func trimMatches(matches map[string][]string, fieldPaths []string) map[string][]
 
 // RunAutoComplete runs an autocomplete request. It's a free function used by both regular search and by GraphQL.
 func RunAutoComplete(ctx context.Context, queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
-	query, autocompleteKey, err := search.ParseAutocompleteRawQuery(queryString)
+	query, autocompleteKey, err := search.ParseQueryForAutocomplete(queryString)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "unable to parse query %q: %v", queryString, err)
 	}
@@ -380,7 +380,7 @@ func shouldProcessAlerts(q *v1.Query) (shouldProcess bool) {
 func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCategory, searchFuncMap map[v1.SearchCategory]SearchFunc) (results []*v1.SearchResult,
 	counts []*v1.SearchResponse_Count, err error) {
 
-	parsedRequest, err := search.ParseRawQuery(query)
+	parsedRequest, err := search.ParseQuery(query)
 	if err != nil {
 		err = status.Error(codes.InvalidArgument, err.Error())
 		return

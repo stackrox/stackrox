@@ -1,7 +1,6 @@
 package search
 
 import (
-	"errors"
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -11,6 +10,44 @@ import (
 var (
 	log = logging.LoggerForModule()
 )
+
+// ParseQueryForAutocomplete parses the input string specific for autocomplete requests.
+func ParseQueryForAutocomplete(query string) (*v1.Query, string, error) {
+	return autocompleteQueryParser{}.parse(query)
+}
+
+// ParseQuery parses the input query with the supplied options.
+func ParseQuery(query string, opts ...ParseQueryOption) (*v1.Query, error) {
+	parser := generalQueryParser{}
+	for _, opt := range opts {
+		opt(&parser)
+	}
+	return parser.parse(query)
+}
+
+// ParseQueryOption represents an option to use when parsing queries.
+type ParseQueryOption func(parser *generalQueryParser)
+
+// LinkFields will parse the input query string as a set of linked fields.
+func LinkFields() ParseQueryOption {
+	return func(parser *generalQueryParser) {
+		parser.LinkFields = true
+	}
+}
+
+// HighlightFields will cause all fields in the input query to be highlighted in the output query object.
+func HighlightFields() ParseQueryOption {
+	return func(parser *generalQueryParser) {
+		parser.HighlightFields = true
+	}
+}
+
+// MatchAllIfEmpty will cause an empty query to be returned if the input query is empty (as opposed to an error).
+func MatchAllIfEmpty() ParseQueryOption {
+	return func(parser *generalQueryParser) {
+		parser.MatchAllIfEmpty = true
+	}
+}
 
 // FilterFields uses a predicate to filter our fields from a raw query based on the field key.
 func FilterFields(query string, pred func(field string) bool) string {
@@ -30,57 +67,6 @@ func FilterFields(query string, pred func(field string) bool) string {
 		pairsToKeep = append(pairsToKeep, pair)
 	}
 	return strings.Join(pairsToKeep, "+")
-}
-
-// ParseRawQueryOrEmpty is a convenience wrapper around ParseRawQuery which returns the empty
-// proto query instead of erroring out if an empty string is passed.
-func ParseRawQueryOrEmpty(query string) (*v1.Query, error) {
-	if query == "" {
-		return EmptyQuery(), nil
-	}
-	parsed, _, err := parseRawQuery(query, false)
-	return parsed, err
-}
-
-// ParseRawQuery takes the text based query and converts to the query proto.
-// It expects the received query to be non-empty.
-func ParseRawQuery(query string) (*v1.Query, error) {
-	if query == "" {
-		return nil, errors.New("empty query received")
-	}
-	parsed, _, err := parseRawQuery(query, false)
-	return parsed, err
-}
-
-// ParseAutocompleteRawQuery parses the query, but extends the last value with .* and highlights
-func ParseAutocompleteRawQuery(query string) (*v1.Query, string, error) {
-	return parseRawQuery(query, true)
-}
-
-func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, string, error) {
-	pairs := strings.Split(query, "+")
-
-	queries := make([]*v1.Query, 0, len(pairs))
-	var autocompleteKey string
-	for i, pair := range pairs {
-		key, commaSeparatedValues, valid := parsePair(pair, isAutocompleteQuery)
-		if !valid {
-			continue
-		}
-		if i == len(pairs)-1 && isAutocompleteQuery {
-			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), true))
-			autocompleteKey = key
-		} else {
-			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), false))
-		}
-	}
-
-	// We always want to return an error here, because it means that the query is ill-defined.
-	if len(queries) == 0 {
-		return nil, "", errors.New("after parsing, query is empty")
-	}
-
-	return ConjunctionQuery(queries...), autocompleteKey, nil
 }
 
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2

@@ -267,7 +267,7 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID string, quer
 
 	q := clusterQuery
 	if query != "" {
-		q, err = search.ParseRawQuery(query)
+		q, err = search.ParseQuery(query)
 		if err != nil {
 			return
 		}

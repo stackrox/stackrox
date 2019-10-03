@@ -92,7 +92,7 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 // CountSecrets counts the number of secrets that match the input query.
 func (s *serviceImpl) CountSecrets(ctx context.Context, request *v1.RawQuery) (*v1.CountSecretsResponse, error) {
 	// Fill in Query.
-	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -107,7 +107,7 @@ func (s *serviceImpl) CountSecrets(ctx context.Context, request *v1.RawQuery) (*
 // ListSecrets returns all secrets that match the query.
 func (s *serviceImpl) ListSecrets(ctx context.Context, request *v1.RawQuery) (*v1.ListSecretsResponse, error) {
 	// Fill in query.
-	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

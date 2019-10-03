@@ -16,7 +16,7 @@ type MockAlertsGetter struct {
 // ListAlerts supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
 func (m MockAlertsGetter) ListAlerts(ctx context.Context, req *v1.ListAlertsRequest) (alerts []*storage.ListAlert, err error) {
-	q, err := search.ParseRawQuery(req.GetQuery())
+	q, err := search.ParseQuery(req.GetQuery())
 	if err != nil {
 		return nil, err
 	}

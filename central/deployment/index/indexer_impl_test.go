@@ -587,9 +587,9 @@ func (suite *DeploymentIndexTestSuite) TestCaseInsensitivityOfFieldNames() {
 	suite.NoError(suite.indexer.AddDeployment(dep))
 	ns := dep.GetNamespace()
 
-	upperCaseQ, err := search.ParseRawQuery(fmt.Sprintf("Namespace:%s", ns))
+	upperCaseQ, err := search.ParseQuery(fmt.Sprintf("Namespace:%s", ns))
 	suite.NoError(err)
-	lowerCaseQ, err := search.ParseRawQuery(fmt.Sprintf("namespace:%s", ns))
+	lowerCaseQ, err := search.ParseQuery(fmt.Sprintf("namespace:%s", ns))
 	suite.NoError(err)
 	for _, q := range []*v1.Query{upperCaseQ, lowerCaseQ} {
 		results, err := suite.indexer.Search(q)
@@ -603,7 +603,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentDelete() {
 	suite.NoError(suite.indexer.AddDeployment(dep))
 
 	ns := dep.GetNamespace()
-	upperCaseQ, err := search.ParseRawQuery(fmt.Sprintf("Namespace:%s", ns))
+	upperCaseQ, err := search.ParseQuery(fmt.Sprintf("Namespace:%s", ns))
 	suite.NoError(err)
 	results, err := suite.indexer.Search(upperCaseQ)
 	suite.NoError(err)

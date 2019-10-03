@@ -116,7 +116,7 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 // CountAlerts counts the number of alerts that match the input query.
 func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v1.CountAlertsResponse, error) {
 	// Fill in Query.
-	parsedQuery, err := search.ParseRawQueryOrEmpty(request.GetQuery())
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -228,7 +228,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 }
 
 func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRequest) (*v1.Empty, error) {
-	query, err := search.ParseRawQuery(req.GetQuery())
+	query, err := search.ParseQuery(req.GetQuery())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -295,7 +295,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		return nil, errors.New("a scoping query is required")
 	}
 
-	query, err := search.ParseRawQueryOrEmpty(request.GetQuery().GetQuery())
+	query, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "error parsing query: %v", err)
 	}

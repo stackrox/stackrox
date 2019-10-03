@@ -67,7 +67,7 @@ func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsR
 		q = searchCommon.EmptyQuery()
 	} else {
 		var err error
-		q, err = searchCommon.ParseRawQuery(request.GetQuery())
+		q, err = searchCommon.ParseQuery(request.GetQuery())
 		if err != nil {
 			return nil, err
 		}
