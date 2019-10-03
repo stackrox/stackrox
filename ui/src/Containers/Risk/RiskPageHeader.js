@@ -24,7 +24,9 @@ function RiskPageHeader({
     searchSuggestions,
     setSearchOptions,
     setSearchModifiers,
-    setSearchSuggestions
+    setSearchSuggestions,
+    currentDeployments,
+    selectedDeploymentId
 }) {
     const hasExecutableFilter =
         searchOptions.length && !searchOptions[searchOptions.length - 1].type;
@@ -35,8 +37,12 @@ function RiskPageHeader({
     } else if (hasNoFilter && isViewFiltered) {
         setIsViewFiltered(false);
     }
-    if (hasExecutableFilter) {
-        setSelectedDeploymentId(undefined);
+    if (
+        hasExecutableFilter &&
+        selectedDeploymentId &&
+        !currentDeployments.find(deployment => deployment.deployment.id === selectedDeploymentId)
+    ) {
+        setSelectedDeploymentId(null);
     }
 
     useEffect(
@@ -79,13 +85,19 @@ RiskPageHeader.propTypes = {
     isViewFiltered: PropTypes.bool.isRequired,
     setIsViewFiltered: PropTypes.func.isRequired,
     sortOption: PropTypes.shape({}).isRequired,
-
+    currentDeployments: PropTypes.arrayOf(PropTypes.object),
+    selectedDeploymentId: PropTypes.string,
     searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
     searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
     searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
     setSearchOptions: PropTypes.func.isRequired,
     setSearchModifiers: PropTypes.func.isRequired,
     setSearchSuggestions: PropTypes.func.isRequired
+};
+
+RiskPageHeader.defaultProps = {
+    currentDeployments: [],
+    selectedDeploymentId: null
 };
 
 const mapStateToProps = createStructuredSelector({

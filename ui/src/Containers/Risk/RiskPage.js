@@ -51,6 +51,8 @@ const RiskPage = ({
                     isViewFiltered={isViewFiltered}
                     setIsViewFiltered={setIsViewFiltered}
                     sortOption={sortOption}
+                    selectedDeploymentId={selectedDeploymentId}
+                    currentDeployments={currentDeployments}
                 />
                 <div className="flex flex-1 relative">
                     <div className="shadow border-primary-300 bg-base-100 w-full overflow-hidden">

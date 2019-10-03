@@ -2,8 +2,7 @@ const selectors = {
     panelHeader: 'div[data-test-id="panel"]',
     searchBtn: 'button:contains("Search")',
     pageSearchSuggestions: 'div.Select-menu-outer',
-    categoryTabs: '.tab',
-
+    categoryTabs: '[data-test-id="tab"]',
     searchInput: '.search-modal input',
     pageSearchInput: '.react-select__input > input',
     searchResultsHeader: '.bg-base-100.flex-1 > .text-xl',

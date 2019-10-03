@@ -169,29 +169,33 @@ class SearchResults extends Component {
             },
             {
                 Header: 'View On:',
-                Cell: ({ original }) => (
-                    <ul className="p-0 list-reset flex">
-                        {!mapping[original.category] || !mapping[original.category].viewOn ? (
-                            <li className="text-base-400">N/A</li>
-                        ) : (
-                            mapping[original.category].viewOn.map((item, index) => (
-                                <li key={index}>
-                                    <button
-                                        type="button"
-                                        onClick={this.onLinkHandler(
-                                            original.category,
-                                            item,
-                                            getLink(item, original.id)
-                                        )}
-                                        className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
-                                    >
-                                        {item}
-                                    </button>
-                                </li>
-                            ))
-                        )}
-                    </ul>
-                ),
+                Cell: ({ original }) => {
+                    const { id, category, name } = original;
+                    return (
+                        <ul className="p-0 list-reset flex">
+                            {!mapping[category] || !mapping[category].viewOn ? (
+                                <li className="text-base-400">N/A</li>
+                            ) : (
+                                mapping[category].viewOn.map((item, index) => (
+                                    <li key={index}>
+                                        <button
+                                            type="button"
+                                            onClick={this.onLinkHandler(
+                                                category,
+                                                item,
+                                                getLink(item, id),
+                                                name
+                                            )}
+                                            className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
+                                        >
+                                            {item}
+                                        </button>
+                                    </li>
+                                ))
+                            )}
+                        </ul>
+                    );
+                },
                 sortable: false
             },
             {
