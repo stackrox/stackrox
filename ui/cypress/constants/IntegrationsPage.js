@@ -32,9 +32,9 @@ export const selectors = {
     apiTokenBox: 'span:contains("eyJ")', // all API tokens start with eyJ
     apiTokenDetailsDiv: 'div[data-test-id="api-token-details"]',
     clusterForm: {
-        nameInput: 'form[data-test-id="cluster-form"] input[name="name"]',
-        imageInput: 'form[data-test-id="cluster-form"] input[name="mainImage"]',
-        endpointInput: 'form[data-test-id="cluster-form"] input[name="centralApiEndpoint"]'
+        nameInput: 'form[data-testid="cluster-form"] input[name="name"]',
+        imageInput: 'form[data-testid="cluster-form"] input[name="mainImage"]',
+        endpointInput: 'form[data-testid="cluster-form"] input[name="centralApiEndpoint"]'
     },
     dockerRegistryForm: {
         nameInput: "form input[name='name']",

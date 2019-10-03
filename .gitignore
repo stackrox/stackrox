@@ -2,6 +2,9 @@
 sensor*.zip
 tmp
 
+# needed for Cypress test mock zip file
+!sensor-kubernetes-cluster-testinstance.zip
+
 # Grafana captures
 monitoring/grafana/captures
 monitoring/grafana/rawcaptures

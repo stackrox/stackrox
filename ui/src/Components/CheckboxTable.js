@@ -55,6 +55,7 @@ class CheckboxTable extends Component {
                 Cell: ({ original }) => (
                     <input
                         type="checkbox"
+                        data-testid="checkbox-table-row-selector"
                         checked={selection.includes(original.id)}
                         onChange={this.toggleRowHandler(original)}
                         onClick={this.stopPropagationOnClick} // don't want checkbox click to select the row

@@ -5,22 +5,56 @@
             "name": "Kubernetes Cluster 0",
             "type": "KUBERNETES_CLUSTER",
             "mainImage": "stackrox/main:latest",
+            "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "namespace": "stackrox",
             "imagePullSecret": "",
             "lastContact": "2018-02-11T06:58:38.682340010Z",
-            "disableSwarmTls": false
+            "disableSwarmTls": false,
+            "runtimeSupport": false,
+            "monitoringEndpoint": "",
+            "collectionMethod": "KERNEL_MODULE",
+            "DEPRECATEDProviderMetadata": null,
+            "admissionController": false,
+            "DEPRECATEDOrchestratorMetadata": null,
+            "status": null,
+            "dynamicConfig": {
+                "admissionControllerConfig": {
+                    "enabled": false,
+                    "timeoutSeconds": 3,
+                    "scanInline": false,
+                    "disableBypass": false
+                },
+                "registryOverride": ""
+            }
         },
         {
             "id": "kubeCluster1",
-            "name": "Kubernetes Cluster 1",
+            "name": "Kubernetes Cluster TestInstance",
             "type": "KUBERNETES_CLUSTER",
             "mainImage": "stackrox/main:latest",
+            "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "namespace": "stackrox",
             "imagePullSecret": "",
             "lastContact": "2018-02-11T07:40:03.045162873Z",
-            "disableSwarmTls": false
+            "disableSwarmTls": false,
+            "runtimeSupport": false,
+            "monitoringEndpoint": "",
+            "collectionMethod": "KERNEL_MODULE",
+            "DEPRECATEDProviderMetadata": null,
+            "admissionController": false,
+            "DEPRECATEDOrchestratorMetadata": null,
+            "status": null,
+            "dynamicConfig": {
+                "admissionControllerConfig": {
+                    "enabled": false,
+                    "timeoutSeconds": 3,
+                    "scanInline": false,
+                    "disableBypass": false
+                },
+                "registryOverride": ""
+            }
         }
     ]
 }

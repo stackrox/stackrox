@@ -1,5 +1,4 @@
 import { selectors } from '../constants/IntegrationsPage';
-import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 
 describe('Integrations page', () => {
@@ -106,86 +105,5 @@ describe('API Token Creation Flow', () => {
         cy.get(selectors.buttons.revoke).click({ force: true });
         cy.get(selectors.buttons.confirm).click();
         cy.get(`.rt-td:contains("${randomTokenName}")`).should('not.exist');
-    });
-});
-
-// TODO: change this test suite to use the new Cluster pages, instead of an Integrations modal,
-//       after ROX_SENSOR_AUTOUPGRADE=true becomes the default;
-//       then, un-skip the test suite
-xdescribe('Cluster Creation Flow', () => {
-    withAuth();
-
-    beforeEach(() => {
-        cy.server();
-        cy.fixture('clusters/single.json').as('singleCluster');
-        cy.route('GET', api.clusters.list, '@singleCluster').as('clusters');
-        cy.route('POST', api.clusters.zip, {}).as('download');
-        cy.route('POST', api.clusters.list).as('addCluster');
-        cy.visit('/');
-        cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click({ force: true });
-        cy.wait('@clusters');
-    });
-
-    it('Should show a confirmation dialog when trying to delete clusters', () => {
-        cy.get(selectors.kubernetesTile).click();
-        cy.get(selectors.dialog).should('not.exist');
-        cy.get(selectors.checkboxes).check();
-        cy.get(selectors.buttons.delete).click({ force: true });
-        cy.get(selectors.dialog);
-    });
-
-    it('Should show the remote cluster when clicking the Kubernetes tile', () => {
-        cy.get(selectors.kubernetesTile).click();
-
-        cy.get(selectors.clusters.k8sCluster0);
-    });
-
-    it.skip('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
-        cy.get(selectors.kubernetesTile).click();
-
-        cy.get(selectors.buttons.new).click();
-
-        const clusterName = 'Kubernetes Cluster TestInstance';
-        cy.get(selectors.clusterForm.nameInput).type(clusterName);
-        // The image name should be pre-populated, so we don't type it in to test that the prepopulation works.
-        // (The backend WILL error out if the image is empty.)
-        cy.get(selectors.clusterForm.endpointInput)
-            .clear()
-            .type('central.stackrox:443');
-
-        cy.get(selectors.buttons.next).click();
-        cy.wait('@addCluster')
-            .its('responseBody')
-            .then(response => {
-                const clusterId = response.cluster.id;
-
-                cy.get(selectors.buttons.downloadYAML).click();
-                cy.wait('@download');
-
-                cy.get('div:contains("Waiting for the cluster to check in successfully...")');
-
-                // make cluster to "check-in" by adding "lastContact"
-                cy.route('GET', `${api.clusters.list}/${clusterId}`, {
-                    cluster: {
-                        id: clusterId,
-                        status: {
-                            lastContact: '2018-06-25T19:12:44.955289Z'
-                        }
-                    }
-                }).as('getCluster');
-                cy.wait('@getCluster');
-                cy.get(
-                    'div:contains("Success! The cluster has been recognized properly by StackRox. You may now save the configuration.")'
-                );
-
-                cy.get(selectors.buttons.closePanel).click();
-
-                // clean up after the test by deleting the cluster
-                cy.get(`.rt-tr:contains("${clusterName}") .rt-td input[type="checkbox"]`).check();
-                cy.get(selectors.buttons.delete).click();
-                cy.get(selectors.buttons.confirm).click();
-                cy.get(`.rt-tr:contains("${clusterName}")`).should('not.exist');
-            });
     });
 });

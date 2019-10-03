@@ -13,7 +13,12 @@ const PageHeader = ({ header, subHeader, classes, bgStyle, children }) => (
         data-test-id="page-header"
     >
         <div className="min-w-max pr-4 self-center">
-            <div className="uppercase text-lg tracking-widest font-700 pt-1">{header}</div>
+            <h1
+                data-test-id="header-text"
+                className="uppercase text-lg tracking-widest font-700 pt-1"
+            >
+                {header}
+            </h1>
             {renderSubHeader(subHeader)}
         </div>
         <div className="flex w-full items-center">{children}</div>
