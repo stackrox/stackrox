@@ -7,7 +7,65 @@ import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import GroupedTabs from 'Components/GroupedTabs';
-import entityTabsMap from '../entityTabRelationships';
+import useCaseTypes from 'constants/useCaseTypes';
+
+const vulnMgmtTabs = {
+    [entityTypes.SERVICE_ACCOUNT]: [entityTypes.DEPLOYMENT, entityTypes.ROLE],
+    [entityTypes.ROLE]: [entityTypes.SUBJECT, entityTypes.SERVICE_ACCOUNT],
+    [entityTypes.SECRET]: [entityTypes.DEPLOYMENT],
+    [entityTypes.CLUSTER]: [
+        entityTypes.CONTROL,
+        entityTypes.NODE,
+        entityTypes.SECRET,
+        entityTypes.IMAGE,
+        entityTypes.NAMESPACE,
+        entityTypes.DEPLOYMENT,
+        entityTypes.SUBJECT,
+        entityTypes.SERVICE_ACCOUNT,
+        entityTypes.ROLE
+    ],
+    [entityTypes.NAMESPACE]: [
+        entityTypes.DEPLOYMENT,
+        entityTypes.SECRET,
+        entityTypes.IMAGE,
+        entityTypes.SERVICE_ACCOUNT
+    ],
+    [entityTypes.NODE]: [entityTypes.CONTROL],
+    [entityTypes.IMAGE]: [entityTypes.DEPLOYMENT],
+    [entityTypes.CONTROL]: [entityTypes.NODE],
+    [entityTypes.SUBJECT]: [entityTypes.ROLE],
+    [entityTypes.DEPLOYMENT]: [entityTypes.IMAGE, entityTypes.SECRET],
+    [entityTypes.POLICY]: [entityTypes.DEPLOYMENT]
+};
+
+const configMgmtTabs = {
+    [entityTypes.SERVICE_ACCOUNT]: [entityTypes.DEPLOYMENT, entityTypes.ROLE],
+    [entityTypes.ROLE]: [entityTypes.SUBJECT, entityTypes.SERVICE_ACCOUNT],
+    [entityTypes.SECRET]: [entityTypes.DEPLOYMENT],
+    [entityTypes.CLUSTER]: [
+        entityTypes.CONTROL,
+        entityTypes.NODE,
+        entityTypes.SECRET,
+        entityTypes.IMAGE,
+        entityTypes.NAMESPACE,
+        entityTypes.DEPLOYMENT,
+        entityTypes.SUBJECT,
+        entityTypes.SERVICE_ACCOUNT,
+        entityTypes.ROLE
+    ],
+    [entityTypes.NAMESPACE]: [
+        entityTypes.DEPLOYMENT,
+        entityTypes.SECRET,
+        entityTypes.IMAGE,
+        entityTypes.SERVICE_ACCOUNT
+    ],
+    [entityTypes.NODE]: [entityTypes.CONTROL],
+    [entityTypes.IMAGE]: [entityTypes.DEPLOYMENT],
+    [entityTypes.CONTROL]: [entityTypes.NODE],
+    [entityTypes.SUBJECT]: [entityTypes.ROLE],
+    [entityTypes.DEPLOYMENT]: [entityTypes.IMAGE, entityTypes.SECRET],
+    [entityTypes.POLICY]: [entityTypes.DEPLOYMENT]
+};
 
 const TAB_GROUPS = {
     OVERVIEW: 'Overview',
@@ -17,11 +75,6 @@ const TAB_GROUPS = {
     RBAC_CONFIG: 'RBAC Visibility & Configurations'
 };
 
-// TODO: this can be greatly simplified with the entityRelationships
-//   that Linda created in the modules folder last week.
-// from Linda: alan says the tabs are the contains and matches relationships
-//   of the entity, which you can derive from the
-//   getContains and getMatches functions of that file
 const ENTITY_TO_TAB = {
     [entityTypes.ROLE]: TAB_GROUPS.RBAC_CONFIG,
     [entityTypes.SUBJECT]: TAB_GROUPS.RBAC_CONFIG,
@@ -38,7 +91,16 @@ const ENTITY_TO_TAB = {
     [entityTypes.CONTROL]: TAB_GROUPS.POLICIES
 };
 
-const EntityTabs = ({ match, location, entityType, entityListType, pageEntityId }) => {
+const useCaseTabs = {
+    [useCaseTypes.VULN_MANAGEMENT]: vulnMgmtTabs,
+    [useCaseTypes.CONFIG_MANAGEMENT]: configMgmtTabs
+};
+
+function getTabMap(useCase, entityType) {
+    return useCaseTabs[useCase][entityType];
+}
+
+const EntityTabs = ({ match, location, useCase, entityType, entityListType, pageEntityId }) => {
     function getTab(relationship) {
         const failingText =
             entityType === entityTypes.DEPLOYMENT && relationship === entityTypes.POLICY
@@ -55,7 +117,7 @@ const EntityTabs = ({ match, location, entityType, entityListType, pageEntityId 
         };
     }
 
-    const relationships = entityTabsMap[entityType];
+    const relationships = getTabMap(useCase, entityType);
     if (!relationships) return null;
     const entityTabs = relationships.map(relationship => getTab(relationship, entityType));
     const groups = Object.values(TAB_GROUPS);
@@ -68,6 +130,7 @@ const EntityTabs = ({ match, location, entityType, entityListType, pageEntityId 
 };
 
 EntityTabs.propTypes = {
+    useCase: PropTypes.string.isRequired,
     entityType: PropTypes.string.isRequired,
     entityListType: PropTypes.string,
     pageEntityId: PropTypes.string.isRequired,

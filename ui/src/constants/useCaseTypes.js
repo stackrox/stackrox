@@ -1,6 +1,6 @@
 const useCaseTypes = {
     CONFIG_MANAGEMENT: 'configmanagement',
-    VULN_MANAGEMENT: 'vulnmanagement',
+    VULN_MANAGEMENT: 'vulnerability-management',
     COMPLIANCE: 'compliance',
     RISK: 'risk',
     SECRET: 'secrets',

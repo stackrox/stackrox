@@ -103,7 +103,11 @@ function getFragmentName(entityType) {
 }
 
 function getFragment(entityType, appContext) {
-    const standardFields = [useCases.CONFIG_MANAGEMENT, useCases.COMPLIANCE];
+    const standardFields = [
+        useCases.CONFIG_MANAGEMENT,
+        useCases.COMPLIANCE,
+        useCases.VULN_MANAGEMENT
+    ];
 
     if (standardFields.includes(appContext)) {
         switch (entityType) {

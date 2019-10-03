@@ -60,7 +60,7 @@ const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessCon
 const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
-const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/VulnMgmt/VulnMgmtLayout'));
+const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
 
 class MainPage extends Component {
     static propTypes = {

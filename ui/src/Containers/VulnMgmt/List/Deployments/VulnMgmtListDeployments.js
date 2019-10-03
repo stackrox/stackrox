@@ -9,10 +9,10 @@ import TableCellLink from 'Components/TableCellLink';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
-import VulnMgmtTable from './VulnMgmtTable';
+import VulnMgmtListTable from '../VulnMgmtListTable';
 
 // TODO refactor this out to a common place
-import filterByPolicyStatus from '../../ConfigManagement/List/utilities/filterByPolicyStatus';
+import filterByPolicyStatus from '../../../ConfigManagement/List/utilities/filterByPolicyStatus';
 
 // TODO update with vulnerability-specific fields, after they become available
 const DEPLOYMENTS_QUERY = gql`
@@ -178,8 +178,9 @@ const VulnMgmtDeployments = ({
         return filteredTableRows;
     }
 
+    // TODO: refactor to remove the need for the intermediate <VulnMgmtListTable> component
     return (
-        <VulnMgmtTable
+        <VulnMgmtListTable
             wrapperClass={wrapperClass}
             query={DEPLOYMENTS_QUERY}
             entityType={entityTypes.DEPLOYMENT}

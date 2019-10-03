@@ -3,6 +3,7 @@
  */
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
+import useCaseTypes from 'constants/useCaseTypes';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -63,6 +64,10 @@ export const urlEntityTypes = {
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccount',
     [rbacConfigTypes.SUBJECT]: 'subject',
     [rbacConfigTypes.ROLE]: 'role'
+};
+
+export const useCasePaths = {
+    [useCaseTypes.VULN_MANAGEMENT]: 'vulnerability-management'
 };
 
 const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;
