@@ -10,6 +10,7 @@ const PageHeader = ({ header, subHeader, classes, bgStyle, children }) => (
     <div
         className={`flex h-18 px-4 bg-base-100 w-full flex-no-shrink z-10 border-b border-base-400 ${classes}`}
         style={bgStyle}
+        data-test-id="page-header"
     >
         <div className="min-w-max pr-4 self-center">
             <div className="uppercase text-lg tracking-widest font-700 pt-1">{header}</div>

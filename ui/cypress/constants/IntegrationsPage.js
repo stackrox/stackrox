@@ -5,6 +5,7 @@ export const selectors = {
     navLink: '.navigation-panel li:contains("Integrations") a',
     kubernetesTile: 'div[role="button"]:contains("Kubernetes")',
     dockerRegistryTile: 'div[role="button"]:contains("Generic Docker Registry")',
+    tiles: 'div[role="button"]',
     clairTile: 'div[role="button"]:contains("CoreOS Clair")',
     clairifyTile: 'div[role="button"]:contains("Clairify")',
     slackTile: 'div[role="button"]:contains("Slack")',
