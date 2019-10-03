@@ -4,5 +4,6 @@ import "reflect"
 
 // TypeWalkParameters tells generator how to walk types
 type TypeWalkParameters struct {
-	IncludedTypes []reflect.Type
+	IncludedTypes    []reflect.Type
+	BlackListedTypes []reflect.Type
 }

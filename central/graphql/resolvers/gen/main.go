@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"reflect"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/central/graphql/generator/codegen"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,6 +45,9 @@ var (
 			reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
 			reflect.TypeOf((*storage.ServiceAccount)(nil)),
 			reflect.TypeOf((*storage.Subject)(nil)),
+		},
+		BlackListedTypes: []reflect.Type{
+			reflect.TypeOf((*types.Timestamp)(nil)),
 		},
 	}
 )
