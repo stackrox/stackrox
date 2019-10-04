@@ -1,7 +1,8 @@
 import pageTypes from 'constants/pageTypes';
 import useCases from 'constants/useCaseTypes';
-import { generatePath } from 'react-router-dom';
+import { generatePath, matchPath } from 'react-router-dom';
 import qs from 'qs';
+import { WorkflowState, isStackValid } from './WorkflowStateManager';
 
 import {
     nestedPaths as workflowPaths,
@@ -88,7 +89,7 @@ export function generateURL(workflowState, searchState) {
     const queryString = queryParams
         ? qs.stringify(queryParams, {
               addQueryPrefix: true,
-              arrayFormat: 'repeat',
+              arrayFormat: 'indices',
               encodeValuesOnly: true
           })
         : '';
@@ -96,24 +97,89 @@ export function generateURL(workflowState, searchState) {
     return generatePath(path, params) + queryString;
 }
 
+function getStateArrayObject(type, entityId) {
+    if (!type && !entityId) return null;
+    const obj = { t: type };
+    if (entityId) obj.i = entityId;
+
+    return obj;
+}
+
+export function paramsToStateStack(params) {
+    const {
+        pageEntityListType,
+        pageEntityType,
+        pageEntityId,
+        entityId1,
+        entityId2,
+        entityType1,
+        entityType2,
+        entityListType1,
+        entityListType2
+    } = params;
+
+    const stateArray = [];
+    if (!pageEntityListType && !pageEntityType) return stateArray;
+
+    if (pageEntityListType) stateArray.push({ t: getTypeKeyFromParamValue(pageEntityListType) });
+    else stateArray.push({ t: getTypeKeyFromParamValue(pageEntityType), i: pageEntityId });
+
+    const tab = entityListType1 ? { t: getTypeKeyFromParamValue(entityListType1) } : null;
+    const entityTypeKey1 =
+        entityId1 && getTypeKeyFromParamValue(entityType1 || entityListType1 || pageEntityListType);
+    const entity1 = getStateArrayObject(entityTypeKey1, entityId1);
+
+    const list = entityListType2 ? { t: getTypeKeyFromParamValue(entityListType2) } : null;
+    const entityTypeKey2 = getTypeKeyFromParamValue(entityType2 || entityListType2);
+    const entity2 = getStateArrayObject(entityTypeKey2, entityId2);
+    // TODO: make this work
+    if (tab) stateArray.push(tab);
+    if (entity1) stateArray.push(entity1);
+    if (list) stateArray.push(list);
+    if (entity2) stateArray.push(entity2);
+
+    if (!isStackValid)
+        throw new Error('The supplied workflow state params produce an invalid state');
+
+    return stateArray;
+}
+
 // Convert URL to workflow state and search objects
-export function parseURL(match, location) {
-    if (!match) return {};
-    const params = { ...match.params };
-    const query =
-        location && location.search ? qs.parse(location.search, { ignoreQueryPrefix: true }) : {};
-    const { workflowState: stateStack = {}, ...searchState } = query;
-    const workflowState = { stateStack, useCase: params.context };
+// note: this will read strictly from 'location' as 'match' is relative to the closest Route component
+export function parseURL(location) {
+    if (!location) return {};
+
+    const { pathname, search } = location;
+    const listParams = matchPath(pathname, {
+        path: workflowPaths.LIST
+    });
+    const entityParams = matchPath(pathname, {
+        path: workflowPaths.ENTITY
+    });
+    const dashboardParams = matchPath(pathname, {
+        path: workflowPaths.DASHBOARD,
+        exact: true
+    });
+    const { params } = entityParams || listParams || dashboardParams;
+
+    let stateStack = paramsToStateStack(params) || [];
+    const query = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
+    const { workflowState: urlWorkflowState = [], ...searchState } = query;
+
+    // if on dashboard, the workflowState query params should be ignored
+    stateStack = dashboardParams ? [] : [...stateStack, ...urlWorkflowState];
+    const workflowState = new WorkflowState(params.context, stateStack);
 
     // Convert URL parameter values to enum types
-    if (params.pageEntityListType) {
-        stateStack.unshift({ t: getTypeKeyFromParamValue(params.pageEntityListType) });
-    } else if (params.pageEntityType) {
-        stateStack.unshift({
-            t: getTypeKeyFromParamValue(params.pageEntityType),
-            i: params.pageEntityId
-        });
-    }
+    // if (params.pageEntityListType) {
+    //     stateStack.unshift({ t: getTypeKeyFromParamValue(params.pageEntityListType) });
+    // } else if (params.pageEntityType) {
+    //     stateStack.unshift({
+    //         t: getTypeKeyFromParamValue(params.pageEntityType),
+    //         i: params.pageEntityId
+    //     });
+    // }
+
     return {
         workflowState,
         searchState

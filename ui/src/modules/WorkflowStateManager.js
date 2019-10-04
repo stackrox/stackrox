@@ -1,15 +1,7 @@
 import entityRelationships from 'modules/entityRelationships';
 
-function getStateArrayObject(type, entityId) {
-    if (!type && !entityId) return null;
-    const obj = { type };
-    if (entityId) obj.id = entityId;
-
-    return obj;
-}
-
 // Returns true if stack provided makes sense
-function isStackValid(stack) {
+export function isStackValid(stack) {
     if (stack.length < 2) return true;
 
     // stack is invalid when the stack is in one of three states:
@@ -37,8 +29,7 @@ function isStackValid(stack) {
         }
         return false;
     });
-    if (isParentState || isMatchState || isInferredState) return false;
-    return true;
+    return !isParentState && !isMatchState && !isInferredState;
 }
 
 // Resets the current state based on minimal parameters
@@ -70,52 +61,14 @@ function trimStack(stack) {
     return baseStateStack(type, id);
 }
 
-export function paramsToStateStack(params) {
-    const {
-        pageEntityListType,
-        pageEntityType,
-        pageEntityId,
-        entityId1,
-        entityId2,
-        entityType1,
-        entityType2,
-        entityListType1,
-        entityListType2
-    } = params;
-
-    const stateArray = [];
-    if (!pageEntityListType && !pageEntityType) return stateArray;
-
-    if (pageEntityListType) stateArray.push({ type: pageEntityListType });
-    else stateArray.push({ type: pageEntityType, id: pageEntityId });
-
-    const tab = entityListType1 ? { type: entityListType1 } : null;
-    const entity1 = getStateArrayObject(
-        entityType1 || entityListType1 || pageEntityListType,
-        entityId1
-    );
-    const list = entityListType2 ? { type: entityListType2 } : null;
-    const entity2 = getStateArrayObject(entityType2 || entityListType2, entityId2);
-    // TODO: make this work
-    if (tab) stateArray.push(tab);
-    if (entity1) stateArray.push(entity1);
-    if (list) stateArray.push(list);
-    if (entity2) stateArray.push(entity2);
-
-    if (!isStackValid)
-        throw new Error('The supplied workflow state params produce an invalid state');
-
-    return stateArray;
-}
-
 /**
  * Summary: Class that ensures the shape of a WorkflowState object
  * {
- *   useCase: 'text,
+ *   useCase: 'text',
  *   stateStack: [{t: 'entityType', i: 'entityId'},{t: 'entityType', i: 'entityId'}]
  * }
  */
-class WorkflowState {
+export class WorkflowState {
     constructor(useCase, stateStack) {
         this.useCase = useCase;
         this.stateStack = stateStack || [];
@@ -144,14 +97,22 @@ export default class WorkflowStateMgr {
 
     // Adds a list of entityType related to the current workflowState
     pushList(type) {
+        const listState = { t: type };
+
+        // if coming from dashboard
+        if (!this.workflowState.stateStack.length) {
+            this.workflowState.stateStack = [listState];
+            return this;
+        }
+
         const currentItem = this.workflowState.stateStack.slice(-1)[0];
-        if (!currentItem.i) {
+        if (currentItem.t && !currentItem.i) {
             // replace the list type
             currentItem.t = type;
             return this;
         }
 
-        this.workflowState.stateStack = trimStack([...this.workflowState.stateStack, { t: type }]);
+        this.workflowState.stateStack = trimStack([...this.workflowState.stateStack, listState]);
         return this;
     }
 

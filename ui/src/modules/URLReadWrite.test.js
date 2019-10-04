@@ -3,13 +3,11 @@ import useCases from 'constants/useCaseTypes';
 import { urlEntityListTypes, urlEntityTypes } from '../routePaths';
 import { parseURL, generateURL } from './URLReadWrite';
 
-function getMatchLocation(params, search) {
+function getLocation(search, pathname) {
     return {
-        match: {
-            params
-        },
         location: {
-            search
+            search,
+            pathname
         }
     };
 }
@@ -33,15 +31,15 @@ describe('ParseURL', () => {
             workflowState: [{ t: entityTypes.NAMESPACE }]
         };
 
-        const params = {
+        const { context, pageEntityType, pageEntityId } = {
             context: useCases.CONFIG_MANAGEMENT,
             pageEntityType: urlEntityTypes.CLUSTER,
-            pageEntityId: 'pageEntityId'
+            pageEntityId: '1234'
         };
 
-        const { match, location } = getMatchLocation(params, search);
-
-        const { workflowState } = parseURL(match, location);
+        const pathname = `/main/${context}/${pageEntityType}/${pageEntityId}`;
+        const { location } = getLocation(search, pathname);
+        const { workflowState } = parseURL(location);
 
         // Test workflowState object
         expect(workflowState).not.toBeNull();
@@ -49,7 +47,7 @@ describe('ParseURL', () => {
         expect(workflowState.stateStack.length).toBe(search.workflowState.length + 1);
         expect(workflowState.stateStack[0]).toEqual({
             t: entityTypes.CLUSTER,
-            i: params.pageEntityId
+            i: pageEntityId
         });
         expect(workflowState.stateStack[1]).toEqual(search.workflowState[0]);
     });
@@ -59,14 +57,14 @@ describe('ParseURL', () => {
             workflowState: [{ t: entityTypes.CLUSTER, i: 'cluster1' }]
         };
 
-        const params = {
+        const { context, pageEntityListType } = {
             context: useCases.CONFIG_MANAGEMENT,
             pageEntityListType: urlEntityListTypes.CLUSTER
         };
 
-        const { match, location } = getMatchLocation(params, search);
-
-        const { workflowState } = parseURL(match, location);
+        const pathname = `/main/${context}/${pageEntityListType}`;
+        const { location } = getLocation(search, pathname);
+        const { workflowState } = parseURL(location);
 
         // Test workflowState object
         expect(workflowState).not.toBeNull();
@@ -83,17 +81,17 @@ describe('ParseURL', () => {
             ...searchParams
         };
 
-        const params = {
-            context: useCases.CONFIG_MANAGEMENT
-        };
+        const context = useCases.CONFIG_MANAGEMENT;
+        const pathname = `/main/${context}?workflowState[0][t]=NODE`;
 
-        const { match, location } = getMatchLocation(params, search);
+        const { location } = getLocation(search, pathname);
 
-        const { searchState } = parseURL(match, location);
+        const { workflowState, searchState } = parseURL(location);
 
         // Test workflowState object
         expect(searchState).not.toBeNull();
         expect(searchState).toEqual(searchParams);
+        expect(workflowState.stateStack).toEqual([]);
     });
 });
 
@@ -110,7 +108,7 @@ describe('GenerateURL', () => {
 
         const url = generateURL(workflowState, searchParams);
         expect(url).toBe(
-            '/main/compliance/namespaces?workflowState[t]=NAMESPACE&workflowState[i]=nsId&workflowState[t]=DEPLOYMENT&s1[sk1]=v1&s1[sk2]=v2&sort1=s1&s2[sk3]=v3&s2[sk4]=v4&sort2=s2'
+            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&s1[sk1]=v1&s1[sk2]=v2&sort1=s1&s2[sk3]=v3&s2[sk4]=v4&sort2=s2'
         );
     });
 
@@ -122,7 +120,7 @@ describe('GenerateURL', () => {
 
         const url = generateURL(workflowState, searchParams);
         expect(url).toBe(
-            '/main/compliance/namespace/nsId?workflowState[t]=DEPLOYMENT&s1[sk1]=v1&s1[sk2]=v2&sort1=s1&s2[sk3]=v3&s2[sk4]=v4&sort2=s2'
+            '/main/compliance/namespace/nsId?workflowState[0][t]=DEPLOYMENT&s1[sk1]=v1&s1[sk2]=v2&sort1=s1&s2[sk3]=v3&s2[sk4]=v4&sort2=s2'
         );
     });
 

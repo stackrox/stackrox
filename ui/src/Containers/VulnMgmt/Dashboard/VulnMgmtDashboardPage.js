@@ -1,21 +1,20 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
+
+import { useCaseEntityMap } from 'modules/entityRelationships';
+import WorkflowStateMgr from 'modules/WorkflowStateManager';
+import { generateURL } from 'modules/URLReadWrite';
+import useCaseTypes from 'constants/useCaseTypes';
 
 import PageHeader from 'Components/PageHeader';
 import Widget from 'Components/Widget';
 import { useTheme } from 'Containers/ThemeProvider';
+import workflowStateContext from 'Containers/workflowStateContext';
 
 const VulnDashboardPage = () => {
     const { isDarkMode } = useTheme();
-    const entities = [
-        'deployments',
-        'images',
-        'components',
-        'cves',
-        'clusters',
-        'namespaces',
-        'policies'
-    ];
+    const workflowState = useContext(workflowStateContext);
+    const entities = useCaseEntityMap[useCaseTypes.VULN_MANAGEMENT];
 
     const pageHeaderBGStyle = isDarkMode
         ? {}
@@ -46,25 +45,28 @@ const VulnDashboardPage = () => {
                     className="grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense"
                     style={{ '--min-tile-height': '160px' }}
                 >
-                    {entities.map(entity => (
-                        <Widget
-                            key={entity}
-                            className="s-2 overflow-hidde pdf-page"
-                            header={entity}
-                            headerComponents={
-                                <Link
-                                    to={`/main/vulnerability-management/${entity}`}
-                                    className="no-underline"
-                                >
-                                    <button className="btn-sm btn-base" type="button">
-                                        View All
-                                    </button>
-                                </Link>
-                            }
-                        >
-                            <p>Widget contents go here.</p>
-                        </Widget>
-                    ))}
+                    {entities.map(entity => {
+                        const workflowStateMgr = new WorkflowStateMgr(workflowState);
+                        workflowStateMgr.pushList(entity);
+                        const entityListLink = generateURL(workflowStateMgr.workflowState);
+
+                        return (
+                            <Widget
+                                key={entity}
+                                className="s-2 overflow-hide pdf-page"
+                                header={entity}
+                                headerComponents={
+                                    <Link to={entityListLink} className="no-underline">
+                                        <button className="btn-sm btn-base" type="button">
+                                            View All
+                                        </button>
+                                    </Link>
+                                }
+                            >
+                                <p>Widget contents go here.</p>
+                            </Widget>
+                        );
+                    })}
                 </div>
             </div>
         </section>

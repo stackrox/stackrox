@@ -12,7 +12,7 @@ import { uniq } from 'lodash';
 const baseEntities = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
 
 // map of use cases to entities
-const useCaseEntityMap = {
+export const useCaseEntityMap = {
     [useCaseTypes.COMPLIANCE]: [entityTypes.CONTROL, entityTypes.NODE, ...baseEntities],
     [useCaseTypes.CONFIG_MANAGEMENT]: [
         entityTypes.CONTROL,
