@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { withRouter } from 'react-router-dom';
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 
-import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import Panel from 'Components/Panel';
 import Table from 'Components/Table';
+import TablePagination from 'Components/TablePagination';
 import entityLabels from 'messages/entity';
 import URLService from 'modules/URLService';
 import createPDFTable from 'utils/pdfUtils';
@@ -17,18 +17,21 @@ const VulnMgmtTable = ({
     wrapperClass,
     headerText,
     query,
-    variables,
     entityType,
     tableColumns,
     createTableRows,
     selectedRowId,
     idAttribute,
     defaultSorted,
+    loading,
+    error,
     data,
     match,
     location,
     history
 }) => {
+    const [page, setPage] = useState(0);
+
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
         const url = URLService.getURL(match, location)
@@ -57,45 +60,42 @@ const VulnMgmtTable = ({
                     id="capture-list"
                     selectedRowId={selectedRowId}
                     noDataText={noDataText}
+                    page={page}
                     defaultSorted={defaultSorted}
                 />
             </Panel>
         );
     }
 
-    function getHeaderComponents() {
+    function getHeaderComponents(totalRows) {
         return (
             <>
                 <div className="flex flex-1 justify-start">
                     <span>URLSearchInput goes here</span>
                 </div>
+                {/* TODO: update pagination to use server-side pagination */}
+                <TablePagination page={page} dataLength={totalRows} setPage={setPage} />
             </>
         );
     }
 
-    if (data) {
-        const headerComponents = getHeaderComponents(data.length);
-        if (data.length) {
-            createPDFTable(data, entityType, query, 'capture-list', tableColumns);
-        }
-        return getRenderComponents(headerComponents, data);
+    if (isGQLLoading(loading, data)) return <Loader />;
+
+    if (error || !data) return <PageNotFound resourceType={entityType} />;
+
+    const tableRows = createTableRows(data);
+
+    // TODO: fix big StackRox logo on PDF
+    if (tableRows.length) {
+        createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
     }
+    const headerComponents = getHeaderComponents(tableRows.length);
+
+    const content = getRenderComponents(headerComponents, tableRows);
 
     return (
         <section className="h-full w-full bg-base-100" id="capture-list">
-            <Query query={query} variables={variables}>
-                {({ loading, data: queryData }) => {
-                    if (isGQLLoading(loading, data)) return <Loader />;
-                    if (!queryData) return <PageNotFound resourceType={entityType} />;
-                    const tableRows = createTableRows(queryData) || [];
-                    const headerComponents = getHeaderComponents(tableRows.length);
-
-                    if (tableRows.length) {
-                        createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
-                    }
-                    return getRenderComponents(headerComponents, tableRows);
-                }}
-            </Query>
+            {content}
         </section>
     );
 };

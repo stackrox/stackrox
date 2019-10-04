@@ -163,6 +163,8 @@ const VulnMgmtDeployments = ({
     entityContext = {},
     match,
     location,
+    loading,
+    error,
     data,
     selectedRowId
 }) => {
@@ -172,7 +174,7 @@ const VulnMgmtDeployments = ({
     const tableColumns = buildTableColumns(match, location, entityContext);
 
     function createTableRowsFilteredByPolicyStatus(items) {
-        const tableRows = items.results || items; // guard to pluck data from different API returs
+        const tableRows = items.results || items || []; // guard to pluck data from different API returs
 
         const filteredTableRows = filterByPolicyStatus(tableRows, policyStatus);
         return filteredTableRows;
@@ -199,6 +201,8 @@ const VulnMgmtDeployments = ({
                 }
             ]}
             defaultSearchOptions={null}
+            loading={loading}
+            error={error}
             data={filterByPolicyStatus(data, policyStatus)}
         />
     );
