@@ -1,4 +1,4 @@
-package blevesearch
+package search
 
 import (
 	"fmt"
@@ -7,9 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoreflect"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
 
@@ -19,8 +17,6 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	typeToSearchCategory = map[string]v1.SearchCategory{
 		"Image":            v1.SearchCategory_IMAGES,
 		"ContainerImage":   v1.SearchCategory_IMAGES,
@@ -37,17 +33,17 @@ var (
 
 type searchWalker struct {
 	category v1.SearchCategory
-	fields   map[search.FieldLabel]*v1.SearchField
+	fields   map[FieldLabel]*v1.SearchField
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(category v1.SearchCategory, prefix string, obj interface{}) search.OptionsMap {
+func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	sw := searchWalker{
 		category: category,
-		fields:   make(map[search.FieldLabel]*v1.SearchField),
+		fields:   make(map[FieldLabel]*v1.SearchField),
 	}
 	sw.walkRecursive(prefix, reflect.TypeOf(obj))
-	return search.OptionsMapFromMap(category, sw.fields)
+	return OptionsMapFromMap(category, sw.fields)
 }
 
 func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField) {
@@ -55,7 +51,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField
 		return "", nil
 	}
 	fields := strings.Split(tag, ",")
-	if !search.FieldLabelSet.Contains(fields[0]) {
+	if !FieldLabelSet.Contains(fields[0]) {
 		log.Panicf("Field %q is not a valid FieldLabel. You may need to add it pkg/search/options.go", fields[0])
 	}
 
@@ -122,7 +118,7 @@ func (s *searchWalker) handleXRef(prefix string, t reflect.Type, tag string) {
 		if !ok {
 			log.Fatalf("Could not find reference to field value %q in option map %q", v, prefix)
 		}
-		s.fields[search.FieldLabel(v)] = value
+		s.fields[FieldLabel(v)] = value
 	}
 }
 
@@ -140,7 +136,7 @@ func (s *searchWalker) handleEmbeddedIndex(prefix string, t reflect.Type, tag st
 		if !ok {
 			log.Fatalf("Could not find reference to field value %q in option map %q", v, prefix)
 		}
-		s.fields[search.FieldLabel(v)] = searchField
+		s.fields[FieldLabel(v)] = searchField
 	}
 }
 
@@ -180,7 +176,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 				continue
 			}
 			searchField.Type = v1.SearchDataType_SEARCH_DATETIME
-			s.fields[search.FieldLabel(fieldName)] = searchField
+			s.fields[FieldLabel(fieldName)] = searchField
 			continue
 		}
 		// If it is a oneof then call XXX_OneofFuncs to get the types via the last returned value
@@ -221,7 +217,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 			continue
 		}
 		searchField.Type = searchDataType
-		s.fields[search.FieldLabel(fieldName)] = searchField
+		s.fields[FieldLabel(fieldName)] = searchField
 	}
 }
 

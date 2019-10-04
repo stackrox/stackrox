@@ -3,6 +3,7 @@ package search
 import (
 	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // ApplyFnToAllBaseQueries walks recursively over the query, applying fn to all the base queries.
@@ -25,6 +26,21 @@ func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 	default:
 		log.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
 	}
+}
+
+// ValidateQuery validates that the input query only contains fields in the given option map.
+func ValidateQuery(q *v1.Query, optionsMap OptionsMap) error {
+	errList := errorhelpers.NewErrorList("query for contains unrecognized fields:")
+	ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if _, isValid := optionsMap.Get(matchFieldQuery.MatchFieldQuery.GetField()); !isValid {
+			errList.AddString(matchFieldQuery.MatchFieldQuery.GetField())
+		}
+	})
+	return errList.ToError()
 }
 
 // FilterQuery applies the given function on every base query, and returns a new

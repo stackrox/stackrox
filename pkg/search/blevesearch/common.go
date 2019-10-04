@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/batcher"
+	"github.com/stackrox/rox/pkg/logging"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
@@ -25,6 +26,8 @@ const (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	defaultSubQueryContext = bleveContext{
 		pagination: &v1.QueryPagination{
 			Limit: maxSearchResponses,

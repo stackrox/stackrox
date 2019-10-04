@@ -12,9 +12,9 @@ var (
 	log = logging.LoggerForModule()
 
 	// StandardOptions is the search options map for a compliance standard
-	StandardOptions = blevesearch.Walk(v1.SearchCategory_COMPLIANCE_STANDARD, "standard", (*v1.ComplianceStandard)(nil))
+	StandardOptions = search.Walk(v1.SearchCategory_COMPLIANCE_STANDARD, "standard", (*v1.ComplianceStandard)(nil))
 	// ControlOptions is the search options map for a compliance control
-	ControlOptions = blevesearch.Walk(v1.SearchCategory_COMPLIANCE_CONTROL, "control", (*v1.ComplianceControl)(nil))
+	ControlOptions = search.Walk(v1.SearchCategory_COMPLIANCE_CONTROL, "control", (*v1.ComplianceControl)(nil))
 )
 
 // Indexer is the interface for Compliance Search

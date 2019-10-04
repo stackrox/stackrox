@@ -47,7 +47,7 @@ func generateOptionsFile(props operations.GeneratorProperties) error {
 	f := NewFile("mappings")
 	f.HeaderComment(headerComment)
 	f.Line()
-	f.Var().Id("OptionsMap").Op("=").Qual(packagenames.RoxBleve, "Walk").Call(
+	f.Var().Id("OptionsMap").Op("=").Qual(packagenames.RoxSearch, "Walk").Call(
 		Qual(packagenames.V1, props.SearchCategory),
 		Lit(tagString),
 		Parens(Op("*").Qual(props.Pkg, props.Object)).Parens(Nil()),

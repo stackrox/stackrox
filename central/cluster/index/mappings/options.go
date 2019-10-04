@@ -5,7 +5,7 @@ package mappings
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
+	search "github.com/stackrox/rox/pkg/search"
 )
 
-var OptionsMap = blevesearch.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil))
+var OptionsMap = search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil))
