@@ -136,7 +136,7 @@ const integrationsList = {
             disabled: false
         },
         {
-            label: 'IBM',
+            label: 'IBM Cloud',
             type: 'ibm',
             categories: 'Registry',
             source: 'imageIntegrations',
@@ -144,7 +144,7 @@ const integrationsList = {
             disabled: false
         },
         {
-            label: 'RedHat',
+            label: 'Red Hat',
             type: 'rhel',
             categories: 'Registry',
             source: 'imageIntegrations',

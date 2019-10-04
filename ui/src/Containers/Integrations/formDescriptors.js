@@ -880,7 +880,7 @@ const formDescriptors = {
                 label: 'Integration Name',
                 jsonpath: 'name',
                 type: 'text',
-                placeholder: 'RHEL Registry'
+                placeholder: 'Red Hat Registry'
             },
             {
                 label: 'Types',
