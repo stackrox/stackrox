@@ -80,6 +80,7 @@ func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 		ContainerRuntimeVersion: node.Status.NodeInfo.ContainerRuntimeVersion,
 		KernelVersion:           node.Status.NodeInfo.KernelVersion,
 		OsImage:                 node.Status.NodeInfo.OSImage,
+		KubeletVersion:          node.Status.NodeInfo.KubeletVersion,
 	}
 
 	events := []*central.SensorEvent{

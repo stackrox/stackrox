@@ -47,6 +47,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                 internalIpAddresses
                 joinedAt
                 kernelVersion
+                kubeletVersion
                 osImage
                 labels {
                     key
@@ -73,6 +74,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
 
                 const {
                     kernelVersion,
+                    kubeletVersion,
                     osImage,
                     labels = [],
                     containerRuntimeVersion,
@@ -85,7 +87,11 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
 
                 const metadataKeyValuePairs = [
                     {
-                        key: 'K8s Version',
+                        key: 'Kubelet Version',
+                        value: kubeletVersion
+                    },
+                    {
+                        key: 'Kernel Version',
                         value: kernelVersion
                     },
                     {

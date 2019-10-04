@@ -12,7 +12,7 @@ import "protobuf/gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 15
+// next available tag: 16
 message Node {
     // A unique ID identifying this node.
     string id                              = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
@@ -35,4 +35,5 @@ message Node {
     string os_image                        = 12;
     // When the cluster reported the node was added
     google.protobuf.Timestamp joined_at    = 13;
+    string kubelet_version                 = 15;
 }
