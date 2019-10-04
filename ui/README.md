@@ -83,9 +83,7 @@ To run all end-to-end tests in a headless mode use `yarn test-e2e-local`.
 
 To bring up [Cypress](https://www.cypress.io/) UI use `yarn cypress-demo-open`.
 To run all end-to-end tests in a headless mode use `yarn test-e2e-demo-local`.
-Make sure that `CYPRESS_ROX_AUTH_TOKEN` is set with the auth token used for the demo setup.
-For non-demo tests, we automatically set this environment variable using the password txt file
-located under `deploy/k8s/central-deploy/password`
+Make sure that `CYPRESS_DEMO_PASSWORD` is set with the Central Password for the Demo Setup.
 
 ### Documentation
 
