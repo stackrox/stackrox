@@ -9,8 +9,6 @@ import (
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
-
-	mapset "github.com/deckarep/golang-set"
 )
 
 // If you want to add a set for your custom type, simply add another go generate line along with the
@@ -23,129 +21,184 @@ import (
 // storage.UpgradeProgress_UpgradeState represents a generic type that we want to have a set of.
 
 // StorageUpgradeProgress_UpgradeStateSet will get translated to generic sets.
-// It uses mapset.Set as the underlying implementation, so it comes with a bunch
-// of utility methods, and is thread-safe.
 type StorageUpgradeProgress_UpgradeStateSet struct {
-	underlying mapset.Set
+	underlying map[storage.UpgradeProgress_UpgradeState]struct{}
 }
 
 // Add adds an element of type storage.UpgradeProgress_UpgradeState.
-func (k StorageUpgradeProgress_UpgradeStateSet) Add(i storage.UpgradeProgress_UpgradeState) bool {
+func (k *StorageUpgradeProgress_UpgradeStateSet) Add(i storage.UpgradeProgress_UpgradeState) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewThreadUnsafeSet()
+		k.underlying = make(map[storage.UpgradeProgress_UpgradeState]struct{})
 	}
 
-	return k.underlying.Add(i)
+	oldLen := len(k.underlying)
+	k.underlying[i] = struct{}{}
+	return len(k.underlying) > oldLen
 }
 
 // AddAll adds all elements of type storage.UpgradeProgress_UpgradeState. The return value is true if any new element
 // was added.
-func (k StorageUpgradeProgress_UpgradeStateSet) AddAll(is ...storage.UpgradeProgress_UpgradeState) bool {
+func (k *StorageUpgradeProgress_UpgradeStateSet) AddAll(is ...storage.UpgradeProgress_UpgradeState) bool {
+	if len(is) == 0 {
+		return false
+	}
 	if k.underlying == nil {
-		k.underlying = mapset.NewThreadUnsafeSet()
+		k.underlying = make(map[storage.UpgradeProgress_UpgradeState]struct{})
 	}
 
-	added := false
+	oldLen := len(k.underlying)
 	for _, i := range is {
-		added = k.underlying.Add(i) || added
+		k.underlying[i] = struct{}{}
 	}
-	return added
+	return len(k.underlying) > oldLen
 }
 
 // Remove removes an element of type storage.UpgradeProgress_UpgradeState.
-func (k StorageUpgradeProgress_UpgradeStateSet) Remove(i storage.UpgradeProgress_UpgradeState) {
-	if k.underlying != nil {
-		k.underlying.Remove(i)
+func (k *StorageUpgradeProgress_UpgradeStateSet) Remove(i storage.UpgradeProgress_UpgradeState) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
+
+	oldLen := len(k.underlying)
+	delete(k.underlying, i)
+	return len(k.underlying) < oldLen
 }
 
 // RemoveAll removes the given elements.
-func (k StorageUpgradeProgress_UpgradeStateSet) RemoveAll(is ...storage.UpgradeProgress_UpgradeState) {
-	if k.underlying == nil {
-		return
+func (k *StorageUpgradeProgress_UpgradeStateSet) RemoveAll(is ...storage.UpgradeProgress_UpgradeState) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
+
+	oldLen := len(k.underlying)
 	for _, i := range is {
-		k.underlying.Remove(i)
+		delete(k.underlying, i)
 	}
+	return len(k.underlying) < oldLen
 }
 
 // RemoveMatching removes all elements that match a given predicate.
-func (k StorageUpgradeProgress_UpgradeStateSet) RemoveMatching(pred func(storage.UpgradeProgress_UpgradeState) bool) {
-	if k.underlying == nil {
-		return
+func (k *StorageUpgradeProgress_UpgradeStateSet) RemoveMatching(pred func(storage.UpgradeProgress_UpgradeState) bool) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
-	for _, elem := range k.AsSlice() {
+
+	oldLen := len(k.underlying)
+	for elem := range k.underlying {
 		if pred(elem) {
-			k.underlying.Remove(elem)
+			delete(k.underlying, elem)
 		}
 	}
+	return len(k.underlying) < oldLen
 }
 
 // Contains returns whether the set contains an element of type storage.UpgradeProgress_UpgradeState.
 func (k StorageUpgradeProgress_UpgradeStateSet) Contains(i storage.UpgradeProgress_UpgradeState) bool {
-	if k.underlying != nil {
-		return k.underlying.Contains(i)
-	}
-	return false
+	_, ok := k.underlying[i]
+	return ok
 }
 
 // Cardinality returns the number of elements in the set.
 func (k StorageUpgradeProgress_UpgradeStateSet) Cardinality() int {
-	if k.underlying != nil {
-		return k.underlying.Cardinality()
+	return len(k.underlying)
+}
+
+// IsEmpty returns whether the underlying set is empty (includes uninitialized).
+func (k StorageUpgradeProgress_UpgradeStateSet) IsEmpty() bool {
+	return len(k.underlying) == 0
+}
+
+// Clone returns a copy of this set.
+func (k StorageUpgradeProgress_UpgradeStateSet) Clone() StorageUpgradeProgress_UpgradeStateSet {
+	if k.underlying == nil {
+		return StorageUpgradeProgress_UpgradeStateSet{}
 	}
-	return 0
+	cloned := make(map[storage.UpgradeProgress_UpgradeState]struct{}, len(k.underlying))
+	for elem := range k.underlying {
+		cloned[elem] = struct{}{}
+	}
+	return StorageUpgradeProgress_UpgradeStateSet{underlying: cloned}
 }
 
 // Difference returns a new set with all elements of k not in other.
 func (k StorageUpgradeProgress_UpgradeStateSet) Difference(other StorageUpgradeProgress_UpgradeStateSet) StorageUpgradeProgress_UpgradeStateSet {
-	if k.underlying == nil {
-		return StorageUpgradeProgress_UpgradeStateSet{underlying: other.underlying}
-	} else if other.underlying == nil {
-		return StorageUpgradeProgress_UpgradeStateSet{underlying: k.underlying}
+	if len(k.underlying) == 0 || len(other.underlying) == 0 {
+		return k.Clone()
 	}
 
-	return StorageUpgradeProgress_UpgradeStateSet{underlying: k.underlying.Difference(other.underlying)}
+	retained := make(map[storage.UpgradeProgress_UpgradeState]struct{}, len(k.underlying))
+	for elem := range k.underlying {
+		if !other.Contains(elem) {
+			retained[elem] = struct{}{}
+		}
+	}
+	return StorageUpgradeProgress_UpgradeStateSet{underlying: retained}
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k StorageUpgradeProgress_UpgradeStateSet) Intersect(other StorageUpgradeProgress_UpgradeStateSet) StorageUpgradeProgress_UpgradeStateSet {
-	if k.underlying != nil && other.underlying != nil {
-		return StorageUpgradeProgress_UpgradeStateSet{underlying: k.underlying.Intersect(other.underlying)}
+	maxIntLen := len(k.underlying)
+	smaller, larger := k.underlying, other.underlying
+	if l := len(other.underlying); l < maxIntLen {
+		maxIntLen = l
+		smaller, larger = larger, smaller
 	}
-	return StorageUpgradeProgress_UpgradeStateSet{}
+	if maxIntLen == 0 {
+		return StorageUpgradeProgress_UpgradeStateSet{}
+	}
+
+	retained := make(map[storage.UpgradeProgress_UpgradeState]struct{}, maxIntLen)
+	for elem := range smaller {
+		if _, ok := larger[elem]; ok {
+			retained[elem] = struct{}{}
+		}
+	}
+	return StorageUpgradeProgress_UpgradeStateSet{underlying: retained}
 }
 
 // Union returns a new set with the union of the members of both sets.
 func (k StorageUpgradeProgress_UpgradeStateSet) Union(other StorageUpgradeProgress_UpgradeStateSet) StorageUpgradeProgress_UpgradeStateSet {
-	if k.underlying == nil {
-		return StorageUpgradeProgress_UpgradeStateSet{underlying: other.underlying}
-	} else if other.underlying == nil {
-		return StorageUpgradeProgress_UpgradeStateSet{underlying: k.underlying}
+	if len(k.underlying) == 0 {
+		return other.Clone()
+	} else if len(other.underlying) == 0 {
+		return k.Clone()
 	}
 
-	return StorageUpgradeProgress_UpgradeStateSet{underlying: k.underlying.Union(other.underlying)}
+	underlying := make(map[storage.UpgradeProgress_UpgradeState]struct{}, len(k.underlying)+len(other.underlying))
+	for elem := range k.underlying {
+		underlying[elem] = struct{}{}
+	}
+	for elem := range other.underlying {
+		underlying[elem] = struct{}{}
+	}
+	return StorageUpgradeProgress_UpgradeStateSet{underlying: underlying}
 }
 
 // Equal returns a bool if the sets are equal
 func (k StorageUpgradeProgress_UpgradeStateSet) Equal(other StorageUpgradeProgress_UpgradeStateSet) bool {
-	if k.underlying == nil && other.underlying == nil {
+	thisL, otherL := len(k.underlying), len(other.underlying)
+	if thisL == 0 && otherL == 0 {
 		return true
 	}
-	if k.underlying == nil || other.underlying == nil {
+	if thisL != otherL {
 		return false
 	}
-	return k.underlying.Equal(other.underlying)
+	for elem := range k.underlying {
+		if _, ok := other.underlying[elem]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k StorageUpgradeProgress_UpgradeStateSet) AsSlice() []storage.UpgradeProgress_UpgradeState {
-	if k.underlying == nil {
+	if len(k.underlying) == 0 {
 		return nil
 	}
-	elems := make([]storage.UpgradeProgress_UpgradeState, 0, k.Cardinality())
-	for elem := range k.underlying.Iter() {
-		elems = append(elems, elem.(storage.UpgradeProgress_UpgradeState))
+	elems := make([]storage.UpgradeProgress_UpgradeState, 0, len(k.underlying))
+	for elem := range k.underlying {
+		elems = append(elems, elem)
 	}
 	return elems
 }
@@ -163,59 +216,23 @@ func (k StorageUpgradeProgress_UpgradeStateSet) AsSortedSlice(less func(i, j sto
 	return sortable.slice
 }
 
-// IsInitialized returns whether the set has been initialized
-func (k StorageUpgradeProgress_UpgradeStateSet) IsInitialized() bool {
-	return k.underlying != nil
-}
-
-// Iter returns a range of elements you can iterate over.
-// Note that in most cases, this is actually slower than pulling out a slice
-// and ranging over that.
-// NOTE THAT YOU MUST DRAIN THE RETURNED CHANNEL, OR THE SET WILL BE DEADLOCKED FOREVER.
-func (k StorageUpgradeProgress_UpgradeStateSet) Iter() <-chan storage.UpgradeProgress_UpgradeState {
-	ch := make(chan storage.UpgradeProgress_UpgradeState)
-	if k.underlying != nil {
-		go func() {
-			for elem := range k.underlying.Iter() {
-				ch <- elem.(storage.UpgradeProgress_UpgradeState)
-			}
-			close(ch)
-		}()
-	} else {
-		close(ch)
-	}
-	return ch
-}
-
 // Clear empties the set
-func (k StorageUpgradeProgress_UpgradeStateSet) Clear() {
-	if k.underlying == nil {
-		return
-	}
-	k.underlying.Clear()
+func (k *StorageUpgradeProgress_UpgradeStateSet) Clear() {
+	k.underlying = nil
 }
 
 // Freeze returns a new, frozen version of the set.
 func (k StorageUpgradeProgress_UpgradeStateSet) Freeze() FrozenStorageUpgradeProgress_UpgradeStateSet {
-	return NewFrozenStorageUpgradeProgress_UpgradeStateSet(k.AsSlice()...)
+	return NewFrozenStorageUpgradeProgress_UpgradeStateSetFromMap(k.underlying)
 }
 
 // NewStorageUpgradeProgress_UpgradeStateSet returns a new thread unsafe set with the given key type.
 func NewStorageUpgradeProgress_UpgradeStateSet(initial ...storage.UpgradeProgress_UpgradeState) StorageUpgradeProgress_UpgradeStateSet {
-	k := StorageUpgradeProgress_UpgradeStateSet{underlying: mapset.NewThreadUnsafeSet()}
+	underlying := make(map[storage.UpgradeProgress_UpgradeState]struct{}, len(initial))
 	for _, elem := range initial {
-		k.Add(elem)
+		underlying[elem] = struct{}{}
 	}
-	return k
-}
-
-// NewThreadSafeStorageUpgradeProgress_UpgradeStateSet returns a new thread safe set
-func NewThreadSafeStorageUpgradeProgress_UpgradeStateSet(initial ...storage.UpgradeProgress_UpgradeState) StorageUpgradeProgress_UpgradeStateSet {
-	k := StorageUpgradeProgress_UpgradeStateSet{underlying: mapset.NewSet()}
-	for _, elem := range initial {
-		k.Add(elem)
-	}
-	return k
+	return StorageUpgradeProgress_UpgradeStateSet{underlying: underlying}
 }
 
 type sortableStorageUpgradeProgress_UpgradeStateSlice struct {
@@ -243,12 +260,13 @@ type FrozenStorageUpgradeProgress_UpgradeStateSet struct {
 	underlying map[storage.UpgradeProgress_UpgradeState]struct{}
 }
 
-// NewFrozenStorageUpgradeProgress_UpgradeStateSetFromChan returns a new frozen set from the provided channel.
-// It drains the channel.
-// This can be useful to avoid unnecessary slice allocations.
-func NewFrozenStorageUpgradeProgress_UpgradeStateSetFromChan(elementC <-chan storage.UpgradeProgress_UpgradeState) FrozenStorageUpgradeProgress_UpgradeStateSet {
-	underlying := make(map[storage.UpgradeProgress_UpgradeState]struct{})
-	for elem := range elementC {
+// NewFrozenStorageUpgradeProgress_UpgradeStateSetFromMap returns a new frozen set from the set-style map.
+func NewFrozenStorageUpgradeProgress_UpgradeStateSetFromMap(m map[storage.UpgradeProgress_UpgradeState]struct{}) FrozenStorageUpgradeProgress_UpgradeStateSet {
+	if len(m) == 0 {
+		return FrozenStorageUpgradeProgress_UpgradeStateSet{}
+	}
+	underlying := make(map[storage.UpgradeProgress_UpgradeState]struct{}, len(m))
+	for elem := range m {
 		underlying[elem] = struct{}{}
 	}
 	return FrozenStorageUpgradeProgress_UpgradeStateSet{
@@ -276,6 +294,11 @@ func (k FrozenStorageUpgradeProgress_UpgradeStateSet) Contains(elem storage.Upgr
 // Cardinality returns the cardinality of the set.
 func (k FrozenStorageUpgradeProgress_UpgradeStateSet) Cardinality() int {
 	return len(k.underlying)
+}
+
+// IsEmpty returns whether the underlying set is empty (includes uninitialized).
+func (k FrozenStorageUpgradeProgress_UpgradeStateSet) IsEmpty() bool {
+	return len(k.underlying) == 0
 }
 
 // AsSlice returns the elements of the set. The order is unspecified.

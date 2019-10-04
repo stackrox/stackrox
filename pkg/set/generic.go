@@ -3,7 +3,6 @@ package set
 import (
 	"sort"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/mauricelam/genny/generic"
 )
 
@@ -25,129 +24,184 @@ import (
 type KeyType generic.Type
 
 // KeyTypeSet will get translated to generic sets.
-// It uses mapset.Set as the underlying implementation, so it comes with a bunch
-// of utility methods, and is thread-safe.
 type KeyTypeSet struct {
-	underlying mapset.Set
+	underlying map[KeyType]struct{}
 }
 
 // Add adds an element of type KeyType.
-func (k KeyTypeSet) Add(i KeyType) bool {
+func (k *KeyTypeSet) Add(i KeyType) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewThreadUnsafeSet()
+		k.underlying = make(map[KeyType]struct{})
 	}
 
-	return k.underlying.Add(i)
+	oldLen := len(k.underlying)
+	k.underlying[i] = struct{}{}
+	return len(k.underlying) > oldLen
 }
 
 // AddAll adds all elements of type KeyType. The return value is true if any new element
 // was added.
-func (k KeyTypeSet) AddAll(is ...KeyType) bool {
+func (k *KeyTypeSet) AddAll(is ...KeyType) bool {
+	if len(is) == 0 {
+		return false
+	}
 	if k.underlying == nil {
-		k.underlying = mapset.NewThreadUnsafeSet()
+		k.underlying = make(map[KeyType]struct{})
 	}
 
-	added := false
+	oldLen := len(k.underlying)
 	for _, i := range is {
-		added = k.underlying.Add(i) || added
+		k.underlying[i] = struct{}{}
 	}
-	return added
+	return len(k.underlying) > oldLen
 }
 
 // Remove removes an element of type KeyType.
-func (k KeyTypeSet) Remove(i KeyType) {
-	if k.underlying != nil {
-		k.underlying.Remove(i)
+func (k *KeyTypeSet) Remove(i KeyType) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
+
+	oldLen := len(k.underlying)
+	delete(k.underlying, i)
+	return len(k.underlying) < oldLen
 }
 
 // RemoveAll removes the given elements.
-func (k KeyTypeSet) RemoveAll(is ...KeyType) {
-	if k.underlying == nil {
-		return
+func (k *KeyTypeSet) RemoveAll(is ...KeyType) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
+
+	oldLen := len(k.underlying)
 	for _, i := range is {
-		k.underlying.Remove(i)
+		delete(k.underlying, i)
 	}
+	return len(k.underlying) < oldLen
 }
 
 // RemoveMatching removes all elements that match a given predicate.
-func (k KeyTypeSet) RemoveMatching(pred func(KeyType) bool) {
-	if k.underlying == nil {
-		return
+func (k *KeyTypeSet) RemoveMatching(pred func(KeyType) bool) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
-	for _, elem := range k.AsSlice() {
+
+	oldLen := len(k.underlying)
+	for elem := range k.underlying {
 		if pred(elem) {
-			k.underlying.Remove(elem)
+			delete(k.underlying, elem)
 		}
 	}
+	return len(k.underlying) < oldLen
 }
 
 // Contains returns whether the set contains an element of type KeyType.
 func (k KeyTypeSet) Contains(i KeyType) bool {
-	if k.underlying != nil {
-		return k.underlying.Contains(i)
-	}
-	return false
+	_, ok := k.underlying[i]
+	return ok
 }
 
 // Cardinality returns the number of elements in the set.
 func (k KeyTypeSet) Cardinality() int {
-	if k.underlying != nil {
-		return k.underlying.Cardinality()
+	return len(k.underlying)
+}
+
+// IsEmpty returns whether the underlying set is empty (includes uninitialized).
+func (k KeyTypeSet) IsEmpty() bool {
+	return len(k.underlying) == 0
+}
+
+// Clone returns a copy of this set.
+func (k KeyTypeSet) Clone() KeyTypeSet {
+	if k.underlying == nil {
+		return KeyTypeSet{}
 	}
-	return 0
+	cloned := make(map[KeyType]struct{}, len(k.underlying))
+	for elem := range k.underlying {
+		cloned[elem] = struct{}{}
+	}
+	return KeyTypeSet{underlying: cloned}
 }
 
 // Difference returns a new set with all elements of k not in other.
 func (k KeyTypeSet) Difference(other KeyTypeSet) KeyTypeSet {
-	if k.underlying == nil {
-		return KeyTypeSet{underlying: other.underlying}
-	} else if other.underlying == nil {
-		return KeyTypeSet{underlying: k.underlying}
+	if len(k.underlying) == 0 || len(other.underlying) == 0 {
+		return k.Clone()
 	}
 
-	return KeyTypeSet{underlying: k.underlying.Difference(other.underlying)}
+	retained := make(map[KeyType]struct{}, len(k.underlying))
+	for elem := range k.underlying {
+		if !other.Contains(elem) {
+			retained[elem] = struct{}{}
+		}
+	}
+	return KeyTypeSet{underlying: retained}
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k KeyTypeSet) Intersect(other KeyTypeSet) KeyTypeSet {
-	if k.underlying != nil && other.underlying != nil {
-		return KeyTypeSet{underlying: k.underlying.Intersect(other.underlying)}
+	maxIntLen := len(k.underlying)
+	smaller, larger := k.underlying, other.underlying
+	if l := len(other.underlying); l < maxIntLen {
+		maxIntLen = l
+		smaller, larger = larger, smaller
 	}
-	return KeyTypeSet{}
+	if maxIntLen == 0 {
+		return KeyTypeSet{}
+	}
+
+	retained := make(map[KeyType]struct{}, maxIntLen)
+	for elem := range smaller {
+		if _, ok := larger[elem]; ok {
+			retained[elem] = struct{}{}
+		}
+	}
+	return KeyTypeSet{underlying: retained}
 }
 
 // Union returns a new set with the union of the members of both sets.
 func (k KeyTypeSet) Union(other KeyTypeSet) KeyTypeSet {
-	if k.underlying == nil {
-		return KeyTypeSet{underlying: other.underlying}
-	} else if other.underlying == nil {
-		return KeyTypeSet{underlying: k.underlying}
+	if len(k.underlying) == 0 {
+		return other.Clone()
+	} else if len(other.underlying) == 0 {
+		return k.Clone()
 	}
 
-	return KeyTypeSet{underlying: k.underlying.Union(other.underlying)}
+	underlying := make(map[KeyType]struct{}, len(k.underlying)+len(other.underlying))
+	for elem := range k.underlying {
+		underlying[elem] = struct{}{}
+	}
+	for elem := range other.underlying {
+		underlying[elem] = struct{}{}
+	}
+	return KeyTypeSet{underlying: underlying}
 }
 
 // Equal returns a bool if the sets are equal
 func (k KeyTypeSet) Equal(other KeyTypeSet) bool {
-	if k.underlying == nil && other.underlying == nil {
+	thisL, otherL := len(k.underlying), len(other.underlying)
+	if thisL == 0 && otherL == 0 {
 		return true
 	}
-	if k.underlying == nil || other.underlying == nil {
+	if thisL != otherL {
 		return false
 	}
-	return k.underlying.Equal(other.underlying)
+	for elem := range k.underlying {
+		if _, ok := other.underlying[elem]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k KeyTypeSet) AsSlice() []KeyType {
-	if k.underlying == nil {
+	if len(k.underlying) == 0 {
 		return nil
 	}
-	elems := make([]KeyType, 0, k.Cardinality())
-	for elem := range k.underlying.Iter() {
-		elems = append(elems, elem.(KeyType))
+	elems := make([]KeyType, 0, len(k.underlying))
+	for elem := range k.underlying {
+		elems = append(elems, elem)
 	}
 	return elems
 }
@@ -165,59 +219,23 @@ func (k KeyTypeSet) AsSortedSlice(less func(i, j KeyType) bool) []KeyType {
 	return sortable.slice
 }
 
-// IsInitialized returns whether the set has been initialized
-func (k KeyTypeSet) IsInitialized() bool {
-	return k.underlying != nil
-}
-
-// Iter returns a range of elements you can iterate over.
-// Note that in most cases, this is actually slower than pulling out a slice
-// and ranging over that.
-// NOTE THAT YOU MUST DRAIN THE RETURNED CHANNEL, OR THE SET WILL BE DEADLOCKED FOREVER.
-func (k KeyTypeSet) Iter() <-chan KeyType {
-	ch := make(chan KeyType)
-	if k.underlying != nil {
-		go func() {
-			for elem := range k.underlying.Iter() {
-				ch <- elem.(KeyType)
-			}
-			close(ch)
-		}()
-	} else {
-		close(ch)
-	}
-	return ch
-}
-
 // Clear empties the set
-func (k KeyTypeSet) Clear() {
-	if k.underlying == nil {
-		return
-	}
-	k.underlying.Clear()
+func (k *KeyTypeSet) Clear() {
+	k.underlying = nil
 }
 
 // Freeze returns a new, frozen version of the set.
 func (k KeyTypeSet) Freeze() FrozenKeyTypeSet {
-	return NewFrozenKeyTypeSet(k.AsSlice()...)
+	return NewFrozenKeyTypeSetFromMap(k.underlying)
 }
 
 // NewKeyTypeSet returns a new thread unsafe set with the given key type.
 func NewKeyTypeSet(initial ...KeyType) KeyTypeSet {
-	k := KeyTypeSet{underlying: mapset.NewThreadUnsafeSet()}
+	underlying := make(map[KeyType]struct{}, len(initial))
 	for _, elem := range initial {
-		k.Add(elem)
+		underlying[elem] = struct{}{}
 	}
-	return k
-}
-
-// NewThreadSafeKeyTypeSet returns a new thread safe set
-func NewThreadSafeKeyTypeSet(initial ...KeyType) KeyTypeSet {
-	k := KeyTypeSet{underlying: mapset.NewSet()}
-	for _, elem := range initial {
-		k.Add(elem)
-	}
-	return k
+	return KeyTypeSet{underlying: underlying}
 }
 
 type sortableKeyTypeSlice struct {
@@ -245,12 +263,13 @@ type FrozenKeyTypeSet struct {
 	underlying map[KeyType]struct{}
 }
 
-// NewFrozenKeyTypeSetFromChan returns a new frozen set from the provided channel.
-// It drains the channel.
-// This can be useful to avoid unnecessary slice allocations.
-func NewFrozenKeyTypeSetFromChan(elementC <-chan KeyType) FrozenKeyTypeSet {
-	underlying := make(map[KeyType]struct{})
-	for elem := range elementC {
+// NewFrozenKeyTypeSetFromMap returns a new frozen set from the set-style map.
+func NewFrozenKeyTypeSetFromMap(m map[KeyType]struct{}) FrozenKeyTypeSet {
+	if len(m) == 0 {
+		return FrozenKeyTypeSet{}
+	}
+	underlying := make(map[KeyType]struct{}, len(m))
+	for elem := range m {
 		underlying[elem] = struct{}{}
 	}
 	return FrozenKeyTypeSet{
@@ -278,6 +297,11 @@ func (k FrozenKeyTypeSet) Contains(elem KeyType) bool {
 // Cardinality returns the cardinality of the set.
 func (k FrozenKeyTypeSet) Cardinality() int {
 	return len(k.underlying)
+}
+
+// IsEmpty returns whether the underlying set is empty (includes uninitialized).
+func (k FrozenKeyTypeSet) IsEmpty() bool {
+	return len(k.underlying) == 0
 }
 
 // AsSlice returns the elements of the set. The order is unspecified.

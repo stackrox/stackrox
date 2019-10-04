@@ -13,6 +13,8 @@ func assertFrozenSetContainsExactly(t *testing.T, fs FrozenStringSet, elements .
 	for _, elem := range elements {
 		a.True(fs.Contains(elem))
 	}
+	a.Equal(len(elements), fs.Cardinality())
+	a.Equal(len(elements) == 0, fs.IsEmpty())
 
 	falseCases := []string{"BLAH", "blah", "BLACK", "SheeP"}
 	for _, elem := range falseCases {
@@ -33,7 +35,6 @@ func assertFrozenSetContainsExactly(t *testing.T, fs FrozenStringSet, elements .
 	a.Equal(elements, fs.AsSortedSlice(func(i, j string) bool {
 		return i > j
 	}))
-
 }
 
 func TestFrozenStringSet(t *testing.T) {

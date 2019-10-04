@@ -90,15 +90,10 @@ func (p *policyRuleSet) ToSlice() []*storage.PolicyRule {
 func (p *policyRuleSet) GetPermissionMap() map[string]set.StringSet {
 	permissionSet := make(map[string]set.StringSet)
 	for _, rule := range p.granted {
+		if rule.GetResources() == nil {
+			continue
+		}
 		for _, verb := range rule.GetVerbs() {
-			if rule.GetResources() == nil {
-				continue
-			}
-
-			if !permissionSet[verb].IsInitialized() {
-				permissionSet[verb] = set.NewStringSet()
-			}
-
 			if permissionSet[verb].Contains("*") {
 				continue
 			}
@@ -108,7 +103,9 @@ func (p *policyRuleSet) GetPermissionMap() map[string]set.StringSet {
 					permissionSet[verb] = set.NewStringSet(resource)
 					break
 				} else {
-					permissionSet[verb].Add(resource)
+					resourceSet := permissionSet[verb]
+					resourceSet.Add(resource)
+					permissionSet[verb] = resourceSet
 				}
 			}
 		}

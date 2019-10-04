@@ -607,9 +607,6 @@ func flattenEdges(edges ...[]edge) []edge {
 }
 
 func mockNode(node string, namespace string, internetAccess, nonIsolatedIngress, nonIsolatedEgress bool, policies ...string) *v1.NetworkNode {
-	if policies == nil {
-		policies = []string{}
-	}
 	sort.Strings(policies)
 	return &v1.NetworkNode{
 		Entity: &storage.NetworkEntityInfo{
@@ -634,8 +631,8 @@ func deploymentLabels(values ...string) map[string]string {
 		panic("values for deployments labels must be even")
 	}
 	m := make(map[string]string)
-	for i := 0; i < len(values)/2+1; i += 2 {
-		m[values[i]] = values[i+1]
+	for i := 0; i < len(values)/2; i++ {
+		m[values[2*i]] = values[2*i+1]
 	}
 	return m
 }
@@ -1022,10 +1019,11 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		populateOutEdges(c.nodes, c.edges)
+		testCase := c
+		populateOutEdges(testCase.nodes, testCase.edges)
 		t.Run(c.name, func(t *testing.T) {
-			nodes := g.evaluate(c.deployments, c.nps)
-			assert.ElementsMatch(t, c.nodes, nodes)
+			nodes := g.evaluate(testCase.deployments, testCase.nps)
+			assert.ElementsMatch(t, testCase.nodes, nodes)
 		})
 	}
 }

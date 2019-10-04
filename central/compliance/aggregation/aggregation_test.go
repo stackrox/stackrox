@@ -182,7 +182,7 @@ func TestGetFlatChecksFromRunResult(t *testing.T) {
 	ag := &aggregatorImpl{
 		standards: mockStandardsRepo{},
 	}
-	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), ag.getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1"), [numScopes]set.StringSet{}))
+	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), ag.getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1"), [numScopes]*set.StringSet{}))
 }
 
 func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) string {
@@ -200,7 +200,7 @@ func TestGetAggregatedResults(t *testing.T) {
 		passPerResult int32
 		failPerResult int32
 		numResults    int
-		mask          [numScopes]set.StringSet
+		mask          [numScopes]*set.StringSet
 	}{
 		{
 			unit:          v1.ComplianceAggregation_CLUSTER,
@@ -290,8 +290,8 @@ func TestGetAggregatedResults(t *testing.T) {
 			failPerResult: 2,
 			passPerResult: 4,
 			numResults:    1,
-			mask: [numScopes]set.StringSet{
-				v1.ComplianceAggregation_NAMESPACE - minScope: set.NewStringSet(qualifiedNamespaceID("cluster1", "namespace1")),
+			mask: [numScopes]*set.StringSet{
+				v1.ComplianceAggregation_NAMESPACE - minScope: &[]set.StringSet{set.NewStringSet(qualifiedNamespaceID("cluster1", "namespace1"))}[0],
 			},
 		},
 	}
@@ -384,7 +384,7 @@ func TestDomainAttribution(t *testing.T) {
 		[]v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE},
 		v1.ComplianceAggregation_CHECK,
 		complianceRunResults,
-		[numScopes]set.StringSet{},
+		[numScopes]*set.StringSet{},
 	)
 
 	for i, r := range results {
@@ -505,9 +505,10 @@ func TestIsValidCheck(t *testing.T) {
 	}
 	for _, testCase := range cases {
 		// testCase mask to actual mask
-		testMask := [numScopes]set.StringSet{}
+		testMask := [numScopes]*set.StringSet{}
 		for k, v := range testCase.mask {
-			testMask[getMaskIndex(k)] = v
+			vCopy := v
+			testMask[getMaskIndex(k)] = &vCopy
 		}
 		for _, c := range testCase.checks {
 			t.Run("aggregation", func(t *testing.T) {

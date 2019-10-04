@@ -1,8 +1,6 @@
 package graph
 
 import (
-	"sort"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -141,7 +139,6 @@ func createNode(deployment *storage.Deployment, dpd *DeploymentPolicyData) *v1.N
 	nodePoliciesSet := dpd.appliedIngress.Union(dpd.appliedEgress).AsSortedSlice(func(i, j string) bool {
 		return i < j
 	})
-	sort.Strings(nodePoliciesSet)
 
 	// Create and return the node.
 	return &v1.NetworkNode{

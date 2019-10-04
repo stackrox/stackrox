@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -785,4 +786,37 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 			assert.Equal(t, c.expected, prs.Grants(c.grants))
 		})
 	}
+}
+
+func TestGetPermissionMap(t *testing.T) {
+	rules := []*storage.PolicyRule{
+		{
+			Resources: []string{"foo"},
+			Verbs:     []string{"view", "edit"},
+		},
+		{
+			Resources: []string{"*"},
+			Verbs:     []string{"edit", "delete"},
+		},
+		{
+			Resources: []string{"bar"},
+			Verbs:     []string{"delete", "patch"},
+		},
+		{
+			Resources: []string{"foo"},
+			Verbs:     []string{"patch"},
+		},
+	}
+	expected := map[string]set.StringSet{
+		"view":   set.NewStringSet("foo"),
+		"edit":   set.NewStringSet("*"),
+		"delete": set.NewStringSet("*"),
+		"patch":  set.NewStringSet("foo", "bar"),
+	}
+	ruleSet := &policyRuleSet{
+		granted: rules,
+	}
+
+	permissionMap := ruleSet.GetPermissionMap()
+	assert.Equal(t, expected, permissionMap)
 }

@@ -8,7 +8,6 @@ package set
 import (
 	"sort"
 
-	mapset "github.com/deckarep/golang-set"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -22,129 +21,184 @@ import (
 // v1.SearchCategory represents a generic type that we want to have a set of.
 
 // V1SearchCategorySet will get translated to generic sets.
-// It uses mapset.Set as the underlying implementation, so it comes with a bunch
-// of utility methods, and is thread-safe.
 type V1SearchCategorySet struct {
-	underlying mapset.Set
+	underlying map[v1.SearchCategory]struct{}
 }
 
 // Add adds an element of type v1.SearchCategory.
-func (k V1SearchCategorySet) Add(i v1.SearchCategory) bool {
+func (k *V1SearchCategorySet) Add(i v1.SearchCategory) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewThreadUnsafeSet()
+		k.underlying = make(map[v1.SearchCategory]struct{})
 	}
 
-	return k.underlying.Add(i)
+	oldLen := len(k.underlying)
+	k.underlying[i] = struct{}{}
+	return len(k.underlying) > oldLen
 }
 
 // AddAll adds all elements of type v1.SearchCategory. The return value is true if any new element
 // was added.
-func (k V1SearchCategorySet) AddAll(is ...v1.SearchCategory) bool {
+func (k *V1SearchCategorySet) AddAll(is ...v1.SearchCategory) bool {
+	if len(is) == 0 {
+		return false
+	}
 	if k.underlying == nil {
-		k.underlying = mapset.NewThreadUnsafeSet()
+		k.underlying = make(map[v1.SearchCategory]struct{})
 	}
 
-	added := false
+	oldLen := len(k.underlying)
 	for _, i := range is {
-		added = k.underlying.Add(i) || added
+		k.underlying[i] = struct{}{}
 	}
-	return added
+	return len(k.underlying) > oldLen
 }
 
 // Remove removes an element of type v1.SearchCategory.
-func (k V1SearchCategorySet) Remove(i v1.SearchCategory) {
-	if k.underlying != nil {
-		k.underlying.Remove(i)
+func (k *V1SearchCategorySet) Remove(i v1.SearchCategory) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
+
+	oldLen := len(k.underlying)
+	delete(k.underlying, i)
+	return len(k.underlying) < oldLen
 }
 
 // RemoveAll removes the given elements.
-func (k V1SearchCategorySet) RemoveAll(is ...v1.SearchCategory) {
-	if k.underlying == nil {
-		return
+func (k *V1SearchCategorySet) RemoveAll(is ...v1.SearchCategory) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
+
+	oldLen := len(k.underlying)
 	for _, i := range is {
-		k.underlying.Remove(i)
+		delete(k.underlying, i)
 	}
+	return len(k.underlying) < oldLen
 }
 
 // RemoveMatching removes all elements that match a given predicate.
-func (k V1SearchCategorySet) RemoveMatching(pred func(v1.SearchCategory) bool) {
-	if k.underlying == nil {
-		return
+func (k *V1SearchCategorySet) RemoveMatching(pred func(v1.SearchCategory) bool) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
-	for _, elem := range k.AsSlice() {
+
+	oldLen := len(k.underlying)
+	for elem := range k.underlying {
 		if pred(elem) {
-			k.underlying.Remove(elem)
+			delete(k.underlying, elem)
 		}
 	}
+	return len(k.underlying) < oldLen
 }
 
 // Contains returns whether the set contains an element of type v1.SearchCategory.
 func (k V1SearchCategorySet) Contains(i v1.SearchCategory) bool {
-	if k.underlying != nil {
-		return k.underlying.Contains(i)
-	}
-	return false
+	_, ok := k.underlying[i]
+	return ok
 }
 
 // Cardinality returns the number of elements in the set.
 func (k V1SearchCategorySet) Cardinality() int {
-	if k.underlying != nil {
-		return k.underlying.Cardinality()
+	return len(k.underlying)
+}
+
+// IsEmpty returns whether the underlying set is empty (includes uninitialized).
+func (k V1SearchCategorySet) IsEmpty() bool {
+	return len(k.underlying) == 0
+}
+
+// Clone returns a copy of this set.
+func (k V1SearchCategorySet) Clone() V1SearchCategorySet {
+	if k.underlying == nil {
+		return V1SearchCategorySet{}
 	}
-	return 0
+	cloned := make(map[v1.SearchCategory]struct{}, len(k.underlying))
+	for elem := range k.underlying {
+		cloned[elem] = struct{}{}
+	}
+	return V1SearchCategorySet{underlying: cloned}
 }
 
 // Difference returns a new set with all elements of k not in other.
 func (k V1SearchCategorySet) Difference(other V1SearchCategorySet) V1SearchCategorySet {
-	if k.underlying == nil {
-		return V1SearchCategorySet{underlying: other.underlying}
-	} else if other.underlying == nil {
-		return V1SearchCategorySet{underlying: k.underlying}
+	if len(k.underlying) == 0 || len(other.underlying) == 0 {
+		return k.Clone()
 	}
 
-	return V1SearchCategorySet{underlying: k.underlying.Difference(other.underlying)}
+	retained := make(map[v1.SearchCategory]struct{}, len(k.underlying))
+	for elem := range k.underlying {
+		if !other.Contains(elem) {
+			retained[elem] = struct{}{}
+		}
+	}
+	return V1SearchCategorySet{underlying: retained}
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k V1SearchCategorySet) Intersect(other V1SearchCategorySet) V1SearchCategorySet {
-	if k.underlying != nil && other.underlying != nil {
-		return V1SearchCategorySet{underlying: k.underlying.Intersect(other.underlying)}
+	maxIntLen := len(k.underlying)
+	smaller, larger := k.underlying, other.underlying
+	if l := len(other.underlying); l < maxIntLen {
+		maxIntLen = l
+		smaller, larger = larger, smaller
 	}
-	return V1SearchCategorySet{}
+	if maxIntLen == 0 {
+		return V1SearchCategorySet{}
+	}
+
+	retained := make(map[v1.SearchCategory]struct{}, maxIntLen)
+	for elem := range smaller {
+		if _, ok := larger[elem]; ok {
+			retained[elem] = struct{}{}
+		}
+	}
+	return V1SearchCategorySet{underlying: retained}
 }
 
 // Union returns a new set with the union of the members of both sets.
 func (k V1SearchCategorySet) Union(other V1SearchCategorySet) V1SearchCategorySet {
-	if k.underlying == nil {
-		return V1SearchCategorySet{underlying: other.underlying}
-	} else if other.underlying == nil {
-		return V1SearchCategorySet{underlying: k.underlying}
+	if len(k.underlying) == 0 {
+		return other.Clone()
+	} else if len(other.underlying) == 0 {
+		return k.Clone()
 	}
 
-	return V1SearchCategorySet{underlying: k.underlying.Union(other.underlying)}
+	underlying := make(map[v1.SearchCategory]struct{}, len(k.underlying)+len(other.underlying))
+	for elem := range k.underlying {
+		underlying[elem] = struct{}{}
+	}
+	for elem := range other.underlying {
+		underlying[elem] = struct{}{}
+	}
+	return V1SearchCategorySet{underlying: underlying}
 }
 
 // Equal returns a bool if the sets are equal
 func (k V1SearchCategorySet) Equal(other V1SearchCategorySet) bool {
-	if k.underlying == nil && other.underlying == nil {
+	thisL, otherL := len(k.underlying), len(other.underlying)
+	if thisL == 0 && otherL == 0 {
 		return true
 	}
-	if k.underlying == nil || other.underlying == nil {
+	if thisL != otherL {
 		return false
 	}
-	return k.underlying.Equal(other.underlying)
+	for elem := range k.underlying {
+		if _, ok := other.underlying[elem]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k V1SearchCategorySet) AsSlice() []v1.SearchCategory {
-	if k.underlying == nil {
+	if len(k.underlying) == 0 {
 		return nil
 	}
-	elems := make([]v1.SearchCategory, 0, k.Cardinality())
-	for elem := range k.underlying.Iter() {
-		elems = append(elems, elem.(v1.SearchCategory))
+	elems := make([]v1.SearchCategory, 0, len(k.underlying))
+	for elem := range k.underlying {
+		elems = append(elems, elem)
 	}
 	return elems
 }
@@ -162,59 +216,23 @@ func (k V1SearchCategorySet) AsSortedSlice(less func(i, j v1.SearchCategory) boo
 	return sortable.slice
 }
 
-// IsInitialized returns whether the set has been initialized
-func (k V1SearchCategorySet) IsInitialized() bool {
-	return k.underlying != nil
-}
-
-// Iter returns a range of elements you can iterate over.
-// Note that in most cases, this is actually slower than pulling out a slice
-// and ranging over that.
-// NOTE THAT YOU MUST DRAIN THE RETURNED CHANNEL, OR THE SET WILL BE DEADLOCKED FOREVER.
-func (k V1SearchCategorySet) Iter() <-chan v1.SearchCategory {
-	ch := make(chan v1.SearchCategory)
-	if k.underlying != nil {
-		go func() {
-			for elem := range k.underlying.Iter() {
-				ch <- elem.(v1.SearchCategory)
-			}
-			close(ch)
-		}()
-	} else {
-		close(ch)
-	}
-	return ch
-}
-
 // Clear empties the set
-func (k V1SearchCategorySet) Clear() {
-	if k.underlying == nil {
-		return
-	}
-	k.underlying.Clear()
+func (k *V1SearchCategorySet) Clear() {
+	k.underlying = nil
 }
 
 // Freeze returns a new, frozen version of the set.
 func (k V1SearchCategorySet) Freeze() FrozenV1SearchCategorySet {
-	return NewFrozenV1SearchCategorySet(k.AsSlice()...)
+	return NewFrozenV1SearchCategorySetFromMap(k.underlying)
 }
 
 // NewV1SearchCategorySet returns a new thread unsafe set with the given key type.
 func NewV1SearchCategorySet(initial ...v1.SearchCategory) V1SearchCategorySet {
-	k := V1SearchCategorySet{underlying: mapset.NewThreadUnsafeSet()}
+	underlying := make(map[v1.SearchCategory]struct{}, len(initial))
 	for _, elem := range initial {
-		k.Add(elem)
+		underlying[elem] = struct{}{}
 	}
-	return k
-}
-
-// NewThreadSafeV1SearchCategorySet returns a new thread safe set
-func NewThreadSafeV1SearchCategorySet(initial ...v1.SearchCategory) V1SearchCategorySet {
-	k := V1SearchCategorySet{underlying: mapset.NewSet()}
-	for _, elem := range initial {
-		k.Add(elem)
-	}
-	return k
+	return V1SearchCategorySet{underlying: underlying}
 }
 
 type sortableV1SearchCategorySlice struct {
@@ -242,12 +260,13 @@ type FrozenV1SearchCategorySet struct {
 	underlying map[v1.SearchCategory]struct{}
 }
 
-// NewFrozenV1SearchCategorySetFromChan returns a new frozen set from the provided channel.
-// It drains the channel.
-// This can be useful to avoid unnecessary slice allocations.
-func NewFrozenV1SearchCategorySetFromChan(elementC <-chan v1.SearchCategory) FrozenV1SearchCategorySet {
-	underlying := make(map[v1.SearchCategory]struct{})
-	for elem := range elementC {
+// NewFrozenV1SearchCategorySetFromMap returns a new frozen set from the set-style map.
+func NewFrozenV1SearchCategorySetFromMap(m map[v1.SearchCategory]struct{}) FrozenV1SearchCategorySet {
+	if len(m) == 0 {
+		return FrozenV1SearchCategorySet{}
+	}
+	underlying := make(map[v1.SearchCategory]struct{}, len(m))
+	for elem := range m {
 		underlying[elem] = struct{}{}
 	}
 	return FrozenV1SearchCategorySet{
@@ -275,6 +294,11 @@ func (k FrozenV1SearchCategorySet) Contains(elem v1.SearchCategory) bool {
 // Cardinality returns the cardinality of the set.
 func (k FrozenV1SearchCategorySet) Cardinality() int {
 	return len(k.underlying)
+}
+
+// IsEmpty returns whether the underlying set is empty (includes uninitialized).
+func (k FrozenV1SearchCategorySet) IsEmpty() bool {
+	return len(k.underlying) == 0
 }
 
 // AsSlice returns the elements of the set. The order is unspecified.

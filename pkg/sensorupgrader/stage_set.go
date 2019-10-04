@@ -7,8 +7,6 @@ package sensorupgrader
 
 import (
 	"sort"
-
-	mapset "github.com/deckarep/golang-set"
 )
 
 // If you want to add a set for your custom type, simply add another go generate line along with the
@@ -21,129 +19,184 @@ import (
 // Stage represents a generic type that we want to have a set of.
 
 // StageSet will get translated to generic sets.
-// It uses mapset.Set as the underlying implementation, so it comes with a bunch
-// of utility methods, and is thread-safe.
 type StageSet struct {
-	underlying mapset.Set
+	underlying map[Stage]struct{}
 }
 
 // Add adds an element of type Stage.
-func (k StageSet) Add(i Stage) bool {
+func (k *StageSet) Add(i Stage) bool {
 	if k.underlying == nil {
-		k.underlying = mapset.NewThreadUnsafeSet()
+		k.underlying = make(map[Stage]struct{})
 	}
 
-	return k.underlying.Add(i)
+	oldLen := len(k.underlying)
+	k.underlying[i] = struct{}{}
+	return len(k.underlying) > oldLen
 }
 
 // AddAll adds all elements of type Stage. The return value is true if any new element
 // was added.
-func (k StageSet) AddAll(is ...Stage) bool {
+func (k *StageSet) AddAll(is ...Stage) bool {
+	if len(is) == 0 {
+		return false
+	}
 	if k.underlying == nil {
-		k.underlying = mapset.NewThreadUnsafeSet()
+		k.underlying = make(map[Stage]struct{})
 	}
 
-	added := false
+	oldLen := len(k.underlying)
 	for _, i := range is {
-		added = k.underlying.Add(i) || added
+		k.underlying[i] = struct{}{}
 	}
-	return added
+	return len(k.underlying) > oldLen
 }
 
 // Remove removes an element of type Stage.
-func (k StageSet) Remove(i Stage) {
-	if k.underlying != nil {
-		k.underlying.Remove(i)
+func (k *StageSet) Remove(i Stage) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
+
+	oldLen := len(k.underlying)
+	delete(k.underlying, i)
+	return len(k.underlying) < oldLen
 }
 
 // RemoveAll removes the given elements.
-func (k StageSet) RemoveAll(is ...Stage) {
-	if k.underlying == nil {
-		return
+func (k *StageSet) RemoveAll(is ...Stage) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
+
+	oldLen := len(k.underlying)
 	for _, i := range is {
-		k.underlying.Remove(i)
+		delete(k.underlying, i)
 	}
+	return len(k.underlying) < oldLen
 }
 
 // RemoveMatching removes all elements that match a given predicate.
-func (k StageSet) RemoveMatching(pred func(Stage) bool) {
-	if k.underlying == nil {
-		return
+func (k *StageSet) RemoveMatching(pred func(Stage) bool) bool {
+	if len(k.underlying) == 0 {
+		return false
 	}
-	for _, elem := range k.AsSlice() {
+
+	oldLen := len(k.underlying)
+	for elem := range k.underlying {
 		if pred(elem) {
-			k.underlying.Remove(elem)
+			delete(k.underlying, elem)
 		}
 	}
+	return len(k.underlying) < oldLen
 }
 
 // Contains returns whether the set contains an element of type Stage.
 func (k StageSet) Contains(i Stage) bool {
-	if k.underlying != nil {
-		return k.underlying.Contains(i)
-	}
-	return false
+	_, ok := k.underlying[i]
+	return ok
 }
 
 // Cardinality returns the number of elements in the set.
 func (k StageSet) Cardinality() int {
-	if k.underlying != nil {
-		return k.underlying.Cardinality()
+	return len(k.underlying)
+}
+
+// IsEmpty returns whether the underlying set is empty (includes uninitialized).
+func (k StageSet) IsEmpty() bool {
+	return len(k.underlying) == 0
+}
+
+// Clone returns a copy of this set.
+func (k StageSet) Clone() StageSet {
+	if k.underlying == nil {
+		return StageSet{}
 	}
-	return 0
+	cloned := make(map[Stage]struct{}, len(k.underlying))
+	for elem := range k.underlying {
+		cloned[elem] = struct{}{}
+	}
+	return StageSet{underlying: cloned}
 }
 
 // Difference returns a new set with all elements of k not in other.
 func (k StageSet) Difference(other StageSet) StageSet {
-	if k.underlying == nil {
-		return StageSet{underlying: other.underlying}
-	} else if other.underlying == nil {
-		return StageSet{underlying: k.underlying}
+	if len(k.underlying) == 0 || len(other.underlying) == 0 {
+		return k.Clone()
 	}
 
-	return StageSet{underlying: k.underlying.Difference(other.underlying)}
+	retained := make(map[Stage]struct{}, len(k.underlying))
+	for elem := range k.underlying {
+		if !other.Contains(elem) {
+			retained[elem] = struct{}{}
+		}
+	}
+	return StageSet{underlying: retained}
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k StageSet) Intersect(other StageSet) StageSet {
-	if k.underlying != nil && other.underlying != nil {
-		return StageSet{underlying: k.underlying.Intersect(other.underlying)}
+	maxIntLen := len(k.underlying)
+	smaller, larger := k.underlying, other.underlying
+	if l := len(other.underlying); l < maxIntLen {
+		maxIntLen = l
+		smaller, larger = larger, smaller
 	}
-	return StageSet{}
+	if maxIntLen == 0 {
+		return StageSet{}
+	}
+
+	retained := make(map[Stage]struct{}, maxIntLen)
+	for elem := range smaller {
+		if _, ok := larger[elem]; ok {
+			retained[elem] = struct{}{}
+		}
+	}
+	return StageSet{underlying: retained}
 }
 
 // Union returns a new set with the union of the members of both sets.
 func (k StageSet) Union(other StageSet) StageSet {
-	if k.underlying == nil {
-		return StageSet{underlying: other.underlying}
-	} else if other.underlying == nil {
-		return StageSet{underlying: k.underlying}
+	if len(k.underlying) == 0 {
+		return other.Clone()
+	} else if len(other.underlying) == 0 {
+		return k.Clone()
 	}
 
-	return StageSet{underlying: k.underlying.Union(other.underlying)}
+	underlying := make(map[Stage]struct{}, len(k.underlying)+len(other.underlying))
+	for elem := range k.underlying {
+		underlying[elem] = struct{}{}
+	}
+	for elem := range other.underlying {
+		underlying[elem] = struct{}{}
+	}
+	return StageSet{underlying: underlying}
 }
 
 // Equal returns a bool if the sets are equal
 func (k StageSet) Equal(other StageSet) bool {
-	if k.underlying == nil && other.underlying == nil {
+	thisL, otherL := len(k.underlying), len(other.underlying)
+	if thisL == 0 && otherL == 0 {
 		return true
 	}
-	if k.underlying == nil || other.underlying == nil {
+	if thisL != otherL {
 		return false
 	}
-	return k.underlying.Equal(other.underlying)
+	for elem := range k.underlying {
+		if _, ok := other.underlying[elem]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k StageSet) AsSlice() []Stage {
-	if k.underlying == nil {
+	if len(k.underlying) == 0 {
 		return nil
 	}
-	elems := make([]Stage, 0, k.Cardinality())
-	for elem := range k.underlying.Iter() {
-		elems = append(elems, elem.(Stage))
+	elems := make([]Stage, 0, len(k.underlying))
+	for elem := range k.underlying {
+		elems = append(elems, elem)
 	}
 	return elems
 }
@@ -161,59 +214,23 @@ func (k StageSet) AsSortedSlice(less func(i, j Stage) bool) []Stage {
 	return sortable.slice
 }
 
-// IsInitialized returns whether the set has been initialized
-func (k StageSet) IsInitialized() bool {
-	return k.underlying != nil
-}
-
-// Iter returns a range of elements you can iterate over.
-// Note that in most cases, this is actually slower than pulling out a slice
-// and ranging over that.
-// NOTE THAT YOU MUST DRAIN THE RETURNED CHANNEL, OR THE SET WILL BE DEADLOCKED FOREVER.
-func (k StageSet) Iter() <-chan Stage {
-	ch := make(chan Stage)
-	if k.underlying != nil {
-		go func() {
-			for elem := range k.underlying.Iter() {
-				ch <- elem.(Stage)
-			}
-			close(ch)
-		}()
-	} else {
-		close(ch)
-	}
-	return ch
-}
-
 // Clear empties the set
-func (k StageSet) Clear() {
-	if k.underlying == nil {
-		return
-	}
-	k.underlying.Clear()
+func (k *StageSet) Clear() {
+	k.underlying = nil
 }
 
 // Freeze returns a new, frozen version of the set.
 func (k StageSet) Freeze() FrozenStageSet {
-	return NewFrozenStageSet(k.AsSlice()...)
+	return NewFrozenStageSetFromMap(k.underlying)
 }
 
 // NewStageSet returns a new thread unsafe set with the given key type.
 func NewStageSet(initial ...Stage) StageSet {
-	k := StageSet{underlying: mapset.NewThreadUnsafeSet()}
+	underlying := make(map[Stage]struct{}, len(initial))
 	for _, elem := range initial {
-		k.Add(elem)
+		underlying[elem] = struct{}{}
 	}
-	return k
-}
-
-// NewThreadSafeStageSet returns a new thread safe set
-func NewThreadSafeStageSet(initial ...Stage) StageSet {
-	k := StageSet{underlying: mapset.NewSet()}
-	for _, elem := range initial {
-		k.Add(elem)
-	}
-	return k
+	return StageSet{underlying: underlying}
 }
 
 type sortableStageSlice struct {
@@ -241,12 +258,13 @@ type FrozenStageSet struct {
 	underlying map[Stage]struct{}
 }
 
-// NewFrozenStageSetFromChan returns a new frozen set from the provided channel.
-// It drains the channel.
-// This can be useful to avoid unnecessary slice allocations.
-func NewFrozenStageSetFromChan(elementC <-chan Stage) FrozenStageSet {
-	underlying := make(map[Stage]struct{})
-	for elem := range elementC {
+// NewFrozenStageSetFromMap returns a new frozen set from the set-style map.
+func NewFrozenStageSetFromMap(m map[Stage]struct{}) FrozenStageSet {
+	if len(m) == 0 {
+		return FrozenStageSet{}
+	}
+	underlying := make(map[Stage]struct{}, len(m))
+	for elem := range m {
 		underlying[elem] = struct{}{}
 	}
 	return FrozenStageSet{
@@ -274,6 +292,11 @@ func (k FrozenStageSet) Contains(elem Stage) bool {
 // Cardinality returns the cardinality of the set.
 func (k FrozenStageSet) Cardinality() int {
 	return len(k.underlying)
+}
+
+// IsEmpty returns whether the underlying set is empty (includes uninitialized).
+func (k FrozenStageSet) IsEmpty() bool {
+	return len(k.underlying) == 0
 }
 
 // AsSlice returns the elements of the set. The order is unspecified.

@@ -134,7 +134,7 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 		containerName string
 	}
 	processGroups := make(map[groupKey]map[string][]*storage.ProcessIndicator)
-	processNameToContainers := make(map[groupKey]set.StringSet)
+	processNameToContainers := make(map[groupKey]*set.StringSet)
 	for _, i := range indicators {
 		name := processwhitelist.WhitelistItemFromProcess(i)
 		if name == "" {
@@ -146,7 +146,7 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 		if !ok {
 			groupMap = make(map[string][]*storage.ProcessIndicator)
 			processGroups[groupKey] = groupMap
-			processNameToContainers[groupKey] = set.NewStringSet()
+			processNameToContainers[groupKey] = &set.StringSet{}
 		}
 		groupMap[i.GetSignal().GetArgs()] = append(groupMap[i.GetSignal().GetArgs()], i)
 		processNameToContainers[groupKey].Add(i.GetSignal().GetContainerId())
@@ -189,14 +189,14 @@ func (s *serviceImpl) GetGroupedProcessByDeploymentAndContainer(ctx context.Cont
 // IndicatorsToGroupedResponses rearranges process indicator storage items into API process name group items.
 func IndicatorsToGroupedResponses(indicators []*storage.ProcessIndicator) []*v1.ProcessNameGroup {
 	processGroups := make(map[string]map[string][]*storage.ProcessIndicator)
-	processNameToContainers := make(map[string]set.StringSet)
+	processNameToContainers := make(map[string]*set.StringSet)
 	for _, i := range indicators {
 		fullProcessName := i.GetSignal().GetExecFilePath()
 		nameMap, ok := processGroups[fullProcessName]
 		if !ok {
 			nameMap = make(map[string][]*storage.ProcessIndicator)
 			processGroups[fullProcessName] = nameMap
-			processNameToContainers[fullProcessName] = set.NewStringSet()
+			processNameToContainers[fullProcessName] = &set.StringSet{}
 		}
 		nameMap[i.GetSignal().GetArgs()] = append(nameMap[i.GetSignal().GetArgs()], i)
 		processNameToContainers[fullProcessName].Add(i.GetSignal().GetContainerId())
