@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/mappings"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -18,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -182,8 +183,13 @@ func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.Deploymen
 	}, nil
 }
 
-func labelsMapFromSearchResults(results []search.Result) (keyValuesMap map[string]*v1.DeploymentLabelsResponse_LabelValues, values []string) {
-	labelFieldPath := mappings.OptionsMap.MustGet(search.Label.String()).GetFieldPath()
+func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.DeploymentLabelsResponse_LabelValues, []string) {
+	labelField, ok := mappings.OptionsMap.Get(search.Label.String())
+	if !ok {
+		utils.Should(errors.Errorf("could not find label %q in options map", search.Label.String()))
+		return nil, nil
+	}
+	labelFieldPath := labelField.GetFieldPath()
 	keyFieldPath := blevesearch.ToMapKeyPath(labelFieldPath)
 	valueFieldPath := blevesearch.ToMapValuePath(labelFieldPath)
 
@@ -193,7 +199,7 @@ func labelsMapFromSearchResults(results []search.Result) (keyValuesMap map[strin
 	for _, r := range results {
 		keyMatches, valueMatches := r.Matches[keyFieldPath], r.Matches[valueFieldPath]
 		if len(keyMatches) != len(valueMatches) {
-			errorhelpers.PanicOnDevelopmentf("Mismatch between key and value matches: %d != %d", len(keyMatches), len(valueMatches))
+			utils.Should(errors.Errorf("mismatch between key and value matches: %d != %d", len(keyMatches), len(valueMatches)))
 			continue
 		}
 		for i, keyMatch := range keyMatches {
@@ -208,17 +214,16 @@ func labelsMapFromSearchResults(results []search.Result) (keyValuesMap map[strin
 		}
 	}
 
-	keyValuesMap = make(map[string]*v1.DeploymentLabelsResponse_LabelValues)
+	keyValuesMap := make(map[string]*v1.DeploymentLabelsResponse_LabelValues, len(tempSet))
+	var values []string
 	for k, valSet := range tempSet {
 		keyValuesMap[k] = &v1.DeploymentLabelsResponse_LabelValues{
-			Values: make([]string, 0, valSet.Cardinality()),
+			Values: valSet.AsSlice(),
 		}
-
-		keyValuesMap[k].Values = append(keyValuesMap[k].Values, valSet.AsSlice()...)
 		sort.Strings(keyValuesMap[k].Values)
 	}
 	values = globalValueSet.AsSlice()
 	sort.Strings(values)
 
-	return
+	return keyValuesMap, values
 }

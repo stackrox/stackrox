@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -41,7 +43,8 @@ func initialize() {
 	for _, protoNotifier := range protoNotifiers {
 		notifier, err := notifiers.CreateNotifier(protoNotifier)
 		if err != nil {
-			log.Panicf("Error creating notifier with %v (%v) and type %v: %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType(), err)
+			utils.Should(errors.Wrapf(err, "error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))
+			continue
 		}
 		pr.UpdateNotifier(notifier)
 	}

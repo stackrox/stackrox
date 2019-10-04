@@ -11,7 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -36,7 +35,9 @@ func init() {
 		return
 	}
 	timeoutSecs, err := strconv.Atoi(timeoutSettingStr)
-	utils.Must(errors.Wrap(err, "could not parse watchdog timeout setting"))
+	if err != nil {
+		panic(errors.Wrap(err, "could not parse watchdog timeout setting"))
+	}
 	lockTimeout = time.Duration(timeoutSecs) * time.Second
 }
 

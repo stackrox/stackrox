@@ -1,10 +1,13 @@
 package store
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/central/globaldb"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -29,9 +32,8 @@ func fillPreloadedRoles(st Store) Store {
 	inSto := st.(*storeImpl)
 	// Load in all the preloaded roles
 	for _, role := range rolePkg.DefaultRolesByName {
-		if err := inSto.roleCrud.Upsert(role); err != nil {
-			log.Panicf("Cannot upsert pre-defined role %s: %v", role.GetName(), err)
-		}
+		err := inSto.roleCrud.Upsert(role)
+		utils.Should(errors.Wrapf(err, "cannot upsert pre-defined role %s", role.GetName()))
 	}
 	return st
 }

@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/central/jwt"
 	"github.com/stackrox/rox/central/role/resources"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -31,15 +33,12 @@ func Singleton() Backend {
 
 		// Create and initialize source.
 		src := newSource()
-		if err := src.initFromStore(ctx, datastore.Singleton()); err != nil {
-			log.Panicf("Could not initialize API tokens source: %v", err)
-		}
+		err := src.initFromStore(ctx, datastore.Singleton())
+		utils.Should(errors.Wrap(err, "could not initialize API tokens source"))
 
 		// Create token issuer.
 		issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(src, tokens.WithDefaultTTL(defaultTTL))
-		if err != nil {
-			log.Panicf("Could not create token issuer: %v", err)
-		}
+		utils.Should(errors.Wrap(err, "could not create token issuer"))
 
 		// Create the final backend.
 		backendInstance = newBackend(issuer, src, datastore.Singleton())
