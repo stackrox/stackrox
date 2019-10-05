@@ -15,6 +15,7 @@ export const selectors = {
         delete: 'button:contains("Delete")',
         test: 'button:contains("Test")',
         create: 'button:contains("Create")',
+        cancelDelete: '.dialog button:contains("Cancel")',
         confirmDelete: '.dialog button:contains("Delete")',
         generate: 'button:contains("Generate"):not([disabled])',
         revoke: 'button:contains("Revoke")',

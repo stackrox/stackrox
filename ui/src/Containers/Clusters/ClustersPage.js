@@ -212,17 +212,17 @@ const ClustersPage = ({
     }
 
     function makeDeleteRequest() {
-        deleteClusters(checkedClusterIds).then(() => {
-            setCheckedClusters([]);
+        deleteClusters(checkedClusterIds)
+            .then(() => {
+                setCheckedClusters([]);
 
-            fetchClustersAsArray()
-                .then(clusters => {
+                fetchClustersAsArray().then(clusters => {
                     setCurrentClusters(clusters);
-                })
-                .finally(() => {
-                    setShowDialog(false);
                 });
-        });
+            })
+            .finally(() => {
+                setShowDialog(false);
+            });
     }
 
     useEffect(() => {

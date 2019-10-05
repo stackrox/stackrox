@@ -57,14 +57,15 @@ describe('Cluster Creation Flow', () => {
         cy.wait('@clusters');
     });
 
-    it('Should show a confirmation dialog when trying to delete clusters', () => {
+    xit('Should show a confirmation dialog when trying to delete clusters', () => {
         cy.get(selectors.dialog).should('not.exist');
         cy.get(selectors.checkboxes).check();
         cy.get(selectors.buttons.delete).click({ force: true });
         cy.get(selectors.dialog);
+        cy.get(selectors.buttons.cancelDelete).click({ force: true });
     });
 
-    it('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
+    xit('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
         cy.get(selectors.buttons.new).click();
 
         const clusterName = 'Kubernetes Cluster TestInstance';
