@@ -156,3 +156,22 @@ func gcLoggersAndCount(expected int) int {
 	}
 	return getNumActiveLoggers()
 }
+
+func TestParseDefaultModuleLevels_Success(t *testing.T) {
+	levels, errs := parseDefaultModuleLevels("foo=Info,, bar =debug, qux = Trace,")
+	assert.Equal(t, levels, map[string]int32{
+		"foo": InfoLevel,
+		"bar": DebugLevel,
+		"qux": TraceLevel,
+	})
+	assert.Empty(t, errs)
+}
+
+func TestParseDefaultModuleLevels_Errs(t *testing.T) {
+	levels, errs := parseDefaultModuleLevels("foo=Info, baz , bar =random, qux=Trace,")
+	assert.Equal(t, levels, map[string]int32{
+		"foo": InfoLevel,
+		"qux": TraceLevel,
+	})
+	assert.Len(t, errs, 2)
+}

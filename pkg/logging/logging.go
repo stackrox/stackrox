@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -60,6 +61,8 @@ var (
 
 	//defaultLevel is the default log level
 	defaultLevel = InfoLevel
+
+	defaultLevelsByModule map[string]int32
 
 	//validLevels is a map of all valid level severities to their name
 	validLevels = map[int32]string{
@@ -143,6 +146,35 @@ func (s severitySlice) Swap(i, j int) {
 	s[j] = tmp
 }
 
+func parseDefaultModuleLevels(str string) (map[string]int32, []error) {
+	var errs []error
+	entries := strings.Split(str, ",")
+	result := make(map[string]int32, len(entries))
+	for _, e := range entries {
+		e = strings.TrimSpace(e)
+		if e == "" {
+			continue
+		}
+
+		parts := strings.SplitN(e, "=", 2)
+		if len(parts) != 2 {
+			errs = append(errs, errors.Errorf("malformed entry %q, expecting form <module>=<level>", e))
+			continue
+		}
+		module := strings.TrimSpace(parts[0])
+		defaultLevelStr := strings.TrimSpace(parts[1])
+
+		level, ok := LevelForLabel(defaultLevelStr)
+		if !ok {
+			errs = append(errs, errors.Errorf("malformed default level %q for module %s", defaultLevelStr, module))
+			continue
+		}
+		result[module] = level
+	}
+
+	return result, errs
+}
+
 func init() {
 	initLevel := os.Getenv("LOGLEVEL")
 	value, ok := LevelForLabel(initLevel)
@@ -157,10 +189,19 @@ func init() {
 		thisModule = "pkg/logging"
 	}
 
+	var defaultLevelsByModuleParsingErrs []error
+	defaultLevelsByModule, defaultLevelsByModuleParsingErrs = parseDefaultModuleLevels(os.Getenv("MODULE_LOGLEVELS"))
+
 	// Use direct calls to createLogger in this function, as New/NewOrGet/LoggerForModule refer to thisModuleLogger.
 	thisModuleLogger = createLogger(thisModule, 0)
 	if !ok && initLevel != "" {
 		thisModuleLogger.Warnf("Invalid LOGLEVEL value '%s', defaulting to %s", initLevel, LabelForLevelOrInvalid(defaultLevel))
+	}
+	if len(defaultLevelsByModuleParsingErrs) > 0 {
+		thisModuleLogger.Warn("Malformed entries in MODULE_LOGLEVELS string:")
+		for _, err := range defaultLevelsByModuleParsingErrs {
+			thisModuleLogger.Warnf("  %v", err)
+		}
 	}
 
 	logFile, err := os.OpenFile(LoggingPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
@@ -427,11 +468,16 @@ func createLogger(module string, skip int) *Logger {
 		creationSite = fmt.Sprintf("%s:%d", creationFile, creationLine)
 	}
 
+	level, ok := defaultLevelsByModule[module]
+	if !ok {
+		level = GetGlobalLogLevel()
+	}
+
 	baseLogger := log.New(defaultDestination, module+": ", log.Lshortfile|log.Ldate|log.Lmicroseconds|log.LUTC)
 	newLogger := &Logger{
 		internal:        baseLogger,
 		module:          module,
-		logLevel:        GetGlobalLogLevel(),
+		logLevel:        level,
 		stackTraceLevel: 3, // Info/Debug/...[f] -> log[f] -> log.Output
 		creationSite:    creationSite,
 	}
