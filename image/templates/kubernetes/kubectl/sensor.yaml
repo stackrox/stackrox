@@ -120,7 +120,7 @@ spec:
         - name: CLUSTER_NAME
           value: {{.ClusterName}}
         - name: PROMETHEUS_ENDPOINT
-          value: http://localhost:9090
+          value: http://127.0.0.1:9090
         - name: MONITORING_ENDPOINT
           value: {{.MonitoringEndpoint}}
         resources:
@@ -300,7 +300,7 @@ spec:
         - name: CLUSTER_NAME
           value: {{.ClusterName}}
         - name: PROMETHEUS_ENDPOINT
-          value: http://localhost:9090
+          value: http://127.0.0.1:9090
         - name: MONITORING_ENDPOINT
           value: {{.MonitoringEndpoint}}
         resources:

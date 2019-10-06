@@ -5,7 +5,7 @@ datasources:
   type: influxdb
   access: proxy
   orgId: 1
-  url: http://localhost:8086
+  url: http://127.0.0.1:8086
   database: telegraf_12h
   isDefault: true
   version: 1
@@ -14,7 +14,7 @@ datasources:
   type: influxdb
   access: proxy
   orgId: 1
-  url: http://localhost:8086
+  url: http://127.0.0.1:8086
   database: telegraf_2w
   isDefault: false
   version: 1
@@ -23,7 +23,7 @@ datasources:
   type: influxdb
   access: proxy
   orgId: 1
-  url: http://localhost:8086
+  url: http://127.0.0.1:8086
   database: telegraf_forever
   isDefault: false
   version: 1

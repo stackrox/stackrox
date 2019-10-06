@@ -18,7 +18,7 @@ import (
 const (
 	cpuProfileDuration = 30 * time.Second
 
-	prometheus = "http://localhost:9090/metrics" // This should be inferred after another PR goes in
+	prometheus = "http://127.0.0.1:9090/metrics" // This should be inferred after another PR goes in
 )
 
 var (

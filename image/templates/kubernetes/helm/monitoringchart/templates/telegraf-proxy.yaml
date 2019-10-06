@@ -94,7 +94,7 @@ data:
       ## urls will be written to each interval.
       # urls = ["unix:///var/run/influxdb.sock"]
       # urls = ["udp://127.0.0.1:8089"]
-      urls = ["http://localhost:8086"]
+      urls = ["http://127.0.0.1:8086"]
 
       ## The target database for metrics; will be created as needed.
       database = "telegraf_12h"
