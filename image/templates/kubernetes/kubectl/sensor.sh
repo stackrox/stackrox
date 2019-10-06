@@ -118,14 +118,10 @@ fi
 echo "Creating secrets for sensor..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
 ${KUBE_COMMAND} -n "stackrox" label secret/sensor-tls 'auto-upgrade.stackrox.io/component=sensor'
-${KUBE_COMMAND} create secret -n "stackrox" generic benchmark-tls --from-file="$DIR/benchmark-cert.pem" --from-file="$DIR/benchmark-key.pem" --from-file="$DIR/ca.pem"
-${KUBE_COMMAND} -n "stackrox" label secret/benchmark-tls 'auto-upgrade.stackrox.io/component=sensor'
 
-{{if ne .CollectionMethod "NO_COLLECTION"}}
 echo "Creating secrets for collector..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
 ${KUBE_COMMAND} -n "stackrox" label secret/collector-tls 'auto-upgrade.stackrox.io/component=sensor'
-{{- end}}
 
 if [[ -d "$DIR/additional-cas" ]]; then
 	echo "Creating secret for additional CAs for sensor..."

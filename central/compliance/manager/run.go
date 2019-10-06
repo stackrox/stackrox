@@ -120,8 +120,15 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, e
 		return nil, errors.Wrap(err, "creating compliance run")
 	}
 
+	log.Infof("Starting evaluating checks for run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
 	r.updateStatus(v1.ComplianceRun_EVALUTING_CHECKS)
-	return run, run.Run(r.ctx, r.domain, data)
+
+	if err := run.Run(r.ctx, r.domain, data); err != nil {
+		log.Errorf("Error evaluating checks for run %s for cluster %q and standard %q: %v", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name, err)
+		return nil, err
+	}
+	log.Infof("Successfully evaluated checks for run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
+	return run, nil
 }
 
 func timeToProto(t time.Time) *types.Timestamp {

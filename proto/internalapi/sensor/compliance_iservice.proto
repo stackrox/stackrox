@@ -4,7 +4,6 @@ option go_package = "sensor";
 
 import "internalapi/compliance/compliance_data.proto";
 import "storage/container_runtime.proto";
-import "api/v1/empty.proto";
 
 package sensor;
 
@@ -13,12 +12,29 @@ message GetScrapeConfigRequest {
     string scrape_id = 2;
 }
 
-message ScrapeConfig {
-    storage.ContainerRuntime container_runtime = 1;
+message MsgFromCompliance {
+    string node = 1;
+
+    oneof msg {
+        compliance.ComplianceReturn return  = 2;
+    }
+}
+
+message MsgToCompliance {
+    message ScrapeConfig {
+        storage.ContainerRuntime container_runtime = 1;
+    }
+    message TriggerRun {
+        string scrape_id = 1;
+    }
+
+    oneof msg {
+        ScrapeConfig config  = 1;
+        TriggerRun   trigger = 2;
+    }
 }
 
 // A Sensor service that allows node scrapes to report results.
 service ComplianceService {
-    rpc GetScrapeConfig (GetScrapeConfigRequest) returns (ScrapeConfig);
-    rpc PushComplianceReturn (compliance.ComplianceReturn) returns (v1.Empty);
+    rpc Communicate (stream MsgFromCompliance) returns (stream MsgToCompliance);
 }

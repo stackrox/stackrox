@@ -71,75 +71,6 @@ spec:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox-benchmark-psp
-  labels:
-    auto-upgrade.stackrox.io/component: "sensor"
-rules:
-  - apiGroups:
-      - extensions
-    resources:
-      - podsecuritypolicies
-    resourceNames:
-      - stackrox-benchmark
-    verbs:
-      - use
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-benchmark-psp
-  namespace: stackrox
-  labels:
-    auto-upgrade.stackrox.io/component: "sensor"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: stackrox-benchmark-psp
-subjects:
-  - kind: ServiceAccount
-    name: benchmark
-    namespace: stackrox
----
-apiVersion: extensions/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: stackrox-benchmark
-  labels:
-    auto-upgrade.stackrox.io/component: "sensor"
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  volumes:
-    - 'configMap'
-    - 'emptyDir'
-    - 'projected'
-    - 'secret'
-    - 'downwardAPI'
-    - 'persistentVolumeClaim'
-    - 'hostPath'
-  allowedHostPaths:
-    - pathPrefix: "/var/run"
-    - pathPrefix: /etc
-    - pathPrefix: /lib
-    - pathPrefix: /usr
-    - pathPrefix: /var
-    - pathPrefix: /run
-  hostNetwork: false
-  hostIPC: false
-  hostPID: true
-  runAsUser:
-    rule: 'RunAsAny'
-  seLinux:
-    rule: 'RunAsAny'
-  supplementalGroups:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
-{{if ne .CollectionMethod "NO_COLLECTION" -}}
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
   name: stackrox-collector-psp
   labels:
     auto-upgrade.stackrox.io/component: "sensor"
@@ -186,12 +117,15 @@ spec:
     - pathPrefix: /var/run
     - pathPrefix: /proc
     - pathPrefix: /etc
-    - pathPrefix: /usr/lib
     - pathPrefix: /sys
     - pathPrefix: /dev
+    - pathPrefix: /lib
+    - pathPrefix: /usr
+    - pathPrefix: /var
+    - pathPrefix: /run
   hostNetwork: false
   hostIPC: false
-  hostPID: false
+  hostPID: true
   runAsUser:
     rule: 'RunAsAny'
   seLinux:
@@ -200,4 +134,3 @@ spec:
     rule: 'RunAsAny'
   fsGroup:
     rule: 'RunAsAny'
-{{- end}}

@@ -1,13 +1,7 @@
 #!/usr/bin/env bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-kubectl delete -f "$DIR/sensor.yaml"
-kubectl delete -n stackrox secret sensor-tls benchmark-tls additional-ca-sensor
-kubectl delete -f "$DIR/sensor-rbac.yaml"
-
-{{if ne .CollectionMethod "NO_COLLECTION"}}
-kubectl -n stackrox delete secret collector-tls collector-stackrox
-{{end}}
+kubectl -n stackrox delete secret -l auto-upgrade.stackrox.io/component=sensor
 
 {{if .AdmissionController}}
 kubectl -n stackrox delete validatingwebhookconfiguration stackrox

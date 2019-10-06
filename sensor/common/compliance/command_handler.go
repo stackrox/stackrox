@@ -1,13 +1,8 @@
 package compliance
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 )
 
@@ -20,18 +15,13 @@ type CommandHandler interface {
 
 	SendCommand(*central.ScrapeCommand) bool
 	Output() <-chan *central.ScrapeUpdate
-
-	resultsChan() chan<- *compliance.ComplianceReturn
-
-	GetScrapeConfig(ctx context.Context, nodeName, scrapeID string) (*sensor.ScrapeConfig, error)
 }
 
 // NewCommandHandler returns a new instance of a CommandHandler using the input image and Orchestrator.
-func NewCommandHandler(orchestrator orchestrators.Orchestrator, roxMetadata roxmetadata.Metadata) CommandHandler {
+func NewCommandHandler(roxMetadata roxmetadata.Metadata, complianceService Service) CommandHandler {
 	return &commandHandlerImpl{
-		orchestrator: orchestrator,
-
 		roxMetadata: roxMetadata,
+		service:     complianceService,
 
 		commands: make(chan *central.ScrapeCommand),
 		updates:  make(chan *central.ScrapeUpdate),
@@ -40,7 +30,5 @@ func NewCommandHandler(orchestrator orchestrators.Orchestrator, roxMetadata roxm
 
 		stopC:    concurrency.NewErrorSignal(),
 		stoppedC: concurrency.NewErrorSignal(),
-
-		resultsC: make(chan *compliance.ComplianceReturn),
 	}
 }

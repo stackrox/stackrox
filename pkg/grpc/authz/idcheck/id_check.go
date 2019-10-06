@@ -19,8 +19,3 @@ func ScannerOnly() authz.Authorizer {
 func CollectorOnly() authz.Authorizer {
 	return Wrap(serviceType(storage.ServiceType_COLLECTOR_SERVICE))
 }
-
-// BenchmarkOnly returns a serviceType authorizer that checks for the Benchmark type
-func BenchmarkOnly() authz.Authorizer {
-	return Wrap(serviceType(storage.ServiceType_BENCHMARK_SERVICE))
-}

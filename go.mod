@@ -22,6 +22,7 @@ require (
 	github.com/blevesearch/blevex v0.0.0-20180227211930-4b158bb555a3 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.2 // indirect
 	github.com/blevesearch/segment v0.0.0-20160915185041-762005e7a34f // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
 	github.com/containers/image v3.0.2+incompatible
 	github.com/coreos/clair v2.0.8+incompatible

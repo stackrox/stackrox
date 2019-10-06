@@ -1,8 +1,10 @@
 package compliance
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/orchestrators"
 	"golang.org/x/net/context"
 )
 
@@ -13,13 +15,17 @@ type Service interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
 	sensor.ComplianceServiceServer
+
+	RunScrape(msg *sensor.MsgToCompliance) int
+	Output() chan *compliance.ComplianceReturn
 }
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any recieved ComplianceReturns
 // to the input channel.
-func NewService(cmdHandler CommandHandler) Service {
+func NewService(orchestrator orchestrators.Orchestrator) Service {
 	return &serviceImpl{
-		output:     cmdHandler.resultsChan(),
-		cmdHandler: cmdHandler,
+		output:            make(chan *compliance.ComplianceReturn),
+		connectionManager: newConnectionManager(),
+		orchestrator:      orchestrator,
 	}
 }

@@ -44,11 +44,6 @@ var (
 			Files: []string{"sensor-cert.pem", "sensor-key.pem", "ca.pem"},
 		},
 		{
-			Kind:  OpaqueSecret,
-			Name:  "benchmark-tls",
-			Files: []string{"benchmark-cert.pem", "benchmark-key.pem", "ca.pem"},
-		},
-		{
 			Kind:     OpaqueSecret,
 			Name:     "collector-tls",
 			Optional: true,

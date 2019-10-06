@@ -15,9 +15,6 @@ spec:
       - podSelector:
           matchLabels:
             service: collector
-      - podSelector:
-          matchLabels:
-            "com.stackrox.io/service": "compliance"
     ports:
     - port: 8443
       protocol: TCP
@@ -43,20 +40,5 @@ spec:
   podSelector:
     matchLabels:
       app: collector
-  policyTypes:
-    - Ingress
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: compliance-no-ingress
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-spec:
-  podSelector:
-    matchLabels:
-      "com.stackrox.io/service": "compliance"
   policyTypes:
     - Ingress

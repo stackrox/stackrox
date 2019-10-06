@@ -70,6 +70,7 @@ class ComplianceTest extends BaseSpecification {
         }
 
         // Generate baseline compliance runs
+        sleep 15000
         def complianceRuns = ComplianceManagementService.triggerComplianceRunsAndWait()
         for (String standard : complianceRuns.keySet()) {
             def runId = complianceRuns.get(standard)

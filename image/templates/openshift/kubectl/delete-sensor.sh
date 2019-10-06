@@ -1,13 +1,7 @@
 #!/usr/bin/env bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-oc delete -f "$DIR/sensor.yaml"
-oc delete -n stackrox secret sensor-tls benchmark-tls additional-ca-sensor
-oc delete -f "$DIR/sensor-rbac.yaml"
-
-{{if ne .CollectionMethod "NO_COLLECTION"}}
-oc -n stackrox delete secret collector-tls collector-stackrox
-{{- end}}
+oc -n stackrox delete secret -l auto-upgrade.stackrox.io/component=sensor
 
 if ! oc get -n stackrox deploy/central > /dev/null; then
     oc delete -n stackrox secret stackrox

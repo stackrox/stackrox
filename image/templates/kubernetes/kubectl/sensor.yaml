@@ -210,7 +210,6 @@ spec:
     app: sensor
   type: ClusterIP
   sessionAffinity: None
-{{if ne .CollectionMethod "NO_COLLECTION" -}}
 ---
 apiVersion: apps/v1beta2
 kind: DaemonSet
@@ -238,7 +237,9 @@ spec:
       - operator: "Exists"
       {{- end}}
       serviceAccount: collector
+      hostPID: true
       containers:
+{{if ne .CollectionMethod "NO_COLLECTION"}}
       - name: collector
         image: {{.CollectorImage}}
         imagePullPolicy: Always
@@ -286,6 +287,49 @@ spec:
         - mountPath: /host/dev
           name: dev-ro
           readOnly: true
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+{{- end}}
+      - command:
+        - stackrox/compliance
+        env:
+        - name: ROX_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: ROX_ADVERTISED_ENDPOINT
+          value: sensor.stackrox:443
+        image: {{.Image}}
+        imagePullPolicy: IfNotPresent
+        name: compliance
+        resources:
+          limits:
+            cpu: "1"
+            memory: 2Gi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /host/etc:ro
+          name: etc-ro
+        - mountPath: /host/lib:ro
+          name: lib
+        - mountPath: /host/usr/bin:ro
+          name: usr-bin
+        - mountPath: /host/usr/lib:ro
+          name: usr-lib
+        - mountPath: /host/var/lib:ro
+          name: var-lib
+        - mountPath: /host/var/log/audit:ro
+          name: var-log-audit
+        - mountPath: /host/run
+          name: run
+        - mountPath: /host/var/run/docker.sock
+          name: var-run-docker-sock
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
@@ -354,6 +398,24 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      - hostPath:
+          path: /lib
+        name: lib
+      - hostPath:
+          path: /usr/bin
+        name: usr-bin
+      - hostPath:
+          path: /usr/lib
+        name: usr-lib
+      - hostPath:
+          path: /var/lib
+        name: var-lib
+      - hostPath:
+          path: /var/log/audit
+        name: var-log-audit
+      - hostPath:
+          path: /run
+        name: run
       {{if .MonitoringEndpoint}}
       - name: monitoring-client-volume
         secret:
@@ -362,4 +424,3 @@ spec:
         configMap:
           name: telegraf
       {{- end}}
-{{- end}}

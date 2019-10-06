@@ -177,17 +177,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := z.createIdentity(wrapper, cluster.GetId(), "benchmark", storage.ServiceType_BENCHMARK_SERVICE); err != nil {
+	// Add MTLS files for collector
+	if err := z.createIdentity(wrapper, cluster.GetId(), "collector", storage.ServiceType_COLLECTOR_SERVICE); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
-	}
-
-	// Add MTLS files for collector if runtime support is enabled
-	if cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION {
-		if err := z.createIdentity(wrapper, cluster.GetId(), "collector", storage.ServiceType_COLLECTOR_SERVICE); err != nil {
-			httputil.WriteGRPCStyleError(w, codes.Internal, err)
-			return
-		}
 	}
 
 	if cluster.GetMonitoringEndpoint() != "" {

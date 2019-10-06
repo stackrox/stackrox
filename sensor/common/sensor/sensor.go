@@ -65,6 +65,7 @@ type Sensor struct {
 	clusterStatusUpdater          clusterstatus.Updater
 	configHandler                 config.Handler
 	upgradeCommandHandler         upgrade.CommandHandler
+	complianceService             compliance.Service
 
 	server          pkgGRPC.API
 	profilingServer *http.Server
@@ -79,6 +80,8 @@ type Sensor struct {
 func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager,
 	m roxmetadata.Metadata, networkPoliciesCommandHandler networkpolicies.CommandHandler, clusterStatusUpdater clusterstatus.Updater,
 	configHandler config.Handler, upgradeCommandHandler upgrade.CommandHandler) *Sensor {
+
+	complianceService := compliance.NewService(o)
 	return &Sensor{
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
@@ -88,7 +91,8 @@ func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orche
 		enforcer:                      e,
 		orchestrator:                  o,
 		networkConnManager:            n,
-		commandHandler:                compliance.NewCommandHandler(o, m),
+		complianceService:             complianceService,
+		commandHandler:                compliance.NewCommandHandler(m, complianceService),
 		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
 		clusterStatusUpdater:          clusterStatusUpdater,
 		configHandler:                 configHandler,
@@ -239,7 +243,7 @@ func (s *Sensor) registerAPIServices() {
 	s.server.Register(
 		signalService.Singleton(),
 		networkFlowService.Singleton(),
-		compliance.NewService(s.commandHandler),
+		s.complianceService,
 	)
 	log.Info("API services registered")
 }

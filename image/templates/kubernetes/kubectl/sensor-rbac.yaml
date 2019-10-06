@@ -12,18 +12,6 @@ imagePullSecrets:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: benchmark
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-imagePullSecrets:
-- name: stackrox
-{{if ne .CollectionMethod "NO_COLLECTION" -}}
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
   name: collector
   namespace: stackrox
   labels:
@@ -31,6 +19,7 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
 imagePullSecrets:
 - name: stackrox
+{{if ne .CollectionMethod "NO_COLLECTION" -}}
 - name: collector-stackrox
 {{- end}}
 ---
