@@ -150,8 +150,8 @@ PROTOC_GEN_GRPC_GATEWAY := $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway
 $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway:
 	@echo "+ $@"
 # keep in sync with Gopkg.toml
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... v1.9.0
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... v1.9.0
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... v1.11.3
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... v1.11.3
 
 $(GENERATED_DOC_PATH):
 	@echo "+ $@"
@@ -182,7 +182,7 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 		-I=$(GOPATH)/src/github.com/gogo \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR),logtostderr=true:$(GENERATED_BASE_PATH) \
+		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR),allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
 # Generate all of the swagger specifications with one invocation of protoc

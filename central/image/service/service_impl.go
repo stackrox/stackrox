@@ -84,7 +84,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "image with sha '%s' does not exist", request.GetId())
+		return nil, status.Errorf(codes.NotFound, "image with id %q does not exist", request.GetId())
 	}
 
 	return image, nil
