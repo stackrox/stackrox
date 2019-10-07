@@ -1,13 +1,13 @@
 package command
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
+	"os"
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/file"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/set"
@@ -53,14 +53,12 @@ func RetrieveCommands() (map[string]*compliance.CommandLine, error) {
 }
 
 func parseCommandline(processes ...string) (*compliance.CommandLine, bool, error) {
-	pid, err := getProcessPID(processes)
-	if err != nil {
-		// This means we couldn't find the pid so return that it doesn't exist
-		return nil, false, nil
-	}
-	cmdLine, err := getCommandLine(pid)
+	cmdLine, err := getCommandLine(processes...)
 	if err != nil {
 		return nil, true, err
+	}
+	if cmdLine == "" {
+		return nil, false, nil
 	}
 
 	processPath, args := getCommandLineArgs(cmdLine)
@@ -73,33 +71,53 @@ func parseCommandline(processes ...string) (*compliance.CommandLine, bool, error
 	}, true, nil
 }
 
-func getPID(process string) (int, error) {
-	output, err := exec.Command("/usr/bin/pgrep", "--exact", process).CombinedOutput()
-	if err != nil {
-		if len(output) != 0 {
-			return -1, errors.Wrapf(err, "Error getting process %q. Output: %s. Err", process, output)
-		}
-		return -1, errors.Wrapf(err, "Error getting process %q", process)
-	}
-	pid, err := strconv.Atoi(strings.TrimSpace(string(output)))
-	return pid, err
-}
-
-func getProcessPID(processNames []string) (int, error) {
-	for _, processName := range processNames {
-		if pid, err := getPID(processName); err == nil {
-			return pid, nil
-		}
-	}
-	return 0, fmt.Errorf("Could not find any pids for processes: %+v", processNames)
-}
-
-func getCommandLine(pid int) (string, error) {
-	cmdline, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
+func findProcess(process string) (string, error) {
+	files, err := ioutil.ReadDir("/host/proc")
 	if err != nil {
 		return "", err
 	}
-	return string(cmdline), err
+	for _, f := range files {
+		if !f.IsDir() {
+			continue
+		}
+		pid, err := strconv.Atoi(f.Name())
+		if err != nil {
+			// This implies it is not a PID
+			continue
+		}
+
+		commandBytes, err := ioutil.ReadFile(fmt.Sprintf("/host/proc/%d/comm", pid))
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return "", err
+		}
+		if string(bytes.TrimSpace(commandBytes)) == process {
+			cmdlineBytes, err := ioutil.ReadFile(fmt.Sprintf("/host/proc/%d/cmdline", pid))
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
+				return "", err
+			}
+			return string(cmdlineBytes), nil
+		}
+	}
+	return "", nil
+}
+
+func getCommandLine(processes ...string) (string, error) {
+	for _, p := range processes {
+		cmdline, err := findProcess(p)
+		if err != nil {
+			return "", err
+		}
+		if cmdline != "" {
+			return cmdline, nil
+		}
+	}
+	return "", nil
 }
 
 func newArg(k string, values ...string) *compliance.CommandLine_Args {

@@ -195,12 +195,6 @@ func (s *Sensor) Start() {
 	if s.listener != nil && s.enforcer != nil {
 		go s.communicationWithCentral(&centralReachable)
 	}
-
-	if s.orchestrator != nil {
-		if err := s.orchestrator.CleanUp(false); err != nil {
-			log.Errorf("Could not clean up deployments by previous sensor instances: %v", err)
-		}
-	}
 }
 
 type stoppable interface {
@@ -228,12 +222,6 @@ func (s *Sensor) Stop() {
 	}
 	if s.commandHandler != nil {
 		s.commandHandler.Stop(nil)
-	}
-
-	if s.orchestrator != nil {
-		if err := s.orchestrator.CleanUp(true); err != nil {
-			log.Errorf("Could not clean up this sensor's deployments: %v", err)
-		}
 	}
 
 	log.Info("Sensor shutdown complete")

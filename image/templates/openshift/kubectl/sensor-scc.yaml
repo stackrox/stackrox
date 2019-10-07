@@ -38,47 +38,6 @@ volumes:
   - downwardAPI
   - emptyDir
   - secret
----
-kind: SecurityContextConstraints
-apiVersion: security.openshift.io/v1
-metadata:
-  annotations:
-    kubernetes.io/description: benchmark is the security constraint for the benchmark container
-  name: benchmark
-  labels:
-    app.kubernetes.io/name: stackrox
-    auto-upgrade.stackrox.io/component: "sensor"
-users:
-  - system:serviceaccount:stackrox:benchmark
-priority: 100
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: RunAsAny
-fsGroup:
-  type: RunAsAny
-supplementalGroups:
-  type: RunAsAny
-groups: []
-readOnlyRootFilesystem: false
-requiredDropCapabilities: null
-seccompProfiles:
-  - '*'
-allowHostDirVolumePlugin: true
-allowHostPID: true
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPorts: false
-allowPrivilegeEscalation: true
-allowPrivilegedContainer: false
-allowedCapabilities: null
-defaultAddCapabilities: null
-volumes:
-  - configMap
-  - downwardAPI
-  - emptyDir
-  - hostPath
-  - secret
 {{if ne .CollectionMethod "NO_COLLECTION"}}
 ---
 kind: SecurityContextConstraints
@@ -115,7 +74,6 @@ allowHostPID: false
 allowHostPorts: false
 allowPrivilegeEscalation: true
 allowedCapabilities: null
-allowHostPID: true
 volumes:
   - configMap
   - downwardAPI

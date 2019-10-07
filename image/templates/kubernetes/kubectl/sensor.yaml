@@ -237,7 +237,6 @@ spec:
       - operator: "Exists"
       {{- end}}
       serviceAccount: collector
-      hostPID: true
       containers:
 {{if ne .CollectionMethod "NO_COLLECTION"}}
       - name: collector
@@ -328,6 +327,8 @@ spec:
           name: var-log-audit
         - mountPath: /host/run
           name: run
+        - mountPath: /host/proc
+          name: proc-ro
         - mountPath: /host/var/run/docker.sock
           name: var-run-docker-sock
         - mountPath: /run/secrets/stackrox.io/certs/

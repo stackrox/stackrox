@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
@@ -45,8 +44,6 @@ func main() {
 	signal.Notify(sigs, os.Interrupt)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	sensorInstanceID := uuid.NewV4().String()
-
 	upgradeCmdHandler, err := k8sUpgrade.NewCommandHandler()
 	utils.Must(err)
 
@@ -55,7 +52,7 @@ func main() {
 	s := sensor.NewSensor(
 		listener.New(configHandler),
 		enforcer.MustCreate(),
-		orchestrator.MustCreate(sensorInstanceID),
+		orchestrator.New(),
 		manager.Singleton(),
 		roxmetadata.Singleton(),
 		networkpolicies.NewCommandHandler(),
