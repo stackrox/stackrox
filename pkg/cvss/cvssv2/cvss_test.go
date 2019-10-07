@@ -1,4 +1,4 @@
-package cvss
+package cvssv2
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 )
 
 func TestParseCVSSV2(t *testing.T) {
-
 	// Automatic test cases. Look through the values and add them and derive the expected response
 	impactSlice := []string{"N", "P", "C"}
 	for _, av := range []string{"L", "A", "N"} {

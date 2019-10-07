@@ -85,6 +85,25 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AttackVector(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Authentication(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Impact(0)))
+	utils.Must(builder.AddType("CVSSV3", []string{
+		"attackComplexity: CVSSV3_Complexity!",
+		"attackVector: CVSSV3_AttackVector!",
+		"availability: CVSSV3_Impact!",
+		"confidentiality: CVSSV3_Impact!",
+		"exploitabilityScore: Float!",
+		"impactScore: Float!",
+		"integrity: CVSSV3_Impact!",
+		"privilegesRequired: CVSSV3_Privileges!",
+		"scope: CVSSV3_Scope!",
+		"userInteraction: CVSSV3_UserInteraction!",
+		"vector: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_AttackVector(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Complexity(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Impact(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Privileges(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Scope(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_UserInteraction(0)))
 	utils.Must(builder.AddType("Cert", []string{
 		"algorithm: String!",
 		"endDate: Time",
@@ -368,10 +387,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("EmbeddedVulnerability", []string{
 		"cve: String!",
 		"cvss: Float!",
-		"cvssV2: CVSSV2",
 		"link: String!",
+		"scoreVersion: EmbeddedVulnerability_ScoreVersion!",
 		"summary: String!",
+		"vectors: EmbeddedVulnerabilityVectors",
 	}))
+	utils.Must(builder.AddUnionType("EmbeddedVulnerabilityVectors", []string{
+		"CVSSV2",
+		"CVSSV3",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
@@ -1522,6 +1547,192 @@ func toCVSSV2_Impacts(values *[]string) []storage.CVSSV2_Impact {
 	output := make([]storage.CVSSV2_Impact, len(*values))
 	for i, v := range *values {
 		output[i] = toCVSSV2_Impact(&v)
+	}
+	return output
+}
+
+type cVSSV3Resolver struct {
+	root *Resolver
+	data *storage.CVSSV3
+}
+
+func (resolver *Resolver) wrapCVSSV3(value *storage.CVSSV3, ok bool, err error) (*cVSSV3Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVSSV3Resolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapCVSSV3s(values []*storage.CVSSV3, err error) ([]*cVSSV3Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVSSV3Resolver, len(values))
+	for i, v := range values {
+		output[i] = &cVSSV3Resolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *cVSSV3Resolver) AttackComplexity(ctx context.Context) string {
+	value := resolver.data.GetAttackComplexity()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) AttackVector(ctx context.Context) string {
+	value := resolver.data.GetAttackVector()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) Availability(ctx context.Context) string {
+	value := resolver.data.GetAvailability()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) Confidentiality(ctx context.Context) string {
+	value := resolver.data.GetConfidentiality()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) ExploitabilityScore(ctx context.Context) float64 {
+	value := resolver.data.GetExploitabilityScore()
+	return float64(value)
+}
+
+func (resolver *cVSSV3Resolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *cVSSV3Resolver) Integrity(ctx context.Context) string {
+	value := resolver.data.GetIntegrity()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) PrivilegesRequired(ctx context.Context) string {
+	value := resolver.data.GetPrivilegesRequired()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) Scope(ctx context.Context) string {
+	value := resolver.data.GetScope()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) UserInteraction(ctx context.Context) string {
+	value := resolver.data.GetUserInteraction()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) Vector(ctx context.Context) string {
+	value := resolver.data.GetVector()
+	return value
+}
+
+func toCVSSV3_AttackVector(value *string) storage.CVSSV3_AttackVector {
+	if value != nil {
+		return storage.CVSSV3_AttackVector(storage.CVSSV3_AttackVector_value[*value])
+	}
+	return storage.CVSSV3_AttackVector(0)
+}
+
+func toCVSSV3_AttackVectors(values *[]string) []storage.CVSSV3_AttackVector {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVSSV3_AttackVector, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV3_AttackVector(&v)
+	}
+	return output
+}
+
+func toCVSSV3_Complexity(value *string) storage.CVSSV3_Complexity {
+	if value != nil {
+		return storage.CVSSV3_Complexity(storage.CVSSV3_Complexity_value[*value])
+	}
+	return storage.CVSSV3_Complexity(0)
+}
+
+func toCVSSV3_Complexities(values *[]string) []storage.CVSSV3_Complexity {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVSSV3_Complexity, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV3_Complexity(&v)
+	}
+	return output
+}
+
+func toCVSSV3_Impact(value *string) storage.CVSSV3_Impact {
+	if value != nil {
+		return storage.CVSSV3_Impact(storage.CVSSV3_Impact_value[*value])
+	}
+	return storage.CVSSV3_Impact(0)
+}
+
+func toCVSSV3_Impacts(values *[]string) []storage.CVSSV3_Impact {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVSSV3_Impact, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV3_Impact(&v)
+	}
+	return output
+}
+
+func toCVSSV3_Privileges(value *string) storage.CVSSV3_Privileges {
+	if value != nil {
+		return storage.CVSSV3_Privileges(storage.CVSSV3_Privileges_value[*value])
+	}
+	return storage.CVSSV3_Privileges(0)
+}
+
+func toCVSSV3_Privilegeses(values *[]string) []storage.CVSSV3_Privileges {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVSSV3_Privileges, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV3_Privileges(&v)
+	}
+	return output
+}
+
+func toCVSSV3_Scope(value *string) storage.CVSSV3_Scope {
+	if value != nil {
+		return storage.CVSSV3_Scope(storage.CVSSV3_Scope_value[*value])
+	}
+	return storage.CVSSV3_Scope(0)
+}
+
+func toCVSSV3_Scopes(values *[]string) []storage.CVSSV3_Scope {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVSSV3_Scope, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV3_Scope(&v)
+	}
+	return output
+}
+
+func toCVSSV3_UserInteraction(value *string) storage.CVSSV3_UserInteraction {
+	if value != nil {
+		return storage.CVSSV3_UserInteraction(storage.CVSSV3_UserInteraction_value[*value])
+	}
+	return storage.CVSSV3_UserInteraction(0)
+}
+
+func toCVSSV3_UserInteractions(values *[]string) []storage.CVSSV3_UserInteraction {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVSSV3_UserInteraction, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV3_UserInteraction(&v)
 	}
 	return output
 }
@@ -3648,19 +3859,65 @@ func (resolver *embeddedVulnerabilityResolver) Cvss(ctx context.Context) float64
 	return float64(value)
 }
 
-func (resolver *embeddedVulnerabilityResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
-	value := resolver.data.GetCvssV2()
-	return resolver.root.wrapCVSSV2(value, true, nil)
-}
-
 func (resolver *embeddedVulnerabilityResolver) Link(ctx context.Context) string {
 	value := resolver.data.GetLink()
 	return value
 }
 
+func (resolver *embeddedVulnerabilityResolver) ScoreVersion(ctx context.Context) string {
+	value := resolver.data.GetScoreVersion()
+	return value.String()
+}
+
 func (resolver *embeddedVulnerabilityResolver) Summary(ctx context.Context) string {
 	value := resolver.data.GetSummary()
 	return value
+}
+
+type embeddedVulnerabilityVectorsResolver struct {
+	resolver interface{}
+}
+
+func (resolver *embeddedVulnerabilityResolver) Vectors() *embeddedVulnerabilityVectorsResolver {
+	if val := resolver.data.GetCvssV2(); val != nil {
+		return &embeddedVulnerabilityVectorsResolver{
+			resolver: &cVSSV2Resolver{resolver.root, val},
+		}
+	}
+	if val := resolver.data.GetCvssV3(); val != nil {
+		return &embeddedVulnerabilityVectorsResolver{
+			resolver: &cVSSV3Resolver{resolver.root, val},
+		}
+	}
+	return nil
+}
+
+func (resolver *embeddedVulnerabilityVectorsResolver) ToCVSSV2() (*cVSSV2Resolver, bool) {
+	res, ok := resolver.resolver.(*cVSSV2Resolver)
+	return res, ok
+}
+
+func (resolver *embeddedVulnerabilityVectorsResolver) ToCVSSV3() (*cVSSV3Resolver, bool) {
+	res, ok := resolver.resolver.(*cVSSV3Resolver)
+	return res, ok
+}
+
+func toEmbeddedVulnerability_ScoreVersion(value *string) storage.EmbeddedVulnerability_ScoreVersion {
+	if value != nil {
+		return storage.EmbeddedVulnerability_ScoreVersion(storage.EmbeddedVulnerability_ScoreVersion_value[*value])
+	}
+	return storage.EmbeddedVulnerability_ScoreVersion(0)
+}
+
+func toEmbeddedVulnerability_ScoreVersions(values *[]string) []storage.EmbeddedVulnerability_ScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.EmbeddedVulnerability_ScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toEmbeddedVulnerability_ScoreVersion(&v)
+	}
+	return output
 }
 
 func toEnforcementAction(value *string) storage.EnforcementAction {

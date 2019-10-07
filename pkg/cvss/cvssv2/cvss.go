@@ -1,4 +1,4 @@
-package cvss
+package cvssv2
 
 import (
 	"fmt"

@@ -55,6 +55,10 @@ message License {
 }
 
 message EmbeddedVulnerability {
+    enum ScoreVersion {
+        V2 = 0; // No unset for automatic backwards compatibility
+        V3 = 1;
+    }
     string cve          = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
     float  cvss         = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     string summary      = 3;
@@ -62,7 +66,11 @@ message EmbeddedVulnerability {
     oneof set_fixed_by {
         string fixed_by = 5 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
     }
-    CVSSV2 cvss_v2      = 6;
+    ScoreVersion score_version = 8;
+    oneof vectors {
+        CVSSV2 cvss_v2      = 6;
+        CVSSV3 cvss_v3      = 7;
+    }
 }
 
 message CVSSV2 {
@@ -93,6 +101,48 @@ message CVSSV2 {
     Impact           confidentiality   = 5;
     Impact           integrity         = 6;
     Impact           availability      = 7;
+}
+
+message CVSSV3 {
+    enum Impact {
+        IMPACT_NONE = 0;
+        IMPACT_LOW  = 1;
+        IMPACT_HIGH = 2;
+    }
+    enum AttackVector {
+        ATTACK_LOCAL    = 0;
+        ATTACK_ADJACENT = 1;
+        ATTACK_NETWORK  = 2;
+        ATTACK_PHYSICAL = 3;
+    }
+    enum Complexity {
+        COMPLEXITY_LOW    = 0;
+        COMPLEXITY_HIGH   = 1;
+    }
+    enum Privileges {
+        PRIVILEGE_NONE = 0;
+        PRIVILEGE_LOW  = 1;
+        PRIVILEGE_HIGH = 2;
+    }
+    enum UserInteraction {
+        UI_NONE     = 0;
+        UI_REQUIRED = 1;
+    }
+    enum Scope {
+        UNCHANGED = 0;
+        CHANGED   = 1;
+    }
+    string           vector               = 1;
+    float            exploitability_score = 2;
+    float            impact_score         = 3;
+    AttackVector     attack_vector        = 4;
+    Complexity       attack_complexity    = 5;
+    Privileges       privileges_required  = 6;
+    UserInteraction  user_interaction     = 7;
+    Scope            scope                = 8;
+    Impact           confidentiality      = 9;
+    Impact           integrity            = 10;
+    Impact           availability         = 11;
 }
 
 message ImageMetadata {

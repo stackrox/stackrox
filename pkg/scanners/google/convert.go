@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cvss"
+	v2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas"
 )
@@ -88,8 +88,8 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 		},
 	}
 
-	if cvssVector, err := cvss.ParseCVSSV2(strings.TrimPrefix(vulnerability.LongDescription, "NIST vectors: ")); err == nil {
-		vuln.CvssV2 = cvssVector
+	if cvssVector, err := v2.ParseCVSSV2(strings.TrimPrefix(vulnerability.LongDescription, "NIST vectors: ")); err == nil {
+		vuln.Vectors = &storage.EmbeddedVulnerability_CvssV2{CvssV2: cvssVector}
 	}
 	return vuln
 }

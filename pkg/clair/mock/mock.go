@@ -43,14 +43,16 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 				FixedBy: "",
 			},
-			CvssV2: &storage.CVSSV2{
-				Vector:           "AV:N/AC:L/Au:S/C:N/I:N",
-				AttackVector:     storage.CVSSV2_ATTACK_NETWORK,
-				AccessComplexity: storage.CVSSV2_ACCESS_LOW,
-				Authentication:   storage.CVSSV2_AUTH_SINGLE,
-				Confidentiality:  storage.CVSSV2_IMPACT_NONE,
-				Integrity:        storage.CVSSV2_IMPACT_NONE,
-				Availability:     storage.CVSSV2_IMPACT_NONE,
+			Vectors: &storage.EmbeddedVulnerability_CvssV2{
+				CvssV2: &storage.CVSSV2{
+					Vector:           "AV:N/AC:L/Au:S/C:N/I:N",
+					AttackVector:     storage.CVSSV2_ATTACK_NETWORK,
+					AccessComplexity: storage.CVSSV2_ACCESS_LOW,
+					Authentication:   storage.CVSSV2_AUTH_SINGLE,
+					Confidentiality:  storage.CVSSV2_IMPACT_NONE,
+					Integrity:        storage.CVSSV2_IMPACT_NONE,
+					Availability:     storage.CVSSV2_IMPACT_NONE,
+				},
 			},
 		},
 	}

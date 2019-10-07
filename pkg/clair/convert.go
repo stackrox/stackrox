@@ -5,7 +5,8 @@ import (
 
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	cvssconv "github.com/stackrox/rox/pkg/cvss"
+	cvssv2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
+	cvssv3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -16,12 +17,15 @@ var (
 )
 
 type nvd struct {
-	Cvss cvss `json:"CVSSv2"`
+	CvssV2 *cvss `json:"CVSSv2"`
+	CvssV3 *cvss `json:"CVSSv3"`
 }
 
 type cvss struct {
-	Score   float32 `json:"score"`
-	Vectors string  `json:"vectors"`
+	Score               float32
+	Vectors             string
+	ExploitabilityScore float32
+	ImpactScore         float32
 }
 
 // ConvertVulnerability converts a clair vulnerability to a proto vulnerability
@@ -46,9 +50,26 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 		if err := json.Unmarshal(d, &n); err != nil {
 			return vul
 		}
-		vul.Cvss = n.Cvss.Score
-		if cvssVector, err := cvssconv.ParseCVSSV2(n.Cvss.Vectors); err == nil {
-			vul.CvssV2 = cvssVector
+
+		if n.CvssV3 != nil {
+			vul.Cvss = n.CvssV3.Score
+			if cvssV3, err := cvssv3.ParseCVSSV3(n.CvssV3.Vectors); err == nil && cvssV3.Vector != "" {
+				cvssV3.ExploitabilityScore = n.CvssV3.ExploitabilityScore
+				cvssV3.ImpactScore = n.CvssV3.ImpactScore
+				vul.Vectors = &storage.EmbeddedVulnerability_CvssV3{
+					CvssV3: cvssV3,
+				}
+			}
+			vul.ScoreVersion = storage.EmbeddedVulnerability_V3
+		} else if n.CvssV2 != nil {
+			vul.Cvss = n.CvssV2.Score
+			if cvssVector, err := cvssv2.ParseCVSSV2(n.CvssV2.Vectors); err == nil {
+				vul.Vectors = &storage.EmbeddedVulnerability_CvssV2{
+					CvssV2: cvssVector,
+				}
+			} else {
+				log.Error(err)
+			}
 		}
 	}
 	return vul

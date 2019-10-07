@@ -51,22 +51,31 @@ func convertVulnToProtoVuln(vuln anchoreClient.Vulnerability) *storage.EmbeddedV
 		vuln.Fix = ""
 	}
 
-	cvss := getSeverity(vuln.Severity)
-	if len(vuln.NVDData) != 0 {
-		if cvssV2 := vuln.NVDData[0].CVSSV2; cvssV2 != nil && cvssV2.Base != -1 {
-			cvss = float32(vuln.NVDData[0].CVSSV2.Base)
-		}
-	}
-
-	return &storage.EmbeddedVulnerability{
+	embeddedVuln := &storage.EmbeddedVulnerability{
 		Cve:     vuln.Vuln,
-		Cvss:    cvss,
 		Summary: "Follow the link for CVE summary",
 		Link:    vuln.Url,
 		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: vuln.Fix,
 		},
+		Cvss: getSeverity(vuln.Severity),
 	}
+
+	if len(vuln.NVDData) != 0 {
+		if cvssV3 := vuln.NVDData[0].CVSSV3; cvssV3 != nil && cvssV3.Base != -1 {
+			embeddedVuln.Vectors = &storage.EmbeddedVulnerability_CvssV3{
+				CvssV3: &storage.CVSSV3{
+					ImpactScore:         float32(cvssV3.Impact),
+					ExploitabilityScore: float32(cvssV3.Exploitability),
+				},
+			}
+			embeddedVuln.Cvss = float32(cvssV3.Base)
+			embeddedVuln.ScoreVersion = storage.EmbeddedVulnerability_V3
+		} else if cvssV2 := vuln.NVDData[0].CVSSV2; cvssV2 != nil && cvssV2.Base != -1 {
+			embeddedVuln.Cvss = float32(vuln.NVDData[0].CVSSV2.Base)
+		}
+	}
+	return embeddedVuln
 }
 
 type componentKey struct {

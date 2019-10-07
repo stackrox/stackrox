@@ -23,7 +23,9 @@ func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []p
 			Cve:     finding.NVDFinding.CVE,
 			Summary: stringutils.Truncate(finding.NVDFinding.Description, 64, stringutils.WordOriented{}),
 			Link:    scans.GetVulnLink(finding.NVDFinding.CVE),
-			CvssV2:  convertCVSS(finding.NVDFinding),
+			Vectors: &storage.EmbeddedVulnerability_CvssV2{
+				CvssV2: convertCVSS(finding.NVDFinding),
+			},
 		}
 		for _, affectedPackage := range finding.Packages {
 			packagesToVulnerabilities[affectedPackage] = append(packagesToVulnerabilities[affectedPackage], vulnerability)
