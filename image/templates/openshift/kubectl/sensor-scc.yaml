@@ -115,6 +115,7 @@ allowHostPID: false
 allowHostPorts: false
 allowPrivilegeEscalation: true
 allowedCapabilities: null
+allowHostPID: true
 volumes:
   - configMap
   - downwardAPI
