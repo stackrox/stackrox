@@ -322,6 +322,26 @@ const formDescriptors = {
                 placeholder: 'slack'
             }
         ],
+        teams: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Teams Integration'
+            },
+            {
+                label: 'Default Teams Webhook',
+                jsonpath: 'labelDefault',
+                type: 'text',
+                placeholder: 'https://outlook.office365.com/webhook/EXAMPLE'
+            },
+            {
+                label: 'Label/Annotation Key For Teams Webhook',
+                jsonpath: 'labelKey',
+                type: 'text',
+                placeholder: 'team'
+            }
+        ],
         cscc: [
             {
                 label: 'Integration Name',

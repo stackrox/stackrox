@@ -18,6 +18,7 @@ import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
 import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
+import teams from 'images/teams.svg';
 import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
 
@@ -214,6 +215,12 @@ const integrationsList = {
             type: 'sumologic',
             source: 'notifiers',
             image: sumologic
+        },
+        {
+            label: 'Microsoft Teams',
+            type: 'teams',
+            source: 'notifiers',
+            image: teams
         }
     ],
     backups: [

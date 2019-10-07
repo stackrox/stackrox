@@ -22,6 +22,11 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'labelDefault', Header: 'Default Webhook', className: 'word-break' },
             { accessor: 'labelKey', Header: 'Webhook Label Key' }
         ],
+        teams: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'labelDefault', Header: 'Default Webhook', className: 'word-break' },
+            { accessor: 'labelKey', Header: 'Webhook Label Key' }
+        ],
         jira: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'labelDefault', Header: 'Default Project' },
