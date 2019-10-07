@@ -3,6 +3,9 @@ All notable changes to this project that require documentation updates will be d
 
 ## [31.0]
 ### Changed
+- The port used for prometheus metrics can now be customized with the environment variable `ROX_METRICS_PORT`. Supported
+  options include `disabled`, `:port-num` (will bind to wildcard address) and `host_or_addr:port`. IPv6 address literals
+  are supported with brackets, like so: `[2001:db8::1234]:9090`. The default setting is still `:9090`.
 - `roxctl` can now talk to Central instances exposed behind a non-gRPC-capable proxy (e.g., AWS ELB/ALB). To support
   this, requests go through an ephemeral client-side reverse proxy. If you observe any issues with `roxctl` that you
   suspect might be due to this change, pass the `--direct-grpc` flag to resort to the old connection behavior.
