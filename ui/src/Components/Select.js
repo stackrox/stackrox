@@ -4,7 +4,12 @@ import * as Icon from 'react-feather';
 
 class Select extends Component {
     static propTypes = {
-        options: PropTypes.arrayOf(PropTypes.object).isRequired,
+        options: PropTypes.arrayOf(
+            PropTypes.shape({
+                label: PropTypes.string,
+                value: PropTypes.string
+            })
+        ).isRequired,
         onChange: PropTypes.func.isRequired,
         placeholder: PropTypes.string,
         className: PropTypes.string,

@@ -16,7 +16,7 @@ import Query from 'Components/CacheFirstQuery';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
 import Sunburst from 'Components/visuals/Sunburst';
-import Select from 'Components/ReactSelect';
+import TextSelect from 'Components/TextSelect';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 const passingColor = 'var(--tertiary-400)';
@@ -276,33 +276,14 @@ const ComplianceByControls = ({
         where: queryService.objectToWhereClause({ Standard: selectedStandard.value })
     };
 
-    const selectStyles = {
-        valueContainer: base => ({
-            ...base,
-            'padding-left': '0'
-        }),
-        control: base => ({
-            ...base,
-            border: 'none',
-            'letter-spacing': '.03125rem',
-            'text-transform': 'uppercase',
-            'font-weight': '700!important',
-            color: 'var(--base-600)',
-            'font-size': '.6875rem'
-        }),
-        indicatorSeparator: base => ({ ...base, display: 'none' })
-    };
-
     return (
         <Query query={QUERY} variables={variables}>
             {({ data, networkStatus }) => {
                 const titleComponents = (
-                    <Select
-                        styles={selectStyles}
+                    <TextSelect
                         value={selectedStandard.value}
                         onChange={onChange}
                         options={options}
-                        isSearchable={false}
                     />
                 );
 

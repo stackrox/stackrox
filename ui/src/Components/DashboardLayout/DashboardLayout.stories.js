@@ -1,6 +1,6 @@
 import React from 'react';
 
-import DashboardLayout from './index';
+import DashboardLayout from './DashboardLayout';
 
 export default {
     title: 'DashboardLayout',
