@@ -33,6 +33,12 @@ type evaluatorImpl struct {
 	namespaceStore namespaceProvider
 }
 
+// policyConnector represents a single policy and connects the policy to sets of nodes to which the policy is applied and which the policy matches.
+type policyConnector struct {
+	appliedIngress map[*v1.NetworkNode]struct{}
+	matchedEgress  map[*v1.NetworkNode]struct{}
+}
+
 // newGraphEvaluator takes in namespaces
 func newGraphEvaluator(namespaceStore namespaceProvider) *evaluatorImpl {
 	return &evaluatorImpl{
@@ -82,7 +88,7 @@ func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, ne
 		data := MatchDeploymentToPolicies(namespacesByID[deployment.GetNamespaceId()], deployment, networkPolicies)
 		allApplied = allApplied.Union(data.appliedEgress.Union(data.appliedIngress))
 	}
-	if allApplied.Cardinality() == 0 {
+	if allApplied.IsEmpty() {
 		return nil
 	}
 
@@ -131,7 +137,7 @@ func (g *evaluatorImpl) getNamespacesByID() map[string]*storage.NamespaceMetadat
 
 func createNode(deployment *storage.Deployment, dpd *DeploymentPolicyData) *v1.NetworkNode {
 	// If there are no egress policies, then it defaults to true
-	if dpd.appliedEgress.Cardinality() == 0 {
+	if dpd.appliedEgress.IsEmpty() {
 		dpd.internetAccess = true
 	}
 
@@ -159,45 +165,101 @@ func createNode(deployment *storage.Deployment, dpd *DeploymentPolicyData) *v1.N
 	}
 }
 
-func setOutgoingEdges(nodes []*v1.NetworkNode, nodeToNodeData map[*v1.NetworkNode]*DeploymentPolicyData) {
-	for srcIndex, srcNode := range nodes {
-		srcData := nodeToNodeData[srcNode]
-		srcNode.NonIsolatedIngress = srcData.appliedIngress.Cardinality() == 0
-		srcNode.NonIsolatedEgress = srcData.appliedEgress.Cardinality() == 0
-
-		for dstIndex, dstNode := range nodes {
-			if srcIndex == dstIndex {
-				continue
-			}
-			dstData := nodeToNodeData[dstNode]
-
-			// Only add edges that are either due to an ingress policy on the destination side, or an egress policy on
-			// the source side.
-			if srcData.appliedEgress.Cardinality() == 0 && dstData.appliedIngress.Cardinality() == 0 {
-				continue
-			}
-
-			// This set is the set of Egress policies that are applicable to the src
-			selectedEgressPoliciesSet := srcData.appliedEgress
-			// This set is the set if Egress policies that have rules that are applicable to the dst
-			matchedEgressPoliciesSet := dstData.matchedEgress
-			// If there are no values in the src set of egress then it has no Egress rules and can talk to everything
-			// Otherwise, if it is not empty then ensure that the intersection of the policies that apply to the source and the rules that apply to the dst have at least one in common
-			if selectedEgressPoliciesSet.Cardinality() != 0 && selectedEgressPoliciesSet.Intersect(matchedEgressPoliciesSet).Cardinality() == 0 {
-				continue
-			}
-
-			// This set is the set of Ingress policies that are applicable to the dst
-			selectedIngressPoliciesSet := dstData.appliedIngress
-			// This set is the set if Ingress policies that have rules that are applicable to the src
-			matchedIngressPoliciesSet := srcData.matchedIngress
-			// If there are no values in the src set of egress then it has no Egress rules and can talk to everything
-			// Otherwise, if it is not empty then ensure that the intersection of the policies that apply to the source and the rules that apply to the dst have at least one in common
-			if selectedIngressPoliciesSet.Cardinality() != 0 && selectedIngressPoliciesSet.Intersect(matchedIngressPoliciesSet).Cardinality() == 0 {
-				continue
-			}
-
-			srcNode.OutEdges[int32(dstIndex)] = &v1.NetworkEdgePropertiesBundle{}
+func makePolicyConnectors(nodes []*v1.NetworkNode, nodeToNodeData map[*v1.NetworkNode]*DeploymentPolicyData) map[string]*policyConnector {
+	policyConnectors := make(map[string]*policyConnector)
+	for _, node := range nodes {
+		nodeData := nodeToNodeData[node]
+		for _, policyID := range nodeData.appliedIngress.AsSlice() {
+			connector := getOrCreatePolicyConnector(policyID, policyConnectors)
+			connector.appliedIngress[node] = struct{}{}
+		}
+		for _, policyID := range nodeData.matchedEgress.AsSlice() {
+			connector := getOrCreatePolicyConnector(policyID, policyConnectors)
+			connector.matchedEgress[node] = struct{}{}
 		}
 	}
+	return policyConnectors
+}
+
+func getOrCreatePolicyConnector(policyID string, policyConnectors map[string]*policyConnector) *policyConnector {
+	conn := policyConnectors[policyID]
+	if conn == nil {
+		conn = newPolicyConnector()
+		policyConnectors[policyID] = conn
+	}
+	return conn
+}
+
+func newPolicyConnector() *policyConnector {
+	return &policyConnector{
+		appliedIngress: make(map[*v1.NetworkNode]struct{}),
+		matchedEgress:  make(map[*v1.NetworkNode]struct{}),
+	}
+}
+
+func setOutgoingEdges(nodes []*v1.NetworkNode, nodeToNodeData map[*v1.NetworkNode]*DeploymentPolicyData) {
+	// Build maps of policies to the nodes they affect
+	policyConnectors := makePolicyConnectors(nodes, nodeToNodeData)
+	// All nodes mapped to their indices so we can find the index of destinations when we iterate out of order
+	indexMap := make(map[*v1.NetworkNode]int, len(nodes))
+	// Pre-compute the set of all nodes without ingress policies because we might be reusing it
+	receiveFromAll := make(map[*v1.NetworkNode]struct{}, len(nodes))
+	for i, node := range nodes {
+		indexMap[node] = i
+		nodeData := nodeToNodeData[node]
+		if nodeData.appliedIngress.IsEmpty() {
+			receiveFromAll[node] = struct{}{}
+		}
+	}
+	for srcNode, srcData := range nodeToNodeData {
+		srcNode.NonIsolatedIngress = srcData.appliedIngress.IsEmpty()
+		srcNode.NonIsolatedEgress = srcData.appliedEgress.IsEmpty()
+
+		// The set of nodes with applied ingress policies which allow them to receive from srcNode
+		allowedIngress := getAllowedIngress(srcData, policyConnectors)
+
+		if srcData.appliedEgress.IsEmpty() {
+			// No egress policies, therefore the set of allowed edges is the set of nodes allowed to receive from srcNode
+			for dstNode := range allowedIngress {
+				if dstNode == srcNode {
+					continue
+				}
+				srcNode.OutEdges[int32(indexMap[dstNode])] = &v1.NetworkEdgePropertiesBundle{}
+			}
+		}
+
+		// The set of nodes srcNode's applied egress policies allow srcNode to transmit to.
+		allowedEgress := getAllowedEgress(srcData, policyConnectors)
+		// Find the intersection of allowed egress and allowed ingress including nodes with no ingress policies
+		for dstNode := range allowedEgress {
+			if dstNode == srcNode {
+				continue
+			}
+			_, inAllowed := allowedIngress[dstNode]
+			_, inReceiveFromAll := receiveFromAll[dstNode]
+			if inAllowed || inReceiveFromAll {
+				srcNode.OutEdges[int32(indexMap[dstNode])] = &v1.NetworkEdgePropertiesBundle{}
+			}
+		}
+	}
+}
+
+func getAllowedEgress(data *DeploymentPolicyData, policyConnectors map[string]*policyConnector) map[*v1.NetworkNode]struct{} {
+	return getAllowedNodes(data.appliedEgress.AsSlice(), policyConnectors, func(policy *policyConnector) map[*v1.NetworkNode]struct{} { return policy.matchedEgress })
+}
+
+func getAllowedIngress(data *DeploymentPolicyData, policyConnectors map[string]*policyConnector) map[*v1.NetworkNode]struct{} {
+	return getAllowedNodes(data.matchedIngress.AsSlice(), policyConnectors, func(policy *policyConnector) map[*v1.NetworkNode]struct{} { return policy.appliedIngress })
+}
+
+func getAllowedNodes(policyIDs []string, policyConnectors map[string]*policyConnector, setFromPolicy func(*policyConnector) map[*v1.NetworkNode]struct{}) map[*v1.NetworkNode]struct{} {
+	dstNodes := make(map[*v1.NetworkNode]struct{})
+	for _, policyID := range policyIDs {
+		if policy, ok := policyConnectors[policyID]; ok {
+			for dstNode := range setFromPolicy(policy) {
+				dstNodes[dstNode] = struct{}{}
+			}
+		}
+	}
+	return dstNodes
 }
