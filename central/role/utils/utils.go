@@ -7,15 +7,16 @@ import (
 
 // FillAccessList fills in the access list if the role uses the GlobalAccess field.
 func FillAccessList(role *storage.Role) {
-	// If the role has global access, fill in the full list of resources with R/W.
-	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		if len(role.GetResourceToAccess()) == 0 {
-			role.ResourceToAccess = make(map[string]storage.Access)
-		}
-		for _, resource := range resources.ListAll() {
-			if role.ResourceToAccess[string(resource)] == storage.Access_NO_ACCESS {
-				role.ResourceToAccess[string(resource)] = role.GetGlobalAccess()
-			}
+	if role.GetGlobalAccess() == storage.Access_NO_ACCESS {
+		return
+	}
+	// If the role has global access, fill in the full list of resources with the max of the role's current access and global access.
+	if role.GetResourceToAccess() == nil {
+		role.ResourceToAccess = make(map[string]storage.Access)
+	}
+	for _, resource := range resources.ListAll() {
+		if role.ResourceToAccess[string(resource)] < role.GetGlobalAccess() {
+			role.ResourceToAccess[string(resource)] = role.GetGlobalAccess()
 		}
 	}
 }
