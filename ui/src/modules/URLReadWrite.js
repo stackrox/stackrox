@@ -2,7 +2,7 @@ import pageTypes from 'constants/pageTypes';
 import useCases from 'constants/useCaseTypes';
 import { generatePath, matchPath } from 'react-router-dom';
 import qs from 'qs';
-import { WorkflowState, isStackValid } from './WorkflowStateManager';
+import { WorkflowState, isStackValid, WorkflowEntity } from './WorkflowStateManager';
 
 import {
     nestedPaths as workflowPaths,
@@ -99,7 +99,7 @@ export function generateURL(workflowState, searchState) {
 
 function getStateArrayObject(type, entityId) {
     if (!type && !entityId) return null;
-    const obj = { t: type };
+    const obj = new WorkflowEntity(type);
     if (entityId) obj.i = entityId;
 
     return obj;
@@ -121,15 +121,21 @@ export function paramsToStateStack(params) {
     const stateArray = [];
     if (!pageEntityListType && !pageEntityType) return stateArray;
 
-    if (pageEntityListType) stateArray.push({ t: getTypeKeyFromParamValue(pageEntityListType) });
-    else stateArray.push({ t: getTypeKeyFromParamValue(pageEntityType), i: pageEntityId });
+    if (pageEntityListType)
+        stateArray.push(new WorkflowEntity(getTypeKeyFromParamValue(pageEntityListType)));
+    else
+        stateArray.push(new WorkflowEntity(getTypeKeyFromParamValue(pageEntityType), pageEntityId));
 
-    const tab = entityListType1 ? { t: getTypeKeyFromParamValue(entityListType1) } : null;
+    const tab = entityListType1
+        ? new WorkflowEntity(getTypeKeyFromParamValue(entityListType1))
+        : null;
     const entityTypeKey1 =
         entityId1 && getTypeKeyFromParamValue(entityType1 || entityListType1 || pageEntityListType);
     const entity1 = getStateArrayObject(entityTypeKey1, entityId1);
 
-    const list = entityListType2 ? { t: getTypeKeyFromParamValue(entityListType2) } : null;
+    const list = entityListType2
+        ? new WorkflowEntity(getTypeKeyFromParamValue(entityListType2))
+        : null;
     const entityTypeKey2 = getTypeKeyFromParamValue(entityType2 || entityListType2);
     const entity2 = getStateArrayObject(entityTypeKey2, entityId2);
     // TODO: make this work
@@ -165,9 +171,10 @@ export function parseURL(location) {
     let stateStack = paramsToStateStack(params) || [];
     const query = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
     const { workflowState: urlWorkflowState = [], ...searchState } = query;
+    const urlWorkflowStateStack = urlWorkflowState.map(({ t, i }) => new WorkflowEntity(t, i));
 
     // if on dashboard, the workflowState query params should be ignored
-    stateStack = dashboardParams ? [] : [...stateStack, ...urlWorkflowState];
+    stateStack = dashboardParams ? [] : [...stateStack, ...urlWorkflowStateStack];
     const workflowState = new WorkflowState(params.context, stateStack);
 
     // Convert URL parameter values to enum types

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 
 // TODO refactor out
@@ -8,7 +8,9 @@ import LabelChip from 'Components/LabelChip';
 import TableCellLink from 'Components/TableCellLink';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
-import URLService from 'modules/URLService';
+import WorkflowStateMgr from 'modules/WorkflowStateManager';
+import { generateURL } from 'modules/URLReadWrite';
+import workflowStateContext from 'Containers/workflowStateContext';
 import VulnMgmtListTable from '../VulnMgmtListTable';
 
 // TODO refactor this out to a common place
@@ -33,7 +35,7 @@ const DEPLOYMENTS_QUERY = gql`
     }
 `;
 
-const buildTableColumns = (match, location, entityContext) => {
+const buildTableColumns = (entityContext, workflowState) => {
     const tableColumns = [
         {
             Header: 'Id',
@@ -57,10 +59,11 @@ const buildTableColumns = (match, location, entityContext) => {
                   // eslint-disable-next-line
                 Cell: ({ original, pdf }) => {
                       const { clusterName, clusterId, id } = original;
-                      const url = URLService.getURL(match, location)
-                          .push(id)
-                          .push(entityTypes.CLUSTER, clusterId)
-                          .url();
+                      const workflowStateMgr = new WorkflowStateMgr(workflowState);
+                      workflowStateMgr
+                          .pushListItem(id)
+                          .pushRelatedEntity(entityTypes.CLUSTER, clusterId);
+                      const url = generateURL(workflowStateMgr.workflowState);
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                   }
               },
@@ -74,10 +77,11 @@ const buildTableColumns = (match, location, entityContext) => {
                   // eslint-disable-next-line
                 Cell: ({ original, pdf }) => {
                       const { namespace, namespaceId, id } = original;
-                      const url = URLService.getURL(match, location)
-                          .push(id)
-                          .push(entityTypes.NAMESPACE, namespaceId)
-                          .url();
+                      const workflowStateMgr = new WorkflowStateMgr(workflowState);
+                      workflowStateMgr
+                          .pushListItem(id)
+                          .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId);
+                      const url = generateURL(workflowStateMgr.workflowState);
                       return <TableCellLink pdf={pdf} url={url} text={namespace} />;
                   }
               },
@@ -101,10 +105,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Cell: ({ original, pdf }) => {
                 const { imageCount, id } = original;
                 if (imageCount === 0) return 'No images';
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.IMAGE)
-                    .url();
+                const workflowStateMgr = new WorkflowStateMgr(workflowState);
+                workflowStateMgr.pushListItem(id).pushList(entityTypes.IMAGE);
+                const url = generateURL(workflowStateMgr.workflowState);
                 return (
                     <TableCellLink
                         pdf={pdf}
@@ -123,10 +126,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Cell: ({ original, pdf }) => {
                 const { secretCount, id } = original;
                 if (secretCount === 0) return 'No secrets';
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.SECRET)
-                    .url();
+                const workflowStateMgr = new WorkflowStateMgr(workflowState);
+                workflowStateMgr.pushListItem(id).pushList(entityTypes.SECRET);
+                const url = generateURL(workflowStateMgr.workflowState);
                 return (
                     <TableCellLink
                         pdf={pdf}
@@ -147,10 +149,11 @@ const buildTableColumns = (match, location, entityContext) => {
                   // eslint-disable-next-line
                 Cell: ({ original, pdf }) => {
                       const { serviceAccount, serviceAccountID, id } = original;
-                      const url = URLService.getURL(match, location)
-                          .push(id)
-                          .push(entityTypes.SERVICE_ACCOUNT, serviceAccountID)
-                          .url();
+                      const workflowStateMgr = new WorkflowStateMgr(workflowState);
+                      workflowStateMgr
+                          .pushListItem(id)
+                          .pushRelatedEntity(entityTypes.SERVICE_ACCOUNT, serviceAccountID);
+                      const url = generateURL(workflowStateMgr.workflowState);
                       return <TableCellLink pdf={pdf} url={url} text={serviceAccount} />;
                   }
               }
@@ -161,17 +164,16 @@ const buildTableColumns = (match, location, entityContext) => {
 const VulnMgmtDeployments = ({
     wrapperClass,
     entityContext = {},
-    match,
-    location,
     loading,
     error,
     data,
     selectedRowId
 }) => {
+    const workflowState = useContext(workflowStateContext);
     // TODO: figure out where policyStatus comes from?
     const policyStatus = null;
 
-    const tableColumns = buildTableColumns(match, location, entityContext);
+    const tableColumns = buildTableColumns(entityContext, workflowState);
 
     function createTableRowsFilteredByPolicyStatus(items) {
         const tableRows = items.results || items || []; // guard to pluck data from different API returs

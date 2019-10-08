@@ -1,9 +1,6 @@
-import React from 'react';
+import { createContext } from 'react';
+import { WorkflowState } from 'modules/WorkflowStateManager';
 
-const defaultWorkflowStateContextData = {
-    workflowStateContext: []
-};
-
-const workflowStateContext = React.createContext(defaultWorkflowStateContextData);
+const workflowStateContext = createContext(new WorkflowState());
 
 export default workflowStateContext;

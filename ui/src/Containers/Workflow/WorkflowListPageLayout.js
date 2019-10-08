@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
 import { useQuery } from 'react-apollo';
@@ -15,6 +15,7 @@ import entityLabels from 'messages/entity';
 import URLService from 'modules/URLService';
 
 import WorkflowSidePanel from './WorkflowSidePanel';
+import workflowStateContext from '../workflowStateContext';
 
 // TODO: extract these map objects to somewhere common and reusable
 const ListMap = {
@@ -35,16 +36,21 @@ const EntityQueryMap = {
 
 const WorkflowListPageLayout = ({ match, location }) => {
     const params = URLService.getParams(match, location);
-    const { context: useCase, pageEntityListType, entityId1 } = params;
+    const { useCase, stateStack } = useContext(workflowStateContext);
+
     const List = ListMap[useCase];
     const Entity = EntityMap[useCase];
+
     const listQueries = ListQueryMap[useCase];
     const entityQueries = EntityQueryMap[useCase];
 
-    const header = pluralize(entityLabels[pageEntityListType]);
+    const entityListType = stateStack[0] && stateStack[0].entityType;
+    const entityId = stateStack[1] && stateStack[1].entityId;
+
+    const header = pluralize(entityLabels[entityListType]);
     const exportFilename = `${pluralize(startCase(header))} Report`;
 
-    const listQueryToUse = listQueries.getListQuery(pageEntityListType);
+    const listQueryToUse = listQueries.getListQuery(entityListType);
     const entityQueryToUse = entityQueries.getEntityQuery();
 
     const { loading: listLoading, error: listError, data: listData } = useQuery(listQueryToUse);
@@ -57,7 +63,7 @@ const WorkflowListPageLayout = ({ match, location }) => {
                         <div className="flex items-center">
                             <ExportButton
                                 fileName={exportFilename}
-                                type={pageEntityListType}
+                                type={entityListType}
                                 page="configManagement"
                                 pdfId="capture-list"
                             />
@@ -67,25 +73,23 @@ const WorkflowListPageLayout = ({ match, location }) => {
             </PageHeader>
             <div className="flex flex-1 h-full bg-base-100 relative z-0" id="capture-list">
                 <List
-                    wrapperClass={`bg-base-100 ${entityId1 ? 'overlay' : ''}`}
-                    entityListType={pageEntityListType}
-                    entityId={entityId1}
+                    wrapperClass={`bg-base-100 ${entityId ? 'overlay' : ''}`}
+                    entityListType={entityListType}
+                    entityId={entityId}
                     {...params}
                     loading={listLoading}
                     error={listError}
                     data={listData}
                 />
             </div>
-            <SidePanelAnimation condition={!!entityId1}>
+            <SidePanelAnimation condition={!!entityId}>
                 <WorkflowSidePanel
                     query={entityQueryToUse}
-                    entityId1={entityId1}
-                    entityType1={pageEntityListType}
                     // eslint-disable-next-line react/jsx-no-bind
                     render={({ loading, error, data }) => (
                         <Entity
-                            entityType={pageEntityListType}
-                            entityId={entityId1}
+                            entityType={entityListType}
+                            entityId={entityId}
                             loading={loading}
                             error={error}
                             data={data}

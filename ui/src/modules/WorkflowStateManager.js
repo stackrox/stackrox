@@ -1,30 +1,59 @@
 import entityRelationships from 'modules/entityRelationships';
 
+// An item in the workflow stack
+export class WorkflowEntity {
+    constructor(entityType, entityId) {
+        if (entityType) {
+            this.entityType = entityType;
+        }
+        if (entityId) {
+            this.i = entityId;
+        }
+    }
+
+    get entityType() {
+        return this.t;
+    }
+
+    get entityId() {
+        return this.i;
+    }
+
+    set entityType(entityType) {
+        this.t = entityType;
+    }
+
+    set entityId(entityId) {
+        this.i = entityId;
+    }
+}
+
 // Returns true if stack provided makes sense
 export function isStackValid(stack) {
     if (stack.length < 2) return true;
 
     // stack is invalid when the stack is in one of three states:
     //
-    // 1) entity -> (entity parent list) -> entity parent -> plus one entity -> nav away
-    // 2) entity -> (entity matches list) -> match entity -> plus one -> nav away
-    // 3) entity -> (entity contains-inferred list) -> contains-inferred entity -> plus one -> nav away
+    // 1) entity -> (entity parent list) -> entity parent -> nav away
+    // 2) entity -> (entity matches list) -> match entity -> nav away
+    // 3) entity -> (entity contains-inferred list) -> contains-inferred entity -> nav away
 
     let isParentState;
     let isMatchState;
     let isInferredState;
 
-    stack.forEach(({ t: type }, i) => {
+    stack.forEach((entity, i) => {
+        const { entityType } = entity;
         if (i > 0 && i !== stack.length - 1) {
-            const { t: prevType } = stack[i - 1];
+            const { entityType: prevType } = stack[i - 1];
             if (!isParentState) {
-                isParentState = entityRelationships.isParent(type, prevType);
+                isParentState = entityRelationships.isParent(entityType, prevType);
             }
             if (!isMatchState) {
-                isMatchState = entityRelationships.isMatch(type, prevType);
+                isMatchState = entityRelationships.isMatch(entityType, prevType);
             }
             if (!isInferredState) {
-                isInferredState = entityRelationships.isContainedInferred(prevType, type);
+                isInferredState = entityRelationships.isContainedInferred(prevType, entityType);
             }
         }
         return false;
@@ -34,14 +63,7 @@ export function isStackValid(stack) {
 
 // Resets the current state based on minimal parameters
 function baseStateStack(entityType, entityId) {
-    const pageObj = {
-        t: entityType
-    };
-    if (entityId) {
-        pageObj.i = entityId;
-    }
-
-    return [pageObj];
+    return [new WorkflowEntity(entityType, entityId)];
 }
 
 // Checks state stack for overflow state/invalid state and returns a valid trimmed version
@@ -53,12 +75,12 @@ function trimStack(stack) {
     // List navigates to: Top single -> selected list
     // Entity navigates to : Entity page (maybe not)
     if (isStackValid(stack)) return stack;
-    const { t: type, i: id } = stack.slice(-1)[0];
-    if (!id) {
-        const { t, i } = stack.slice(-2)[0];
-        return [...baseStateStack(t, i), { t: type }];
+    const { entityType: lastItemType, entityId: lastItemId } = stack.slice(-1)[0];
+    if (!lastItemId) {
+        const { entityType, entityId } = stack.slice(-2)[0];
+        return [...baseStateStack(entityType, entityId), new WorkflowEntity(lastItemType)];
     }
-    return baseStateStack(type, id);
+    return baseStateStack(lastItemType, lastItemId);
 }
 
 /**
@@ -72,6 +94,18 @@ export class WorkflowState {
     constructor(useCase, stateStack) {
         this.useCase = useCase;
         this.stateStack = stateStack || [];
+    }
+
+    // Returns current entity (top of stack)
+    getCurrentEntity() {
+        if (!this.stateStack.length) return null;
+        return this.stateStack.slice(-1)[0];
+    }
+
+    // Returns base (first) entity of stack
+    getBaseEntity() {
+        if (!this.stateStack.length) return null;
+        return this.stateStack[0];
     }
 }
 
@@ -87,7 +121,7 @@ export default class WorkflowStateMgr {
     }
 
     // Resets the current state based on minimal parameters
-    base(entityType, entityId, useCase) {
+    reset(useCase, entityType, entityId) {
         const newUseCase = useCase || this.workflowState.useCase;
         const newStateStack = baseStateStack(entityType, entityId);
 
@@ -95,9 +129,18 @@ export default class WorkflowStateMgr {
         return this;
     }
 
+    // sets the stateStack to base state when returning from side panel
+    base() {
+        const { useCase, stateStack } = this.workflowState;
+        const baseEntity = this.workflowState.getBaseEntity();
+        const newStateStack = baseEntity.entityId ? stateStack.slice(0, 2) : [baseEntity];
+        this.workflowState = new WorkflowState(useCase, newStateStack);
+        return this;
+    }
+
     // Adds a list of entityType related to the current workflowState
     pushList(type) {
-        const listState = { t: type };
+        const listState = new WorkflowEntity(type);
 
         // if coming from dashboard
         if (!this.workflowState.stateStack.length) {
@@ -106,9 +149,9 @@ export default class WorkflowStateMgr {
         }
 
         const currentItem = this.workflowState.stateStack.slice(-1)[0];
-        if (currentItem.t && !currentItem.i) {
+        if (currentItem.entityType && !currentItem.entityId) {
             // replace the list type
-            currentItem.t = type;
+            currentItem.entityType = type;
             return this;
         }
 
@@ -119,17 +162,25 @@ export default class WorkflowStateMgr {
     // Selects an item in a list by Id
     pushListItem(id) {
         const currentItem = this.workflowState.stateStack.slice(-1)[0];
-        currentItem.i = id;
+        // this shouldn't happen since the panel closes on clicking out, but just in case
+        if (currentItem.entityId) {
+            currentItem.entityId = id;
+            return this;
+        }
+        this.workflowState.stateStack.push(new WorkflowEntity(currentItem.entityType, id));
         return this;
     }
 
     // Shows an entity in relation to the top entity in the workflow
     pushRelatedEntity(type, id) {
         const currentItem = this.workflowState.stateStack.slice(-1)[0];
-        if (!currentItem.i)
+        if (!currentItem.entityId)
             throw new Error(`Can't push related entity onto a list. Use pushListItem(id) instead.`);
 
-        const newStack = trimStack([...this.workflowState.stateStack, { t: type, i: id }]);
+        const newStack = trimStack([
+            ...this.workflowState.stateStack,
+            new WorkflowEntity(type, id)
+        ]);
         this.workflowState.stateStack = newStack;
 
         return this;

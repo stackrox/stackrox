@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useQuery } from 'react-apollo';
 
 import PageHeader from 'Components/PageHeader';
@@ -7,6 +7,8 @@ import VulnMgmtEntity from 'Containers/VulnMgmt/Entity/VulnMgmtEntity';
 import VulnMgmtEntityQueries from 'Containers/VulnMgmt/Entity/VulnMgmtEntityQueries';
 import VulnMgmtList from 'Containers/VulnMgmt/List/VulnMgmtList';
 import URLService from 'modules/URLService';
+
+import workflowStateContext from '../workflowStateContext';
 
 // TODO: extract these map objects to somewhere common and reusable
 const EntityMap = {
@@ -24,23 +26,25 @@ const ListMap = {
 };
 
 const WorkflowEntityPageLayout = ({ match, location }) => {
+    const workflowState = useContext(workflowStateContext);
     const params = URLService.getParams(match, location);
-    const { context: useCase, pageEntityType, pageEntityId } = params;
 
-    const Entity = EntityMap[useCase];
-    const entityQueries = EntityQueryMap[useCase];
+    const Entity = EntityMap[workflowState.useCase];
+    const entityQueries = EntityQueryMap[workflowState.useCase];
 
-    const entityQueryToUse = entityQueries.getQuery();
+    const { entityType, entityId } = workflowState.getCurrentEntity();
+
+    const entityQueryToUse = entityQueries.getEntityQuery();
     const { loading, error, data } = useQuery(entityQueryToUse, {
-        variables: { id: pageEntityId }
+        variables: { id: entityId }
     });
 
     const entityName =
-        data && data[pageEntityType.toLowerCase()] && data[pageEntityType.toLowerCase()].name;
+        data && data[entityType.toLowerCase()] && data[entityType.toLowerCase()].name;
 
     return (
         <div className="flex flex-1 flex-col bg-base-200">
-            {!!pageEntityType && <PageHeader header={`${entityName}`} subHeader={pageEntityType} />}
+            {!!entityType && <PageHeader header={`${entityName}`} subHeader={entityType} />}
 
             {/* TODO add Tabs component
             <Tabs
@@ -51,8 +55,8 @@ const WorkflowEntityPageLayout = ({ match, location }) => {
             /> */}
 
             <Entity
-                entityType={pageEntityType}
-                entityId={pageEntityId}
+                entityType={entityType}
+                entityId={entityId}
                 loading={loading}
                 error={error}
                 data={data}

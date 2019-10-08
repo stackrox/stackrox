@@ -1,75 +1,44 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { withRouter, Link } from 'react-router-dom';
-import URLService from 'modules/URLService';
+import WorkflowStateMgr from 'modules/WorkflowStateManager';
+import { generateURL } from 'modules/URLReadWrite';
 import onClickOutside from 'react-onclickoutside';
 import { useTheme } from 'Containers/ThemeProvider';
+import workflowStateContext from 'Containers/workflowStateContext';
 import { useQuery } from 'react-apollo';
 
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Panel from 'Components/Panel';
 
-const WorkflowSidePanel = ({
-    match,
-    location,
-    history,
-    contextEntityType,
-    entityListType1,
-    entityType1,
-    entityId1,
-    entityType2,
-    entityListType2,
-    entityId2,
-    query,
-    render
-}) => {
+const WorkflowSidePanel = ({ history, query, render }) => {
     const { isDarkMode } = useTheme();
-    const isList = !entityId1 || (entityListType2 && !entityId2);
+    const workflowState = useContext(workflowStateContext);
+    const { useCase, stateStack } = workflowState;
+    const firstItem = stateStack[0];
+    const currentItem = stateStack.slice(-1)[0];
 
-    function getCurrentEntityId() {
-        return entityId2 || entityId1;
-    }
-
-    function getCurrentEntityType() {
-        return (
-            entityType2 ||
-            (entityId2 && entityListType2) ||
-            entityType1 ||
-            entityListType1 ||
-            contextEntityType
-        );
-    }
-
-    function getListType() {
-        if (!isList) return null;
-        return entityListType2;
-    }
+    const isList = firstItem.entityType && !firstItem.entityId;
 
     function onClose() {
-        history.push(
-            URLService.getURL(match, location)
-                .clearSidePanelParams()
-                .url()
-        );
+        const workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr.base();
+        const url = generateURL(workflowStateMgr.workflowState);
+        history.push(url);
     }
 
     WorkflowSidePanel.handleClickOutside = () => {
         onClose();
     };
 
-    const { loading, error, data } = useQuery(query, { variables: { id: entityId1 } });
+    const { loading, error, data } = useQuery(query, { variables: { id: currentItem.entityId } });
 
-    const entityId = getCurrentEntityId();
-    const entityType = getCurrentEntityType();
-    const listType = getListType();
-    const externalURL = URLService.getURL(match, location)
-        .base(entityType, entityId)
-        .push(listType)
-        .query()
-        .url();
+    const workflowStateMgr = new WorkflowStateMgr(workflowState);
+    workflowStateMgr.reset(useCase, currentItem.entityType, currentItem.entityId);
+    const url = generateURL(workflowStateMgr.workflowState);
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
             <Link
-                to={externalURL}
+                to={url}
                 data-test-id="external-link"
                 className={`${
                     !isDarkMode ? 'border-base-100' : 'border-base-400'

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { withRouter } from 'react-router-dom';
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
@@ -8,8 +8,10 @@ import PageNotFound from 'Components/PageNotFound';
 import Panel from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
+import workflowStateContext from 'Containers/workflowStateContext';
 import entityLabels from 'messages/entity';
-import URLService from 'modules/URLService';
+import WorkflowStateMgr from 'modules/WorkflowStateManager';
+import { generateURL } from 'modules/URLReadWrite';
 import createPDFTable from 'utils/pdfUtils';
 import isGQLLoading from 'utils/gqlLoading';
 
@@ -26,17 +28,18 @@ const VulnMgmtTable = ({
     loading,
     error,
     data,
-    match,
-    location,
     history
 }) => {
     const [page, setPage] = useState(0);
+    const workflowState = useContext(workflowStateContext);
 
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
-        const url = URLService.getURL(match, location)
-            .push(id)
-            .url();
+
+        const workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr.pushListItem(id);
+        const url = generateURL(workflowStateMgr.workflowState);
+
         history.push(url);
     }
 

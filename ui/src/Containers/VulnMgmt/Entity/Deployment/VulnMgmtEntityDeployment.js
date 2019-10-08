@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { format } from 'date-fns';
 
 import entityTypes from 'constants/entityTypes';
@@ -12,7 +12,11 @@ import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
 import isGQLLoading from 'utils/gqlLoading';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 
+import workflowStateContext from 'Containers/workflowStateContext';
+
 const VulmMgmtDeployment = ({ loading, data }) => {
+    const workflowState = useContext(workflowStateContext);
+
     // (1) still waiting for data
     if (isGQLLoading(loading, data)) return <Loader transparent />;
 
@@ -79,6 +83,7 @@ const VulmMgmtDeployment = ({ loading, data }) => {
                                     entityType={entityTypes.CLUSTER}
                                     entityId={cluster.id}
                                     name="Cluster"
+                                    workflowState={workflowState}
                                     value={cluster.name}
                                 />
                             )}
@@ -104,6 +109,7 @@ const VulmMgmtDeployment = ({ loading, data }) => {
                                 className="mx-4 min-w-48 h-48 mb-4"
                                 name="Images"
                                 value={imageCount}
+                                workflowState={workflowState}
                                 entityType={entityTypes.IMAGE}
                             />
                             <RelatedEntityListCount

@@ -6,12 +6,15 @@ import hexagonal from 'images/side-panel-icons/hexagonal.svg';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import WorkflowStateMgr from 'modules/WorkflowStateManager';
+import { generateURL } from 'modules/URLReadWrite';
 
 // @TODO We should try to use this component for Compliance as well
 const RelatedEntity = ({
     match,
     location,
     history,
+    workflowState,
     name,
     entityType,
     entityId,
@@ -21,11 +24,19 @@ const RelatedEntity = ({
 }) => {
     function onClick() {
         if (!entityId) return;
-        history.push(
-            URLService.getURL(match, location)
+
+        let url;
+        // this is a workaround to make this flexible for legacy URLService and new workflow state manager
+        if (workflowState) {
+            const workflowStateMgr = new WorkflowStateMgr(workflowState);
+            workflowStateMgr.pushRelatedEntity(entityType, entityId);
+            url = generateURL(workflowStateMgr.workflowState);
+        } else {
+            url = URLService.getURL(match, location)
                 .push(entityType, entityId)
-                .url()
-        );
+                .url();
+        }
+        history.push(url);
     }
 
     const content = (
@@ -70,14 +81,16 @@ RelatedEntity.propTypes = {
     link: PropTypes.string,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
+    workflowState: PropTypes.shape({})
 };
 
 RelatedEntity.defaultProps = {
     link: null,
     value: '',
     entityId: null,
-    name: null
+    name: null,
+    workflowState: null
 };
 
 export default withRouter(RelatedEntity);

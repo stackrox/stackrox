@@ -1,6 +1,6 @@
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import WorkflowStateMgr from './WorkflowStateManager';
+import WorkflowStateMgr, { WorkflowEntity } from './WorkflowStateManager';
 
 const entityId1 = '1234';
 const entityId2 = '5678';
@@ -11,20 +11,58 @@ describe('WorkflowStateManager', () => {
     it('resets current state based on given parameters', () => {
         const workflowState = {
             useCase,
-            stateStack: [{ t: entityTypes.NAMESPACE }, { t: entityTypes.NAMESPACE, i: entityId1 }]
+            stateStack: [
+                new WorkflowEntity(entityTypes.NAMESPACE),
+                new WorkflowEntity(entityTypes.NAMESPACE, entityId1)
+            ]
         };
         const workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.base(entityTypes.DEPLOYMENT, entityId2, useCase);
+        workflowStateMgr.reset(useCase, entityTypes.DEPLOYMENT, entityId2);
+
         expect(workflowStateMgr.workflowState).toEqual({
             useCase,
             stateStack: [{ t: entityTypes.DEPLOYMENT, i: entityId2 }]
+        });
+    });
+    it('sets to base workflow state', () => {
+        // in list
+        let workflowState = {
+            useCase,
+            stateStack: [
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)
+            ]
+        };
+        let workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr.base();
+
+        expect(workflowStateMgr.workflowState).toEqual({
+            useCase,
+            stateStack: [{ t: entityTypes.DEPLOYMENT }]
+        });
+
+        // in entity
+        workflowState = {
+            useCase,
+            stateStack: [
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
+                new WorkflowEntity(entityTypes.NAMESPACE),
+                new WorkflowEntity(entityTypes.NAMESPACE, entityId2)
+            ]
+        };
+        workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr.base();
+
+        expect(workflowStateMgr.workflowState).toEqual({
+            useCase,
+            stateStack: [{ t: entityTypes.DEPLOYMENT, i: entityId1 }, { t: entityTypes.NAMESPACE }]
         });
     });
     it('pushes a list onto the stack related to current workflow state', () => {
         // entity page
         let workflowState = {
             useCase,
-            stateStack: [{ t: entityTypes.DEPLOYMENT, i: entityId1 }]
+            stateStack: [new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)]
         };
         let workflowStateMgr = new WorkflowStateMgr(workflowState);
         workflowStateMgr.pushList(entityTypes.NAMESPACE);
@@ -36,7 +74,10 @@ describe('WorkflowStateManager', () => {
         // list page
         workflowState = {
             useCase,
-            stateStack: [{ t: entityTypes.DEPLOYMENT }, { t: entityTypes.DEPLOYMENT, i: entityId1 }]
+            stateStack: [
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)
+            ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
         workflowStateMgr.pushList(entityTypes.NAMESPACE);
@@ -54,13 +95,14 @@ describe('WorkflowStateManager', () => {
         let workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.DEPLOYMENT, i: entityId1 },
-                { t: entityTypes.NAMESPACE, i: entityId2 },
-                { t: entityTypes.SECRET, i: entityId3 }
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
+                new WorkflowEntity(entityTypes.NAMESPACE, entityId2),
+                new WorkflowEntity(entityTypes.SECRET, entityId3)
             ]
         };
         let workflowStateMgr = new WorkflowStateMgr(workflowState);
         workflowStateMgr.pushList(entityTypes.DEPLOYMENT);
+
         expect(workflowStateMgr.workflowState).toEqual({
             useCase,
             stateStack: [{ t: entityTypes.SECRET, i: entityId3 }, { t: entityTypes.DEPLOYMENT }]
@@ -70,12 +112,12 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.DEPLOYMENT },
-                { t: entityTypes.DEPLOYMENT, i: entityId1 },
-                { t: entityTypes.NAMESPACE },
-                { t: entityTypes.NAMESPACE, i: entityId2 },
-                { t: entityTypes.SECRET },
-                { t: entityTypes.SECRET, i: entityId3 }
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
+                new WorkflowEntity(entityTypes.NAMESPACE),
+                new WorkflowEntity(entityTypes.NAMESPACE, entityId2),
+                new WorkflowEntity(entityTypes.SECRET),
+                new WorkflowEntity(entityTypes.SECRET, entityId3)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -89,9 +131,9 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.DEPLOYMENT, i: entityId1 },
-                { t: entityTypes.SECRET, i: entityId3 },
-                { t: entityTypes.CLUSTER, i: entityId2 }
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
+                new WorkflowEntity(entityTypes.SECRET, entityId3),
+                new WorkflowEntity(entityTypes.CLUSTER, entityId2)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -105,11 +147,11 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.DEPLOYMENT },
-                { t: entityTypes.DEPLOYMENT, i: entityId1 },
-                { t: entityTypes.SECRET },
-                { t: entityTypes.SECRET, i: entityId3 },
-                { t: entityTypes.CLUSTER, i: entityId2 }
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
+                new WorkflowEntity(entityTypes.SECRET),
+                new WorkflowEntity(entityTypes.SECRET, entityId3),
+                new WorkflowEntity(entityTypes.CLUSTER, entityId2)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -123,9 +165,9 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.CLUSTER, i: entityId1 },
-                { t: entityTypes.IMAGE, i: entityId2 },
-                { t: entityTypes.DEPLOYMENT, i: entityId3 }
+                new WorkflowEntity(entityTypes.CLUSTER, entityId1),
+                new WorkflowEntity(entityTypes.IMAGE, entityId2),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -142,11 +184,11 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.CLUSTER },
-                { t: entityTypes.CLUSTER, i: entityId1 },
-                { t: entityTypes.IMAGE },
-                { t: entityTypes.IMAGE, i: entityId2 },
-                { t: entityTypes.DEPLOYMENT, i: entityId3 }
+                new WorkflowEntity(entityTypes.CLUSTER),
+                new WorkflowEntity(entityTypes.CLUSTER, entityId1),
+                new WorkflowEntity(entityTypes.IMAGE),
+                new WorkflowEntity(entityTypes.IMAGE, entityId2),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -162,19 +204,19 @@ describe('WorkflowStateManager', () => {
     it('pushes an entity of a list by id onto the stack', () => {
         const workflowState = {
             useCase,
-            stateStack: [{ t: entityTypes.DEPLOYMENT }]
+            stateStack: [new WorkflowEntity(entityTypes.DEPLOYMENT)]
         };
         const workflowStateMgr = new WorkflowStateMgr(workflowState);
         workflowStateMgr.pushListItem(entityId1);
         expect(workflowStateMgr.workflowState).toEqual({
             useCase,
-            stateStack: [{ t: entityTypes.DEPLOYMENT, i: entityId1 }]
+            stateStack: [{ t: entityTypes.DEPLOYMENT }, { t: entityTypes.DEPLOYMENT, i: entityId1 }]
         });
     });
     it('replaces an entity of a list by pushing id onto the stack', () => {
         const workflowState = {
             useCase,
-            stateStack: [{ t: entityTypes.DEPLOYMENT, i: entityId1 }]
+            stateStack: [new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)]
         };
         const workflowStateMgr = new WorkflowStateMgr(workflowState);
         workflowStateMgr.pushListItem(entityId2);
@@ -186,7 +228,7 @@ describe('WorkflowStateManager', () => {
     it('pushes a related entity to the stack', () => {
         const workflowState = {
             useCase,
-            stateStack: [{ t: entityTypes.DEPLOYMENT, i: entityId1 }]
+            stateStack: [new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)]
         };
         const workflowStateMgr = new WorkflowStateMgr(workflowState);
         workflowStateMgr.pushRelatedEntity(entityTypes.POLICY, entityId2);
@@ -203,9 +245,9 @@ describe('WorkflowStateManager', () => {
         let workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.IMAGE, i: entityId1 },
-                { t: entityTypes.DEPLOYMENT, i: entityId2 },
-                { t: entityTypes.NAMESPACE, i: entityId3 }
+                new WorkflowEntity(entityTypes.IMAGE, entityId1),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2),
+                new WorkflowEntity(entityTypes.NAMESPACE, entityId3)
             ]
         };
         let workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -219,11 +261,11 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.IMAGE },
-                { t: entityTypes.IMAGE, i: entityId1 },
-                { t: entityTypes.DEPLOYMENT },
-                { t: entityTypes.DEPLOYMENT, i: entityId2 },
-                { t: entityTypes.NAMESPACE, i: entityId3 }
+                new WorkflowEntity(entityTypes.IMAGE),
+                new WorkflowEntity(entityTypes.IMAGE, entityId1),
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2),
+                new WorkflowEntity(entityTypes.NAMESPACE, entityId3)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -237,9 +279,9 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.DEPLOYMENT, i: entityId1 },
-                { t: entityTypes.POLICY, i: entityId2 },
-                { t: entityTypes.DEPLOYMENT, i: entityId3 }
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
+                new WorkflowEntity(entityTypes.POLICY, entityId2),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -253,11 +295,11 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.DEPLOYMENT },
-                { t: entityTypes.DEPLOYMENT, i: entityId1 },
-                { t: entityTypes.POLICY, i: entityId2 },
-                { t: entityTypes.DEPLOYMENT },
-                { t: entityTypes.DEPLOYMENT, i: entityId3 }
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
+                new WorkflowEntity(entityTypes.POLICY, entityId2),
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -271,9 +313,9 @@ describe('WorkflowStateManager', () => {
         workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.CLUSTER, i: entityId1 },
-                { t: entityTypes.SUBJECT, i: entityId1 },
-                { t: entityTypes.ROLE, i: entityId1 }
+                new WorkflowEntity(entityTypes.CLUSTER, entityId1),
+                new WorkflowEntity(entityTypes.SUBJECT, entityId1),
+                new WorkflowEntity(entityTypes.ROLE, entityId1)
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
@@ -287,8 +329,8 @@ describe('WorkflowStateManager', () => {
         const workflowState = {
             useCase,
             stateStack: [
-                { t: entityTypes.DEPLOYMENT, i: entityId1 },
-                { t: entityTypes.NAMESPACE, i: entityId2 }
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
+                new WorkflowEntity(entityTypes.NAMESPACE, entityId2)
             ]
         };
         const workflowStateMgr = new WorkflowStateMgr(workflowState);
