@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
 
@@ -20,8 +21,9 @@ type enricherImpl struct {
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
 
-	scanLimiter *rate.Limiter
-	scanCache   expiringcache.Cache
+	syncSemaphore    *semaphore.Weighted
+	asyncRateLimiter *rate.Limiter
+	scanCache        expiringcache.Cache
 
 	metrics metrics
 }
@@ -121,6 +123,20 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 	return ScanNotDone, errorList.ToError()
 }
 
+func (e *enricherImpl) populateFromCache(image *storage.Image) bool {
+	ref := getRef(image)
+	scanValue := e.scanCache.Get(ref)
+	if scanValue == nil {
+		e.metrics.IncrementScanCacheMiss()
+		return false
+	}
+
+	e.metrics.IncrementScanCacheHit()
+	image.Scan = scanValue.(*storage.ImageScan)
+	FillScanStats(image)
+	return true
+}
+
 func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
 	if !scanner.Match(image) {
 		return ScanNotDone, nil
@@ -130,25 +146,23 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		return ScanNotDone, nil
 	}
 
-	ref := getRef(image)
-	if scanValue := e.scanCache.Get(ref); scanValue != nil {
-		e.metrics.IncrementScanCacheHit()
-		image.Scan = scanValue.(*storage.ImageScan)
-		FillScanStats(image)
+	if e.populateFromCache(image) {
 		return ScanSucceeded, nil
 	}
-	e.metrics.IncrementScanCacheMiss()
 
 	if ctx.NoExternalMetadata {
 		return ScanNotDone, nil
 	}
 
-	// Wait until limiter allows entrance
-	_ = e.scanLimiter.Wait(context.Background())
-
 	var scan *storage.ImageScan
 
 	if asyncScanner, ok := scanner.(scannerTypes.AsyncImageScanner); ok && ctx.UseNonBlockingCallsWherePossible {
+		_ = e.asyncRateLimiter.Wait(context.Background())
+
+		if e.populateFromCache(image) {
+			return ScanSucceeded, nil
+		}
+
 		var err error
 		scan, err = asyncScanner.GetOrTriggerScan(image)
 		if err != nil {
@@ -158,8 +172,16 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 			return ScanTriggered, nil
 		}
 	} else {
+		_ = e.syncSemaphore.Acquire(context.Background(), 1)
+		defer e.syncSemaphore.Release(1)
+
+		if e.populateFromCache(image) {
+			return ScanSucceeded, nil
+		}
+
 		var err error
 		scan, err = scanner.GetScan(image)
+
 		if err != nil {
 			return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
 		}
@@ -174,7 +196,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	image.Scan = scan
 	FillScanStats(image)
 
-	e.scanCache.Add(ref, scan)
+	e.scanCache.Add(getRef(image), scan)
 	if image.GetId() == "" {
 		if digest := image.GetMetadata().GetV2().GetDigest(); digest != "" {
 			e.scanCache.Add(digest, scan)

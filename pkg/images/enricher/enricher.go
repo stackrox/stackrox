@@ -8,7 +8,12 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+)
+
+const (
+	maxConcurrentScans = 6
 )
 
 var (
@@ -69,8 +74,9 @@ func New(is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache, scan
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
 
-		scanLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
-		scanCache:   scanCache,
+		syncSemaphore:    semaphore.NewWeighted(maxConcurrentScans),
+		asyncRateLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
+		scanCache:        scanCache,
 
 		metrics: newMetrics(subsystem),
 	}
