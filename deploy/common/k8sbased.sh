@@ -184,6 +184,7 @@ function launch_central {
 
     wait_for_central "${API_ENDPOINT}"
     echo "Successfully deployed Central!"
+
     echo "Access the UI at: https://${API_ENDPOINT}"
     setup_auth0 "${API_ENDPOINT}"
 
