@@ -60,6 +60,7 @@ class K8sRbacTest extends BaseSpecification {
         while (t.IsValid() &&
                 !stackroxSAs.find { it.serviceAccount.getNamespace() == Constants.ORCHESTRATOR_NAMESPACE }) {
             stackroxSAs = ServiceAccountService.getServiceAccounts()
+            orchestratorSAs = orchestrator.getServiceAccounts()
         }
 
         println t.IsValid() ? "Found default SA for namespace" : "Never found default SA for namespace"
@@ -151,6 +152,7 @@ class K8sRbacTest extends BaseSpecification {
         Timer t = new Timer(15, 2)
         while (t.IsValid() && stackroxRoles.size() != orchestratorRoles.size()) {
             stackroxRoles = RbacService.getRoles()
+            orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
         }
 
         stackroxRoles.size() == orchestratorRoles.size()
@@ -230,6 +232,7 @@ class K8sRbacTest extends BaseSpecification {
         Timer t = new Timer(15, 2)
         while (t.IsValid() && stackroxBindings.size() != orchestratorBindings.size()) {
             stackroxBindings = RbacService.getRoleBindings()
+            orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
         }
 
         assert stackroxBindings.size() == orchestratorBindings.size()
@@ -263,13 +266,7 @@ class K8sRbacTest extends BaseSpecification {
     def "Verify returned subject list is complete"() {
         given:
         "list of bindings from the orchestrator, we will pull unique subjects from this list"
-        def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
-        def orchestratorSubjects = orchestratorBindings.collectMany {
-            it.subjects
-        }.findAll {
-            it.kind == "User" || it.kind == "Group"
-        }
-        orchestratorSubjects.unique { a, b -> a.name <=> b.name }
+        def orchestratorSubjects = fetchOrchestratorSubjects()
 
         expect:
         "SR should have the same subjects"
@@ -277,6 +274,7 @@ class K8sRbacTest extends BaseSpecification {
         Timer t = new Timer(15, 2)
         while (t.IsValid() && stackroxSubjectsAndRoles.size() != orchestratorSubjects.size()) {
             stackroxSubjectsAndRoles = RbacService.getSubjects()
+            orchestratorSubjects = fetchOrchestratorSubjects()
         }
         def stackroxSubjects = stackroxSubjectsAndRoles*.subject
 
@@ -370,5 +368,16 @@ class K8sRbacTest extends BaseSpecification {
         cleanup:
         orchestrator.createServiceAccount(NEW_SA)
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
+    }
+
+    private fetchOrchestratorSubjects() {
+        def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
+        def orchestratorSubjects = orchestratorBindings.collectMany {
+            it.subjects
+        }.findAll {
+            it.kind == "User" || it.kind == "Group"
+        }
+        orchestratorSubjects.unique { a, b -> a.name <=> b.name }
+        return orchestratorSubjects
     }
 }

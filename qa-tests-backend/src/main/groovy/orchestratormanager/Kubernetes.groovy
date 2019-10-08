@@ -22,7 +22,6 @@ import io.fabric8.kubernetes.api.model.SecretVolumeSource
 import io.fabric8.kubernetes.api.model.SecurityContext
 import io.fabric8.kubernetes.api.model.Service
 import io.fabric8.kubernetes.api.model.ServiceAccount
-import io.fabric8.kubernetes.api.model.ServiceList
 import io.fabric8.kubernetes.api.model.ServicePort
 import io.fabric8.kubernetes.api.model.ServiceSpec
 import io.fabric8.kubernetes.api.model.Volume
@@ -86,6 +85,7 @@ import java.util.stream.Collectors
 class Kubernetes implements OrchestratorMain {
     final int sleepDuration = 5000
     final int maxWaitTime = 90000
+    final int lbWaitTime = 600000
 
     String namespace
     KubernetesClient client
@@ -539,26 +539,22 @@ class Kubernetes implements OrchestratorMain {
 
     def createLoadBalancer(Deployment deployment) {
         if (deployment.createLoadBalancer) {
-            int waitTime = 0
+            Long startTime = System.currentTimeMillis()
             println "Waiting for LB external IP for " + deployment.name
-            while (waitTime < 600000) {
-                ServiceList sList = client.services().inNamespace(deployment.namespace).list()
+            while (System.currentTimeMillis() - startTime < lbWaitTime) {
+                Service service = client.services().inNamespace(deployment.namespace).withName(deployment.name).get()
 
-                for (Service service : sList.getItems()) {
-                    if (service.getMetadata().getName() == deployment.name) {
-                        if (service.getStatus().getLoadBalancer().getIngress() != null &&
-                                service.getStatus().getLoadBalancer().getIngress().size() > 0) {
-                            deployment.loadBalancerIP =
-                                    service.getStatus().getLoadBalancer().getIngress().get(0).getIp() != null ?
-                                            service.getStatus().getLoadBalancer().getIngress().get(0).getIp() :
-                                            service.getStatus().getLoadBalancer().getIngress().get(0).getHostname()
-                            println "LB IP: " + deployment.loadBalancerIP
-                            waitTime += maxWaitTime
-                        }
-                    }
+                if (service != null &&
+                        service.getStatus().getLoadBalancer().getIngress() != null &&
+                        service.getStatus().getLoadBalancer().getIngress().size() > 0) {
+                    deployment.loadBalancerIP =
+                            service.getStatus().getLoadBalancer().getIngress().get(0).getIp() != null ?
+                                    service.getStatus().getLoadBalancer().getIngress().get(0).getIp() :
+                                    service.getStatus().getLoadBalancer().getIngress().get(0).getHostname()
+                    println "LB IP: " + deployment.loadBalancerIP
+                    break
                 }
                 sleep(sleepDuration)
-                waitTime += sleepDuration
             }
         }
     }

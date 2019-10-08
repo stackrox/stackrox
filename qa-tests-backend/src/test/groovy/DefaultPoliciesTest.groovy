@@ -179,6 +179,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled(it))
         }
 
+        and:
         "The struts deployment details"
         Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
         RiskOuterClass.Risk risk = Services.getRisk(dep.deploymentUid, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
@@ -189,6 +190,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         def waitTime = 30000
         def start = System.currentTimeMillis()
         while (riskResult == null && (System.currentTimeMillis() - start) < waitTime) {
+            risk = Services.getRisk(dep.deploymentUid, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
             riskResult = risk.resultsList.find { it.name == riskFactor }
             sleep 2000
         }

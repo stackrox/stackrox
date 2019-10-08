@@ -697,7 +697,7 @@ class Enforcement extends BaseSpecification {
                 .newBuilder().build())
         String alertId = violations.find {
             it.getPolicy().name.equalsIgnoreCase(WHITELISTPROCESS_POLICY) &&
-            it.deployment.id.equalsIgnoreCase(wpDeployment.deploymentUid) }.id
+            it.deployment.id.equalsIgnoreCase(wpDeployment.deploymentUid) }?.id
         assert (alertId != null)
         AlertOuterClass.Alert alert = AlertService.getViolation(alertId)
         assert alert != null
@@ -714,10 +714,14 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "remove deployment"
-        Services.updatePolicyEnforcement(WHITELISTPROCESS_POLICY, startEnforcements)
-        AlertService.resolveAlert(alertId, false)
-        if (wpDeployment != null) {
+        if (!startEnforcements.contains("EXCEPTION")) {
+            Services.updatePolicyEnforcement(WHITELISTPROCESS_POLICY, startEnforcements)
+        }
+        if (alertId != null) {
+            AlertService.resolveAlert(alertId, false)
+        }
+        if (wpDeployment.deploymentUid != null) {
             orchestrator.deleteDeployment(wpDeployment)
         }
-        }
     }
+}
