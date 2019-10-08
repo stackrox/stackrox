@@ -7,6 +7,7 @@ import (
 	anchoreClient "github.com/stackrox/anchore-client/client"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 func getSeverity(s string) float32 {
@@ -36,14 +37,14 @@ func convertImageScan(i *anchoreClient.AnchoreImage, packages []anchoreClient.Co
 	}
 }
 
-func convertPackageToComponent(pkg anchoreClient.ContentPackageResponseContent) *storage.EmbeddedImageScanComponent {
-	return &storage.EmbeddedImageScanComponent{
+func convertPackageToComponentValue(pkg anchoreClient.ContentPackageResponseContent) *componentValue {
+	return newComponentValue(&storage.EmbeddedImageScanComponent{
 		Name:    pkg.Package_,
 		Version: pkg.Version,
 		License: &storage.License{
 			Name: pkg.License,
 		},
-	}
+	})
 }
 
 func convertVulnToProtoVuln(vuln anchoreClient.Vulnerability) *storage.EmbeddedVulnerability {
@@ -82,27 +83,47 @@ type componentKey struct {
 	pkg, version string
 }
 
+func newComponentValue(c *storage.EmbeddedImageScanComponent) *componentValue {
+	s := set.NewStringSet()
+	return &componentValue{
+		component: c,
+		vulnSet:   &s,
+	}
+}
+
+type componentValue struct {
+	component *storage.EmbeddedImageScanComponent
+	vulnSet   *set.StringSet
+}
+
+func (c *componentValue) addVuln(vulnerability anchoreClient.Vulnerability) {
+	if added := c.vulnSet.Add(vulnerability.Vuln); !added {
+		return
+	}
+	c.component.Vulns = append(c.component.Vulns, convertVulnToProtoVuln(vulnerability))
+}
+
 func stitchPackagesAndVulns(packages []anchoreClient.ContentPackageResponseContent, vulns []anchoreClient.Vulnerability) []*storage.EmbeddedImageScanComponent {
-	componentMap := make(map[componentKey]*storage.EmbeddedImageScanComponent)
+	componentMap := make(map[componentKey]*componentValue)
 	for _, p := range packages {
-		componentMap[componentKey{pkg: p.Package_, version: p.Version}] = convertPackageToComponent(p)
+		componentMap[componentKey{pkg: p.Package_, version: p.Version}] = convertPackageToComponentValue(p)
 	}
 
 	for _, v := range vulns {
 		key := componentKey{pkg: v.PackageName, version: v.PackageVersion}
 		_, ok := componentMap[key]
 		if !ok {
-			componentMap[key] = &storage.EmbeddedImageScanComponent{
+			componentMap[key] = newComponentValue(&storage.EmbeddedImageScanComponent{
 				Name:    v.PackageName,
 				Version: v.PackageVersion,
-			}
+			})
 		}
 		component := componentMap[key]
-		component.Vulns = append(component.Vulns, convertVulnToProtoVuln(v))
+		component.addVuln(v)
 	}
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(componentMap))
 	for _, v := range componentMap {
-		components = append(components, v)
+		components = append(components, v.component)
 	}
 	return components
 }
