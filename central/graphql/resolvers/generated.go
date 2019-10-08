@@ -78,6 +78,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"authentication: CVSSV2_Authentication!",
 		"availability: CVSSV2_Impact!",
 		"confidentiality: CVSSV2_Impact!",
+		"exploitabilityScore: Float!",
+		"impactScore: Float!",
 		"integrity: CVSSV2_Impact!",
 		"vector: String!",
 	}))
@@ -1467,6 +1469,16 @@ func (resolver *cVSSV2Resolver) Availability(ctx context.Context) string {
 func (resolver *cVSSV2Resolver) Confidentiality(ctx context.Context) string {
 	value := resolver.data.GetConfidentiality()
 	return value.String()
+}
+
+func (resolver *cVSSV2Resolver) ExploitabilityScore(ctx context.Context) float64 {
+	value := resolver.data.GetExploitabilityScore()
+	return float64(value)
+}
+
+func (resolver *cVSSV2Resolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
 }
 
 func (resolver *cVSSV2Resolver) Integrity(ctx context.Context) string {

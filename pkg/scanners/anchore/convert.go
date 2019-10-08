@@ -73,7 +73,14 @@ func convertVulnToProtoVuln(vuln anchoreClient.Vulnerability) *storage.EmbeddedV
 			embeddedVuln.Cvss = float32(cvssV3.Base)
 			embeddedVuln.ScoreVersion = storage.EmbeddedVulnerability_V3
 		} else if cvssV2 := vuln.NVDData[0].CVSSV2; cvssV2 != nil && cvssV2.Base != -1 {
+			embeddedVuln.Vectors = &storage.EmbeddedVulnerability_CvssV2{
+				CvssV2: &storage.CVSSV2{
+					ImpactScore:         float32(cvssV2.Impact),
+					ExploitabilityScore: float32(cvssV2.Exploitability),
+				},
+			}
 			embeddedVuln.Cvss = float32(vuln.NVDData[0].CVSSV2.Base)
+			embeddedVuln.ScoreVersion = storage.EmbeddedVulnerability_V2
 		}
 	}
 	return embeddedVuln

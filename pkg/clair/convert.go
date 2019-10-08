@@ -63,9 +63,12 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 			vul.ScoreVersion = storage.EmbeddedVulnerability_V3
 		} else if n.CvssV2 != nil {
 			vul.Cvss = n.CvssV2.Score
-			if cvssVector, err := cvssv2.ParseCVSSV2(n.CvssV2.Vectors); err == nil {
+			vul.ScoreVersion = storage.EmbeddedVulnerability_V2
+			if cvssV2, err := cvssv2.ParseCVSSV2(n.CvssV2.Vectors); err == nil {
+				cvssV2.ExploitabilityScore = n.CvssV2.ExploitabilityScore
+				cvssV2.ImpactScore = n.CvssV2.ImpactScore
 				vul.Vectors = &storage.EmbeddedVulnerability_CvssV2{
-					CvssV2: cvssVector,
+					CvssV2: cvssV2,
 				}
 			} else {
 				log.Error(err)

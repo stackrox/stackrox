@@ -94,13 +94,15 @@ message CVSSV2 {
         AUTH_SINGLE   = 1;
         AUTH_NONE     = 2;
     }
-    string           vector            = 1;
-    AttackVector     attack_vector     = 2;
-    AccessComplexity access_complexity = 3;
-    Authentication   authentication    = 4;
-    Impact           confidentiality   = 5;
-    Impact           integrity         = 6;
-    Impact           availability      = 7;
+    string           vector               = 1;
+    AttackVector     attack_vector        = 2;
+    AccessComplexity access_complexity    = 3;
+    Authentication   authentication       = 4;
+    Impact           confidentiality      = 5;
+    Impact           integrity            = 6;
+    Impact           availability         = 7;
+    float            exploitability_score = 8;
+    float            impact_score         = 9;
 }
 
 message CVSSV3 {
