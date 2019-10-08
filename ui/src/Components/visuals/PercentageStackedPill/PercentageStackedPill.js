@@ -1,0 +1,68 @@
+import React from 'react';
+import PropTypes from 'prop-types';
+import { colorTypes, defaultColorType } from 'constants/visuals/colors';
+
+import Tooltip from 'rc-tooltip';
+
+const TooltipOverlay = ({ title, body }) => {
+    if (!title || !body) return null;
+    return (
+        <div className="">
+            <div className="border-b border-base-100 mb-2 pb-2">{title}</div>
+            <div>{body}</div>
+        </div>
+    );
+};
+
+const getBackgroundColor = colorType => {
+    const color = colorTypes.find(datum => datum === colorType);
+    if (!color) return defaultColorType;
+    return `bg-${color}-400`;
+};
+
+const PercentageStackedPill = ({ data, tooltip }) => {
+    const pills = data.map(({ value, colorType }, i, arr) => {
+        let className = `border-r border-base-100 ${getBackgroundColor(colorType)}`;
+        // adds a rounded corner to the left-most pill
+        if (i === 0) className = `${className} rounded-l-full`;
+        // adds a rounded corner to the right-most pill
+        if (i === arr.length - 1) className = `${className} rounded-r-full`;
+
+        return <div className={className} style={{ width: `${value}%` }} />;
+    });
+    const { title: tooltipTitle, body: tooltipBody } = tooltip || {};
+    return (
+        <Tooltip
+            placement="top"
+            overlay={<TooltipOverlay title={tooltipTitle} body={tooltipBody} />}
+            mouseLeaveDelay={0}
+        >
+            <div
+                className="flex rounded-full w-64 h-4 border border-base-300 bg-base-200"
+                style={{ boxShadow: 'inset 0 0px 8px 0 hsla(0, 0%, 0%, .10) !important' }}
+            >
+                {pills}
+            </div>
+        </Tooltip>
+    );
+};
+
+PercentageStackedPill.propTypes = {
+    data: PropTypes.arrayOf(
+        PropTypes.shape({
+            color: PropTypes.string.isRequired,
+            value: PropTypes.number.isRequired
+        })
+    ),
+    tooltip: PropTypes.shape({
+        title: PropTypes.string.isRequired,
+        body: PropTypes.string.isRequired
+    })
+};
+
+PercentageStackedPill.defaultProps = {
+    data: [],
+    tooltip: null
+};
+
+export default PercentageStackedPill;

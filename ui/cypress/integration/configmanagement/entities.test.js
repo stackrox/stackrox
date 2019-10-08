@@ -11,7 +11,7 @@ const renderListAndSidePanel = (entity, entityName = null) => {
         .eq(1)
         .click({ force: true });
     cy.wait(500);
-    cy.get(selectors.widgets);
+    cy.get(selectors.widgets, { timeout: 7000 });
 };
 
 const navigateToSingleEntityPage = entity => {

@@ -6,4 +6,18 @@ const colors = [
     'var(--secondary-500)'
 ];
 
+export const colorTypes = [
+    'alert',
+    'caution',
+    'warning',
+    'success',
+    'accent',
+    'tertiary',
+    'secondary',
+    'primary',
+    'base'
+];
+
+export const defaultColorType = 'base';
+
 export default colors;
