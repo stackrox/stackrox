@@ -30,6 +30,7 @@ type DataStore interface {
 	CountAlerts(ctx context.Context) (int, error)
 	AddAlert(ctx context.Context, alert *storage.Alert) error
 	UpdateAlert(ctx context.Context, alert *storage.Alert) error
+	UpdateAlerts(ctx context.Context, alerts []*storage.Alert) error
 	MarkAlertStale(ctx context.Context, id string) error
 
 	DeleteAlerts(ctx context.Context, ids ...string) error

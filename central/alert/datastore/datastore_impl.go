@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/txn"
 )
 
@@ -141,6 +142,49 @@ func (ds *datastoreImpl) UpdateAlert(ctx context.Context, alert *storage.Alert) 
 	}
 
 	return ds.updateAlertNoLock(alert)
+}
+
+// UpdateAlert updates an alert in storage and in the indexer
+func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Alert, waitGroup *sync.WaitGroup, c chan error) {
+	defer waitGroup.Done()
+	ds.keyedMutex.Lock(alert.GetId())
+	defer ds.keyedMutex.Unlock(alert.GetId())
+	oldAlert, exists, err := ds.GetAlert(ctx, alert.GetId())
+	if err != nil {
+		log.Errorf("error in get alert: %+v", err)
+		c <- err
+		return
+	}
+	if exists {
+		if !hasSameScope(alert.GetDeployment(), oldAlert.GetDeployment()) {
+			c <- fmt.Errorf("cannot change the cluster or namespace of an existing alert %q", alert.GetId())
+			return
+		}
+	}
+	err = ds.updateAlertNoLock(alert)
+	if err != nil {
+		c <- err
+	}
+}
+
+// UpdateAlert updates an alert in storage and in the indexer
+func (ds *datastoreImpl) UpdateAlerts(ctx context.Context, alertBatch []*storage.Alert) error {
+	var waitGroup sync.WaitGroup
+	c := make(chan error, len(alertBatch))
+	for _, alert := range alertBatch {
+		waitGroup.Add(1)
+		go ds.UpdateAlertBatch(ctx, alert, &waitGroup, c)
+	}
+	waitGroup.Wait()
+	close(c)
+	if len(c) > 0 {
+		errorList := errorhelpers.NewErrorList(fmt.Sprintf("found %d errors while resolving alerts", len(c)))
+		for err := range c {
+			errorList.AddError(err)
+		}
+		return errorList.ToError()
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {

@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/processwhitelist"
@@ -17,21 +17,30 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/batcher"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	alertSAC = sac.ForResource(resources.Alert)
 )
 
 const (
 	badSnoozeErrorMsg = "'snooze_till' timestamp must be at a future time"
 
 	maxListAlertsReturned = 1000
+	alertResolveBatchSize = 100
 )
 
 var (
@@ -233,7 +242,6 @@ func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRe
 		log.Error(err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-
 	runtimeQuery := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
 	cq := search.NewConjunctionQuery(query, runtimeQuery)
 	alerts, err := s.dataStore.SearchRawAlerts(ctx, cq)
@@ -241,14 +249,62 @@ func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRe
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
-	for _, alert := range alerts {
-		err := s.changeAlertState(ctx, alert, storage.ViolationState_RESOLVED)
-		if err != nil {
-			log.Error(err)
-		}
+	err = s.changeAlertsState(ctx, alerts, storage.ViolationState_RESOLVED)
+	if err != nil {
+		return nil, err
 	}
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) checkAlertSAC(ctx context.Context, alert *storage.Alert, c chan error, waitGroup *sync.WaitGroup) {
+	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+		c <- fmt.Errorf("sac permission denied for alert id %q", alert.GetId())
+	}
+	waitGroup.Done()
+}
+
+func (s *serviceImpl) checkAlertsSAC(ctx context.Context, alerts []*storage.Alert) error {
+	var waitGroup sync.WaitGroup
+	c := make(chan error, len(alerts))
+	for _, alert := range alerts {
+		waitGroup.Add(1)
+		go s.checkAlertSAC(ctx, alert, c, &waitGroup)
+	}
+	waitGroup.Wait()
+	if len(c) > 0 {
+		errorList := errorhelpers.NewErrorList(fmt.Sprintf("found %d sac permission denials while resolving alerts", len(c)))
+		for err := range c {
+			errorList.AddError(err)
+		}
+		return errorList.ToError()
+	}
+	return nil
+}
+
+func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.Alert, state storage.ViolationState) error {
+	err := s.checkAlertsSAC(ctx, alerts)
+	if err != nil {
+		return err
+	}
+
+	b := batcher.New(len(alerts), alertResolveBatchSize)
+	for start, end, valid := b.Next(); valid; start, end, valid = b.Next() {
+		for _, alert := range alerts[start:end] {
+			if state != storage.ViolationState_SNOOZED {
+				alert.SnoozeTill = nil
+			}
+			alert.State = state
+		}
+		err := s.dataStore.UpdateAlerts(ctx, alerts[start:end])
+		if err != nil {
+			log.Error(err)
+			return status.Error(codes.Internal, err.Error())
+		}
+		for _, alert := range alerts[start:end] {
+			s.notifier.ProcessAlert(alert)
+		}
+	}
+	return nil
 }
 
 func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert, state storage.ViolationState) error {

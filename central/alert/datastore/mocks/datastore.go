@@ -170,6 +170,20 @@ func (mr *MockDataStoreMockRecorder) UpdateAlert(ctx, alert interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAlert", reflect.TypeOf((*MockDataStore)(nil).UpdateAlert), ctx, alert)
 }
 
+// UpdateAlerts mocks base method
+func (m *MockDataStore) UpdateAlerts(ctx context.Context, alerts []*storage.Alert) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAlerts", ctx, alerts)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAlerts indicates an expected call of UpdateAlerts
+func (mr *MockDataStoreMockRecorder) UpdateAlerts(ctx, alerts interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAlerts", reflect.TypeOf((*MockDataStore)(nil).UpdateAlerts), ctx, alerts)
+}
+
 // MarkAlertStale mocks base method
 func (m *MockDataStore) MarkAlertStale(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
