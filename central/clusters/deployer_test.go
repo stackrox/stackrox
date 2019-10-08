@@ -95,7 +95,7 @@ func getBaseConfig() *storage.Cluster {
 		CollectionMethod:    storage.CollectionMethod_KERNEL_MODULE,
 		AdmissionController: false,
 		TolerationsConfig: &storage.TolerationsConfig{
-			Enabled: false,
+			Disabled: false,
 		},
 	}
 }

@@ -25,7 +25,7 @@ import (
 var (
 	cluster = storage.Cluster{
 		TolerationsConfig: &storage.TolerationsConfig{
-			Enabled: true,
+			Disabled: false,
 		},
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AdmissionControllerConfig: &storage.AdmissionControllerConfig{},
@@ -101,7 +101,7 @@ func Command() *cobra.Command {
 		c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", false, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
 	}
 
-	c.PersistentFlags().BoolVar(&cluster.TolerationsConfig.Enabled, "tolerations", true, "whether or not to have tolerations for tainted nodes")
+	c.PersistentFlags().BoolVar(&cluster.GetTolerationsConfig().Disabled, "--disable-tolerations", true, "whether or not to have tolerations for tainted nodes")
 
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())

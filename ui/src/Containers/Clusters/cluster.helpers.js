@@ -55,7 +55,7 @@ export const newClusterDefault = {
     DEPRECATEDOrchestratorMetadata: null,
     status: null,
     tolerationsConfig: {
-        enabled: true
+        disabled: false
     },
     dynamicConfig: {
         admissionControllerConfig: {

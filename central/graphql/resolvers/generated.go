@@ -906,7 +906,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
 	utils.Must(builder.AddType("TolerationsConfig", []string{
-		"enabled: Boolean!",
+		"disabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("UpgradeProgress", []string{
 		"since: Time",
@@ -7731,8 +7731,8 @@ func (resolver *Resolver) wrapTolerationsConfigs(values []*storage.TolerationsCo
 	return output, nil
 }
 
-func (resolver *tolerationsConfigResolver) Enabled(ctx context.Context) bool {
-	value := resolver.data.GetEnabled()
+func (resolver *tolerationsConfigResolver) Disabled(ctx context.Context) bool {
+	value := resolver.data.GetDisabled()
 	return value
 }
 

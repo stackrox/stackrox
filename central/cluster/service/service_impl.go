@@ -94,6 +94,10 @@ func addDefaults(cluster *storage.Cluster) error {
 		}
 	}
 
+	cluster.TolerationsConfig = &storage.TolerationsConfig{
+		Disabled: false,
+	}
+
 	if cluster.GetDynamicConfig() == nil {
 		cluster.DynamicConfig = &storage.DynamicClusterConfig{}
 	}

@@ -63,7 +63,7 @@ message AdmissionControllerConfig {
 }
 
 message TolerationsConfig {
-    bool                  enabled                              = 1;
+        bool  disabled                              = 1;
 }
 
 message DynamicClusterConfig {
@@ -92,6 +92,7 @@ message Cluster {
     ClusterStatus             status                      = 15;
     DynamicClusterConfig      dynamic_config              = 18;
     TolerationsConfig         tolerations_config           = 19;
+
 }
 
 message ClusterStatus {

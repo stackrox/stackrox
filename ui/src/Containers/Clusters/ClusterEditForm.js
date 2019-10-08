@@ -222,7 +222,12 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                                 id="tolerationsConfig.enabled"
                                 name="tolerationsConfig.enabled"
                                 toggleHandler={handleChange}
-                                enabled={selectedCluster.tolerationsConfig.enabled}
+                                // TODO: check until API guarantees a tolerationsConfig object is returned
+                                // with false, if not yet set
+                                enabled={
+                                    selectedCluster.tolerationsConfig !== null &&
+                                    !selectedCluster.tolerationsConfig.disabled
+                                }
                             />
                         </div>
                         <div className="flex py-1 italic">
@@ -348,7 +353,7 @@ ClusterEditForm.propTypes = {
         collectorImage: PropTypes.string,
         admissionController: PropTypes.string,
         tolerationsConfig: PropTypes.shape({
-            enabled: PropTypes.bool
+            disabled: PropTypes.bool
         }),
         dynamicConfig: PropTypes.shape({
             registryOverride: PropTypes.string,
