@@ -76,12 +76,15 @@ class Tabs extends Component {
         const { activeIndex } = this.state;
         const { headers, tabActiveClass, tabClass, tabDisabledClass, hasTabSpacing } = this.props;
         return headers.map((header, i) => {
-            let className = activeIndex === i ? tabActiveClass : tabClass;
+            const isActive = activeIndex === i;
+            let className = isActive ? tabActiveClass : tabClass;
             if (header.disabled) className = tabDisabledClass;
             return (
                 <button
                     type="button"
-                    className={`${className} ${hasTabSpacing && i !== 0 && 'ml-2'}`}
+                    className={`${className} ${hasTabSpacing && i !== 0 && 'ml-2'} ${
+                        isActive ? 'active' : ''
+                    }`}
                     key={`${header.text}`}
                     onClick={this.tabClickHandler(header, i)}
                     data-test-id="tab"

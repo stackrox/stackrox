@@ -51,7 +51,10 @@ const renderDeploymentsList = deployments => {
 const TopRiskyDeployments = ({ deployments }) => {
     if (!deployments) return '';
     return (
-        <div className="flex flex-col bg-base-100 rounded shadow h-full">
+        <div
+            className="flex flex-col bg-base-100 rounded shadow h-full"
+            data-test-id="top-risky-deployments"
+        >
             <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
                 <Icon.File className="h-4 w-4 m-3" />
                 <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">

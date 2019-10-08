@@ -40,7 +40,10 @@ const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
     }
 
     return (
-        <nav className="top-navigation flex flex-1 justify-between bg-base-200 relative bg-header">
+        <nav
+            className="top-navigation flex flex-1 justify-between bg-base-200 relative bg-header"
+            data-test-id="top-nav-bar"
+        >
             <div className="flex w-full">
                 <div className="flex py-2 px-4 border-r bg-base-100 border-base-400 items-center">
                     <Logo className="fill-current text-primary-800" />

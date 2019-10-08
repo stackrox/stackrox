@@ -6,7 +6,9 @@ const table = {
         firstRow: 'div.rt-tr-group:first-child div.rt-tr'
     },
     rows: 'div.rt-tr-group div.rt-tr',
-    columns: '.rt-td'
+    columns: '.rt-td',
+    columnHeaders: 'div.rt-th',
+    activeRow: 'div.rt-tr-group .row-active'
 };
 
 export default table;

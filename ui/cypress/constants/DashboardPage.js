@@ -25,5 +25,8 @@ export const selectors = {
         legendLink: '[data-test-id="CIS Docker v1.2.0"]'
     },
     timeseries: 'svg.recharts-surface',
-    searchInput: '.react-select__input > input'
+    searchInput: '.react-select__input > input',
+    severityTiles: '[data-test-id="severity-tile"]',
+    topRiskyDeployments: '[data-test-id="top-risky-deployments"] ul li a',
+    policyCategoryViolations: '[data-test-id="policy-category-violation"]'
 };

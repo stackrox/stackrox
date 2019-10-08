@@ -26,7 +26,11 @@ const ViolationsByPolicyCategory = ({ data, history }) => {
             }
         }));
         return (
-            <div className="p-3 w-full lg:w-1/2 xl:w-1/3" key={policyType.group}>
+            <div
+                className="p-3 w-full lg:w-1/2 xl:w-1/3"
+                key={policyType.group}
+                data-test-id="policy-category-violation"
+            >
                 <div className="bg-base-100 rounded-sm shadow h-full rounded">
                     <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
                         <Icon.BarChart className="h-4 w-4 m-3" />

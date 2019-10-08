@@ -9,5 +9,6 @@
     "reporterOptions": {
         "mochaFile": "cypress-report.xml",
         "toConsole": true
-    }
+    },
+    "numTestsKeptInMemory": 0
 }

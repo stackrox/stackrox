@@ -28,6 +28,7 @@ const SeverityTile = ({ severity, count, index, color }) => {
                 className={`severity-tile flex flex-1 flex-col border-base-100 border-3 p-4 text-center rounded-sm relative ${
                     index !== 0 ? 'ml-4' : ''
                 }`}
+                data-test-id="severity-tile"
             >
                 {renderTileContent()}
             </div>
@@ -39,6 +40,7 @@ const SeverityTile = ({ severity, count, index, color }) => {
                 index !== 0 ? 'ml-4' : ''
             }`}
             to={`/main/violations?severity=${severity}`}
+            data-test-id="severity-tile"
         >
             {renderTileContent()}
         </Link>
