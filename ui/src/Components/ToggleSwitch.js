@@ -6,8 +6,13 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import { set } from 'lodash';
 
-function ToggleSwitch({ id, toggleHandler, label, enabled, extraClassNames }) {
+function ToggleSwitch({ id, toggleHandler, label, enabled, extraClassNames, flipped }) {
+    const flippedToggleHandler = e => {
+        set(e, 'target.checked', !e.target.checked);
+        toggleHandler(e);
+    };
     return (
         <div className={`toggle-switch-wrapper ${extraClassNames}`}>
             <label className="text-xs text-grey-dark" htmlFor={id}>
@@ -16,8 +21,8 @@ function ToggleSwitch({ id, toggleHandler, label, enabled, extraClassNames }) {
             <div className="toggle-switch inline-block align-middle ml-2">
                 <input
                     type="checkbox"
-                    checked={!!enabled}
-                    onChange={toggleHandler}
+                    checked={flipped ? !enabled : !!enabled}
+                    onChange={flipped ? flippedToggleHandler : toggleHandler}
                     name={id}
                     id={id}
                     className="toggle-switch-checkbox"
@@ -33,13 +38,15 @@ ToggleSwitch.propTypes = {
     toggleHandler: PropTypes.func.isRequired,
     label: PropTypes.string,
     enabled: PropTypes.bool,
-    extraClassNames: PropTypes.string
+    extraClassNames: PropTypes.string,
+    flipped: PropTypes.bool
 };
 
 ToggleSwitch.defaultProps = {
     label: '',
     enabled: false,
-    extraClassNames: ''
+    extraClassNames: '',
+    flipped: false
 };
 
 export default ToggleSwitch;

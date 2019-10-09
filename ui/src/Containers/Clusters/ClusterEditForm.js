@@ -213,20 +213,23 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                     <div className="mb-4 flex flex-col bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 justify-between">
                         <div className="flex items-center justify-between">
                             <label
-                                htmlFor="tolerationsConfig.enabled"
+                                htmlFor="tolerationsConfig.disabled"
                                 className="block py-2 text-base-600 font-700"
                             >
                                 Enable Taint Tolerations
                             </label>
                             <ToggleSwitch
-                                id="tolerationsConfig.enabled"
-                                name="tolerationsConfig.enabled"
+                                id="tolerationsConfig.disabled"
+                                name="tolerationsConfig.disabled"
                                 toggleHandler={handleChange}
+                                flipped
                                 // TODO: check until API guarantees a tolerationsConfig object is returned
                                 // with false, if not yet set
                                 enabled={
-                                    selectedCluster.tolerationsConfig !== null &&
-                                    !selectedCluster.tolerationsConfig.disabled
+                                    !(
+                                        selectedCluster.tolerationsConfig === null ||
+                                        selectedCluster.tolerationsConfig.disabled === false
+                                    )
                                 }
                             />
                         </div>
