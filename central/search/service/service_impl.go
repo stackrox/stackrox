@@ -23,6 +23,7 @@ import (
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	centralsearch "github.com/stackrox/rox/central/search"
 	"github.com/stackrox/rox/central/search/options"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
@@ -102,7 +103,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 
 var (
 	autocompleteCategories = func() set.V1SearchCategorySet {
-		s := set.NewV1SearchCategorySet(GetGlobalSearchCategories().AsSlice()...)
+		s := set.NewV1SearchCategorySet(centralsearch.GetGlobalSearchCategories().AsSlice()...)
 		s.Add(v1.SearchCategory_COMPLIANCE)
 		return s
 	}()
@@ -137,27 +138,6 @@ func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.Res
 	}
 
 	return searchCategoryToResource
-}
-
-// GetGlobalSearchCategories returns a set of search categories
-func GetGlobalSearchCategories() set.V1SearchCategorySet {
-	// globalSearchCategories is exposed for e2e options test
-	globalSearchCategories := set.NewV1SearchCategorySet(
-		v1.SearchCategory_ALERTS,
-		v1.SearchCategory_DEPLOYMENTS,
-		v1.SearchCategory_IMAGES,
-		v1.SearchCategory_POLICIES,
-		v1.SearchCategory_SECRETS,
-		v1.SearchCategory_NODES,
-		v1.SearchCategory_NAMESPACES,
-		v1.SearchCategory_CLUSTERS,
-		v1.SearchCategory_SERVICE_ACCOUNTS,
-		v1.SearchCategory_ROLES,
-		v1.SearchCategory_ROLEBINDINGS,
-	)
-
-	return globalSearchCategories
-
 }
 
 // SearchService provides APIs for search.
@@ -441,7 +421,7 @@ func (s *serviceImpl) Options(ctx context.Context, request *v1.SearchOptionsRequ
 
 // GetAllSearchableCategories returns a list of categories that are currently valid for global search
 func GetAllSearchableCategories() (categories []v1.SearchCategory) {
-	return GetGlobalSearchCategories().AsSortedSlice(func(catI, catJ v1.SearchCategory) bool {
+	return centralsearch.GetGlobalSearchCategories().AsSortedSlice(func(catI, catJ v1.SearchCategory) bool {
 		return catI < catJ
 	})
 }

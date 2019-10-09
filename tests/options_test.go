@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	search "github.com/stackrox/rox/central/search"
 	"github.com/stackrox/rox/central/search/options"
-	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +52,7 @@ func TestOptions(t *testing.T) {
 	// All category
 
 	categories = categories[:0]
-	categories = append(categories, searchService.GetGlobalSearchCategories().AsSlice()...)
+	categories = append(categories, search.GetGlobalSearchCategories().AsSlice()...)
 
 	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
 	cancel()

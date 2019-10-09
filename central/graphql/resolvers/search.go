@@ -141,6 +141,7 @@ func (r rawQuery) String() string {
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
 		v1.SearchCategory_ALERTS:           resolver.ViolationsDataStore,
+		v1.SearchCategory_CLUSTERS:         resolver.ClusterDataStore,
 		v1.SearchCategory_DEPLOYMENTS:      resolver.DeploymentDataStore,
 		v1.SearchCategory_IMAGES:           resolver.ImageDataStore,
 		v1.SearchCategory_POLICIES:         resolver.PolicyDataStore,
@@ -149,6 +150,8 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_NODES:            resolver.NodeGlobalDataStore,
 		v1.SearchCategory_COMPLIANCE:       resolver.ComplianceAggregator,
 		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore,
+		v1.SearchCategory_ROLES:            resolver.K8sRoleStore,
+		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore,
 	}
 
 	return searchers
@@ -158,6 +161,7 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 
 	searchfuncs := map[v1.SearchCategory]searchService.SearchFunc{
 		v1.SearchCategory_ALERTS:           resolver.ViolationsDataStore.SearchAlerts,
+		v1.SearchCategory_CLUSTERS:         resolver.ClusterDataStore.SearchResults,
 		v1.SearchCategory_DEPLOYMENTS:      resolver.DeploymentDataStore.SearchDeployments,
 		v1.SearchCategory_IMAGES:           resolver.ImageDataStore.SearchImages,
 		v1.SearchCategory_POLICIES:         resolver.PolicyDataStore.SearchPolicies,
@@ -165,6 +169,8 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_NAMESPACES:       resolver.NamespaceDataStore.SearchResults,
 		v1.SearchCategory_NODES:            resolver.NodeGlobalDataStore.SearchResults,
 		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore.SearchServiceAccounts,
+		v1.SearchCategory_ROLES:            resolver.K8sRoleStore.SearchRoles,
+		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore.SearchRoleBindings,
 	}
 
 	return searchfuncs
