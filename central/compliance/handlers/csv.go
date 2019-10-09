@@ -128,16 +128,17 @@ func (c *csvResults) addAll(row complianceRow, controls map[string]*v1.Complianc
 }
 
 var (
-	stateNames = map[storage.ComplianceState]string{
-		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   "Error",
-		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: "Fail",
-		storage.ComplianceState_COMPLIANCE_STATE_SUCCESS: "Pass",
+	stateToStringMap = map[storage.ComplianceState]string{
 		storage.ComplianceState_COMPLIANCE_STATE_SKIP:    "N/A",
+		storage.ComplianceState_COMPLIANCE_STATE_NOTE:    "Info",
+		storage.ComplianceState_COMPLIANCE_STATE_SUCCESS: "Pass",
+		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: "Fail",
+		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   "Error",
 	}
 )
 
 func stateToString(s storage.ComplianceState) string {
-	val, ok := stateNames[s]
+	val, ok := stateToStringMap[s]
 	if !ok {
 		return "Unknown"
 	}

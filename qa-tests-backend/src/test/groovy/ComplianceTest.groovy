@@ -329,6 +329,8 @@ class ComplianceTest extends BaseSpecification {
                 return ComplianceState.COMPLIANCE_STATE_ERROR
             case "N/A":
                 return ComplianceState.COMPLIANCE_STATE_SKIP
+            case "Info":
+                return ComplianceState.COMPLIANCE_STATE_NOTE
         }
     }
 
