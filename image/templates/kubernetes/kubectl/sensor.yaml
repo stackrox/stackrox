@@ -313,22 +313,31 @@ spec:
         securityContext:
           runAsUser: 0
         volumeMounts:
-        - mountPath: /host/etc:ro
+        - mountPath: /etc/ssl/
+          name: etc-ssl
+        - mountPath: /host/etc
           name: etc-ro
-        - mountPath: /host/lib:ro
+          readOnly: true
+        - mountPath: /host/lib
           name: lib
-        - mountPath: /host/usr/bin:ro
+          readOnly: true
+        - mountPath: /host/usr/bin
           name: usr-bin
-        - mountPath: /host/usr/lib:ro
+          readOnly: true
+        - mountPath: /host/usr/lib
           name: usr-lib
-        - mountPath: /host/var/lib:ro
+          readOnly: true
+        - mountPath: /host/var/lib
           name: var-lib
-        - mountPath: /host/var/log/audit:ro
+          readOnly: true
+        - mountPath: /host/var/log/audit
           name: var-log-audit
+          readOnly: true
         - mountPath: /host/run
           name: run
         - mountPath: /host/proc
           name: proc-ro
+          readOnly: true
         - mountPath: /host/var/run/docker.sock
           name: var-run-docker-sock
         - mountPath: /run/secrets/stackrox.io/certs/
@@ -417,6 +426,8 @@ spec:
       - hostPath:
           path: /run
         name: run
+      - name: etc-ssl
+        emptyDir: {}
       {{if .MonitoringEndpoint}}
       - name: monitoring-client-volume
         secret:
