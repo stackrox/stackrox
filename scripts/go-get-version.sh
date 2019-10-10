@@ -19,7 +19,8 @@ function install() {
   go get -d -v "${package_without_trailing_dots}"
   cd "${GOPATH}/src/${package_without_trailing_dots}" || { echo "Couldn't cd to the directory!"; return 1; }
 
-  git rev-parse --git-dir > /dev/null 2>&1 || { echo "This script only supports git-based packages!"; return 1; }
+  git rev-parse --git-dir &>/dev/null || { echo "This script only supports git-based packages!"; return 1; }
+  git fetch --tags
   git checkout -q "${hash_or_tag}" || { echo "git checkout failed!"; exit 1; }
   [[ "$skip_install" = "--skip-install" ]] || go install "${package}" || { echo "go install failed!"; return 1; }
 }
