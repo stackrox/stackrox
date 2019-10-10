@@ -344,7 +344,8 @@ func (t *teams) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	funcMap := template.FuncMap{
 		"codeBlock": func(s string) string {
 			if len(s) > 0 {
-				return s
+				s = strings.ReplaceAll(s, "\n", "\r\r")
+				return "```" + s
 			}
 			return "\n<YAML is empty>\n"
 		},
@@ -353,7 +354,6 @@ func (t *teams) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	if err != nil {
 		return err
 	}
-	body = strings.ReplaceAll(body, "\n", "\r\r")
 	notification := notification{
 		Title: tagLine,
 		Color: notifiers.YAMLNotificationColor,

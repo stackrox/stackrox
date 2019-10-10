@@ -418,6 +418,29 @@ class Services extends BaseService {
         }
     }
 
+    static addTeamsNotifier(String name) {
+        try {
+            return getNotifierClient().postNotifier(
+                    NotifierOuterClass.Notifier.newBuilder()
+                            .setType("teams")
+                            .setName(name)
+                            .setLabelKey("#teams-test")
+                            .setLabelDefault(
+                                    "https://outlook.office.com/webhook/8a021ef7-9845-449a-a0c0-7bf85eab3955@" +
+                                            "6aec22ae-2b26-45bd-b17f-d60e89828e89/IncomingWebhook/9bb3b3574ea2" +
+                                            "4655b6482116848bf175/6de97827-1fef-4f8c-a8ab-edac7629df89"
+                            )
+                            .setEnabled(true)
+                            .setUiEndpoint("https://" +
+                                    Env.mustGetHostname() + ":" +
+                                    Env.mustGetPort())
+                            .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
     static addJiraNotifier(String name) {
         try {
             return getNotifierClient().postNotifier(

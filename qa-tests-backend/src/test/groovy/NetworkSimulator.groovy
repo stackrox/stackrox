@@ -595,6 +595,10 @@ class NetworkSimulator extends BaseSpecification {
                 case "EMAIL":
                     notifier = Services.addEmailNotifier("Email Test")
                     break
+
+                case "TEAMS":
+                    notifier = Services.addTeamsNotifier("Teams Test")
+                    break
             }
             notifiers.add(notifier)
         }
@@ -629,9 +633,10 @@ class NetworkSimulator extends BaseSpecification {
         ["SLACK"]         | _
         ["EMAIL"]         | _
         ["JIRA"]          | _
+        ["TEAMS"]         | _
 
-        // Adding a SLACK and EMAIL notifier test so we still verify multiple notifiers
-        ["SLACK", "EMAIL"] | _
+        // Adding a SLACK, TEAMS, EMAIL notifier test so we still verify multiple notifiers
+        ["SLACK", "EMAIL", "TEAMS"] | _
     }
 
     @Category([NetworkPolicySimulation])
