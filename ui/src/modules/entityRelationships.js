@@ -143,7 +143,8 @@ const getContains = entityType => {
             relationships.push(child, ...childMatches, ...childContains);
         });
     }
-    return uniq(relationships);
+    // TODO: Should never return a type as a relationship of itself. Seems like logic is off somewhere
+    return uniq(relationships).filter(type => type !== entityType);
 };
 
 const isChild = (parent, child) => !!getChildren(parent).find(c => c === child);

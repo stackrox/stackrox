@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { withRouter } from 'react-router-dom';
 
 import PageNotFound from 'Components/PageNotFound';
 import VulnMgmtEntityDeployment from './Deployment/VulnMgmtEntityDeployment';
@@ -22,20 +21,31 @@ const entityComponentMap = {
     [entityTypes.POLICY]: VulnMgmtEntityPolicy
 };
 
-const VulnMgmtEntity = ({ entityType, entityId, entityListType, ...rest }) => {
+const VulnMgmtEntity = ({ entityType, entityId, entityListType, search, entityContext }) => {
     const Component = entityComponentMap[entityType];
     if (!Component) return <PageNotFound resourceType={entityType} />;
-    return <Component id={entityId} entityListType={entityListType} {...rest} />;
+    return (
+        <Component
+            entityId={entityId}
+            entityListType={entityListType}
+            search={search}
+            entityContext={entityContext}
+        />
+    );
 };
 
 VulnMgmtEntity.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
-    entityListType: PropTypes.string
+    entityListType: PropTypes.string,
+    search: PropTypes.shape({}),
+    entityContext: PropTypes.shape({})
 };
 
 VulnMgmtEntity.defaultProps = {
-    entityListType: null
+    entityListType: null,
+    search: null,
+    entityContext: {}
 };
 
-export default withRouter(VulnMgmtEntity);
+export default VulnMgmtEntity;

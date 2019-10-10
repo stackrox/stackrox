@@ -48,9 +48,12 @@ export const entityListDefaultprops = {
     data: null
 };
 
+// TODO: standardize on entityId and search props from legacy id and query.
 export const entityComponentPropTypes = {
-    id: PropTypes.string.isRequired,
-    query: PropTypes.shape({}).isRequired,
+    id: PropTypes.string,
+    entityId: PropTypes.string,
+    query: PropTypes.shape({}),
+    search: PropTypes.shape({}),
     entityListType: PropTypes.string,
     entityContext: PropTypes.shape({})
 };
@@ -59,5 +62,9 @@ export const entityComponentDefaultProps = {
     entityListType: null,
     contextEntityType: null,
     contextEntityId: null,
-    entityContext: {}
+    entityContext: {},
+    query: null,
+    search: null,
+    id: null,
+    entityid: null
 };

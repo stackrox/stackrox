@@ -5,17 +5,15 @@ import { generateURL } from 'modules/URLReadWrite';
 import onClickOutside from 'react-onclickoutside';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { useQuery } from 'react-apollo';
-
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Panel from 'Components/Panel';
 
-const WorkflowSidePanel = ({ history, query, render }) => {
+const WorkflowSidePanel = ({ history, children, stateStack }) => {
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
-    const { useCase, stateStack } = workflowState;
-    const firstItem = stateStack[0];
-    const currentItem = stateStack.slice(-1)[0];
+    const { useCase } = workflowState;
+    const firstItem = workflowState.getBaseEntity();
+    const currentItem = workflowState.getCurrentEntity();
 
     const isList = firstItem.entityType && !firstItem.entityId;
 
@@ -30,7 +28,7 @@ const WorkflowSidePanel = ({ history, query, render }) => {
         onClose();
     };
 
-    const { loading, error, data } = useQuery(query, { variables: { id: currentItem.entityId } });
+    // const { loading, error, data } = useQuery(query, { variables: { id: currentItem.entityId } });
 
     const workflowStateMgr = new WorkflowStateMgr(workflowState);
     workflowStateMgr.reset(useCase, currentItem.entityType, currentItem.entityId);
@@ -57,13 +55,24 @@ const WorkflowSidePanel = ({ history, query, render }) => {
                     !isDarkMode ? 'bg-side-panel-wave border-base-100' : 'border-base-400'
                 }`}
                 bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : ''}`}
+                headerTextComponent={
+                    <div statStack={stateStack}>TODO: Breadcrumbs</div>
+                    // <BreadCrumbs
+                    //     className="font-700 leading-normal text-base-600 tracking-wide truncate"
+                    //     entityType1={entityType1 || entityListType1}
+                    //     entityId1={entityId1}
+                    //     entityType2={entityType2}
+                    //     entityListType2={entityListType2}
+                    //     entityId2={entityId2}
+                    // />
+                }
                 headerComponents={externalLink}
                 onClose={onClose}
                 closeButtonClassName={
                     isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
                 }
             >
-                {render({ loading, error, data })}
+                {children}
             </Panel>
         </div>
     );

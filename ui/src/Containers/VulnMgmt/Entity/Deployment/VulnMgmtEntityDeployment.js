@@ -1,137 +1,111 @@
-import React, { useContext } from 'react';
-import { format } from 'date-fns';
-
-import entityTypes from 'constants/entityTypes';
-import dateTimeFormat from 'constants/dateTimeFormat';
-import Loader from 'Components/Loader';
-import PageNotFound from 'Components/PageNotFound';
-import CollapsibleSection from 'Components/CollapsibleSection';
-import RelatedEntity from 'Containers/ConfigManagement/Entity/widgets/RelatedEntity';
-import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
-import Metadata from 'Containers/ConfigManagement/Entity/widgets/Metadata';
+import React from 'react';
 import isGQLLoading from 'utils/gqlLoading';
+import { useQuery } from 'react-apollo';
+import useCases from 'constants/useCaseTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import queryService from 'modules/queryService';
+import entityTypes from 'constants/entityTypes';
+import gql from 'graphql-tag';
+import Loader from 'Components/Loader';
+import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
+import EntityList from '../../List/VulnMgmtList';
 
-import workflowStateContext from 'Containers/workflowStateContext';
-
-const VulmMgmtDeployment = ({ loading, data }) => {
-    const workflowState = useContext(workflowStateContext);
-
-    // (1) still waiting for data
-    if (isGQLLoading(loading, data)) return <Loader transparent />;
-
-    // (2) no deployment with that ID
-    if (!data || !data.deployment) return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
-    const { deployment: entity } = data;
-
-    // (3) if we get this far, display the deployment
-
-    // TODO: calculate this higher up and pass in
-    // const overlay = !!entityId1;
-    const overlay = false;
-
-    // TODO handle entity lists here
-
-    const {
-        cluster,
-        created,
-        type,
-        replicas,
-        labels = [],
-        annotations = [],
-        namespace,
-        namespaceId,
-        serviceAccount,
-        serviceAccountID,
-        imageCount,
-        secretCount
-    } = entity;
-
-    const metadataKeyValuePairs = [
-        {
-            key: 'Created',
-            value: created ? format(created, dateTimeFormat) : 'N/A'
-        },
-        {
-            key: 'Deployment Type',
-            value: type
-        },
-        {
-            key: 'Replicas',
-            value: replicas
+const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext }) => {
+    // TODO: templatize this so this doesn't have to be repeated for every entity type component
+    const overviewQuery = gql`
+    query getDeployment($id: ID!, $query: String) {
+        deployment(id: $id) {
+            id
+            annotations {
+                key
+                value
+            }
+            ${entityContext[entityTypes.CLUSTER] ? '' : 'cluster { id name}'}
+            hostNetwork: id
+            imagePullSecrets
+            inactive
+            labels {
+                key
+                value
+            }
+            name
+            ${entityContext[entityTypes.NAMESPACE] ? '' : 'namespace namespaceId'}
+            ports {
+                containerPort
+                exposedPort
+                exposure
+                exposureInfos {
+                    externalHostnames
+                    externalIps
+                    level
+                    nodePort
+                    serviceClusterIp
+                    serviceId
+                    serviceName
+                    servicePort
+                }
+                name
+                protocol
+            }
+            priority
+            replicas
+            ${entityContext[entityTypes.SERVICE_ACCOUNT] ? '' : 'serviceAccount serviceAccountID'}
+            failingPolicyCount(query: $query)
+            tolerations {
+                key
+                operator
+                taintEffect
+                value
+            }
+            type
+            created
+            secretCount
+            imageCount
         }
-    ];
+    }
+    `;
 
-    return (
-        <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-hidden">
-            <div
-                className={`${overlay ? 'overlay' : ''} h-full w-full overflow-auto`}
-                id="capture-list"
-            >
-                <div className="w-full" id="capture-dashboard-stretch">
-                    <CollapsibleSection title="Deployment Details">
-                        <div className="flex mb-4 flex-wrap pdf-page">
-                            <Metadata
-                                className="mx-4 bg-base-100 h-48 mb-4"
-                                keyValuePairs={metadataKeyValuePairs}
-                                labels={labels}
-                                annotations={annotations}
-                            />
-                            {cluster && (
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.CLUSTER}
-                                    entityId={cluster.id}
-                                    name="Cluster"
-                                    workflowState={workflowState}
-                                    value={cluster.name}
-                                />
-                            )}
-                            {namespace && (
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.NAMESPACE}
-                                    entityId={namespaceId}
-                                    name="Namespace"
-                                    value={namespace}
-                                />
-                            )}
-                            {serviceAccount && (
-                                <RelatedEntity
-                                    className="mx-4 min-w-48 h-48 mb-4"
-                                    entityType={entityTypes.SERVICE_ACCOUNT}
-                                    name="Service Account"
-                                    value={serviceAccount}
-                                    entityId={serviceAccountID}
-                                />
-                            )}
-                            <RelatedEntityListCount
-                                className="mx-4 min-w-48 h-48 mb-4"
-                                name="Images"
-                                value={imageCount}
-                                workflowState={workflowState}
-                                entityType={entityTypes.IMAGE}
-                            />
-                            <RelatedEntityListCount
-                                className="mx-4 min-w-48 h-48 mb-4"
-                                name="Secrets"
-                                value={secretCount}
-                                entityType={entityTypes.SECRET}
-                            />
-                        </div>
-                    </CollapsibleSection>
-                    <CollapsibleSection title="Deployment Findings">
-                        <div className="flex mb-4 pdf-page pdf-stretch">
-                            <p>Deployment Findings go here</p>
-                        </div>
-                    </CollapsibleSection>
-                </div>
-            </div>
-        </div>
+    function getQuery() {
+        if (!entityListType) return overviewQuery;
+        const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
+            entityTypes.CVE,
+            entityListType,
+            useCases.VULN_MANAGEMENT
+        );
+
+        return gql`
+        query getDeployment${entityListType}($id: ID!, $query: String) {
+            deployment(id: $id) {
+                id
+                ${listFieldName}(query: $query) { ...${fragmentName} }
+            }
+        }
+        ${fragment}
+    `;
+    }
+
+    const variables = {
+        variables: {
+            cacheBuster: new Date().getUTCMilliseconds(),
+            id: entityId,
+            query: queryService.objectToWhereClause(search)
+        }
+    };
+    const query = getQuery();
+
+    const { loading, data } = useQuery(query, variables);
+    if (isGQLLoading(loading, data)) return <Loader transparent />;
+    const { deployment } = data;
+    return entityListType ? (
+        <EntityList
+            entityListType={entityListType}
+            data={deployment}
+            search={search}
+            entityContext={{ ...entityContext, [entityTypes.DEPLOYMENT]: entityId }}
+        />
+    ) : (
+        <VulnMgmtDeploymentOverview data={deployment} entityContext={entityContext} />
     );
-    //         }}
-    //     </Query>
-    // );
 };
 
 VulmMgmtDeployment.propTypes = entityComponentPropTypes;

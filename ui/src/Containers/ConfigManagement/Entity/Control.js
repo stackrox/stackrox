@@ -7,7 +7,7 @@ import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ControlDetails from 'Components/ControlDetails';
-import RelatedEntityListCount from 'Containers/ConfigManagement/Entity/widgets/RelatedEntityListCount';
+import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import isGQLLoading from 'utils/gqlLoading';
 import Widget from 'Components/Widget';
 import searchContext from 'Containers/searchContext';

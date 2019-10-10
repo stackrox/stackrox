@@ -11,6 +11,7 @@ import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 import { CONTROL_FRAGMENT } from 'queries/controls';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
+import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 function objectToWhereClause(query) {
     if (!query) return '';
@@ -97,6 +98,8 @@ function getFragmentName(entityType) {
             return 'serviceAccountFields';
         case entityTypes.CONTROL:
             return 'controlFields';
+        case entityTypes.CVE:
+            return 'cveListFields';
         default:
             return '';
     }
@@ -131,6 +134,8 @@ function getFragment(entityType, appContext) {
                 return SERVICE_ACCOUNT_FRAGMENT;
             case entityTypes.CONTROL:
                 return CONTROL_FRAGMENT;
+            case entityTypes.CVE:
+                return CVE_LIST_FRAGMENT;
             default:
                 return '';
         }
