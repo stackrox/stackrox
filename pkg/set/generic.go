@@ -9,6 +9,7 @@ import (
 // If you want to add a set for your custom type, simply add another go generate line along with the
 // existing ones. If you're creating a set for a primitive type, you can follow the example of "string"
 // and create the generated file in this package.
+// For non-primitive sets, please make the generated code files go outside this package.
 // Sometimes, you might need to create it in the same package where it is defined to avoid import cycles.
 // The permission set is an example of how to do that.
 // You can also specify the -imp command to specify additional imports in your generated file, if required.
@@ -17,10 +18,6 @@ import (
 //go:generate genny -in=$GOFILE -out=gen-string-$GOFILE gen "KeyType=string"
 //go:generate genny -in=$GOFILE -out=gen-int-$GOFILE gen "KeyType=int"
 //go:generate genny -in=$GOFILE -out=gen-uint32-$GOFILE gen "KeyType=uint32"
-//go:generate genny -in=$GOFILE -out=gen-v1-search-cats-$GOFILE -imp=github.com/stackrox/rox/generated/api/v1 gen "KeyType=v1.SearchCategory"
-//go:generate genny -in=$GOFILE -out=$GOPATH/src/github.com/stackrox/rox/pkg/auth/permissions/set.go -pkg permissions gen "KeyType=Resource"
-//go:generate genny -in=$GOFILE -out=gen-upgrade-progress-state-$GOFILE -imp=github.com/stackrox/rox/generated/storage gen "KeyType=storage.UpgradeProgress_UpgradeState"
-//go:generate genny -in=$GOFILE -out=$GOPATH/src/github.com/stackrox/rox/pkg/sensorupgrader/stage_set.go -pkg sensorupgrader gen "KeyType=Stage"
 type KeyType generic.Type
 
 // KeyTypeSet will get translated to generic sets.

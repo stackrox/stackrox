@@ -12,6 +12,7 @@ import (
 // If you want to add a set for your custom type, simply add another go generate line along with the
 // existing ones. If you're creating a set for a primitive type, you can follow the example of "string"
 // and create the generated file in this package.
+// For non-primitive sets, please make the generated code files go outside this package.
 // Sometimes, you might need to create it in the same package where it is defined to avoid import cycles.
 // The permission set is an example of how to do that.
 // You can also specify the -imp command to specify additional imports in your generated file, if required.

@@ -2,7 +2,7 @@ package search
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/generated/set"
 )
 
 // GetGlobalSearchCategories returns a set of search categories

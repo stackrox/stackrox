@@ -1,9 +1,9 @@
 package stateutils
 
 import (
+	"github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 type stateAndUpgraderReq struct {
