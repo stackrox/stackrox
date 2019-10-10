@@ -20,13 +20,13 @@ addDecorator(
 // whitespace around the story, which would otherwise start in the top-left
 addDecorator(storyFn => <div style={{ padding: "10px 20px 20px" }}>{storyFn()}</div>);
 
-
 addParameters({
     themes: [
         { name: 'Light Theme', class: 'theme-light', color: '#9199b1', default: true },
         { name: 'Dark Theme', class: 'theme-dark', color: '#5e667d' },
     ],
 });
+
 addDecorator(withThemes);
 
 configure(require.context('../src', true, /\.stories\.js$/), module);

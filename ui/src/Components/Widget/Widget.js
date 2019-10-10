@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import ErrorBoundary from 'Containers/ErrorBoundary';
-import { PagerDots, PagerButtonGroup } from './PagerControls';
+import ErrorBoundary from 'Containers/ErrorBoundary'; // @TODO Move ErrorBoundary to Components directory
+import { PagerDots, PagerButtonGroup } from 'Components/PagerControls';
 
 function Widget({
     header,

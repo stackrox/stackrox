@@ -48,7 +48,7 @@ PagerDots.defaultProps = {
 };
 
 export const PagerButtonGroup = ({ onPagePrev, onPageNext, enableNext, enablePrev }) => (
-    <div className="-mt-1">
+    <div className="-mt-1 flex">
         <button
             type="button"
             onClick={onPagePrev}
