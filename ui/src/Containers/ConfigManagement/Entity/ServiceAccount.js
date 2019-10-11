@@ -17,8 +17,8 @@ import searchContext from 'Containers/searchContext';
 import useCases from 'constants/useCaseTypes';
 import queryService from 'modules/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
 import EntityList from '../List/EntityList';
-import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
 const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);

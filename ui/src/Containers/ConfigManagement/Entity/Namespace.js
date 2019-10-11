@@ -16,7 +16,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
 import EntityList from '../List/EntityList';
 
 const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {

@@ -18,9 +18,9 @@ import CVETable from 'Containers/Images/CVETable';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import useCases from 'constants/useCaseTypes';
-import EntityList from '../List/EntityList';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
 import TableWidget from './widgets/TableWidget';
-import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
+import EntityList from '../List/EntityList';
 
 const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);

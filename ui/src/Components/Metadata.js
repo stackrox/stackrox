@@ -115,13 +115,20 @@ Metadata.propTypes = {
     keyValuePairs: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string.isRequired,
-            value: PropTypes.oneOf([PropTypes.string.isRequired, PropTypes.element.isRequired])
+            value: PropTypes.oneOfType([PropTypes.string, PropTypes.element, PropTypes.number])
         })
     ).isRequired,
-    labels: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    annotations: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    whitelists: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    secrets: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    labels: PropTypes.arrayOf(PropTypes.shape({})),
+    annotations: PropTypes.arrayOf(PropTypes.shape({})),
+    whitelists: PropTypes.arrayOf(PropTypes.shape({})),
+    secrets: PropTypes.arrayOf(PropTypes.shape({}))
+};
+
+Metadata.defaultProps = {
+    labels: null,
+    annotations: null,
+    whitelists: null,
+    secrets: null
 };
 
 export default Metadata;

@@ -17,7 +17,7 @@ import queryService from 'modules/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
-import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
 import EntityList from '../List/EntityList';
 
 const Role = ({ id, entityListType, entityId1, query, entityContext }) => {

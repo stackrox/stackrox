@@ -14,7 +14,7 @@ import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
 import isGQLLoading from 'utils/gqlLoading';
-import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';

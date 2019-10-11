@@ -9,6 +9,7 @@ import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import SeverityLabel from 'Components/SeverityLabel';
 import LifecycleStageLabel from 'Components/LifecycleStageLabel';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
 import Widget from 'Components/Widget';
 import Metadata from 'Components/Metadata';
 import Button from 'Components/Button';
@@ -19,7 +20,6 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import searchContext from 'Containers/searchContext';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import EntityList from '../../List/EntityList';
-import getSubListFromEntity from '../../List/utilities/getSubListFromEntity';
 import PolicyFindings from './PolicyFindings';
 
 const PolicyEditButton = ({ id }) => {

@@ -19,9 +19,9 @@ import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import useCases from 'constants/useCaseTypes';
 import queryService from 'modules/queryService';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import EntityList from '../List/EntityList';
-import getSubListFromEntity from '../List/utilities/getSubListFromEntity';
 
 const SecretDataMetadata = ({ metadata }) => {
     if (!metadata) return null;

@@ -11,12 +11,12 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
 import useCases from 'constants/useCaseTypes';
 import EntityList from '../../List/EntityList';
-import getSubListFromEntity from '../../List/utilities/getSubListFromEntity';
 import DeploymentFindings from './DeploymentFindings';
 
 const Deployment = ({ id, entityContext, entityListType, query }) => {
