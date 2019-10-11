@@ -91,13 +91,13 @@ var (
 		Help:      "A counter of the total number of network flows received by Central from Sensor",
 	}, []string{"ClusterID"})
 
-	riskProcessingHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	riskProcessingHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "risk_processing_duration",
 		Help:      "Histogram of how long risk processing takes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
-	})
+	}, []string{"Risk_Reprocessor"})
 
 	totalCacheOperationsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -162,8 +162,8 @@ func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows i
 }
 
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
-func ObserveRiskProcessingDuration(startTime time.Time) {
-	riskProcessingHistogram.Observe(startTimeToMS(startTime))
+func ObserveRiskProcessingDuration(startTime time.Time, riskObjectType string) {
+	riskProcessingHistogramVec.With(prometheus.Labels{"Risk_Reprocessor": riskObjectType}).Observe(startTimeToMS(startTime))
 }
 
 // IncrementDBCacheCounter is a counter for how many times a DB cache hits and misses

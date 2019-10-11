@@ -42,7 +42,7 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 }
 
 func (s *serviceImpl) GetRisk(ctx context.Context, request *v1.GetRiskRequest) (*storage.Risk, error) {
-	subjectType, err := datastore.RiskSubjectType(request.SubjectType)
+	subjectType, err := datastore.SubjectType(request.SubjectType)
 	if err != nil || subjectType == storage.RiskSubjectType_UNKNOWN {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

@@ -1,0 +1,104 @@
+package deployment
+
+import (
+	"context"
+	"fmt"
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	evaluatorMocks "github.com/stackrox/rox/central/processwhitelist/evaluator/mocks"
+	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	"github.com/stackrox/rox/central/risk/getters"
+	deploymentMultiplier "github.com/stackrox/rox/central/risk/multipliers/deployment"
+	imageMultiplier "github.com/stackrox/rox/central/risk/multipliers/image"
+	pkgScorer "github.com/stackrox/rox/central/risk/scorer"
+	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestScore(t *testing.T) {
+	ctx := context.Background()
+
+	mockCtrl := gomock.NewController(t)
+	mockRoles := roleMocks.NewMockDataStore(mockCtrl)
+	mockBindings := bindingMocks.NewMockDataStore(mockCtrl)
+	mockServiceAccounts := saMocks.NewMockDataStore(mockCtrl)
+	mockEvaluator := evaluatorMocks.NewMockEvaluator(mockCtrl)
+
+	deployment := pkgScorer.GetMockDeployment()
+	scorer := NewDeploymentScorer(&getters.MockAlertsGetter{
+		Alerts: []*storage.ListAlert{
+			{
+				Deployment: &storage.ListAlertDeployment{},
+				Policy: &storage.ListAlertPolicy{
+					Name:     "Test",
+					Severity: storage.Severity_CRITICAL_SEVERITY,
+				},
+			},
+		},
+	}, mockRoles, mockBindings, mockServiceAccounts, mockEvaluator)
+
+	mockEvaluator.EXPECT().EvaluateWhitelistsAndPersistResult(deployment).MaxTimes(2).Return(nil, nil)
+
+	// Without user defined function
+	expectedRiskScore := 9.016
+	expectedRiskResults := []*storage.Risk_Result{
+		{
+			Name:    deploymentMultiplier.PolicyViolationsHeading,
+			Factors: []*storage.Risk_Result_Factor{{Message: "Test (severity: Critical)"}},
+			Score:   1.96,
+		},
+		{
+			Name: deploymentMultiplier.VulnsHeading,
+			Factors: []*storage.Risk_Result_Factor{
+				{Message: "Image \"docker.io/library/nginx:1.10\" contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
+			},
+			Score: 1.15,
+		},
+		{
+			Name: deploymentMultiplier.ServiceConfigHeading,
+			Factors: []*storage.Risk_Result_Factor{
+				{Message: "Volumes rw volume were mounted RW"},
+				{Message: "Secrets secret are used inside the deployment"},
+				{Message: "Capabilities ALL were added"},
+				{Message: "No capabilities were dropped"},
+				{Message: fmt.Sprintf("Container %q in the deployment is privileged", deployment.GetContainers()[0].GetName())},
+			},
+			Score: 2.0,
+		},
+		{
+			Name: deploymentMultiplier.ReachabilityHeading,
+			Factors: []*storage.Risk_Result_Factor{
+				{Message: "Port 22 is exposed to external clients"},
+				{Message: "Port 23 is exposed in the cluster"},
+				{Message: "Port 24 is exposed on node interfaces"},
+			},
+			Score: 1.6,
+		},
+		{
+			Name: imageMultiplier.ImageAgeHeading,
+			Factors: []*storage.Risk_Result_Factor{
+				{Message: "Image \"docker.io/library/nginx:1.10\" is 180 days old"},
+			},
+			Score: 1.25,
+		},
+	}
+
+	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
+
+	actualRisk := scorer.Score(ctx, deployment, pkgScorer.GetMockImages())
+	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
+	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+
+	expectedRiskScore = 9.016
+
+	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
+
+	actualRisk = scorer.Score(ctx, deployment, pkgScorer.GetMockImages())
+	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
+	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+
+	mockCtrl.Finish()
+}

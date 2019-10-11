@@ -37,5 +37,6 @@ enum RiskSubjectType {
     NAMESPACE               = 2;
     CLUSTER                 = 3;
     IMAGE                   = 4;
+    IMAGE_COMPONENT         = 6;
     SERVICEACCOUNT          = 5;
 }

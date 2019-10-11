@@ -213,19 +213,21 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least a 100 CVEs.
-                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\" \\(container \"" +
-                     STRUTS + "\"\\) contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
+                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\"" +
+                     " contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
                      "\\d+(\\.\\d{1,2})? and \\d+(\\.\\d{1,2})?" | []
 
         "Service Configuration"           | 2.0f     |
                 "No capabilities were dropped" | null | []
 
         "Components Useful for Attackers" | 1.5f     |
-                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains components useful for attackers:" +
+                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\" " +
+                "contains components useful for attackers:" +
                     " apt, bash, curl, wget" | null | []
 
         "Number of Components in Image"   | 1.5f     |
-                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components" | null | []
+                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\"" +
+                " contains 206 components" | null | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
 
