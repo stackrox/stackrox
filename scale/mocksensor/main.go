@@ -29,6 +29,7 @@ var (
 	deploymentIDBase = uuid.NewV4().String()
 	deploymentCount  = int64(0)
 	admissionCount   = int64(0)
+	imageNameIndex   = int64(0)
 )
 
 func getDeploymentCount() int {
@@ -47,10 +48,15 @@ func incrementAndGetAdmissionCount() int {
 	return int(atomic.AddInt64(&admissionCount, 1))
 }
 
+func getAndIncrementNameIndex() int {
+	return int(atomic.AddInt64(&imageNameIndex, 1)) - 1
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	deploymentInterval := flag.Duration("deployment-interval", 2000*time.Millisecond, "interval for sending deployments")
 	maxDeployments := flag.Int("max-deployments", 200, "maximum number of deployments to send")
+	useImagesFromList := flag.Bool("use-images-from-list", false, "generate deployments with different image names from a list of known image names")
 
 	admissionInterval := flag.Duration("admission-interval", 2000*time.Millisecond, "interval for sending admission controller requests")
 	maxAdmissionRequests := flag.Int("max-admission-requests", 0, "maximum number of admission controller requests to send")
@@ -106,7 +112,7 @@ func main() {
 	go stream.StartReceiving()
 
 	deploymentSignal := concurrency.NewSignal()
-	go sendDeployments(stream, *maxDeployments, *deploymentInterval, *bigDepRate, deploymentSignal)
+	go sendDeployments(stream, *maxDeployments, *deploymentInterval, *bigDepRate, *useImagesFromList, deploymentSignal)
 
 	time.Sleep(5 * time.Second)
 
@@ -146,12 +152,15 @@ func getGeneratedDeploymentID(i int) string {
 	return fmt.Sprintf("%s%d", deploymentIDBase, i)
 }
 
-func deploymentSensorEvent(bigDepRate float64) *central.SensorEvent {
+func deploymentSensorEvent(bigDepRate float64, useImagesFromList bool) *central.SensorEvent {
 	var deployment *storage.Deployment
 	if rand.Float64() < bigDepRate {
 		deployment = fixtures.GetDeployment()
 	} else {
 		deployment = fixtures.LightweightDeployment()
+	}
+	if useImagesFromList {
+		replaceImages(deployment)
 	}
 	return deploymentSensorEventForNum(getDeploymentCount(), deployment)
 }
@@ -165,6 +174,25 @@ func deploymentSensorEventForNum(depNum int, deployment *storage.Deployment) *ce
 		Action: central.ResourceAction_CREATE_RESOURCE,
 		Resource: &central.SensorEvent_Deployment{
 			Deployment: deployment,
+		},
+	}
+}
+
+func replaceImages(deployment *storage.Deployment) {
+	for _, container := range deployment.GetContainers() {
+		container.Image = knownDockerContainerImage()
+	}
+}
+
+func knownDockerContainerImage() *storage.ContainerImage {
+	nameIndex := getAndIncrementNameIndex()
+	remote := imageNames[nameIndex%len(imageNames)]
+	return &storage.ContainerImage{
+		Name: &storage.ImageName{
+			Registry: "docker.io",
+			Remote:   remote,
+			Tag:      "latest",
+			FullName: fmt.Sprintf("docker.io/%s", remote),
 		},
 	}
 }
@@ -200,13 +228,13 @@ func sendNodes(stream *threadSafeStream, maxNodes int, nodeInterval time.Duratio
 	signal.Signal()
 }
 
-func sendDeployments(stream *threadSafeStream, maxDeployments int, deploymentInterval time.Duration, bigDepRate float64, signal concurrency.Signal) {
+func sendDeployments(stream *threadSafeStream, maxDeployments int, deploymentInterval time.Duration, bigDepRate float64, useImagesFromList bool, signal concurrency.Signal) {
 	ticker := time.NewTicker(deploymentInterval)
 	defer ticker.Stop()
 
 	for getDeploymentCount() < maxDeployments {
 		<-ticker.C
-		if err := stream.SendEvent(deploymentSensorEvent(bigDepRate)); err != nil {
+		if err := stream.SendEvent(deploymentSensorEvent(bigDepRate, useImagesFromList)); err != nil {
 			logger.Errorf("Error: %v", err)
 		}
 		incrementDeploymentCount()
