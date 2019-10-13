@@ -24,7 +24,7 @@ describe('WorkflowStateManager', () => {
             stateStack: [{ t: entityTypes.DEPLOYMENT, i: entityId2 }]
         });
     });
-    it('sets to base workflow state', () => {
+    it('Removes sidepanel params state', () => {
         // in list
         let workflowState = {
             useCase,
@@ -34,7 +34,7 @@ describe('WorkflowStateManager', () => {
             ]
         };
         let workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.base();
+        workflowStateMgr.removeSidePanelParams();
 
         expect(workflowStateMgr.workflowState).toEqual({
             useCase,
@@ -51,7 +51,7 @@ describe('WorkflowStateManager', () => {
             ]
         };
         workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.base();
+        workflowStateMgr.removeSidePanelParams();
 
         expect(workflowStateMgr.workflowState).toEqual({
             useCase,

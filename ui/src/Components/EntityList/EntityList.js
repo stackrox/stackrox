@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
-
+import WorkflowStateMgr from 'modules/WorkflowStateManager';
+import workflowStateContext from 'Containers/workflowStateContext';
+import { generateURL } from 'modules/URLReadWrite';
 import Panel from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';
-
+import { withRouter } from 'react-router-dom';
 import { searchCategories } from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
-import URLService from 'modules/URLService';
 import createPDFTable from 'utils/pdfUtils';
 
 const EntityList = ({
@@ -22,8 +22,6 @@ const EntityList = ({
     headerText,
     history,
     idAttribute,
-    location,
-    match,
     rowData,
     searchOptions,
     selectedRowId,
@@ -31,12 +29,14 @@ const EntityList = ({
     wrapperClass
 }) => {
     const [page, setPage] = useState(0);
+    const workflowState = useContext(workflowStateContext);
 
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
-        const url = URLService.getURL(match, location)
-            .push(id)
-            .url();
+        const workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr.pushListItem(id);
+        const url = generateURL(workflowStateMgr.workflowState);
+
         history.push(url);
     }
 
@@ -104,8 +104,6 @@ EntityList.propTypes = {
     headerText: PropTypes.string,
     idAttribute: PropTypes.string.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    match: ReactRouterPropTypes.match.isRequired,
     rowData: PropTypes.arrayOf(PropTypes.shape({})),
     searchOptions: PropTypes.arrayOf(PropTypes.string),
     selectedRowId: PropTypes.string,

@@ -22,19 +22,23 @@ const entityComponentMap = {
     [entityTypes.POLICY]: VulnMgmtListPolicies
 };
 
-const VulnMgmtEntityList = ({ entityListType, entityId, ...rest }) => {
+const VulnMgmtEntityList = ({ entityListType, entityId, search, entityContext }) => {
     const Component = entityComponentMap[entityListType];
     if (!Component) return <PageNotFound resourceType={entityListType} />;
-    return <Component selectedRowId={entityId} {...rest} />;
+    return <Component selectedRowId={entityId} search={search} entityContext={entityContext} />;
 };
 
 VulnMgmtEntityList.propTypes = {
     entityListType: PropTypes.string.isRequired,
-    entityId: PropTypes.string
+    entityId: PropTypes.string,
+    search: PropTypes.shape({}),
+    entityContext: PropTypes.shape({})
 };
 
 VulnMgmtEntityList.defaultProps = {
-    entityId: null
+    entityId: null,
+    search: null,
+    entityContext: {}
 };
 
 export default withRouter(VulnMgmtEntityList);

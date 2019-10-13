@@ -171,7 +171,9 @@ export function parseURL(location) {
     let stateStack = paramsToStateStack(params) || [];
     const query = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
     const { workflowState: urlWorkflowState = [], ...searchState } = query;
-    const urlWorkflowStateStack = urlWorkflowState.map(({ t, i }) => new WorkflowEntity(t, i));
+
+    const arrayState = !Array.isArray(urlWorkflowState) ? [urlWorkflowState] : urlWorkflowState;
+    const urlWorkflowStateStack = arrayState.map(({ t, i }) => new WorkflowEntity(t, i));
 
     // if on dashboard, the workflowState query params should be ignored
     stateStack = dashboardParams ? [] : [...stateStack, ...urlWorkflowStateStack];

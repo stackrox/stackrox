@@ -1,8 +1,10 @@
 import React, { useContext } from 'react';
+import { uniq } from 'lodash';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
+
 import GroupedTabs from 'Components/GroupedTabs';
 import WorkflowStateManager from 'modules/WorkflowStateManager';
 import entityRelationships from 'modules/entityRelationships';
@@ -37,15 +39,16 @@ const ENTITY_TO_TAB = {
     [entityTypes.CVE]: TAB_GROUPS.SECURITY
 };
 
-const EntityTabs = ({ entityType, listType }) => {
+// eslint-disable-next-line
+const EntityTabs = ({ useCase, entityType, activeTab }) => {
     const workflowState = useContext(workflowStateContext);
-
     function getTab(tabType) {
         const failingText =
             entityType === entityTypes.DEPLOYMENT && tabType === entityTypes.POLICY
                 ? 'failing '
                 : '';
-        const newState = new WorkflowStateManager(workflowState).pushList(tabType).workflowState;
+        const newState = new WorkflowStateManager(workflowState).pushList(tabType).workflowState; // { stateStack: [], useCase: 'vulnerability-management' };
+
         return {
             group: ENTITY_TO_TAB[tabType],
             value: tabType,
@@ -54,29 +57,38 @@ const EntityTabs = ({ entityType, listType }) => {
         };
     }
 
-    const relationships = [
+    const relationships = uniq([
         ...entityRelationships.getContains(entityType),
         ...entityRelationships.getMatches(entityType)
-    ];
+    ]);
+
+    // TODO filter tabs by useCase
 
     if (!relationships) return null;
     const entityTabs = relationships.map(relationship => getTab(relationship, entityType));
     const groups = Object.values(TAB_GROUPS);
 
     const tabs = [
-        { group: TAB_GROUPS.OVERVIEW, value: '', text: 'Overview', to: '.' },
+        {
+            group: TAB_GROUPS.OVERVIEW,
+            value: '',
+            text: 'Overview',
+            to: generateURL(new WorkflowStateManager(workflowState).base().workflowState)
+        },
         ...entityTabs
     ];
-    return <GroupedTabs groups={groups} tabs={tabs} activeTab={listType || ''} />;
+
+    return <GroupedTabs groups={groups} tabs={tabs} activeTab={activeTab || ''} />;
 };
 
 EntityTabs.propTypes = {
+    useCase: PropTypes.string.isRequired,
     entityType: PropTypes.string.isRequired,
-    listType: PropTypes.string
+    activeTab: PropTypes.string
 };
 
 EntityTabs.defaultProps = {
-    listType: null
+    activeTab: null
 };
 
 export default EntityTabs;

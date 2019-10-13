@@ -1,59 +1,42 @@
 import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
-import { useQuery } from 'react-apollo';
-
+import searchContexts from 'constants/searchContexts';
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
-import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
-import useCaseTypes from 'constants/useCaseTypes';
-import VulnMgmtList from 'Containers/VulnMgmt/List/VulnMgmtList';
-import VulnMgmtEntity from 'Containers/VulnMgmt/Entity/VulnMgmtEntity';
-import VulnMgmtListQueries from 'Containers/VulnMgmt/List/VulnMgmtListQueries';
-import VulnMgmtEntityQueries from 'Containers/VulnMgmt/Entity/VulnMgmtEntityQueries';
+
 import entityLabels from 'messages/entity';
-import URLService from 'modules/URLService';
+import getSidePanelEntity from 'utils/getSidePanelEntity';
+import { parseURL } from 'modules/URLReadWrite';
 
 import WorkflowSidePanel from './WorkflowSidePanel';
 import workflowStateContext from '../workflowStateContext';
 
-// TODO: extract these map objects to somewhere common and reusable
-const ListMap = {
-    [useCaseTypes.VULN_MANAGEMENT]: VulnMgmtList
-};
+import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
-const EntityMap = {
-    [useCaseTypes.VULN_MANAGEMENT]: VulnMgmtEntity
-};
+const WorkflowListPageLayout = ({ location }) => {
+    const workflowState = useContext(workflowStateContext);
+    const { stateStack, useCase } = workflowState;
+    const { searchState } = parseURL(location);
+    const pageSearch = searchState[searchContexts.page];
 
-const ListQueryMap = {
-    [useCaseTypes.VULN_MANAGEMENT]: VulnMgmtListQueries
-};
+    // Get the list / entity components
+    const ListComponent = ListComponentMap[useCase];
+    const EntityComponent = EntityComponentMap[useCase];
 
-const EntityQueryMap = {
-    [useCaseTypes.VULN_MANAGEMENT]: VulnMgmtEntityQueries
-};
+    // Calculate page entity props
+    const pageListType = stateStack[0].entityType;
 
-const WorkflowListPageLayout = ({ match, location }) => {
-    const params = URLService.getParams(match, location);
-    const { useCase, stateStack } = useContext(workflowStateContext);
+    // Calculate sidepanel entity props
+    const {
+        sidePanelEntityId,
+        sidePanelEntityType,
+        sidePanelListType,
+        sidePanelSearch
+    } = getSidePanelEntity(stateStack, searchState);
 
-    const List = ListMap[useCase];
-    const Entity = EntityMap[useCase];
-
-    const listQueries = ListQueryMap[useCase];
-    const entityQueries = EntityQueryMap[useCase];
-
-    const entityListType = stateStack[0] && stateStack[0].entityType;
-    const entityId = stateStack[1] && stateStack[1].entityId;
-
-    const header = pluralize(entityLabels[entityListType]);
+    const header = pluralize(entityLabels[pageListType]);
     const exportFilename = `${pluralize(startCase(header))} Report`;
-
-    const listQueryToUse = listQueries.getListQuery(entityListType);
-    const entityQueryToUse = entityQueries.getEntityQuery();
-
-    const { loading: listLoading, error: listError, data: listData } = useQuery(listQueryToUse);
 
     return (
         <div className="flex flex-col relative min-h-full">
@@ -63,7 +46,7 @@ const WorkflowListPageLayout = ({ match, location }) => {
                         <div className="flex items-center">
                             <ExportButton
                                 fileName={exportFilename}
-                                type={entityListType}
+                                type={pageListType}
                                 page="configManagement"
                                 pdfId="capture-list"
                             />
@@ -72,32 +55,25 @@ const WorkflowListPageLayout = ({ match, location }) => {
                 </div>
             </PageHeader>
             <div className="flex flex-1 h-full bg-base-100 relative z-0" id="capture-list">
-                <List
-                    wrapperClass={`bg-base-100 ${entityId ? 'overlay' : ''}`}
-                    entityListType={entityListType}
-                    entityId={entityId}
-                    {...params}
-                    loading={listLoading}
-                    error={listError}
-                    data={listData}
+                <ListComponent
+                    // wrapperClass={`bg-base-100 ${sidePanelEntityId ? 'overlay' : ''}`}
+                    entityListType={pageListType}
+                    entityId={sidePanelEntityId}
+                    search={pageSearch}
                 />
             </div>
-            <SidePanelAnimation condition={!!entityId}>
-                <WorkflowSidePanel
-                    query={entityQueryToUse}
-                    // eslint-disable-next-line react/jsx-no-bind
-                    render={({ loading, error, data }) => (
-                        <Entity
-                            entityType={entityListType}
-                            entityId={entityId}
-                            loading={loading}
-                            error={error}
-                            data={data}
-                            {...params}
-                        />
-                    )}
-                />
-            </SidePanelAnimation>
+            <WorkflowSidePanel isOpen={!!sidePanelEntityId}>
+                {sidePanelEntityId ? (
+                    <EntityComponent
+                        entityId={sidePanelEntityId}
+                        entityType={sidePanelEntityType}
+                        listType={sidePanelListType}
+                        search={sidePanelSearch}
+                    />
+                ) : (
+                    <span />
+                )}
+            </WorkflowSidePanel>
         </div>
     );
 };

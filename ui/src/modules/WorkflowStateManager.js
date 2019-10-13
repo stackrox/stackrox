@@ -1,14 +1,16 @@
 import entityRelationships from 'modules/entityRelationships';
+import { cloneDeep } from 'lodash';
 
 // An item in the workflow stack
 export class WorkflowEntity {
     constructor(entityType, entityId) {
         if (entityType) {
-            this.entityType = entityType;
+            this.t = entityType;
         }
         if (entityId) {
             this.i = entityId;
         }
+        Object.freeze(this);
     }
 
     get entityType() {
@@ -17,14 +19,6 @@ export class WorkflowEntity {
 
     get entityId() {
         return this.i;
-    }
-
-    set entityType(entityType) {
-        this.t = entityType;
-    }
-
-    set entityId(entityId) {
-        this.i = entityId;
     }
 }
 
@@ -93,7 +87,7 @@ function trimStack(stack) {
 export class WorkflowState {
     constructor(useCase, stateStack) {
         this.useCase = useCase;
-        this.stateStack = stateStack || [];
+        this.stateStack = cloneDeep(stateStack) || [];
     }
 
     // Returns current entity (top of stack)
@@ -130,11 +124,17 @@ export default class WorkflowStateMgr {
     }
 
     // sets the stateStack to base state when returning from side panel
-    base() {
+    removeSidePanelParams() {
         const { useCase, stateStack } = this.workflowState;
         const baseEntity = this.workflowState.getBaseEntity();
         const newStateStack = baseEntity.entityId ? stateStack.slice(0, 2) : [baseEntity];
         this.workflowState = new WorkflowState(useCase, newStateStack);
+        return this;
+    }
+
+    // sets statestack to only the first item
+    base() {
+        this.workflowState.stateStack = this.workflowState.stateStack.slice(0, 1);
         return this;
     }
 
@@ -156,18 +156,19 @@ export default class WorkflowStateMgr {
         }
 
         this.workflowState.stateStack = trimStack([...this.workflowState.stateStack, listState]);
+
         return this;
     }
 
     // Selects an item in a list by Id
     pushListItem(id) {
-        const currentItem = this.workflowState.stateStack.slice(-1)[0];
-        // this shouldn't happen since the panel closes on clicking out, but just in case
-        if (currentItem.entityId) {
-            currentItem.entityId = id;
-            return this;
-        }
-        this.workflowState.stateStack.push(new WorkflowEntity(currentItem.entityType, id));
+        const { stateStack } = this.workflowState;
+        const currentItem = stateStack.slice(-1)[0];
+        const newItem = new WorkflowEntity(currentItem.entityType, id);
+        const newStateStack = currentItem.entityId ? stateStack.slice(0, -1) : stateStack;
+        newStateStack.push(newItem);
+
+        this.workflowState.stateStack = newStateStack;
         return this;
     }
 

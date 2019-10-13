@@ -7,8 +7,11 @@ import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Panel from 'Components/Panel';
+import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
+import searchContexts from 'constants/searchContexts';
+import searchContext from 'Containers/searchContext';
 
-const WorkflowSidePanel = ({ history, children, stateStack }) => {
+const WorkflowSidePanel = ({ history, children, isOpen }) => {
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
     const { useCase } = workflowState;
@@ -19,7 +22,7 @@ const WorkflowSidePanel = ({ history, children, stateStack }) => {
 
     function onClose() {
         const workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.base();
+        workflowStateMgr.removeSidePanelParams();
         const url = generateURL(workflowStateMgr.workflowState);
         history.push(url);
     }
@@ -48,33 +51,37 @@ const WorkflowSidePanel = ({ history, children, stateStack }) => {
     );
 
     return (
-        <div className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel">
-            <Panel
-                id="side-panel"
-                headerClassName={`flex w-full h-14 overflow-y-hidden border-b ${
-                    !isDarkMode ? 'bg-side-panel-wave border-base-100' : 'border-base-400'
-                }`}
-                bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : ''}`}
-                headerTextComponent={
-                    <div statStack={stateStack}>TODO: Breadcrumbs</div>
-                    // <BreadCrumbs
-                    //     className="font-700 leading-normal text-base-600 tracking-wide truncate"
-                    //     entityType1={entityType1 || entityListType1}
-                    //     entityId1={entityId1}
-                    //     entityType2={entityType2}
-                    //     entityListType2={entityListType2}
-                    //     entityId2={entityId2}
-                    // />
-                }
-                headerComponents={externalLink}
-                onClose={onClose}
-                closeButtonClassName={
-                    isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
-                }
-            >
-                {children}
-            </Panel>
-        </div>
+        <searchContext.Provider value={searchContexts.sidePanel}>
+            <SidePanelAnimation condition={isOpen}>
+                <div className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel">
+                    <Panel
+                        id="side-panel"
+                        headerClassName={`flex w-full h-14 overflow-y-hidden border-b ${
+                            !isDarkMode ? 'bg-side-panel-wave border-base-100' : 'border-base-400'
+                        }`}
+                        bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : ''}`}
+                        headerTextComponent={
+                            <div>TODO: Breadcrumbs</div>
+                            // <BreadCrumbs
+                            //     className="font-700 leading-normal text-base-600 tracking-wide truncate"
+                            //     entityType1={entityType1 || entityListType1}
+                            //     entityId1={entityId1}
+                            //     entityType2={entityType2}
+                            //     entityListType2={entityListType2}
+                            //     entityId2={entityId2}
+                            // />
+                        }
+                        headerComponents={externalLink}
+                        onClose={onClose}
+                        closeButtonClassName={
+                            isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
+                        }
+                    >
+                        {children}
+                    </Panel>
+                </div>
+            </SidePanelAnimation>
+        </searchContext.Provider>
     );
 };
 
