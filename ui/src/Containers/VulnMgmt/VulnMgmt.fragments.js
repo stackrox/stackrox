@@ -26,15 +26,6 @@ export const CVE_LIST_FRAGMENT = gql`
     fragment cveListFields on EmbeddedVulnerability {
         cve
         cvss
-        cvssV2 {
-            accessComplexity
-            attackVector
-            authentication
-            availability
-            confidentiality
-            integrity
-            vector
-        }
         # Env. Impact
         # Impact score
         summary

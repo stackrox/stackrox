@@ -39,15 +39,6 @@ const CVES_QUERY = gql`
         vulnerabilities {
             cve
             cvss
-            cvssV2 {
-                accessComplexity
-                attackVector
-                authentication
-                availability
-                confidentiality
-                integrity
-                vector
-            }
             summary
             fixedByVersion
             isFixable
