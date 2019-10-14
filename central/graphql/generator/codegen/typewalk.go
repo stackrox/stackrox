@@ -9,6 +9,7 @@ import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
 	"github.com/pkg/errors"
+	generator2 "github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/pkg/protoreflect"
 )
 
@@ -33,6 +34,9 @@ type typeData struct {
 type walkState struct {
 	typeData  map[reflect.Type]typeData
 	typeQueue []reflect.Type
+
+	skipResolvers []reflect.Type
+	skipFields    []generator2.TypeAndField
 }
 
 func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
@@ -100,7 +104,9 @@ func (ctx *walkState) walkType(p reflect.Type) {
 			return td.FieldData[i].Name < td.FieldData[j].Name
 		})
 	}
-	ctx.typeData[p] = td
+	if !rejectedType(p, ctx.skipResolvers) {
+		ctx.typeData[p] = td
+	}
 }
 
 func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructField) {
@@ -111,13 +117,15 @@ func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructF
 		return
 	}
 	ctx.typeQueue = append(ctx.typeQueue, sf.Type)
-	td.FieldData = append(td.FieldData, fieldData{
-		Name: sf.Name,
-		Type: sf.Type,
-	})
+	if !rejectedField(p, sf, ctx.skipFields) {
+		td.FieldData = append(td.FieldData, fieldData{
+			Name: sf.Name,
+			Type: sf.Type,
+		})
+	}
 }
 
-func rejected(p reflect.Type, blacklist []reflect.Type) bool {
+func rejectedType(p reflect.Type, blacklist []reflect.Type) bool {
 	for _, t := range blacklist {
 		if t == p {
 			return true
@@ -126,17 +134,25 @@ func rejected(p reflect.Type, blacklist []reflect.Type) bool {
 	return false
 }
 
-func typeWalk(initial []reflect.Type, blacklist []reflect.Type) []typeData {
+func rejectedField(parentType reflect.Type, field reflect.StructField, blacklist []generator2.TypeAndField) bool {
+	for _, t := range blacklist {
+		if t.ParentType == parentType && t.FieldName == field.Name {
+			return true
+		}
+	}
+	return false
+}
+
+func typeWalk(initial, skipResolvers []reflect.Type, skipFields []generator2.TypeAndField) []typeData {
 	ctx := walkState{
-		typeData: make(map[reflect.Type]typeData),
+		typeData:      make(map[reflect.Type]typeData),
+		skipResolvers: skipResolvers,
+		skipFields:    skipFields,
 	}
 	ctx.typeQueue = append(ctx.typeQueue, initial...)
 	for len(ctx.typeQueue) > 0 {
 		car, cdr := ctx.typeQueue[0], ctx.typeQueue[1:]
 		ctx.typeQueue = cdr
-		if rejected(car, blacklist) {
-			continue
-		}
 		ctx.walkType(car)
 	}
 	out := make([]typeData, len(ctx.typeData))

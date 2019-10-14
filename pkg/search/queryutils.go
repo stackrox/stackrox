@@ -43,6 +43,20 @@ func ValidateQuery(q *v1.Query, optionsMap OptionsMap) error {
 	return errList.ToError()
 }
 
+// FilterQueryWithMap removes match fields portions of the query that are not in the input options map.
+func FilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) *v1.Query {
+	filtered, _ := FilterQuery(q, func(bq *v1.BaseQuery) bool {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok {
+			if _, isValid := optionsMap.Get(matchFieldQuery.MatchFieldQuery.GetField()); isValid {
+				return true
+			}
+		}
+		return false
+	})
+	return filtered
+}
+
 // FilterQuery applies the given function on every base query, and returns a new
 // query that has only the sub-queries that the function returns true for.
 // It will NOT mutate q unless the function passed mutates its argument.

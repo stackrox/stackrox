@@ -13,3 +13,9 @@ var OptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)
 	Add(search.ClusterID, mappings.OptionsMap.MustGet(search.ClusterID.String())).
 	Add(search.Namespace, mappings.OptionsMap.MustGet(search.Namespace.String())).
 	Add(search.Label, mappings.OptionsMap.MustGet(search.Label.String()))
+
+// VulnerabilityOptionsMap defines the search options for Vulnerabilities stored in images.
+var VulnerabilityOptionsMap = search.Walk(v1.SearchCategory_VULNERABILITIES, "image.scan.components.vulns", (*storage.EmbeddedVulnerability)(nil))
+
+// ComponentOptionsMap defines the search options for image components stored in images.
+var ComponentOptionsMap = search.Walk(v1.SearchCategory_IMAGE_COMPONENTS, "image.scan.components", (*storage.EmbeddedImageScanComponent)(nil))

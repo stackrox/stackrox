@@ -105,12 +105,3 @@ func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Imag
 	}
 	return alert
 }
-
-func (resolver *embeddedImageScanComponentResolver) LayerIndex() *int32 {
-	w, ok := resolver.data.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
-	if !ok {
-		return nil
-	}
-	v := w.LayerIndex
-	return &v
-}

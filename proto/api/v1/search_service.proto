@@ -30,6 +30,8 @@ enum SearchCategory {
     PROCESS_WHITELISTS       = 17;
     SUBJECTS                 = 18;
     RISKS                    = 19;
+    IMAGE_COMPONENTS         = 20;
+    VULNERABILITIES          = 21;
 }
 
 enum SearchDataType {

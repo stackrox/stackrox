@@ -253,7 +253,8 @@ func listField(td schemaEntry, field fieldData) bool {
 func GenerateResolvers(parameters generator.TypeWalkParameters, writer io.Writer) {
 	data := typeWalk(
 		parameters.IncludedTypes,
-		parameters.BlackListedTypes,
+		parameters.SkipResolvers,
+		parameters.SkipFields,
 	)
 	rootTemplate := template.New("codegen")
 	rootTemplate.Funcs(template.FuncMap{

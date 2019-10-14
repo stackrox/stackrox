@@ -376,27 +376,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"useSTARTTLS: Boolean!",
 		"username: String!",
 	}))
-	utils.Must(builder.AddType("EmbeddedImageScanComponent", []string{
-		"license: License",
-		"name: String!",
-		"version: String!",
-		"vulns: [EmbeddedVulnerability]!",
-	}))
 	utils.Must(builder.AddType("EmbeddedSecret", []string{
 		"name: String!",
 		"path: String!",
-	}))
-	utils.Must(builder.AddType("EmbeddedVulnerability", []string{
-		"cve: String!",
-		"cvss: Float!",
-		"link: String!",
-		"scoreVersion: EmbeddedVulnerability_ScoreVersion!",
-		"summary: String!",
-		"vectors: EmbeddedVulnerabilityVectors",
-	}))
-	utils.Must(builder.AddUnionType("EmbeddedVulnerabilityVectors", []string{
-		"CVSSV2",
-		"CVSSV3",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
@@ -472,7 +454,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"username: String!",
 	}))
 	utils.Must(builder.AddType("ImageScan", []string{
-		"components: [EmbeddedImageScanComponent]!",
 		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("Jira", []string{
@@ -3762,49 +3743,6 @@ func (resolver *emailResolver) Username(ctx context.Context) string {
 	return value
 }
 
-type embeddedImageScanComponentResolver struct {
-	root *Resolver
-	data *storage.EmbeddedImageScanComponent
-}
-
-func (resolver *Resolver) wrapEmbeddedImageScanComponent(value *storage.EmbeddedImageScanComponent, ok bool, err error) (*embeddedImageScanComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &embeddedImageScanComponentResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapEmbeddedImageScanComponents(values []*storage.EmbeddedImageScanComponent, err error) ([]*embeddedImageScanComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*embeddedImageScanComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &embeddedImageScanComponentResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *embeddedImageScanComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
-	value := resolver.data.GetLicense()
-	return resolver.root.wrapLicense(value, true, nil)
-}
-
-func (resolver *embeddedImageScanComponentResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *embeddedImageScanComponentResolver) Version(ctx context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
-}
-
-func (resolver *embeddedImageScanComponentResolver) Vulns(ctx context.Context) ([]*embeddedVulnerabilityResolver, error) {
-	value := resolver.data.GetVulns()
-	return resolver.root.wrapEmbeddedVulnerabilities(value, nil)
-}
-
 type embeddedSecretResolver struct {
 	root *Resolver
 	data *storage.EmbeddedSecret
@@ -3836,82 +3774,6 @@ func (resolver *embeddedSecretResolver) Name(ctx context.Context) string {
 func (resolver *embeddedSecretResolver) Path(ctx context.Context) string {
 	value := resolver.data.GetPath()
 	return value
-}
-
-type embeddedVulnerabilityResolver struct {
-	root *Resolver
-	data *storage.EmbeddedVulnerability
-}
-
-func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulnerability, ok bool, err error) (*embeddedVulnerabilityResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &embeddedVulnerabilityResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapEmbeddedVulnerabilities(values []*storage.EmbeddedVulnerability, err error) ([]*embeddedVulnerabilityResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*embeddedVulnerabilityResolver, len(values))
-	for i, v := range values {
-		output[i] = &embeddedVulnerabilityResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *embeddedVulnerabilityResolver) Cve(ctx context.Context) string {
-	value := resolver.data.GetCve()
-	return value
-}
-
-func (resolver *embeddedVulnerabilityResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
-}
-
-func (resolver *embeddedVulnerabilityResolver) Link(ctx context.Context) string {
-	value := resolver.data.GetLink()
-	return value
-}
-
-func (resolver *embeddedVulnerabilityResolver) ScoreVersion(ctx context.Context) string {
-	value := resolver.data.GetScoreVersion()
-	return value.String()
-}
-
-func (resolver *embeddedVulnerabilityResolver) Summary(ctx context.Context) string {
-	value := resolver.data.GetSummary()
-	return value
-}
-
-type embeddedVulnerabilityVectorsResolver struct {
-	resolver interface{}
-}
-
-func (resolver *embeddedVulnerabilityResolver) Vectors() *embeddedVulnerabilityVectorsResolver {
-	if val := resolver.data.GetCvssV2(); val != nil {
-		return &embeddedVulnerabilityVectorsResolver{
-			resolver: &cVSSV2Resolver{resolver.root, val},
-		}
-	}
-	if val := resolver.data.GetCvssV3(); val != nil {
-		return &embeddedVulnerabilityVectorsResolver{
-			resolver: &cVSSV3Resolver{resolver.root, val},
-		}
-	}
-	return nil
-}
-
-func (resolver *embeddedVulnerabilityVectorsResolver) ToCVSSV2() (*cVSSV2Resolver, bool) {
-	res, ok := resolver.resolver.(*cVSSV2Resolver)
-	return res, ok
-}
-
-func (resolver *embeddedVulnerabilityVectorsResolver) ToCVSSV3() (*cVSSV3Resolver, bool) {
-	res, ok := resolver.resolver.(*cVSSV3Resolver)
-	return res, ok
 }
 
 func toEmbeddedVulnerability_ScoreVersion(value *string) storage.EmbeddedVulnerability_ScoreVersion {
@@ -4536,11 +4398,6 @@ func (resolver *Resolver) wrapImageScans(values []*storage.ImageScan, err error)
 		output[i] = &imageScanResolver{resolver, v}
 	}
 	return output, nil
-}
-
-func (resolver *imageScanResolver) Components(ctx context.Context) ([]*embeddedImageScanComponentResolver, error) {
-	value := resolver.data.GetComponents()
-	return resolver.root.wrapEmbeddedImageScanComponents(value, nil)
 }
 
 func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {

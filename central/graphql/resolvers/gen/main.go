@@ -46,8 +46,16 @@ var (
 			reflect.TypeOf((*storage.ServiceAccount)(nil)),
 			reflect.TypeOf((*storage.Subject)(nil)),
 		},
-		BlackListedTypes: []reflect.Type{
-			reflect.TypeOf((*types.Timestamp)(nil)),
+		SkipResolvers: []reflect.Type{
+			reflect.TypeOf(storage.EmbeddedVulnerability{}),
+			reflect.TypeOf(storage.EmbeddedImageScanComponent{}),
+			reflect.TypeOf(types.Timestamp{}),
+		},
+		SkipFields: []generator.TypeAndField{
+			{
+				ParentType: reflect.TypeOf(storage.ImageScan{}),
+				FieldName:  "Components",
+			},
 		},
 	}
 )
