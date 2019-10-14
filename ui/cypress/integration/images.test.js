@@ -1,7 +1,7 @@
 import { url as imagesUrl, selectors as imageSelectors } from '../constants/ImagesPage';
 import { url as riskUrl, selectors as riskSelectors } from '../constants/RiskPage';
 import * as api from '../constants/apiEndpoints';
-import selectors from '../constants/SearchPage';
+import searchSelectors from '../constants/SearchPage';
 import withAuth from '../helpers/basicAuth';
 
 describe('Images page', () => {
@@ -40,7 +40,7 @@ describe('Images page', () => {
         cy.wait('@noimages');
         cy.wait('@zerocount');
 
-        cy.get(selectors.pageSearchInput).type('Cluster:hello{enter}', { force: true });
+        cy.get(searchSelectors.pageSearchInput).type('Cluster:hello{enter}', { force: true });
 
         // No results found
         cy.get(imageSelectors.matchedHeader).contains('0 Images Matched');
@@ -55,8 +55,8 @@ describe('Images page', () => {
         cy.wait('@image');
 
         cy.get(imageSelectors.panelHeader)
-            .eq(1)
-            .should('have.text', 'apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest');
+            .eq(0)
+            .contains('apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest');
     });
 
     it('Should add the image id to the url when clicking a row', () => {
@@ -88,10 +88,8 @@ describe('Images page', () => {
     });
 
     it('should close the side panel on search filter', () => {
-        cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
-        cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
-        cy.get(imageSelectors.panelHeader)
-            .eq(1)
-            .should('not.be.visible');
+        cy.get(searchSelectors.pageSearchInput).type('Cluster:{enter}', { force: true });
+        cy.get(searchSelectors.pageSearchInput).type('remote{enter}', { force: true });
+        cy.get(imageSelectors.panelHeader).should('not.exist');
     });
 });

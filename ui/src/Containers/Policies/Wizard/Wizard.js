@@ -43,6 +43,7 @@ class Wizard extends Component {
                 header={header}
                 headerComponents={<Buttons />}
                 onClose={this.onClose}
+                id="side-panel"
                 className="bg-primary-200 w-1/2"
             >
                 <div className="bg-primary-100 w-full">

@@ -62,7 +62,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                             >
                                 <div
                                     className="flex flex-1 uppercase items-center tracking-wide pl-4 leading-normal font-700"
-                                    data-test-id="panel-header"
+                                    data-test-id="side-panel-header"
                                 >
                                     {linkText}
                                 </div>
@@ -83,6 +83,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                         className="bg-primary-200 z-40 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-108 md:relative"
                         headerTextComponent={headerTextComponent}
                         onClose={closeSidePanel}
+                        id="side-panel"
                     >
                         {entityPage}
                     </Panel>

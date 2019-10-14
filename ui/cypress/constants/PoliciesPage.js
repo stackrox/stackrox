@@ -58,15 +58,20 @@ export const selectors = {
         enabledValueDiv: 'div.text-base-600:contains("Enabled") + div'
     },
     searchInput: '.react-select__input > input',
-    sidePanel: '[data-test-id="panel"]',
-    sidePanelHeader: '[data-test-id="panel-header"]',
+    sidePanel: '[data-test-id="side-panel"]',
+    sidePanelHeader: '[data-test-id="side-panel-header"]',
     tableFirstRow: 'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd',
     tableFirstRowName:
         'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd [data-test-id=policy-name]',
     hoverActionButtons: '.rt-tr-actions svg',
     tableContainer: '[data-test-id="policies-table-container"]',
     enableDisableIcon: '[data-test-id="enable-disable-icon"]',
-    enabledIconColor: 'bg-success-500'
+    enabledIconColor: 'bg-success-500',
+    enforcement: {
+        buildTile: '[data-test-id="policy-enforcement-build-tile"]',
+        deployTile: '[data-test-id="policy-enforcement-deploy-tile"]',
+        onOffToggle: '[data-test-id="policy-enforcement-on-off"]'
+    }
 };
 
 export const text = {

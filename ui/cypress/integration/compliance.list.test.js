@@ -1,4 +1,5 @@
-import { url, selectors } from '../constants/CompliancePage';
+import { url, selectors as ComplianceSelectors } from '../constants/CompliancePage';
+import selectors from '../selectors/index';
 import withAuth from '../helpers/basicAuth';
 
 describe('Compliance list page', () => {
@@ -6,40 +7,36 @@ describe('Compliance list page', () => {
 
     it('should open/close side panel when clicking on a table row', () => {
         cy.visit(url.list.clusters);
-        cy.get(selectors.list.table.firstRowName)
+        cy.get(ComplianceSelectors.list.table.firstRowName)
             .invoke('text')
             .then(name => {
-                cy.get(selectors.list.table.firstRow).click();
-                cy.get(selectors.list.panels)
-                    .its('length')
-                    .should('eq', 2);
-                cy.get(selectors.list.sidePanelHeader).contains(name);
-                cy.get(selectors.widget.relatedEntities).should('not.exist');
-                cy.get(selectors.list.sidePanelCloseBtn).click();
-                cy.get(selectors.list.panels)
-                    .its('length')
-                    .should('eq', 1);
+                cy.get(ComplianceSelectors.list.table.firstRow).click();
+                cy.get(selectors.panel.sidePanel).should('exist');
+                cy.get(selectors.panel.sidePanelHeader).contains(name);
+                cy.get(ComplianceSelectors.widget.relatedEntities).should('not.exist');
+                cy.get(selectors.panel.closeButton).click();
+                cy.get(selectors.panel.sidePanel).should('not.exist');
             });
     });
 
     it('should link to entity page when clicking on side panel header', () => {
         cy.visit(url.list.clusters);
-        cy.get(selectors.list.table.firstRowName)
+        cy.get(ComplianceSelectors.list.table.firstRowName)
             .invoke('text')
             .then(name => {
-                cy.get(selectors.list.table.firstRow).click();
-                cy.get(selectors.list.sidePanelHeader).contains(name);
-                cy.get(selectors.list.sidePanelHeader).click();
+                cy.get(ComplianceSelectors.list.table.firstRow).click();
+                cy.get(selectors.panel.sidePanelHeader).contains(name);
+                cy.get(selectors.panel.sidePanelHeader).click();
                 cy.url().should('include', url.entity.cluster);
             });
     });
 
     it('should be sorted by version in standards list', () => {
         cy.visit(url.list.standards.CIS_Docker_v1_2_0);
-        cy.get(selectors.list.table.firstRowName)
+        cy.get(ComplianceSelectors.list.table.firstRowName)
             .invoke('text')
             .then(text1 => {
-                cy.get(selectors.list.table.secondRowName)
+                cy.get(ComplianceSelectors.list.table.secondRowName)
                     .invoke('text')
                     .then(text2 => {
                         const arr1 = text1.split(' ')[0];
@@ -56,27 +53,27 @@ describe('Compliance list page', () => {
 
     it('should collapse/open table grouping', () => {
         cy.visit(url.list.standards.PCI_DSS_3_2);
-        cy.get(selectors.list.table.firstTableGroup).should('be.visible');
-        cy.get(selectors.list.table.firstGroup).click();
-        cy.get(selectors.list.table.firstTableGroup).should('not.be.visible');
+        cy.get(ComplianceSelectors.list.table.firstTableGroup).should('be.visible');
+        cy.get(ComplianceSelectors.list.table.firstGroup).click();
+        cy.get(ComplianceSelectors.list.table.firstTableGroup).should('not.be.visible');
     });
 
     it('should collapse/open table banner', () => {
         cy.visit(url.list.clusters);
-        cy.get(selectors.list.banner.content).should('be.visible');
-        cy.get(selectors.list.banner.collapseButton).click();
-        cy.get(selectors.list.banner.content).should('be.not.visible');
+        cy.get(ComplianceSelectors.list.banner.content).should('be.visible');
+        cy.get(ComplianceSelectors.list.banner.collapseButton).click();
+        cy.get(ComplianceSelectors.list.banner.content).should('be.not.visible');
     });
 
     it('should show the proper percentage value in the gauge in the Standards List page', () => {
         cy.visit(url.list.standards.CIS_Docker_v1_2_0);
-        cy.get(selectors.widget.controlsInCompliance.centerLabel)
+        cy.get(ComplianceSelectors.widget.controlsInCompliance.centerLabel)
             .invoke('text')
             .then(labelPercentage => {
-                cy.get(selectors.widget.controlsInCompliance.passingControls)
+                cy.get(ComplianceSelectors.widget.controlsInCompliance.passingControls)
                     .invoke('text')
                     .then(passingControls => {
-                        cy.get(selectors.widget.controlsInCompliance.failingControls)
+                        cy.get(ComplianceSelectors.widget.controlsInCompliance.failingControls)
                             .invoke('text')
                             .then(failingControls => {
                                 const percentagePassing = Math.round(
@@ -95,15 +92,15 @@ describe('Compliance list page', () => {
 
     it('should go to the specific control when User clicks an item from the "Controls Most Failed" widget', () => {
         cy.visit(url.list.standards.CIS_Docker_v1_2_0);
-        cy.get(selectors.widget.controlsMostFailed.listItems, { timeout: 10000 })
+        cy.get(ComplianceSelectors.widget.controlsMostFailed.listItems, { timeout: 10000 })
             .eq(0)
             .invoke('text')
             .then(text => {
                 const controlName = text.split(':')[0];
-                cy.get(selectors.widget.controlsMostFailed.listItems)
+                cy.get(ComplianceSelectors.widget.controlsMostFailed.listItems)
                     .eq(0)
                     .click();
-                cy.get(selectors.widget.controlDetails.controlname)
+                cy.get(ComplianceSelectors.widget.controlDetails.controlName)
                     .invoke('text')
                     .should('eq', controlName);
             });

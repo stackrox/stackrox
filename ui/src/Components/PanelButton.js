@@ -14,7 +14,13 @@ const PanelButton = ({ icon, text, onClick, className, disabled, tooltip }) => {
             overlayClassName={tooltipClassName}
         >
             <div>
-                <button type="button" className={className} onClick={onClick} disabled={disabled}>
+                <button
+                    type="button"
+                    className={className}
+                    onClick={onClick}
+                    disabled={disabled}
+                    data-test-id={`${text.toLowerCase()}-button`}
+                >
                     {icon && <span className="flex items-center">{icon}</span>}
                     {text && <span className="mx-2 sm:hidden md:flex">{text}</span>}
                 </button>

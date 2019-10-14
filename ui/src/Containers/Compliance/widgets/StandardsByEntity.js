@@ -133,6 +133,7 @@ const StandardsByEntity = ({ match, location, entityType, bodyClassName, classNa
                         if (pages) {
                             const VerticalBarChartPaged = ({ currentPage }) => (
                                 <VerticalBarChart
+                                    id={`passing-standards-by-${entityType.toLowerCase()}`}
                                     data={results[currentPage]}
                                     labelLinks={labelLinks}
                                 />

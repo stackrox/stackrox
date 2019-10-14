@@ -19,6 +19,7 @@ import HoverHint from './HoverHint';
 
 class BarChart extends Component {
     static propTypes = {
+        id: PropTypes.string,
         history: ReactRouterPropTypes.history.isRequired,
         data: PropTypes.shape({}).isRequired,
         colors: PropTypes.arrayOf(PropTypes.string),
@@ -33,6 +34,7 @@ class BarChart extends Component {
     };
 
     static defaultProps = {
+        id: '',
         colors,
         containerProps: {},
         plotProps: {},
@@ -82,6 +84,7 @@ class BarChart extends Component {
 
     render() {
         const {
+            id,
             data,
             colors: colorRange,
             tickValues,
@@ -165,6 +168,7 @@ class BarChart extends Component {
                     <VerticalBarSeries
                         data={data[key]}
                         color={colorRange[i % colorRange.length]}
+                        className={`vertical-cluster-bar-${standardBaseTypes[key]}`}
                         {...seriesProps}
                         key={key}
                     />
@@ -172,7 +176,7 @@ class BarChart extends Component {
             });
 
         return (
-            <div {...containerProps}>
+            <div {...containerProps} data-test-id={id}>
                 <div className="flex flex-col h-full">
                     <FlexibleXYPlot {...plotProps}>
                         <VerticalGridLines

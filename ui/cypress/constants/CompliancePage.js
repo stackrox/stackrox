@@ -20,7 +20,7 @@ export const url = {
 };
 
 export const selectors = {
-    scanButton: "button:contains('Scan environment')",
+    scanButton: "[data-test-id='scan-button']",
     export: {
         exportButton: "button:contains('Export')",
         pdfButton: "[data-test-id='download-pdf-button']",
@@ -81,6 +81,10 @@ export const selectors = {
             axisLinks: '[data-test-id="standards-across-cluster"] a',
             barLabels: '[data-test-id="standards-across-cluster"] .rv-xy-plot__series > text'
         },
+        passingStandardsByCluster: {
+            NISTBarLinks:
+                '[data-test-id="passing-standards-by-cluster"] g.vertical-cluster-bar-NIST rect'
+        },
         passingStandardsAcrossNamespaces: {
             axisLinks: '[data-test-id="standards-across-namespace"] a'
         },
@@ -94,7 +98,7 @@ export const selectors = {
         controlDetails: {
             widget: '[data-test-id="control-details"]',
             standardName: '[data-test-id="control-details"] [data-test-id="standard-name"]',
-            controlname: '[data-test-id="control-details"] [data-test-id="control-name"]'
+            controlName: '[data-test-id="control-details"] [data-test-id="control-name"]'
         },
         PCICompliance: {
             controls:

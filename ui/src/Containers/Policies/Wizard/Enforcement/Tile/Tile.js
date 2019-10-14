@@ -8,7 +8,10 @@ import Visual from 'Containers/Policies/Wizard/Enforcement/Tile/Visual';
 const Tile = props => {
     const { enabled } = props;
     return (
-        <div className={`p-3 w-full ${!enabled && 'opacity-50'}`}>
+        <div
+            className={`p-3 w-full ${!enabled ? 'opacity-50' : ''}`}
+            data-test-id={`policy-enforcement-${props.enforcement.label.toLowerCase()}-tile`}
+        >
             <div className="flex w-full bg-primary-100 border-3 rounded border-primary-300">
                 <div className="flex flex-col border-r-3 border-primary-200">
                     <div className="px-5">

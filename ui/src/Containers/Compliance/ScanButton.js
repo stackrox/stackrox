@@ -70,6 +70,7 @@ class ScanButton extends React.Component {
                                 }
                                 return (
                                     <Button
+                                        dataTestId="scan-button"
                                         className={className}
                                         text={text}
                                         textCondensed={textCondensed}

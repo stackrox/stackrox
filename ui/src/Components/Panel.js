@@ -7,7 +7,7 @@ import CloseButton from './CloseButton';
 
 export const headerClassName = 'flex w-full h-12 border-b border-base-400';
 
-export const TooltipDiv = ({ header, isUpperCase }) => {
+export const TooltipDiv = ({ header, isUpperCase, id }) => {
     const titleClassName = isUpperCase ? 'uppercase' : 'capitalize';
     const tooltipContent = <span className="text-sm">{header}</span>;
 
@@ -62,7 +62,7 @@ export const TooltipDiv = ({ header, isUpperCase }) => {
         <div
             ref={parentRef}
             className={`overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 ${titleClassName}`}
-            data-test-id="panel-header"
+            data-test-id={`${id}-header`}
         >
             {content}
         </div>
@@ -71,12 +71,14 @@ export const TooltipDiv = ({ header, isUpperCase }) => {
 
 TooltipDiv.propTypes = {
     header: PropTypes.string,
-    isUpperCase: PropTypes.bool
+    isUpperCase: PropTypes.bool,
+    id: PropTypes.string
 };
 
 TooltipDiv.defaultProps = {
     header: ' ',
-    isUpperCase: true
+    isUpperCase: true,
+    id: 'panel'
 };
 
 const Panel = props => (
@@ -96,7 +98,11 @@ const Panel = props => (
                 {props.headerTextComponent ? (
                     props.headerTextComponent
                 ) : (
-                    <TooltipDiv header={props.header} isUpperCase={props.isUpperCase} />
+                    <TooltipDiv
+                        header={props.header}
+                        isUpperCase={props.isUpperCase}
+                        id={props.id}
+                    />
                 )}
 
                 <div

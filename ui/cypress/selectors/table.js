@@ -1,5 +1,6 @@
 const table = {
     column: {
+        name: 'div.rt-th div:contains("Name")',
         priority: 'div.rt-th div:contains("Priority")'
     },
     row: {
