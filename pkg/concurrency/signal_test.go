@@ -73,9 +73,9 @@ func TestSignalDoWithTimeout(t *testing.T) {
 	a.False(DoWithTimeout(&s, action, 100*time.Millisecond))
 	a.False(done)
 	go func() {
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		s.Signal()
 	}()
-	a.True(DoWithTimeout(&s, action, 100*time.Millisecond))
+	a.True(DoWithTimeout(&s, action, 500*time.Millisecond))
 	a.True(done)
 }
