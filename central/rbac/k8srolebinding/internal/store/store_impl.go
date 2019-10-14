@@ -38,7 +38,8 @@ func newStore(db *bbolt.DB) (*store, error) {
 
 func (s *store) DeleteRoleBinding(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "RoleBinding")
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 func (s *store) GetRoleBinding(id string) (*storage.K8SRoleBinding, bool, error) {
@@ -85,5 +86,6 @@ func (s *store) ListRoleBindings() ([]*storage.K8SRoleBinding, error) {
 
 func (s *store) UpsertRoleBinding(rolebinding *storage.K8SRoleBinding) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "RoleBinding")
-	return s.crud.Upsert(rolebinding)
+	_, _, err := s.crud.Upsert(rolebinding)
+	return err
 }

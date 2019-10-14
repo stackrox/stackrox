@@ -17,7 +17,8 @@ func generateDelete(props *GeneratorProperties) (Code, Code) {
 
 	implementation := renderDeleteFunctionSignature(common.RenderFuncSStarStore(), props).Block(
 		common.RenderBoltMetricLine("Remove", props.Singular),
-		Return(Id("s").Dot("crud").Dot("Delete").Call(Id("id"))),
+		List(Id("_"), Id("_"), Err()).Op(":=").Id("s").Dot("crud").Dot("Delete").Call(Id("id")),
+		Return(Err()),
 	)
 	return interfaceMethod, implementation
 }

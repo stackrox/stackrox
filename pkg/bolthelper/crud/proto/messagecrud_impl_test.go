@@ -134,7 +134,8 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 	}
 
 	for _, a := range updatedAlerts {
-		s.NoError(s.crud.Update(a))
+		_, _, err := s.crud.Update(a)
+		s.NoError(err)
 	}
 
 	for _, a := range updatedAlerts {
@@ -169,7 +170,8 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 	}
 
 	for _, a := range alerts {
-		s.NoError(s.crud.Upsert(a))
+		_, _, err := s.crud.Upsert(a)
+		s.NoError(err)
 	}
 
 	updatedAlerts := []*storage.Alert{
@@ -191,7 +193,8 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 	}
 
 	for _, a := range updatedAlerts {
-		s.NoError(s.crud.Upsert(a))
+		_, _, err := s.crud.Upsert(a)
+		s.NoError(err)
 	}
 
 	for _, a := range updatedAlerts {
@@ -226,11 +229,13 @@ func (s *MessageCrudTestSuite) TestDelete() {
 	}
 
 	for _, a := range alerts {
-		s.NoError(s.crud.Upsert(a))
+		_, _, err := s.crud.Upsert(a)
+		s.NoError(err)
 	}
 
 	for _, a := range alerts {
-		s.NoError(s.crud.Delete(a.GetId()))
+		_, _, err := s.crud.Delete(a.GetId())
+		s.NoError(err)
 	}
 
 	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"deleteId1", "deleteId2"})
@@ -259,11 +264,13 @@ func (s *MessageCrudTestSuite) TestDeleteBatch() {
 	}
 
 	for _, a := range alerts {
-		s.NoError(s.crud.Upsert(a))
+		_, _, err := s.crud.Upsert(a)
+		s.NoError(err)
 	}
 
 	ids := []string{"deleteBatchId1", "deleteBatchId2"}
-	s.NoError(s.crud.DeleteBatch(ids))
+	_, _, err := s.crud.DeleteBatch(ids)
+	s.NoError(err)
 
 	for _, id := range ids {
 		alert, err := s.crud.Read(id)

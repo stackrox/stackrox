@@ -38,7 +38,8 @@ func newStore(db *bbolt.DB) (*store, error) {
 
 func (s *store) DeleteServiceAccount(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "ServiceAccount")
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 func (s *store) GetServiceAccount(id string) (*storage.ServiceAccount, bool, error) {
@@ -85,5 +86,6 @@ func (s *store) ListServiceAccounts() ([]*storage.ServiceAccount, error) {
 
 func (s *store) UpsertServiceAccount(serviceaccount *storage.ServiceAccount) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "ServiceAccount")
-	return s.crud.Upsert(serviceaccount)
+	_, _, err := s.crud.Upsert(serviceaccount)
+	return err
 }

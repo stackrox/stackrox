@@ -5,7 +5,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/bolthelper/crud/generic"
-	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/storecache"
 )
 
 // MessageCrud provides a simple crud layer on top of bolt DB for protobuf messages with a string Id field.
@@ -17,13 +17,13 @@ type MessageCrud interface {
 
 	Create(msg proto.Message) error
 	CreateBatch(msgs []proto.Message) error
-	Update(msg proto.Message) error
-	UpdateBatch(msgs []proto.Message) error
-	Upsert(msg proto.Message) error
-	UpsertBatch(msgs []proto.Message) error
+	Update(msg proto.Message) (uint64, uint64, error)
+	UpdateBatch(msgs []proto.Message) (uint64, uint64, error)
+	Upsert(msg proto.Message) (uint64, uint64, error)
+	UpsertBatch(msgs []proto.Message) (uint64, uint64, error)
 
-	Delete(id string) error
-	DeleteBatch(ids []string) error
+	Delete(id string) (uint64, uint64, error)
+	DeleteBatch(ids []string) (uint64, uint64, error)
 
 	KeyFunc(msg proto.Message) []byte
 }
@@ -50,7 +50,7 @@ func NewMessageCrudOrPanic(db *bolt.DB,
 
 // NewCachedMessageCrud returns a new MessageCrud instance for the given db and bucket using the provided cache.
 func NewCachedMessageCrud(messageCrud MessageCrud,
-	cache expiringcache.Cache,
+	cache storecache.Cache,
 	metricType string,
 	metricFunc func(string, string)) MessageCrud {
 	return &cachedMessageCrudImpl{

@@ -78,13 +78,13 @@ func (crud *messageCrudImpl) CreateBatch(msgs []proto.Message) error {
 
 // Update updates a new entry in bolt for the input message.
 // Returns an error an entry with the same id does not already exist.
-func (crud *messageCrudImpl) Update(msg proto.Message) error {
+func (crud *messageCrudImpl) Update(msg proto.Message) (uint64, uint64, error) {
 	return crud.genericCrud.Update(msg)
 }
 
 // Update updates the entries in bolt for the input messages.
 // Returns an error if any input message does not have an existing entry.
-func (crud *messageCrudImpl) UpdateBatch(msgs []proto.Message) error {
+func (crud *messageCrudImpl) UpdateBatch(msgs []proto.Message) (uint64, uint64, error) {
 	entries := make([]generic.Entry, len(msgs))
 	for i, msg := range msgs {
 		entries[i] = generic.Entry{Value: msg}
@@ -93,12 +93,12 @@ func (crud *messageCrudImpl) UpdateBatch(msgs []proto.Message) error {
 }
 
 // Upsert upserts the input message into bolt whether or not an entry with the same id already exists.
-func (crud *messageCrudImpl) Upsert(msg proto.Message) error {
+func (crud *messageCrudImpl) Upsert(msg proto.Message) (uint64, uint64, error) {
 	return crud.genericCrud.Upsert(msg)
 }
 
 // Upsert upserts the input messages into bolt whether or not entries with the same ids already exist.
-func (crud *messageCrudImpl) UpsertBatch(msgs []proto.Message) error {
+func (crud *messageCrudImpl) UpsertBatch(msgs []proto.Message) (uint64, uint64, error) {
 	entries := make([]generic.Entry, len(msgs))
 	for i, msg := range msgs {
 		entries[i] = generic.Entry{Value: msg}
@@ -107,12 +107,12 @@ func (crud *messageCrudImpl) UpsertBatch(msgs []proto.Message) error {
 }
 
 // Delete delete the input message in bolt whether or not an entry with the same id exists.
-func (crud *messageCrudImpl) Delete(id string) error {
+func (crud *messageCrudImpl) Delete(id string) (uint64, uint64, error) {
 	return crud.genericCrud.Delete(generic.Key(id))
 }
 
 // DeleteBatch deletes the messages associated with all of the input ids in bolt.
-func (crud *messageCrudImpl) DeleteBatch(ids []string) error {
+func (crud *messageCrudImpl) DeleteBatch(ids []string) (uint64, uint64, error) {
 	return crud.genericCrud.DeleteBatch(idsToKeyPaths(ids)...)
 }
 

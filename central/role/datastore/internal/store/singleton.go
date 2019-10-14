@@ -32,7 +32,7 @@ func fillPreloadedRoles(st Store) Store {
 	inSto := st.(*storeImpl)
 	// Load in all the preloaded roles
 	for _, role := range rolePkg.DefaultRolesByName {
-		err := inSto.roleCrud.Upsert(role)
+		_, _, err := inSto.roleCrud.Upsert(role)
 		utils.Should(errors.Wrapf(err, "cannot upsert pre-defined role %s", role.GetName()))
 	}
 	return st

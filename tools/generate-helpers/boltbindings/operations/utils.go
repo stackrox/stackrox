@@ -44,7 +44,8 @@ func renderUpdateUpsert(sigFunc func(*Statement, *GeneratorProperties) *Statemen
 
 	implementation := sigFunc(common.RenderFuncSStarStore(), props).Block(
 		common.RenderBoltMetricLine(crudCall, props.Singular),
-		Return(Id("s").Dot("crud").Dot(crudCall).Call(Id(argName))),
+		List(Id("_"), Id("_"), Err()).Op(":=").Id("s").Dot("crud").Dot(crudCall).Call(Id(argName)),
+		Return(Err()),
 	)
 
 	return interfaceMethod, implementation
@@ -60,7 +61,8 @@ func renderUpdateUpsertMany(sigFunc func(*Statement, *GeneratorProperties) *Stat
 				Id("msgs").Index(Id("i")).Op("=").Id("key"),
 			),
 		),
-		Return(Id("s").Dot("crud").Dot(crudCall).Call(Id("msgs"))),
+		List(Id("_"), Id("_"), Err()).Op(":=").Id("s").Dot("crud").Dot(crudCall).Call(Id("msgs")),
+		Return(Err()),
 	)
 	return interfaceMethod, implementation
 }

@@ -43,7 +43,8 @@ func (s *store) AddWhitelist(whitelist *storage.ProcessWhitelist) error {
 
 func (s *store) DeleteWhitelist(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Whitelist")
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 func (s *store) GetWhitelist(id string) (*storage.ProcessWhitelist, error) {
@@ -90,5 +91,6 @@ func (s *store) ListWhitelists() ([]*storage.ProcessWhitelist, error) {
 
 func (s *store) UpdateWhitelist(whitelist *storage.ProcessWhitelist) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Whitelist")
-	return s.crud.Update(whitelist)
+	_, _, err := s.crud.Update(whitelist)
+	return err
 }

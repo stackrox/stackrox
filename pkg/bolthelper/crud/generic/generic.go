@@ -25,13 +25,13 @@ type Crud interface {
 
 	Create(x interface{}, nesting ...Key) error
 	CreateBatch(entries []Entry, nestingPrefix ...Key) error
-	Update(x interface{}, nesting ...Key) error
-	UpdateBatch(entries []Entry, nestingPrefix ...Key) error
-	Upsert(x interface{}, nesting ...Key) error
-	UpsertBatch(entries []Entry, nestingPrefix ...Key) error
+	Update(x interface{}, nesting ...Key) (uint64, uint64, error)
+	UpdateBatch(entries []Entry, nestingPrefix ...Key) (uint64, uint64, error)
+	Upsert(x interface{}, nesting ...Key) (uint64, uint64, error)
+	UpsertBatch(entries []Entry, nestingPrefix ...Key) (uint64, uint64, error)
 
-	Delete(firstKey Key, restKeys ...Key) error
-	DeleteBatch(keyPaths ...KeyPath) error
+	Delete(firstKey Key, restKeys ...Key) (uint64, uint64, error)
+	DeleteBatch(keyPaths ...KeyPath) (uint64, uint64, error)
 }
 
 // DeserializeFunc is the function converting a byte slice into an element (or returning an error).

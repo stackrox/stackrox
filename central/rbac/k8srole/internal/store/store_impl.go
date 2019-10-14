@@ -8,8 +8,8 @@ import (
 	metrics "github.com/stackrox/rox/central/metrics"
 	storage "github.com/stackrox/rox/generated/storage"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
-	expiringcache "github.com/stackrox/rox/pkg/expiringcache"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	storecache "github.com/stackrox/rox/pkg/storecache"
 	"time"
 )
 
@@ -29,7 +29,7 @@ func alloc() proto.Message {
 	return new(storage.K8SRole)
 }
 
-func newStore(db *bbolt.DB, cache expiringcache.Cache) (*store, error) {
+func newStore(db *bbolt.DB, cache storecache.Cache) (*store, error) {
 	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,8 @@ func newStore(db *bbolt.DB, cache expiringcache.Cache) (*store, error) {
 
 func (s *store) DeleteRole(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Role")
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 func (s *store) GetRole(id string) (*storage.K8SRole, bool, error) {
@@ -87,5 +88,6 @@ func (s *store) ListRoles() ([]*storage.K8SRole, error) {
 
 func (s *store) UpsertRole(role *storage.K8SRole) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Role")
-	return s.crud.Upsert(role)
+	_, _, err := s.crud.Upsert(role)
+	return err
 }

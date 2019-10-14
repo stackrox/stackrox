@@ -38,7 +38,8 @@ func newStore(db *bbolt.DB) (*store, error) {
 
 func (s *store) DeleteRisk(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Risk")
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 func (s *store) GetRisk(id string) (*storage.Risk, error) {
@@ -85,5 +86,6 @@ func (s *store) ListRisks() ([]*storage.Risk, error) {
 
 func (s *store) UpsertRisk(risk *storage.Risk) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Risk")
-	return s.crud.Upsert(risk)
+	_, _, err := s.crud.Upsert(risk)
+	return err
 }

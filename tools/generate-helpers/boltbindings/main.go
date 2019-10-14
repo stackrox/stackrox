@@ -41,7 +41,7 @@ func generateInterfaceFile(interfaceMethods []Code, props *operations.GeneratorP
 	f.Func().Id("New").Params(
 		operations.CBlock(
 			operations.CCode(true, Id("db").Op("*").Qual(packagenames.BBolt, "DB")),
-			operations.CCode(props.Cache, Id("cache").Qual(packagenames.ExpiringCache, "Cache")),
+			operations.CCode(props.Cache, Id("cache").Qual(packagenames.StoreCache, "Cache")),
 		)...,
 	).
 		Parens(List(Id("Store"), Error())).
@@ -91,7 +91,7 @@ func generateNewFunc(props *operations.GeneratorProperties) Code {
 	return Func().Id("newStore").Params(
 		operations.CBlock(
 			operations.CCode(true, Id("db").Op("*").Qual(packagenames.BBolt, "DB")),
-			operations.CCode(props.Cache, Id("cache").Qual(packagenames.ExpiringCache, "Cache")),
+			operations.CCode(props.Cache, Id("cache").Qual(packagenames.StoreCache, "Cache")),
 		)...,
 	).Parens(List(Op("*").Id("store"), Error())).Block(
 		operations.CBlock(

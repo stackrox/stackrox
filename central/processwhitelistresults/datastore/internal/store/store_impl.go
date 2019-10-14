@@ -38,7 +38,8 @@ func newStore(db *bbolt.DB) (*store, error) {
 
 func (s *store) DeleteWhitelistResults(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "WhitelistResults")
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 func (s *store) GetWhitelistResults(id string) (*storage.ProcessWhitelistResults, error) {
@@ -56,5 +57,6 @@ func (s *store) GetWhitelistResults(id string) (*storage.ProcessWhitelistResults
 
 func (s *store) UpsertWhitelistResults(whitelistresults *storage.ProcessWhitelistResults) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "WhitelistResults")
-	return s.crud.Upsert(whitelistresults)
+	_, _, err := s.crud.Upsert(whitelistresults)
+	return err
 }

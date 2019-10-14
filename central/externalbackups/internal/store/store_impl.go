@@ -56,9 +56,11 @@ func (s *storeImpl) GetBackup(id string) (*storage.ExternalBackup, error) {
 }
 
 func (s *storeImpl) UpsertBackup(backup *storage.ExternalBackup) error {
-	return s.crud.Upsert(backup)
+	_, _, err := s.crud.Upsert(backup)
+	return err
 }
 
 func (s *storeImpl) RemoveBackup(id string) error {
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }

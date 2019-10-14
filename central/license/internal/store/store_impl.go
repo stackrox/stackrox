@@ -38,7 +38,8 @@ func newStore(db *bbolt.DB) (*store, error) {
 
 func (s *store) DeleteLicenseKey(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "LicenseKey")
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 func (s *store) ListLicenseKeys() ([]*storage.StoredLicenseKey, error) {
@@ -59,5 +60,6 @@ func (s *store) UpsertLicenseKeys(licensekeys []*storage.StoredLicenseKey) error
 	for i, key := range licensekeys {
 		msgs[i] = key
 	}
-	return s.crud.UpsertBatch(msgs)
+	_, _, err := s.crud.UpsertBatch(msgs)
+	return err
 }

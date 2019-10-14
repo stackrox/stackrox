@@ -1,10 +1,8 @@
 package store
 
 import (
-	"time"
-
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/storecache"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -17,8 +15,7 @@ var (
 // Singleton returns a singleton of the Store class
 func Singleton() Store {
 	singletonInit.Do(func() {
-		cache := expiringcache.NewExpiringCache(time.Hour, expiringcache.UpdateExpirationOnGets)
-		store, err := New(globaldb.GetGlobalDB(), cache)
+		store, err := New(globaldb.GetGlobalDB(), storecache.NewMapBackedCache())
 		utils.Must(err)
 		singleton = store
 	})

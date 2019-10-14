@@ -38,7 +38,8 @@ func newStore(db *bbolt.DB) (*store, error) {
 
 func (s *store) DeleteAuthzPluginConfig(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "AuthzPluginConfig")
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 func (s *store) GetAuthzPluginConfig(id string) (*storage.AuthzPluginConfig, error) {
@@ -69,7 +70,8 @@ func (s *store) ListAuthzPluginConfigs() ([]*storage.AuthzPluginConfig, error) {
 
 func (s *store) UpsertAuthzPluginConfig(authzpluginconfig *storage.AuthzPluginConfig) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "AuthzPluginConfig")
-	return s.crud.Upsert(authzpluginconfig)
+	_, _, err := s.crud.Upsert(authzpluginconfig)
+	return err
 }
 
 func (s *store) UpsertAuthzPluginConfigs(authzpluginconfigs []*storage.AuthzPluginConfig) error {
@@ -77,5 +79,6 @@ func (s *store) UpsertAuthzPluginConfigs(authzpluginconfigs []*storage.AuthzPlug
 	for i, key := range authzpluginconfigs {
 		msgs[i] = key
 	}
-	return s.crud.UpsertBatch(msgs)
+	_, _, err := s.crud.UpsertBatch(msgs)
+	return err
 }

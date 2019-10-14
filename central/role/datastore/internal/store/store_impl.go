@@ -24,7 +24,8 @@ func (s *storeImpl) UpdateRole(role *storage.Role) error {
 	if isDefaultRole(role) {
 		return errors.Errorf("cannot modify default role %s", role.GetName())
 	}
-	return s.roleCrud.Update(role)
+	_, _, err := s.roleCrud.Update(role)
+	return err
 }
 
 // RemoveRole removes a role from the store.
@@ -33,7 +34,9 @@ func (s *storeImpl) RemoveRole(name string) error {
 	if isDefaultRoleName(name) {
 		return errors.Errorf("cannot modify default role %s", name)
 	}
-	return s.roleCrud.Delete(name)
+
+	_, _, err := s.roleCrud.Delete(name)
+	return err
 }
 
 // GetRole returns a role from the store by name.

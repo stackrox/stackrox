@@ -3,13 +3,12 @@ package proto
 import (
 	"os"
 	"testing"
-	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/storecache"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,16 +18,25 @@ func TestCachedMessageCrud(t *testing.T) {
 	suite.Run(t, new(cachedMessageCrudTestSuite))
 }
 
+// cacheTracker will be used by the tests to assert on cache hits and cache misses
+type cacheTracker struct {
+	cacheHit  int
+	cacheMiss int
+}
+
+func (m *cacheTracker) fakeMetricFunc(a, b string) {
+	if a == "hit" {
+		m.cacheHit++
+	} else {
+		m.cacheMiss++
+	}
+}
+
 type cachedMessageCrudTestSuite struct {
 	suite.Suite
 
 	db *bolt.DB
-
-	crud  MessageCrud
-	cache expiringcache.Cache
 }
-
-func fakeMetricFunc(a, b string) {}
 
 func (s *cachedMessageCrudTestSuite) SetupSuite() {
 	db := testutils.DBForSuite(s) //bolthelper.NewTemp(s.T().Name() + ".db")
@@ -37,20 +45,6 @@ func (s *cachedMessageCrudTestSuite) SetupSuite() {
 	bolthelper.RegisterBucketOrPanic(db, testBucket)
 
 	s.db = db
-
-	// Function that provides the key for a given instance.
-	keyFunc := func(msg proto.Message) []byte {
-		return []byte(msg.(*storage.Alert).GetId())
-	}
-	// Function that provide a new empty instance when wanted.
-	allocFunc := func() proto.Message {
-		return &storage.Alert{}
-	}
-	s.cache = expiringcache.NewExpiringCache(time.Hour)
-	wrappedCrud, err := NewMessageCrud(db, []byte("testBucket"), keyFunc, allocFunc)
-	s.NoError(err)
-	crud := NewCachedMessageCrud(wrappedCrud, s.cache, "testMetric", fakeMetricFunc)
-	s.crud = crud
 }
 
 func (s *cachedMessageCrudTestSuite) TearDownSuite() {
@@ -60,7 +54,24 @@ func (s *cachedMessageCrudTestSuite) TearDownSuite() {
 	}
 }
 
+func (s *cachedMessageCrudTestSuite) makeCachedMessageCrud() (MessageCrud, *cacheTracker) {
+	// Function that provides the key for a given instance.
+	keyFunc := func(msg proto.Message) []byte {
+		return []byte(msg.(*storage.Alert).GetId())
+	}
+	// Function that provide a new empty instance when wanted.
+	allocFunc := func() proto.Message {
+		return &storage.Alert{}
+	}
+	cache := storecache.NewMapBackedCache()
+	wrappedCrud, err := NewMessageCrud(s.db, []byte("testBucket"), keyFunc, allocFunc)
+	s.NoError(err)
+	tracker := &cacheTracker{}
+	return NewCachedMessageCrud(wrappedCrud, cache, "testMetric", tracker.fakeMetricFunc), tracker
+}
+
 func (s *cachedMessageCrudTestSuite) TestCreate() {
+	crud, tracker := s.makeCachedMessageCrud()
 	alerts := []*storage.Alert{
 		{
 			Id:             "createId1",
@@ -80,26 +91,33 @@ func (s *cachedMessageCrudTestSuite) TestCreate() {
 	}
 
 	for _, a := range alerts {
-		s.NoError(s.crud.Create(a))
+		s.NoError(crud.Create(a))
 	}
 
 	for _, a := range alerts {
-		s.Error(s.crud.Create(a))
+		s.Error(crud.Create(a))
 	}
 
 	for _, a := range alerts {
-		full, err := s.crud.Read(a.GetId())
+		// Creates don't put things in the cache.  This get should be a cache miss.
+		expectedMisses := tracker.cacheMiss + 1
+		full, err := crud.Read(a.GetId())
 		s.NoError(err)
 		s.Equal(a, full)
+		s.Equal(expectedMisses, tracker.cacheMiss)
 	}
 
-	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"createId1", "createId2"})
+	// These results were previously gotten.  These gets should be cache hits.
+	expectedHits := tracker.cacheHit + len(alerts)
+	retrievedAlerts, missingIndices, err := crud.ReadBatch([]string{"createId1", "createId2"})
 	s.NoError(err)
 	s.Empty(missingIndices)
 	s.ElementsMatch(alerts, retrievedAlerts)
+	s.Equal(expectedHits, tracker.cacheHit)
 }
 
 func (s *cachedMessageCrudTestSuite) TestUpdate() {
+	crud, tracker := s.makeCachedMessageCrud()
 	alerts := []*storage.Alert{
 		{
 			Id:             "updateId1",
@@ -120,7 +138,7 @@ func (s *cachedMessageCrudTestSuite) TestUpdate() {
 
 	// Create the alerts.
 	for _, a := range alerts {
-		s.NoError(s.crud.Create(a))
+		s.NoError(crud.Create(a))
 	}
 
 	updatedAlerts := []*storage.Alert{
@@ -141,23 +159,32 @@ func (s *cachedMessageCrudTestSuite) TestUpdate() {
 		},
 	}
 
+	var expectedWriteVersion uint64
 	for _, a := range updatedAlerts {
-		s.NoError(s.crud.Update(a))
+		expectedWriteVersion++
+		writeVersion, _, err := crud.Update(a)
+		s.NoError(err)
+		s.Equal(expectedWriteVersion, writeVersion)
 	}
 
 	for _, a := range updatedAlerts {
-		full, err := s.crud.Read(a.GetId())
+		expectedHits := tracker.cacheHit + 1
+		full, err := crud.Read(a.GetId())
 		s.NoError(err)
 		s.Equal(a, full)
+		s.Equal(expectedHits, tracker.cacheHit)
 	}
 
-	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"updateId1", "updateId2"})
+	expectedHits := tracker.cacheHit + len(updatedAlerts)
+	retrievedAlerts, missingIndices, err := crud.ReadBatch([]string{"updateId1", "updateId2"})
 	s.NoError(err)
 	s.Empty(missingIndices)
 	s.ElementsMatch(updatedAlerts, retrievedAlerts)
+	s.Equal(expectedHits, tracker.cacheHit)
 }
 
 func (s *cachedMessageCrudTestSuite) TestUpsert() {
+	crud, tracker := s.makeCachedMessageCrud()
 	alerts := []*storage.Alert{
 		{
 			Id:             "upsertId1",
@@ -176,8 +203,12 @@ func (s *cachedMessageCrudTestSuite) TestUpsert() {
 		},
 	}
 
+	var expectedWriteVersion uint64
 	for _, a := range alerts {
-		s.NoError(s.crud.Upsert(a))
+		expectedWriteVersion++
+		writeVersion, _, err := crud.Upsert(a)
+		s.NoError(err)
+		s.Equal(expectedWriteVersion, writeVersion)
 	}
 
 	updatedAlerts := []*storage.Alert{
@@ -199,22 +230,30 @@ func (s *cachedMessageCrudTestSuite) TestUpsert() {
 	}
 
 	for _, a := range updatedAlerts {
-		s.NoError(s.crud.Upsert(a))
+		expectedWriteVersion++
+		writeVersion, _, err := crud.Upsert(a)
+		s.NoError(err)
+		s.Equal(expectedWriteVersion, writeVersion)
 	}
 
 	for _, a := range updatedAlerts {
-		full, err := s.crud.Read(a.GetId())
+		expectedCacheHits := tracker.cacheHit + 1
+		full, err := crud.Read(a.GetId())
 		s.NoError(err)
 		s.Equal(a, full)
+		s.Equal(expectedCacheHits, tracker.cacheHit)
 	}
 
-	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"upsertId1", "upsertId2"})
+	expectedCacheHits := tracker.cacheHit + len(alerts)
+	retrievedAlerts, missingIndices, err := crud.ReadBatch([]string{"upsertId1", "upsertId2"})
 	s.NoError(err)
 	s.Empty(missingIndices)
 	s.ElementsMatch(updatedAlerts, retrievedAlerts)
+	s.Equal(expectedCacheHits, tracker.cacheHit)
 }
 
 func (s *cachedMessageCrudTestSuite) TestDelete() {
+	crud, tracker := s.makeCachedMessageCrud()
 	alerts := []*storage.Alert{
 		{
 			Id:             "deleteId1",
@@ -233,21 +272,31 @@ func (s *cachedMessageCrudTestSuite) TestDelete() {
 		},
 	}
 
+	var expectedWriteVersion uint64
 	for _, a := range alerts {
-		s.NoError(s.crud.Upsert(a))
+		expectedWriteVersion++
+		writeVersion, _, err := crud.Upsert(a)
+		s.NoError(err)
+		s.Equal(expectedWriteVersion, writeVersion)
 	}
 
 	for _, a := range alerts {
-		s.NoError(s.crud.Delete(a.GetId()))
+		expectedWriteVersion++
+		writeVersion, _, err := crud.Delete(a.GetId())
+		s.NoError(err)
+		s.Equal(expectedWriteVersion, writeVersion)
 	}
 
-	retrievedAlerts, missingIndices, err := s.crud.ReadBatch([]string{"deleteId1", "deleteId2"})
+	expectedCacheMisses := tracker.cacheMiss + len(alerts)
+	retrievedAlerts, missingIndices, err := crud.ReadBatch([]string{"deleteId1", "deleteId2"})
 	s.NoError(err)
 	s.ElementsMatch(missingIndices, []int{0, 1})
 	s.Empty(retrievedAlerts)
+	s.Equal(expectedCacheMisses, tracker.cacheMiss)
 }
 
 func (s *cachedMessageCrudTestSuite) TestDeleteBatch() {
+	crud, tracker := s.makeCachedMessageCrud()
 	alerts := []*storage.Alert{
 		{
 			Id:             "deleteBatchId1",
@@ -266,16 +315,25 @@ func (s *cachedMessageCrudTestSuite) TestDeleteBatch() {
 		},
 	}
 
+	var expectedWriteVersion uint64
 	for _, a := range alerts {
-		s.NoError(s.crud.Upsert(a))
+		expectedWriteVersion++
+		writeVersion, _, err := crud.Upsert(a)
+		s.NoError(err)
+		s.Equal(expectedWriteVersion, writeVersion)
 	}
 
 	ids := []string{"deleteBatchId1", "deleteBatchId2"}
-	s.NoError(s.crud.DeleteBatch(ids))
+	expectedWriteVersion++
+	writeVersion, _, err := crud.DeleteBatch(ids)
+	s.NoError(err)
+	s.Equal(expectedWriteVersion, writeVersion)
 
 	for _, id := range ids {
-		alert, err := s.crud.Read(id)
+		expectedCacheMisses := tracker.cacheMiss + 1
+		alert, err := crud.Read(id)
 		s.NoError(err)
 		s.Nil(alert)
+		s.Equal(expectedCacheMisses, tracker.cacheMiss)
 	}
 }

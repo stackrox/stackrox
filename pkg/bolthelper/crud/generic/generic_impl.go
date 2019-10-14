@@ -2,6 +2,7 @@ package generic
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
@@ -13,6 +14,8 @@ type crudImpl struct {
 
 	deserializeFunc DeserializeFunc
 	serializeFunc   SerializeFunc
+
+	writeVersion uint64
 }
 
 func find(bucket *bolt.Bucket, firstKey Key, restKeys ...Key) (*bolt.Bucket, Key) {
@@ -53,6 +56,10 @@ func traverse(bucket *bolt.Bucket, createBuckets bool, path KeyPath) (*bolt.Buck
 		}
 	}
 	return currBucket, nil
+}
+
+func (c *crudImpl) incAndGetWriteVersion() uint64 {
+	return atomic.AddUint64(&c.writeVersion, 1)
 }
 
 // Read reads and returns a single value from bolt.
@@ -229,13 +236,17 @@ func (c *crudImpl) CreateBatch(entries []Entry, nestingPrefix ...Key) error {
 
 // Update updates a new entry in bolt for the input value.
 // Returns an error if an entry with the same key does not already exist.
-func (c *crudImpl) Update(x interface{}, nestingPrefix ...Key) error {
+func (c *crudImpl) Update(x interface{}, nestingPrefix ...Key) (uint64, uint64, error) {
 	key, bytes, err := c.serializeFunc(x)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
-	return c.bucketRef.Update(func(b *bolt.Bucket) error {
+	var writeVersion uint64
+	var attempts uint64
+	return writeVersion, attempts, c.bucketRef.Update(func(b *bolt.Bucket) error {
+		writeVersion = c.incAndGetWriteVersion()
+		attempts++
 		innermostBucket, err := traverse(b, false, nestingPrefix)
 		if err != nil {
 			return err
@@ -252,17 +263,21 @@ func (c *crudImpl) Update(x interface{}, nestingPrefix ...Key) error {
 
 // Update updates the entries in bolt for the input values.
 // Returns an error if any input value does not have an existing entry.
-func (c *crudImpl) UpdateBatch(entries []Entry, nestingPrefix ...Key) error {
+func (c *crudImpl) UpdateBatch(entries []Entry, nestingPrefix ...Key) (uint64, uint64, error) {
 	serializedValues := make([]bolthelper.KV, len(entries))
 	for i, entry := range entries {
 		key, bytes, err := c.serializeFunc(entry.Value)
 		if err != nil {
-			return err
+			return 0, 0, err
 		}
 		serializedValues[i] = bolthelper.KV{Key: key, Value: bytes}
 	}
 
-	return c.bucketRef.Update(func(b *bolt.Bucket) error {
+	var writeVersion uint64
+	var attempts uint64
+	return writeVersion, attempts, c.bucketRef.Update(func(b *bolt.Bucket) error {
+		writeVersion = c.incAndGetWriteVersion()
+		attempts++
 		currBucket := b
 		for _, prefixKey := range nestingPrefix {
 			var err error
@@ -291,13 +306,17 @@ func (c *crudImpl) UpdateBatch(entries []Entry, nestingPrefix ...Key) error {
 }
 
 // Upsert upserts the input value into bolt whether or not an entry with the same key already exists.
-func (c *crudImpl) Upsert(x interface{}, nesting ...Key) error {
+func (c *crudImpl) Upsert(x interface{}, nesting ...Key) (uint64, uint64, error) {
 	key, bytes, err := c.serializeFunc(x)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
-	return c.bucketRef.Update(func(b *bolt.Bucket) error {
+	var writeVersion uint64
+	var attempts uint64
+	return writeVersion, attempts, c.bucketRef.Update(func(b *bolt.Bucket) error {
+		writeVersion = c.incAndGetWriteVersion()
+		attempts++
 		innermostBucket, err := traverse(b, true, nesting)
 		if err != nil {
 			return err
@@ -307,17 +326,21 @@ func (c *crudImpl) Upsert(x interface{}, nesting ...Key) error {
 }
 
 // Upsert upserts the input values into bolt whether or not entries with the same keys already exist.
-func (c *crudImpl) UpsertBatch(entries []Entry, nestingPrefix ...Key) error {
+func (c *crudImpl) UpsertBatch(entries []Entry, nestingPrefix ...Key) (uint64, uint64, error) {
 	serializedValues := make([]bolthelper.KV, len(entries))
 	for i, entry := range entries {
 		key, bytes, err := c.serializeFunc(entry.Value)
 		if err != nil {
-			return err
+			return 0, 0, err
 		}
 		serializedValues[i] = bolthelper.KV{Key: key, Value: bytes}
 	}
 
-	return c.bucketRef.Update(func(b *bolt.Bucket) error {
+	var writeVersion uint64
+	var attempts uint64
+	return writeVersion, attempts, c.bucketRef.Update(func(b *bolt.Bucket) error {
+		writeVersion = c.incAndGetWriteVersion()
+		attempts++
 		currBucket := b
 		for _, prefixKey := range nestingPrefix {
 			var err error
@@ -340,8 +363,12 @@ func (c *crudImpl) UpsertBatch(entries []Entry, nestingPrefix ...Key) error {
 }
 
 // Delete delete the input value in bolt whether or not an entry with the given key exists.
-func (c *crudImpl) Delete(firstKey Key, restKeys ...Key) error {
-	return c.bucketRef.Update(func(b *bolt.Bucket) error {
+func (c *crudImpl) Delete(firstKey Key, restKeys ...Key) (uint64, uint64, error) {
+	var writeVersion uint64
+	var attempts uint64
+	return writeVersion, attempts, c.bucketRef.Update(func(b *bolt.Bucket) error {
+		writeVersion = c.incAndGetWriteVersion()
+		attempts++
 		innermostBucket, leafKey := find(b, firstKey, restKeys...)
 		if innermostBucket == nil {
 			return nil
@@ -351,8 +378,12 @@ func (c *crudImpl) Delete(firstKey Key, restKeys ...Key) error {
 }
 
 // DeleteBatch deletes the values associated with all of the input keys in bolt.
-func (c *crudImpl) DeleteBatch(keyPaths ...KeyPath) error {
-	return c.bucketRef.Update(func(b *bolt.Bucket) error {
+func (c *crudImpl) DeleteBatch(keyPaths ...KeyPath) (uint64, uint64, error) {
+	var writeVersion uint64
+	var attempts uint64
+	return writeVersion, attempts, c.bucketRef.Update(func(b *bolt.Bucket) error {
+		writeVersion = c.incAndGetWriteVersion()
+		attempts++
 		for _, keyPath := range keyPaths {
 			if len(keyPath) == 0 {
 				return errors.New("key path must not be empty")

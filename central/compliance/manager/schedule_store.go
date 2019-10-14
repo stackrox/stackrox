@@ -54,11 +54,13 @@ func (s *scheduleStoreImpl) ListSchedules() ([]*storage.ComplianceRunSchedule, e
 }
 
 func (s *scheduleStoreImpl) UpsertSchedule(schedule *storage.ComplianceRunSchedule) error {
-	return s.crud.Upsert(schedule)
+	_, _, err := s.crud.Upsert(schedule)
+	return err
 }
 
 func (s *scheduleStoreImpl) DeleteSchedule(id string) error {
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
 
 //go:generate mockgen-wrapper

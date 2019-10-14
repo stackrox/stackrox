@@ -42,9 +42,11 @@ func (s *storeImpl) GetNode(id string) (*storage.Node, error) {
 }
 
 func (s *storeImpl) UpsertNode(node *storage.Node) error {
-	return s.crud.Upsert(node)
+	_, _, err := s.crud.Upsert(node)
+	return err
 }
 
 func (s *storeImpl) RemoveNode(id string) error {
-	return s.crud.Delete(id)
+	_, _, err := s.crud.Delete(id)
+	return err
 }
