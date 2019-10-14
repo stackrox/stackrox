@@ -17,16 +17,18 @@ func Command() *cobra.Command {
 			PersistenceType: renderer.PersistencePVC,
 		},
 	}
+	var opts run.Options
 
 	c := &cobra.Command{
 		Use:   "v2",
 		Short: "Generate V2 creates the required YAML files to deploy StackRox Scanner V2 (preview).",
 		Long:  "Generate V2 creates the required YAML files to deploy StackRox Scanner V2 (preview).",
 		RunE: func(c *cobra.Command, _ []string) error {
-			return run.Run(c, &params)
+			return run.Run(c, &params, opts)
 		},
 	}
 
+	c.Flags().StringVar(&opts.OutputDir, "output-dir", "", "Output directory for Scanner V2 bundle (leave blank for default)")
 	c.Flags().StringVar(&params.ScannerV2Image, "image", "", "Scanner V2 image to use (leave blank to use server default)")
 	c.Flags().StringVar(&params.ScannerV2DBImage, "db-image", "", "Scanner V2 DB image to use (leave blank to use server default)")
 

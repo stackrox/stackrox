@@ -34,6 +34,8 @@ var (
 	continueIfExists bool
 
 	createUpgraderSA bool
+
+	outputDir string
 )
 
 func fullClusterCreation(timeout time.Duration) error {
@@ -86,6 +88,7 @@ func Command() *cobra.Command {
 		},
 	}
 
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
 	c.PersistentFlags().BoolVar(&continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")
 	c.PersistentFlags().StringVar(&cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
@@ -137,5 +140,6 @@ func getBundle(id string, createUpgraderSA bool, timeout time.Duration) error {
 		Timeout:    timeout,
 		BundleType: "sensor",
 		ExpandZip:  true,
+		OutputDir:  outputDir,
 	})
 }

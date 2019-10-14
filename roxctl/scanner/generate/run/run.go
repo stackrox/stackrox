@@ -18,8 +18,13 @@ func getBundleType(params *apiparams.Scanner) string {
 	return "scanner"
 }
 
+// Options stores options related to scanner generate commands.
+type Options struct {
+	OutputDir string
+}
+
 // Run extracts out the common logic from the scanner generate commands.
-func Run(c *cobra.Command, params *apiparams.Scanner) error {
+func Run(c *cobra.Command, params *apiparams.Scanner, opts Options) error {
 	params.ClusterType = clustertype.Get().String()
 	body, err := json.Marshal(params)
 	if err != nil {
@@ -33,5 +38,6 @@ func Run(c *cobra.Command, params *apiparams.Scanner) error {
 		Timeout:    timeout,
 		BundleType: getBundleType(params),
 		ExpandZip:  true,
+		OutputDir:  opts.OutputDir,
 	})
 }

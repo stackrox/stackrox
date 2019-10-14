@@ -15,6 +15,8 @@ All notable changes to this project that require documentation updates will be d
 - `roxctl` now has a `--tolerations` flag that is true by default, and can be set to false to disable tolerations for 
   tainted nodes from being added into `sensor.yaml`. If the flag is set to true, collectors will be deployed to and run on 
   all nodes of the cluster.
+- The `roxctl sensor generate` and `roxctl scanner generate` subcommands now accept an optional `--output-dir <dir>` flag
+  that can be used to extract the bundle files to a custom directory.
 - Changes to default TLS cert and `htpasswd` secrets (`central-default-tls-cert` and `central-htpasswd`) are now picked
   up automatically, without needing to restart Central. Note that Kubernetes secret changes may take up to a minute to
   get propagated to the pod.

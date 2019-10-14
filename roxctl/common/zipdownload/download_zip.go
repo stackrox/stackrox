@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -14,42 +13,58 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 )
 
-func writeZipToFolder(zipName, bundleType string) error {
-	reader, err := zip.OpenReader(zipName)
+const (
+	inMemFileSizeThreshold = 1 << 20 // 1MB
+)
+
+func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string) error {
+	reader, err := zip.NewReader(contents, contentsLength)
 	if err != nil {
 		return err
 	}
 
-	outputFolder := strings.TrimRight(zipName, filepath.Ext(zipName))
-	if err := os.MkdirAll(outputFolder, 0755); err != nil {
-		return errors.Wrapf(err, "Unable to create folder %q", outputFolder)
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return errors.Wrapf(err, "Unable to create folder %q", outputDir)
 	}
 
 	for _, f := range reader.File {
-		fileReader, err := f.Open()
-		if err != nil {
-			return errors.Wrapf(err, "Unable to open file %q", f.Name)
-		}
-		data, err := ioutil.ReadAll(fileReader)
-		if err != nil {
-			return errors.Wrapf(err, "Unable to read file %q", f.Name)
-		}
-
-		outputFile := filepath.Join(outputFolder, f.Name)
-		folder := path.Dir(outputFile)
-		if err := os.MkdirAll(folder, 0755); err != nil {
-			return errors.Wrapf(err, "Unable to create folder %q", folder)
-		}
-		if err := ioutil.WriteFile(filepath.Join(outputFolder, f.Name), data, f.Mode()); err != nil {
-			return errors.Wrapf(err, "Unable to write file %q", f.Name)
+		if err := extractFile(f, outputDir); err != nil {
+			return err
 		}
 	}
-	printf("Successfully wrote %s folder %q\n", bundleType, outputFolder)
+
+	printf("Successfully wrote %s folder %q\n", bundleType, outputDir)
+	return nil
+}
+
+func extractFile(f *zip.File, outputDir string) error {
+	fileReader, err := f.Open()
+	if err != nil {
+		return errors.Wrapf(err, "Unable to open file %q", f.Name)
+	}
+	defer utils.IgnoreError(fileReader.Close)
+
+	outputFilePath := filepath.Join(outputDir, f.Name)
+	folder := path.Dir(outputFilePath)
+	if err := os.MkdirAll(folder, 0755); err != nil {
+		return errors.Wrapf(err, "Unable to create folder %q", folder)
+	}
+
+	outFile, err := os.OpenFile(outputFilePath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, f.Mode())
+	if err != nil {
+		return errors.Wrapf(err, "Unable to create output file %q", outputFilePath)
+	}
+	defer utils.IgnoreError(outFile.Close)
+
+	if _, err := io.Copy(outFile, fileReader); err != nil {
+		return errors.Wrapf(err, "Unable to write file %q", f.Name)
+	}
 	return nil
 }
 
@@ -58,7 +73,11 @@ func parseFilenameFromHeader(header http.Header) (string, error) {
 	if data == "" {
 		return data, fmt.Errorf("could not parse filename from header: %+v", header)
 	}
+	oldLen := len(data)
 	data = strings.TrimPrefix(data, "attachment; filename=")
+	if len(data) == oldLen {
+		return "", fmt.Errorf("cannot parse filename from Content-Disposition header value %q", data)
+	}
 	return strings.Trim(data, `"`), nil
 }
 
@@ -72,6 +91,30 @@ type GetZipOptions struct {
 	Body                     []byte
 	Timeout                  time.Duration
 	ExpandZip                bool
+	OutputDir                string
+}
+
+func storeZipFile(respBody io.Reader, fileName, outputDir string) error {
+	outputFile := fileName
+	if outputDir != "" {
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			return errors.Wrapf(err, "could not create output directory %q", outputDir)
+		}
+		outputFile = filepath.Join(outputDir, outputFile)
+	}
+
+	file, err := os.Create(outputFile)
+	if err != nil {
+		return errors.Wrapf(err, "Could not create file %q", outputFile)
+	}
+	if _, err := io.Copy(file, respBody); err != nil {
+		_ = file.Close()
+		return errors.Wrap(err, "error writing to ZIP file")
+	}
+	if err := file.Close(); err != nil {
+		return errors.Wrap(err, "error writing to ZIP file")
+	}
+	return nil
 }
 
 // GetZip downloads a zip from the given endpoint.
@@ -83,35 +126,42 @@ func GetZip(opts GetZipOptions) error {
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	outputFilename, err := parseFilenameFromHeader(resp.Header)
+	zipFileName, err := parseFilenameFromHeader(resp.Header)
 	if err != nil {
-		return err
+		zipFileName = fmt.Sprintf("%s.zip", opts.BundleType)
+		printf("Warning: could not obtain output file name from HTTP response: %v.", err)
+		printf("Defaulting to filename %q", zipFileName)
 	}
-	// If containerized, then write a zip file
+
+	// If containerized, then write a zip file to stdout
 	if roxctl.InMainImage() {
 		if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
 			return errors.Wrap(err, "Error writing out zip file")
 		}
 		printf("Successfully wrote %s zip file\n", opts.BundleType)
-	} else {
-		file, err := os.Create(outputFilename)
-		if err != nil {
-			return errors.Wrapf(err, "Could not create file %q", outputFilename)
-		}
-		if _, err := io.Copy(file, resp.Body); err != nil {
-			_ = file.Close()
-			return errors.Wrap(err, "Error writing out zip file")
-		}
-		if err := file.Close(); err != nil {
-			return errors.Wrap(err, "Error closing file")
-		}
-		if opts.ExpandZip {
-			if err := writeZipToFolder(outputFilename, opts.BundleType); err != nil {
-				return err
-			}
-		} else {
-			printf("Successfully wrote %s folder %q\n", opts.BundleType, outputFilename)
-		}
+		return nil
 	}
-	return nil
+
+	if !opts.ExpandZip {
+		return storeZipFile(resp.Body, zipFileName, opts.OutputDir)
+	}
+
+	buf := ioutils.NewRWBuf(inMemFileSizeThreshold)
+	defer utils.IgnoreError(buf.Close)
+
+	if _, err := io.Copy(buf, resp.Body); err != nil {
+		return errors.Wrap(err, "error downloading Zip file")
+	}
+
+	contents, size, err := buf.Contents()
+	if err != nil {
+		return errors.Wrap(err, "accessing buffer contents")
+	}
+
+	outputDir := opts.OutputDir
+	if outputDir == "" {
+		outputDir = strings.TrimSuffix(zipFileName, filepath.Ext(zipFileName))
+	}
+
+	return extractZipToFolder(contents, size, opts.BundleType, outputDir)
 }
