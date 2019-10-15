@@ -7,7 +7,7 @@ import entityTypes from 'constants/entityTypes';
 import { useQuery } from 'react-apollo';
 import logError from 'modules/logError';
 
-import TileLink from 'Components/TileLink';
+import EntityTileLink from 'Components/EntityTileLink';
 
 const NUM_CIS_CONTROLS = gql`
     query numCISControls {
@@ -24,18 +24,18 @@ const CISControlsTile = ({ match, location }) => {
     const { loading, error, data } = useQuery(NUM_CIS_CONTROLS);
     if (error) logError(error);
 
-    const controlsLink = URLService.getURL(match, location)
+    const controlsURL = URLService.getURL(match, location)
         .base(entityTypes.CONTROL)
         .url();
 
     const numCISControls = !loading ? getNumCISControls(data) : 0;
     return (
-        <TileLink
-            value={numCISControls}
-            caption="CIS Controls"
-            to={controlsLink}
+        <EntityTileLink
+            count={numCISControls}
+            entityType={entityTypes.CONTROL}
+            url={controlsURL}
             loading={loading}
-            className="rounded-none"
+            position="middle"
         />
     );
 };

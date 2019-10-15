@@ -5,7 +5,7 @@ import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import entityTypes from 'constants/entityTypes';
 import Query from 'Components/ThrowingQuery';
-import TileLink from 'Components/TileLink';
+import EntityTileLink from 'Components/EntityTileLink';
 import queryService from 'modules/queryService';
 
 const policiesQuery = gql`
@@ -25,7 +25,7 @@ function getTotalNumPolicies(data) {
 }
 
 const PoliciesTile = ({ match, location }) => {
-    const policiesLink = URLService.getURL(match, location)
+    const policiesURL = URLService.getURL(match, location)
         .base(entityTypes.POLICY)
         .url();
     return (
@@ -38,12 +38,12 @@ const PoliciesTile = ({ match, location }) => {
             {({ loading, data }) => {
                 const totalNumPolicies = getTotalNumPolicies(data);
                 return (
-                    <TileLink
-                        value={totalNumPolicies}
-                        caption="Policies"
-                        to={policiesLink}
+                    <EntityTileLink
+                        count={totalNumPolicies}
+                        entityType={entityTypes.POLICY}
+                        url={policiesURL}
                         loading={loading}
-                        className="rounded-l-sm border-r-0"
+                        position="first"
                     />
                 );
             }}

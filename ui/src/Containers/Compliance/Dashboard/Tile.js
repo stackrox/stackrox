@@ -5,7 +5,7 @@ import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import Query from 'Components/CacheFirstQuery';
-import TileLink from 'Components/TileLink';
+import EntityTileLink from 'Components/EntityTileLink';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import gql from 'graphql-tag';
 
@@ -68,7 +68,7 @@ const processNumValue = (data, entityType) => {
     return value;
 };
 
-const DashboardTile = ({ match, location, entityType }) => {
+const DashboardTile = ({ match, location, entityType, position }) => {
     const QUERY = getQuery(entityType);
     const url = URLService.getURL(match, location)
         .base(entityType)
@@ -79,11 +79,12 @@ const DashboardTile = ({ match, location, entityType }) => {
             {({ loading, data }) => {
                 const value = processNumValue(data, entityType);
                 return (
-                    <TileLink
-                        value={value}
-                        caption={resourceLabels[entityType]}
-                        to={url}
+                    <EntityTileLink
+                        count={value}
+                        entityType={resourceLabels[entityType]}
+                        url={url}
                         loading={loading}
+                        position={position}
                     />
                 );
             }}
@@ -94,7 +95,12 @@ const DashboardTile = ({ match, location, entityType }) => {
 DashboardTile.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    entityType: PropTypes.string.isRequired
+    entityType: PropTypes.string.isRequired,
+    position: PropTypes.string
+};
+
+DashboardTile.defaultProps = {
+    position: null
 };
 
 export default withRouter(DashboardTile);
