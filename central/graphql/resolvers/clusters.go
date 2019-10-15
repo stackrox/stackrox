@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
@@ -59,6 +60,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", "failingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Cluster", "passingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Cluster", "complianceControlCount(query: String): ComplianceControlCount!"),
+		schema.AddExtraResolver("Cluster", `risk: Risk`),
 	)
 }
 
@@ -681,4 +683,49 @@ func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context) ([]*
 		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
 
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+}
+
+func (resolver *clusterResolver) Risk(ctx context.Context) (*riskResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Risk")
+	if err := readRisks(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapRisk(resolver.getClusterRisk(ctx))
+}
+
+func (resolver *clusterResolver) getClusterRisk(ctx context.Context) (*storage.Risk, bool, error) {
+	cluster := resolver.data
+
+	riskQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, cluster.GetId()).
+		AddExactMatches(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+		ProtoQuery()
+
+	risks, err := resolver.root.RiskDataStore.SearchRawRisks(ctx, riskQuery)
+	if err != nil {
+		return nil, false, err
+	}
+
+	risks = filterDeploymentRisksOnScope(ctx, risks...)
+	scrubRiskFactors(risks...)
+	aggregateRiskScore := getAggregateRiskScore(risks...)
+	if aggregateRiskScore == float32(0.0) {
+		return nil, false, nil
+	}
+
+	risk := &storage.Risk{
+		Score: aggregateRiskScore,
+		Subject: &storage.RiskSubject{
+			Id:   cluster.GetId(),
+			Type: storage.RiskSubjectType_CLUSTER,
+		},
+	}
+
+	id, err := riskDS.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
+	if err != nil {
+		return nil, false, err
+	}
+	risk.Id = id
+
+	return risk, true, nil
 }

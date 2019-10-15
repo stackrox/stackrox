@@ -8,18 +8,12 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	deploymentSAC = sac.ForResource(resources.Deployment)
 )
 
 func init() {
@@ -421,10 +415,9 @@ func (resolver *namespaceResolver) getNamespaceRisk(ctx context.Context) (*stora
 		return nil, false, err
 	}
 
-	risks = resolver.filterRisksOnScope(ctx, risks...)
-	resolver.scrubRiskFactors(risks...)
-
-	aggregateRiskScore := resolver.getAggregateRiskScore(risks...)
+	risks = filterDeploymentRisksOnScope(ctx, risks...)
+	scrubRiskFactors(risks...)
+	aggregateRiskScore := getAggregateRiskScore(risks...)
 	if aggregateRiskScore == float32(0.0) {
 		return nil, false, nil
 	}
@@ -446,31 +439,4 @@ func (resolver *namespaceResolver) getNamespaceRisk(ctx context.Context) (*stora
 	risk.Id = id
 
 	return risk, true, nil
-}
-
-func (resolver *namespaceResolver) filterRisksOnScope(ctx context.Context, risks ...*storage.Risk) []*storage.Risk {
-	filtered := risks[:0]
-	for _, risk := range risks {
-		scopeKeys := sac.KeyForNSScopedObj(risk.GetSubject())
-		if ok, err := deploymentSAC.ReadAllowed(ctx, scopeKeys...); err != nil || !ok {
-			continue
-		}
-		filtered = append(filtered, risk)
-	}
-
-	return filtered
-}
-
-func (resolver *namespaceResolver) getAggregateRiskScore(risks ...*storage.Risk) float32 {
-	score := float32(0.0)
-	for _, risk := range risks {
-		score += risk.GetScore()
-	}
-	return score
-}
-
-func (resolver *namespaceResolver) scrubRiskFactors(risks ...*storage.Risk) {
-	for _, risk := range risks {
-		risk.Results = nil
-	}
 }
