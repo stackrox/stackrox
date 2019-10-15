@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { PropTypes } from 'prop-types';
 import pluralize from 'pluralize';
 import gql from 'graphql-tag';
 
@@ -11,7 +12,6 @@ import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { generateURL } from 'modules/URLReadWrite';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import { PropTypes } from 'prop-types';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 
 const VulnMgmtDeployments = ({ selectedRowId, search, entityContext }) => {

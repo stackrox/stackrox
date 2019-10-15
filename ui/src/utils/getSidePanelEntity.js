@@ -19,10 +19,14 @@ function getSidePanelEntity(stateStack, searchState) {
         if (topItem.entityId) {
             sidePanelEntityId = topItem.entityId;
             sidePanelEntityType = topItem.entityType;
-        } else {
+        } else if (secondItem) {
             sidePanelEntityId = secondItem.entityId;
             sidePanelEntityType = secondItem.entityType;
             sidePanelListType = topItem.entityType;
+        } else if (process.env.NODE_ENV === 'development') {
+            throw new Error(
+                `Neither topItem.entityId nor secondItem is defined in sidePanelStateStack.`
+            );
         }
     }
 

@@ -9,6 +9,7 @@ import PropTypes from 'prop-types';
 const WorkflowEntityPage = ({
     query,
     queryOptions,
+    defaultSorted,
     entityListType,
     getTableColumns,
     selectedRowId,
@@ -30,6 +31,7 @@ const WorkflowEntityPage = ({
             tableColumns={tableColumns}
             selectedRowId={selectedRowId}
             search={search}
+            defaultSorted={defaultSorted}
         />
     );
 };
@@ -38,6 +40,7 @@ WorkflowEntityPage.propTypes = {
     // eslint-disable-next-line
     query: PropTypes.any.isRequired,
     queryOptions: PropTypes.shape({}),
+    defaultSorted: PropTypes.arrayOf(PropTypes.shape({})),
     entityListType: PropTypes.string.isRequired,
     getTableColumns: PropTypes.func.isRequired,
     entityContext: PropTypes.shape({}),
@@ -48,6 +51,7 @@ WorkflowEntityPage.propTypes = {
 
 WorkflowEntityPage.defaultProps = {
     queryOptions: null,
+    defaultSorted: [],
     entityContext: {},
     selectedRowId: null,
     search: null,
