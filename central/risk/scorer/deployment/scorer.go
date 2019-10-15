@@ -68,8 +68,10 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 		Score:   overallScore,
 		Results: riskResults,
 		Subject: &storage.RiskSubject{
-			Id:   deployment.GetId(),
-			Type: storage.RiskSubjectType_DEPLOYMENT,
+			Id:        deployment.GetId(),
+			Type:      storage.RiskSubjectType_DEPLOYMENT,
+			Namespace: deployment.GetNamespace(),
+			ClusterId: deployment.GetClusterId(),
 		},
 	}
 

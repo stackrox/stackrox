@@ -7,12 +7,19 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	deploymentSAC = sac.ForResource(resources.Deployment)
 )
 
 func init() {
@@ -38,6 +45,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", "cluster: Cluster!"),
 		schema.AddExtraResolver("Namespace", `secretCount: Int!`),
 		schema.AddExtraResolver("Namespace", `deploymentCount: Int!`),
+		schema.AddExtraResolver("Namespace", `risk: Risk`),
 	)
 }
 
@@ -389,4 +397,80 @@ func (resolver *namespaceResolver) getConjunctionQuery(args rawQuery) (*v1.Query
 func (resolver *namespaceResolver) getClusterNamespaceQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).ProtoQuery()
+}
+
+func (resolver *namespaceResolver) Risk(ctx context.Context) (*riskResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Risk")
+	if err := readRisks(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapRisk(resolver.getNamespaceRisk(ctx))
+}
+
+func (resolver *namespaceResolver) getNamespaceRisk(ctx context.Context) (*storage.Risk, bool, error) {
+	ns := resolver.data
+
+	riskQuery := search.NewQueryBuilder().
+		AddExactMatches(search.Namespace, ns.GetMetadata().GetName()).
+		AddExactMatches(search.ClusterID, ns.GetMetadata().GetClusterId()).
+		AddExactMatches(search.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+		ProtoQuery()
+
+	risks, err := resolver.root.RiskDataStore.SearchRawRisks(ctx, riskQuery)
+	if err != nil {
+		return nil, false, err
+	}
+
+	risks = resolver.filterRisksOnScope(ctx, risks...)
+	resolver.scrubRiskFactors(risks...)
+
+	aggregateRiskScore := resolver.getAggregateRiskScore(risks...)
+	if aggregateRiskScore == float32(0.0) {
+		return nil, false, nil
+	}
+
+	risk := &storage.Risk{
+		Score: aggregateRiskScore,
+		Subject: &storage.RiskSubject{
+			Id:        ns.GetMetadata().GetId(),
+			Namespace: ns.GetMetadata().GetName(),
+			ClusterId: ns.GetMetadata().GetClusterId(),
+			Type:      storage.RiskSubjectType_NAMESPACE,
+		},
+	}
+
+	id, err := riskDS.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
+	if err != nil {
+		return nil, false, err
+	}
+	risk.Id = id
+
+	return risk, true, nil
+}
+
+func (resolver *namespaceResolver) filterRisksOnScope(ctx context.Context, risks ...*storage.Risk) []*storage.Risk {
+	filtered := risks[:0]
+	for _, risk := range risks {
+		scopeKeys := sac.KeyForNSScopedObj(risk.GetSubject())
+		if ok, err := deploymentSAC.ReadAllowed(ctx, scopeKeys...); err != nil || !ok {
+			continue
+		}
+		filtered = append(filtered, risk)
+	}
+
+	return filtered
+}
+
+func (resolver *namespaceResolver) getAggregateRiskScore(risks ...*storage.Risk) float32 {
+	score := float32(0.0)
+	for _, risk := range risks {
+		score += risk.GetScore()
+	}
+	return score
+}
+
+func (resolver *namespaceResolver) scrubRiskFactors(risks ...*storage.Risk) {
+	for _, risk := range risks {
+		risk.Results = nil
+	}
 }
