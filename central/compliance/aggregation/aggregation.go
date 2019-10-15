@@ -2,7 +2,6 @@ package aggregation
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -20,10 +19,10 @@ import (
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -310,7 +309,7 @@ func getAggregationKeys(groupByKey groupByKey) []*v1.ComplianceAggregation_Aggre
 func (a *aggregatorImpl) getCategoryID(controlID string) string {
 	category := a.standards.GetCategoryByControl(controlID)
 	if category == nil {
-		errorhelpers.PanicOnDevelopment(fmt.Errorf("no category found for control %q", controlID))
+		utils.Should(errors.Errorf("no category found for control %q", controlID))
 		return ""
 	}
 	return category.QualifiedID()
@@ -474,7 +473,7 @@ func (a *aggregatorImpl) getResultsFromScope(ctx context.Context, scope v1.Compl
 	funcAndMap, ok := a.getSearchFuncs()[scope]
 	// Programming error.
 	if !ok {
-		errorhelpers.PanicOnDevelopmentf("No search func registered for scope: %s", scope)
+		utils.Should(errors.Errorf("No search func registered for scope: %s", scope))
 		return
 	}
 	wasApplicable = search.HasApplicableOptions(querySpecifiedFields, funcAndMap.optionsMap)

@@ -14,12 +14,12 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/templates"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/config"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1beta1"
@@ -249,7 +249,7 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		msg = fmt.Sprintf("internal failure executing admission controller msg template: %v", err)
-		errorhelpers.PanicOnDevelopment(errors.New(msg))
+		utils.Should(errors.New(msg))
 	}
 	writeResponse(w, admissionReview.Request.UID, false, msg)
 }

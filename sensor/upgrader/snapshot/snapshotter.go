@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
@@ -132,13 +132,13 @@ func (s *snapshotter) createStateSnapshot() ([]k8sobjects.Object, *v1.Secret, er
 	var compressedData bytes.Buffer
 	gzipWriter, err := gzip.NewWriterLevel(&compressedData, gzip.BestCompression)
 	if err != nil {
-		return nil, nil, errorhelpers.PanicOnDevelopment(err) // level is valid, so expect no error
+		return nil, nil, utils.Should(err) // level is valid, so expect no error
 	}
 	if _, err := gzipWriter.Write(bytes.Join(byteSlices, jsonSeparator)); err != nil {
-		return nil, nil, errorhelpers.PanicOnDevelopment(err)
+		return nil, nil, utils.Should(err)
 	}
 	if err := gzipWriter.Close(); err != nil {
-		return nil, nil, errorhelpers.PanicOnDevelopment(err)
+		return nil, nil, utils.Should(err)
 	}
 
 	secret := &v1.Secret{

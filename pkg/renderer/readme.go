@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/roxctl"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // generateReadme generates a README file.
@@ -92,7 +92,7 @@ func instructions(c Config, mode mode) (string, error) {
 
 	data, err := executeRawTemplate(template, &c)
 	if err != nil {
-		errorhelpers.PanicOnDevelopment(err)
+		utils.Should(err)
 		return "", err
 	}
 

@@ -2,7 +2,8 @@ package badgerhelper
 
 import (
 	"github.com/dgraph-io/badger"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ForEachOptions controls the behavior of a `ForEach[Item]WithPrefix` call.
@@ -15,7 +16,7 @@ type ForEachOptions struct {
 func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k []byte, item *badger.Item) error) error {
 	defer func() {
 		if r := recover(); r != nil {
-			errorhelpers.PanicOnDevelopmentf("panic in iteration: %+v", r)
+			utils.Should(errors.Errorf("panic in iteration: %+v", r))
 		}
 	}()
 

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
+	"github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,7 +67,7 @@ func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.Sen
 	}
 	k8sClient, err := kubernetes.NewForConfig(&config)
 	if err != nil {
-		return nil, errorhelpers.PanicOnDevelopment(err)
+		return nil, utils.Should(err)
 	}
 	p.k8sClient = k8sClient
 
@@ -201,11 +202,11 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 
 			obj, _ := ev.Object.(metav1.Object)
 			if obj == nil {
-				return errorhelpers.PanicOnDevelopment(errors.Errorf("object returned by watch is a non-k8s object of type %T", ev.Object))
+				return utils.Should(errors.Errorf("object returned by watch is a non-k8s object of type %T", ev.Object))
 			}
 
 			if obj.GetName() != name {
-				errorhelpers.PanicOnDevelopmentf("received watch event for unexpected object %s of type %T", name, obj)
+				utils.Should(errors.Errorf("received watch event for unexpected object %s of type %T", name, obj))
 				continue // should not happen
 			}
 

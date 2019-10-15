@@ -12,7 +12,6 @@ import (
 
 	"github.com/fullsailor/pkcs7"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -43,7 +42,7 @@ type attestedMetadata struct {
 func getAttestedVMID(ctx context.Context) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, attestedMetadataBaseURL, nil)
 	if err != nil {
-		errorhelpers.PanicOnDevelopment(err)
+		utils.Should(err)
 		return "", err
 	}
 	req = req.WithContext(ctx)

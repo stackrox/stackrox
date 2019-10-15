@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // UpgradeController controls auto-upgrading for one specific cluster.
@@ -45,7 +46,7 @@ func validateTimeouts(t timeoutProvider) error {
 
 func newWithTimeoutProvider(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concurrency.Flag, timeouts timeoutProvider) (UpgradeController, error) {
 	if err := validateTimeouts(timeouts); err != nil {
-		return nil, errorhelpers.PanicOnDevelopment(err)
+		return nil, utils.Should(err)
 	}
 
 	u := &upgradeController{

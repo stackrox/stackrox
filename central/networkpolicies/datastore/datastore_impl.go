@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -158,7 +158,7 @@ func filterResults(ctx context.Context, resourceScopeChecker sac.ScopeChecker, r
 		}
 		extraAllowed, maybe := filterResultsOnce(resourceScopeChecker, maybe)
 		if len(maybe) > 0 {
-			errorhelpers.PanicOnDevelopmentf("still %d maybe results after PerformChecks", len(maybe))
+			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", len(maybe)))
 		}
 		allowed = append(allowed, extraAllowed...)
 	}

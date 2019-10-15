@@ -4,11 +4,12 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // The EvaluationMode specifies when to treat a whitelist as being locked.
@@ -55,7 +56,7 @@ func LockedUnderMode(whitelist *storage.ProcessWhitelist, mode EvaluationMode) b
 	case RoxAndUserLocked:
 		return IsRoxLocked(whitelist) && IsUserLocked(whitelist)
 	}
-	errorhelpers.PanicOnDevelopmentf("invalid evaluation mode: %v", mode)
+	utils.Should(errors.Errorf("invalid evaluation mode: %v", mode))
 	return false
 }
 

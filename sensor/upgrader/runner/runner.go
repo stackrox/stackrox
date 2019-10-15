@@ -2,9 +2,9 @@ package runner
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
@@ -99,11 +99,11 @@ func (r *runner) Err() error {
 
 func (r *runner) RunNextStage() {
 	if r.Err() != nil {
-		errorhelpers.PanicOnDevelopment(errors.Wrap(r.Err(), "cannot run next stage; runner is in error"))
+		utils.Should(errors.Wrap(r.Err(), "cannot run next stage; runner is in error"))
 		return
 	}
 	if r.Finished() {
-		errorhelpers.PanicOnDevelopment(errors.New("cannot run next stage; runner is finished"))
+		utils.Should(errors.New("cannot run next stage; runner is finished"))
 		return
 	}
 

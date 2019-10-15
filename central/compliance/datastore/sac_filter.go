@@ -3,13 +3,14 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -111,7 +112,7 @@ func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.String
 		}
 		extraAllowed, maybe := ds.tryFilterClusters(resourceScopeChecker, maybe.AsSlice())
 		if maybe.Cardinality() > 0 {
-			errorhelpers.PanicOnDevelopmentf("still %d maybe results after PerformChecks", maybe.Cardinality())
+			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", maybe.Cardinality()))
 		}
 		allowed.Union(extraAllowed)
 	}

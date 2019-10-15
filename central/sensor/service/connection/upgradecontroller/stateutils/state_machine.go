@@ -1,10 +1,11 @@
 package stateutils
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -22,7 +23,7 @@ func DetermineNextStateAndWorkflowForUpgrader(currentUpgradeState storage.Upgrad
 
 	// This should never happen in practice; it means that we're in an unexpected situation.
 	// Respond by telling the upgrader to clean up.
-	log.Error(errorhelpers.PanicOnDevelopmentf("UNEXPECTED: No transition found for state: %s; workflow: %s; state; %s; upgraderErr: %s", currentUpgradeState, workflow, stage, upgraderErr))
+	utils.Should(errors.Errorf("UNEXPECTED: No transition found for state: %s; workflow: %s; state; %s; upgraderErr: %s", currentUpgradeState, workflow, stage, upgraderErr))
 	return currentUpgradeState, sensorupgrader.CleanupWorkflow, false
 }
 

@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -76,7 +75,7 @@ type restoreProcess struct {
 func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreRequestHeader, handlerFuncs []common.RestoreFileHandlerFunc, data io.Reader) (*restoreProcess, error) {
 	mfFiles := header.GetManifest().GetFiles()
 	if len(mfFiles) != len(handlerFuncs) {
-		return nil, errorhelpers.PanicOnDevelopmentf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles))
+		return nil, utils.Should(errors.Errorf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles)))
 	}
 
 	files := make([]*restoreFile, 0, len(mfFiles))
@@ -99,7 +98,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 
 	resumableDataReader, initAttach, detachEvents := ioutils.NewResumableReader(crc32.NewIEEE())
 	if err := initAttach.Attach(data, 0, nil); err != nil {
-		return nil, errorhelpers.PanicOnDevelopmentf("could not attach initial reader to resumable reader: %v", err)
+		return nil, utils.Should(errors.Wrap(err, "could not attach initial reader to resumable reader"))
 	}
 
 	p := &restoreProcess{
@@ -294,7 +293,7 @@ func (p *restoreProcess) onReaderDetached(event ioutils.ReaderDetachmentEvent) {
 
 	if event.ReadError() == io.EOF {
 		if err := event.Finish(io.EOF); err != nil {
-			errorhelpers.PanicOnDevelopment(err)
+			utils.Should(err)
 		}
 		return
 	}
@@ -323,12 +322,12 @@ func (p *restoreProcess) onReaderDetached(event ioutils.ReaderDetachmentEvent) {
 		select {
 		case <-p.cancelSig.Done():
 			if err := event.Finish(errors.New("process canceled")); err != nil {
-				errorhelpers.PanicOnDevelopment(err)
+				utils.Should(err)
 			}
 			return
 		case <-timer.C:
 			if err := event.Finish(errors.Errorf("timeout: no new data stream attached after %v", p.reattachTimeout)); err != nil {
-				errorhelpers.PanicOnDevelopment(err)
+				utils.Should(err)
 			}
 			return
 		case req := <-reattachC:

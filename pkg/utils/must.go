@@ -17,7 +17,7 @@ func Must(errs ...error) {
 // Should panics on development builds and logs on release builds
 // The expectation is that this function will be called with an error wrapped by errors.Wrap
 // so that tracing is easier
-func Should(errs ...error) {
+func Should(errs ...error) error {
 	for _, err := range errs {
 		if err != nil {
 			if buildinfo.ReleaseBuild {
@@ -25,6 +25,8 @@ func Should(errs ...error) {
 			} else {
 				panic(err)
 			}
+			return err
 		}
 	}
+	return nil
 }

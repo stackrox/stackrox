@@ -10,8 +10,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const workerQueueSize = 16
@@ -71,7 +71,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			s.reconciliationMap.Add(evt.Event.Resource, evt.Event.Id)
 		}
 	default:
-		errorhelpers.PanicOnDevelopment(errors.New("handler only supports events"))
+		utils.Should(errors.New("handler only supports events"))
 	}
 	queue := s.typeToQueue[typ]
 	// Lazily create the queue for a type if necessary

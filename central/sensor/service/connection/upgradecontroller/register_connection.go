@@ -9,15 +9,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 func (u *upgradeController) RegisterConnection(sensorCtx context.Context, injector common.MessageInjector) concurrency.ErrorWaitable {
 	var errCond concurrency.ErrorWaitable
 
-	errorhelpers.PanicOnDevelopment(u.do(func() error {
+	utils.Should(u.do(func() error {
 		u.errorSig.Reset()
 
 		if u.doHandleNewConnection(sensorCtx, injector) {
@@ -42,7 +42,7 @@ func (u *upgradeController) watchConnection(sensorCtx context.Context, injector 
 	case <-sensorCtx.Done():
 	}
 
-	errorhelpers.PanicOnDevelopment(u.do(func() error {
+	utils.Should(u.do(func() error {
 		if u.activeSensorConn != nil && u.activeSensorConn.injector == injector {
 			u.activeSensorConn = nil
 		}

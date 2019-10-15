@@ -1,11 +1,12 @@
 package listener
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -107,6 +108,6 @@ func getObjUID(newObj interface{}) types.UID {
 		return objWithID.GetUID()
 	}
 
-	errorhelpers.PanicOnDevelopmentf("this object didn't have an ID %T, %+v", newObj, newObj)
+	utils.Should(errors.Errorf("this object didn't have an ID %T", newObj))
 	return ""
 }

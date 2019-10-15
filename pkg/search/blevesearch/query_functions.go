@@ -10,9 +10,9 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type queryFunction func(category v1.SearchCategory, field, value string, queryModifiers ...queryModifier) (query.Query, error)
@@ -134,7 +134,7 @@ func newStringQuery(category v1.SearchCategory, field string, value string, quer
 		return q, nil
 	}
 	err := errors.Errorf("unknown query modifier: %s", queryModifiers[0])
-	errorhelpers.PanicOnDevelopment(err)
+	utils.Should(err)
 	return nil, err
 }
 

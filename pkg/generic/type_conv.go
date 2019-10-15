@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // String accepts value as interface and converts it from basic type to its string representation.
@@ -27,7 +28,7 @@ func String(value interface{}) string {
 	case byte:
 		return string(v)
 	default:
-		errorhelpers.PanicOnDevelopmentf("unsupported type %T", v)
+		utils.Should(errors.Errorf("unsupported type %T", v))
 		return fmt.Sprintf("%+v", v)
 	}
 }

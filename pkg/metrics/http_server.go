@@ -7,8 +7,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -30,7 +30,7 @@ type HTTPServer struct {
 // NewDefaultHTTPServer creates and returns a new metrics http server with configured settings.
 func NewDefaultHTTPServer() *HTTPServer {
 	if err := env.ValidateMetricsSetting(); err != nil {
-		err = errorhelpers.PanicOnDevelopment(errors.Wrap(err, "invalid metrics port setting"))
+		utils.Should(errors.Wrap(err, "invalid metrics port setting"))
 		log.Error(errors.Wrap(err, "metrics server is disabled"))
 	}
 	if !env.MetricsEnabled() {

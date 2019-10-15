@@ -8,16 +8,17 @@ import (
 	"github.com/blevesearch/bleve/document"
 	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/pkg/errors"
 	mappings "github.com/stackrox/rox/central/image/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
 	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const batchSize = 5000
@@ -44,14 +45,14 @@ func getVulnPath(s string) (string, []string) {
 func getSubMappingOrPanic(mapping *mapping.DocumentMapping, subPath string) *mapping.DocumentMapping {
 	subMapping := mapping.Properties[subPath]
 	if subMapping == nil {
-		errorhelpers.PanicOnDevelopment(fmt.Errorf("no mapping with name %q", subPath))
+		utils.Should(errors.Errorf("no mapping with name %q", subPath))
 	}
 	return subMapping
 }
 
 func getFieldOrPanic(mapping *mapping.DocumentMapping) *mapping.FieldMapping {
 	if len(mapping.Fields) == 0 {
-		errorhelpers.PanicOnDevelopment(fmt.Errorf("no fields are available for mapping: %+v", mapping))
+		utils.Should(errors.Errorf("no fields are available for mapping: %+v", mapping))
 	}
 	return mapping.Fields[0]
 }

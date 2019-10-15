@@ -5,7 +5,7 @@ import (
 
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
 
@@ -21,7 +21,7 @@ func anyToError(x interface{}) error {
 
 func panicHandler(p interface{}) error {
 	err := anyToError(p)
-	errorhelpers.PanicOnDevelopmentf("Caught panic in gRPC call. Reason: %v. Stack trace:\n%s", err, string(debug.Stack()))
+	utils.Should(errors.Errorf("Caught panic in gRPC call. Reason: %v. Stack trace:\n%s", err, string(debug.Stack())))
 	return err
 }
 

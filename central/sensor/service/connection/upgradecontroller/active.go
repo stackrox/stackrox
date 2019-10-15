@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -25,7 +25,7 @@ func (u *upgradeController) makeProcessActive(cluster *storage.Cluster, processS
 	}
 
 	if u.active != nil {
-		errorhelpers.PanicOnDevelopmentf("Making process %s active when there already is an active one. This should not happen...", processStatus.GetId())
+		utils.Should(errors.Errorf("Making process %s active when there already is an active one. This should not happen...", processStatus.GetId()))
 	}
 
 	u.active = &activeUpgradeInfo{
@@ -106,7 +106,7 @@ func (u *upgradeController) reconcileUpgradeStateRegularly(processID string) {
 
 		// This function should never return an error unless there's a programming mistake.
 		// Note that setUpgradeProgress does no DB operations.
-		errorhelpers.PanicOnDevelopment(u.do(func() error {
+		utils.Should(u.do(func() error {
 			// The upgrade progress we were monitoring is complete. Exit this goroutine.
 			if u.active == nil || u.active.status.GetId() != processID {
 				done = true

@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -30,7 +30,7 @@ func CheckConfirmation(c *cobra.Command) error {
 	f, err := c.Flags().GetBool(forceFlag)
 	if err != nil {
 		log.Errorf("Error checking value of --force flag: %v", err)
-		errorhelpers.PanicOnDevelopment(err)
+		utils.Should(err)
 		f = false
 	}
 	if f {

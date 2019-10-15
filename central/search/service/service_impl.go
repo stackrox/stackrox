@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/alert/mappings"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -30,7 +31,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	protoSet "github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -38,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -232,7 +233,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		searcher, ok := searchers[category]
 		if searcher == nil {
 			if ok {
-				errorhelpers.PanicOnDevelopmentf("searchers map has an entry for category %v, but the returned searcher was nil", category)
+				utils.Should(errors.Errorf("searchers map has an entry for category %v, but the returned searcher was nil", category))
 			}
 			return nil, status.Errorf(codes.InvalidArgument, "Search category %q is not implemented", category.String())
 		}

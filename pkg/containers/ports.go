@@ -1,8 +1,8 @@
 package containers
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -15,12 +15,12 @@ var (
 func CompareExposureLevel(a, b storage.PortConfig_ExposureLevel) int {
 	aRank, ok := exposureRank[a]
 	if !ok {
-		errorhelpers.PanicOnDevelopmentf("invalid exposure level %v", a)
+		utils.Should(errors.Errorf("invalid exposure level %v", a))
 		aRank = -1
 	}
 	bRank, ok := exposureRank[b]
 	if !ok {
-		errorhelpers.PanicOnDevelopmentf("invalid exposure level %v", b)
+		utils.Should(errors.Errorf("invalid exposure level %v", b))
 		bRank = -1
 	}
 	return aRank - bRank

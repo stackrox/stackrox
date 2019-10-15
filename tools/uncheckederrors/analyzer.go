@@ -41,9 +41,8 @@ var (
 			"(*Builder).WriteString",
 			"(*Builder).WriteRune",
 		),
-		"github.com/stackrox/rox/pkg/errorhelpers": set.NewFrozenStringSet(
-			"PanicOnDevelopment",
-			"PanicOnDevelopmentf",
+		"github.com/stackrox/rox/pkg/utils": set.NewFrozenStringSet(
+			"Should",
 		),
 	}
 )

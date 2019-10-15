@@ -30,7 +30,7 @@ func (s *certSet) Fetch(ctx context.Context) error {
 
 	req, err := http.NewRequest(http.MethodGet, certsURL, nil)
 	if err != nil {
-		errorhelpers.PanicOnDevelopment(err)
+		utils.Should(err)
 		return err
 	}
 	req = req.WithContext(ctx)

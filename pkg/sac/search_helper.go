@@ -9,9 +9,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // SearchHelper facilitates applying scoped access control to search operations.
@@ -126,7 +126,7 @@ func filterDocs(ctx context.Context, resultsChecker searchResultsChecker, resour
 		}
 		extraAllowed, maybe := filterDocsOnce(resultsChecker, resourceScopeChecker, maybe)
 		if len(maybe) > 0 {
-			errorhelpers.PanicOnDevelopmentf("still %d maybe results after PerformChecks", len(maybe))
+			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", len(maybe)))
 		}
 		allowed = append(allowed, extraAllowed...)
 	}
@@ -153,7 +153,7 @@ func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker S
 		}
 		extraAllowed, maybe := h.filterResultsOnce(resourceScopeChecker, maybe)
 		if len(maybe) > 0 {
-			errorhelpers.PanicOnDevelopmentf("still %d maybe results after PerformChecks", len(maybe))
+			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", len(maybe)))
 		}
 		allowed = append(allowed, extraAllowed...)
 	}

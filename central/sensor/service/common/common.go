@@ -4,9 +4,10 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -30,7 +31,7 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return "NetworkPoliciesResponse"
 	default:
-		errorhelpers.PanicOnDevelopmentf("Unknown message type: %T", t)
+		utils.Should(errors.Errorf("Unknown message type: %T", t))
 		return "Unknown"
 	}
 }

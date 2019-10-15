@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
@@ -34,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/time/rate"
 )
 
@@ -95,12 +95,12 @@ func (m *managerImpl) buildIndicatorFilter() {
 		return nil
 	})
 	if err != nil {
-		errorhelpers.PanicOnDevelopmentf("error building indicator filter: %v", err)
+		utils.Should(errors.Wrap(err, "error building indicator filter"))
 	}
 
 	log.Infof("Cleaning up %d processes as a part of building process filter", len(processesToRemove))
 	if err := m.processesDataStore.RemoveProcessIndicators(ctx, processesToRemove); err != nil {
-		errorhelpers.PanicOnDevelopmentf("error removing process indicators: %v", err)
+		utils.Should(errors.Wrap(err, "error removing process indicators"))
 	}
 	log.Infof("Successfully cleaned up those %d processes", len(processesToRemove))
 }

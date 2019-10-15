@@ -13,7 +13,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -68,7 +68,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		var err error
 		since, err = types.TimestampProto(time.Now().Add(defaultSince))
 		if err != nil {
-			errorhelpers.PanicOnDevelopment(err)
+			utils.Should(err)
 		}
 	}
 
