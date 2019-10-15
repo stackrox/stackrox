@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/x509"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -55,6 +56,15 @@ func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasVa
 	}, nil
 }
 
+func (s *serviceImpl) RandomData(ctx context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
+	resp := &central.RandomDataResponse{
+		Data: make([]byte, req.GetSize_()),
+	}
+
+	_, _ = rand.Read(resp.Data)
+	return resp, nil
+}
+
 // New creates a new Service.
 func New() Service {
 	return &serviceImpl{
@@ -69,7 +79,7 @@ func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return nil
+	return central.RegisterDevelopmentServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.

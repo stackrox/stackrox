@@ -2,9 +2,10 @@ syntax = "proto3";
 
 option go_package = "central";
 
+import weak "google/api/annotations.proto";
+
 // This is an internal service which contains tools intended to be used only for testing.
 // It will NOT be available in Central in production builds.
-// Even in dev, access is gRPC-only.
 package central;
 
 message URLHasValidCertRequest {
@@ -23,6 +24,20 @@ message URLHasValidCertResponse {
     string details    = 2;
 }
 
+message RandomDataRequest {
+    int32 size = 1;
+}
+
+message RandomDataResponse {
+    bytes data = 1;
+}
+
 service DevelopmentService {
     rpc URLHasValidCert (URLHasValidCertRequest) returns (URLHasValidCertResponse);
+
+    rpc RandomData (RandomDataRequest) returns (RandomDataResponse) {
+        option (google.api.http) = {
+            get: "/v1/internal/dev/random"
+        };
+    }
 }

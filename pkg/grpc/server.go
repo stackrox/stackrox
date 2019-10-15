@@ -6,6 +6,7 @@ import (
 	golog "log"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
@@ -35,7 +37,8 @@ import (
 )
 
 const (
-	maxMsgSize = 8 * 1024 * 1024
+	maxMsgSize                = 8 * 1024 * 1024
+	defaultMaxResponseMsgSize = 256 * 1024 * 1024 // 256MB
 )
 
 func init() {
@@ -44,7 +47,20 @@ func init() {
 
 var (
 	log = logging.LoggerForModule()
+
+	maxResponseMsgSizeSetting = env.RegisterSetting("ROX_GRPC_MAX_RESPONSE_SIZE")
 )
+
+func maxResponseMsgSize() int {
+	if setting := maxResponseMsgSizeSetting.Setting(); setting != "" {
+		value, err := strconv.Atoi(setting)
+		if err == nil {
+			return value
+		}
+		log.Warnf("Invalid value %q for %s: %v", setting, maxResponseMsgSizeSetting.EnvVar(), err)
+	}
+	return defaultMaxResponseMsgSize
+}
 
 type server interface {
 	Serve(l net.Listener) error
@@ -280,7 +296,8 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) error {
 }
 
 func (a *apiImpl) connectToLocalEndpoint() (*grpc.ClientConn, error) {
-	return grpc.Dial(a.config.InsecureLocalEndpoint, grpc.WithInsecure())
+	return grpc.Dial(a.config.InsecureLocalEndpoint, grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())))
 }
 
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
