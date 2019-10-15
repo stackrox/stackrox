@@ -23,7 +23,10 @@ func restoreV1(file *os.File, deadline time.Time) error {
 		return err
 	}
 
-	client := common.GetHTTPClient(0)
+	client, err := common.GetHTTPClient(0)
+	if err != nil {
+		return err
+	}
 
 	resp, err := transfer.ViaHTTP(req, client, deadline, idleTimeout)
 	if err != nil {

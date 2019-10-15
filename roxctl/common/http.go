@@ -1,7 +1,6 @@
 package common
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,19 +13,31 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"golang.org/x/net/http2"
+)
+
+var (
+	http1NextProtos = []string{"http/1.1", "http/1.0"}
 )
 
 // GetHTTPClient gets a client with the correct config
-func GetHTTPClient(timeout time.Duration) *http.Client {
-	client := &http.Client{
-		Timeout: timeout,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
+func GetHTTPClient(timeout time.Duration) (*http.Client, error) {
+	tlsConf, err := tlsConfigForCentral()
+	if err != nil {
+		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
 	}
-	return client
+	transport := &http.Transport{
+		TLSClientConfig: tlsConf,
+	}
+	// There's no reason to not use HTTP/2, but we don't go out of our way to do so.
+	if err := http2.ConfigureTransport(transport); err != nil {
+		transport.TLSClientConfig.NextProtos = http1NextProtos
+	}
+	client := &http.Client{
+		Timeout:   timeout,
+		Transport: transport,
+	}
+	return client, nil
 }
 
 // DoHTTPRequestAndCheck200 does an http request to the provided path in Central,
@@ -38,7 +49,11 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 		return nil, err
 	}
 
-	client := GetHTTPClient(timeout)
+	client, err := GetHTTPClient(timeout)
+	if err != nil {
+		return nil, err
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

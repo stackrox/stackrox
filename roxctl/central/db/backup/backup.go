@@ -119,11 +119,14 @@ func getBackup(timeout time.Duration, userProvidedOutput string) error {
 		return err
 	}
 
+	client, err := common.GetHTTPClient(0)
+	if err != nil {
+		return err
+	}
+
 	reqCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	req = req.WithContext(reqCtx)
-
-	client := common.GetHTTPClient(0)
 
 	// Cancel the context if no headers have been received after `timeout`.
 	t := time.AfterFunc(timeout, cancel)

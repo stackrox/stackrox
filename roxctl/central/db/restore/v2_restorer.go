@@ -83,7 +83,11 @@ func newV2Restorer(cmd *cobra.Command, retryDeadline time.Time) (*v2Restorer, er
 	}
 
 	dbClient := v1.NewDBServiceClient(conn)
-	httpClient := common.GetHTTPClient(0)
+	httpClient, err := common.GetHTTPClient(0)
+	if err != nil {
+		return nil, err
+	}
+
 	return &v2Restorer{
 		httpClient:    httpClient,
 		dbClient:      dbClient,

@@ -42,7 +42,7 @@ func generateMTLSFiles(fileMap map[string][]byte) (caCert, caKey []byte, err err
 		return nil, nil, errors.Wrap(err, "could not generate a serial number")
 	}
 	req := csr.CertificateRequest{
-		CN:           "StackRox Certificate Authority",
+		CN:           mtls.ServiceCACommonName,
 		KeyRequest:   csr.NewBasicKeyRequest(),
 		SerialNumber: serial.String(),
 	}

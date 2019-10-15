@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/util"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -23,7 +23,12 @@ import (
 
 var (
 	// NextProtos are the ALPN protos to use for gRPC connections.
-	NextProtos = []string{alpn.PureGRPCALPNString, "h2"}
+	NextProtos = []string{alpn.PureGRPCALPNString, "h2", "http/1.1"}
+	// NextProtosNoPureGRPC are the ALPN protos to use if the connection needs to support plain HTTP in addition to
+	// only gRPC calls.
+	NextProtosNoPureGRPC = []string{"h2", "http/1.1"}
+
+	log = logging.LoggerForModule()
 )
 
 // Options specifies options for establishing a gRPC client connection.
@@ -63,60 +68,10 @@ type TLSConfigOptions struct {
 	UseClientCert      bool
 	ServerName         string
 	InsecureSkipVerify bool
-}
+	CustomCertVerifier TLSCertVerifier
+	RootCAs            *x509.CertPool
 
-// verifyPeerCertificateFunc returns a function that can be used as the `VerifyPeerCertificate` callback of a
-// tls.Config. It first tries to verify the peer certificate against the StackRox service CA (with a ServerName derived
-// from server), and if that fails, tries to verify the peer certificate as a third-party certificate trusted by a
-// system trust root.
-func verifyPeerCertificateFunc(server mtls.Subject, serviceCA *x509.CertPool, serverName string) func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
-	return func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
-		var leafCert *x509.Certificate
-		intermediates := x509.NewCertPool()
-		for i, rawCert := range rawCerts {
-			cert, err := x509.ParseCertificate(rawCert)
-			if err != nil {
-				return errors.Wrap(err, "could not parse peer certificate")
-			}
-			if i == 0 {
-				leafCert = cert
-			} else {
-				intermediates.AddCert(cert)
-			}
-		}
-
-		if leafCert == nil {
-			return errors.New("no peer certificates provided")
-		}
-
-		// Try verifying StackRox Service Cert
-		serviceVerifyOpts := x509.VerifyOptions{
-			DNSName:       server.Hostname(),
-			Intermediates: intermediates,
-			Roots:         serviceCA,
-		}
-
-		verifyErrors := errorhelpers.NewErrorList("peer certificate validation failed")
-		if _, err := leafCert.Verify(serviceVerifyOpts); err != nil {
-			verifyErrors.AddError(err)
-		} else {
-			return nil
-		}
-
-		// Try verifying 3rd party cert.
-		thirdPartyVerifyOpts := x509.VerifyOptions{
-			DNSName:       serverName,
-			Intermediates: intermediates,
-			Roots:         nil, // use system roots
-		}
-		if _, err := leafCert.Verify(thirdPartyVerifyOpts); err != nil {
-			verifyErrors.AddError(err)
-		} else {
-			return nil
-		}
-
-		return verifyErrors.ToError()
-	}
+	GRPCOnly bool
 }
 
 // TLSConfig returns a TLS config that can be used to talk to the given server via mTLS.
@@ -126,9 +81,15 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 		serverName = server.Hostname()
 	}
 
+	nextProtos := NextProtos
+	if !opts.GRPCOnly {
+		nextProtos = NextProtosNoPureGRPC // no pure gRPC
+	}
+
 	conf := &tls.Config{
 		ServerName: serverName,
-		NextProtos: NextProtos,
+		NextProtos: nextProtos,
+		RootCAs:    opts.RootCAs,
 	}
 
 	if opts.UseClientCert {
@@ -139,25 +100,33 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 		conf.Certificates = []tls.Certificate{clientCert}
 	}
 
-	if !opts.InsecureSkipVerify {
-		serviceCA, err := verifier.TrustedCertPool()
-		if err != nil {
-			return nil, errors.Wrap(err, "trusted pool")
+	customVerifier := opts.CustomCertVerifier
+	if !opts.InsecureSkipVerify && customVerifier == nil {
+		// Try verifying the remote certificate as a StackRox service certificate (locate the service CA cert in the
+		// custom root CA pool, or the standard mTLS root CA certificate location).
+		serviceCA := opts.RootCAs
+		if serviceCA == nil {
+			var err error
+			serviceCA, err = verifier.TrustedCertPool()
+			if err != nil {
+				// Not an error - this code path is invoked from `roxctl` as well, in which case we don't expect a
+				// `/run/secrets/stackrox.io/...` directory structure to exist.
+				serviceCA = nil
+			}
 		}
-		conf.RootCAs = serviceCA
 
-		if serverName != server.Hostname() {
-			// Since we want to support verifying against both a StackRox Service CA or a System CA, we don't know the
-			// ServerName against which to verify. While we could leave the `ServerName` field empty and only check the
-			// `ServerName` of the verified chains passed to the `VerifyPeerCertificate` callback, this would have the
-			// undesired side effect of not sending SNI in the handshake. Hence, skip the verification done by the tls
-			// library altogether and do everything in our `VerifyPeerCertificate` callback.
-			// Don't worry - this looks scary, but is actually not insecure; just slightly more flexible than what the
-			// tls library supports natively.
-			conf.InsecureSkipVerify = true
-			conf.VerifyPeerCertificate = verifyPeerCertificateFunc(server, serviceCA, serverName)
+		if serviceCA != nil {
+			customVerifier = &serviceCertFallbackVerifier{
+				serviceCAs: serviceCA,
+				subject:    server,
+			}
 		}
-	} else {
+	} else if opts.InsecureSkipVerify {
+		conf.InsecureSkipVerify = true
+	}
+
+	if customVerifier != nil {
+		conf.VerifyPeerCertificate = verifyPeerCertFunc(conf, customVerifier)
 		conf.InsecureSkipVerify = true
 	}
 
@@ -222,6 +191,7 @@ func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConn
 		TLS: TLSConfigOptions{
 			UseClientCert: true,
 			ServerName:    host,
+			GRPCOnly:      true,
 		},
 		DialTLS: connOpts.dialTLSFunc,
 	}
@@ -240,6 +210,8 @@ func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConn
 // GRPCConnection establishes a gRPC connection to the given server, using the given connection options.
 func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint string, clientConnOpts Options, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+2)
+
+	clientConnOpts.TLS.GRPCOnly = true
 
 	var tlsConf *tls.Config
 	if !clientConnOpts.InsecureNoTLS {
