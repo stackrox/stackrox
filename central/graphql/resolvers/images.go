@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -20,6 +21,8 @@ func init() {
 		schema.AddQuery("image(sha:ID!): Image"),
 		schema.AddExtraResolver("Image", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Image", "deploymentCount: Int!"),
+		schema.AddExtraResolver("Image", "vulns: [EmbeddedVulnerability]!"),
+		schema.AddExtraResolver("Image", "vulnCount: Int!"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
 	)
 }
@@ -96,6 +99,46 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context) (int32, erro
 		return 0, nil
 	}
 	return int32(len(results)), nil
+}
+
+// Vulns returns all of the vulnerabilities in the image.
+func (resolver *imageResolver) Vulns(ctx context.Context) ([]*EmbeddedVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Vulnerabilities")
+
+	// create a set of the CVEs to return.
+	cveToVuln := make(map[string]*storage.EmbeddedVulnerability)
+	for _, component := range resolver.data.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			if _, exists := cveToVuln[vuln.GetCve()]; exists {
+				continue
+			}
+			cveToVuln[vuln.GetCve()] = vuln
+		}
+	}
+
+	// Create the resolvers.
+	var resolvers []*EmbeddedVulnerabilityResolver
+	for _, vuln := range cveToVuln {
+		resolvers = append(resolvers, &EmbeddedVulnerabilityResolver{
+			root: resolver.root,
+			data: vuln,
+		})
+	}
+	return resolvers, nil
+}
+
+// VulnCount returns the number of vulnerabilities the image has.
+func (resolver *imageResolver) VulnCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCount")
+
+	// Get a string set of all the CVEs that appear in all of the image's components.
+	cves := set.NewStringSet()
+	for _, component := range resolver.data.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			cves.Add(vuln.GetCve())
+		}
+	}
+	return int32(cves.Cardinality()), nil
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {
