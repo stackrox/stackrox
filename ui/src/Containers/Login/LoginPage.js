@@ -15,6 +15,8 @@ import { selectors } from 'reducers';
 import * as Icon from 'react-feather';
 import Tooltip from 'rc-tooltip';
 
+import { ThemeContext } from 'Containers/ThemeProvider';
+
 import AppWrapper from '../AppWrapper';
 import LoginNotice from './LoginNotice';
 
@@ -29,6 +31,8 @@ class LoginPage extends Component {
             error_uri: PropTypes.string
         }).isRequired
     };
+
+    static contextType = ThemeContext;
 
     constructor(props) {
         super(props);
@@ -170,8 +174,7 @@ class LoginPage extends Component {
     };
 
     render() {
-        const isDarkMode = localStorage.getItem('isDarkMode') === 'true';
-
+        const { isDarkMode } = this.context;
         return (
             <AppWrapper>
                 <section
