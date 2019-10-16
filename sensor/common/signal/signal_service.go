@@ -2,11 +2,13 @@ package signal
 
 import (
 	"context"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -60,6 +62,25 @@ func (s *serviceImpl) Indicators() <-chan *central.SensorEvent {
 	return s.indicators
 }
 
+// TODO(ROX-3281) this is a workaround for these collector issues
+func isProcessSignalValid(signal *storage.ProcessSignal) bool {
+	// Example: <NA> or sometimes a truncated variant
+	if signal.GetExecFilePath() == "" || signal.GetExecFilePath()[0] == '<' {
+		return false
+	}
+	if signal.GetName() == "" || signal.GetName()[0] == '<' {
+		return false
+	}
+	if strings.HasPrefix(signal.GetExecFilePath(), "/proc/self") {
+		return false
+	}
+	// Example: /var/run/docker/containerd/daemon/io.containerd.runtime.v1.linux/moby/8f79b77ac6785562e875cde2f087c49f1d4e4899f18a26d3739c47155668ec0b/run
+	if strings.HasPrefix(signal.GetExecFilePath(), "/var/run/docker") {
+		return false
+	}
+	return true
+}
+
 func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignalsServer) error {
 	log.Info("starting receiveMessages")
 	for {
@@ -76,7 +97,6 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		}
 		signal := signalStreamMsg.GetSignal()
 
-		// todo(cgorman) we currently need to filter out network because they are not being processed
 		switch signal.GetSignal().(type) {
 		case *v1.Signal_ProcessSignal:
 			processSignal := signal.GetProcessSignal()
@@ -86,7 +106,7 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 			}
 
 			processSignal.ExecFilePath = stringutils.OrDefault(processSignal.GetExecFilePath(), processSignal.GetName())
-			if processSignal.GetExecFilePath() == "" {
+			if !isProcessSignalValid(processSignal) {
 				continue
 			}
 
