@@ -94,10 +94,6 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 		return nil, status.Errorf(codes.Internal, "failed to retrieve service accounts: %s", err)
 	}
 
-	if len(serviceAccounts) == 0 {
-		return nil, nil
-	}
-
 	saAndRoles := make([]*v1.ServiceAccountAndRoles, 0, len(serviceAccounts))
 	for _, sa := range serviceAccounts {
 		clusterRoles, scopedRoles, err := s.getRoles(ctx, sa)
