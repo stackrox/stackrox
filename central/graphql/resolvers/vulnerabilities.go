@@ -130,14 +130,14 @@ type EmbeddedVulnerabilityResolver struct {
 
 // Vectors returns either the CVSSV2 or CVSSV3 data.
 func (evr *EmbeddedVulnerabilityResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {
-	if val := evr.data.GetCvssV2(); val != nil {
-		return &EmbeddedVulnerabilityVectorsResolver{
-			resolver: &cVSSV2Resolver{evr.root, val},
-		}
-	}
 	if val := evr.data.GetCvssV3(); val != nil {
 		return &EmbeddedVulnerabilityVectorsResolver{
 			resolver: &cVSSV3Resolver{evr.root, val},
+		}
+	}
+	if val := evr.data.GetCvssV2(); val != nil {
+		return &EmbeddedVulnerabilityVectorsResolver{
+			resolver: &cVSSV2Resolver{evr.root, val},
 		}
 	}
 	return nil

@@ -67,10 +67,8 @@ message EmbeddedVulnerability {
         string fixed_by = 5 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
     }
     ScoreVersion score_version = 8;
-    oneof vectors {
-        CVSSV2 cvss_v2      = 6;
-        CVSSV3 cvss_v3      = 7;
-    }
+    CVSSV2 cvss_v2      = 6;
+    CVSSV3 cvss_v3      = 7;
 }
 
 message CVSSV2 {
@@ -103,6 +101,7 @@ message CVSSV2 {
     Impact           availability         = 7;
     float            exploitability_score = 8;
     float            impact_score         = 9;
+    float            score                = 10;
 }
 
 message CVSSV3 {
@@ -145,6 +144,7 @@ message CVSSV3 {
     Impact           confidentiality      = 9;
     Impact           integrity            = 10;
     Impact           availability         = 11;
+    float            score                = 12;
 }
 
 message ImageMetadata {

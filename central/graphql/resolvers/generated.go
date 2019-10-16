@@ -81,6 +81,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"exploitabilityScore: Float!",
 		"impactScore: Float!",
 		"integrity: CVSSV2_Impact!",
+		"score: Float!",
 		"vector: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AccessComplexity(0)))
@@ -97,6 +98,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"integrity: CVSSV3_Impact!",
 		"privilegesRequired: CVSSV3_Privileges!",
 		"scope: CVSSV3_Scope!",
+		"score: Float!",
 		"userInteraction: CVSSV3_UserInteraction!",
 		"vector: String!",
 	}))
@@ -1467,6 +1469,11 @@ func (resolver *cVSSV2Resolver) Integrity(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *cVSSV2Resolver) Score(ctx context.Context) float64 {
+	value := resolver.data.GetScore()
+	return float64(value)
+}
+
 func (resolver *cVSSV2Resolver) Vector(ctx context.Context) string {
 	value := resolver.data.GetVector()
 	return value
@@ -1610,6 +1617,11 @@ func (resolver *cVSSV3Resolver) PrivilegesRequired(ctx context.Context) string {
 func (resolver *cVSSV3Resolver) Scope(ctx context.Context) string {
 	value := resolver.data.GetScope()
 	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) Score(ctx context.Context) float64 {
+	value := resolver.data.GetScore()
+	return float64(value)
 }
 
 func (resolver *cVSSV3Resolver) UserInteraction(ctx context.Context) string {

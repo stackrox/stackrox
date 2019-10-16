@@ -89,7 +89,7 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 	}
 
 	if cvssVector, err := v2.ParseCVSSV2(strings.TrimPrefix(vulnerability.LongDescription, "NIST vectors: ")); err == nil {
-		vuln.Vectors = &storage.EmbeddedVulnerability_CvssV2{CvssV2: cvssVector}
+		vuln.CvssV2 = cvssVector
 	}
 	return vuln
 }

@@ -29,7 +29,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs }) => {
             width: 100,
             Cell: ci => {
                 return `${ci.original && ci.original.cvss && ci.original.cvss.toFixed(1)} (${
-                    ci.original.scoreVersion
+                    ci.original.scoreVersion === 'V2' ? 'v2' : 'v3'
                 })`;
             },
             headerClassName:

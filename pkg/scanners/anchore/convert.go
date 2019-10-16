@@ -63,24 +63,23 @@ func convertVulnToProtoVuln(vuln anchoreClient.Vulnerability) *storage.EmbeddedV
 	}
 
 	if len(vuln.NVDData) != 0 {
-		if cvssV3 := vuln.NVDData[0].CVSSV3; cvssV3 != nil && cvssV3.Base != -1 {
-			embeddedVuln.Vectors = &storage.EmbeddedVulnerability_CvssV3{
-				CvssV3: &storage.CVSSV3{
-					ImpactScore:         float32(cvssV3.Impact),
-					ExploitabilityScore: float32(cvssV3.Exploitability),
-				},
-			}
-			embeddedVuln.Cvss = float32(cvssV3.Base)
-			embeddedVuln.ScoreVersion = storage.EmbeddedVulnerability_V3
-		} else if cvssV2 := vuln.NVDData[0].CVSSV2; cvssV2 != nil && cvssV2.Base != -1 {
-			embeddedVuln.Vectors = &storage.EmbeddedVulnerability_CvssV2{
-				CvssV2: &storage.CVSSV2{
-					ImpactScore:         float32(cvssV2.Impact),
-					ExploitabilityScore: float32(cvssV2.Exploitability),
-				},
+		if cvssV2 := vuln.NVDData[0].CVSSV2; cvssV2 != nil && cvssV2.Base != -1 {
+			embeddedVuln.CvssV2 = &storage.CVSSV2{
+				Score:               float32(cvssV2.Base),
+				ImpactScore:         float32(cvssV2.Impact),
+				ExploitabilityScore: float32(cvssV2.Exploitability),
 			}
 			embeddedVuln.Cvss = float32(vuln.NVDData[0].CVSSV2.Base)
 			embeddedVuln.ScoreVersion = storage.EmbeddedVulnerability_V2
+		}
+		if cvssV3 := vuln.NVDData[0].CVSSV3; cvssV3 != nil && cvssV3.Base != -1 {
+			embeddedVuln.CvssV3 = &storage.CVSSV3{
+				ImpactScore:         float32(cvssV3.Impact),
+				ExploitabilityScore: float32(cvssV3.Exploitability),
+				Score:               float32(cvssV3.Base),
+			}
+			embeddedVuln.Cvss = float32(cvssV3.Base)
+			embeddedVuln.ScoreVersion = storage.EmbeddedVulnerability_V3
 		}
 	}
 	return embeddedVuln
