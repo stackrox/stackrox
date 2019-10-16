@@ -11,8 +11,12 @@ const Header = () => {
         <div className="flex flex-1 justify-end">
             <PoliciesTile />
             <CISControlsTile />
-            <AppMenu />
-            <RBACMenu />
+            <div className="flex w-32">
+                <AppMenu />
+            </div>
+            <div className="flex w-32">
+                <RBACMenu />
+            </div>
             <div className="flex items-center self-center">
                 <ExportButton
                     fileName="Config Mangement Dashboard Report"

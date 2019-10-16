@@ -42,7 +42,7 @@ export const dashboardSelectors = {
     applicationAndInfrastructureDropdown: 'button:contains("Application & Infrastructure")',
     rbacVisibilityDropdown: 'button:contains("RBAC")',
     getMenuListItem: name => {
-        return `[data-test-id="menu-list"] button:contains("${name}")`;
+        return `[data-test-id="menu-list"] [data-test-id="${name}"]`;
     },
     getWidget: title => {
         return `[data-test-id="widget"]:contains('${title}')`;
