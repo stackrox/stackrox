@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -74,7 +75,7 @@ type complianceRow struct {
 	objectType         string
 	objectName         string
 	objectNamespace    string
-	value              *storage.ComplianceResultValue
+	result             *storage.ComplianceResultValue
 	runTimestamp       string
 }
 
@@ -120,8 +121,8 @@ func (c *csvResults) addAll(row complianceRow, controls map[string]*v1.Complianc
 			controlDescription = control.GetDescription()
 		}
 		valueRow := row
+		valueRow.result = result
 		valueRow.controlName = fmt.Sprintf(`=("%s")`, controlName) // avoid excel parsing as a number
-		valueRow.value = result
 		valueRow.controlDescription = controlDescription
 		c.addRow(valueRow)
 	}
@@ -155,11 +156,17 @@ func (c *csvResults) addRow(row complianceRow) {
 		row.objectName,
 		row.controlName,
 		row.controlDescription,
+		stateToString(row.result.OverallState),
 	}
-	for _, ev := range row.value.GetEvidence() {
-		value2 := append(value, stateToString(ev.GetState()), ev.GetMessage(), row.runTimestamp)
-		c.values = append(c.values, value2)
+
+	lines := make([]string, 0, len(row.result.GetEvidence()))
+	for i, ev := range row.result.GetEvidence() {
+		lines = append(lines, fmt.Sprintf("%d. (%s) %s", i+1, stateToString(ev.GetState()), ev.GetMessage()))
 	}
+	combinedEvidence := strings.Join(lines, "\n")
+
+	value = append(value, combinedEvidence, row.runTimestamp)
+	c.values = append(c.values, value)
 }
 
 func fromTS(timestamp *types.Timestamp) string {
@@ -207,21 +214,21 @@ func CSVHandler() http.HandlerFunc {
 				clusterName:  d.GetDomain().GetCluster().GetName(),
 				runTimestamp: timestamp,
 			}
-			for dk, dv := range d.GetDeploymentResults() {
+			for depKey, depValue := range d.GetDeploymentResults() {
 				deploymentRow := dataRow
-				deployment := d.GetDomain().GetDeployments()[dk]
+				deployment := d.GetDomain().GetDeployments()[depKey]
 				deploymentRow.objectType = deployment.GetType()
 				deploymentRow.objectNamespace = deployment.GetNamespace()
 				deploymentRow.objectName = deployment.GetName()
-				output.addAll(deploymentRow, controls, dv.GetControlResults())
+				output.addAll(deploymentRow, controls, depValue.GetControlResults())
 			}
 			dataRow.objectNamespace = ""
-			for node, values := range d.GetNodeResults() {
+			for nodeKey, nodeValue := range d.GetNodeResults() {
 				nodeRow := dataRow
-				node := d.GetDomain().GetNodes()[node]
+				node := d.GetDomain().GetNodes()[nodeKey]
 				nodeRow.objectType = "node"
 				nodeRow.objectName = node.GetName()
-				output.addAll(nodeRow, controls, values.GetControlResults())
+				output.addAll(nodeRow, controls, nodeValue.GetControlResults())
 			}
 			dataRow.objectType = "cluster"
 			dataRow.objectName = dataRow.clusterName
