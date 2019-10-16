@@ -8,6 +8,8 @@ All notable changes to this project that require documentation updates will be d
   are supported with brackets, like so: `[2001:db8::1234]:9090`. The default setting is still `:9090`. (ROX-3209)
 - The `roxctl sensor generate` and `roxctl scanner generate` subcommands now accept an optional `--output-dir <dir>` flag
   that can be used to extract the bundle files to a custom directory. (ROX-2529)
+- The `roxctl central debug dump` subcommand now accepts an optional `--output-dir <dir>` flag
+  that can be used to specify a custom directory for the debug zip file.
 
 ## [31.0]
 ### Changed

@@ -18,7 +18,8 @@ const (
 // DumpCommand allows pulling logs, profiles, and metrics
 func DumpCommand() *cobra.Command {
 	var (
-		withLogs bool
+		withLogs  bool
+		outputDir string
 	)
 
 	c := &cobra.Command{
@@ -27,15 +28,17 @@ func DumpCommand() *cobra.Command {
 		Long:  `"dump" to get retrieve a zip of debug metrics`,
 		RunE: func(c *cobra.Command, _ []string) error {
 			fmt.Fprint(os.Stderr, "Retrieving debug metrics. This may take a couple minutes...\n")
-			return retrieveDump(flags.Timeout(c), withLogs)
+			return retrieveDump(flags.Timeout(c), withLogs, outputDir)
 		},
 	}
 	flags.AddTimeoutWithDefault(c, dumpTimeout)
 	c.Flags().BoolVar(&withLogs, "logs", false, "logs=true will retrieve the dump without logs from Central")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
+
 	return c
 }
 
-func retrieveDump(timeout time.Duration, logs bool) error {
+func retrieveDump(timeout time.Duration, logs bool, outputDir string) error {
 	path := fmt.Sprintf("/debug/dump?logs=%t", logs)
 	return zipdownload.GetZip(zipdownload.GetZipOptions{
 		Path:       path,
@@ -43,5 +46,6 @@ func retrieveDump(timeout time.Duration, logs bool) error {
 		Timeout:    timeout,
 		BundleType: "debug",
 		ExpandZip:  false,
+		OutputDir:  outputDir,
 	})
 }

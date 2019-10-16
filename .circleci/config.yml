@@ -444,6 +444,17 @@ commands:
                     circleci step halt
                   fi
 
+  get-and-store-debug-dump:
+    description: Runs roxctl debug dump and stores it for the job.
+    steps:
+      - run:
+          name: Pull the dump from Central
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir debug-dump
+      - store_artifacts:
+          path: debug-dump
+          destination: debug
+
   setup-gcp:
     parameters:
       docker-login:
@@ -707,6 +718,7 @@ commands:
             fi
 
       - *collectK8sLogs
+      - get-and-store-debug-dump
       - *storeQATestResults
       - copy-gradle-files:
           target-dir: ${CIRCLE_JOB}-part1
@@ -737,6 +749,7 @@ commands:
       - *updateTestRail
 
       - *collectK8sLogs
+      - get-and-store-debug-dump
       - *backupDB
       - *storeDBBackupArtifact
       - *verifyNoStackRoxRestarts
@@ -937,6 +950,8 @@ commands:
             fi
 
       - *collectK8sLogs
+      - get-and-store-debug-dump
+
       - *storeQATestResults
       - copy-gradle-files:
           target-dir: openshift-part1
@@ -948,7 +963,6 @@ commands:
             export HOSTNAME=localhost
             export PORT="${LOCAL_PORT}"
             make -C qa-tests-backend sensor-bounce-test
-
 
       - run:
           name: Check for failures in part 1
@@ -966,6 +980,7 @@ commands:
       - *storeDBBackupArtifact
 
       - *collectK8sLogs
+      - get-and-store-debug-dump
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
@@ -1710,6 +1725,7 @@ jobs:
       - *storeImbuedUILogs
 
       - *collectK8sLogs
+      - get-and-store-debug-dump
       - *backupDB
       - *storeDBBackupArtifact
       - *verifyNoStackRoxRestarts
@@ -1998,6 +2014,7 @@ jobs:
             fi
 
       - *collectK8sLogs
+      - get-and-store-debug-dump
       - *storeK8sLogs
 
       - teardown-gke
