@@ -1,22 +1,25 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
-## [31.0]
+## [32.0]
 ### Changed
 - The port used for prometheus metrics can now be customized with the environment variable `ROX_METRICS_PORT`. Supported
   options include `disabled`, `:port-num` (will bind to wildcard address) and `host_or_addr:port`. IPv6 address literals
-  are supported with brackets, like so: `[2001:db8::1234]:9090`. The default setting is still `:9090`.
+  are supported with brackets, like so: `[2001:db8::1234]:9090`. The default setting is still `:9090`. (ROX-3209)
+- The `roxctl sensor generate` and `roxctl scanner generate` subcommands now accept an optional `--output-dir <dir>` flag
+  that can be used to extract the bundle files to a custom directory. (ROX-2529)
+
+## [31.0]
+### Changed
 - `roxctl` can now talk to Central instances exposed behind a non-gRPC-capable proxy (e.g., AWS ELB/ALB). To support
   this, requests go through an ephemeral client-side reverse proxy. If you observe any issues with `roxctl` that you
   suspect might be due to this change, pass the `--direct-grpc` flag to resort to the old connection behavior.
 - `roxctl` can now talk to Central instances exposed via plaintext (either directly, or via a plaintext proxy talking to
   a plaintext or TLS-enabled backend). While we advise against this, this behavior can be enabled via the `--plaintext`
   flag in conjunction with the `--insecure` flag.
-- `roxctl` now has a `--tolerations` flag that is true by default, and can be set to false to disable tolerations for 
-  tainted nodes from being added into `sensor.yaml`. If the flag is set to true, collectors will be deployed to and run on 
+- `roxctl` now has a `--tolerations` flag that is true by default, and can be set to false to disable tolerations for
+  tainted nodes from being added into `sensor.yaml`. If the flag is set to true, collectors will be deployed to and run on
   all nodes of the cluster.
-- The `roxctl sensor generate` and `roxctl scanner generate` subcommands now accept an optional `--output-dir <dir>` flag
-  that can be used to extract the bundle files to a custom directory.
 - Changes to default TLS cert and `htpasswd` secrets (`central-default-tls-cert` and `central-htpasswd`) are now picked
   up automatically, without needing to restart Central. Note that Kubernetes secret changes may take up to a minute to
   get propagated to the pod.
