@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -48,7 +49,12 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Adds the params for the framework.
 	ctx := context.WithValue(r.Context(), paramsContextKey{}, params)
+
+	// Adds the data loader intermediates so that we can stop ourselves from loading the same data from the store
+	// many time.
+	ctx = loaders.WithLoaderContext(ctx)
 
 	defer metrics.SetGraphQLQueryDurationTime(time.Now(), params.Query)
 
