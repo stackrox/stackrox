@@ -28,6 +28,7 @@ func init() {
 	utils.Must(
 		schema.AddType("EmbeddedImageScanComponent", []string{
 			"license: License",
+			"id: ID!",
 			"name: String!",
 			"version: String!",
 			"vulns: [EmbeddedVulnerability]!",
