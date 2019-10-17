@@ -2,8 +2,7 @@ import pageTypes from 'constants/pageTypes';
 import useCases from 'constants/useCaseTypes';
 import { generatePath, matchPath } from 'react-router-dom';
 import qs from 'qs';
-import { WorkflowState, isStackValid, WorkflowEntity } from './WorkflowStateManager';
-
+import { WorkflowState, WorkflowEntity } from './WorkflowStateManager';
 import {
     nestedPaths as workflowPaths,
     riskPath,
@@ -48,18 +47,20 @@ function getTypeKeyFromParamValue(value, listOnly) {
 export function generateURL(workflowState, searchState) {
     const { stateStack: originalStateStack, useCase } = workflowState;
     const stateStack = [...originalStateStack];
-
+    const pageStack = workflowState.getPageStack();
+    const qsStack = stateStack.slice(pageStack.length);
     if (!useCase) throw new Error('Cannot generate a url from workflowState without a use case');
 
     // Find the path map for the use case
     const pathMap = legacyPathMap[useCase] || defaultPathMap;
     if (!pathMap) throw new Error(`Can't generate a URL. No paths found for context ${useCase}`);
 
-    const pageParams = stateStack.shift();
+    const pageParams = workflowState.getPageStack();
 
     // determine the page type
     let pageType = pageTypes.DASHBOARD;
-    if (pageParams) pageType = pageParams.i ? pageTypes.ENTITY : pageTypes.LIST;
+    if (pageParams.length > 0)
+        pageType = pageParams[0].entityId ? pageTypes.ENTITY : pageTypes.LIST;
 
     // determine the path
     const path = pathMap[pageType];
@@ -70,10 +71,12 @@ export function generateURL(workflowState, searchState) {
 
     // create url params
     const params = { useCase, context: useCase }; // using legacy context url param. remove after paths are updated
-    if (pageParams) {
-        params.pageEntityId = pageParams.i;
-        params.pageEntityType = urlEntityTypes[pageParams.t];
-        params.pageEntityListType = urlEntityListTypes[pageParams.t];
+    if (pageParams.length > 0) {
+        params.pageEntityId = pageParams[0].entityId;
+        params.pageEntityType = urlEntityTypes[pageParams[0].entityType];
+        params.pageEntityListType = urlEntityListTypes[pageParams[0].entityType];
+        if (pageType === pageTypes.ENTITY && pageParams[1])
+            params.entityType1 = urlEntityListTypes[pageParams[1].entityType];
     }
 
     // Add url params for legacy contexts
@@ -84,7 +87,7 @@ export function generateURL(workflowState, searchState) {
     }
 
     // generate the querystring using remaining statestack params
-    const queryParams = { workflowState: stateStack, ...searchState };
+    const queryParams = { workflowState: qsStack, ...searchState };
 
     const queryString = queryParams
         ? qs.stringify(queryParams, {
@@ -97,55 +100,35 @@ export function generateURL(workflowState, searchState) {
     return generatePath(path, params) + queryString;
 }
 
-function getStateArrayObject(type, entityId) {
-    if (!type && !entityId) return null;
-    const obj = new WorkflowEntity(type);
-    if (entityId) obj.i = entityId;
-
-    return obj;
+function getEntityFromURLParam(type, id) {
+    return new WorkflowEntity(getTypeKeyFromParamValue(type), id);
 }
 
 export function paramsToStateStack(params) {
-    const {
-        pageEntityListType,
-        pageEntityType,
-        pageEntityId,
-        entityId1,
-        entityId2,
-        entityType1,
-        entityType2,
-        entityListType1,
-        entityListType2
-    } = params;
-
+    const { pageEntityListType, pageEntityType, pageEntityId, entityId1, entityId2 } = params;
+    const { entityType1: urlEntityType1, entityType2: urlEntityType2 } = params;
+    const entityListType1 = getTypeKeyFromParamValue(urlEntityType1, true);
+    const entityListType2 = getTypeKeyFromParamValue(urlEntityType2, true);
+    const entityType1 = getTypeKeyFromParamValue(urlEntityType1);
+    const entityType2 = getTypeKeyFromParamValue(urlEntityType2);
     const stateArray = [];
     if (!pageEntityListType && !pageEntityType) return stateArray;
 
-    if (pageEntityListType)
-        stateArray.push(new WorkflowEntity(getTypeKeyFromParamValue(pageEntityListType)));
-    else
-        stateArray.push(new WorkflowEntity(getTypeKeyFromParamValue(pageEntityType), pageEntityId));
+    // List
+    if (pageEntityListType) {
+        stateArray.push(getEntityFromURLParam(pageEntityListType));
 
-    const tab = entityListType1
-        ? new WorkflowEntity(getTypeKeyFromParamValue(entityListType1))
-        : null;
-    const entityTypeKey1 =
-        entityId1 && getTypeKeyFromParamValue(entityType1 || entityListType1 || pageEntityListType);
-    const entity1 = getStateArrayObject(entityTypeKey1, entityId1);
+        if (entityId1) {
+            stateArray.push(getEntityFromURLParam(pageEntityListType, entityId1));
+        }
+    } else {
+        stateArray.push(getEntityFromURLParam(pageEntityType, pageEntityId));
+        if (entityListType1) stateArray.push(new WorkflowEntity(entityListType1));
+        if (entityType1 && entityId1) stateArray.push(new WorkflowEntity(entityType1, entityId1));
+    }
 
-    const list = entityListType2
-        ? new WorkflowEntity(getTypeKeyFromParamValue(entityListType2))
-        : null;
-    const entityTypeKey2 = getTypeKeyFromParamValue(entityType2 || entityListType2);
-    const entity2 = getStateArrayObject(entityTypeKey2, entityId2);
-    // TODO: make this work
-    if (tab) stateArray.push(tab);
-    if (entity1) stateArray.push(entity1);
-    if (list) stateArray.push(list);
-    if (entity2) stateArray.push(entity2);
-
-    if (!isStackValid)
-        throw new Error('The supplied workflow state params produce an invalid state');
+    if (entityListType2) stateArray.push(new WorkflowEntity(entityListType2));
+    if (entityType2 && entityId2) stateArray.push(new WorkflowEntity(entityType2, entityId2));
 
     return stateArray;
 }
@@ -166,28 +149,25 @@ export function parseURL(location) {
         path: workflowPaths.DASHBOARD,
         exact: true
     });
+
     const { params } = entityParams || listParams || dashboardParams;
-
-    let stateStack = paramsToStateStack(params) || [];
     const query = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
-    const { workflowState: urlWorkflowState = [], ...searchState } = query;
 
-    const arrayState = !Array.isArray(urlWorkflowState) ? [urlWorkflowState] : urlWorkflowState;
-    const urlWorkflowStateStack = arrayState.map(({ t, i }) => new WorkflowEntity(t, i));
+    const stateStackFromURLParams = paramsToStateStack(params) || [];
 
-    // if on dashboard, the workflowState query params should be ignored
-    stateStack = dashboardParams ? [] : [...stateStack, ...urlWorkflowStateStack];
-    const workflowState = new WorkflowState(params.context, stateStack);
+    // eslint-disable-next-line
+    let { workflowState: stateStackFromQueryString = [], ...searchState } = query;
+    stateStackFromQueryString = !Array.isArray(stateStackFromQueryString)
+        ? [stateStackFromQueryString]
+        : stateStackFromQueryString;
+    stateStackFromQueryString = stateStackFromQueryString.map(
+        ({ t, i }) => new WorkflowEntity(t, i)
+    );
 
-    // Convert URL parameter values to enum types
-    // if (params.pageEntityListType) {
-    //     stateStack.unshift({ t: getTypeKeyFromParamValue(params.pageEntityListType) });
-    // } else if (params.pageEntityType) {
-    //     stateStack.unshift({
-    //         t: getTypeKeyFromParamValue(params.pageEntityType),
-    //         i: params.pageEntityId
-    //     });
-    // }
+    const workflowState = new WorkflowState(params.context, [
+        ...stateStackFromURLParams,
+        ...stateStackFromQueryString
+    ]);
 
     return {
         workflowState,

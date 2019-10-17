@@ -2,11 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
+import { resourceLabels } from 'messages/common';
 
 import TileLink, { POSITION } from 'Components/TileLink';
 
 const EntityTileLink = ({ count, entityType, position, subText, icon, url, loading, isError }) => {
-    const text = `${count} ${count === 1 ? entityType : `${pluralize(entityType)}`}`;
+    const text = `${count} ${
+        count === 1 ? entityType : `${pluralize(resourceLabels[entityType] || '')}`
+    }`;
 
     return (
         <TileLink

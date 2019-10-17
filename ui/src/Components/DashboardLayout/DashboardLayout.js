@@ -61,7 +61,7 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
 DashboardLayout.propTypes = {
     headerText: PropTypes.string.isRequired,
     headerComponents: PropTypes.element.isRequired,
-    children: PropTypes.element.isRequired
+    children: PropTypes.arrayOf(PropTypes.node).isRequired
 };
 
 export default DashboardLayout;

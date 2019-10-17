@@ -1,13 +1,13 @@
 import searchContexts from 'constants/searchContexts';
 
-function getSidePanelEntity(stateStack, searchState) {
+function getSidePanelEntity(workflowState, searchState) {
     const sidePanelSearch = searchState[searchContexts.sidePanel];
-    if (!stateStack || stateStack.length === 0) return {};
+    if (workflowState.stateStack.length === 0) return {};
 
-    const baseEntity = stateStack[0];
+    const pageStack = workflowState.getPageStack();
+    const sidePanelStateStack = workflowState.stateStack.slice(pageStack.length);
 
     // Calculate sidepanel entity props
-    const sidePanelStateStack = [...stateStack.slice(baseEntity.entityId ? 2 : 1)];
     const topItem = sidePanelStateStack.pop();
     const secondItem = sidePanelStateStack.pop();
     const sidePanelOpen = !!topItem;

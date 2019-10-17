@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
 import { withRouter } from 'react-router-dom';
@@ -6,25 +6,20 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
 import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import { generateURL } from 'modules/URLReadWrite';
+import workflowStateContext from 'Containers/workflowStateContext';
 
 // @TODO We should try to use this component for Compliance as well
-const RelatedEntityListCount = ({
-    match,
-    location,
-    history,
-    name,
-    value,
-    entityType,
-    workflowState,
-    ...rest
-}) => {
+const RelatedEntityListCount = ({ match, location, history, name, value, entityType, ...rest }) => {
+    const workflowState = useContext(workflowStateContext);
+
     function onClick() {
         let url;
 
         // this is a workaround to make this flexible for legacy URLService and new workflow state manager
-        if (workflowState) {
+        if (workflowState && workflowState.useCase) {
             const workflowStateMgr = new WorkflowStateMgr(workflowState);
             workflowStateMgr.pushList(entityType);
+
             url = generateURL(workflowStateMgr.workflowState);
         } else {
             url = URLService.getURL(match, location)
@@ -66,13 +61,11 @@ RelatedEntityListCount.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    entityType: PropTypes.string.isRequired,
-    workflowState: PropTypes.shape({})
+    entityType: PropTypes.string.isRequired
 };
 
 RelatedEntityListCount.defaultProps = {
-    value: 0,
-    workflowState: null
+    value: 0
 };
 
 export default withRouter(RelatedEntityListCount);

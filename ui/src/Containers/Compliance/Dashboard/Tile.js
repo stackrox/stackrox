@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { resourceLabels } from 'messages/common';
 import URLService from 'modules/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
@@ -81,7 +80,7 @@ const DashboardTile = ({ match, location, entityType, position }) => {
                 return (
                     <EntityTileLink
                         count={value}
-                        entityType={resourceLabels[entityType]}
+                        entityType={entityType}
                         url={url}
                         loading={loading}
                         position={position}

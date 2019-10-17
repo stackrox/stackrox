@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
 import EntityIcon from 'Components/EntityIcon';
@@ -8,13 +8,13 @@ import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import { generateURL } from 'modules/URLReadWrite';
+import workflowStateContext from 'Containers/workflowStateContext';
 
 // @TODO We should try to use this component for Compliance as well
 const RelatedEntity = ({
     match,
     location,
     history,
-    workflowState,
     name,
     entityType,
     entityId,
@@ -22,12 +22,14 @@ const RelatedEntity = ({
     link,
     ...rest
 }) => {
+    const workflowState = useContext(workflowStateContext);
+
     function onClick() {
         if (!entityId) return;
 
         let url;
         // this is a workaround to make this flexible for legacy URLService and new workflow state manager
-        if (workflowState) {
+        if (workflowState && workflowState.useCase) {
             const workflowStateMgr = new WorkflowStateMgr(workflowState);
             workflowStateMgr.pushRelatedEntity(entityType, entityId);
             url = generateURL(workflowStateMgr.workflowState);
@@ -81,16 +83,14 @@ RelatedEntity.propTypes = {
     link: PropTypes.string,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
-    workflowState: PropTypes.shape({})
+    history: ReactRouterPropTypes.history.isRequired
 };
 
 RelatedEntity.defaultProps = {
     link: null,
     value: '',
     entityId: null,
-    name: null,
-    workflowState: null
+    name: null
 };
 
 export default withRouter(RelatedEntity);

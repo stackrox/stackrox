@@ -1,4 +1,6 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+
 import PageNotFound from 'Components/PageNotFound';
 import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
@@ -48,12 +50,27 @@ const WorkflowEntityPage = ({
     );
 };
 
-// Page.propTypes = {
-//     location: ReactRouterPropTypes.location
-// };
+WorkflowEntityPage.propTypes = {
+    ListComponent: PropTypes.func.isRequired,
+    OverviewComponent: PropTypes.func.isRequired,
+    entityType: PropTypes.string.isRequired,
+    entityId: PropTypes.string.isRequired,
+    entityListType: PropTypes.string,
+    useCase: PropTypes.string.isRequired,
+    getListQuery: PropTypes.func.isRequired,
+    overviewQuery: PropTypes.shape({}).isRequired,
+    queryOptions: PropTypes.shape({}),
+    entityContext: PropTypes.shape({}),
+    search: PropTypes.shape({}),
+    getListData: PropTypes.func
+};
 
-// Page.defaultProps = {
-//     location: null
-// };
+WorkflowEntityPage.defaultProps = {
+    entityListType: null,
+    queryOptions: null,
+    entityContext: {},
+    search: null,
+    getListData: null
+};
 
 export default WorkflowEntityPage;

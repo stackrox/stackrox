@@ -40,7 +40,7 @@ const ENTITY_TO_TAB = {
 };
 
 // eslint-disable-next-line
-const EntityTabs = ({ useCase, entityType, activeTab }) => {
+const EntityTabs = ({ entityType, activeTab }) => {
     const workflowState = useContext(workflowStateContext);
     function getTab(tabType) {
         const failingText =
@@ -48,7 +48,6 @@ const EntityTabs = ({ useCase, entityType, activeTab }) => {
                 ? 'failing '
                 : '';
         const newState = new WorkflowStateManager(workflowState).pushList(tabType).workflowState; // { stateStack: [], useCase: 'vulnerability-management' };
-
         return {
             group: ENTITY_TO_TAB[tabType],
             value: tabType,
@@ -82,7 +81,6 @@ const EntityTabs = ({ useCase, entityType, activeTab }) => {
 };
 
 EntityTabs.propTypes = {
-    useCase: PropTypes.string.isRequired,
     entityType: PropTypes.string.isRequired,
     activeTab: PropTypes.string
 };

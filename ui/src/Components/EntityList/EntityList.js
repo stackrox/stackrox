@@ -25,8 +25,7 @@ const EntityList = ({
     rowData,
     searchOptions,
     selectedRowId,
-    tableColumns,
-    wrapperClass
+    tableColumns
 }) => {
     const [page, setPage] = useState(0);
     const workflowState = useContext(workflowStateContext);
@@ -81,7 +80,11 @@ const EntityList = ({
     );
 
     return (
-        <Panel className={wrapperClass} header={header} headerComponents={headerComponents}>
+        <Panel
+            className={selectedRowId ? 'bg-base-100 overlay' : ''}
+            header={header}
+            headerComponents={headerComponents}
+        >
             <Table
                 rows={rowData}
                 columns={tableColumns}
@@ -107,8 +110,7 @@ EntityList.propTypes = {
     rowData: PropTypes.arrayOf(PropTypes.shape({})),
     searchOptions: PropTypes.arrayOf(PropTypes.string),
     selectedRowId: PropTypes.string,
-    tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    wrapperClass: PropTypes.string
+    tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired
 };
 
 EntityList.defaultProps = {
@@ -117,8 +119,7 @@ EntityList.defaultProps = {
     headerText: '',
     rowData: null,
     searchOptions: [],
-    selectedRowId: null,
-    wrapperClass: ''
+    selectedRowId: null
 };
 
 export default withRouter(EntityList);

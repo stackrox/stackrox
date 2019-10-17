@@ -101,6 +101,19 @@ export class WorkflowState {
         if (!this.stateStack.length) return null;
         return this.stateStack[0];
     }
+
+    // Gets workflow entities related to page level
+    getPageStack() {
+        const { stateStack } = this;
+        if (stateStack.length < 2) return stateStack;
+
+        // list page or entity page with entity sidepanel
+        if (!stateStack[0].entityId || (stateStack.length > 1 && stateStack[1].entityId))
+            return stateStack.slice(0, 1);
+
+        // entity page with tab
+        return stateStack.slice(0, 2);
+    }
 }
 
 export default class WorkflowStateMgr {
@@ -140,22 +153,17 @@ export default class WorkflowStateMgr {
 
     // Adds a list of entityType related to the current workflowState
     pushList(type) {
-        const listState = new WorkflowEntity(type);
+        const { stateStack } = this.workflowState;
+        const newItem = new WorkflowEntity(type);
+        const currentItem = this.workflowState.getCurrentEntity();
 
-        // if coming from dashboard
-        if (!this.workflowState.stateStack.length) {
-            this.workflowState.stateStack = [listState];
-            return this;
-        }
-
-        const currentItem = this.workflowState.stateStack.slice(-1)[0];
-        if (currentItem.entityType && !currentItem.entityId) {
-            // replace the list type
-            currentItem.entityType = type;
-            return this;
-        }
-
-        this.workflowState.stateStack = trimStack([...this.workflowState.stateStack, listState]);
+        // Slice an item off the end of the stack if this push should result in a replacement (e.g. clicking on tabs)
+        const newStateStack =
+            currentItem && currentItem.entityType && !currentItem.entityId
+                ? stateStack.slice(0, -1)
+                : stateStack;
+        newStateStack.push(newItem);
+        this.workflowState.stateStack = trimStack(newStateStack);
 
         return this;
     }
@@ -163,8 +171,9 @@ export default class WorkflowStateMgr {
     // Selects an item in a list by Id
     pushListItem(id) {
         const { stateStack } = this.workflowState;
-        const currentItem = stateStack.slice(-1)[0];
+        const currentItem = this.workflowState.getCurrentEntity();
         const newItem = new WorkflowEntity(currentItem.entityType, id);
+        // Slice an item off the end of the stack if this push should result in a replacement (e.g. clicking on multiple list items)
         const newStateStack = currentItem.entityId ? stateStack.slice(0, -1) : stateStack;
         newStateStack.push(newItem);
 
