@@ -53,29 +53,41 @@ const VulnMgmtCves = ({ selectedRowId, search }) => {
             },
             {
                 Header: `Fixable`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-20 text-center ${defaultHeaderClassName}`,
+                className: `w-20 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
                 Cell: ({ original }) => {
                     const { isFixable } = original;
-                    return isFixable ? <LabelChip text="Fixable" type="success" /> : 'No';
+                    const fixableFlag = isFixable ? (
+                        <LabelChip text="Fixable" type="success" />
+                    ) : (
+                        'No'
+                    );
+                    return <div className="mx-auto">{fixableFlag}</div>;
                 },
                 accessor: 'isFixable',
                 id: 'isFixable'
             },
             {
                 Header: `CVSS score`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
                 Cell: ({ original }) => {
-                    const { cvss } = original;
+                    const { cvss, scoreVersion } = original;
 
                     if (!cvss && cvss !== 0) return 'N/A';
 
                     // TODO: add CVSS version beneath when available from API
                     const chipType = getSeverityChipType(cvss);
-                    return <LabelChip text={cvss.toFixed(1) || ''} type={chipType} />;
+                    return (
+                        <div className="mx-auto flex flex-col">
+                            <LabelChip text={cvss.toFixed(1) || ''} type={chipType} />
+                            <span className="pt-1 text-base-500 text-sm text-center">
+                                {scoreVersion}
+                            </span>
+                        </div>
+                    );
                 },
                 accessor: 'cvss',
                 id: 'cvss'
@@ -96,8 +108,8 @@ const VulnMgmtCves = ({ selectedRowId, search }) => {
             // },
             {
                 Header: `Scanned`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
                     const { lastScanned } = original;
                     return <DateTimeField date={lastScanned} />;
@@ -198,7 +210,7 @@ const VulnMgmtCves = ({ selectedRowId, search }) => {
             search={search}
             defaultSorted={[
                 {
-                    id: 'cvss',
+                    id: 'lastScanned',
                     desc: true
                 }
             ]}

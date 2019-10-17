@@ -26,6 +26,7 @@ export const CVE_LIST_FRAGMENT = gql`
     fragment cveListFields on EmbeddedVulnerability {
         cve
         cvss
+        scoreVersion
         # Env. Impact
         # Impact score
         summary
