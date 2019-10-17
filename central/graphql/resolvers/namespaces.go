@@ -58,12 +58,9 @@ func (resolver *Resolver) Namespaces(ctx context.Context, args rawQuery) ([]*nam
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
-	query, err := args.AsV1Query()
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
-	}
-	if query == nil {
-		return resolver.wrapNamespaces(namespace.ResolveAll(ctx, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
 	}
 	return resolver.wrapNamespaces(namespace.ResolveByQuery(ctx, query, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
 }

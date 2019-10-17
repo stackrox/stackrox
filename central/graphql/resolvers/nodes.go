@@ -72,7 +72,7 @@ func (resolver *Resolver) Nodes(ctx context.Context, args rawQuery) ([]*nodeReso
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	query, err := args.AsV1Query()
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}

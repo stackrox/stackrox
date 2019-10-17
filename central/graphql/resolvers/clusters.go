@@ -79,12 +79,9 @@ func (resolver *Resolver) Clusters(ctx context.Context, args rawQuery) ([]*clust
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
-	query, err := args.AsV1Query()
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
-	}
-	if query == nil {
-		return resolver.wrapClusters(resolver.ClusterDataStore.GetClusters(ctx))
 	}
 	return resolver.wrapClusters(resolver.ClusterDataStore.SearchRawClusters(ctx, query))
 }

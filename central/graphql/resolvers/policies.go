@@ -34,12 +34,9 @@ func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*polic
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
-	q, err := args.AsV1Query()
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
-	}
-	if q == nil {
-		return resolver.wrapPolicies(resolver.PolicyDataStore.GetPolicies(ctx))
 	}
 	return resolver.wrapPolicies(resolver.PolicyDataStore.SearchRawPolicies(ctx, q))
 }

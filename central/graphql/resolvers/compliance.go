@@ -377,7 +377,7 @@ func (resolver *Resolver) ComplianceResults(ctx context.Context, query rawQuery)
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	q, err := query.AsV1Query()
+	q, err := query.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}

@@ -50,7 +50,7 @@ func (resolver *Resolver) K8sRoles(ctx context.Context, arg rawQuery) ([]*k8SRol
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
-	query, err := arg.AsV1Query()
+	query, err := arg.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}

@@ -99,7 +99,7 @@ func (resolver *Resolver) Subjects(ctx context.Context, args rawQuery) ([]*subje
 		return nil, err
 	}
 
-	query, err := args.AsV1Query()
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}

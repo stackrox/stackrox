@@ -12,7 +12,7 @@ import (
 
 func TestGetNamespaces(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.namespace.EXPECT().GetNamespaces(gomock.Any()).Return([]*storage.NamespaceMetadata{
+	mocks.namespace.EXPECT().SearchNamespaces(gomock.Any(), search.EmptyQuery()).Return([]*storage.NamespaceMetadata{
 		{
 			Id:          fakeNamespaceID,
 			Name:        fakeNamespaceName,

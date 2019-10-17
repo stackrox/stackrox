@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -27,12 +26,9 @@ func (resolver *Resolver) Violations(ctx context.Context, args paginatedQuery) (
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
-	q, err := args.AsV1Query()
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
-	}
-	if q == nil {
-		q = search.EmptyQuery()
 	}
 	return resolver.wrapListAlerts(
 		resolver.ViolationsDataStore.SearchListAlerts(ctx, q))

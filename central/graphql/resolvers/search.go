@@ -79,18 +79,6 @@ type paginatedQuery struct {
 	Pagination *pagination
 }
 
-func (r *paginatedQuery) AsV1Query() (*v1.Query, error) {
-	if r == nil || r.Query == nil {
-		return nil, nil
-	}
-	q, err := search.ParseQuery(*r.Query)
-	if err != nil {
-		return nil, err
-	}
-	paginated.FillPagination(q, r.Pagination.AsV1Pagination(), math.MaxInt32)
-	return q, nil
-}
-
 func (r *paginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	var q *v1.Query
 	if r == nil || r.Query == nil {
@@ -115,13 +103,6 @@ func (r *paginatedQuery) String() string {
 
 type rawQuery struct {
 	Query *string
-}
-
-func (r rawQuery) AsV1Query() (*v1.Query, error) {
-	if r.Query == nil {
-		return nil, nil
-	}
-	return search.ParseQuery(*r.Query)
 }
 
 func (r rawQuery) AsV1QueryOrEmpty() (*v1.Query, error) {

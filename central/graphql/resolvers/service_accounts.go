@@ -52,7 +52,7 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args rawQuery) ([
 		return nil, err
 	}
 
-	query, err := args.AsV1Query()
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}

@@ -7,12 +7,13 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetClusters(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.cluster.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
+	mocks.cluster.EXPECT().SearchRawClusters(gomock.Any(), search.EmptyQuery()).Return([]*storage.Cluster{
 		{
 			Id:   fakeClusterID,
 			Name: "fake cluster",
