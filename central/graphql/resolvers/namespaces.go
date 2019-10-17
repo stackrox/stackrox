@@ -34,6 +34,10 @@ func init() {
 		schema.AddExtraResolver("Namespace", `policies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Namespace", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Namespace", `imageCount: Int!`),
+		schema.AddExtraResolver("Namespace", `imageComponents: [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver("Namespace", `imageComponentCount: Int!`),
+		schema.AddExtraResolver("Namespace", `vulns: [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Namespace", `vulnCount: Int!`),
 		schema.AddExtraResolver("Namespace", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Namespace", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Namespace", "cluster: Cluster!"),
@@ -323,6 +327,70 @@ func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([
 		return nil, err
 	}
 	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx, q))
+}
+
+func (resolver *namespaceResolver) ImageComponents(ctx context.Context) ([]*EmbeddedImageScanComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
+
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	if err != nil {
+		return nil, err
+	}
+	return mapImagesToComponentResolvers(resolver.root, images, search.EmptyQuery())
+}
+
+func (resolver *namespaceResolver) ImageComponentCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
+
+	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	if err != nil {
+		return 0, err
+	}
+
+	vulns, err := mapImagesToComponentResolvers(resolver.root, images, search.EmptyQuery())
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(vulns)), nil
+}
+
+func (resolver *namespaceResolver) Vulns(ctx context.Context) ([]*EmbeddedVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
+
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	if err != nil {
+		return nil, err
+	}
+	return mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
+}
+
+func (resolver *namespaceResolver) VulnCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
+
+	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	if err != nil {
+		return 0, err
+	}
+
+	vulns, err := mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(vulns)), nil
 }
 
 func (resolver *namespaceResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
