@@ -42,6 +42,7 @@ func init() {
 			"imageCount: Int!",
 			"deployments: [Deployment!]!",
 			"deploymentCount: Int!",
+			"envImpact: Float!",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String): [EmbeddedVulnerability!]!"),
@@ -237,6 +238,24 @@ func (evr *EmbeddedVulnerabilityResolver) DeploymentCount(ctx context.Context) (
 		return 0, err
 	}
 	return int32(len(evr.deployments)), nil
+}
+
+// EnvImpact is the fraction of deployments that contains the CVE
+func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float64, error) {
+	allDepsCount, err := evr.root.DeploymentDataStore.CountDeployments(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if allDepsCount == 0 {
+		return 0, errors.New("deployments count not available")
+	}
+
+	if err := evr.loadDeployments(ctx); err != nil {
+		return 0, err
+	}
+
+	return float64(float64(len(evr.deployments)) / float64(allDepsCount)), nil
 }
 
 func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) error {
