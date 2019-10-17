@@ -82,12 +82,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"impactScore: Float!",
 		"integrity: CVSSV2_Impact!",
 		"score: Float!",
+		"severity: CVSSV2_Severity!",
 		"vector: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AccessComplexity(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AttackVector(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Authentication(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Impact(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Severity(0)))
 	utils.Must(builder.AddType("CVSSV3", []string{
 		"attackComplexity: CVSSV3_Complexity!",
 		"attackVector: CVSSV3_AttackVector!",
@@ -99,6 +101,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"privilegesRequired: CVSSV3_Privileges!",
 		"scope: CVSSV3_Scope!",
 		"score: Float!",
+		"severity: CVSSV3_Severity!",
 		"userInteraction: CVSSV3_UserInteraction!",
 		"vector: String!",
 	}))
@@ -107,6 +110,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Impact(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Privileges(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Scope(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Severity(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_UserInteraction(0)))
 	utils.Must(builder.AddType("Cert", []string{
 		"algorithm: String!",
@@ -1474,6 +1478,11 @@ func (resolver *cVSSV2Resolver) Score(ctx context.Context) float64 {
 	return float64(value)
 }
 
+func (resolver *cVSSV2Resolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
 func (resolver *cVSSV2Resolver) Vector(ctx context.Context) string {
 	value := resolver.data.GetVector()
 	return value
@@ -1551,6 +1560,24 @@ func toCVSSV2_Impacts(values *[]string) []storage.CVSSV2_Impact {
 	return output
 }
 
+func toCVSSV2_Severity(value *string) storage.CVSSV2_Severity {
+	if value != nil {
+		return storage.CVSSV2_Severity(storage.CVSSV2_Severity_value[*value])
+	}
+	return storage.CVSSV2_Severity(0)
+}
+
+func toCVSSV2_Severities(values *[]string) []storage.CVSSV2_Severity {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVSSV2_Severity, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV2_Severity(&v)
+	}
+	return output
+}
+
 type cVSSV3Resolver struct {
 	root *Resolver
 	data *storage.CVSSV3
@@ -1622,6 +1649,11 @@ func (resolver *cVSSV3Resolver) Scope(ctx context.Context) string {
 func (resolver *cVSSV3Resolver) Score(ctx context.Context) float64 {
 	value := resolver.data.GetScore()
 	return float64(value)
+}
+
+func (resolver *cVSSV3Resolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
 }
 
 func (resolver *cVSSV3Resolver) UserInteraction(ctx context.Context) string {
@@ -1720,6 +1752,24 @@ func toCVSSV3_Scopes(values *[]string) []storage.CVSSV3_Scope {
 	output := make([]storage.CVSSV3_Scope, len(*values))
 	for i, v := range *values {
 		output[i] = toCVSSV3_Scope(&v)
+	}
+	return output
+}
+
+func toCVSSV3_Severity(value *string) storage.CVSSV3_Severity {
+	if value != nil {
+		return storage.CVSSV3_Severity(storage.CVSSV3_Severity_value[*value])
+	}
+	return storage.CVSSV3_Severity(0)
+}
+
+func toCVSSV3_Severities(values *[]string) []storage.CVSSV3_Severity {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVSSV3_Severity, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV3_Severity(&v)
 	}
 	return output
 }

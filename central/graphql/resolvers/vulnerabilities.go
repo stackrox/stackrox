@@ -43,6 +43,7 @@ func init() {
 			"deployments: [Deployment!]!",
 			"deploymentCount: Int!",
 			"envImpact: Float!",
+			"severity: String!",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String): [EmbeddedVulnerability!]!"),
@@ -263,6 +264,17 @@ func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float6
 	}
 
 	return float64(float64(len(evr.deployments)) / float64(allDepsCount)), nil
+}
+
+// Severity return the severity of the vulnerability (CVSSv3 or CVSSv2).
+func (evr *EmbeddedVulnerabilityResolver) Severity(ctx context.Context) string {
+	if val := evr.data.GetCvssV3(); val != nil {
+		return evr.data.GetCvssV3().GetSeverity().String()
+	}
+	if val := evr.data.GetCvssV2(); val != nil {
+		return evr.data.GetCvssV2().GetSeverity().String()
+	}
+	return storage.CVSSV2_UNKNOWN.String()
 }
 
 func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) error {

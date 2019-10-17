@@ -67,6 +67,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 				Confidentiality:  storage.CVSSV2_IMPACT_NONE,
 				Integrity:        storage.CVSSV2_IMPACT_NONE,
 				Availability:     storage.CVSSV2_IMPACT_NONE,
+				Severity:         storage.CVSSV2_MEDIUM,
 			},
 		},
 		{
@@ -89,6 +90,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 				Confidentiality:     storage.CVSSV2_IMPACT_NONE,
 				Integrity:           storage.CVSSV2_IMPACT_NONE,
 				Availability:        storage.CVSSV2_IMPACT_NONE,
+				Severity:            storage.CVSSV2_HIGH,
 			},
 			CvssV3: &storage.CVSSV3{
 				Vector:              "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
@@ -103,6 +105,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 				Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
 				Integrity:           storage.CVSSV3_IMPACT_NONE,
 				Availability:        storage.CVSSV3_IMPACT_NONE,
+				Severity:            storage.CVSSV3_HIGH,
 			},
 		},
 	}
