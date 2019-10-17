@@ -31,6 +31,7 @@ func init() {
 			"id: ID!",
 			"name: String!",
 			"version: String!",
+			"topVuln: EmbeddedVulnerability",
 			"vulns: [EmbeddedVulnerability]!",
 			"vulnCount: Int!",
 			"lastScanned: Time",
@@ -181,6 +182,17 @@ func (eicr *EmbeddedImageScanComponentResolver) LastScanned(ctx context.Context)
 		}
 	}
 	return timestamp(latestTime)
+}
+
+// TopVuln returns the first vulnerability with the top CVSS score.
+func (eicr *EmbeddedImageScanComponentResolver) TopVuln(ctx context.Context) (*EmbeddedVulnerabilityResolver, error) {
+	var maxCvss *storage.EmbeddedVulnerability
+	for _, vuln := range eicr.data.GetVulns() {
+		if maxCvss == nil || vuln.GetCvss() > maxCvss.GetCvss() {
+			maxCvss = vuln
+		}
+	}
+	return eicr.root.wrapEmbeddedVulnerability(maxCvss, nil)
 }
 
 // Vulns resolves the vulnerabilities contained in the image component.

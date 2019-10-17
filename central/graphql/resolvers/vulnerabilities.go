@@ -106,6 +106,13 @@ func vulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*E
 	return mapImagesToVulnerabilityResolvers(root, images, query)
 }
 
+func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulnerability, err error) (*EmbeddedVulnerabilityResolver, error) {
+	if err != nil {
+		return nil, err
+	}
+	return &EmbeddedVulnerabilityResolver{root: resolver, data: value}, nil
+}
+
 func (resolver *Resolver) wrapEmbeddedVulnerabilities(values []*storage.EmbeddedVulnerability, err error) ([]*EmbeddedVulnerabilityResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err

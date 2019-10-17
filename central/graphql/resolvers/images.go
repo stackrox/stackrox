@@ -21,6 +21,7 @@ func init() {
 		schema.AddQuery("image(sha:ID!): Image"),
 		schema.AddExtraResolver("Image", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Image", "deploymentCount: Int!"),
+		schema.AddExtraResolver("Image", "topVuln: EmbeddedVulnerability"),
 		schema.AddExtraResolver("Image", "vulns: [EmbeddedVulnerability]!"),
 		schema.AddExtraResolver("Image", "vulnCount: Int!"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
@@ -99,6 +100,22 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context) (int32, erro
 		return 0, nil
 	}
 	return int32(len(results)), nil
+}
+
+// TopVuln returns the first vulnerability with the top CVSS score.
+func (resolver *imageResolver) TopVuln(ctx context.Context) (*EmbeddedVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVulnerability")
+
+	// create a set of the CVEs to return.
+	var maxCvss *storage.EmbeddedVulnerability
+	for _, component := range resolver.data.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			if maxCvss == nil || vuln.GetCvss() > maxCvss.GetCvss() {
+				maxCvss = vuln
+			}
+		}
+	}
+	return resolver.root.wrapEmbeddedVulnerability(maxCvss, nil)
 }
 
 // Vulns returns all of the vulnerabilities in the image.
