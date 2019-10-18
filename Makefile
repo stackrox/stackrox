@@ -195,9 +195,9 @@ endif
 blanks:
 	@echo "+ $@"
 ifdef CI
-	@echo $(FORMATTING_FILES) | xargs $(BASE_PATH)/tools/import_validate.py
+	@echo $(FORMATTING_FILES) | xargs $(BASE_DIR)/tools/import_validate.py
 else
-	@echo $(FORMATTING_FILES) | xargs $(BASE_PATH)/tools/fix-blanks.sh
+	@echo $(FORMATTING_FILES) | xargs $(BASE_DIR)/tools/fix-blanks.sh
 endif
 
 .PHONY: dev
