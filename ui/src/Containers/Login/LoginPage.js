@@ -116,9 +116,11 @@ class LoginPage extends Component {
         ) {
             return null;
         }
-        const options = authProviders
-            .filter(obj => obj.enabled)
-            .map(authProvider => ({ label: authProvider.name, value: authProvider.id }));
+
+        const options = authProviders.map(authProvider => ({
+            label: authProvider.name,
+            value: authProvider.id
+        }));
         const { selectedAuthProviderId } = this.state;
         return (
             <div className="py-8 items-center w-2/3">
@@ -202,7 +204,7 @@ class LoginPage extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    authProviders: selectors.getAuthProviders,
+    authProviders: selectors.getLoginAuthProviders,
     authStatus: selectors.getAuthStatus,
     authProviderResponse: selectors.getAuthProviderError
 });

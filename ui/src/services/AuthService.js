@@ -2,6 +2,7 @@ import store from 'store';
 import axios from './instance';
 
 const authProvidersUrl = '/v1/authProviders';
+const authLoginProvidersUrl = '/v1/login/authproviders';
 const accessTokenKey = 'access_token';
 const requestedLocationKey = 'requested_location';
 
@@ -31,6 +32,17 @@ export class AuthHttpError extends Error {
  */
 export function fetchAuthProviders() {
     return axios.get(`${authProvidersUrl}`).then(response => ({
+        response: response.data.authProviders
+    }));
+}
+
+/**
+ * Fetches login authentication providers.
+ *
+ * @returns {Promise<Object, Error>} object with response property being an array of login auth providers
+ */
+export function fetchLoginAuthProviders() {
+    return axios.get(`${authLoginProvidersUrl}`).then(response => ({
         response: response.data.authProviders
     }));
 }

@@ -19,6 +19,16 @@ message GetAuthProvidersRequest {
     string type = 2;
 }
 
+message GetLoginAuthProvidersResponse {
+    message LoginAuthProvider {
+        string id                   = 1;
+        string name                 = 2;
+        string type                 = 3;
+        string login_url            = 5;
+    }
+    repeated LoginAuthProvider auth_providers = 1;
+}
+
 message GetAuthProvidersResponse {
     repeated storage.AuthProvider auth_providers = 1;
 }
@@ -53,6 +63,12 @@ service AuthProviderService {
     rpc GetAuthProvider (GetAuthProviderRequest) returns (storage.AuthProvider) {
         option (google.api.http) = {
             get: "/v1/authProviders/{id}"
+        };
+    }
+
+    rpc GetLoginAuthProviders (Empty) returns (GetLoginAuthProvidersResponse) {
+        option (google.api.http) = {
+            get: "/v1/login/authproviders"
         };
     }
 

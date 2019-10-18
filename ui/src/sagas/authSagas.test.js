@@ -13,12 +13,13 @@ import saga from './authSagas';
 import createLocationChange from './sagaTestUtils';
 
 const createStateSelectors = (authProviders = [], authStatus = AUTH_STATUS.LOADING) => [
+    [select(selectors.getLoginAuthProviders), authProviders],
     [select(selectors.getAuthProviders), authProviders],
     [select(selectors.getAuthStatus), authStatus]
 ];
 
 describe('Auth Sagas', () => {
-    it('should get and put auth providers when on integrations page', () => {
+    it('should get and put auth providers when on access page', () => {
         const authProviders = [{ name: 'ap1', validated: true }];
         const fetchMock = jest
             .fn()
@@ -29,11 +30,12 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors(),
                 [call(AuthService.fetchAuthProviders), dynamic(fetchMock)],
+                [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.fetchAuthProviders.success(authProviders))
-            .dispatch(createLocationChange('/')) // first location change will also trigger auth providers fetching
-            .dispatch(createLocationChange('/main/integrations'))
+            .dispatch(createLocationChange('/'))
+            .dispatch(createLocationChange('/main/access'))
             .silentRun();
     });
 
@@ -42,7 +44,7 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), dynamic(fetchMock)],
+                [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .dispatch(createLocationChange('/'))
@@ -58,7 +60,7 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.ANONYMOUS_ACCESS),
-                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), false],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
@@ -70,7 +72,7 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }]),
-                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(AuthService.fetchAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }]
@@ -83,7 +85,7 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }]),
-                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(AuthService.fetchAuthStatus), throwError(new Error('401'))],
                 [call(fetchUserRolePermissions), { response: {} }]
@@ -97,7 +99,7 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
-                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(AuthService.clearAccessToken), dynamic(clearTokenMock)],
                 [call(fetchUserRolePermissions), { response: {} }]
@@ -116,7 +118,7 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), { response: [] }],
+                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
                 [call(AuthService.storeRequestedLocation, from), dynamic(storeLocationMock)],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
@@ -137,7 +139,7 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), { response: [] }],
+                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
                 [
                     call(AuthService.exchangeAuthToken, token, 'oidc', serverState),
                     { token: exchangedToken }
@@ -170,7 +172,7 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
-                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
@@ -183,7 +185,7 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
-                [call(AuthService.fetchAuthProviders), { response: [{ name: 'ap1' }] }],
+                [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.isTokenPresent), true],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])

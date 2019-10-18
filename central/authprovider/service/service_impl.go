@@ -24,9 +24,12 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
+			"/v1.AuthProviderService/GetLoginAuthProviders",
+			"/v1.AuthProviderService/ExchangeToken",
+		},
+		user.With(permissions.View(resources.AuthProvider)): {
 			"/v1.AuthProviderService/GetAuthProvider",
 			"/v1.AuthProviderService/GetAuthProviders",
-			"/v1.AuthProviderService/ExchangeToken",
 		},
 		user.With(permissions.Modify(resources.AuthProvider)): {
 			"/v1.AuthProviderService/PostAuthProvider",
@@ -68,6 +71,32 @@ func (s *serviceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthPr
 	return authProvider.StorageView(), nil
 }
 
+// GetLoginAuthProviders retrieves all authProviders that matches the request filters
+func (s *serviceImpl) GetLoginAuthProviders(ctx context.Context, empty *v1.Empty) (*v1.GetLoginAuthProvidersResponse, error) {
+	authProviders := s.registry.GetProviders(nil, nil)
+	result := make([]*v1.GetLoginAuthProvidersResponse_LoginAuthProvider, 0, len(authProviders))
+	for _, provider := range authProviders {
+		if view := provider.StorageView(); view.GetEnabled() {
+			result = append(result, &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{
+				Id:       view.GetId(),
+				Name:     view.GetName(),
+				Type:     view.GetType(),
+				LoginUrl: view.GetLoginUrl(),
+			})
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].GetType() == basic.TypeName {
+			return false
+		}
+		if result[j].GetType() == basic.TypeName {
+			return true
+		}
+		return result[i].GetName() < result[j].GetName()
+	})
+	return &v1.GetLoginAuthProvidersResponse{AuthProviders: result}, nil
+}
+
 // GetAuthProviders retrieves all authProviders that matches the request filters
 func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error) {
 	var name, typ *string
@@ -83,7 +112,7 @@ func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthP
 	for i, provider := range authProviders {
 		result[i] = provider.StorageView()
 	}
-	sort.SliceStable(result, func(i, j int) bool {
+	sort.Slice(result, func(i, j int) bool {
 		if result[i].GetType() == basic.TypeName {
 			return false
 		}

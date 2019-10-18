@@ -6,7 +6,7 @@ import * as api from '../constants/apiEndpoints';
 describe('Authentication', () => {
     const setupAuth = (landingUrl, authStatusValid = true) => {
         cy.server();
-        cy.route('GET', api.auth.authProviders, 'fixture:auth/authProviders.json').as(
+        cy.route('GET', api.auth.loginAuthProviders, 'fixture:auth/authProviders.json').as(
             'authProviders'
         );
         cy.route({

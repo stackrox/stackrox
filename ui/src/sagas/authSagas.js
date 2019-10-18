@@ -4,7 +4,7 @@ import { push } from 'react-router-redux';
 import queryString from 'qs';
 import Raven from 'raven-js';
 
-import { loginPath, integrationsPath, authResponsePrefix } from 'routePaths';
+import { loginPath, accessControlPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import * as AuthService from 'services/AuthService';
 import fetchUsersAttributes from 'services/AttributesService';
@@ -55,7 +55,16 @@ function* evaluateUserAccess() {
 }
 
 function* watchNewAuthProviders() {
-    yield takeLatest(types.FETCH_AUTH_PROVIDERS.SUCCESS, evaluateUserAccess);
+    yield takeLatest(types.FETCH_LOGIN_AUTH_PROVIDERS.SUCCESS, evaluateUserAccess);
+}
+
+export function* getLoginAuthProviders() {
+    try {
+        const result = yield call(AuthService.fetchLoginAuthProviders);
+        yield put(actions.fetchLoginAuthProviders.success(result.response));
+    } catch (error) {
+        yield put(actions.fetchLoginAuthProviders.failure(error));
+    }
 }
 
 export function* getAuthProviders() {
@@ -69,6 +78,10 @@ export function* getAuthProviders() {
 
 function* watchAuthProvidersFetchRequest() {
     yield takeLatest(types.FETCH_AUTH_PROVIDERS.REQUEST, getAuthProviders);
+}
+
+function* watchLoginAuthProvidersFetchRequest() {
+    yield takeLatest(types.FETCH_LOGIN_AUTH_PROVIDERS.REQUEST, getLoginAuthProviders);
 }
 
 function* logout() {
@@ -144,7 +157,7 @@ function* dispatchAuthResponse(type, location) {
 
     const storedLocation = yield call(AuthService.getAndClearRequestedLocation);
     yield put(push(storedLocation || '/')); // try to restore requested path
-    yield call(getAuthProviders);
+    yield call(getLoginAuthProviders);
 }
 
 function* handleHttpError(action) {
@@ -153,7 +166,7 @@ function* handleHttpError(action) {
         // TODO-ivan: for now leave it to individual calls to deal with (e.g. popup message etc.)
     } else {
         // access was revoked or auth mode was enabled, need to update auth providers
-        yield fork(getAuthProviders);
+        yield fork(getLoginAuthProviders);
         yield put(actions.logout());
     }
 }
@@ -265,16 +278,17 @@ export default function* auth() {
         yield fork(dispatchAuthResponse, authType, location);
     } else {
         // otherwise we still need to fetch auth providers to check if user can access the app
-        yield fork(getAuthProviders);
+        yield fork(getLoginAuthProviders);
         yield fork(getUserPermissions);
     }
 
     yield all([
-        takeEveryLocation(integrationsPath, getAuthProviders),
+        takeEveryLocation(accessControlPath, getAuthProviders),
         takeEveryLocation(loginPath, handleLoginPageRedirect),
         fork(watchSaveAuthProvider),
         fork(watchDeleteAuthProvider),
         fork(watchAuthProvidersFetchRequest),
+        fork(watchLoginAuthProvidersFetchRequest),
         fork(watchLogout),
         fork(watchAuthHttpErrors),
         fork(watchSelectAuthProvider)
