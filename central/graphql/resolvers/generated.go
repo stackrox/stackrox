@@ -427,6 +427,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"metadata: ImageMetadata",
 		"name: ImageName",
 		"notPullable: Boolean!",
+		"priority: Int!",
 		"scan: ImageScan",
 	}))
 	utils.Must(builder.AddType("ImageLayer", []string{
@@ -4203,6 +4204,14 @@ func (resolver *imageResolver) NotPullable(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetNotPullable()
 	return value
+}
+
+func (resolver *imageResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	if resolver.data == nil {
+		value = resolver.list.GetPriority()
+	}
+	return int32(value)
 }
 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {

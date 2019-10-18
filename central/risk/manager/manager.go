@@ -31,8 +31,8 @@ var (
 type Manager interface {
 	ReprocessDeploymentRisk(deployment *storage.Deployment)
 	ReprocessDeploymentRiskWithImages(deployment *storage.Deployment, images []*storage.Image)
-	ReprocessImageRisk(image *storage.Image) *storage.Risk
-	ReprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent) *storage.Risk
+	ReprocessImageRisk(image *storage.Image)
+	ReprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent)
 }
 
 type managerImpl struct {
@@ -67,30 +67,45 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 		return
 	}
 	e.ReprocessDeploymentRiskWithImages(deployment, images)
+
+	// We want to compute and store risk for images when deployment risk is reprocessed.
+	for _, image := range images {
+		e.ReprocessImageRisk(image)
+	}
 }
 
 // ReprocessDeploymentRiskWithImages will reprocess the passed deployments risk and save the results
 func (e *managerImpl) ReprocessDeploymentRiskWithImages(deployment *storage.Deployment, images []*storage.Image) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Deployment")
 
-	deploymentRisk := e.deploymentScorer.Score(allAccessCtx, deployment, images)
-
-	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, deploymentRisk); err != nil {
+	risk := e.deploymentScorer.Score(allAccessCtx, deployment, images)
+	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for deployment %s: %v", deployment.GetName(), err)
 	}
 }
 
-// ReprocessImageRisk will reprocess and return risk of the passed image. Results are not saved.
-func (e *managerImpl) ReprocessImageRisk(image *storage.Image) *storage.Risk {
+// ReprocessImageRisk will reprocess risk of the passed image and save the results.
+func (e *managerImpl) ReprocessImageRisk(image *storage.Image) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
 
-	return e.imageScorer.Score(allAccessCtx, image)
+	risk := e.imageScorer.Score(allAccessCtx, image)
+	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
+		log.Errorf("Error reprocessing risk for image %s: %v", image.GetName(), err)
+	}
+
+	// We want to compute and store risk for image components when image risk is reprocessed.
+	for _, component := range image.GetScan().GetComponents() {
+		e.ReprocessImageComponentRisk(component)
+	}
 }
 
-// ReprocessImageComponentRisk will reprocess and return risk of image components of the passed image. Results are not saved.
+// ReprocessImageComponentRisk will reprocess risk of image components and save the results.
 // Image Component ID is generated as <component_name>:<component_version>
-func (e *managerImpl) ReprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent) *storage.Risk {
+func (e *managerImpl) ReprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
-	return e.imageComponentScorer.Score(allAccessCtx, imageComponent)
+	risk := e.imageComponentScorer.Score(allAccessCtx, imageComponent)
+	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
+		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
+	}
 }

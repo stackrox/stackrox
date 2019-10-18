@@ -100,11 +100,15 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
+	ctrl := gomock.NewController(t)
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).AnyTimes()
+	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
 	// Initialize real datastore
-	images, err := imageDatastore.NewBadger(db, bleveIndex, true)
+	images, err := imageDatastore.NewBadger(db, bleveIndex, true, mockRiskDatastore)
 	require.NoError(t, err)
 
-	ctrl := gomock.NewController(t)
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).Return((error)(nil))
 
@@ -114,10 +118,6 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
 
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
-
-	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
-	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
-	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
 
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
@@ -148,8 +148,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
-	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
-	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any())
+	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()

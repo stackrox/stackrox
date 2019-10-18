@@ -2,11 +2,14 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
+	"github.com/stackrox/rox/central/ranking"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,20 +35,59 @@ type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
+
+	risks riskDS.DataStore
+
+	imageRanker          *ranking.Ranker
+	imageComponentRanker *ranking.Ranker
+
+	componentsInImages map[string]int
 }
 
-func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher) (*datastoreImpl, error) {
+func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDS.DataStore) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
+		risks:    risks,
 
-		keyedMutex: concurrency.NewKeyedMutex(16),
+		componentsInImages: make(map[string]int),
+		keyedMutex:         concurrency.NewKeyedMutex(16),
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
 	}
 	return ds, nil
+}
+
+func (ds *datastoreImpl) initializeRankers() error {
+	ds.imageRanker = ranking.ImageRanker()
+	ds.imageComponentRanker = ranking.ImageComponentRanker()
+
+	riskElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Risk),
+		))
+
+	imageRisks, err := ds.risks.SearchRawRisks(riskElevatedCtx, searchPkg.NewQueryBuilder().AddStrings(
+		searchPkg.RiskSubjectType, storage.RiskSubjectType_IMAGE.String()).ProtoQuery())
+	if err != nil {
+		return err
+	}
+	for _, risk := range imageRisks {
+		ds.imageRanker.Add(risk.GetSubject().GetId(), risk.GetScore())
+	}
+
+	imageComponentRisks, err := ds.risks.SearchRawRisks(riskElevatedCtx, searchPkg.NewQueryBuilder().AddStrings(
+		searchPkg.RiskSubjectType, storage.RiskSubjectType_IMAGE_COMPONENT.String()).ProtoQuery())
+	if err != nil {
+		return err
+	}
+	for _, risk := range imageComponentRisks {
+		ds.imageComponentRanker.Add(risk.GetSubject().GetId(), risk.GetScore())
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -62,6 +104,7 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 	if err != nil {
 		return nil, err
 	}
+	ds.updateImagePriority(imgs...)
 	return imgs, nil
 }
 
@@ -70,6 +113,7 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 	if err != nil {
 		return nil, err
 	}
+	ds.updateListImagePriority(imgs...)
 	return imgs, nil
 }
 
@@ -82,7 +126,7 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 	if ok, err := ds.canReadImage(ctx, sha); err != nil || !ok {
 		return nil, false, err
 	}
-
+	ds.updateListImagePriority(img)
 	return img, true, nil
 }
 
@@ -125,11 +169,10 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 	if err != nil || !found {
 		return nil, false, err
 	}
-
 	if ok, err := ds.canReadImage(ctx, sha); err != nil || !ok {
 		return nil, false, err
 	}
-
+	ds.updateImagePriority(img)
 	return img, true, nil
 }
 
@@ -146,7 +189,13 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 	}
 
 	shasQuery := searchPkg.NewQueryBuilder().AddStrings(searchPkg.ImageSHA, shas...).ProtoQuery()
-	return ds.SearchRawImages(ctx, shasQuery)
+	imgs, err := ds.SearchRawImages(ctx, shasQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	ds.updateImagePriority(imgs...)
+	return imgs, nil
 }
 
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
@@ -176,6 +225,12 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	if err = ds.storage.UpsertImage(image); err != nil {
 		return err
 	}
+
+	for _, imageComponent := range image.GetScan().GetComponents() {
+		key := getImageComponentKey(imageComponent)
+		ds.componentsInImages[key]++
+	}
+
 	return ds.indexer.AddImage(image)
 }
 
@@ -187,7 +242,18 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting images")
+	deleteRiskCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Risk),
+		))
+
 	for _, id := range ids {
+		image, found, err := ds.storage.GetImage(id)
+		if err != nil || !found {
+			return err
+		}
+
 		if err := ds.storage.DeleteImage(id); err != nil {
 			errorList.AddError(err)
 			continue
@@ -195,6 +261,24 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 		if err := ds.indexer.DeleteImage(id); err != nil {
 			errorList.AddError(err)
 		}
+
+		if err := ds.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_IMAGE); err != nil {
+			return err
+		}
+
+		for _, imageComponent := range image.GetScan().GetComponents() {
+			key := getImageComponentKey(imageComponent)
+			ds.componentsInImages[key]--
+
+			if ds.componentsInImages[key] == 0 {
+				delete(ds.componentsInImages, key)
+
+				if err := ds.risks.RemoveRisk(deleteRiskCtx, key, storage.RiskSubjectType_IMAGE_COMPONENT); err != nil {
+					return err
+				}
+			}
+		}
+
 	}
 	return errorList.ToError()
 }
@@ -260,4 +344,23 @@ func (ds *datastoreImpl) buildIndex() error {
 
 	log.Info("[STARTUP] Successfully indexed images")
 	return nil
+}
+
+func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {
+	for _, image := range images {
+		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+	}
+}
+
+func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
+	for _, image := range images {
+		for _, imageComponent := range image.GetScan().GetComponents() {
+			imageComponent.Priority = ds.imageComponentRanker.GetRankForID(getImageComponentKey(imageComponent))
+		}
+		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+	}
+}
+
+func getImageComponentKey(imageComponent *storage.EmbeddedImageScanComponent) string {
+	return fmt.Sprintf("%s:%s", imageComponent.GetName(), imageComponent.GetVersion())
 }

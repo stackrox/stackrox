@@ -21,10 +21,10 @@ var (
 )
 
 type datastoreImpl struct {
-	storage          store.Store
-	indexer          index.Indexer
-	searcher         search.Searcher
-	deploymentRanker *ranking.Ranker
+	storage             store.Store
+	indexer             index.Indexer
+	searcher            search.Searcher
+	subjectTypeToRanker map[string]*ranking.Ranker
 }
 
 func (d *datastoreImpl) buildIndex() error {
@@ -45,6 +45,9 @@ func (d *datastoreImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*sto
 
 // TODO: if subject is namespace or cluster, compute risk based on all visible child subjects
 func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, error) {
+	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
+		return nil, err
+	}
 	id, err := GetID(subjectID, subjectType)
 	if err != nil {
 		return nil, err
@@ -57,15 +60,13 @@ func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectTy
 	if !exists {
 		return nil, errors.Errorf("risk %s not found", id)
 	}
-
-	if allowed, err := allowed(ctx, storage.Access_READ_ACCESS, risk); err != nil || !allowed {
-		return nil, err
-	}
-
 	return risk, nil
 }
 
 func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, riskIndicatorNames []string) (*storage.Risk, error) {
+	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
+		return nil, err
+	}
 	risk, err := d.GetRisk(ctx, subjectID, subjectType)
 	if err != nil {
 		return nil, err
@@ -87,7 +88,7 @@ func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID strin
 }
 
 func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) error {
-	if allowed, err := allowed(ctx, storage.Access_READ_WRITE_ACCESS, risk); err != nil {
+	if allowed, err := riskSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !allowed {
 		return errors.New("permission denied")
@@ -107,6 +108,12 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 }
 
 func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error {
+	if allowed, err := riskSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !allowed {
+		return errors.New("permission denied")
+	}
+
 	id, err := GetID(subjectID, subjectType)
 	if err != nil {
 		return err
@@ -115,12 +122,6 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 	risk, exists, err := d.getRisk(id)
 	if err != nil || !exists {
 		return err
-	}
-
-	if allowed, err := allowed(ctx, storage.Access_READ_WRITE_ACCESS, risk); err != nil {
-		return err
-	} else if !allowed {
-		return errors.New("permission denied")
 	}
 
 	if err := d.storage.DeleteRisk(id); err != nil {
@@ -143,27 +144,12 @@ func (d *datastoreImpl) getRisk(id string) (*storage.Risk, bool, error) {
 	return risk, true, nil
 }
 
-func allowed(ctx context.Context, sm storage.Access, risk *storage.Risk) (bool, error) {
-	subject := risk.GetSubject()
-	if subject.GetType() == storage.RiskSubjectType_UNKNOWN {
-		return false, errors.Errorf("cannot determine scope: risk subject type %s", subject.GetType().String())
-	}
-	scopeKeys := sac.KeyForNSScopedObj(subject)
-	if ok, err := riskSAC.ScopeChecker(ctx, sm, scopeKeys...).Allowed(ctx); err != nil || !ok {
-		return false, err
-	}
-
-	return true, nil
-}
-
 func (d *datastoreImpl) getRanker(subjectType storage.RiskSubjectType) *ranking.Ranker {
-	switch subjectType {
-	case storage.RiskSubjectType_DEPLOYMENT:
-		return d.deploymentRanker
-	default:
+	ranker, found := d.subjectTypeToRanker[subjectType.String()]
+	if !found {
 		logging.Panicf("ranker not implemented for type %v", subjectType.String())
 	}
-	return nil
+	return ranker
 }
 
 func upsertRankerRecord(ranker *ranking.Ranker, id string, score float32) {

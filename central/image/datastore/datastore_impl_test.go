@@ -8,6 +8,7 @@ import (
 	searchMock "github.com/stackrox/rox/central/image/datastore/internal/search/mocks"
 	storeMock "github.com/stackrox/rox/central/image/datastore/internal/store/mocks"
 	indexMock "github.com/stackrox/rox/central/image/index/mocks"
+	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -21,6 +22,7 @@ func TestImageDataStore(t *testing.T) {
 type ImageDataStoreTestSuite struct {
 	suite.Suite
 
+	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
 	mockIndexer  *indexMock.MockIndexer
@@ -28,6 +30,7 @@ type ImageDataStoreTestSuite struct {
 	mockStore    *storeMock.MockStore
 
 	datastore DataStore
+	mockRisks *riskDatastoreMocks.MockDataStore
 
 	mockCtrl *gomock.Controller
 }
@@ -35,9 +38,12 @@ type ImageDataStoreTestSuite struct {
 func (suite *ImageDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
+	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Image, resources.Risk)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Image)))
+		sac.ResourceScopeKeys(resources.Image, resources.Risk)))
 
 	suite.mockIndexer = indexMock.NewMockIndexer(suite.mockCtrl)
 	suite.mockIndexer.EXPECT().GetTxnCount().Return(uint64(1))
@@ -45,9 +51,10 @@ func (suite *ImageDataStoreTestSuite) SetupTest() {
 	suite.mockSearcher = searchMock.NewMockSearcher(suite.mockCtrl)
 	suite.mockStore = storeMock.NewMockStore(suite.mockCtrl)
 	suite.mockStore.EXPECT().GetTxnCount().Return(uint64(1), nil)
+	suite.mockRisks = riskDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 
 	var err error
-	suite.datastore, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher)
+	suite.datastore, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockRisks)
 	suite.Require().NoError(err)
 }
 

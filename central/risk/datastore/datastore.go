@@ -26,12 +26,17 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(store store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+
 	d := &datastoreImpl{
-		storage:          storage,
-		indexer:          indexer,
-		searcher:         searcher,
-		deploymentRanker: ranking.DeploymentRanker(),
+		storage:  store,
+		indexer:  indexer,
+		searcher: searcher,
+		subjectTypeToRanker: map[string]*ranking.Ranker{
+			storage.RiskSubjectType_DEPLOYMENT.String():      ranking.DeploymentRanker(),
+			storage.RiskSubjectType_IMAGE.String():           ranking.ImageRanker(),
+			storage.RiskSubjectType_IMAGE_COMPONENT.String(): ranking.ImageComponentRanker(),
+		},
 	}
 	if err := d.buildIndex(); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
