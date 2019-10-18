@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
+	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/v2backuprestore"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -58,7 +59,7 @@ func showRestoreStatus(timeout time.Duration) error {
 		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 
-	ctx, cancel := context.WithTimeout(common.Context(), timeout)
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
 	dbClient := v1.NewDBServiceClient(conn)

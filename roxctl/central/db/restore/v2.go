@@ -12,8 +12,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
+	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -205,7 +205,7 @@ func tryRestoreV2(cmd *cobra.Command, file *os.File, deadline time.Time) error {
 		return err
 	}
 
-	resp, err := restorer.Run(common.Context(), file)
+	resp, err := restorer.Run(pkgCommon.Context(), file)
 	if err != nil {
 		return err
 	}

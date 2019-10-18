@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"google.golang.org/grpc/codes"
@@ -33,7 +34,7 @@ func cancelActiveRestore(c *cobra.Command) error {
 		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 
-	ctx, cancel := context.WithTimeout(common.Context(), flags.Timeout(c))
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), flags.Timeout(c))
 	defer cancel()
 
 	dbClient := v1.NewDBServiceClient(conn)
@@ -60,7 +61,7 @@ func cancelActiveRestore(c *cobra.Command) error {
 		return err
 	}
 
-	ctx, cancel = context.WithTimeout(common.Context(), flags.Timeout(c))
+	ctx, cancel = context.WithTimeout(pkgCommon.Context(), flags.Timeout(c))
 	defer cancel()
 
 	_, err = dbClient.CancelRestoreProcess(ctx, &v1.ResourceByID{

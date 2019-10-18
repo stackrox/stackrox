@@ -294,6 +294,33 @@ storeMonitoringMetrics: &storeMonitoringMetrics
     path: monitoring/grafana/rawmetrics.zip
     destination: monitoring-metrics.zip
 
+benchmarkDashboard: &benchmarkDashboard
+  run:
+    name: Benchmark dashboard queries
+
+    command: |
+      ./scripts/ci/bench-and-graph.sh .*Dashboard ./scale/tests/
+
+storeDashBenchImages: &storeDashBenchImages
+  store_artifacts:
+    path: monitoring/grafana/captures
+    destination: monitoring-images-dashboard-bench
+
+benchmarkCompliance: &benchmarkCompliance
+  run:
+    name: Benchmark compliance queries
+
+    command: |
+      ./scale/mocksensor/launch_mock_sensor.sh scale-test --node-interval=10ms --max-nodes=500 --deployment-interval=10ms --max-deployments=1000
+      # allow enough time for all the deployments to be processed
+      sleep 400
+      ./scripts/ci/bench-and-graph.sh .*Compliance ./scale/tests/
+
+storeComplianceBenchImages: &storeComplianceBenchImages
+  store_artifacts:
+    path: monitoring/grafana/captures
+    destination: monitoring-images-compliance-bench
+
 verifyNoStackRoxRestarts: &verifyNoStackRoxRestarts
   run:
     name: Verify that StackRox services did not restart during the runs
@@ -2063,6 +2090,7 @@ jobs:
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
             cci-export ROX_RECORDER_DB_CREDS /tmp/gcp.json
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
 
       - *waitForAPI
 
@@ -2074,14 +2102,18 @@ jobs:
             # 65 min run so that we are confident that the run has completely finished
             ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 65
       - *storeProfilingResults
-      - *collectK8sLogs
       - *verifyNoStackRoxRestarts
-      - *storeK8sLogs
-
       - *connectToMonitoring
       - *collectMonitoringImages
       - *storeMonitoringImages
       - *storeMonitoringMetrics
+      - *benchmarkDashboard
+      - *storeDashBenchImages
+      - *benchmarkCompliance
+      - *storeComplianceBenchImages
+      - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
+      - *storeK8sLogs
 
       - teardown-gke
 

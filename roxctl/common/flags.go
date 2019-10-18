@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	http1DowngradeClient "github.com/stackrox/rox/pkg/grpc/http1downgrade/client"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"google.golang.org/grpc"
 )
@@ -42,5 +43,5 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 		opts.ConfigureBasicAuth(basic.DefaultUsername, flags.Password())
 	}
 
-	return clientconn.GRPCConnection(Context(), mtls.CentralSubject, endpoint, opts)
+	return clientconn.GRPCConnection(common.Context(), mtls.CentralSubject, endpoint, opts)
 }
