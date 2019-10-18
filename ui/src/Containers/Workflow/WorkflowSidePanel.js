@@ -10,11 +10,14 @@ import Panel from 'Components/Panel';
 import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
 import searchContexts from 'constants/searchContexts';
 import searchContext from 'Containers/searchContext';
+import EntityBreadCrumbs from 'Containers/BreadCrumbs/EntityBreadCrumbs';
 
 const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
     const { isDarkMode } = useTheme();
     const { workflowState, searchState } = parseURL(location);
     const sidePanelSearch = searchState[searchContexts.sidePanel];
+    const pageStack = workflowState.getPageStack();
+    const breadCrumbEntities = workflowState.stateStack.slice(pageStack.length);
 
     const { useCase } = workflowState;
     const firstItem = workflowState.getBaseEntity();
@@ -63,15 +66,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
                             }`}
                             bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : ''}`}
                             headerTextComponent={
-                                <div>TODO: Breadcrumbs</div>
-                                // <BreadCrumbs
-                                //     className="font-700 leading-normal text-base-600 tracking-wide truncate"
-                                //     entityType1={entityType1 || entityListType1}
-                                //     entityId1={entityId1}
-                                //     entityType2={entityType2}
-                                //     entityListType2={entityListType2}
-                                //     entityId2={entityId2}
-                                // />
+                                <EntityBreadCrumbs workflowEntities={breadCrumbEntities} />
                             }
                             headerComponents={externalLink}
                             onClose={onClose}

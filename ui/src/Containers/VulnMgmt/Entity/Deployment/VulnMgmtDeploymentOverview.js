@@ -48,7 +48,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                         labels={labels}
                         annotations={annotations}
                     />
-                    {!entityContext.CLUSTER && (
+                    {!entityContext.CLUSTER && cluster && (
                         <RelatedEntity
                             className="mx-4 min-w-48 h-48 mb-4"
                             entityType={entityTypes.CLUSTER}
