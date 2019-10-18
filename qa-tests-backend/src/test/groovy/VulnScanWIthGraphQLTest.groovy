@@ -5,18 +5,11 @@ import services.GraphQLService
 import spock.lang.Shared
 import spock.lang.Unroll
 import org.junit.experimental.categories.Category
+import util.Timer
 
 class VulnScanWIthGraphQLTest extends BaseSpecification {
-    static final private String DEPLOYMENTNGINX_VULN_SCAN = "vuln-scan-deploymentnginx"
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private List<Deployment> DEPLOYMENTS = [
-                    new Deployment()
-                            .setName(DEPLOYMENTNGINX_VULN_SCAN)
-                            .setImage("nginx:1.7.9")
-                            .addPort(22, "TCP")
-                            .addAnnotation("test", "annotation")
-                            .setEnv(["CLUSTER_NAME": "main"])
-                            .addLabel("app", "test"),
     new Deployment()
     .setName (STRUTSDEPLOYMENT_VULN_SCAN)
     .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
@@ -61,6 +54,18 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
         }
     }"""
 
+    private static final String DEP_QUERY = """query getDeployment(\$id: ID!) {
+        deployment :
+        deployment(id: \$id) {
+             images {
+             scan
+             {
+             scanTime} id name {fullName}
+             }
+        }
+    }
+"""
+
     @Shared
     private  gqlService = new GraphQLService()
 
@@ -85,48 +90,42 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
         gqlService = new GraphQLService()
         String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
         assert uid != null
-        def imageId = getImageIDFromDepId(uid)
+        def imageId = waitForValidImageID(uid)
         println "image id ..." + imageId
+        assert !StringUtils.isEmpty(imageId)
         def resultRet = gqlService.Call(GET_CVES_INFO_WITH_IMAGE_QUERY, [ id: imageId ])
         assert resultRet.getCode() == 200
         println "return code " + resultRet.getCode()
         then:
-        println "image results " + resultRet.getValue().toString()
-        assert !(StringUtils.isEmpty(resultRet.getValue().toString()))
-        int cve
-        def vulns
-        def scan = resultRet.getValue().image.scan
-        println " scan " + scan
-        if (scan != null) {
-            vulns = scan.components.vulns
-            println "vulns " + vulns
-        }
-        if (vulns != null) {
-            cve =  getCVEs(vulns)
-        }
+        assert resultRet.getValue() != null
+        def image = resultRet.getValue().image
+        assert image?.scan?.components?.vulns != null
+        int cve =  getCVEs(image.scan.components.vulns)
         assert cve >= vuln_cve
         where :
         "Data inputs are :"
         depName | vuln_cve
-        DEPLOYMENTNGINX_VULN_SCAN | 0
         STRUTSDEPLOYMENT_VULN_SCAN | 219
     }
 
     private String getImageIDFromDepId(String id) {
-        String depQuery = """query getDeployment(\$id: ID!) {
-        deployment :
-        deployment(id: \$id) {
-             images {
-             id }
-        }
-    }
-"""
-        def resultRet = gqlService.Call(depQuery, [ id: id ])
+        println "id " + id
+        def resultRet = gqlService.Call(DEP_QUERY, [ id: id ])
         println "code " + resultRet.getCode()
         assert resultRet.getCode() == 200
-        String imageID =  resultRet.getValue().deployment.images.id
-        println "image id " + imageID[imageID.indexOf('[')+1 .. imageID.indexOf(']')-1]
-        return imageID[imageID.indexOf('[')+1 .. imageID.indexOf(']')-1]
+        String imageID
+        assert resultRet.getValue() != null
+        def dep = resultRet.getValue().deployment
+        if (dep != null && dep.images != null) {
+            for (Object img : dep.images) {
+                if (img.name != null && img.name.fullName.contains("struts") ) {
+                    println " img.name ..." + img.name
+                    imageID = img.id
+                    break
+                }
+            }
+        }
+        return imageID
     }
 
     private int getCVEs(List vulns) {
@@ -136,5 +135,20 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
         }
         println "number of CVEs " + numCVEs
         return numCVEs
+    }
+
+    private String waitForValidImageID(String depID, int iterations = 30, int interval = 2) {
+        Timer t = new Timer(iterations, interval)
+        String imageID
+        while (t.IsValid()) {
+            imageID = getImageIDFromDepId(depID)
+            if (!StringUtils.isEmpty(imageID)) {
+                println "imageID found using deployment query "
+                return imageID
+            }
+            println "imageID not found for ${depID} yet "
+        }
+        println "could not find  imageID from  ${depID} in ${iterations * interval} seconds"
+        return ""
     }
 }
