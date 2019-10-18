@@ -23,7 +23,7 @@ const getClassNameByPosition = position => {
     return '';
 };
 
-const TileLink = ({ text, subText, icon, url, loading, isError, position }) => {
+const TileLink = ({ text, superText, subText, icon, url, loading, isError, position }) => {
     const { isDarkMode } = useTheme();
 
     const className = getClassNameByPosition(position);
@@ -31,18 +31,21 @@ const TileLink = ({ text, subText, icon, url, loading, isError, position }) => {
     const content = loading ? (
         <Loader className="text-base-100" message="" transparent />
     ) : (
-        <>
+        <div className="flex flex-col text-center">
+            {superText && <div className="text-3xl tracking-widest">{superText}</div>}
             <div
-                className="flex items-center text-lg font-600 font-condensed capitalize"
+                className="flex items-center text-lg font-600 font-condensed uppercase"
                 data-test-id="tile-link-value"
             >
                 {text} {icon && <div className="ml-1">{icon}</div>}
             </div>
-            <div className="text-sm pt-1 tracking-wides font-condensed font-600">{subText}</div>
-        </>
+            {subText && (
+                <div className="text-sm pt-1 tracking-wide font-condensed font-600">{subText}</div>
+            )}
+        </div>
     );
     let classes = '';
-    const positionClasses = `flex flex-col items-center justify-center px-2 lg:px-4 min-w-20 lg:min-w-24 border-2 rounded min-h-14`;
+    const positionClasses = `flex flex-col items-center justify-center py-2 px-2 lg:px-4 min-w-20 lg:min-w-24 border-2 rounded min-h-14`;
     const colors = 'text-base-600 hover:bg-base-200 border-primary-400 bg-base-100';
     const darkModeColors = 'text-base-600 hover:bg-primary-200 border-primary-400';
     const errorColors = 'text-alert-700 bg-alert-200 hover:bg-alert-200 border-alert-400';
@@ -63,6 +66,7 @@ const TileLink = ({ text, subText, icon, url, loading, isError, position }) => {
 
 TileLink.propTypes = {
     text: PropTypes.string.isRequired,
+    superText: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     subText: PropTypes.string,
     icon: PropTypes.element,
     url: PropTypes.string.isRequired,
@@ -75,6 +79,7 @@ TileLink.defaultProps = {
     isError: false,
     position: null,
     loading: false,
+    superText: null,
     subText: null,
     icon: null
 };

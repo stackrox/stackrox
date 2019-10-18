@@ -46,7 +46,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext }) => {
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
         query getCve${entityListType}($id: ID!, $query: String) {
-            result: deployment(id: $id) {
+            result: cve(id: $id) {
                 id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
             }
