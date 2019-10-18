@@ -28,7 +28,7 @@ const PercentageStackedPill = ({ data, tooltip }) => {
         // adds a rounded corner to the right-most pill
         if (i === arr.length - 1) className = `${className} rounded-r-full`;
 
-        return <div className={className} style={{ width: `${value}%` }} />;
+        return <div className={className} key={i} style={{ width: `${value}%` }} />;
     });
     const { title: tooltipTitle, body: tooltipBody } = tooltip || {};
     return (

@@ -9,7 +9,7 @@ const getOrientationClassName = orientation => {
     return 'flex';
 };
 
-const FixableCVECount = ({ cves, fixable, url, orientation }) => {
+const FixableCVECount = ({ cves, fixable, url, orientation, pdf }) => {
     const className = `text-base leading-normal ${getOrientationClassName(orientation)}`;
     let content = (
         <div className={className}>
@@ -17,6 +17,11 @@ const FixableCVECount = ({ cves, fixable, url, orientation }) => {
             {!!fixable && <div className="text-success-800 font-600">({fixable} Fixable)</div>}
         </div>
     );
+
+    // This field is necessary to exclude rendering the Link during PDF generation. It causes an error where the Link can't be rendered outside a Router
+    if (pdf) {
+        return content;
+    }
     if (url) content = <Link to={url}>{content}</Link>;
     return content;
 };
@@ -25,14 +30,16 @@ FixableCVECount.propTypes = {
     cves: PropTypes.number,
     fixable: PropTypes.number,
     url: PropTypes.string,
-    orientation: PropTypes.oneOf(orientations)
+    orientation: PropTypes.oneOf(orientations),
+    pdf: PropTypes.bool
 };
 
 FixableCVECount.defaultProps = {
     cves: 0,
     fixable: 0,
     url: null,
-    orientation: 'horizontal'
+    orientation: 'horizontal',
+    pdf: false
 };
 
 export default FixableCVECount;
