@@ -3,10 +3,10 @@ package central
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/central/db"
+	"github.com/stackrox/rox/roxctl/central/debug"
 	"github.com/stackrox/rox/roxctl/central/deploy"
 	"github.com/stackrox/rox/roxctl/central/license"
 	"github.com/stackrox/rox/roxctl/central/userpki"
-	"github.com/stackrox/rox/roxctl/debug"
 )
 
 // Command defines the central command tree

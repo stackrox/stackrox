@@ -2,6 +2,7 @@ package dump
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 const (
@@ -92,6 +94,21 @@ func getLogs(zipWriter *zip.Writer) error {
 	return err
 }
 
+func getVersion(zipWriter *zip.Writer) error {
+	w, err := zipWriter.Create("versions.json")
+	if err != nil {
+		return err
+	}
+	versions := version.GetAllVersions()
+	data, err := json.Marshal(versions)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(data)
+	return err
+}
+
 // DebugHandler is an HTTP handler that outputs debugging information
 func DebugHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -114,37 +131,35 @@ func DebugHandler() http.HandlerFunc {
 		zipWriter := zip.NewWriter(w)
 		defer utils.IgnoreError(zipWriter.Close)
 
-		if err := getPrometheusMetrics(zipWriter, "metrics-1"); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+		if err := getVersion(zipWriter); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		if err := getPrometheusMetrics(zipWriter, "metrics-1"); err != nil {
+			log.Error(err)
 		}
 
 		if err := getMemory(zipWriter); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			log.Error(err)
 		}
 
 		if err := getGoroutines(zipWriter); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			log.Error(err)
 		}
 
 		if err := getCPU(zipWriter, cpuProfileDuration); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			log.Error(err)
 		}
 
 		if err := getPrometheusMetrics(zipWriter, "metrics-2"); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			log.Error(err)
 		}
 
 		if withLogs {
 			if err := getLogs(zipWriter); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
+				log.Error(err)
 			}
 		}
-
 	}
 }

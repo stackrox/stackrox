@@ -94,7 +94,7 @@ type GetZipOptions struct {
 	OutputDir                string
 }
 
-func storeZipFile(respBody io.Reader, fileName, outputDir string) error {
+func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string) error {
 	outputFile := fileName
 	if outputDir != "" {
 		if err := os.MkdirAll(outputDir, 0755); err != nil {
@@ -114,6 +114,8 @@ func storeZipFile(respBody io.Reader, fileName, outputDir string) error {
 	if err := file.Close(); err != nil {
 		return errors.Wrap(err, "error writing to ZIP file")
 	}
+	printf("Successfully wrote %s zip file to %q \n", bundleType, filepath.Join(outputDir, fileName))
+
 	return nil
 }
 
@@ -143,7 +145,7 @@ func GetZip(opts GetZipOptions) error {
 	}
 
 	if !opts.ExpandZip {
-		return storeZipFile(resp.Body, zipFileName, opts.OutputDir)
+		return storeZipFile(resp.Body, zipFileName, opts.OutputDir, opts.BundleType)
 	}
 
 	buf := ioutils.NewRWBuf(inMemFileSizeThreshold)
