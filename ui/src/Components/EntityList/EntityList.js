@@ -98,7 +98,7 @@ const EntityList = ({
                 page={page}
                 defaultSorted={defaultSorted}
                 SubComponent={SubComponent}
-                defaultExpanded={defaultExpanded}
+                expanded={defaultExpanded}
             />
         </Panel>
     );

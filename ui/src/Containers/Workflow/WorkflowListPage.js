@@ -1,10 +1,20 @@
-import React from 'react';
-import PageNotFound from 'Components/PageNotFound';
-import isGQLLoading from 'utils/gqlLoading';
-import Loader from 'Components/Loader';
-import { useQuery } from 'react-apollo';
-import EntityList from 'Components/EntityList';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
+import { useQuery } from 'react-apollo';
+
+import PageNotFound from 'Components/PageNotFound';
+import Loader from 'Components/Loader';
+import EntityList from 'Components/EntityList';
+import workflowStateContext from 'Containers/workflowStateContext';
+import isGQLLoading from 'utils/gqlLoading';
+
+export function getDefaultExpandedRows(data) {
+    return data && data.results
+        ? data.results.map((_element, index) => {
+              return { [index]: true };
+          })
+        : null;
+}
 
 const WorkflowEntityPage = ({
     query,
@@ -18,19 +28,16 @@ const WorkflowEntityPage = ({
     showSubrows,
     search
 }) => {
+    const workflowState = useContext(workflowStateContext);
+
     const { loading, error, data } = useQuery(query, queryOptions);
     if (isGQLLoading(loading, data)) return <Loader />;
 
     if (!data || !data.results || error) return <PageNotFound resourceType={entityListType} />;
 
-    const tableColumns = getTableColumns();
+    const tableColumns = getTableColumns(workflowState);
 
-    const defaultExpandedRows =
-        showSubrows && data && data.results
-            ? data.results.map((_element, index) => {
-                  return { [index]: true };
-              })
-            : null;
+    const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(data) : null;
 
     return (
         <EntityList

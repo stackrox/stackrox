@@ -1,10 +1,12 @@
 import React from 'react';
+import gql from 'graphql-tag';
+
 import useCases from 'constants/useCaseTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
-import gql from 'graphql-tag';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
 
@@ -62,8 +64,12 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext })
                 created
                 secretCount
                 imageCount
+                vulnerabilities: vulns {
+                    ...cveListFields
+                }
             }
         }
+        ${CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
