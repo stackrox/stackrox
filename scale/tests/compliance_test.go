@@ -87,6 +87,21 @@ func getRunIDs(runResponses []complianceRunsListItem) []string {
 	return ids
 }
 
+const (
+	triggerScanQuery = "mutation triggerScan($clusterId: ID!, $standardId: ID!) {\n  complianceTriggerRuns(clusterId: $clusterId, standardId: $standardId) {\n    id\n    standardId\n    clusterId\n    state\n    errorMessage\n    __typename\n  }\n}\n"
+)
+
+func getTriggerScan(clusterID, standardID string) []byte {
+	return marshallQuery(
+		triggerScanQuery,
+		"triggerScan",
+		map[string]interface{}{
+			"clusterId":  clusterID,
+			"standardId": standardID,
+		},
+	)
+}
+
 func triggerAndWaitForCompliance(envVars *testEnvVars, client *http.Client) ([]complianceRunsListItem, error) {
 	query := getTriggerScan("*", "*")
 
