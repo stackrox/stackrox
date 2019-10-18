@@ -36,7 +36,7 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
                 alt="Waves"
             />
             <div
-                className="relative bg-gradient-diagonal p-6 xxxl:p-8"
+                className="h-full relative bg-gradient-diagonal p-6 xxxl:p-8"
                 style={{ '--start': 'var(--base-200)', '--end': 'var(--primary-100)' }}
                 id="capture-dashboard"
             >

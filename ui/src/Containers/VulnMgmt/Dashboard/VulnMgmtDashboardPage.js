@@ -20,7 +20,9 @@ const VulnDashboardPage = () => {
         <>
             <PoliciesCountTile />
             <CvesCountTile />
-            <ApplicationDashboardMenu />
+            <div className="flex w-32">
+                <ApplicationDashboardMenu />
+            </div>
             <FilterCvesRadioButtonGroup />
         </>
     );
