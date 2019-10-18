@@ -4,6 +4,14 @@ A detailed explanation of the changes in your PR.
 
 Feel free to remove this section if it is overkill for your PR, and the title of your PR is sufficiently descriptive.
 
+## Checklist
+- [ ] Investigated and inspected CI test results
+- [ ] Unit test and regression tests added
+- [ ] Evaluated and added CHANGELOG entry if required
+- [ ] Determined and documented upgrade steps
+
+If any of these don't apply, please comment below.
+
 ## Testing Performed
 
 TODO(replace-me)
