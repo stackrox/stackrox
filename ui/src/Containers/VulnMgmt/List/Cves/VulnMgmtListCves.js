@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React, { useContext } from 'react';
 import { PropTypes } from 'prop-types';
 import pluralize from 'pluralize';
@@ -39,6 +40,10 @@ const VulnMgmtCves = ({ selectedRowId, search }) => {
 
     function getTableColumns() {
         const tableColumns = [
+            {
+                expander: true,
+                show: false
+            },
             {
                 Header: 'cve',
                 headerClassName: 'hidden',
@@ -214,6 +219,15 @@ const VulnMgmtCves = ({ selectedRowId, search }) => {
                     desc: true
                 }
             ]}
+            showSubrows
+            SubComponent={row => {
+                const { original } = row;
+                return (
+                    <div className="px-2 pb-4 pt-1">
+                        {original.summary || 'No description available.'}
+                    </div>
+                );
+            }}
         />
     );
 };

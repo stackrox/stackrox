@@ -25,7 +25,9 @@ const EntityList = ({
     rowData,
     searchOptions,
     selectedRowId,
-    tableColumns
+    tableColumns,
+    SubComponent,
+    defaultExpanded
 }) => {
     const [page, setPage] = useState(0);
     const workflowState = useContext(workflowStateContext);
@@ -95,6 +97,8 @@ const EntityList = ({
                 noDataText={noDataText}
                 page={page}
                 defaultSorted={defaultSorted}
+                SubComponent={SubComponent}
+                defaultExpanded={defaultExpanded}
             />
         </Panel>
     );
@@ -110,7 +114,9 @@ EntityList.propTypes = {
     rowData: PropTypes.arrayOf(PropTypes.shape({})),
     searchOptions: PropTypes.arrayOf(PropTypes.string),
     selectedRowId: PropTypes.string,
-    tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    SubComponent: PropTypes.func,
+    defaultExpanded: PropTypes.arrayOf(PropTypes.shape({}))
 };
 
 EntityList.defaultProps = {
@@ -119,7 +125,9 @@ EntityList.defaultProps = {
     headerText: '',
     rowData: null,
     searchOptions: [],
-    selectedRowId: null
+    selectedRowId: null,
+    SubComponent: null,
+    defaultExpanded: null
 };
 
 export default withRouter(EntityList);

@@ -869,6 +869,24 @@ h6 {
     @apply .whitespace-normal !important;
 }
 
+.ReactTable.expanded .rt-tbody .rt-tr .rt-td {
+    box-shadow: 0px -1px 0 0 config("colors.base-300"),
+        inset 0px -1px 0 -1px config("colors.base-300");
+    @apply .whitespace-normal !important;
+}
+
+.ReactTable.expanded .rt-tbody .rt-tr:hover > .rt-td {
+    @apply .bg-base-200 !important;
+    z-index: 3 !important;
+    box-shadow: 0px -1px 0 0 config("colors.base-400"),
+        inset 0px -1px 0 -1px config("colors.base-400");
+}
+
+.ReactTable.expanded .rt-tbody .rt-tr-group:hover {
+    @apply .bg-base-200 !important;
+    z-index: 3 !important;
+}
+
 .ReactTable .rt-tbody .rt-tr:hover > .rt-td {
     @apply .bg-base-200 !important;
     z-index: 3 !important;

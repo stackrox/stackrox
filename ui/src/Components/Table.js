@@ -25,6 +25,7 @@ class Table extends Component {
         page: PropTypes.number,
         trClassName: PropTypes.string,
         showThead: PropTypes.bool,
+        defaultExpanded: PropTypes.arrayOf(PropTypes.shape({})),
         defaultSorted: PropTypes.arrayOf(PropTypes.object)
     };
 
@@ -37,6 +38,7 @@ class Table extends Component {
         page: 0,
         trClassName: '',
         showThead: true,
+        defaultExpanded: null,
         defaultSorted: []
     };
 
@@ -82,7 +84,7 @@ class Table extends Component {
     getHeaderClassName = column => column.headerClassName || defaultHeaderClassName;
 
     render() {
-        const { rows, columns, defaultSorted, ...rest } = this.props;
+        const { rows, columns, defaultExpanded, defaultSorted, ...rest } = this.props;
         if (!columns || !columns.length) return null;
         columns.forEach(column =>
             Object.assign(column, {
@@ -100,7 +102,9 @@ class Table extends Component {
                 getTheadProps={this.getTheadProps}
                 defaultPageSize={pageSize}
                 defaultSorted={defaultSorted}
-                className="flex flex-1 overflow-auto border-0 w-full h-full"
+                className={`flex flex-1 overflow-auto border-0 w-full h-full ${
+                    defaultExpanded ? 'expanded' : ''
+                }`}
                 resizable={false}
                 sortable
                 defaultSortDesc={false}
@@ -108,6 +112,7 @@ class Table extends Component {
                 minRows={Math.min(this.props.rows.length, pageSize)}
                 page={this.props.page}
                 showPagination={false}
+                expanded={defaultExpanded}
                 {...rest}
             />
         );

@@ -14,6 +14,8 @@ const WorkflowEntityPage = ({
     getTableColumns,
     selectedRowId,
     idAttribute,
+    SubComponent,
+    showSubrows,
     search
 }) => {
     const { loading, error, data } = useQuery(query, queryOptions);
@@ -23,6 +25,13 @@ const WorkflowEntityPage = ({
 
     const tableColumns = getTableColumns();
 
+    const defaultExpandedRows =
+        showSubrows && data && data.results
+            ? data.results.map((_element, index) => {
+                  return { [index]: true };
+              })
+            : null;
+
     return (
         <EntityList
             entityType={entityListType}
@@ -31,7 +40,9 @@ const WorkflowEntityPage = ({
             tableColumns={tableColumns}
             selectedRowId={selectedRowId}
             search={search}
+            SubComponent={SubComponent}
             defaultSorted={defaultSorted}
+            defaultExpanded={defaultExpandedRows}
         />
     );
 };
@@ -46,6 +57,8 @@ WorkflowEntityPage.propTypes = {
     entityContext: PropTypes.shape({}),
     selectedRowId: PropTypes.string,
     search: PropTypes.shape({}),
+    SubComponent: PropTypes.func,
+    showSubrows: PropTypes.bool,
     idAttribute: PropTypes.string
 };
 
@@ -55,6 +68,8 @@ WorkflowEntityPage.defaultProps = {
     entityContext: {},
     selectedRowId: null,
     search: null,
+    SubComponent: null,
+    showSubrows: false,
     idAttribute: 'id'
 };
 
