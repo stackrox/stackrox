@@ -48,7 +48,7 @@ const TileLink = ({ text, superText, subText, icon, url, loading, isError, posit
     const positionClasses = `flex flex-col items-center justify-center py-2 px-2 lg:px-4 min-w-20 lg:min-w-24 border-2 rounded min-h-14`;
     const colors = 'text-base-600 hover:bg-base-200 border-primary-400 bg-base-100';
     const darkModeColors = 'text-base-600 hover:bg-primary-200 border-primary-400';
-    const errorColors = 'text-alert-700 bg-alert-200 hover:bg-alert-200 border-alert-400';
+    const errorColors = 'text-alert-700 bg-alert-200 hover:bg-alert-300 border-alert-400';
     const errorDarkModeColors = 'text-base-100 bg-alert-400 hover:bg-alert-500 border-alert-400';
 
     if (isError) {
