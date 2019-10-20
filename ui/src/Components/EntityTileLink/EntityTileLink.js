@@ -6,7 +6,17 @@ import { resourceLabels } from 'messages/common';
 
 import TileLink, { POSITION } from 'Components/TileLink';
 
-const EntityTileLink = ({ count, entityType, position, subText, icon, url, loading, isError }) => {
+const EntityTileLink = ({
+    count,
+    entityType,
+    position,
+    superText,
+    subText,
+    icon,
+    url,
+    loading,
+    isError
+}) => {
     const text = `${count} ${
         count === 1 ? entityType : `${pluralize(resourceLabels[entityType] || '')}`
     }`;
@@ -14,6 +24,7 @@ const EntityTileLink = ({ count, entityType, position, subText, icon, url, loadi
     return (
         <TileLink
             text={text}
+            superText={superText}
             subText={subText}
             position={position}
             icon={icon}
@@ -27,6 +38,7 @@ const EntityTileLink = ({ count, entityType, position, subText, icon, url, loadi
 EntityTileLink.propTypes = {
     count: PropTypes.number.isRequired,
     entityType: PropTypes.oneOf(Object.values(entityTypes)).isRequired,
+    superText: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     subText: PropTypes.string,
     icon: PropTypes.element,
     url: PropTypes.string.isRequired,
@@ -39,6 +51,7 @@ EntityTileLink.defaultProps = {
     isError: false,
     position: null,
     loading: false,
+    superText: null,
     subText: null,
     icon: null
 };
