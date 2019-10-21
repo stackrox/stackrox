@@ -79,6 +79,10 @@ func (e *managerImpl) ReprocessDeploymentRiskWithImages(deployment *storage.Depl
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Deployment")
 
 	risk := e.deploymentScorer.Score(allAccessCtx, deployment, images)
+	if risk == nil {
+		return
+	}
+
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for deployment %s: %v", deployment.GetName(), err)
 	}
@@ -89,6 +93,10 @@ func (e *managerImpl) ReprocessImageRisk(image *storage.Image) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
 
 	risk := e.imageScorer.Score(allAccessCtx, image)
+	if risk == nil {
+		return
+	}
+
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for image %s: %v", image.GetName(), err)
 	}
@@ -105,6 +113,10 @@ func (e *managerImpl) ReprocessImageComponentRisk(imageComponent *storage.Embedd
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
 	risk := e.imageComponentScorer.Score(allAccessCtx, imageComponent)
+	if risk == nil {
+		return
+	}
+
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}
