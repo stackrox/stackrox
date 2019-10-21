@@ -1,5 +1,13 @@
+import React from 'react';
+import Widget from 'Components/Widget';
+
 const MostRecentVulnerabilities = () => {
-    return null;
+    const header = 'Most Recent Vulnerabilities';
+    return (
+        <Widget className="s-2 pdf-page" header={header}>
+            <div />
+        </Widget>
+    );
 };
 
 export default MostRecentVulnerabilities;

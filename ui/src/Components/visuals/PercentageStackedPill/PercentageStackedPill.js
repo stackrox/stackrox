@@ -38,7 +38,7 @@ const PercentageStackedPill = ({ data, tooltip }) => {
             mouseLeaveDelay={0}
         >
             <div
-                className="flex rounded-full w-64 h-4 border border-base-300 bg-base-200"
+                className="flex rounded-full min-w-24 h-4 border border-base-300 bg-base-200"
                 style={{ boxShadow: 'inset 0 0px 8px 0 hsla(0, 0%, 0%, .10) !important' }}
             >
                 {pills}
@@ -50,13 +50,13 @@ const PercentageStackedPill = ({ data, tooltip }) => {
 PercentageStackedPill.propTypes = {
     data: PropTypes.arrayOf(
         PropTypes.shape({
-            color: PropTypes.string.isRequired,
+            colorType: PropTypes.string.isRequired,
             value: PropTypes.number.isRequired
         })
     ),
     tooltip: PropTypes.shape({
         title: PropTypes.string.isRequired,
-        body: PropTypes.string.isRequired
+        body: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired
     })
 };
 

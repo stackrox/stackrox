@@ -36,7 +36,7 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
                 alt="Waves"
             />
             <div
-                className="h-full relative bg-gradient-diagonal p-6 xxxl:p-8"
+                className="h-full overflow-auto relative bg-gradient-diagonal p-6 xxxl:p-8"
                 style={{ '--start': 'var(--base-200)', '--end': 'var(--primary-100)' }}
                 id="capture-dashboard"
             >
@@ -61,7 +61,8 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
 DashboardLayout.propTypes = {
     headerText: PropTypes.string.isRequired,
     headerComponents: PropTypes.element.isRequired,
-    children: PropTypes.arrayOf(PropTypes.node).isRequired
+    children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)])
+        .isRequired
 };
 
 export default DashboardLayout;

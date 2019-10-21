@@ -10,7 +10,9 @@ const getOrientationClassName = orientation => {
 };
 
 const FixableCVECount = ({ cves, fixable, url, orientation, pdf }) => {
-    const className = `text-base leading-normal ${getOrientationClassName(orientation)}`;
+    const className = `text-sm leading-normal whitespace-no-wrap ${getOrientationClassName(
+        orientation
+    )}`;
     let content = (
         <div className={className}>
             {!!cves && <div className="text-primary-800 font-600 mx-1">{cves} CVES</div>}

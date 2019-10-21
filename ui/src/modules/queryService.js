@@ -38,6 +38,11 @@ function entityContextToQueryObject(entityContext) {
     }, {});
 }
 
+function entityContextToQueryString(entityContext) {
+    const queryObject = entityContextToQueryObject(entityContext);
+    return objectToWhereClause(queryObject);
+}
+
 function getEntityWhereClause(search, entityContext) {
     return objectToWhereClause({ ...search, ...entityContextToQueryObject(entityContext) });
 }
@@ -158,6 +163,7 @@ function getFragmentInfo(entityType, listType, appContext) {
 export default {
     objectToWhereClause,
     entityContextToQueryObject,
+    entityContextToQueryString,
     getEntityWhereClause,
     getQueryBasedOnSearchContext,
     getFragmentInfo

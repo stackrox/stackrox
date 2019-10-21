@@ -9,20 +9,24 @@ const NumberedList = ({ data }) => {
         } ${url ? 'hover:bg-base-200' : ''}`;
         let content = (
             <>
-                <span className="text-primary-800 text-base font-600 truncate">
+                <span className="text-sm text-primary-800 font-600 truncate">
                     {i + 1}. {text}
                 </span>
-                <div className="flex flex-1 justify-end">{component}</div>
+                <div className="flex flex-1 justify-end ml-4">{component}</div>
             </>
         );
         if (url) {
             content = (
-                <Link className="flex no-underline w-full" to={url}>
+                <Link className="flex items-center no-underline w-full" to={url}>
                     {content}
                 </Link>
             );
         }
-        return <li className={className}>{content}</li>;
+        return (
+            <li key={text} className={className}>
+                {content}
+            </li>
+        );
     });
     return <ul className="list-reset leading-loose">{list}</ul>;
 };

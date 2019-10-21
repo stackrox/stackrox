@@ -41,7 +41,7 @@ SeverityStackedPill.propTypes = {
     critical: PropTypes.number,
     tooltip: PropTypes.shape({
         title: PropTypes.string.isRequired,
-        body: PropTypes.string.isRequired
+        body: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired
     })
 };
 
