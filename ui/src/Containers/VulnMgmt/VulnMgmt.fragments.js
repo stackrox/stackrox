@@ -44,9 +44,15 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
     fragment deploymentListFields on Deployment {
         id
         name
-        # cves
-        # latestViolation
-        # policuCount
+        vulnerabilities: vulns {
+            cve
+            cvss
+            isFixable
+        }
+        deployAlerts {
+            time
+        }
+        failingPolicyCount
         policyStatus
         clusterName
         clusterId
@@ -56,6 +62,6 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         serviceAccountID
         secretCount
         imageCount
-        # risk
+        priority
     }
 `;
