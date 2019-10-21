@@ -5,12 +5,15 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
+	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -31,13 +34,17 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(store store.Store, indexer index.Indexer) (DataStore, error) {
+func New(store store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:   store,
-		indexer: indexer,
+		store:       store,
+		indexer:     indexer,
+		deployments: deploymentDataStore,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
+	}
+	if err := ds.initializeRanker(); err != nil {
+		return ds, err
 	}
 	return ds, nil
 }
@@ -45,11 +52,25 @@ func New(store store.Store, indexer index.Indexer) (DataStore, error) {
 var (
 	namespaceSAC             = sac.ForResource(resources.Namespace)
 	namespaceSACSearchHelper = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
+
+	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
 	store   store.Store
 	indexer index.Indexer
+
+	namespaceRanker  *ranking.Ranker
+	deploymentRanker *ranking.Ranker
+
+	deployments deploymentDataStore.DataStore
+}
+
+func (b *datastoreImpl) initializeRanker() error {
+	b.namespaceRanker = ranking.NamespaceRanker()
+	b.deploymentRanker = ranking.DeploymentRanker()
+
+	return nil
 }
 
 func (b *datastoreImpl) buildIndex() error {
@@ -72,7 +93,7 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 		Allowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
-
+	b.updateNamespacePriority(namespace)
 	return namespace, true, err
 }
 
@@ -93,6 +114,7 @@ func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.Namespace
 		allowedNamespaces = append(allowedNamespaces, namespace)
 	}
 
+	b.updateNamespacePriority(allowedNamespaces...)
 	return allowedNamespaces, nil
 }
 
@@ -135,6 +157,9 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 	if err := b.store.RemoveNamespace(id); err != nil {
 		return err
 	}
+	// Remove ranker record here since removal is not handled in risk store as no entry present for namespace
+	b.namespaceRanker.Remove(id)
+
 	return b.indexer.DeleteNamespaceMetadata(id)
 }
 
@@ -191,5 +216,37 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 
 func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error) {
 	namespaces, _, err := b.searchNamespaces(ctx, q)
+	b.updateNamespacePriority(namespaces...)
 	return namespaces, err
+}
+
+func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadata) {
+	for _, ns := range nss {
+		b.aggregateDeploymentScores(ns.GetId())
+	}
+	for _, ns := range nss {
+		ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
+	}
+}
+
+func (b *datastoreImpl) aggregateDeploymentScores(namespaceID string) {
+	aggregateScore := float32(0.0)
+	deploymentReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment),
+		))
+
+	searchResults, err := b.deployments.Search(deploymentReadCtx,
+		search.NewQueryBuilder().
+			AddExactMatches(search.NamespaceID, namespaceID).ProtoQuery())
+	if err != nil {
+		log.Error("deployment search for namespace risk calculation failed")
+		return
+	}
+
+	for _, r := range searchResults {
+		aggregateScore += b.deploymentRanker.GetScoreForID(r.ID)
+	}
+	b.namespaceRanker.Add(namespaceID, aggregateScore)
 }

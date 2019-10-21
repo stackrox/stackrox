@@ -75,6 +75,11 @@ func New(
 	if err := ds.buildIndex(); err != nil {
 		return ds, err
 	}
+
+	if err := ds.initializeRanker(); err != nil {
+		return ds, err
+	}
+
 	go ds.cleanUpNodeStore(cleanupCtx)
 	return ds, nil
 }

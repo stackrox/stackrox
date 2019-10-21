@@ -13,6 +13,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -46,6 +47,16 @@ type datastoreImpl struct {
 	ns  nodeDataStore.GlobalDataStore
 	ss  secretDataStore.DataStore
 	cm  connection.Manager
+
+	clusterRanker    *ranking.Ranker
+	deploymentRanker *ranking.Ranker
+}
+
+func (ds *datastoreImpl) initializeRanker() error {
+	ds.clusterRanker = ranking.ClusterRanker()
+	ds.deploymentRanker = ranking.DeploymentRanker()
+
+	return nil
 }
 
 func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
@@ -80,7 +91,13 @@ func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.
 }
 
 func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
-	return ds.searcher.SearchClusters(ctx, q)
+	clusters, err := ds.searcher.SearchClusters(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	ds.updateClusterPriority(clusters...)
+	return clusters, nil
 }
 
 func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
@@ -88,14 +105,25 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 		return nil, false, err
 	}
 
-	return ds.storage.GetCluster(id)
+	cluster, found, err := ds.storage.GetCluster(id)
+	if err != nil || !found {
+		return nil, false, err
+	}
+
+	ds.updateClusterPriority(cluster)
+	return cluster, true, nil
 }
 
 func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
-		return ds.storage.GetClusters()
+		clusters, err := ds.storage.GetClusters()
+		if err != nil {
+			return nil, err
+		}
+		ds.updateClusterPriority(clusters...)
+		return clusters, nil
 	}
 
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
@@ -217,6 +245,9 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		}
 	}
 
+	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
+	ds.clusterRanker.Remove(cluster.GetId())
+
 	// Fetch the deployments.
 	deployments, err := ds.getDeployments(ctx, cluster)
 	if err != nil {
@@ -327,4 +358,35 @@ func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
 	}
 
 	return ds.ns.RemoveClusterNodeStores(ctx, clusterIDsInNodeStore.AsSlice()...)
+}
+
+func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {
+	for _, cluster := range clusters {
+		ds.aggregateDeploymentScores(cluster.GetId())
+	}
+	for _, cluster := range clusters {
+		cluster.Priority = ds.clusterRanker.GetRankForID(cluster.GetId())
+	}
+}
+
+func (ds *datastoreImpl) aggregateDeploymentScores(clusterID string) {
+	aggregateScore := float32(0.0)
+	deploymentReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment),
+		))
+
+	searchResults, err := ds.dds.Search(deploymentReadCtx,
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery())
+	if err != nil {
+		log.Error("deployment search for cluster risk calculation failed")
+		return
+	}
+
+	for _, r := range searchResults {
+		aggregateScore += ds.deploymentRanker.GetScoreForID(r.ID)
+	}
+
+	ds.clusterRanker.Add(clusterID, aggregateScore)
 }

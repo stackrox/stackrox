@@ -141,6 +141,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"mainImage: String!",
 		"monitoringEndpoint: String!",
 		"name: String!",
+		"priority: Int!",
 		"runtimeSupport: Boolean!",
 		"status: ClusterStatus",
 		"tolerationsConfig: TolerationsConfig",
@@ -540,6 +541,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"labels: [Label!]!",
 		"name: String!",
+		"priority: Int!",
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo", []string{
 		"id: ID!",
@@ -1980,6 +1982,11 @@ func (resolver *clusterResolver) MonitoringEndpoint(ctx context.Context) string 
 func (resolver *clusterResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func (resolver *clusterResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	return int32(value)
 }
 
 func (resolver *clusterResolver) RuntimeSupport(ctx context.Context) bool {
@@ -5059,6 +5066,11 @@ func (resolver *namespaceMetadataResolver) Labels(ctx context.Context) labels {
 func (resolver *namespaceMetadataResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func (resolver *namespaceMetadataResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	return int32(value)
 }
 
 type networkEntityInfoResolver struct {

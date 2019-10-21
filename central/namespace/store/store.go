@@ -9,6 +9,7 @@ import (
 var namespaceBucket = []byte("namespaces")
 
 // Store provides storage functionality for alerts.
+//go:generate mockgen-wrapper
 type Store interface {
 	GetNamespace(id string) (*storage.NamespaceMetadata, bool, error)
 	GetNamespaces() ([]*storage.NamespaceMetadata, error)

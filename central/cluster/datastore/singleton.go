@@ -26,7 +26,14 @@ func initialize() {
 	indexer := index.New(globalindex.GetGlobalIndex())
 
 	var err error
-	ad, err = New(storage, indexer, alertDataStore.Singleton(), deploymentDataStore.Singleton(), nodeDataStore.Singleton(), secretDataStore.Singleton(), connection.ManagerSingleton(), notifierProcessor.Singleton())
+	ad, err = New(storage,
+		indexer,
+		alertDataStore.Singleton(),
+		deploymentDataStore.Singleton(),
+		nodeDataStore.Singleton(),
+		secretDataStore.Singleton(),
+		connection.ManagerSingleton(),
+		notifierProcessor.Singleton())
 	utils.Must(err)
 }
 

@@ -72,27 +72,27 @@ message DynamicClusterConfig {
 }
 
 message Cluster {
-    string                    id                          = 1 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
-    string                    name                        = 2 [(gogoproto.moretags) = "search:\"Cluster,store\""];
-    ClusterType               type                        = 3;
-    string                    main_image                  = 4;
-    string                    collector_image             = 16;
-    string                    central_api_endpoint        = 5;
-    reserved                                                6;
-    bool                      runtime_support             = 7 [deprecated=true];
-    string                    monitoring_endpoint         = 8;
-    CollectionMethod          collection_method           = 17;
+    string                    id                               = 1 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
+    string                    name                             = 2 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+    ClusterType               type                             = 3;
+    string                    main_image                       = 4;
+    string                    collector_image                  = 16;
+    string                    central_api_endpoint             = 5;
+    reserved                                                     6;
+    bool                      runtime_support                  = 7 [deprecated=true];
+    string                    monitoring_endpoint              = 8;
+    CollectionMethod          collection_method                = 17;
 
-    reserved 9,10,11;
+    reserved                                                     9,10,11;
 
     ProviderMetadata          DEPRECATED_provider_metadata     = 12;
     bool                      admission_controller             = 13;
     OrchestratorMetadata      DEPRECATED_orchestrator_metadata = 14;
 
-    ClusterStatus             status                      = 15;
-    DynamicClusterConfig      dynamic_config              = 18;
-    TolerationsConfig         tolerations_config           = 19;
-
+    ClusterStatus             status                           = 15;
+    DynamicClusterConfig      dynamic_config                   = 18;
+    TolerationsConfig         tolerations_config               = 19;
+    int64                     priority                         = 20;
 }
 
 message ClusterStatus {

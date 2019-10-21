@@ -13,6 +13,8 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
+	"github.com/stackrox/rox/central/ranking"
+	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -44,9 +46,9 @@ type ClusterDataStoreTestSuite struct {
 	secretDataStore     *secretMocks.MockDataStore
 	connMgr             *connectionMocks.MockManager
 	alertDataStore      *alertMocks.MockDataStore
-
-	mockCtrl     *gomock.Controller
-	notifierMock *notifierMocks.MockProcessor
+	riskDataStore       *riskMocks.MockDataStore
+	mockCtrl            *gomock.Controller
+	notifierMock        *notifierMocks.MockProcessor
 }
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
@@ -68,6 +70,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.alertDataStore = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 	suite.secretDataStore = secretMocks.NewMockDataStore(suite.mockCtrl)
+	suite.riskDataStore = riskMocks.NewMockDataStore(suite.mockCtrl)
 	suite.connMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
 
@@ -77,7 +80,14 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 
 	var err error
-	suite.clusterDataStore, err = New(suite.clusters, suite.indexer, suite.alertDataStore, suite.deploymentDataStore, suite.nodeDataStore, suite.secretDataStore, suite.connMgr, suite.notifierMock)
+	suite.clusterDataStore, err = New(suite.clusters,
+		suite.indexer,
+		suite.alertDataStore,
+		suite.deploymentDataStore,
+		suite.nodeDataStore,
+		suite.secretDataStore,
+		suite.connMgr,
+		suite.notifierMock)
 	suite.NoError(err)
 }
 
@@ -308,4 +318,86 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsSearch() {
 
 	_, err = suite.clusterDataStore.Search(suite.hasWriteCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error trying to read with permissions")
+}
+
+func (suite *ClusterDataStoreTestSuite) TestClusterPriority() {
+	ranker := ranking.DeploymentRanker()
+	ranker.Add("dep1", 1.0)
+	ranker.Add("dep2", 2.0)
+
+	ranker.Add("dep3", 3.0)
+	ranker.Add("dep4", 4.0)
+
+	ranker.Add("dep5", 10.0)
+
+	cases := []struct {
+		cluster          *storage.Cluster
+		deployments      []search.Result
+		expectedPriority int64
+	}{
+		{
+			cluster: &storage.Cluster{
+				Id: "test1",
+			},
+			deployments: []search.Result{
+				{
+					ID: "dep1",
+				},
+				{
+					ID: "dep2",
+				},
+			},
+			expectedPriority: 3,
+		},
+		{
+			cluster: &storage.Cluster{
+				Id: "test2",
+			},
+			deployments: []search.Result{
+				{
+					ID: "dep3",
+				},
+				{
+					ID: "dep4",
+				},
+			},
+			expectedPriority: 2,
+		},
+		{
+			cluster: &storage.Cluster{
+				Id: "test3",
+			},
+			deployments: []search.Result{
+				{
+					ID: "dep5",
+				},
+			},
+			expectedPriority: 1,
+		},
+	}
+
+	deploymentReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment),
+		))
+
+	var expectedClusters []*storage.Cluster
+	for _, c := range cases {
+		expectedClusters = append(expectedClusters, c.cluster)
+	}
+
+	suite.clusters.EXPECT().GetClusters().Return(expectedClusters, nil)
+	for _, c := range cases {
+		suite.deploymentDataStore.EXPECT().Search(deploymentReadCtx,
+			search.NewQueryBuilder().AddExactMatches(search.ClusterID, c.cluster.GetId()).ProtoQuery()).
+			Return(c.deployments, nil)
+	}
+
+	actualClusters, err := suite.clusterDataStore.GetClusters(suite.hasReadCtx)
+	suite.Nil(err)
+
+	for i, c := range cases {
+		suite.Equal(c.expectedPriority, actualClusters[i].GetPriority())
+	}
 }
