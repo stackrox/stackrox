@@ -15,7 +15,11 @@ const FixableCVECount = ({ cves, fixable, url, orientation, pdf }) => {
     )}`;
     let content = (
         <div className={className}>
-            {!!cves && <div className="text-primary-800 font-600 mx-1">{cves} CVES</div>}
+            {!!cves && (
+                <div className="text-primary-800 font-600 mx-1">
+                    {cves} {cves.length === 1 ? 'CVE' : 'CVEs'}
+                </div>
+            )}
             {!!fixable && <div className="text-success-800 font-600">({fixable} Fixable)</div>}
         </div>
     );
@@ -24,7 +28,12 @@ const FixableCVECount = ({ cves, fixable, url, orientation, pdf }) => {
     if (pdf) {
         return content;
     }
-    if (url) content = <Link to={url}>{content}</Link>;
+    if (url)
+        content = (
+            <Link to={url} className="w-full">
+                {content}
+            </Link>
+        );
     return content;
 };
 

@@ -65,3 +65,37 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         priority
     }
 `;
+
+export const IMAGE_LIST_FRAGMENT = gql`
+    fragment imageListFields on Image {
+        id
+        name {
+            fullName
+        }
+        deploymentCount
+        priority
+        topVuln {
+            cvss
+            scoreVersion
+        }
+        metadata {
+            v1 {
+                created
+            }
+        }
+        scan {
+            scanTime
+            components {
+                name
+            }
+        }
+        # vulnCount {
+        #    total
+        #    fixable
+        #    low
+        #    medium
+        #    high
+        #    critical
+        # }
+    }
+`;

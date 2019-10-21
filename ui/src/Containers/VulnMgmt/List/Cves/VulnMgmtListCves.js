@@ -8,12 +8,12 @@ import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table
 import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
 import TableCellLink from 'Components/TableCellLink';
+import TopCvssLabel from 'Components/TopCvssLabel';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import queryService from 'modules/queryService';
 import { generateURL } from 'modules/URLReadWrite';
-import { getSeverityChipType } from 'utils/vulnerabilityUtils';
 
 import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
@@ -55,19 +55,7 @@ export function getCveTableColumns(workflowState) {
             // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { cvss, scoreVersion } = original;
-
-                if (!cvss && cvss !== 0) return 'N/A';
-
-                // TODO: add CVSS version beneath when available from API
-                const chipType = getSeverityChipType(cvss);
-                return (
-                    <div className="mx-auto flex flex-col">
-                        <LabelChip text={cvss.toFixed(1) || ''} type={chipType} />
-                        <span className="pt-1 text-base-500 text-sm text-center">
-                            {scoreVersion}
-                        </span>
-                    </div>
-                );
+                return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
             accessor: 'cvss',
             id: 'cvss'
