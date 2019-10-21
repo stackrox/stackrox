@@ -9,8 +9,8 @@ const BarGradient = () => (
         x2="50%"
         y2="50%"
     >
-        <stop offset="0%" stopColor="#B3DCFF" />
-        <stop offset="100%" stopColor="#BDF3FF" />
+        <stop offset="0%" stopColor="#BCC0FD" />
+        <stop offset="100%" stopColor="#9ED6FA" />
     </linearGradient>
 );
 
