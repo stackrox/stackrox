@@ -10,6 +10,9 @@ import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplet
 import { Creatable } from 'Components/ReactSelect';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import searchContext from 'Containers/searchContext';
+import workflowStateContext from 'Containers/workflowStateContext';
+import WorkflowStateMgr from 'modules/WorkflowStateManager';
+import { generateURL } from 'modules/URLReadWrite';
 
 const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
@@ -92,8 +95,20 @@ export const removeValuesForKey = (oldOptions, newOptions) => {
     return actualSearchOptions;
 };
 
-const URLSearchInputWithAutocomplete = props => {
-    const paramName = useContext(searchContext);
+const URLSearchInputWithAutocomplete = ({
+    location,
+    history,
+    autoCompleteResults,
+    categoryOptions,
+    setAllSearchOptions,
+    clearAutocomplete,
+    fetchAutocomplete,
+    placeholder,
+    className,
+    ...rest
+}) => {
+    const searchParam = useContext(searchContext);
+    const workflowState = useContext(workflowStateContext);
 
     function createCategoryOption(category) {
         return {
@@ -129,52 +144,65 @@ const URLSearchInputWithAutocomplete = props => {
         return options.map(createCategoryOption);
     }
 
-    function getQueryJSON(search) {
-        return queryString.parse(search, { ignoreQueryPrefix: true })[paramName] || {};
-    }
-
-    function setQueryJSON(obj) {
-        const currentQuery = queryString.parse(props.location.search, { ignoreQueryPrefix: true });
-        const queryJSON = { ...currentQuery, [paramName]: obj };
-        return queryString.stringify(queryJSON, { arrayFormat: 'repeat', encodeValuesOnly: true });
+    function getFullQueryObject() {
+        return queryString.parse(location.search, { ignoreQueryPrefix: true });
     }
 
     function transformSearchOptionsToQueryString(searchOptions) {
-        const { search: prevSearch } = props.location;
-        const prevQueryJSON = getQueryJSON(prevSearch);
-        const queryJSON = {};
+        const currentFullQueryObject = getFullQueryObject();
+        const newSearch = {};
         let categoryKey = '';
         searchOptions.forEach(option => {
             if (isCategoryOption(option)) {
                 const category = getCategory(option);
                 categoryKey = category;
-                queryJSON[categoryKey] = '';
+                newSearch[categoryKey] = '';
             } else {
                 const value = getValue(option);
-                if (!queryJSON[categoryKey]) {
-                    queryJSON[categoryKey] = value;
+                if (!newSearch[categoryKey]) {
+                    newSearch[categoryKey] = value;
                 } else {
-                    queryJSON[categoryKey] = [queryJSON[categoryKey]];
-                    queryJSON[categoryKey].push(value);
+                    newSearch[categoryKey] = [newSearch[categoryKey]];
+                    newSearch[categoryKey].push(value);
                 }
             }
         });
         // to not clear the `groupBy` query. will need to remove once search officially supports groupBy
-        if (prevQueryJSON.groupBy) queryJSON.groupBy = prevQueryJSON.groupBy;
+        // if (prevQueryJSON.groupBy) queryJSON.groupBy = prevQueryJSON.groupBy;
 
-        return setQueryJSON(queryJSON);
+        if (workflowState && workflowState.useCase) {
+            const mgr = new WorkflowStateMgr(workflowState);
+            mgr.setSearch(newSearch);
+
+            // Get the full querystring to redirect to
+            const url = generateURL(mgr.workflowState);
+            const qsStart = url.indexOf('?');
+            if (qsStart === -1) return '';
+            return url.substr(qsStart);
+        }
+
+        // For backwards compatibility
+        const newQueryObject = { ...currentFullQueryObject, [searchParam]: newSearch };
+        return queryString.stringify(newQueryObject, {
+            arrayFormat: 'repeat',
+            encodeValuesOnly: true
+        });
     }
 
-    function transformQueryStringToSearchOptions(search) {
+    function transformQueryStringToSearchOptions() {
         const queryStringOptions = [];
-        const queryJSON = getQueryJSON(search);
-        Object.keys(queryJSON).forEach(key => {
-            const matchedOptionKey = props.categoryOptions.find(
+        const fullQueryObject = getFullQueryObject();
+        const queryObj =
+            workflowState && workflowState.useCase
+                ? workflowState.getCurrentSearchState()
+                : fullQueryObject[searchParam] || {};
+        Object.keys(queryObj).forEach(key => {
+            const matchedOptionKey = categoryOptions.find(
                 category => category.toLowerCase() === key.toLowerCase()
             );
             if (matchedOptionKey) {
                 queryStringOptions.push(createCategoryOption(matchedOptionKey));
-                const value = queryJSON[key];
+                const value = queryObj[key];
                 if (Array.isArray(value)) {
                     value.forEach(v => {
                         queryStringOptions.push(createValueOption(v));
@@ -188,9 +216,9 @@ const URLSearchInputWithAutocomplete = props => {
     }
 
     function replaceLocationSearch(searchOptions) {
-        const { pathname } = props.location;
+        const { pathname } = location;
         const search = transformSearchOptionsToQueryString(searchOptions);
-        props.history.replace({
+        history.replace({
             pathname,
             search
         });
@@ -198,24 +226,24 @@ const URLSearchInputWithAutocomplete = props => {
 
     function updateAutocompleteState(searchOptions) {
         return input => {
-            props.setAllSearchOptions(searchOptions);
+            setAllSearchOptions(searchOptions);
             if (searchOptions.length === 0) {
-                if (props.clearAutocomplete) {
-                    props.clearAutocomplete();
+                if (clearAutocomplete) {
+                    clearAutocomplete();
                 }
                 return;
             }
-            if (props.fetchAutocomplete) {
+            if (fetchAutocomplete) {
                 const clonedSearchOptions = searchOptions.slice();
                 clonedSearchOptions.push(createValueOption(input));
                 const query = searchOptionsToQuery(clonedSearchOptions);
-                props.fetchAutocomplete({ query });
+                fetchAutocomplete({ query });
             }
         };
     }
 
     function setOptions(_, searchOptions) {
-        const oldOptions = transformQueryStringToSearchOptions(props.location.search);
+        const oldOptions = transformQueryStringToSearchOptions(location.search);
         const actualSearchOptions = removeValuesForKey(oldOptions, searchOptions);
 
         replaceLocationSearch(actualSearchOptions);
@@ -223,7 +251,6 @@ const URLSearchInputWithAutocomplete = props => {
     }
 
     function getOptions() {
-        const { categoryOptions, location } = props;
         const searchOptions = transformQueryStringToSearchOptions(location.search);
         let options = [];
         if (
@@ -233,12 +260,11 @@ const URLSearchInputWithAutocomplete = props => {
             options = options.concat(transformCategoryOptions(categoryOptions));
         }
         if (searchOptions.length) {
-            options = options.concat(props.autoCompleteResults.map(createValueOption));
+            options = options.concat(autoCompleteResults.map(createValueOption));
         }
         return options;
     }
 
-    const { placeholder, className, location, ...rest } = props;
     const Placeholder = placeholderCreator(placeholder);
     const searchOptions = transformQueryStringToSearchOptions(location.search);
     const options = getOptions();
@@ -274,8 +300,7 @@ URLSearchInputWithAutocomplete.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
     fetchAutocomplete: PropTypes.func,
     clearAutocomplete: PropTypes.func,
-    setAllSearchOptions: PropTypes.func.isRequired,
-    autoFocus: PropTypes.bool
+    setAllSearchOptions: PropTypes.func.isRequired
 };
 
 URLSearchInputWithAutocomplete.defaultProps = {
@@ -284,8 +309,7 @@ URLSearchInputWithAutocomplete.defaultProps = {
     categoryOptions: [],
     autoCompleteResults: [],
     fetchAutocomplete: null,
-    clearAutocomplete: null,
-    autoFocus: true
+    clearAutocomplete: null
 };
 
 const mapDispatchToProps = {

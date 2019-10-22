@@ -5,18 +5,18 @@ import EntityTabs from 'Components/EntityTabs';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { parseURL } from 'modules/URLReadWrite';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
-import searchContext from 'Containers/searchContext';
 import searchContexts from 'constants/searchContexts';
+import { WorkflowState } from 'modules/WorkflowStateManager';
 import entityLabels from 'messages/entity';
 import useEntityName from 'hooks/useEntityName';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowEntityPageLayout = ({ location }) => {
-    const { workflowState, searchState } = parseURL(location);
-    const { stateStack, useCase } = workflowState;
-    const pageState = { ...workflowState, stateStack: workflowState.getPageStack() };
-    const pageSearch = searchState[searchContexts.page];
+    const workflowState = parseURL(location);
+    const { stateStack, useCase, search } = workflowState;
+    const pageState = new WorkflowState(useCase, workflowState.getPageStack(), search);
+    const pageSearch = search[searchContexts.page];
     const EntityComponent = EntityComponentMap[useCase];
 
     // Calculate page entity props
@@ -29,7 +29,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
         sidePanelEntityType,
         sidePanelListType,
         sidePanelSearch
-    } = getSidePanelEntity(workflowState, searchState);
+    } = getSidePanelEntity(workflowState);
     const [fadeIn, setFadeIn] = useState(false);
     useEffect(() => setFadeIn(false), []);
 
@@ -50,43 +50,41 @@ const WorkflowEntityPageLayout = ({ location }) => {
 
     return (
         <workflowStateContext.Provider value={pageState}>
-            <searchContext.Provider value={pageSearch}>
-                <div className="flex flex-1 flex-col bg-base-200" style={style}>
-                    <PageHeader header={entityName} subHeader={subheaderText} />
-                    <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
-                    <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-hidden">
-                        <div
-                            className={`${
-                                sidePanelEntityId ? 'overlay' : ''
-                            } h-full w-full overflow-auto`}
-                            id="capture-list"
-                        >
-                            <EntityComponent
-                                entityType={pageEntityType}
-                                entityId={pageEntityId}
-                                entityListType={pageListType}
-                                search={pageSearch}
-                            />
-                        </div>
-
-                        <WorkflowSidePanel isOpen={!!sidePanelEntityId}>
-                            {sidePanelEntityId ? (
-                                <EntityComponent
-                                    entityId={sidePanelEntityId}
-                                    entityType={sidePanelEntityType}
-                                    entityListType={sidePanelListType}
-                                    search={sidePanelSearch}
-                                    entityContext={{
-                                        [pageEntity.entityType]: pageEntity.entityId
-                                    }}
-                                />
-                            ) : (
-                                <span />
-                            )}
-                        </WorkflowSidePanel>
+            <div className="flex flex-1 flex-col bg-base-200" style={style}>
+                <PageHeader header={entityName} subHeader={subheaderText} />
+                <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
+                <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-hidden">
+                    <div
+                        className={`${
+                            sidePanelEntityId ? 'overlay' : ''
+                        } h-full w-full overflow-auto`}
+                        id="capture-list"
+                    >
+                        <EntityComponent
+                            entityType={pageEntityType}
+                            entityId={pageEntityId}
+                            entityListType={pageListType}
+                            search={pageSearch}
+                        />
                     </div>
+
+                    <WorkflowSidePanel isOpen={!!sidePanelEntityId}>
+                        {sidePanelEntityId ? (
+                            <EntityComponent
+                                entityId={sidePanelEntityId}
+                                entityType={sidePanelEntityType}
+                                entityListType={sidePanelListType}
+                                search={sidePanelSearch}
+                                entityContext={{
+                                    [pageEntity.entityType]: pageEntity.entityId
+                                }}
+                            />
+                        ) : (
+                            <span />
+                        )}
+                    </WorkflowSidePanel>
                 </div>
-            </searchContext.Provider>
+            </div>
         </workflowStateContext.Provider>
     );
 };

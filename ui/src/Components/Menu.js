@@ -75,7 +75,7 @@ const Menu = ({ buttonClass, buttonContent, className, options, disabled }) => {
 Menu.propTypes = {
     buttonClass: PropTypes.string,
     buttonContent: PropTypes.node.isRequired,
-    className: PropTypes.string.isRequired,
+    className: PropTypes.string,
     options: PropTypes.arrayOf(
         PropTypes.shape({
             className: PropTypes.string,
@@ -90,7 +90,8 @@ Menu.propTypes = {
 
 Menu.defaultProps = {
     buttonClass: '',
-    disabled: false
+    disabled: false,
+    className: ''
 };
 
 export default Menu;

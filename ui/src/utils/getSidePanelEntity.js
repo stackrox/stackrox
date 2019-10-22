@@ -1,7 +1,7 @@
 import searchContexts from 'constants/searchContexts';
 
-function getSidePanelEntity(workflowState, searchState) {
-    const sidePanelSearch = searchState[searchContexts.sidePanel];
+function getSidePanelEntity(workflowState) {
+    const sidePanelSearch = workflowState.search[searchContexts.sidePanel];
     if (workflowState.stateStack.length === 0) return {};
 
     const pageStack = workflowState.getPageStack();

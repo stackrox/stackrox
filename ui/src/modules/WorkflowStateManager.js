@@ -1,5 +1,6 @@
 import entityRelationships from 'modules/entityRelationships';
 import { cloneDeep } from 'lodash';
+import searchContexts from 'constants/searchContexts';
 
 // An item in the workflow stack
 export class WorkflowEntity {
@@ -85,9 +86,15 @@ function trimStack(stack) {
  * }
  */
 export class WorkflowState {
-    constructor(useCase, stateStack) {
+    constructor(useCase, stateStack, search) {
         this.useCase = useCase;
         this.stateStack = cloneDeep(stateStack) || [];
+        this.search = search || {};
+
+        Object.freeze(this);
+        Object.freeze(search);
+        Object.freeze(stateStack);
+        Object.freeze(useCase);
     }
 
     // Returns current entity (top of stack)
@@ -114,46 +121,57 @@ export class WorkflowState {
         // entity page with tab
         return stateStack.slice(0, 2);
     }
+
+    getCurrentSearchContext() {
+        return this.getPageStack().length === this.stateStack.length
+            ? searchContexts.page
+            : searchContexts.sidePanel;
+    }
+
+    getCurrentSearchState() {
+        return this.search[this.getCurrentSearchContext()] || {};
+    }
 }
 
 export default class WorkflowStateMgr {
-    constructor(workflowState, searchState) {
+    constructor(workflowState) {
         if (workflowState) {
-            const { useCase, stateStack } = workflowState;
-            this.workflowState = new WorkflowState(useCase, stateStack);
+            const { useCase, stateStack, search } = workflowState;
+            this.workflowState = new WorkflowState(useCase, stateStack, search);
         } else {
             this.workflowState = new WorkflowState();
         }
-        this.searchState = { ...searchState };
     }
 
     // Resets the current state based on minimal parameters
-    reset(useCase, entityType, entityId) {
+    reset(useCase, entityType, entityId, search) {
         const newUseCase = useCase || this.workflowState.useCase;
         const newStateStack = baseStateStack(entityType, entityId);
-
-        this.workflowState = new WorkflowState(newUseCase, newStateStack);
+        const newSearch = search || this.search;
+        this.workflowState = new WorkflowState(newUseCase, newStateStack, newSearch);
         return this;
     }
 
     // sets the stateStack to base state when returning from side panel
     removeSidePanelParams() {
-        const { useCase, stateStack } = this.workflowState;
+        const { useCase, stateStack, search } = this.workflowState;
         const baseEntity = this.workflowState.getBaseEntity();
         const newStateStack = baseEntity.entityId ? stateStack.slice(0, 2) : [baseEntity];
-        this.workflowState = new WorkflowState(useCase, newStateStack);
+        const newSearch = { [searchContexts.page]: search[searchContexts.page] };
+        this.workflowState = new WorkflowState(useCase, newStateStack, newSearch);
         return this;
     }
 
     // sets statestack to only the first item
     base() {
-        this.workflowState.stateStack = this.workflowState.stateStack.slice(0, 1);
+        const { useCase, stateStack, search } = this.workflowState;
+        this.workflowState = new WorkflowState(useCase, stateStack.slice(0, 1), search);
         return this;
     }
 
     // Adds a list of entityType related to the current workflowState
     pushList(type) {
-        const { stateStack } = this.workflowState;
+        const { useCase, stateStack, search } = this.workflowState;
         const newItem = new WorkflowEntity(type);
         const currentItem = this.workflowState.getCurrentEntity();
 
@@ -163,35 +181,35 @@ export default class WorkflowStateMgr {
                 ? stateStack.slice(0, -1)
                 : stateStack;
         newStateStack.push(newItem);
-        this.workflowState.stateStack = trimStack(newStateStack);
+
+        this.workflowState = new WorkflowState(useCase, trimStack(newStateStack), search);
 
         return this;
     }
 
     // Selects an item in a list by Id
     pushListItem(id) {
-        const { stateStack } = this.workflowState;
+        const { useCase, stateStack, search } = this.workflowState;
         const currentItem = this.workflowState.getCurrentEntity();
         const newItem = new WorkflowEntity(currentItem.entityType, id);
         // Slice an item off the end of the stack if this push should result in a replacement (e.g. clicking on multiple list items)
         const newStateStack = currentItem.entityId ? stateStack.slice(0, -1) : stateStack;
         newStateStack.push(newItem);
 
-        this.workflowState.stateStack = newStateStack;
+        this.workflowState = new WorkflowState(useCase, newStateStack, search);
         return this;
     }
 
     // Shows an entity in relation to the top entity in the workflow
     pushRelatedEntity(type, id) {
-        const currentItem = this.workflowState.stateStack.slice(-1)[0];
+        const { useCase, stateStack, search } = this.workflowState;
+        const currentItem = stateStack.slice(-1)[0];
         if (!currentItem.entityId)
             throw new Error(`Can't push related entity onto a list. Use pushListItem(id) instead.`);
 
-        const newStack = trimStack([
-            ...this.workflowState.stateStack,
-            new WorkflowEntity(type, id)
-        ]);
-        this.workflowState.stateStack = newStack;
+        const newStateStack = trimStack([...stateStack, new WorkflowEntity(type, id)]);
+
+        this.workflowState = new WorkflowState(useCase, newStateStack, search);
 
         return this;
     }
@@ -202,7 +220,22 @@ export default class WorkflowStateMgr {
             // A state stack has to have at least one item in it
             return this;
 
-        this.workflowState.stateStack.pop();
+        const { useCase, stateStack, search } = this.workflowState;
+
+        this.workflowState = new WorkflowState(
+            useCase,
+            stateStack.slice(0, stateStack.length - 1),
+            search
+        );
         return this;
+    }
+
+    setSearch(newProps) {
+        const { useCase, stateStack, search } = this.workflowState;
+        const newSearch = {
+            ...search,
+            [this.workflowState.getCurrentSearchContext()]: newProps
+        };
+        this.workflowState = new WorkflowState(useCase, stateStack, newSearch);
     }
 }

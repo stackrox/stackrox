@@ -7,6 +7,8 @@ import Loader from 'Components/Loader';
 import EntityList from 'Components/EntityList';
 import workflowStateContext from 'Containers/workflowStateContext';
 import isGQLLoading from 'utils/gqlLoading';
+import { SEARCH_OPTIONS_QUERY } from 'queries/search';
+import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 
 export function getDefaultExpandedRows(data) {
     return data && data.results
@@ -16,7 +18,7 @@ export function getDefaultExpandedRows(data) {
         : null;
 }
 
-const WorkflowEntityPage = ({
+const WorkflowListPage = ({
     query,
     queryOptions,
     defaultSorted,
@@ -30,13 +32,21 @@ const WorkflowEntityPage = ({
 }) => {
     const workflowState = useContext(workflowStateContext);
 
-    const { loading, error, data } = useQuery(query, queryOptions);
-    if (isGQLLoading(loading, data)) return <Loader />;
+    const searchCategories = [searchCategoryTypes[entityListType]];
+    const searchQueryOptions = {
+        variables: {
+            categories: searchCategories
+        }
+    };
+    const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
+    const searchOptions = (searchData && searchData.searchOptions) || [];
 
+    const { loading, error, data } = useQuery(query, queryOptions);
+
+    if (isGQLLoading(loading, data)) return <Loader />;
     if (!data || !data.results || error) return <PageNotFound resourceType={entityListType} />;
 
     const tableColumns = getTableColumns(workflowState);
-
     const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(data) : null;
 
     return (
@@ -50,11 +60,12 @@ const WorkflowEntityPage = ({
             SubComponent={SubComponent}
             defaultSorted={defaultSorted}
             defaultExpanded={defaultExpandedRows}
+            searchOptions={searchOptions}
         />
     );
 };
 
-WorkflowEntityPage.propTypes = {
+WorkflowListPage.propTypes = {
     // eslint-disable-next-line
     query: PropTypes.any.isRequired,
     queryOptions: PropTypes.shape({}),
@@ -69,7 +80,7 @@ WorkflowEntityPage.propTypes = {
     idAttribute: PropTypes.string
 };
 
-WorkflowEntityPage.defaultProps = {
+WorkflowListPage.defaultProps = {
     queryOptions: null,
     defaultSorted: [],
     entityContext: {},
@@ -80,4 +91,4 @@ WorkflowEntityPage.defaultProps = {
     idAttribute: 'id'
 };
 
-export default WorkflowEntityPage;
+export default WorkflowListPage;

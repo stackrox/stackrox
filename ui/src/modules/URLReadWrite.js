@@ -2,7 +2,9 @@ import pageTypes from 'constants/pageTypes';
 import useCases from 'constants/useCaseTypes';
 import { generatePath, matchPath } from 'react-router-dom';
 import qs from 'qs';
+import searchContexts from 'constants/searchContexts';
 import WorkflowStateMgr, { WorkflowState, WorkflowEntity } from './WorkflowStateManager';
+
 import {
     nestedPaths as workflowPaths,
     riskPath,
@@ -44,7 +46,7 @@ function getTypeKeyFromParamValue(value, listOnly) {
 }
 
 // Convert workflowState and searchState to URL;
-export function generateURL(workflowState, searchState) {
+export function generateURL(workflowState) {
     const { stateStack: originalStateStack, useCase } = workflowState;
     const stateStack = [...originalStateStack];
     const pageStack = workflowState.getPageStack();
@@ -87,7 +89,11 @@ export function generateURL(workflowState, searchState) {
     }
 
     // generate the querystring using remaining statestack params
-    const queryParams = { workflowState: qsStack, ...searchState };
+    const queryParams = {
+        workflowState: qsStack,
+        [searchContexts.page]: workflowState.search[searchContexts.page],
+        [searchContexts.sidePanel]: workflowState.search[searchContexts.sidePanel]
+    };
 
     const queryString = queryParams
         ? qs.stringify(queryParams, {
@@ -156,7 +162,7 @@ export function parseURL(location) {
     const stateStackFromURLParams = paramsToStateStack(params) || [];
 
     // eslint-disable-next-line
-    let { workflowState: stateStackFromQueryString = [], ...searchState } = query;
+    let { workflowState: stateStackFromQueryString = [], [searchContexts.page] : pageSearch, [searchContexts.sidePanel] : sidePanelSearch } = query;
     stateStackFromQueryString = !Array.isArray(stateStackFromQueryString)
         ? [stateStackFromQueryString]
         : stateStackFromQueryString;
@@ -164,15 +170,16 @@ export function parseURL(location) {
         ({ t, i }) => new WorkflowEntity(t, i)
     );
 
-    const workflowState = new WorkflowState(params.context, [
-        ...stateStackFromURLParams,
-        ...stateStackFromQueryString
-    ]);
+    const workflowState = new WorkflowState(
+        params.context,
+        [...stateStackFromURLParams, ...stateStackFromQueryString],
+        {
+            [searchContexts.page]: pageSearch,
+            [searchContexts.sidePanel]: sidePanelSearch
+        }
+    );
 
-    return {
-        workflowState,
-        searchState
-    };
+    return workflowState;
 }
 
 export function generateURLTo(workflowState, entityType, entityId) {

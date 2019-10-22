@@ -13,7 +13,7 @@ const DashboardMap = {
 
 const WorkflowDashboardLayout = ({ match, location }) => {
     const params = URLService.getParams(match, location);
-    const { workflowState } = parseURL(location);
+    const workflowState = parseURL(location);
     const { context: useCase } = params;
     const Dashboard = DashboardMap[useCase];
     return (
