@@ -10,15 +10,12 @@ import TileList from 'Components/TileList';
 import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLTo } from 'modules/URLReadWrite';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
 
 function getPushEntityType(workflowState, entityType) {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityType);
-    const url = generateURL(workflowStateMgr.workflowState);
+    const url = generateURLTo(workflowState, entityType);
 
     return url;
 }

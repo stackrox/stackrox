@@ -8,7 +8,7 @@ import pluralize from 'pluralize';
 import GroupedTabs from 'Components/GroupedTabs';
 import WorkflowStateManager from 'modules/WorkflowStateManager';
 import entityRelationships from 'modules/entityRelationships';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLTo, generateURL } from 'modules/URLReadWrite';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 const TAB_GROUPS = {
@@ -47,12 +47,11 @@ const EntityTabs = ({ entityType, activeTab }) => {
             entityType === entityTypes.DEPLOYMENT && tabType === entityTypes.POLICY
                 ? 'failing '
                 : '';
-        const newState = new WorkflowStateManager(workflowState).pushList(tabType).workflowState; // { stateStack: [], useCase: 'vulnerability-management' };
         return {
             group: ENTITY_TO_TAB[tabType],
             value: tabType,
             text: `${failingText}${pluralize(entityLabels[tabType])}`,
-            to: generateURL(newState)
+            to: generateURLTo(workflowState, tabType)
         };
     }
 

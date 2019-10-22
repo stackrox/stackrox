@@ -3,16 +3,13 @@ import entityTypes from 'constants/entityTypes';
 import pluralize from 'pluralize';
 import entityLabels from 'messages/entity';
 
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLTo } from 'modules/URLReadWrite';
 
 import DashboardMenu from 'Components/DashboardMenu';
 
 const getURL = (workflowState, entityType) => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityType);
-    const url = generateURL(workflowStateMgr.workflowState);
+    const url = generateURLTo(workflowState, entityType);
     return url;
 };
 

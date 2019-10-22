@@ -4,8 +4,7 @@ import Widget from 'Components/Widget';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLTo } from 'modules/URLReadWrite';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 // @TODO We should try to use this component for Compliance as well
@@ -17,10 +16,7 @@ const RelatedEntityListCount = ({ match, location, history, name, value, entityT
 
         // this is a workaround to make this flexible for legacy URLService and new workflow state manager
         if (workflowState && workflowState.useCase) {
-            const workflowStateMgr = new WorkflowStateMgr(workflowState);
-            workflowStateMgr.pushList(entityType);
-
-            url = generateURL(workflowStateMgr.workflowState);
+            url = generateURLTo(workflowState, entityType);
         } else {
             url = URLService.getURL(match, location)
                 .push(entityType)

@@ -2,7 +2,7 @@ import pageTypes from 'constants/pageTypes';
 import useCases from 'constants/useCaseTypes';
 import { generatePath, matchPath } from 'react-router-dom';
 import qs from 'qs';
-import { WorkflowState, WorkflowEntity } from './WorkflowStateManager';
+import WorkflowStateMgr, { WorkflowState, WorkflowEntity } from './WorkflowStateManager';
 import {
     nestedPaths as workflowPaths,
     riskPath,
@@ -173,4 +173,18 @@ export function parseURL(location) {
         workflowState,
         searchState
     };
+}
+
+export function generateURLTo(workflowState, entityType, entityId) {
+    if (!entityType && !entityId) return generateURL(workflowState);
+
+    const mgr = new WorkflowStateMgr(workflowState);
+    if (!entityId) {
+        mgr.pushList(entityType);
+    } else if (!entityType) {
+        mgr.pushListItem(entityId);
+    } else {
+        mgr.pushRelatedEntity(entityType, entityId);
+    }
+    return generateURL(mgr.workflowState);
 }
