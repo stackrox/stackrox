@@ -40,8 +40,6 @@ type datastoreImpl struct {
 
 	imageRanker          *ranking.Ranker
 	imageComponentRanker *ranking.Ranker
-
-	componentsInImages map[string]int
 }
 
 func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDS.DataStore) (*datastoreImpl, error) {
@@ -51,8 +49,7 @@ func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher searc
 		searcher: searcher,
 		risks:    risks,
 
-		componentsInImages: make(map[string]int),
-		keyedMutex:         concurrency.NewKeyedMutex(16),
+		keyedMutex: concurrency.NewKeyedMutex(16),
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -226,11 +223,6 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 		return err
 	}
 
-	for _, imageComponent := range image.GetScan().GetComponents() {
-		key := getImageComponentKey(imageComponent)
-		ds.componentsInImages[key]++
-	}
-
 	return ds.indexer.AddImage(image)
 }
 
@@ -249,11 +241,6 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 		))
 
 	for _, id := range ids {
-		image, found, err := ds.storage.GetImage(id)
-		if err != nil || !found {
-			return err
-		}
-
 		if err := ds.storage.DeleteImage(id); err != nil {
 			errorList.AddError(err)
 			continue
@@ -265,20 +252,6 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 		if err := ds.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_IMAGE); err != nil {
 			return err
 		}
-
-		for _, imageComponent := range image.GetScan().GetComponents() {
-			key := getImageComponentKey(imageComponent)
-			ds.componentsInImages[key]--
-
-			if ds.componentsInImages[key] == 0 {
-				delete(ds.componentsInImages, key)
-
-				if err := ds.risks.RemoveRisk(deleteRiskCtx, key, storage.RiskSubjectType_IMAGE_COMPONENT); err != nil {
-					return err
-				}
-			}
-		}
-
 	}
 	return errorList.ToError()
 }
