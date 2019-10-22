@@ -84,7 +84,7 @@ const MostCommonVulnerabilities = ({ entityContext }) => {
 
     return (
         <Widget
-            className="sx-2 sy-4 pdf-page"
+            className="h-full pdf-page"
             bodyClassName="px-2"
             header="Most Common Vulnerabilities"
             headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}

@@ -199,7 +199,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext }) => {
             pagination: {
                 limit: 8
                 /*
-                @TODO: When priority is a sortable field, uncomment this 
+                @TODO: When priority is a sortable field, uncomment this
 
                 sortOption: {
                     field: 'priority',
@@ -225,7 +225,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext }) => {
 
     return (
         <Widget
-            className="s-2 pdf-page"
+            className="h-full pdf-page"
             titleComponents={
                 <TextSelect value={selectedEntity} options={entities} onChange={onEntityChange} />
             }

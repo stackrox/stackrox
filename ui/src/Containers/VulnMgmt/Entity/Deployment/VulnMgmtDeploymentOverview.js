@@ -6,6 +6,7 @@ import LabelChip from 'Components/LabelChip';
 import TileList from 'Components/TileList';
 import Widget from 'Components/Widget';
 import entityTypes from 'constants/entityTypes';
+import MostRecentVulnerabilities from 'Containers/VulnMgmt/widgets/MostRecentVulnerabilities';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 import WorkflowStateMgr from 'modules/WorkflowStateManager';
@@ -69,32 +70,37 @@ const VulnMgmtDeploymentOverview = ({ data }) => {
             <div className="flex h-full">
                 <div className="flex flex-col flex-grow">
                     <CollapsibleSection title="CVE summary">
-                        <div className="flex mb-4 pdf-page">
-                            {/* TODO: abstract this into a new, more powerful Metadata component */}
-                            <Widget
-                                header="Details & Metadata"
-                                className="mx-4 bg-base-100 h-48 mb-4 flex-grow max-w-6xl"
-                            >
-                                <div className="flex flex-col w-full">
-                                    <div className="border-b border-base-300 text-base-500 flex justify-between items-center">
-                                        <div className="flex flex-grow p-4 justify-center items-center border-r-2 border-base-300 border-dotted">
-                                            <span className="pr-1">Risk score:</span>
-                                            <span className="pl-1 text-3xl">{priority}</span>
+                        <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                            <div className="">
+                                {/* TODO: abstract this into a new, more powerful Metadata component */}
+                                <Widget
+                                    header="Details & Metadata"
+                                    className="bg-base-100 h-48 mb-4 flex-grow max-w-6xl h-full"
+                                >
+                                    <div className="flex flex-col w-full">
+                                        <div className="border-b border-base-300 text-base-500 flex justify-between items-center">
+                                            <div className="flex flex-grow p-4 justify-center items-center border-r-2 border-base-300 border-dotted">
+                                                <span className="pr-1">Risk score:</span>
+                                                <span className="pl-1 text-3xl">{priority}</span>
+                                            </div>
+                                            <div className="flex flex-col p-4 flex-grow justify-center text-center">
+                                                <span>Policy status:</span>
+                                                {policyStatus === 'pass' ? (
+                                                    <LabelChip text="Pass" type="success" />
+                                                ) : (
+                                                    <LabelChip text="Fail" type="alert" />
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col p-4 flex-grow justify-center text-center">
-                                            <span>Policy status:</span>
-                                            {policyStatus === 'pass' ? (
-                                                <LabelChip text="Pass" type="success" />
-                                            ) : (
-                                                <LabelChip text="Fail" type="alert" />
-                                            )}
+                                        <div>
+                                            Cluster: {cluster.name} / Namespace: {namespace}
                                         </div>
                                     </div>
-                                    <div>
-                                        Cluster: {cluster.name} / Namespace: {namespace}
-                                    </div>
-                                </div>
-                            </Widget>
+                                </Widget>
+                            </div>
+                            <div>
+                                <MostRecentVulnerabilities />
+                            </div>
                         </div>
                     </CollapsibleSection>
                 </div>

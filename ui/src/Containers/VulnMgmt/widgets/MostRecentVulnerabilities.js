@@ -56,9 +56,9 @@ const getSingleEntityURL = (workflowState, id) => {
     return url;
 };
 
-const processData = (data, workflowState) => {
+const processData = (data, workflowState, limit) => {
     const results = sortBy(data.results, [datum => getTime(new Date(datum.lastScanned))])
-        .splice(-8)
+        .splice(-limit) // @TODO: filter on the client side until we have pagination on Vulnerabilities
         .reverse(); // @TODO: Remove when we have pagination on Vulnerabilities
     return results.map(({ id, cve, cvss, scoreVersion, imageCount, envImpact, isFixable }) => {
         const text = cve;
@@ -98,7 +98,7 @@ const processData = (data, workflowState) => {
     });
 };
 
-const MostRecentVulnerabilities = ({ entityContext }) => {
+const MostRecentVulnerabilities = ({ entityContext, limit }) => {
     const { loading, data = {} } = useQuery(MOST_RECENT_VULNERABILITIES, {
         variables: {
             query: queryService.entityContextToQueryString(entityContext)
@@ -109,7 +109,7 @@ const MostRecentVulnerabilities = ({ entityContext }) => {
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState);
+        const processedData = processData(data, workflowState, limit);
 
         content = (
             <div className="w-full">
@@ -120,7 +120,7 @@ const MostRecentVulnerabilities = ({ entityContext }) => {
 
     return (
         <Widget
-            className="s-2 pdf-page"
+            className="h-full pdf-page"
             header="Most Recent Vulnerabilities"
             headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}
         >
@@ -130,11 +130,13 @@ const MostRecentVulnerabilities = ({ entityContext }) => {
 };
 
 MostRecentVulnerabilities.propTypes = {
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
+    limit: PropTypes.number
 };
 
 MostRecentVulnerabilities.defaultProps = {
-    entityContext: {}
+    entityContext: {},
+    limit: 5
 };
 
 export default MostRecentVulnerabilities;

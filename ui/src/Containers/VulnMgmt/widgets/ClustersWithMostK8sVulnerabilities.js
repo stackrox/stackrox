@@ -99,7 +99,7 @@ const ClustersWithMostK8sVulnerabilities = ({ entityContext }) => {
 
     return (
         <Widget
-            className="s-2 pdf-page"
+            className="h-full pdf-page"
             header="Clusters With Most K8s Vulnerabilities"
             headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}
         >

@@ -15,6 +15,8 @@ import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostK8sVulnerabilities from '../widgets/ClustersWithMostK8sVulnerabilities';
 
+const recentVulnerabilitiesDashboardCount = 8; // layout-specific
+
 const VulnDashboardPage = () => {
     const headerComponents = (
         <>
@@ -28,13 +30,27 @@ const VulnDashboardPage = () => {
     );
     return (
         <DashboardLayout headerText="Vulnerability Management" headerComponents={headerComponents}>
-            <TopRiskyEntitiesByVulnerabilities />
-            <TopRiskiestImagesAndComponents />
-            <FrequentlyViolatedPolicies />
-            <MostRecentVulnerabilities />
-            <MostCommonVulnerabilities />
-            <DeploymentsWithMostSeverePolicyViolations />
-            <ClustersWithMostK8sVulnerabilities />
+            <div className="sx-4 sy-2">
+                <TopRiskyEntitiesByVulnerabilities />
+            </div>
+            <div className="s-2">
+                <TopRiskiestImagesAndComponents />
+            </div>
+            <div className="s-2">
+                <FrequentlyViolatedPolicies />
+            </div>
+            <div className="s-2">
+                <MostRecentVulnerabilities limit={recentVulnerabilitiesDashboardCount} />
+            </div>
+            <div className="sx-2 sy-4">
+                <MostCommonVulnerabilities />
+            </div>
+            <div className="s-2">
+                <DeploymentsWithMostSeverePolicyViolations />
+            </div>
+            <div className="s-2">
+                <ClustersWithMostK8sVulnerabilities />
+            </div>
         </DashboardLayout>
     );
 };

@@ -82,7 +82,7 @@ const FrequentlyViolatedPolicies = ({ entityContext }) => {
 
     return (
         <Widget
-            className="s-2 pdf-page"
+            className="h-full pdf-page"
             bodyClassName="px-2"
             header="Frequently Violated Policies"
             headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}

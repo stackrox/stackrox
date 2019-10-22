@@ -137,7 +137,7 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext }) => {
 
     return (
         <Widget
-            className="s-2 pdf-page"
+            className="h-full pdf-page"
             header="Deployments With Most Severe Policy Violations"
             headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}
         >
