@@ -42,7 +42,11 @@ export function getCveTableColumns(workflowState) {
             // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { isFixable } = original;
-                const fixableFlag = isFixable ? <LabelChip text="Fixable" type="success" /> : 'No';
+                const fixableFlag = isFixable ? (
+                    <LabelChip text="Fixable" type="success" size="large" />
+                ) : (
+                    'No'
+                );
                 return <div className="mx-auto">{fixableFlag}</div>;
             },
             accessor: 'isFixable',

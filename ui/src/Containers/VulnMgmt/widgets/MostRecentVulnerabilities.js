@@ -74,6 +74,7 @@ const processData = (data, workflowState) => {
                             <LabelChip
                                 text={`${imageCount} ${pluralize('Image', imageCount)}`}
                                 type="tertiary"
+                                size="small"
                             />
                         </div>
                     )}
@@ -82,12 +83,13 @@ const processData = (data, workflowState) => {
                             <LabelChip
                                 text={`Env Impact: ${envImpactPercentage}`}
                                 type="secondary"
+                                size="small"
                             />
                         </div>
                     )}
                     {isFixable && (
                         <div className="ml-2">
-                            <LabelChip text="Fixable" type="success" />
+                            <LabelChip text="Fixable" type="success" size="small" />
                         </div>
                     )}
                 </>

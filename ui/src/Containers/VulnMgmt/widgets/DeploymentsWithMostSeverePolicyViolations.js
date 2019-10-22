@@ -93,15 +93,15 @@ const processData = (data, workflowState) => {
             component: (
                 <>
                     <div className="mr-4">
-                        <LabelChip text={`${low} L`} type="base" />
+                        <LabelChip text={`${low} L`} type="base" size="small" />
                     </div>
                     <div className="mr-4">
-                        <LabelChip text={`${medium} M`} type="warning" />
+                        <LabelChip text={`${medium} M`} type="warning" size="small" />
                     </div>
                     <div className="mr-4">
-                        <LabelChip text={`${high} H`} type="caution" />
+                        <LabelChip text={`${high} H`} type="caution" size="small" />
                     </div>
-                    <LabelChip text={`${critical} C`} type="alert" />
+                    <LabelChip text={`${critical} C`} type="alert" size="small" />
                 </>
             )
         };
