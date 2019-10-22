@@ -15,6 +15,8 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext })
         query getDeployment($id: ID!, $query: String) {
             result: deployment(id: $id) {
                 id
+                priority
+                policyStatus
                 annotations {
                     key
                     value
@@ -64,6 +66,8 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext })
                 created
                 secretCount
                 imageCount
+                imageComponentCount
+                vulnCount
                 vulnerabilities: vulns {
                     ...cveListFields
                 }

@@ -91,7 +91,13 @@ const entityRelationshipMap = {
     [entityTypes.CVE]: {
         children: [],
         parents: [],
-        matches: [entityTypes.COMPONENT]
+        matches: [
+            entityTypes.COMPONENT,
+            entityTypes.DEPLOYMENT,
+            entityTypes.IMAGE,
+            entityTypes.NAMESPACE,
+            entityTypes.POLICY
+        ]
     },
     [entityTypes.CONTROL]: {
         children: [],

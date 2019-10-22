@@ -12,6 +12,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext }) => {
     const overviewQuery = gql`
         query getCve($id: ID!) {
             result: vulnerability(id: $id) {
+                id: cve
                 cve
                 # Env. impact
                 cvss

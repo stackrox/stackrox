@@ -1,124 +1,122 @@
 import React, { useContext } from 'react';
-import { format } from 'date-fns';
+import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
-import Metadata from 'Components/Metadata';
-import RelatedEntity from 'Components/RelatedEntity';
-import RelatedEntityListCount from 'Components/RelatedEntityListCount';
-import EntityList from 'Components/EntityList';
+import LabelChip from 'Components/LabelChip';
+import TileList from 'Components/TileList';
+import Widget from 'Components/Widget';
 import entityTypes from 'constants/entityTypes';
-import {
-    getCveTableColumns,
-    renderCveDescription,
-    defaultCveSort
-} from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
-import { getDefaultExpandedRows } from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
-import dateTimeFormat from 'constants/dateTimeFormat';
 
-const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
+import WorkflowStateMgr from 'modules/WorkflowStateManager';
+import { generateURL } from 'modules/URLReadWrite';
+
+function getPushEntityType(workflowState, entityType) {
+    const workflowStateMgr = new WorkflowStateMgr(workflowState);
+    workflowStateMgr.pushList(entityType);
+    const url = generateURL(workflowStateMgr.workflowState);
+
+    return url;
+}
+
+const VulnMgmtDeploymentOverview = ({ data }) => {
     const workflowState = useContext(workflowStateContext);
 
     const {
         cluster,
-        created,
-        type,
-        replicas,
-        labels = [],
-        annotations = [],
+        priority,
         namespace,
-        namespaceId,
-        serviceAccount,
-        serviceAccountID,
+        policyStatus,
+        failingPolicyCount,
         imageCount,
-        secretCount,
-        vulnerabilities
+        imageComponentCount,
+        vulnCount
     } = data;
 
-    const metadataKeyValuePairs = [
-        {
-            key: 'Created',
-            value: created ? format(created, dateTimeFormat) : 'N/A'
-        },
-        {
-            key: 'Deployment Type',
-            value: type
-        },
-        {
-            key: 'Replicas',
-            value: replicas
-        }
-    ];
+    const matchesTiles = failingPolicyCount
+        ? [
+              {
+                  count: failingPolicyCount,
+                  label: pluralize('Policy', failingPolicyCount),
+                  url: getPushEntityType(workflowState, entityTypes.POLICY)
+              }
+          ]
+        : [];
 
-    const cveTableColumns = getCveTableColumns(workflowState);
-    // TODO: move filtering to the GraphQL query, if it becomes available at that level
-    const fixableCves = vulnerabilities.filter(vuln => vuln.isFixable);
-    const expandedCveRows = getDefaultExpandedRows(fixableCves);
+    const containsTiles =
+        vulnCount || imageCount || imageComponentCount
+            ? [
+                  {
+                      count: vulnCount,
+                      label: pluralize('CVE', vulnCount),
+                      url: getPushEntityType(workflowState, entityTypes.CVE)
+                  },
+                  {
+                      count: imageCount,
+                      label: pluralize('Image', imageCount),
+                      url: getPushEntityType(workflowState, entityTypes.IMAGE)
+                  },
+                  {
+                      count: imageComponentCount,
+                      label: pluralize('Component', imageComponentCount),
+                      url: getPushEntityType(workflowState, entityTypes.COMPONENT)
+                  }
+              ]
+            : [];
 
     return (
-        <div className="w-full" id="capture-dashboard-stretch">
-            <CollapsibleSection title="Deployment Details">
-                <div className="flex mb-4 flex-wrap pdf-page">
-                    <Metadata
-                        className="mx-4 bg-base-100 h-48 mb-4"
-                        keyValuePairs={metadataKeyValuePairs}
-                        labels={labels}
-                        annotations={annotations}
-                    />
-                    {!entityContext.CLUSTER && cluster && (
-                        <RelatedEntity
-                            className="mx-4 min-w-48 h-48 mb-4"
-                            entityType={entityTypes.CLUSTER}
-                            entityId={cluster.id}
-                            name="Cluster"
-                            value={cluster.name}
-                        />
-                    )}
-                    {!entityContext.NAMESPACE && (
-                        <RelatedEntity
-                            className="mx-4 min-w-48 h-48 mb-4"
-                            entityType={entityTypes.NAMESPACE}
-                            entityId={namespaceId}
-                            name="Namespace"
-                            value={namespace}
-                        />
-                    )}
-                    {!entityContext.SERVICE_ACCOUNT && (
-                        <RelatedEntity
-                            className="mx-4 min-w-48 h-48 mb-4"
-                            entityType={entityTypes.SERVICE_ACCOUNT}
-                            name="Service Account"
-                            value={serviceAccount}
-                            entityId={serviceAccountID}
-                        />
-                    )}
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Images"
-                        value={imageCount}
-                        entityType={entityTypes.IMAGE}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Secrets"
-                        value={secretCount}
-                        entityType={entityTypes.SECRET}
-                    />
+        <div className="w-full h-full" id="capture-dashboard-stretch">
+            <div className="flex h-full">
+                <div className="flex flex-col flex-grow">
+                    <CollapsibleSection title="CVE summary">
+                        <div className="flex mb-4 pdf-page">
+                            {/* TODO: abstract this into a new, more powerful Metadata component */}
+                            <Widget
+                                header="Details & Metadata"
+                                className="mx-4 bg-base-100 h-48 mb-4 flex-grow max-w-6xl"
+                            >
+                                <div className="flex flex-col w-full">
+                                    <div className="border-b border-base-300 text-base-500 flex justify-between items-center">
+                                        <div className="flex flex-grow p-4 justify-center items-center border-r-2 border-base-300 border-dotted">
+                                            <span className="pr-1">Risk score:</span>
+                                            <span className="pl-1 text-3xl">{priority}</span>
+                                        </div>
+                                        <div className="flex flex-col p-4 flex-grow justify-center text-center">
+                                            <span>Policy status:</span>
+                                            {policyStatus === 'pass' ? (
+                                                <LabelChip text="Pass" type="success" />
+                                            ) : (
+                                                <LabelChip text="Fail" type="alert" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        Cluster: {cluster.name} / Namespace: {namespace}
+                                    </div>
+                                </div>
+                            </Widget>
+                        </div>
+                    </CollapsibleSection>
                 </div>
-            </CollapsibleSection>
-            <CollapsibleSection title="Deployment Findings">
-                <EntityList
-                    entityType={entityTypes.CVE}
-                    idAttribute="cve"
-                    rowData={fixableCves}
-                    tableColumns={cveTableColumns}
-                    selectedRowId={null}
-                    search={null}
-                    SubComponent={renderCveDescription}
-                    defaultSorted={defaultCveSort}
-                    defaultExpanded={expandedCveRows}
-                />
-            </CollapsibleSection>
+
+                <div className="bg-primary-300 h-full relative">
+                    {/* TODO: decide if this should be added as custom tailwind class, or a "component" CSS class in app.css */}
+                    <h2
+                        style={{
+                            position: 'relative',
+                            left: '-0.5rem',
+                            width: 'calc(100% + 0.5rem)'
+                        }}
+                        className="my-4 p-2 bg-primary-700 text-base text-base-100 rounded-l"
+                    >
+                        Related entities
+                    </h2>
+                    {matchesTiles.length > 0 && <TileList items={matchesTiles} title="Matches" />}
+                    {containsTiles.length > 0 && (
+                        <TileList items={containsTiles} title="Contains" />
+                    )}
+                </div>
+            </div>
         </div>
     );
 };

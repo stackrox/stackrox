@@ -12,6 +12,7 @@ import {
     CLUSTERS_QUERY as CLUSTERS,
     CLUSTER_NAME
 } from 'queries/cluster';
+import { CVE_NAME } from 'queries/cve';
 import {
     NAMESPACE_QUERY as NAMESPACE,
     NAMESPACES_QUERY as NAMESPACES,
@@ -58,6 +59,7 @@ export const entityListQueryMap = {
 };
 
 export const entityNameQueryMap = {
+    [entityTypes.CVE]: CVE_NAME,
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_NAME,
     [entityTypes.SECRET]: SECRET_NAME,
     [entityTypes.DEPLOYMENT]: DEPLOYMENT_NAME,
