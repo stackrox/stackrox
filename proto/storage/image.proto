@@ -62,16 +62,18 @@ message EmbeddedVulnerability {
         V2 = 0; // No unset for automatic backwards compatibility
         V3 = 1;
     }
-    string cve                 = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
-    float  cvss                = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
-    string summary             = 3;
-    string link                = 4;
+    string cve                              = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
+    float  cvss                             = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
+    string summary                          = 3;
+    string link                             = 4;
     oneof set_fixed_by {
-        string fixed_by        = 5 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
+        string fixed_by                     = 5 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
     }
-    ScoreVersion score_version = 8;
-    CVSSV2 cvss_v2             = 6;
-    CVSSV3 cvss_v3             = 7;
+    ScoreVersion score_version              = 8;
+    CVSSV2 cvss_v2                          = 6;
+    CVSSV3 cvss_v3                          = 7;
+    google.protobuf.Timestamp published_on  = 9;
+    google.protobuf.Timestamp last_modified = 10;
 }
 
 message CVSSV2 {

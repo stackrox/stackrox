@@ -2,14 +2,20 @@ package clair
 
 import (
 	"encoding/json"
+	"time"
 
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
+)
+
+const (
+	timeFormat = "2006-01-02T15:04Z"
 )
 
 var (
@@ -17,8 +23,10 @@ var (
 )
 
 type nvd struct {
-	CvssV2 *cvss `json:"CVSSv2"`
-	CvssV3 *cvss `json:"CVSSv3"`
+	PublishedOn  string `json:"PublishedDateTime"`
+	LastModified string `json:"LastModifiedDateTime"`
+	CvssV2       *cvss  `json:"CVSSv2"`
+	CvssV3       *cvss  `json:"CVSSv3"`
 }
 
 type cvss struct {
@@ -53,6 +61,16 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	var n nvd
 	if err := json.Unmarshal(d, &n); err != nil {
 		return vul
+	}
+	if n.PublishedOn != "" {
+		if ts, err := time.Parse(timeFormat, n.PublishedOn); err == nil {
+			vul.PublishedOn = protoconv.ConvertTimeToTimestamp(ts)
+		}
+	}
+	if n.LastModified != "" {
+		if ts, err := time.Parse(timeFormat, n.LastModified); err == nil {
+			vul.LastModified = protoconv.ConvertTimeToTimestamp(ts)
+		}
 	}
 
 	if n.CvssV2 != nil && n.CvssV2.Vectors != "" {

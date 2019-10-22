@@ -44,6 +44,8 @@ func init() {
 			"deploymentCount: Int!",
 			"envImpact: Float!",
 			"severity: String!",
+			"publishedOn: Time",
+			"lastModified: Time",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String): [EmbeddedVulnerability!]!"),
@@ -275,6 +277,16 @@ func (evr *EmbeddedVulnerabilityResolver) Severity(ctx context.Context) string {
 		return evr.data.GetCvssV2().GetSeverity().String()
 	}
 	return storage.CVSSV2_UNKNOWN.String()
+}
+
+// PublishedOn is the time the vulnerability was published (ref: NVD).
+func (evr *EmbeddedVulnerabilityResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(evr.data.GetPublishedOn())
+}
+
+// LastModified is the time the vulnerability was last modified (ref: NVD).
+func (evr *EmbeddedVulnerabilityResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(evr.data.GetLastModified())
 }
 
 func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) error {
