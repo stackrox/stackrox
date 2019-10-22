@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMatchesDeploymentWhitelist(t *testing.T) {
@@ -103,19 +104,26 @@ func TestMatchesDeploymentWhitelist(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := matchesDeploymentWhitelists(c.deployment, c.policy)
+			compiledWhitelists := make([]*compiledWhitelist, 0, len(c.policy.GetWhitelists()))
+			for _, w := range c.policy.GetWhitelists() {
+				cw, err := newCompiledWhitelist(w)
+				require.NoError(t, err)
+				compiledWhitelists = append(compiledWhitelists, cw)
+			}
+
+			got := matchesDeploymentWhitelists(c.deployment, compiledWhitelists)
 			assert.Equal(t, c.shouldMatch, got)
 			// If it should match, make sure it doesn't match if the whitelists are all expired.
 			if c.shouldMatch {
 				for _, whitelist := range c.policy.GetWhitelists() {
 					whitelist.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))
 				}
-				assert.False(t, matchesDeploymentWhitelists(c.deployment, c.policy))
+				assert.False(t, matchesDeploymentWhitelists(c.deployment, compiledWhitelists))
 
 				for _, whitelist := range c.policy.GetWhitelists() {
 					whitelist.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour))
 				}
-				assert.True(t, matchesDeploymentWhitelists(c.deployment, c.policy))
+				assert.True(t, matchesDeploymentWhitelists(c.deployment, compiledWhitelists))
 			}
 			c.policy.Whitelists = append(c.policy.Whitelists, &storage.Whitelist{Image: &storage.Whitelist_Image{Name: "BLAH"}})
 			assert.Equal(t, c.shouldMatch, got)

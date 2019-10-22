@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -256,27 +258,21 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args rawQuery) 
 
 func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Policy, clusterID string) bool {
 	// Global Policy
-	if len(policy.Scope) == 0 {
+	if len(policy.GetScope()) == 0 {
 		return true
 	}
 	// Clustered or namespace scope policy, evaluate all scopes
-	for _, scope := range policy.Scope {
-		if scope.GetCluster() != "" {
-			if scope.GetCluster() == clusterID &&
-				(scope.GetNamespace() == "" || scope.GetNamespace() == resolver.data.Metadata.GetName()) {
-				return true
-			}
-		} else if scope.GetNamespace() != "" {
-			if scope.GetNamespace() == resolver.data.GetMetadata().GetName() {
-				return true
-			}
-		} else {
-			if scope.GetLabel() != nil {
-				label := scope.GetLabel()
-				if resolver.data.GetMetadata().GetLabels()[label.GetKey()] == label.GetValue() {
-					return true
-				}
-			}
+	for _, scope := range policy.GetScope() {
+		cs, err := scopecomp.CompileScope(scope)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "could not compile scope"))
+			continue
+		}
+		if scope.GetCluster() != "" && cs.MatchesCluster(clusterID) && cs.MatchesNamespace(resolver.data.Metadata.GetName()) {
+			return true
+		}
+		if cs.MatchesNamespace(resolver.data.Metadata.GetName()) {
+			return true
 		}
 	}
 	return false

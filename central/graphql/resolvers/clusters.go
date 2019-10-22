@@ -550,14 +550,14 @@ func (resolver *clusterResolver) policyAppliesToCluster(ctx context.Context, pol
 		return true
 	}
 	// Clustered or namespaced scope policy
-	for _, scope := range policy.Scope {
+	for _, scope := range policy.GetScope() {
 		if scope.GetCluster() != "" {
 			if scope.GetCluster() == resolver.data.GetId() {
 				return true
 			}
 		} else if scope.GetNamespace() != "" {
 			q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
-				AddExactMatches(search.Namespace, scope.GetNamespace()).ProtoQuery()
+				AddRegexes(search.Namespace, scope.GetNamespace()).ProtoQuery()
 			result, err := resolver.root.NamespaceDataStore.Search(ctx, q)
 			if err != nil {
 				continue

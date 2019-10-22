@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
 // CompiledPolicy is a compiled policy, which means it has a generated matcher and predicate function.
@@ -20,14 +21,24 @@ func NewCompiledPolicy(policy *storage.Policy, matcher searchbasedpolicies.Match
 		matcher: matcher,
 	}
 
+	whitelists := make([]*compiledWhitelist, 0, len(policy.GetWhitelists()))
+	for _, w := range policy.GetWhitelists() {
+		w, err := newCompiledWhitelist(w)
+		if err != nil {
+			return nil, err
+		}
+		whitelists = append(whitelists, w)
+	}
+
 	if policies.AppliesAtDeployTime(policy) || policies.AppliesAtRunTime(policy) {
-		compiled.predicates = append(compiled.predicates, &deploymentPredicate{policy: policy})
+		compiled.predicates = append(compiled.predicates, &deploymentPredicate{policy: policy, whitelists: whitelists})
 	}
 	if policies.AppliesAtBuildTime(policy) {
 		compiled.predicates = append(compiled.predicates, &imagePredicate{
 			policy: policy,
 		})
 	}
+
 	return compiled, nil
 }
 
@@ -63,9 +74,51 @@ type Predicate interface {
 	AppliesTo(interface{}) bool
 }
 
+type compiledWhitelist struct {
+	whitelist *storage.Whitelist
+	cs        *scopecomp.CompiledScope
+}
+
+func newCompiledWhitelist(whitelist *storage.Whitelist) (*compiledWhitelist, error) {
+	if whitelist.GetDeployment() == nil || whitelist.GetDeployment().GetScope() == nil {
+		return &compiledWhitelist{
+			whitelist: whitelist,
+		}, nil
+	}
+
+	cs, err := scopecomp.CompileScope(whitelist.GetDeployment().GetScope())
+	if err != nil {
+		return nil, err
+	}
+	return &compiledWhitelist{
+		whitelist: whitelist,
+		cs:        cs,
+	}, nil
+}
+
+func (cw *compiledWhitelist) MatchesDeployment(deployment *storage.Deployment) bool {
+	if whitelistIsExpired(cw.whitelist) {
+		return false
+	}
+	deploymentWhitelist := cw.whitelist.GetDeployment()
+	if deploymentWhitelist == nil {
+		return false
+	}
+
+	if !cw.cs.MatchesDeployment(deployment) {
+		return false
+	}
+
+	if deploymentWhitelist.GetName() != "" && deploymentWhitelist.GetName() != deployment.GetName() {
+		return false
+	}
+	return true
+}
+
 // Predicate for deployments.
 type deploymentPredicate struct {
-	policy *storage.Policy
+	policy     *storage.Policy
+	whitelists []*compiledWhitelist
 }
 
 func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
@@ -73,7 +126,8 @@ func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
 	if !isDeployment {
 		return false
 	}
-	return !matchesDeploymentWhitelists(deployment, cp.policy)
+
+	return !matchesDeploymentWhitelists(deployment, cp.whitelists)
 }
 
 // Predicate for images.

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
 func newPolicyValidator(notifierStorage notifierDataStore.DataStore, clusterStorage clusterDataStore.DataStore, deploymentMatcherBuilder, imageMatcherBuilder matcher.Builder) *policyValidator {
@@ -207,6 +208,9 @@ func (s *policyValidator) validateDeploymentWhitelist(whitelist *storage.Whiteli
 func (s *policyValidator) validateScope(scope *storage.Scope) error {
 	if scope.GetCluster() == "" && scope.GetNamespace() == "" && scope.GetLabel() == nil {
 		return errors.New("scope must have at least one field populated")
+	}
+	if _, err := scopecomp.CompileScope(scope); err != nil {
+		return errors.Wrap(err, "could not compile scope")
 	}
 	return nil
 }

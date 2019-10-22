@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWithinScope(t *testing.T) {
@@ -130,6 +131,8 @@ func TestWithinScope(t *testing.T) {
 		},
 	}
 	for _, test := range subtests {
-		assert.Equalf(t, test.result, WithinScope(test.scope, test.deployment), "Failed test '%s'", test.name)
+		cs, err := CompileScope(test.scope)
+		require.NoError(t, err)
+		assert.Equalf(t, test.result, cs.MatchesDeployment(test.deployment), "Failed test '%s'", test.name)
 	}
 }

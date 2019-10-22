@@ -1,6 +1,8 @@
 package policyutils
 
 import (
+	"fmt"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -19,10 +21,10 @@ func ScopeToQuery(scopes []*storage.Scope) *v1.Query {
 			qb.AddExactMatches(search.ClusterID, s.GetCluster())
 		}
 		if s.GetNamespace() != "" {
-			qb.AddExactMatches(search.Namespace, s.GetNamespace())
+			qb.AddRegexes(search.Namespace, s.GetNamespace())
 		}
 		if s.GetLabel() != nil {
-			qb.AddMapQuery(search.Label, s.GetLabel().GetKey(), s.GetLabel().GetValue())
+			qb.AddMapQuery(search.Label, fmt.Sprintf("%s%s", search.RegexPrefix, s.GetLabel().GetKey()), fmt.Sprintf("%s%s", search.RegexPrefix, s.GetLabel().GetValue()))
 		}
 		queries = append(queries, qb.ProtoQuery())
 	}

@@ -5,33 +5,15 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
-func matchesDeploymentWhitelists(deployment *storage.Deployment, policy *storage.Policy) bool {
-	for _, whitelist := range policy.GetWhitelists() {
-		if matchesDeploymentWhitelist(deployment, whitelist) {
+func matchesDeploymentWhitelists(deployment *storage.Deployment, whitelists []*compiledWhitelist) bool {
+	for _, whitelist := range whitelists {
+		if whitelist.MatchesDeployment(deployment) {
 			return true
 		}
 	}
 	return false
-}
-
-func matchesDeploymentWhitelist(deployment *storage.Deployment, whitelist *storage.Whitelist) bool {
-	if whitelistIsExpired(whitelist) {
-		return false
-	}
-	deploymentWhitelist := whitelist.GetDeployment()
-	if deploymentWhitelist == nil {
-		return false
-	}
-	if deploymentWhitelist.GetScope() != nil && !scopecomp.WithinScope(deploymentWhitelist.GetScope(), deployment) {
-		return false
-	}
-	if deploymentWhitelist.GetName() != "" && deploymentWhitelist.GetName() != deployment.GetName() {
-		return false
-	}
-	return true
 }
 
 func matchesImageWhitelist(image string, policy *storage.Policy) bool {
