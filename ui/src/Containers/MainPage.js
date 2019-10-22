@@ -153,15 +153,7 @@ class MainPage extends Component {
                             true
                         )}
                     />
-                    <ProtectedRoute
-                        path={clustersPath}
-                        component={AsyncClustersPage}
-                        featureFlagEnabled={isBackendFeatureFlagEnabled(
-                            this.props.featureFlags,
-                            knownBackendFlags.ROX_SENSOR_AUTOUPGRADE,
-                            true // enabled by default as of 29.0
-                        )}
-                    />
+                    <ProtectedRoute path={clustersPath} component={AsyncClustersPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
                 {this.renderPDFLoader()}

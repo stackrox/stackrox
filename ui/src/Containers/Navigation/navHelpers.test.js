@@ -1,5 +1,3 @@
-import { knownBackendFlags } from 'utils/featureFlags';
-
 // system under test
 import { filterLinksByFeatureFlag } from './navHelpers';
 
@@ -48,7 +46,7 @@ describe('nav helpers', () => {
                 {
                     text: 'Config Management',
                     to: '/main/configmanagement',
-                    featureFlag: knownBackendFlags.ROX_CONFIG_MGMT_UI
+                    featureFlag: mockFeatureFlags[0].envVar
                 },
                 {
                     text: 'Risk',
@@ -67,7 +65,7 @@ describe('nav helpers', () => {
                 {
                     text: 'clusters',
                     to: '/main/clusters',
-                    featureFlag: knownBackendFlags.ROX_SENSOR_AUTOUPGRADE
+                    featureFlag: mockFeatureFlags[1].envVar
                 },
                 {
                     text: 'Config Management',

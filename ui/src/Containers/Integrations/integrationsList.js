@@ -8,10 +8,8 @@ import email from 'images/email.svg';
 import google from 'images/google-cloud.svg';
 import ibm from 'images/ibm-ccr.svg';
 import jira from 'images/jira.svg';
-import kubernetes from 'images/kubernetes.svg';
 import logo from 'images/logo-tall.svg';
 import nexus from 'images/nexus.svg';
-import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
 import redhat from 'images/redhat.svg';
 import slack from 'images/slack.svg';
@@ -151,20 +149,6 @@ const integrationsList = {
             source: 'imageIntegrations',
             image: redhat,
             disabled: false
-        }
-    ],
-    orchestrators: [
-        {
-            label: 'Kubernetes',
-            image: kubernetes,
-            source: 'clusters',
-            type: 'KUBERNETES_CLUSTER'
-        },
-        {
-            label: 'OpenShift',
-            image: openshift,
-            source: 'clusters',
-            type: 'OPENSHIFT_CLUSTER'
         }
     ],
     plugins: [

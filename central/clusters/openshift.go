@@ -3,7 +3,6 @@ package clusters
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -35,15 +34,12 @@ func (*openshift) Render(cluster *storage.Cluster, _ []byte, opts RenderOptions)
 		"kubernetes/kubectl/sensor-netpol.yaml",
 		"kubernetes/kubectl/sensor-pod-security.yaml",
 		"kubernetes/kubectl/sensor-rbac.yaml",
+		"kubernetes/kubectl/upgrader-serviceaccount.yaml",
 		"openshift/kubectl/delete-sensor.sh",
 		"openshift/kubectl/sensor.sh",
 		"openshift/kubectl/sensor-image-setup.sh",
 		"openshift/kubectl/sensor-scc.yaml",
 	)
-
-	if features.SensorAutoUpgrade.Enabled() {
-		filenames.Add("kubernetes/kubectl/upgrader-serviceaccount.yaml")
-	}
 
 	if cluster.MonitoringEndpoint != "" {
 		filenames.Add(monitoringFilenames...)

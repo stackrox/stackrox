@@ -4,16 +4,14 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import PageHeader from 'Components/PageHeader';
 
-import ClustersModal from 'Containers/Integrations/Clusters/ClustersModal';
 import integrationsList from 'Containers/Integrations/integrationsList';
 import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import { actions as authActions } from 'reducers/auth';
 import { actions as apiTokenActions } from 'reducers/apitokens';
 import { actions as integrationActions } from 'reducers/integrations';
-import { actions as clusterActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
-import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
+import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import APITokensModal from './APITokens/APITokensModal';
 
 class IntegrationsPage extends Component {
@@ -39,7 +37,6 @@ class IntegrationsPage extends Component {
                 name: PropTypes.string.isRequired
             })
         ).isRequired,
-        clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         fetchAuthPlugins: PropTypes.func.isRequired,
@@ -48,7 +45,6 @@ class IntegrationsPage extends Component {
         fetchBackups: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
         fetchImageIntegrations: PropTypes.func.isRequired,
-        fetchClusters: PropTypes.func.isRequired,
         featureFlags: PropTypes.arrayOf(
             PropTypes.shape({
                 envVar: PropTypes.string.isRequired,
@@ -82,45 +78,12 @@ class IntegrationsPage extends Component {
             case 'notifiers':
                 this.props.fetchNotifiers();
                 break;
-            case 'clusters':
-                this.props.fetchClusters();
-                break;
             case 'backups':
                 this.props.fetchBackups();
                 break;
             default:
                 throw new Error(`Unknown source ${source}`);
         }
-    };
-
-    getClustersForOrchestrator = orchestrator => {
-        const { type } = orchestrator;
-        const clusters = this.props.clusters.filter(cluster => cluster.type === type);
-        return clusters;
-    };
-
-    // DEPRECATED: only show orchestrators section if ROX_SENSOR_AUTOUPGRADE not set
-    getOrchestratorsSection = orchestrators => {
-        const autoUpgradeEnabled = isBackendFeatureFlagEnabled(
-            this.props.featureFlags,
-            knownBackendFlags.ROX_SENSOR_AUTOUPGRADE,
-            true // enabled by default as of 29.0
-        );
-
-        if (autoUpgradeEnabled) {
-            return null;
-        }
-
-        return (
-            <section className="mb-6">
-                <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                    Orchestrators &amp; Container Platforms
-                </h2>
-                <div className="flex flex-col items-center w-full">
-                    <div className="flex flex-wrap w-full -mx-6 p-3">{orchestrators}</div>
-                </div>
-            </section>
-        );
     };
 
     openIntegrationModal = integrationCategory => {
@@ -148,8 +111,6 @@ class IntegrationsPage extends Component {
         switch (source) {
             case 'authPlugins':
                 return this.props.authPlugins;
-            case 'clusters':
-                return this.getClustersForOrchestrator(type);
             case 'authProviders':
                 if (type === 'apitoken') {
                     return this.props.apiTokens;
@@ -166,15 +127,6 @@ class IntegrationsPage extends Component {
         }
     };
 
-    renderClustersModal() {
-        return (
-            <ClustersModal
-                clusterType={this.state.selectedType}
-                onRequestClose={this.fetchEntitiesAndCloseModal}
-            />
-        );
-    }
-
     renderAPITokensModal() {
         return (
             <APITokensModal
@@ -187,10 +139,6 @@ class IntegrationsPage extends Component {
     renderIntegrationModal() {
         const { modalOpen, selectedSource, selectedType, selectedLabel } = this.state;
         if (!modalOpen) return null;
-
-        if (selectedSource === 'clusters') {
-            return this.renderClustersModal();
-        }
 
         if (selectedSource === 'authProviders' && selectedType === 'apitoken') {
             return this.renderAPITokensModal();
@@ -226,11 +174,7 @@ class IntegrationsPage extends Component {
                     key={tile.label}
                     integration={tile}
                     onClick={this.openIntegrationModal}
-                    numIntegrations={
-                        source !== 'orchestrators'
-                            ? this.findIntegrations(tile.source, tile.type).length
-                            : this.getClustersForOrchestrator(tile).length
-                    }
+                    numIntegrations={this.findIntegrations(tile.source, tile.type).length}
                 />
             );
         });
@@ -241,10 +185,6 @@ class IntegrationsPage extends Component {
         const authPlugins = this.renderIntegrationTiles('authPlugins');
         const authProviders = this.renderIntegrationTiles('authProviders');
         const backups = this.renderIntegrationTiles('backups');
-
-        // DEPRECATED: only show orchestrators section if ROX_SENSOR_AUTOUPGRADE not set
-        const orchestrators = this.renderIntegrationTiles('orchestrators');
-        const orchestratorsSection = this.getOrchestratorsSection(orchestrators);
 
         return (
             <div className="h-full flex flex-col md:w-full bg-base-200" id="integrationsPage">
@@ -262,8 +202,6 @@ class IntegrationsPage extends Component {
                             </div>
                         </div>
                     </section>
-
-                    {orchestratorsSection}
 
                     <section className="mb-6">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
@@ -311,7 +249,6 @@ const mapStateToProps = createStructuredSelector({
     authPlugins: selectors.getAuthPlugins,
     authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
-    clusters: selectors.getClusters,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
@@ -326,7 +263,6 @@ const mapDispatchToProps = dispatch => ({
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
     fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),
     fetchScanners: () => dispatch(integrationActions.fetchScanners.request()),
-    fetchClusters: () => dispatch(clusterActions.fetchClusters.request()),
     fetchAuthPlugins: () => dispatch(integrationActions.fetchAuthPlugins.request())
 });
 

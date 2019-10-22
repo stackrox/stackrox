@@ -103,7 +103,6 @@ import (
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -290,6 +289,8 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		sacService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
+		sensorUpgradeService.Singleton(),
+		sensorUpgradeControlService.Singleton(),
 		serviceAccountService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
@@ -299,23 +300,13 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		backupRestoreService.Singleton(),
 	}
 
-	var autoTriggerUpgrades *concurrency.Flag
-	if features.SensorAutoUpgrade.Enabled() {
-		autoTriggerUpgrades = sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
-	}
+	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
 	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton(), autoTriggerUpgrades); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
-	}
-
-	if features.SensorAutoUpgrade.Enabled() {
-		servicesToRegister = append(servicesToRegister,
-			sensorUpgradeService.Singleton(),
-			sensorUpgradeControlService.Singleton(),
-		)
 	}
 
 	return servicesToRegister

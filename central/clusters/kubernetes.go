@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -44,11 +43,8 @@ func (*kubernetes) Render(cluster *storage.Cluster, ca []byte, opts RenderOption
 		"kubernetes/kubectl/sensor-netpol.yaml",
 		"kubernetes/kubectl/delete-sensor.sh",
 		"kubernetes/kubectl/sensor-pod-security.yaml",
+		"kubernetes/kubectl/upgrader-serviceaccount.yaml",
 	)
-
-	if features.SensorAutoUpgrade.Enabled() {
-		filenames.Add("kubernetes/kubectl/upgrader-serviceaccount.yaml")
-	}
 
 	if cluster.MonitoringEndpoint != "" {
 		filenames.Add(monitoringFilenames...)

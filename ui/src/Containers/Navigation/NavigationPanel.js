@@ -18,7 +18,6 @@ const navLinks = [
     {
         text: 'Clusters',
         to: clustersPath.replace('/:clusterId', '')
-        // enabled by default as of 29.0
     },
     {
         text: 'System Policies',

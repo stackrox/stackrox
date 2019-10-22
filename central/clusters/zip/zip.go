@@ -18,7 +18,6 @@ import (
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -154,12 +153,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Ignore the param unless the feature flag is enabled.
 	var createUpgraderSA bool
-	if features.SensorAutoUpgrade.Enabled() {
-		if params.CreateUpgraderSA == nil {
-			createUpgraderSA = createUpgraderSADefault
-		} else {
-			createUpgraderSA = *params.CreateUpgraderSA
-		}
+	if params.CreateUpgraderSA == nil {
+		createUpgraderSA = createUpgraderSADefault
+	} else {
+		createUpgraderSA = *params.CreateUpgraderSA
 	}
 
 	baseFiles, err := deployer.Render(cluster, ca, clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA})

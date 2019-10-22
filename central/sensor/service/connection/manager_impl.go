@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc/codes"
@@ -80,12 +79,10 @@ func (m *manager) initializeUpgradeControllers() error {
 
 func (m *manager) Start(clusterManager ClusterManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.clusters = clusterManager
-	if features.SensorAutoUpgrade.Enabled() {
-		m.autoTriggerUpgrades = autoTriggerUpgrades
-		err := m.initializeUpgradeControllers()
-		if err != nil {
-			return errors.Wrap(err, "failed to initialize upgrade controllers")
-		}
+	m.autoTriggerUpgrades = autoTriggerUpgrades
+	err := m.initializeUpgradeControllers()
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize upgrade controllers")
 	}
 
 	go m.updateClusterContactTimesForever()
@@ -127,17 +124,15 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 	oldConnection = connAndUpgradeCtrl.connection
 	upgradeCtrl := connAndUpgradeCtrl.upgradeCtrl
 
-	if features.SensorAutoUpgrade.Enabled() {
-		if upgradeCtrl == nil {
-			upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters, m.autoTriggerUpgrades)
-			if err != nil {
-				return nil, err
-			}
+	if upgradeCtrl == nil {
+		upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters, m.autoTriggerUpgrades)
+		if err != nil {
+			return nil, err
 		}
-		upgradeCtrlErrSig := upgradeCtrl.RegisterConnection(ctx, newConnection)
-		if upgradeCtrlErrSig != nil {
-			go newConnection.stopSig.SignalWhen(upgradeCtrlErrSig, concurrency.Never())
-		}
+	}
+	upgradeCtrlErrSig := upgradeCtrl.RegisterConnection(ctx, newConnection)
+	if upgradeCtrlErrSig != nil {
+		go newConnection.stopSig.SignalWhen(upgradeCtrlErrSig, concurrency.Never())
 	}
 	m.connectionsByClusterID[clusterID] = connectionAndUpgradeController{
 		connection:  newConnection,
@@ -193,9 +188,6 @@ func (m *manager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID stri
 	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
 		return nil, err
 	}
-	if !features.SensorAutoUpgrade.Enabled() {
-		return nil, errors.New("cannot process check in from upgrader; auto-upgrade feature flag disabled")
-	}
 	upgradeCtrl, err := m.getOrCreateUpgradeCtrl(clusterID)
 	if err != nil {
 		return nil, err
@@ -206,9 +198,6 @@ func (m *manager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID stri
 func (m *manager) ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromSensorRequest) error {
 	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
 		return err
-	}
-	if !features.SensorAutoUpgrade.Enabled() {
-		return errors.New("cannot process check in from sensor; auto-upgrade feature flag disabled")
 	}
 	upgradeCtrl, err := m.getOrCreateUpgradeCtrl(clusterID)
 	if err != nil {
