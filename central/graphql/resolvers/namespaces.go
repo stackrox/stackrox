@@ -40,6 +40,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `imageComponentCount: Int!`),
 		schema.AddExtraResolver("Namespace", `vulns: [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Namespace", `vulnCount: Int!`),
+		schema.AddExtraResolver("Namespace", `vulnCounter: VulnerabilityCounter!`),
 		schema.AddExtraResolver("Namespace", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Namespace", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Namespace", "cluster: Cluster!"),
@@ -387,6 +388,19 @@ func (resolver *namespaceResolver) VulnCount(ctx context.Context) (int32, error)
 		return 0, err
 	}
 	return int32(len(vulns)), nil
+}
+
+func (resolver *namespaceResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCounter")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	if err != nil {
+		return nil, err
+	}
+	return mapImagesToVulnerabilityCounter(images), nil
 }
 
 func (resolver *namespaceResolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {

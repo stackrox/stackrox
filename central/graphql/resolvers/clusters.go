@@ -54,6 +54,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `imageComponentCount: Int!`),
 		schema.AddExtraResolver("Cluster", `vulns: [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `vulnCount: Int!`),
+		schema.AddExtraResolver("Cluster", `vulnCounter: VulnerabilityCounter!`),
 		schema.AddExtraResolver("Cluster", `policies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policyStatus: PolicyStatus!`),
@@ -519,6 +520,19 @@ func (resolver *clusterResolver) VulnCount(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 	return int32(len(vulns)), nil
+}
+
+func (resolver *clusterResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCounter")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getQuery())
+	if err != nil {
+		return nil, err
+	}
+	return mapImagesToVulnerabilityCounter(images), nil
 }
 
 func (resolver *clusterResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {

@@ -34,6 +34,7 @@ func init() {
 			"topVuln: EmbeddedVulnerability",
 			"vulns: [EmbeddedVulnerability]!",
 			"vulnCount: Int!",
+			"vulnCounter: VulnerabilityCounter!",
 			"lastScanned: Time",
 			"images: [Image!]!",
 			"imageCount: Int!",
@@ -210,6 +211,11 @@ func (eicr *EmbeddedImageScanComponentResolver) Vulns(ctx context.Context) ([]*E
 // VulnCount resolves the number of vulnerabilities contained in the image component.
 func (eicr *EmbeddedImageScanComponentResolver) VulnCount(ctx context.Context) (int32, error) {
 	return int32(len(eicr.data.GetVulns())), nil
+}
+
+// VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
+func (eicr *EmbeddedImageScanComponentResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
+	return mapVulnsToVulnerabilityCounter(eicr.data.GetVulns()), nil
 }
 
 // Images are the images that contain the CVE/Vulnerability.

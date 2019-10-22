@@ -24,6 +24,7 @@ func init() {
 		schema.AddExtraResolver("Image", "topVuln: EmbeddedVulnerability"),
 		schema.AddExtraResolver("Image", "vulns: [EmbeddedVulnerability]!"),
 		schema.AddExtraResolver("Image", "vulnCount: Int!"),
+		schema.AddExtraResolver("Image", "vulnCounter: VulnerabilityCounter!"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
 	)
 }
@@ -156,6 +157,11 @@ func (resolver *imageResolver) VulnCount(ctx context.Context) (int32, error) {
 		}
 	}
 	return int32(cves.Cardinality()), nil
+}
+
+// VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
+func (resolver *imageResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
+	return mapImagesToVulnerabilityCounter([]*storage.Image{resolver.data}), nil
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {
