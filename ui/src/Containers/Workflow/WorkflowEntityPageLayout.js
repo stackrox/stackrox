@@ -7,6 +7,8 @@ import { parseURL } from 'modules/URLReadWrite';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import searchContext from 'Containers/searchContext';
 import searchContexts from 'constants/searchContexts';
+import entityLabels from 'messages/entity';
+import useEntityName from 'hooks/useEntityName';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
 
@@ -42,11 +44,15 @@ const WorkflowEntityPageLayout = ({ location }) => {
         : {
               opacity: 0
           };
+
+    const subheaderText = entityLabels[pageEntityType];
+    const { entityName = '' } = useEntityName(pageEntityType, pageEntityId);
+
     return (
         <workflowStateContext.Provider value={pageState}>
             <searchContext.Provider value={pageSearch}>
                 <div className="flex flex-1 flex-col bg-base-200" style={style}>
-                    <PageHeader header="Temp Header" subheader="temp subheader" />
+                    <PageHeader header={entityName} subHeader={subheaderText} />
                     <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
                     <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-hidden">
                         <div
