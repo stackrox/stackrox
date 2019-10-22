@@ -669,6 +669,13 @@ commands:
           command: |
             source .circleci/create-cluster.sh && wait-for-cluster
 
+  remove-existing-stackrox-resources:
+    steps:
+      - run:
+          name: Remove all the existing StackRox resources (they can exist when Circle restarts a container)
+          command: |
+            kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait || true
+
   deploy-webhook-server:
     steps:
       - run:
@@ -713,6 +720,7 @@ commands:
       - setup-gcp
       - attach-gke-cluster:
           cluster-id: << parameters.cluster-id >>
+      - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
       - *setupLicense
 
@@ -1630,6 +1638,7 @@ jobs:
 
       - attach-gke-cluster:
           cluster-id: k8s-tests
+      - remove-existing-stackrox-resources
 
       - run:
           name: Export Trusted CA file
@@ -1856,7 +1865,7 @@ jobs:
       - setup-gcp
       - attach-gke-cluster:
           cluster-id: upgrade-test
-
+      - remove-existing-stackrox-resources
       - run:
           name: Checkout 2.4.16.4
           command: git checkout 2.4.16.4
@@ -2076,6 +2085,7 @@ jobs:
       - setup-gcp
       - attach-gke-cluster:
           cluster-id: scale-test
+      - remove-existing-stackrox-resources
 
       - *setupHelm
       - *setupGoogleAppCreds
