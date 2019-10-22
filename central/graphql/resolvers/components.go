@@ -40,6 +40,7 @@ func init() {
 			"imageCount: Int!",
 			"deployments: [Deployment!]!",
 			"deploymentCount: Int!",
+			"priority: Int!",
 		}),
 		schema.AddExtraResolver("ImageScan", `components: [EmbeddedImageScanComponent!]!`),
 		schema.AddQuery("imageComponent(id: ID): EmbeddedImageScanComponent"),
@@ -160,6 +161,11 @@ func (eicr *EmbeddedImageScanComponentResolver) Name(ctx context.Context) string
 // Version gives the version of the image component.
 func (eicr *EmbeddedImageScanComponentResolver) Version(ctx context.Context) string {
 	return eicr.data.GetVersion()
+}
+
+// Priority returns the priority of the component.
+func (eicr *EmbeddedImageScanComponentResolver) Priority(ctx context.Context) int32 {
+	return int32(eicr.data.GetPriority())
 }
 
 // LayerIndex is the index in the parent image.
