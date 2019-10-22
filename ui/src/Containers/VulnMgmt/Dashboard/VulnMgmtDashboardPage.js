@@ -13,7 +13,7 @@ import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
 import MostRecentVulnerabilities from '../widgets/MostRecentVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
-import ClustersWithMostK8sIstioVulnerabilities from '../widgets/ClustersWithMostK8sIstioVulnerabilities';
+import ClustersWithMostK8sVulnerabilities from '../widgets/ClustersWithMostK8sVulnerabilities';
 
 const VulnDashboardPage = () => {
     const headerComponents = (
@@ -34,7 +34,7 @@ const VulnDashboardPage = () => {
             <MostRecentVulnerabilities />
             <MostCommonVulnerabilities />
             <DeploymentsWithMostSeverePolicyViolations />
-            <ClustersWithMostK8sIstioVulnerabilities />
+            <ClustersWithMostK8sVulnerabilities />
         </DashboardLayout>
     );
 };

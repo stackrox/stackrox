@@ -4,19 +4,23 @@ import { Link } from 'react-router-dom';
 
 const NumberedGrid = ({ data }) => {
     const list = data.map(({ text, subText, url, component }, index) => {
-        const className = `inline-block w-full py-2 px-2 border-b border-base-300 ${
+        const className = `inline-block w-full py-2 px-2 border-b  border-r border-base-300 ${
             url ? 'hover:bg-base-200' : ''
         }`;
         let content = (
             <div className="flex flex-1 items-center">
-                <span className="text-base-600 self-center text-2xl tracking-widest pl-4 pr-4 font-600">
+                <span className="text-base-600 self-center text-2xl tracking-widest pl-2 pr-4 font-600">
                     {index + 1}
                 </span>
-                <div className="flex flex-col">
+                <div className="flex flex-1 flex-col">
                     {subText && (
-                        <div className="text-base-500 italic font-600 text-sm mb-1">{subText}</div>
+                        <div className="text-base-500 italic font-600 text-sm mb-1 whitespace-no-wrap truncate">
+                            {subText}
+                        </div>
                     )}
-                    <div className="text-base-600 font-600 text-base">{text}</div>
+                    <div className="text-base-600 font-600 text-base mr-4 whitespace-no-wrap truncate">
+                        {text}
+                    </div>
                     {component && <div className="mt-2">{component}</div>}
                 </div>
             </div>
