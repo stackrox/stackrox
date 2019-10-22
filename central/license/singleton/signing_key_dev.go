@@ -7,12 +7,12 @@ import (
 
 	"github.com/stackrox/rox/pkg/license/validator"
 	"github.com/stackrox/rox/pkg/timeutil"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
-	utils.Must(
-		validatorInstance.RegisterSigningKey(
+
+	f1 := func(v validator.Validator) error {
+		return v.RegisterSigningKey(
 			validator.EC256,
 			// projects/stackrox-dev/locations/us-west2/keyRings/licensing-dev/cryptoKeys/dev-license/cryptoKeyVersions/4
 			[]byte{
@@ -33,10 +33,12 @@ func init() {
 				MaxNodeLimit:                            50,
 				BuildFlavors:                            []string{"development"},
 				AllowNoDeploymentEnvironmentRestriction: true,
-			}),
+			})
+	}
 
-		// OLD VERSION - NO LONGER USED FOR NEW LICENSES
-		validatorInstance.RegisterSigningKey(
+	// OLD VERSION - NO LONGER USED FOR NEW LICENSES
+	f2 := func(v validator.Validator) error {
+		return v.RegisterSigningKey(
 			validator.EC256,
 			// projects/stackrox-dev/locations/us-west2/keyRings/licensing-dev/cryptoKeys/dev-license/cryptoKeyVersions/3
 			[]byte{
@@ -57,6 +59,8 @@ func init() {
 				MaxNodeLimit:                            50,
 				BuildFlavors:                            []string{"development"},
 				AllowNoDeploymentEnvironmentRestriction: true,
-			}),
-	)
+			})
+	}
+
+	registerSigningKeyRegisterFuncs(f1, f2)
 }
