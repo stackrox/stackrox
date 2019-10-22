@@ -25,9 +25,11 @@ func GetMockImages() []*storage.Image {
 						Version: "1.1.1",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
+								Cve:  "CVE-2019-0001",
 								Cvss: 5,
 							},
 							{
+								Cve:  "CVE-2019-0002",
 								Cvss: 5,
 							},
 						},
@@ -37,9 +39,11 @@ func GetMockImages() []*storage.Image {
 						Version: "1.1.1",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
+								Cve:  "CVE-2019-0001",
 								Cvss: 5,
 							},
 							{
+								Cve:  "CVE-2019-0002",
 								Cvss: 5,
 							},
 						},

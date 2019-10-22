@@ -1,4 +1,6 @@
 import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
+import io.stackrox.proto.api.v1.ImageServiceGrpc
+import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.RiskServiceGrpc
 import io.stackrox.proto.api.v1.RiskServiceOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
@@ -43,6 +45,10 @@ class Services extends BaseService {
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
       }
+
+    static getImageClient() {
+        return ImageServiceGrpc.newBlockingStub(getChannel())
+    }
 
     static getIntegrationClient() {
         return ImageIntegrationServiceGrpc.newBlockingStub(getChannel())
@@ -224,7 +230,7 @@ class Services extends BaseService {
             def integration = getIntegrationClient().postImageIntegration(ImageIntegration.newBuilder().
                 setName(AUTO_REGISTERED_SCANNER_INTEGRATION).
                 setType("clairify").
-                setCategories(0, ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER).
+                addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER).
                 setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder().
                     setEndpoint("https://scanner.stackrox:8080").
                     build()
@@ -279,6 +285,13 @@ class Services extends BaseService {
         } catch (Exception e) {
             return e.toString().contains("NOT_FOUND")
         }
+    }
+
+    static scanImage(String image) {
+        return getImageClient().scanImage(
+                ImageServiceOuterClass.ScanImageRequest.newBuilder()
+                         .setImageName(image).build()
+        )
     }
 
     static requestBuildImageScan(String registry, String remote, String tag) {

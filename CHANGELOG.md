@@ -10,6 +10,8 @@ All notable changes to this project that require documentation updates will be d
   that can be used to extract the bundle files to a custom directory. (ROX-2529)
 - The `roxctl central debug dump` subcommand now accepts an optional `--output-dir <dir>` flag
   that can be used to specify a custom directory for the debug zip file.
+- RHSA vulnerabilities will now be displayed with the highest CVSS score from the CVEs it references. The referenced CVEs will
+  now also be available.
 
 ## [31.0]
 ### Changed

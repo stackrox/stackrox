@@ -3,9 +3,9 @@ package imagecomponent
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/stackrox/rox/central/risk/multipliers"
+	"github.com/stackrox/rox/central/risk/scorer/vulns"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -27,21 +27,7 @@ func NewVulnerabilities() Multiplier {
 
 // Score takes an image component and evaluates its risk based on vulnerabilties
 func (c *vulnerabilitiesMultiplier) Score(ctx context.Context, imageComponent *storage.EmbeddedImageScanComponent) *storage.Risk_Result {
-	var cvssSum float32
-	cvssMin := math.MaxFloat64
-	cvssMax := -math.MaxFloat64
-	numCVEs := 0
-	for _, vuln := range imageComponent.GetVulns() {
-		// Sometimes if the vuln doesn't have a CVSS score then it is unknown and we'll exclude it during scoring
-		if vuln.GetCvss() == 0 {
-			continue
-		}
-		cvssMax = math.Max(float64(vuln.GetCvss()), cvssMax)
-		cvssMin = math.Min(float64(vuln.GetCvss()), cvssMin)
-		cvssSum += vuln.GetCvss() * vuln.GetCvss() / 10
-		numCVEs++
-	}
-
+	min, max, sum, numCVEs := vulns.ProcessComponent(imageComponent)
 	if numCVEs == 0 {
 		return nil
 	}
@@ -51,9 +37,9 @@ func (c *vulnerabilitiesMultiplier) Score(ctx context.Context, imageComponent *s
 		Factors: []*storage.Risk_Result_Factor{
 			{
 				Message: fmt.Sprintf("Image Component %s version %s contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f",
-					imageComponent.GetName(), imageComponent.GetVersion(), numCVEs, cvssMin, cvssMax),
+					imageComponent.GetName(), imageComponent.GetVersion(), numCVEs, min, max),
 			},
 		},
-		Score: multipliers.NormalizeScore(cvssSum, vulnSaturation, vulnMaxScore),
+		Score: multipliers.NormalizeScore(sum, vulnSaturation, vulnMaxScore),
 	}
 }
