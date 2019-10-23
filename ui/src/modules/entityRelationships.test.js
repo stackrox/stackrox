@@ -3,7 +3,7 @@ import relationshipTypes from 'constants/relationshipTypes';
 import useCaseTypes from 'constants/useCaseTypes';
 import { getEntityTypesByRelationship } from './entityRelationships';
 
-it('gets direct Matches relationships', () => {
+it('gets Matches relationships', () => {
     let matches = getEntityTypesByRelationship(
         entityTypes.CLUSTER,
         relationshipTypes.MATCHES,
@@ -17,6 +17,17 @@ it('gets direct Matches relationships', () => {
         useCaseTypes.VULN_MANAGEMENT
     );
     expect(matches).not.toContain(entityTypes.CONTROL);
+
+    // should also get extended matches
+    matches = getEntityTypesByRelationship(
+        entityTypes.CVE,
+        relationshipTypes.MATCHES,
+        useCaseTypes.VULN_MANAGEMENT
+    );
+    expect(matches).toContain(entityTypes.IMAGE);
+    expect(matches).toContain(entityTypes.COMPONENT);
+    expect(matches).toContain(entityTypes.DEPLOYMENT);
+    expect(matches).not.toContain(entityTypes.NAMESPACE);
 });
 
 it('gets direct Children relationships', () => {
@@ -81,4 +92,18 @@ it('gets Contain relationships', () => {
     // should have grandchild's matches
     expect(contains).toContain(entityTypes.POLICY);
     expect(contains).not.toContain(entityTypes.CONTROL);
+
+    contains = getEntityTypesByRelationship(
+        entityTypes.IMAGE,
+        relationshipTypes.CONTAINS,
+        useCaseTypes.VULN_MANAGEMENT
+    );
+    // should have direct child
+    expect(contains).toContain(entityTypes.COMPONENT);
+    // should not contain itself
+    expect(contains).not.toContain(entityTypes.IMAGE);
+    // should have grandchild
+    expect(contains).toContain(entityTypes.CVE);
+    // should not have granchild's extended matches
+    expect(contains).not.toContain(entityTypes.DEPLOYMENT);
 });

@@ -1,24 +1,16 @@
 import React, { useContext } from 'react';
 import { ExternalLink } from 'react-feather';
 import { format } from 'date-fns';
-import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import LabelChip from 'Components/LabelChip';
-import TileList from 'Components/TileList';
 import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
-import { generateURLTo } from 'modules/URLReadWrite';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
-
-function getPushEntityType(workflowState, entityType) {
-    const url = generateURLTo(workflowState, entityType);
-
-    return url;
-}
+import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
 const VulnMgmtCveOverview = ({ data }) => {
     const workflowState = useContext(workflowStateContext);
@@ -90,26 +82,18 @@ const VulnMgmtCveOverview = ({ data }) => {
         }
     ];
 
-    const tiles =
-        deploymentCount || imageCount || componentCount
-            ? [
-                  {
-                      count: deploymentCount,
-                      label: pluralize('Deployment', deploymentCount),
-                      url: getPushEntityType(workflowState, entityTypes.DEPLOYMENT)
-                  },
-                  {
-                      count: imageCount,
-                      label: pluralize('Image', imageCount),
-                      url: getPushEntityType(workflowState, entityTypes.IMAGE)
-                  },
-                  {
-                      count: componentCount,
-                      label: pluralize('Component', componentCount),
-                      url: getPushEntityType(workflowState, entityTypes.COMPONENT)
-                  }
-              ]
-            : [];
+    function getCountData(entityType) {
+        switch (entityType) {
+            case entityTypes.DEPLOYMENT:
+                return deploymentCount;
+            case entityTypes.IMAGE:
+                return imageCount;
+            case entityTypes.COMPONENT:
+                return componentCount;
+            default:
+                return 0;
+        }
+    }
 
     const severityStyle = getSeverityChipType(cvss);
 
@@ -172,21 +156,11 @@ const VulnMgmtCveOverview = ({ data }) => {
                         </div>
                     </CollapsibleSection>
                 </div>
-
-                <div className="bg-primary-300 h-full relative">
-                    {/* TODO: decide if this should be added as custom tailwind class, or a "component" CSS class in app.css */}
-                    <h2
-                        style={{
-                            position: 'relative',
-                            left: '-0.5rem',
-                            width: 'calc(100% + 0.5rem)'
-                        }}
-                        className="my-4 p-2 bg-primary-700 text-base text-base-100 rounded-l"
-                    >
-                        Related entities
-                    </h2>
-                    <TileList items={tiles} title="Contains" />
-                </div>
+                <RelatedEntitiesSideList
+                    entityType={entityTypes.CVE}
+                    workflowState={workflowState}
+                    getCountData={getCountData}
+                />
             </div>
         </div>
     );

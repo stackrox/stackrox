@@ -56,7 +56,8 @@ const entityRelationshipMap = {
     [entityTypes.CLUSTER]: {
         children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
         parents: [],
-        matches: [entityTypes.CONTROL]
+        matches: [entityTypes.CONTROL],
+        extendedMatches: [entityTypes.POLICY]
     },
     [entityTypes.NODE]: {
         children: [],
@@ -66,7 +67,8 @@ const entityRelationshipMap = {
     [entityTypes.NAMESPACE]: {
         children: [entityTypes.DEPLOYMENT, entityTypes.SERVICE_ACCOUNT, entityTypes.SECRET],
         parents: [entityTypes.CLUSTER],
-        matches: []
+        matches: [],
+        extendedMatches: [entityTypes.POLICY]
     },
     [entityTypes.DEPLOYMENT]: {
         children: [entityTypes.IMAGE],
@@ -91,13 +93,8 @@ const entityRelationshipMap = {
     [entityTypes.CVE]: {
         children: [],
         parents: [],
-        matches: [
-            entityTypes.COMPONENT,
-            entityTypes.DEPLOYMENT,
-            entityTypes.IMAGE,
-            entityTypes.NAMESPACE,
-            entityTypes.POLICY
-        ]
+        matches: [entityTypes.COMPONENT],
+        extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT]
     },
     [entityTypes.CONTROL]: {
         children: [],
@@ -134,7 +131,14 @@ const entityRelationshipMap = {
 // helper functions
 const getChildren = entityType => entityRelationshipMap[entityType].children;
 const getParents = entityType => entityRelationshipMap[entityType].parents;
-const getMatches = entityType => entityRelationshipMap[entityType].matches;
+const getPureMatches = entityType => entityRelationshipMap[entityType].matches;
+const getMatches = entityType => {
+    const relationships = [];
+    if (entityRelationshipMap[entityType].extendedMatches)
+        relationships.push(...entityRelationshipMap[entityType].extendedMatches);
+    relationships.push(...entityRelationshipMap[entityType].matches);
+    return relationships;
+};
 
 // function to recursively get inclusive 'contains' relationships (inferred)
 // this includes all generations of children AND inferred (matches of children down the chain) relationships
@@ -144,7 +148,7 @@ const getContains = entityType => {
     const children = getChildren(entityType);
     if (children) {
         children.forEach(child => {
-            const childMatches = getMatches(child);
+            const childMatches = getPureMatches(child);
             const childContains = getContains(child);
             relationships.push(child, ...childMatches, ...childContains);
         });
@@ -164,11 +168,11 @@ const isContainedInferred = (entityType1, entityType2) =>
     !!isContained(entityType1, entityType2) &&
     !isChild(entityType1, entityType2);
 
-// wrapper function returns a list of entities, given an entitytype, relationship, and context
+// wrapper function returns a list of entities, given an entitytype, relationship, and useCase
 // e.g.
-// f(type, relationship, context)
+// f(type, relationship, useCase)
 // f(cluster, contains, config management), f(deployment, parents, config management)
-export const getEntityTypesByRelationship = (entityType, relationship, context) => {
+export const getEntityTypesByRelationship = (entityType, relationship, useCase) => {
     let entities = [];
     if (relationship === relationshipTypes.CONTAINS) {
         entities = getContains(entityType);
@@ -179,7 +183,7 @@ export const getEntityTypesByRelationship = (entityType, relationship, context) 
     } else if (relationship === relationshipTypes.CHILDREN) {
         entities = getChildren(entityType);
     }
-    return entities.filter(entity => useCaseEntityMap[context].includes(entity));
+    return entities.filter(entity => useCaseEntityMap[useCase].includes(entity));
 };
 
 export default {

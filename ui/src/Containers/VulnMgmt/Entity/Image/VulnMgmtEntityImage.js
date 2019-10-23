@@ -29,6 +29,11 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext }) => {
                         digest
                     }
                 }
+                vulnCounter {
+                    all {
+                        total
+                    }
+                }
                 topVuln {
                     cvss
                     scoreVersion
