@@ -12,6 +12,11 @@ All notable changes to this project that require documentation updates will be d
   that can be used to specify a custom directory for the debug zip file.
 - RHSA vulnerabilities will now be displayed with the highest CVSS score from the CVEs it references. The referenced CVEs will
   now also be available.
+- The format of collector tags changed from `<version>` to `<version>-latest`. This tag references a *mutable* image in
+  canonical upstream repository (`collector.stackrox.io/collector`) that will get updated whenever kernel modules/eBPF
+  probes for new Linux kernel versions become available. This decreases the need to rely on module downloads via
+  the internet. If you configure StackRox to pull collector images from your private registry, you need to configure a
+  periodic mirroring to take advantage of this effect.
 
 ## [31.0]
 ### Changed

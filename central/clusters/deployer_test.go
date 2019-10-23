@@ -106,6 +106,9 @@ func TestImagePaths(t *testing.T) {
 	collectorImage := "CollectorImage"
 	collectorRegistry := "CollectorRegistry"
 	collectorVersion := version.GetCollectorVersion()
+	if collectorVersion != "" {
+		collectorVersion = "1.2.3" // not necessary for functionality, but test output looks weird o/w.
+	}
 	var cases = []struct {
 		name                      string
 		mainImage                 string
@@ -118,14 +121,14 @@ func TestImagePaths(t *testing.T) {
 			name:                      "defaults",
 			mainImage:                 "stackrox.io/main",
 			expectedMainRegistry:      "https://stackrox.io",
-			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s", collectorVersion),
+			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
 			expectedCollectorRegistry: "https://collector.stackrox.io",
 		},
 		{
 			name:                      "airgap with generated collector image",
 			mainImage:                 "some.other.registry/main",
 			expectedMainRegistry:      "https://some.other.registry",
-			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s", collectorVersion),
+			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
 			expectedCollectorRegistry: "https://some.other.registry",
 		},
 		{
@@ -133,7 +136,7 @@ func TestImagePaths(t *testing.T) {
 			mainImage:                 "some.other.registry/main",
 			expectedMainRegistry:      "https://some.other.registry",
 			collectorImage:            "some.other.registry/collector",
-			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s", collectorVersion),
+			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
 			expectedCollectorRegistry: "https://some.other.registry",
 		},
 		{
@@ -141,7 +144,7 @@ func TestImagePaths(t *testing.T) {
 			mainImage:                 "some.rhel.registry.stackrox/main",
 			expectedMainRegistry:      "https://some.rhel.registry.stackrox",
 			collectorImage:            "collector.stackrox.io/collector",
-			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s", collectorVersion),
+			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
 			expectedCollectorRegistry: "https://collector.stackrox.io",
 		},
 	}

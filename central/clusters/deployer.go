@@ -1,6 +1,7 @@
 package clusters
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -57,16 +58,16 @@ func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.
 }
 
 func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage string) (*storage.ImageName, error) {
-	collectorVersion := version.GetCollectorVersion()
+	collectorTag := fmt.Sprintf("%s-latest", version.GetCollectorVersion())
 	var collectorImageName *storage.ImageName
 	if collectorImage != "" {
 		var err error
-		collectorImageName, err = generateCollectorImageNameFromString(collectorImage, collectorVersion)
+		collectorImageName, err = generateCollectorImageNameFromString(collectorImage, collectorTag)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		collectorImageName = defaultimages.GenerateNamedImageFromMainImage(mainImageName, collectorVersion, defaultimages.Collector)
+		collectorImageName = defaultimages.GenerateNamedImageFromMainImage(mainImageName, collectorTag, defaultimages.Collector)
 	}
 	return collectorImageName, nil
 }
