@@ -26,12 +26,13 @@ const VulnMgmtCveOverview = ({ data }) => {
     const {
         cve,
         cvss,
+        envImpact,
         vectors,
         isFixable,
         summary,
         link,
         lastScanned,
-        published,
+        publishedOn,
         lastModified,
         scoreVersion,
         componentCount,
@@ -77,11 +78,11 @@ const VulnMgmtCveOverview = ({ data }) => {
         },
         {
             key: 'Published',
-            value: published
+            value: publishedOn ? format(publishedOn, dateTimeFormat) : 'N/A'
         },
         {
             key: 'Last modified',
-            value: lastModified
+            value: lastModified ? format(lastModified, dateTimeFormat) : 'N/A'
         },
         {
             key: 'Scoring version',
@@ -121,7 +122,7 @@ const VulnMgmtCveOverview = ({ data }) => {
                             <Widget
                                 header="Details"
                                 headerComponents={linkToNVD}
-                                className="mx-4 bg-base-100 h-48 mb-4 flex-grow"
+                                className="ml-4 mr-2 bg-base-100 h-48 mb-4 flex-grow"
                             >
                                 <div className="flex flex-col w-full">
                                     <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
@@ -129,13 +130,24 @@ const VulnMgmtCveOverview = ({ data }) => {
                                             <span>{cve}</span>
                                         </div>
                                         <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
-                                            <span className="px-6 py-4 border-base-400 border-l">
+                                            {// eslint-disable-next-line eqeqeq
+                                            envImpact == Number(envImpact) && (
+                                                <span className="px-4 py-6 border-base-400 border-l whitespace-no-wrap">
+                                                    <span>
+                                                        {' '}
+                                                        {`Env. Impact: ${(envImpact * 100).toFixed(
+                                                            0
+                                                        )}%`}
+                                                    </span>
+                                                </span>
+                                            )}
+                                            <span className="px-4 py-4 border-base-400 border-l">
                                                 <LabelChip
                                                     text={`CVSS ${cvss && cvss.toFixed(1)}`}
                                                     type={severityStyle}
                                                 />
                                             </span>
-                                            <span className="px-6 py-4 border-base-400 border-l">
+                                            <span className="px-4 py-4 border-base-400 border-l">
                                                 {isFixable ? (
                                                     <LabelChip text="Fixable" type="success" />
                                                 ) : (
@@ -148,12 +160,12 @@ const VulnMgmtCveOverview = ({ data }) => {
                                 </div>
                             </Widget>
                             <Metadata
-                                className="mx-4 min-w-48 bg-base-100 h-48 mb-4"
+                                className="mx-2 min-w-48 bg-base-100 h-48 mb-4"
                                 keyValuePairs={cvssScoreBreakdown}
                                 title="CVSS Score Breakdown"
                             />
                             <Metadata
-                                className="mx-4 min-w-48 bg-base-100 h-48 mb-4"
+                                className="mx-2 min-w-48 bg-base-100 h-48 mb-4"
                                 keyValuePairs={scanningDetails}
                                 title="Scanning Details"
                             />

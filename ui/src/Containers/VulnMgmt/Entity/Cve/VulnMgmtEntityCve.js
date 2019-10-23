@@ -14,7 +14,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext }) => {
             result: vulnerability(id: $id) {
                 id: cve
                 cve
-                # Env. impact
+                envImpact
                 cvss
                 scoreVersion
                 link # for View on NVD website
@@ -31,8 +31,8 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext }) => {
                         vector
                     }
                 }
-                # published
-                # lastModified
+                publishedOn
+                lastModified
                 summary
                 fixedByVersion
                 isFixable

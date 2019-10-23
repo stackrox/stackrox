@@ -55,13 +55,13 @@ const renderName = data => {
 
 const Metadata = ({ keyValuePairs, title, labels, annotations, whitelists, secrets, ...rest }) => {
     const keyValueList = keyValuePairs.map(({ key, value }) => (
-        <li className="border-b border-base-300 px-4 py-2" key={key}>
+        <li className="border-b border-base-300 py-2" key={key}>
             <span className="text-base-700 font-600 mr-2">{key}:</span>
             {value}
         </li>
     ));
 
-    const keyValueClasses = `flex-1 list-reset border-base-300 ${
+    const keyValueClasses = `flex-1 list-reset border-base-300 overflow-hidden px-2 ${
         labels || annotations || whitelists || secrets ? ' border-r' : ''
     }`;
 
