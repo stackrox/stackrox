@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.2.3
+    - image: docker.io/stackrox/apollo-ci:0.2.4
       auth:
         username: $DOCKER_IO_PULL_USERNAME
         password: $DOCKER_IO_PULL_PASSWORD
@@ -1184,6 +1184,9 @@ jobs:
           name: Prepare UI tree state file
           command: |
             git log -n 1 --pretty=format:%H -- ui/ >/tmp/ui-tree-state
+            # Add the node version to the UI tree state, since a different node version
+            # should bust the cache.
+            node -v >>/tmp/ui-tree-state
 
       - restore_cache:
           name: Restoring UI build cache
