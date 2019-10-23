@@ -9,6 +9,7 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -99,8 +100,13 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q rawQuery) ([]*E
 
 // Helper function that actually runs the queries and produces the resolvers from the images.
 func components(ctx context.Context, root *Resolver, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Run search on images.
-	images, err := root.ImageDataStore.SearchRawImages(ctx, query)
+	images, err := imageLoader.FromQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -32,16 +33,19 @@ func init() {
 // Images returns GraphQL resolvers for all images
 func (resolver *Resolver) Images(ctx context.Context, args paginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Images")
-
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
+
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapImages(
-		resolver.ImageDataStore.SearchRawImages(ctx, q))
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.wrapImages(imageLoader.FromQuery(ctx, q))
 }
 
 // ImageCount returns count of all images across deployments
@@ -50,35 +54,40 @@ func (resolver *Resolver) ImageCount(ctx context.Context, args rawQuery) (int32,
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
+
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.ImageDataStore.Search(ctx, q)
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return imageLoader.CountFromQuery(ctx, q)
 }
 
 // Image returns a graphql resolver for the identified image, if it exists
 func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID }) (*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Image")
-
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapImage(
-		resolver.ImageDataStore.GetImage(ctx, string(args.Sha)))
+
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	image, err := imageLoader.FromID(ctx, string(args.Sha))
+	return resolver.wrapImage(image, image != nil, err)
 }
 
 // Deployments returns the deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Deployments")
-
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
+
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -95,6 +104,7 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context) (int32, erro
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
+
 	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).ProtoQuery()
 	results, err := resolver.root.DeploymentDataStore.Search(ctx, query)
 	if err != nil {
@@ -165,9 +175,13 @@ func (resolver *imageResolver) VulnCounter(ctx context.Context) (*VulnerabilityC
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {
-	alert, ok, err := resolver.ImageDataStore.GetImage(ctx, id)
-	if err != nil || !ok {
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
 		return nil
 	}
-	return alert
+	image, err := imageLoader.FromID(ctx, id)
+	if err != nil {
+		return nil
+	}
+	return image
 }

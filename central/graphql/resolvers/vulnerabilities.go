@@ -8,6 +8,7 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -94,8 +95,14 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q rawQuery) ([]*E
 
 // Helper function that actually runs the queries and produces the resolvers from the images.
 func vulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*EmbeddedVulnerabilityResolver, error) {
+	// Get the image loader from the context.
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Run search on images.
-	images, err := root.ImageDataStore.SearchRawImages(ctx, query)
+	images, err := imageLoader.FromQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -327,6 +334,7 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) e
 
 // Map the images that matched a query to the vulnerabilities it contains.
 func mapImagesToVulnerabilityResolvers(root *Resolver, images []*storage.Image, query *v1.Query) ([]*EmbeddedVulnerabilityResolver, error) {
+	query = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 	pred, err := vulnPredicateFactory.GeneratePredicate(query)
 	if err != nil {
 		return nil, err

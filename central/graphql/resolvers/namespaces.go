@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -323,7 +324,11 @@ func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx, q))
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapImages(imageLoader.FromQuery(ctx, q))
 }
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context) ([]*EmbeddedImageScanComponentResolver, error) {

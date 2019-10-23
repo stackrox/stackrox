@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -441,7 +442,11 @@ func (resolver *clusterResolver) Images(ctx context.Context, args rawQuery) ([]*
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getConjunctionQuery(q)))
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapImages(imageLoader.FromQuery(ctx, resolver.getConjunctionQuery(q)))
 }
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) {
@@ -450,12 +455,11 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) 
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
-	q := resolver.getQuery()
-	results, err := resolver.root.ImageDataStore.Search(ctx, q)
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return imageLoader.CountFromQuery(ctx, resolver.getQuery())
 }
 
 func (resolver *clusterResolver) ImageComponents(ctx context.Context) ([]*EmbeddedImageScanComponentResolver, error) {

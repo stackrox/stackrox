@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -324,9 +325,12 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args rawQuery) (
 
 	imageShas := resolver.getImageShas(ctx)
 	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return resolver.root.wrapImages(resolver.root.ImageDataStore.SearchRawImages(ctx,
-		search.NewConjunctionQuery(imageShaQuery, q)))
+	return resolver.root.wrapImages(imageLoader.FromQuery(ctx, search.NewConjunctionQuery(imageShaQuery, q)))
 }
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context) (int32, error) {
