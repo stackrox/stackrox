@@ -3,6 +3,10 @@ import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 
 const DateTimeField = ({ date }) => {
+    if (!date) {
+        return '—';
+    }
+
     const datePart = format(date, 'MM/DD/YYYY');
     const timePart = format(date, 'h:mm:ssA');
 

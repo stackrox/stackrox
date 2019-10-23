@@ -47,6 +47,7 @@ func init() {
 			"severity: String!",
 			"publishedOn: Time",
 			"lastModified: Time",
+			"impactScore: Float!",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String): [EmbeddedVulnerability!]!"),
@@ -294,6 +295,17 @@ func (evr *EmbeddedVulnerabilityResolver) PublishedOn(ctx context.Context) (*gra
 // LastModified is the time the vulnerability was last modified (ref: NVD).
 func (evr *EmbeddedVulnerabilityResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetLastModified())
+}
+
+// ImpactScore returns the impact score of the vulnerability.
+func (evr *EmbeddedVulnerabilityResolver) ImpactScore(ctx context.Context) (float64, error) {
+	if val := evr.data.GetCvssV3(); val != nil {
+		return float64(evr.data.GetCvssV3().GetImpactScore()), nil
+	}
+	if val := evr.data.GetCvssV2(); val != nil {
+		return float64(evr.data.GetCvssV2().GetImpactScore()), nil
+	}
+	return float64(0.0), errors.New("impact score not available")
 }
 
 func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) error {

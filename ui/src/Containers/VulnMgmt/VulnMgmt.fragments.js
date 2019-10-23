@@ -27,13 +27,13 @@ export const CVE_LIST_FRAGMENT = gql`
         cve
         cvss
         scoreVersion
-        # Env. Impact
-        # Impact score
+        envImpact
+        impactScore
         summary
         fixedByVersion
         isFixable
         lastScanned
-        # published
+        publishedOn
         deploymentCount
         imageCount
         componentCount

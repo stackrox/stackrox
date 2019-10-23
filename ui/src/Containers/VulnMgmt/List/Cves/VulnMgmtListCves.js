@@ -64,20 +64,30 @@ export function getCveTableColumns(workflowState) {
             accessor: 'cvss',
             id: 'cvss'
         },
-        // TODO: enable this column after data is available from the API
-        // {
-        //     Header: `Env. Impact`,
-        //     headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        //     className: `w-1/8 ${defaultColumnClassName}`,
-        //     accessor: 'envImpact'
-        // },
-        // TODO: enable this column after data is available from the API
-        // {
-        //     Header: `Impact score`,
-        //     headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        //     className: `w-1/8 ${defaultColumnClassName}`,
-        //     accessor: 'impactScore'
-        // },
+        {
+            Header: `Env. Impact`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { envImpact } = original;
+                // eslint-disable-next-line eqeqeq
+                return envImpact == Number(envImpact)
+                    ? `${(envImpact * 100).toFixed(0)}% affected`
+                    : '-';
+            },
+            accessor: 'envImpact'
+        },
+        {
+            Header: `Impact score`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { impactScore } = original;
+                // eslint-disable-next-line eqeqeq
+                return impactScore == Number(impactScore) ? impactScore.toFixed(1) : '-';
+            },
+            accessor: 'impactScore'
+        },
         {
             Header: `Scanned`,
             headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
@@ -89,17 +99,17 @@ export function getCveTableColumns(workflowState) {
             accessor: 'lastScanned',
             id: 'lastScanned'
         },
-        // TODO: enable this column after data is available from the API
-        // {
-        //     Header: `Published`,
-        //     headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        //     className: `w-1/8 ${defaultColumnClassName}`,
-        //     Cell: ({ original }) => {
-        //         const { published } = original;
-        //         return <DateTimeField text={published} />;
-        //     },
-        //     id: 'published'
-        // },
+        {
+            Header: `Published`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { publishedOn } = original;
+                return <DateTimeField date={publishedOn} />;
+            },
+            accessor: 'publishedOn',
+            id: 'published'
+        },
         {
             Header: `Deployments`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
@@ -124,8 +134,8 @@ export function getCveTableColumns(workflowState) {
         },
         {
             Header: `Images`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { imageCount, cve } = original;
@@ -173,7 +183,11 @@ export function getCveTableColumns(workflowState) {
 
 export function renderCveDescription(row) {
     const { original } = row;
-    return <div className="px-2 pb-4 pt-1">{original.summary || 'No description available.'}</div>;
+    return (
+        <div className="px-2 pb-4 pt-1 text-base-500">
+            {original.summary || 'No description available.'}
+        </div>
+    );
 }
 
 export const defaultCveSort = [
