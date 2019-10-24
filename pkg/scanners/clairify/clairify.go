@@ -80,9 +80,6 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	}
 
 	client := client.NewWithClient(endpoint, true, httpClient)
-	if err := client.Ping(); err != nil {
-		return nil, err
-	}
 	scanner := &clairify{
 		client:                client,
 		conf:                  conf,
