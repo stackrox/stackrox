@@ -7,6 +7,7 @@ import TileList from 'Components/TileList';
 import Widget from 'Components/Widget';
 import entityTypes from 'constants/entityTypes';
 import MostRecentVulnerabilities from 'Containers/VulnMgmt/widgets/MostRecentVulnerabilities';
+import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 import WorkflowStateMgr from 'modules/WorkflowStateManager';
@@ -24,6 +25,7 @@ const VulnMgmtDeploymentOverview = ({ data }) => {
     const workflowState = useContext(workflowStateContext);
 
     const {
+        id,
         cluster,
         priority,
         namespace,
@@ -100,6 +102,9 @@ const VulnMgmtDeploymentOverview = ({ data }) => {
                             </div>
                             <div>
                                 <MostRecentVulnerabilities />
+                            </div>
+                            <div>
+                                <MostCommonVulnerabiltiesInDeployment deploymentId={id} />
                             </div>
                         </div>
                     </CollapsibleSection>

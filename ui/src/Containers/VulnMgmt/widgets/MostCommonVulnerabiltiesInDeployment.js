@@ -3,21 +3,19 @@ import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
 import sortBy from 'lodash/sortBy';
-import { getTime } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import { generateURLTo } from 'modules/URLReadWrite';
+import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
-import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
-import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
+import Widget from 'Components/Widget';
 
-const MOST_RECENT_VULNERABILITIES = gql`
-    query mostRecentVulnerabilities($query: String) {
+const MOST_COMMON_VULNERABILITIES = gql`
+    query mostCommonVulnerabilitiesInDeployment($query: String) {
         results: vulnerabilities(query: $query) {
             id: cve
             cve
@@ -26,32 +24,35 @@ const MOST_RECENT_VULNERABILITIES = gql`
             imageCount
             isFixable
             envImpact
-            lastScanned
+            deployments {
+                id
+            }
         }
     }
 `;
 
-const processData = (data, workflowState, limit) => {
-    const results = sortBy(data.results, [datum => getTime(new Date(datum.lastScanned))])
-        .splice(-limit) // @TODO: filter on the client side until we have pagination on Vulnerabilities
-        .reverse(); // @TODO: Remove when we have pagination on Vulnerabilities
+const processData = (data, workflowState, deploymentId, limit) => {
+    const results = sortBy(data.results, [datum => datum.imageCount])
+        .filter(
+            // test whether the given deployment appears in the list of vulnerabilities
+            cve =>
+                cve.deployments &&
+                cve.deployments.some(deployment => deployment.id === deploymentId)
+        )
+        .splice(-limit); // @TODO: filter on the client side until we have pagination on Vulnerabilities;
 
     // @TODO: remove JSX generation from processing data and into Numbered List function
     return getVulnerabilityChips(workflowState, results);
 };
 
-const MostRecentVulnerabilities = ({ entityContext, limit }) => {
-    const { loading, data = {} } = useQuery(MOST_RECENT_VULNERABILITIES, {
-        variables: {
-            query: queryService.entityContextToQueryString(entityContext)
-        }
-    });
+const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
+    const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES);
 
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState, limit);
+        const processedData = processData(data, workflowState, deploymentId, limit);
 
         content = (
             <div className="w-full">
@@ -65,7 +66,8 @@ const MostRecentVulnerabilities = ({ entityContext, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Recent Vulnerabilities"
+            bodyClassName="px-2"
+            header="Most Common Vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllUrl} />}
         >
             {content}
@@ -73,14 +75,13 @@ const MostRecentVulnerabilities = ({ entityContext, limit }) => {
     );
 };
 
-MostRecentVulnerabilities.propTypes = {
-    entityContext: PropTypes.shape({}),
+MostCommonVulnerabiltiesInDeployment.propTypes = {
+    deploymentId: PropTypes.string.isRequired,
     limit: PropTypes.number
 };
 
-MostRecentVulnerabilities.defaultProps = {
-    entityContext: {},
+MostCommonVulnerabiltiesInDeployment.defaultProps = {
     limit: 5
 };
 
-export default MostRecentVulnerabilities;
+export default MostCommonVulnerabiltiesInDeployment;
