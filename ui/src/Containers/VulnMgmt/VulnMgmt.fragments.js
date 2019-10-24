@@ -44,6 +44,28 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
     fragment deploymentListFields on Deployment {
         id
         name
+        vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            medium {
+                total
+                fixable
+            }
+            high {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
         vulnerabilities: vulns {
             cve
             cvss
@@ -89,13 +111,27 @@ export const IMAGE_LIST_FRAGMENT = gql`
                 name
             }
         }
-        # vulnCount {
-        #    total
-        #    fixable
-        #    low
-        #    medium
-        #    high
-        #    critical
-        # }
+        vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            medium {
+                total
+                fixable
+            }
+            high {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
     }
 `;

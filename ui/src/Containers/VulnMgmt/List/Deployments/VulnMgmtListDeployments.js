@@ -4,20 +4,16 @@ import gql from 'graphql-tag';
 
 import queryService from 'modules/queryService';
 import DateTimeField from 'Components/DateTimeField';
-import FixableCVECount from 'Components/FixableCVECount';
 import LabelChip from 'Components/LabelChip';
-import SeverityStackedPill from 'Components/visuals/SeverityStackedPill';
+import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLToFromTable } from 'modules/URLReadWrite';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { getLatestDatedItemByKey } from 'utils/dateUtils';
-import { getSeverityCounts } from 'utils/vulnerabilityUtils';
-import { severities } from 'constants/severities';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
 export const defaultDeploymentSort = [
@@ -65,53 +61,10 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
-                    const { vulnerabilities, id } = original;
-                    if (!vulnerabilities || vulnerabilities.length === 0) return 'No CVEs';
-                    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                    workflowStateMgr.pushListItem(id).pushList(entityTypes.CVE);
-                    const url = generateURL(workflowStateMgr.workflowState);
-
-                    const fixables = vulnerabilities.filter(vuln => vuln.isFixable);
-                    const counts = getSeverityCounts(vulnerabilities);
-                    const tooltipBody = (
-                        <div>
-                            <div>
-                                {counts[severities.CRITICAL_SEVERITY].total} Critical CVEs (
-                                {counts[severities.CRITICAL_SEVERITY].fixable} Fixable)
-                            </div>
-                            <div>
-                                {counts[severities.HIGH_SEVERITY].total} High CVEs (
-                                {counts[severities.HIGH_SEVERITY].fixable} Fixable)
-                            </div>
-                            <div>
-                                {counts[severities.MEDIUM_SEVERITY].total} Medium CVEs (
-                                {counts[severities.MEDIUM_SEVERITY].fixable} Fixable)
-                            </div>
-                            <div>
-                                {counts[severities.LOW_SEVERITY].total} Low CVEs (
-                                {counts[severities.LOW_SEVERITY].fixable} Fixable)
-                            </div>
-                        </div>
-                    );
-
-                    return (
-                        <div className="flex items-center">
-                            <FixableCVECount
-                                cves={vulnerabilities.length}
-                                fixable={fixables.length}
-                                orientation="vertical"
-                                url={url}
-                                pdf={pdf}
-                            />
-                            <SeverityStackedPill
-                                critical={counts[severities.CRITICAL_SEVERITY].total}
-                                high={counts[severities.HIGH_SEVERITY].total}
-                                medium={counts[severities.MEDIUM_SEVERITY].total}
-                                low={counts[severities.LOW_SEVERITY].total}
-                                tooltip={{ title: 'Criticality Distribution', body: tooltipBody }}
-                            />
-                        </div>
-                    );
+                    const { vulnCounter, id } = original;
+                    if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
+                    const url = generateURLToFromTable(workflowState, id, entityTypes.CVE);
+                    return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
                 }
             },
             {
@@ -137,10 +90,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                       Cell: ({ original, pdf }) => {
                           const { failingPolicyCount, id } = original;
                           if (failingPolicyCount === 0) return 'No failing policies';
-
-                          const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                          workflowStateMgr.pushListItem(id).pushList(entityTypes.POLICY);
-                          const url = generateURL(workflowStateMgr.workflowState);
+                          const url = generateURLToFromTable(workflowState, id, entityTypes.POLICY);
                           return (
                               <TableCellLink
                                   pdf={pdf}
@@ -177,11 +127,12 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                       accessor: 'clusterName',
                       Cell: ({ original, pdf }) => {
                           const { clusterName, clusterId, id } = original;
-                          const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                          workflowStateMgr
-                              .pushListItem(id)
-                              .pushRelatedEntity(entityTypes.CLUSTER, clusterId);
-                          const url = generateURL(workflowStateMgr.workflowState);
+                          const url = generateURLToFromTable(
+                              workflowState,
+                              id,
+                              entityTypes.CLUSTER,
+                              clusterId
+                          );
                           return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                       }
                   },
@@ -194,11 +145,12 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                       accessor: 'namespace',
                       Cell: ({ original, pdf }) => {
                           const { namespace, namespaceId, id } = original;
-                          const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                          workflowStateMgr
-                              .pushListItem(id)
-                              .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId);
-                          const url = generateURL(workflowStateMgr.workflowState);
+                          const url = generateURLToFromTable(
+                              workflowState,
+                              id,
+                              entityTypes.NAMESPACE,
+                              namespaceId
+                          );
                           return <TableCellLink pdf={pdf} url={url} text={namespace} />;
                       }
                   },
@@ -209,9 +161,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                 Cell: ({ original, pdf }) => {
                     const { imageCount, id } = original;
                     if (imageCount === 0) return 'No images';
-                    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                    workflowStateMgr.pushListItem(id).pushList(entityTypes.IMAGE);
-                    const url = generateURL(workflowStateMgr.workflowState);
+                    const url = generateURLToFromTable(workflowState, id, entityTypes.IMAGE);
                     return (
                         <TableCellLink
                             pdf={pdf}

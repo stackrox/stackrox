@@ -215,3 +215,14 @@ export function generateURLTo(workflowState, entityType, entityId) {
     }
     return generateURL(mgr.workflowState);
 }
+
+export function generateURLToFromTable(workflowState, rowEntityId, entityType, entityId) {
+    const mgr = new WorkflowStateMgr(workflowState);
+    mgr.pushListItem(rowEntityId);
+    if (!entityId) {
+        mgr.pushList(entityType);
+    } else {
+        mgr.pushRelatedEntity(entityType, entityId);
+    }
+    return generateURL(mgr.workflowState);
+}

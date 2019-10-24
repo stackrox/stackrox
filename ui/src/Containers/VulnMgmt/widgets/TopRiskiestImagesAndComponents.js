@@ -1,23 +1,18 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { Link } from 'react-router-dom';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
-import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
-import { severities } from 'constants/severities';
 import queryService from 'modules/queryService';
 
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLTo } from 'modules/URLReadWrite';
 
-import Button from 'Components/Button';
+import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import TextSelect from 'Components/TextSelect';
 import Widget from 'Components/Widget';
-import FixableCVECount from 'Components/FixableCVECount';
-import SeverityStackedPill from 'Components/visuals/SeverityStackedPill';
+import CVEStackedPill from 'Components/CVEStackedPill';
 import NumberedList from 'Components/NumberedList';
 
 const TOP_RISKIEST_IMAGES = gql`
@@ -27,11 +22,27 @@ const TOP_RISKIEST_IMAGES = gql`
             name {
                 fullName
             }
-            vulnCount
-            vulns {
-                cve
-                isFixable
-                cvss
+            vulnCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                medium {
+                    total
+                    fixable
+                }
+                high {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
             }
         }
     }
@@ -43,87 +54,31 @@ const TOP_RISKIEST_COMPONENTS = gql`
             id
             name
             version
-            vulnCount
-            vulns {
-                cve
-                isFixable
-                cvss
+            vulnCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                medium {
+                    total
+                    fixable
+                }
+                high {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
             }
         }
     }
 `;
-
-const ViewAllButton = ({ url }) => {
-    return (
-        <Link to={url} className="no-underline">
-            <Button className="btn-sm btn-base" type="button" text="View All" />
-        </Link>
-    );
-};
-
-const getViewAllURL = workflowState => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityTypes.IMAGE);
-    const url = generateURL(workflowStateMgr.workflowState);
-    return url;
-};
-
-const getSingleEntityURL = (workflowState, entityType, id) => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityType).pushListItem(id);
-    const url = generateURL(workflowStateMgr.workflowState);
-    return url;
-};
-
-const getSeverityCountsAndTooltip = vulns => {
-    const criticalCves = vulns.filter(
-        vuln => getSeverityByCvss(vuln.cvss) === severities.CRITICAL_SEVERITY
-    );
-    const highCves = vulns.filter(
-        vuln => getSeverityByCvss(vuln.cvss) === severities.HIGH_SEVERITY
-    );
-    const mediumCves = vulns.filter(
-        vuln => getSeverityByCvss(vuln.cvss) === severities.MEDIUM_SEVERITY
-    );
-    const lowCves = vulns.filter(vuln => getSeverityByCvss(vuln.cvss) === severities.LOW_SEVERITY);
-
-    const fixableCriticalCves = criticalCves.filter(vuln => !!vuln.isFixable);
-    const fixableHighCves = highCves.filter(vuln => !!vuln.isFixable);
-    const fixableMediumCves = mediumCves.filter(vuln => !!vuln.isFixable);
-    const fixableLowCves = lowCves.filter(vuln => !!vuln.isFixable);
-
-    const tooltip = {
-        title: 'Criticality Distribution',
-        body: (
-            <div>
-                <div>
-                    {criticalCves.length} Critical CVES
-                    {!!fixableCriticalCves.length && ` (${fixableCriticalCves.length} Fixable)`}
-                </div>
-                <div>
-                    {highCves.length} High CVES
-                    {!!fixableHighCves.length && ` (${fixableHighCves.length} Fixable)`}
-                </div>
-                <div>
-                    {mediumCves.length} Medium CVEs
-                    {!!fixableMediumCves.length && ` (${fixableMediumCves.length} Fixable)`}
-                </div>
-                <div>
-                    {lowCves.length} Low CVES
-                    {!!fixableLowCves.length && ` (${fixableLowCves.length} Fixable)`}
-                </div>
-            </div>
-        )
-    };
-
-    return {
-        critical: criticalCves.length,
-        high: highCves.length,
-        medium: mediumCves.length,
-        low: lowCves.length,
-        tooltip
-    };
-};
 
 const getTextByEntityType = (entityType, data) => {
     switch (entityType) {
@@ -136,28 +91,13 @@ const getTextByEntityType = (entityType, data) => {
 };
 
 const processData = (data, entityType, workflowState) => {
-    const results = data.results.map(({ id, vulnCount, vulns, ...rest }) => {
+    const results = data.results.map(({ id, vulnCounter, ...rest }) => {
         const text = getTextByEntityType(entityType, { ...rest });
-        const cvesCount = vulnCount;
-        const fixableCvesCount = vulns.filter(vuln => vuln.isFixable).length;
-        const { critical, high, medium, low, tooltip } = getSeverityCountsAndTooltip(vulns);
+        const url = generateURLTo(workflowState, entityType, id);
         return {
             text,
-            url: getSingleEntityURL(workflowState, entityType, id),
-            component: (
-                <>
-                    <div className="mr-4">
-                        <FixableCVECount cves={cvesCount} fixable={fixableCvesCount} />
-                    </div>
-                    <SeverityStackedPill
-                        critical={critical}
-                        high={high}
-                        medium={medium}
-                        low={low}
-                        tooltip={tooltip}
-                    />
-                </>
-            )
+            url,
+            component: <CVEStackedPill vulnCounter={vulnCounter} url={url} horizontal />
         };
     });
     return results.splice(0, 8); // @TODO: Remove when we have pagination on image components
@@ -223,13 +163,14 @@ const TopRiskiestImagesAndComponents = ({ entityContext }) => {
         );
     }
 
+    const viewAllURL = generateURLTo(workflowState, entityTypes.IMAGE);
     return (
         <Widget
             className="h-full pdf-page"
             titleComponents={
                 <TextSelect value={selectedEntity} options={entities} onChange={onEntityChange} />
             }
-            headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}
+            headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
         </Widget>

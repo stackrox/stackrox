@@ -5,14 +5,12 @@ import pluralize from 'pluralize';
 import queryService from 'modules/queryService';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import TableCellLink from 'Components/TableCellLink';
-// import FixableCVECount from 'Components/FixableCVECount';
-// import SeverityStackedPill from 'Components/visuals/SeverityStackedPill';
+import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
 import { sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLToFromTable } from 'modules/URLReadWrite';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
@@ -31,40 +29,20 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/6 ${defaultColumnClassName}`,
             accessor: 'name.fullName'
         },
-        // TO DO: add back once vulnCounter goes in
-        // {
-        //     Header: `CVEs`,
-        //     headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        //     className: `w-1/8 ${defaultColumnClassName}`,
-        //     Cell: ({ original, pdf }) => {
-        //         const { vulnCounter, id } = original;
-        //         const workflowStateMgr = new WorkflowStateMgr(workflowState);
-        //         workflowStateMgr.pushListItem(id).pushList(entityTypes.CVE);
-        //         const url = generateURL(workflowStateMgr.workflowState);
-        //         const { critical, high, medium, low, fixable, total } = vulnCounter;
-        //         return (
-        //             <div className="flex w-full items-center">
-        //                 <FixableCVECount
-        //                     cves={total}
-        //                     fixable={fixable}
-        //                     orientation="vertical"
-        //                     url={url}
-        //                     pdf={pdf}
-        //                 />
-        //                 <SeverityStackedPill
-        //                     critical={critical}
-        //                     high={high}
-        //                     medium={medium}
-        //                     low={low}
-        //                 />
-        //             </div>
-        //         );
-        //     }
-        // },
+        {
+            Header: `CVEs`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const { vulnCounter, id } = original;
+                const url = generateURLToFromTable(workflowState, id, entityTypes.CVE);
+                return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
+            }
+        },
         {
             Header: `Top CVSS`,
-            headerClassName: `w-1 ${defaultHeaderClassName}`,
-            className: `w-1 ${defaultColumnClassName}`,
+            headerClassName: `w-10 ${defaultHeaderClassName}`,
+            className: `w-10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
                 const { cvss, scoreVersion } = topVuln;
@@ -100,9 +78,7 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, id } = original;
-                const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                workflowStateMgr.pushListItem(id).pushList(entityTypes.DEPLOYMENT);
-                const url = generateURL(workflowStateMgr.workflowState);
+                const url = generateURLToFromTable(workflowState, id, entityTypes.DEPLOYMENT);
                 const text = `${deploymentCount} ${pluralize('deployment', deploymentCount)}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
             }
@@ -115,9 +91,7 @@ export function getImageTableColumns(workflowState) {
                 const { scan, id } = original;
                 if (!scan) return '-';
                 const { components } = scan;
-                const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                workflowStateMgr.pushListItem(id).pushList(entityTypes.COMPONENT);
-                const url = generateURL(workflowStateMgr.workflowState);
+                const url = generateURLToFromTable(workflowState, id, entityTypes.COMPONENT);
                 const text = `${components.length} ${pluralize('component', components.length)}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
             }
