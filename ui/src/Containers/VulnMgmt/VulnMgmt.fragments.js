@@ -136,3 +136,43 @@ export const IMAGE_LIST_FRAGMENT = gql`
         }
     }
 `;
+
+export const NAMESPACE_LIST_FRAGMENT = gql`
+    fragment namespaceListFields on Namespace {
+        metadata {
+            id
+            clusterName
+            clusterId
+            priority
+            name
+        }
+        vulnCounter {
+            all {
+                fixable
+                total
+            }
+            critical {
+                fixable
+                total
+            }
+            high {
+                fixable
+                total
+            }
+            medium {
+                fixable
+                total
+            }
+            low {
+                fixable
+                total
+            }
+        }
+        deploymentCount
+        imageCount
+        policyCount
+        policyStatus {
+            status
+        }
+    }
+`;
