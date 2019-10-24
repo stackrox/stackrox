@@ -1,0 +1,172 @@
+[
+  {
+    "cve": {
+      "CVE_data_meta": {
+        "ID": "CVE-2019-1002100"
+      }
+    },
+    "impact": {
+      "baseMetricV2": {
+        "cvssV2": {
+          "baseScore": 4,
+          "accessVector": "NETWORK",
+          "accessComplexity": "LOW",
+          "authentication": "SINGLE",
+          "confidentialityImpact": "NONE",
+          "integrityImpact": "NONE",
+          "availabilityImpact": "PARTIAL"
+        },
+        "severity": "MEDIUM",
+        "exploitabilityScore": 8,
+        "impactScore": 2.9
+      },
+      "baseMetricV3": {
+        "cvssV3": {
+          "baseScore": 6.5,
+          "attackVector": "NETWORK",
+          "attackComplexity": "LOW",
+          "privilegesRequired": "LOW",
+          "userInteraction": "NONE",
+          "scope": "UNCHANGED",
+          "confidentialityImpact": "NONE",
+          "integrityImpact": "NONE",
+          "availabilityImpact": "HIGH"
+        },
+        "exploitabilityScore": 2.8,
+        "impactScore": 3.6
+      }
+    },
+    "publishedDate": "2019-04-01T14:29Z",
+    "configurations": {
+      "operator": "",
+      "nodes": [
+        {
+          "cpe_match": [
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:kubernetes:kubernetes:*:*:*:*:*:*:*:*",
+              "versionStartIncluding": "",
+              "versionEndIncluding": "",
+              "versionEndExcluding": "1.11.8"
+            },
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:kubernetes:kubernetes:*:*:*:*:*:*:*:*",
+              "versionStartIncluding": "1.12.0",
+              "versionEndIncluding": "",
+              "versionEndExcluding": "1.12.6"
+            },
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:kubernetes:kubernetes:*:*:*:*:*:*:*:*",
+              "versionStartIncluding": "1.13.0",
+              "versionEndIncluding": "",
+              "versionEndExcluding": "1.13.4"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "cve": {
+      "CVE_data_meta": {
+        "ID": "CVE-2019-1002101"
+      }
+    },
+    "impact": {
+      "baseMetricV2": {
+        "cvssV2": {
+          "baseScore": 5.8,
+          "accessVector": "NETWORK",
+          "accessComplexity": "MEDIUM",
+          "authentication": "NONE",
+          "confidentialityImpact": "NONE",
+          "integrityImpact": "PARTIAL",
+          "availabilityImpact": "PARTIAL"
+        },
+        "severity": "MEDIUM",
+        "exploitabilityScore": 8.6,
+        "impactScore": 4.9
+      },
+      "baseMetricV3": {
+        "cvssV3": {
+          "baseScore": 5.5,
+          "attackVector": "LOCAL",
+          "attackComplexity": "LOW",
+          "privilegesRequired": "NONE",
+          "userInteraction": "REQUIRED",
+          "scope": "UNCHANGED",
+          "confidentialityImpact": "NONE",
+          "integrityImpact": "HIGH",
+          "availabilityImpact": "NONE"
+        },
+        "exploitabilityScore": 1.8,
+        "impactScore": 3.6
+      }
+    },
+    "publishedDate": "2019-04-01T14:29Z",
+    "configurations": {
+      "operator": "",
+      "nodes": [
+        {
+          "cpe_match": [
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:kubernetes:kubernetes:*:*:*:*:*:*:*:*",
+              "versionStartIncluding": "1.11.0",
+              "versionEndIncluding": "",
+              "versionEndExcluding": "1.11.9"
+            },
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:kubernetes:kubernetes:*:*:*:*:*:*:*:*",
+              "versionStartIncluding": "1.12.0",
+              "versionEndIncluding": "",
+              "versionEndExcluding": "1.12.7"
+            },
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:kubernetes:kubernetes:*:*:*:*:*:*:*:*",
+              "versionStartIncluding": "1.13.0",
+              "versionEndIncluding": "",
+              "versionEndExcluding": "1.13.5"
+            },
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:kubernetes:kubernetes:1.14.0:*:*:*:*:*:*:*",
+              "versionStartIncluding": "",
+              "versionEndIncluding": "",
+              "versionEndExcluding": ""
+            }
+          ]
+        },
+        {
+          "cpe_match": [
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:redhat:openshift_container_platform:3.9:*:*:*:*:*:*:*",
+              "versionStartIncluding": "",
+              "versionEndIncluding": "",
+              "versionEndExcluding": ""
+            },
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:redhat:openshift_container_platform:3.10:*:*:*:*:*:*:*",
+              "versionStartIncluding": "",
+              "versionEndIncluding": "",
+              "versionEndExcluding": ""
+            },
+            {
+              "vulnerable": true,
+              "cpe23Uri": "cpe:2.3:a:redhat:openshift_container_platform:3.11:*:*:*:*:*:*:*",
+              "versionStartIncluding": "",
+              "versionEndIncluding": "",
+              "versionEndExcluding": ""
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

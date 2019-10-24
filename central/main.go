@@ -25,6 +25,7 @@ import (
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	configService "github.com/stackrox/rox/central/config/service"
+	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/debug/dump"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
@@ -103,6 +104,7 @@ import (
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -303,6 +305,11 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
 	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton(), autoTriggerUpgrades); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
+	}
+
+	if features.VulnMgmtUI.Enabled() && env.OfflineModeEnv.Setting() != "true" {
+		m := fetcher.SingletonManager()
+		go m.Fetch()
 	}
 
 	if devbuild.IsEnabled() {
