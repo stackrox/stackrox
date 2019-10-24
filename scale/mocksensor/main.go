@@ -186,13 +186,14 @@ func replaceImages(deployment *storage.Deployment) {
 
 func knownDockerContainerImage() *storage.ContainerImage {
 	nameIndex := getAndIncrementNameIndex()
-	remote := imageNames[nameIndex%len(imageNames)]
+	nameAndID := imageNames[nameIndex%len(imageNames)]
 	return &storage.ContainerImage{
+		Id: nameAndID.id,
 		Name: &storage.ImageName{
 			Registry: "docker.io",
-			Remote:   remote,
+			Remote:   nameAndID.name,
 			Tag:      "latest",
-			FullName: fmt.Sprintf("docker.io/%s", remote),
+			FullName: fmt.Sprintf("docker.io/%s", nameAndID.name),
 		},
 	}
 }
