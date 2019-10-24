@@ -18,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -180,18 +179,6 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 	return len(searchResults), nil
 }
 
-func containerIds(deployment *storage.Deployment) (ids []string) {
-	for _, container := range deployment.GetContainers() {
-		for _, instance := range container.GetInstances() {
-			containerID := containerid.ShortContainerIDFromInstance(instance)
-			if containerID != "" {
-				ids = append(ids, containerID)
-			}
-		}
-	}
-	return
-}
-
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	return ds.upsertDeployment(ctx, deployment, true)
@@ -232,7 +219,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Indicator)))
 
-	if err := ds.indicators.RemoveProcessIndicatorsOfStaleContainers(deleteIndicatorsCtx, deployment.GetId(), containerIds(deployment)); err != nil {
+	if err := ds.indicators.RemoveProcessIndicatorsOfStaleContainers(deleteIndicatorsCtx, deployment); err != nil {
 		log.Errorf("Failed to remove stale process indicators for deployment %s/%s: %s",
 			deployment.GetNamespace(), deployment.GetName(), err)
 	}

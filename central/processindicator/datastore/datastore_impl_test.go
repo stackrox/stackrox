@@ -116,6 +116,12 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*sto
 	boltResults, err := suite.storage.GetProcessIndicators()
 	suite.NoError(err)
 	suite.Len(boltResults, len(indicators))
+	for _, ind := range indicators {
+		ind.DeploymentStateTs = 0
+	}
+	for _, ind := range boltResults {
+		ind.DeploymentStateTs = 0
+	}
 	suite.ElementsMatch(boltResults, indicators)
 }
 
@@ -186,6 +192,24 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorAddOneByOne() {
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
+func generateIndicatorsWithTS(deploymentTSs map[string]int64, containerIDs []string) []*storage.ProcessIndicator {
+	var indicators []*storage.ProcessIndicator
+	for d, ts := range deploymentTSs {
+		for _, c := range containerIDs {
+			indicators = append(indicators, &storage.ProcessIndicator{
+				Id:           fmt.Sprintf("indicator_id_%s_%s", d, c),
+				DeploymentId: d,
+				Signal: &storage.ProcessSignal{
+					ContainerId:  fmt.Sprintf("%s_%s", d, c),
+					ExecFilePath: fmt.Sprintf("EXECFILE_%s_%s", d, c),
+				},
+				DeploymentStateTs: ts,
+			})
+		}
+	}
+	return indicators
+}
+
 func generateIndicators(deploymentIDs []string, containerIDs []string) []*storage.ProcessIndicator {
 	var indicators []*storage.ProcessIndicator
 	for _, d := range deploymentIDs {
@@ -228,16 +252,53 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentIDAgai
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerID() {
 	suite.setupDataStoreNoPruning()
 
-	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
+	indicators := generateIndicatorsWithTS(map[string]int64{"d1": 1234, "d2": 1234}, []string{"c1", "c2"})
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "d1", []string{"d1_c2"}))
+	deploy1 := &storage.Deployment{
+		Id: "d1",
+		Containers: []*storage.Container{
+			{
+				Instances: []*storage.ContainerInstance{
+					{
+						InstanceId: &storage.ContainerInstanceID{
+							Id: "d1_c2",
+						},
+					},
+				},
+			},
+		},
+		StateTimestamp: 1235,
+	}
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, deploy1))
 	suite.verifyIndicatorsAre(
 		append(generateIndicators([]string{"d1"}, []string{"c2"}), generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "d2", []string{"d2_c2"}))
-	suite.verifyIndicatorsAre(generateIndicators([]string{"d1", "d2"}, []string{"c2"})...)
+	deploy2 := &storage.Deployment{
+		Id:             "d2",
+		StateTimestamp: 1233,
+	}
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, deploy2))
+	suite.verifyIndicatorsAre(
+		append(generateIndicators([]string{"d1"}, []string{"c2"}), generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)...)
+
+	deploy2 = &storage.Deployment{
+		Id: "d2",
+		Containers: []*storage.Container{
+			{
+				Instances: []*storage.ContainerInstance{
+					{
+						InstanceId: &storage.ContainerInstanceID{
+							Id: "d2_c2",
+						},
+					},
+				},
+			},
+		},
+		StateTimestamp: 1233,
+	}
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, deploy2))
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerIDAgain() {
@@ -247,7 +308,10 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerIDAgain
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "d1", nil))
+	deploy1 := &storage.Deployment{
+		Id: "d1",
+	}
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, deploy1))
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
 }
 
@@ -456,10 +520,19 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByStaleContainers() 
 	storeMock.EXPECT().RemoveProcessIndicators(gomock.Any()).Times(0)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)
 
-	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasNoneCtx, "Joseph Rules", []string{})
+	deploy1 := &storage.Deployment{
+		Id:   uuid.NewV4().String(),
+		Name: "Joseph rules",
+	}
+
+	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasNoneCtx, deploy1)
 	suite.Error(err, "expected an error trying to write without permissions")
 
-	err = suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasReadCtx, "nfsiux", []string{})
+	deploy2 := &storage.Deployment{
+		Id:   uuid.NewV4().String(),
+		Name: "nsfiux",
+	}
+	err = suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasReadCtx, deploy2)
 	suite.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -469,6 +542,10 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByStaleContainers() {
 	storeMock.EXPECT().RemoveProcessIndicators(gomock.Any()).Return(nil)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
 
-	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, "eoiurvbf", []string{})
+	deploy1 := &storage.Deployment{
+		Id:   uuid.NewV4().String(),
+		Name: "eoiurvbf",
+	}
+	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, deploy1)
 	suite.NoError(err, "expected no error trying to write with permissions")
 }

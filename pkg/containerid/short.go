@@ -8,12 +8,13 @@ const (
 	collectorContainerIDLength = 12
 )
 
-// ShortContainerIDFromInstance returns a short container id from the given container instance.
-// It returns an empty string if the container id doesn't exist or is too short.
+// ShortContainerIDFromInstance returns a short container id from the given container instance. Container IDs that are
+// shorter than the length of a truncated container ID (12 hexadecimal characters) are returned without modification.
+// This is intended to facilitate testing, which often uses fake container IDs.
 func ShortContainerIDFromInstance(instance *storage.ContainerInstance) string {
 	id := instance.GetInstanceId().GetId()
-	if len(id) < collectorContainerIDLength {
-		return ""
+	if len(id) > collectorContainerIDLength {
+		id = id[:collectorContainerIDLength]
 	}
-	return id[:collectorContainerIDLength]
+	return id
 }

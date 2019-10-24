@@ -10,6 +10,7 @@ import (
 // ContainerMetadata is the container metadata that is stored per instance
 type ContainerMetadata struct {
 	DeploymentID  string
+	DeploymentTS  int64
 	PodID         string
 	ContainerName string
 	ContainerID   string

@@ -12,7 +12,7 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
-// Next available tag: 26
+// Next available tag: 28
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
@@ -39,6 +39,8 @@ message Deployment {
     bool host_network                          = 21;
     repeated Toleration tolerations            = 22;
     repeated PortConfig ports                  = 24;
+
+    int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\""]; // Internal use only
 }
 
 message ContainerImage {

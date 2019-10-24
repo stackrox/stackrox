@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/timestamp"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -106,13 +107,14 @@ func newWrap(meta metav1.Object, kind, registryOverride string) *DeploymentWrap 
 	return &DeploymentWrap{
 		registryOverride: registryOverride,
 		Deployment: &storage.Deployment{
-			Id:          string(meta.GetUID()),
-			Name:        meta.GetName(),
-			Type:        kind,
-			Namespace:   stringutils.OrDefault(meta.GetNamespace(), "default"),
-			Labels:      meta.GetLabels(),
-			Annotations: meta.GetAnnotations(),
-			Created:     createdTime,
+			Id:             string(meta.GetUID()),
+			Name:           meta.GetName(),
+			Type:           kind,
+			Namespace:      stringutils.OrDefault(meta.GetNamespace(), "default"),
+			Labels:         meta.GetLabels(),
+			Annotations:    meta.GetAnnotations(),
+			Created:        createdTime,
+			StateTimestamp: int64(timestamp.Now()),
 		},
 	}
 }

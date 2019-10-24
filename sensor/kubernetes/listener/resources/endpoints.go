@@ -101,6 +101,7 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 
 			result.AddContainerID(id, clusterentities.ContainerMetadata{
 				DeploymentID:  w.GetId(),
+				DeploymentTS:  w.GetStateTimestamp(),
 				PodID:         podID,
 				ContainerName: c.GetName(),
 				ContainerID:   id,

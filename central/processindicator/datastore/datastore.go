@@ -24,7 +24,7 @@ type DataStore interface {
 	AddProcessIndicator(context.Context, *storage.ProcessIndicator) error
 	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
 	RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error
-	RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deploymentID string, currentContainerIDs []string) error
+	RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deployment *storage.Deployment) error
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
 
 	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error

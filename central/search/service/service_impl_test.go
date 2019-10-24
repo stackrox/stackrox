@@ -97,7 +97,7 @@ func TestAutocomplete(t *testing.T) {
 
 	mockIndicators := mocks.NewMockDataStore(mockCtrl)
 	// This gets called as a side effect of `UpsertDeployment`.
-	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())

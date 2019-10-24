@@ -110,7 +110,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	require.NoError(t, err)
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).Return((error)(nil))
+	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).Return((error)(nil))
 
 	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
 
@@ -139,7 +139,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	ctrl := gomock.NewController(t)
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).Return((error)(nil))
+	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).Return((error)(nil))
 
 	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
 

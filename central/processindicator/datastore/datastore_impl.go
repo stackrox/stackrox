@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/debug"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
@@ -183,7 +185,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(ctx context.Context
 	return ds.removeMatchingIndicators(results)
 }
 
-func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deploymentID string, currentContainerIDs []string) error {
+func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deployment *storage.Deployment) error {
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -191,9 +193,13 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(ctx context.Co
 	}
 
 	mustConjunction := &v1.ConjunctionQuery{
-		Queries: []*v1.Query{pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()},
+		Queries: []*v1.Query{
+			pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deployment.GetId()).ProtoQuery(),
+			pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.DeploymentStateTS, fmt.Sprintf("<=%d", deployment.GetStateTimestamp())).ProtoQuery(),
+		},
 	}
 
+	currentContainerIDs := containerIds(deployment)
 	queries := make([]*v1.Query, 0, len(currentContainerIDs))
 	for _, containerID := range currentContainerIDs {
 		queries = append(queries, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ContainerID, pkgSearch.ExactMatchString(containerID)).ProtoQuery())
@@ -329,4 +335,16 @@ func (ds *datastoreImpl) buildIndex() error {
 	}
 	log.Info("[STARTUP] Successfully indexed process indicators")
 	return nil
+}
+
+func containerIds(deployment *storage.Deployment) (ids []string) {
+	for _, container := range deployment.GetContainers() {
+		for _, instance := range container.GetInstances() {
+			containerID := containerid.ShortContainerIDFromInstance(instance)
+			if containerID != "" {
+				ids = append(ids, containerID)
+			}
+		}
+	}
+	return
 }

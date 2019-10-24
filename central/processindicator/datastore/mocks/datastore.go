@@ -131,17 +131,17 @@ func (mr *MockDataStoreMockRecorder) RemoveProcessIndicatorsByDeployment(ctx, id
 }
 
 // RemoveProcessIndicatorsOfStaleContainers mocks base method
-func (m *MockDataStore) RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deploymentID string, currentContainerIDs []string) error {
+func (m *MockDataStore) RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deployment *storage.Deployment) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveProcessIndicatorsOfStaleContainers", ctx, deploymentID, currentContainerIDs)
+	ret := m.ctrl.Call(m, "RemoveProcessIndicatorsOfStaleContainers", ctx, deployment)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveProcessIndicatorsOfStaleContainers indicates an expected call of RemoveProcessIndicatorsOfStaleContainers
-func (mr *MockDataStoreMockRecorder) RemoveProcessIndicatorsOfStaleContainers(ctx, deploymentID, currentContainerIDs interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) RemoveProcessIndicatorsOfStaleContainers(ctx, deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicatorsOfStaleContainers", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessIndicatorsOfStaleContainers), ctx, deploymentID, currentContainerIDs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicatorsOfStaleContainers", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessIndicatorsOfStaleContainers), ctx, deployment)
 }
 
 // RemoveProcessIndicators mocks base method

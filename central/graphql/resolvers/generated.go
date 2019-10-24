@@ -363,6 +363,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"priority: Int!",
 		"replicas: Int!",
 		"serviceAccount: String!",
+		"stateTimestamp: Int!",
 		"tolerations: [Toleration]!",
 		"type: String!",
 	}))
@@ -702,6 +703,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"containerName: String!",
 		"containerStartTime: Time",
 		"deploymentId: String!",
+		"deploymentStateTs: Int!",
 		"id: ID!",
 		"namespace: String!",
 		"podId: String!",
@@ -3677,6 +3679,12 @@ func (resolver *deploymentResolver) ServiceAccount(ctx context.Context) string {
 	return value
 }
 
+func (resolver *deploymentResolver) StateTimestamp(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetStateTimestamp()
+	return int32(value)
+}
+
 func (resolver *deploymentResolver) Tolerations(ctx context.Context) ([]*tolerationResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetTolerations()
@@ -6183,6 +6191,11 @@ func (resolver *processIndicatorResolver) ContainerStartTime(ctx context.Context
 func (resolver *processIndicatorResolver) DeploymentId(ctx context.Context) string {
 	value := resolver.data.GetDeploymentId()
 	return value
+}
+
+func (resolver *processIndicatorResolver) DeploymentStateTs(ctx context.Context) int32 {
+	value := resolver.data.GetDeploymentStateTs()
+	return int32(value)
 }
 
 func (resolver *processIndicatorResolver) Id(ctx context.Context) graphql.ID {

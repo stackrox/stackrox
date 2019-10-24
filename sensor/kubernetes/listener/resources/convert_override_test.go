@@ -182,6 +182,9 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, c.registryOverride).GetDeployment()
+			if actual != nil {
+				actual.StateTimestamp = 0
+			}
 			assert.Equal(t, c.expectedDeployment, actual)
 		})
 	}
