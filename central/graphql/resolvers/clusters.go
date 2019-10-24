@@ -32,6 +32,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Cluster", `alertCount: Int!`),
 		schema.AddExtraResolver("Cluster", "latestViolation: Time"),
+		schema.AddExtraResolver("Cluster", `failingPolicyCounter: PolicyCounter`),
 		schema.AddExtraResolver("Cluster", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Cluster", `deploymentCount: Int!`),
 		schema.AddExtraResolver("Cluster", `nodes(query: String): [Node!]!`),
@@ -134,6 +135,19 @@ func (resolver *clusterResolver) AlertCount(ctx context.Context) (int32, error) 
 	}
 
 	return int32(len(results)), nil
+}
+
+// FailingPolicyCounter returns a policy counter for all the failed policies.
+func (resolver *clusterResolver) FailingPolicyCounter(ctx context.Context) (*PolicyCounterResolver, error) {
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+	query := resolver.getQuery()
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, query)
+	if err != nil {
+		return nil, nil
+	}
+	return mapListAlertsToPolicyCount(alerts), nil
 }
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster

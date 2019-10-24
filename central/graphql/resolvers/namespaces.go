@@ -35,6 +35,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `policyStatus: PolicyStatus!`),
 		schema.AddExtraResolver("Namespace", `policies(query: String): [Policy!]!`),
+		schema.AddExtraResolver("Namespace", `failingPolicyCounter: PolicyCounter`),
 		schema.AddExtraResolver("Namespace", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Namespace", `imageCount: Int!`),
 		schema.AddExtraResolver("Namespace", `imageComponents: [EmbeddedImageScanComponent!]!`),
@@ -257,6 +258,19 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args rawQuery) 
 		return nil, err
 	}
 	return resolver.root.wrapPolicies(resolver.getNamespacePolicies(ctx, args))
+}
+
+// FailingPolicyCounter returns a policy counter for all the failed policies.
+func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context) (*PolicyCounterResolver, error) {
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+	query := resolver.getClusterNamespaceQuery()
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, query)
+	if err != nil {
+		return nil, nil
+	}
+	return mapListAlertsToPolicyCount(alerts), nil
 }
 
 func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Policy, clusterID string) bool {

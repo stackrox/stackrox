@@ -33,6 +33,7 @@ func init() {
 		schema.AddExtraResolver("Deployment", "latestViolation: Time"),
 		schema.AddExtraResolver("Deployment", `failingPolicies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Deployment", `failingPolicyCount(query: String): Int!`),
+		schema.AddExtraResolver("Deployment", `failingPolicyCounter: PolicyCounter`),
 		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
 		schema.AddExtraResolver("Deployment", `images(query: String): [Image!]!`),
@@ -207,6 +208,19 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 		set.Add(alert.GetPolicy().GetId())
 	}
 	return int32(set.Cardinality()), nil
+}
+
+// FailingPolicyCounter returns a policy counter for all the failed policies.
+func (resolver *deploymentResolver) FailingPolicyCounter(ctx context.Context) (*PolicyCounterResolver, error) {
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+	query := resolver.getQuery()
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, query)
+	if err != nil {
+		return nil, nil
+	}
+	return mapListAlertsToPolicyCount(alerts), nil
 }
 
 // Secrets returns the total number of secrets for this deployment
