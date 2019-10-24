@@ -2,8 +2,10 @@ package teams
 
 import (
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
@@ -86,4 +88,14 @@ func TestTeamsTest(t *testing.T) {
 		},
 	}
 	assert.NoError(t, s.Test())
+}
+
+func TestPolicySeverityEnumConverter(t *testing.T) {
+	for k := range storage.Severity_value {
+		actual, err := notifiers.GetNotifiersCompatiblePolicySeverity(k)
+		assert.Nil(t, err)
+		prefix := strings.Split(k, "_")[0]
+		expected := strings.Title(strings.ToLower(prefix))
+		assert.Equal(t, actual, expected)
+	}
 }

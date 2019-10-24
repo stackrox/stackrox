@@ -71,7 +71,13 @@ func (t *teams) getAlertSection(alert *storage.Alert) section {
 	if policy == nil {
 		return section
 	}
-	section.Facts = append(facts, fact{Name: "Severity", Value: policy.GetSeverity().String()})
+
+	severityVal, err := notifiers.GetNotifiersCompatiblePolicySeverity(policy.GetSeverity().String())
+	if err != nil {
+		return section
+	}
+
+	section.Facts = append(facts, fact{Name: "Severity", Value: severityVal})
 	return section
 }
 
@@ -172,17 +178,17 @@ func (t *teams) getPolicyFieldsFacts(policyFields reflect.Value) []fact {
 		if strings.HasPrefix(fieldName, "XXX_") {
 			continue
 		}
-		text := translateRecursive(fieldName, policyFields.Field(i))
+		text := translateRecursive(0, policyFields.Field(i))
+
 		if len(text) == 0 {
 			continue
 		}
-		flattened := strings.SplitN(text, ":", 2)
-		facts = append(facts, fact{Name: flattened[0], Value: flattened[1]})
+		facts = append(facts, fact{Name: fieldName, Value: text})
 	}
 	return facts
 }
 
-func translateSlice(prefix string, original reflect.Value) string {
+func translateSlice(level int, original reflect.Value) string {
 	var slices []string
 	switch original.Interface().(type) {
 	case []string:
@@ -197,7 +203,7 @@ func translateSlice(prefix string, original reflect.Value) string {
 		}
 	default:
 		for i := 0; i < original.Len(); i++ {
-			ret := translateRecursive(prefix, original.Field(i))
+			ret := translateRecursive(level, original.Field(i))
 			if len(ret) > 0 {
 				slices = append(slices, ret)
 			}
@@ -206,41 +212,46 @@ func translateSlice(prefix string, original reflect.Value) string {
 	if len(slices) == 0 {
 		return ""
 	}
-	ret := fmt.Sprintf("[ %s ]", strings.Join(slices, ", "))
-	return fmt.Sprintf("%s : %s", prefix, ret)
+	return fmt.Sprintf("[ %s ]", strings.Join(slices, ", "))
 }
 
-func translateRecursive(prefix string, original reflect.Value) string {
+func getSpacedString(count int) string {
+	var builder strings.Builder
+	for i := 0; i < 2*count; i++ {
+		builder.WriteString(" ")
+	}
+	return builder.String()
+}
+
+func translateRecursive(level int, original reflect.Value) string {
 	ret := ""
+	spacedString := getSpacedString(level)
 	switch original.Kind() {
 	case reflect.Ptr:
 		original = original.Elem()
 		if !original.IsValid() {
 			return ""
 		}
-		return translateRecursive(prefix, original)
+		return translateRecursive(level, original)
+	case reflect.Slice:
+		return translateSlice(level, original)
 	case reflect.Interface:
 		original = original.Elem()
-		return translateRecursive(prefix, original)
-	case reflect.Slice:
-		return translateSlice(prefix, original)
+		return translateRecursive(level, original)
 	case reflect.Struct:
-		var slices []string
 		for i := 0; i < original.NumField(); i++ {
 			fieldName := original.Type().Field(i).Name
 			if strings.HasPrefix(fieldName, "XXX_") {
 				continue
 			}
-			ret = translateRecursive(prefix+"."+original.Type().Field(i).Name, original.Field(i))
-			if len(ret) > 0 {
-				slices = append(slices, ret)
+			val := translateRecursive(level+1, original.Field(i))
+			if len(val) > 0 {
+				ret = fmt.Sprintf("%s%s - %s: %s\n", ret, spacedString, fieldName, val)
 			}
 		}
-		if len(slices) == 0 {
-			return ""
+		if len(ret) > 0 {
+			ret = fmt.Sprintf("<pre>%s</pre>", ret)
 		}
-		ret := "{" + strings.Join(slices, ", ") + "}"
-		return prefix + " : " + ret
 	case reflect.String:
 		ret = original.Interface().(string)
 	case reflect.Bool:
@@ -279,10 +290,7 @@ func translateRecursive(prefix string, original reflect.Value) string {
 	default:
 		break
 	}
-	if len(ret) == 0 {
-		return ""
-	}
-	return prefix + " : " + ret
+	return ret
 }
 
 // AlertNotify takes in an alert and generates the Teams message
@@ -341,15 +349,16 @@ func (t *teams) AlertNotify(alert *storage.Alert) error {
 // YamlNotify takes in a yaml file and generates the teams message
 func (t *teams) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	tagLine := fmt.Sprintf("Network policy YAML applied on cluster %q", clusterName)
+
 	funcMap := template.FuncMap{
 		"codeBlock": func(s string) string {
 			if len(s) > 0 {
-				s = strings.ReplaceAll(s, "\n", "\r\r")
-				return "```" + s
+				return fmt.Sprintf("<pre>%s</pre>", s)
 			}
 			return "\n<YAML is empty>\n"
 		},
 	}
+
 	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, funcMap)
 	if err != nil {
 		return err
@@ -359,6 +368,7 @@ func (t *teams) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 		Color: notifiers.YAMLNotificationColor,
 		Text:  body,
 	}
+
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
 		return errors.Wrapf(err, "Could not marshal notification for yaml for cluster %s", clusterName)
@@ -415,10 +425,10 @@ func (t *teams) Test() error {
 
 func postMessage(url string, jsonPayload []byte) error {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
-	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{
 		Timeout: notifiers.Timeout,
 	}

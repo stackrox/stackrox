@@ -173,3 +173,12 @@ func stringify(inter ...interface{}) string {
 	}
 	return strings.Join(result, " ")
 }
+
+// GetNotifiersCompatiblePolicySeverity converts the enum value to more meaningful policy severity string
+func GetNotifiersCompatiblePolicySeverity(enumSeverity string) (string, error) {
+	strs := strings.Split(enumSeverity, "_")
+	if len(strs) != 2 || strs[1] != "SEVERITY" {
+		return "", fmt.Errorf("severity enum %q does not the format *_SEVERITY", enumSeverity)
+	}
+	return fmt.Sprintf("%s%s", strings.ToUpper(strs[0][:1]), strings.ToLower(strs[0][1:])), nil
+}

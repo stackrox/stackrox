@@ -215,10 +215,10 @@ func (s *slack) Test() error {
 
 func postMessage(url string, jsonPayload []byte) error {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
-	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{
 		Timeout: notifiers.Timeout,
