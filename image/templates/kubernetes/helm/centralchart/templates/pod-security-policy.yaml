@@ -53,6 +53,11 @@ spec:
     ranges:
       - min: 4000
         max: 4000
+  runAsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
   seLinux:
     rule: 'RunAsAny'
   supplementalGroups:

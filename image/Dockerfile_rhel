@@ -46,22 +46,22 @@ ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
 # Including these VOLUME instructions means that we can enable a
 # read-only root file system without preventing writes to these paths.
 # Trusted CA certificates are written to this path by `update-ca-trust`.
-RUN chown -R 4000 /etc/pki /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl
+RUN chown -R 4000:4000 /etc/pki /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl
 VOLUME /etc/pki/ca-trust
 VOLUME /etc/ssl
 
 # The BoltDB is stored at this path.
-RUN mkdir -p /var/lib/stackrox && chown -R 4000 /var/lib/stackrox
+RUN mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox
 VOLUME /var/lib/stackrox
 # The log file is stored at this path
-RUN mkdir -p /var/log/stackrox && chown -R 4000 /var/log/stackrox
+RUN mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox
 VOLUME /var/log/stackrox
 
 # /tmp needs to be a read-write filesystem.
-RUN chown -R 4000 /tmp
+RUN chown -R 4000:4000 /tmp
 VOLUME /tmp
 
-RUN mkdir -p /stackrox/data && chown -R 4000 /stackrox/data
+RUN mkdir -p /stackrox/data && chown -R 4000:4000 /stackrox/data
 VOLUME /stackrox/data
 
-USER 4000
+USER 4000:4000

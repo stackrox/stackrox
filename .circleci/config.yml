@@ -1894,14 +1894,14 @@ jobs:
               --timeout 1m
 
       - run:
-          name: Do the upgrade
+          name: Do the upgrade to 2.5.29.x-54-g70655b1846
           command: |
-            new_image="stackrox/main:$(make --quiet tag)"
-            central_patch='[
-              {"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "'"$new_image"'"},
+            intermediate_image="stackrox/main:2.5.29.x-54-g70655b1846"
+            intermediate_central_patch='[
+              {"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "'"$intermediate_image"'"},
               {"op": "replace", "path": "/spec/template/spec/containers/0/ports", "value": [{"name": "api", "containerPort": 8443}]}
             ]'
-            kubectl -n stackrox patch deploy/central --type json -p "$central_patch"
+            kubectl -n stackrox patch deploy/central --type json -p "$intermediate_central_patch"
             kubectl -n stackrox describe deploy/central
 
             network_policy_patch='[
@@ -1916,17 +1916,16 @@ jobs:
               kubectl -n stackrox patch service/central-loadbalancer --type json -p "$lb_patch"
             fi
 
-            central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
-            if [ "${central_image}" != "${new_image}" ]; then
-              echo "Unexpected central image!"
-              exit 1
-            fi
-      - *restoreGradle
-
-      - *setupGoogleAppCreds
-      - *setupLicense
-
       - *waitForAPI
+      - *setupGoogleAppCreds
+
+      - run:
+          name: Setup CI License
+          command: |
+            echo "Issuing a CI license for testing the build"
+            ROX_LICENSE_KEY="$(licenses/ci.sh)"
+
+            cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
       - run:
           name: Install license key
@@ -1935,6 +1934,30 @@ jobs:
             sleep 3
 
       - *waitForAPI
+
+      - run:
+          name: Do the upgrade
+          command: |
+            new_image="stackrox/main:$(make --quiet tag)"
+
+            kubectl -n stackrox set image deploy/central central=${new_image}
+            kubectl -n stackrox describe deploy/central
+
+            run_as_user_patch='{"spec":{"template":{"spec":{"securityContext":{"fsGroup":4000,"runAsUser":4000}}}}}'
+            kubectl -n stackrox patch deploy/central -p "$run_as_user_patch"
+
+            pod_sec_policy_patch='{"spec":{"runAsGroup":{"rule":"MustRunAs", "ranges":[{"min":4000,"max":4000}]}}}'
+            (kubectl -n stackrox get podsecuritypolicy stackrox-central && kubectl -n stackrox patch podsecuritypolicy/stackrox-central -p "$pod_sec_policy_patch") || true
+
+            central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
+            if [ "${central_image}" != "${new_image}" ]; then
+              echo "Unexpected central image!"
+              exit 1
+            fi
+
+      - *waitForAPI
+
+      - *restoreGradle
 
       - run:
           name: Back up and restore the DB
