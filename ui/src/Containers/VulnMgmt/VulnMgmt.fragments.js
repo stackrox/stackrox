@@ -176,3 +176,18 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
         }
     }
 `;
+
+export const POLICY_LIST_FRAGMENT = gql`
+    fragment policyListFields on Policy {
+        id
+        name
+        description
+        policyStatus
+        #lastUpdated
+        #lastestViolation
+        severity
+        deploymentCount
+        lifecycleStages
+        enforcementActions
+    }
+`;
