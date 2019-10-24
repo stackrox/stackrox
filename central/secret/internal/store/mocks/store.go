@@ -34,12 +34,13 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // ListSecrets mocks base method
-func (m *MockStore) ListSecrets(ids []string) ([]*storage.ListSecret, error) {
+func (m *MockStore) ListSecrets(ids []string) ([]*storage.ListSecret, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListSecrets", ids)
 	ret0, _ := ret[0].([]*storage.ListSecret)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // ListSecrets indicates an expected call of ListSecrets

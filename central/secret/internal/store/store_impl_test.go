@@ -64,7 +64,7 @@ func (suite *SecretStoreTestSuite) TestSecrets() {
 	}
 
 	// Get batch list secrets
-	retrievedListSecrets, err := suite.store.ListSecrets([]string{"secret1", "secret2"})
+	retrievedListSecrets, _, err := suite.store.ListSecrets([]string{"secret1", "secret2"})
 	suite.Nil(err)
 	suite.Len(retrievedListSecrets, 2)
 

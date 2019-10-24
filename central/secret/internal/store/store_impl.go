@@ -17,17 +17,19 @@ type storeImpl struct {
 	db *bolt.DB
 }
 
-func getListSecret(tx *bolt.Tx, id string) (secret *storage.ListSecret, err error) {
+func getListSecret(tx *bolt.Tx, id string) (*storage.ListSecret, error) {
 	bucket := tx.Bucket(secretListBucket)
 	bytes := bucket.Get([]byte(id))
 	if bytes == nil {
-		err = fmt.Errorf("secret with id: %s does not exist", id)
-		return
+		return nil, nil
 	}
 
-	secret = new(storage.ListSecret)
-	err = proto.Unmarshal(bytes, secret)
-	return
+	var secret storage.ListSecret
+	err := proto.Unmarshal(bytes, &secret)
+	if err != nil {
+		return nil, err
+	}
+	return &secret, nil
 }
 
 // Note: This is called within a txn and does not require an Update or View
@@ -134,20 +136,25 @@ func (s *storeImpl) GetSecretsWithIds(ids []string) ([]*storage.Secret, []int, e
 }
 
 // ListSecrets returns a list of secrets from the given ids.
-func (s *storeImpl) ListSecrets(ids []string) ([]*storage.ListSecret, error) {
+func (s *storeImpl) ListSecrets(ids []string) ([]*storage.ListSecret, []int, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListSecret")
 	secrets := make([]*storage.ListSecret, 0, len(ids))
+	var missingIndices []int
 	err := s.db.View(func(tx *bolt.Tx) error {
-		for _, id := range ids {
+		for i, id := range ids {
 			secret, err := getListSecret(tx, id)
 			if err != nil {
 				return err
+			}
+			if secret == nil {
+				missingIndices = append(missingIndices, i)
+				continue
 			}
 			secrets = append(secrets, secret)
 		}
 		return nil
 	})
-	return secrets, err
+	return secrets, missingIndices, err
 }
 
 // UpsertSecret adds or updates the secret in the db.

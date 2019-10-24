@@ -50,7 +50,8 @@ func (ds *searcherImpl) SearchListSecrets(ctx context.Context, q *v1.Query) ([]*
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToListSecrets(results)
+	secrets, _, err := ds.resultsToListSecrets(results)
+	return secrets, err
 }
 
 // SearchRawSecrets retrieves secrets from the indexer and storage
@@ -63,21 +64,18 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 }
 
 // ToSecrets returns the secrets from the db for the given search results.
-func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storage.ListSecret, error) {
-	ids := make([]string, len(results))
-	for index, result := range results {
-		ids[index] = result.ID
-	}
-	return ds.storage.ListSecrets(ids)
+func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storage.ListSecret, []int, error) {
+	return ds.storage.ListSecrets(search.ResultsToIDs(results))
 }
 
 // ToSearchResults returns the searchResults from the db for the given search results.
 func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	sars, err := ds.resultsToListSecrets(results)
+	secrets, missingIndices, err := ds.resultsToListSecrets(results)
 	if err != nil {
 		return nil, err
 	}
-	return convertMany(sars, results), nil
+	results = search.RemoveMissingResults(results, missingIndices)
+	return convertMany(secrets, results), nil
 }
 
 func convertMany(secrets []*storage.ListSecret, results []search.Result) []*v1.SearchResult {
