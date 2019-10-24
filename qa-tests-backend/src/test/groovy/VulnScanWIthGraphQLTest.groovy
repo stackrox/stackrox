@@ -9,13 +9,13 @@ import util.Timer
 
 class VulnScanWIthGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
+    static final private Deployment STRUTS_DEP = new Deployment()
+            .setName (STRUTSDEPLOYMENT_VULN_SCAN)
+            .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+            .addLabel ("app", "test" )
     static final private List<Deployment> DEPLOYMENTS = [
-    new Deployment()
-    .setName (STRUTSDEPLOYMENT_VULN_SCAN)
-    .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-    .addLabel ("app", "test" ),
+    STRUTS_DEP,
     ]
-
     private static final String GET_CVES_INFO_WITH_IMAGE_QUERY = """
     query image(\$id: ID!) {
         image:
@@ -54,6 +54,39 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
         }
     }"""
 
+    private static final String GET_IMAGE_INFO_FROM_VULN_QUERY = """
+    query getCve(\$id: ID!) {
+        result: vulnerability(id: \$id) {
+        cve
+        cvss
+        scoreVersion
+        link
+        vectors {
+          __typename
+          ... on CVSSV2 {
+            impactScore
+            exploitabilityScore
+            vector
+          }
+          ... on CVSSV3 {
+            impactScore
+            exploitabilityScore
+            vector
+          }
+        }
+        summary
+        fixedByVersion
+        isFixable
+        lastScanned
+        componentCount
+        imageCount
+        deploymentCount
+        images {
+            id  name {fullName} scan {
+                scanTime
+            }}}
+    }"""
+
     private static final String DEP_QUERY = """query getDeployment(\$id: ID!) {
         deployment :
         deployment(id: \$id) {
@@ -65,7 +98,6 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
         }
     }
 """
-
     @Shared
     private  gqlService = new GraphQLService()
 
@@ -106,6 +138,39 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
         "Data inputs are :"
         depName | vuln_cve
         STRUTSDEPLOYMENT_VULN_SCAN | 219
+    }
+
+    @Unroll
+    @Category(GraphQL)
+    def "Verify image info from cve in GraphQL"() {
+        when:
+        "Fetch the results of the CVE,image from GraphQL "
+        GraphQLService.Response result2Ret = waitForImagesTobeFetched(CVEID)
+        assert result2Ret.getValue()?.result?.images  != null
+        then :
+        List<Object> imagesReturned = result2Ret.getValue().result.images
+        assert imagesReturned != null
+        String imgName = imagesReturned.find { it.name.fullName == imageToBeVerified }
+        assert !(StringUtils.isEmpty(imgName))
+        where :
+        "Data inputs are :"
+        CVEID | imageToBeVerified
+        "CVE-2016-0682" | STRUTS_DEP.getImage()
+    }
+
+    private GraphQLService.Response waitForImagesTobeFetched(String cveId , int iterations = 30, int interval = 4) {
+        Timer t = new Timer(iterations, interval)
+        while (t.IsValid()) {
+            def result2Ret = gqlService.Call(GET_IMAGE_INFO_FROM_VULN_QUERY, [id: cveId])
+            assert result2Ret.getCode() == 200
+            println "return code " + result2Ret.getCode()
+            if (result2Ret.getValue().result != null) {
+                println "images fetched from cve"
+                return result2Ret
+            }
+        }
+        println "Unable to fetch images for $cveId in ${iterations * interval} seconds"
+        return null
     }
 
     private String getImageIDFromDepId(String id) {
