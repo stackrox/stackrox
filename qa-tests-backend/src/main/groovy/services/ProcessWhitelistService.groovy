@@ -126,7 +126,7 @@ class ProcessWhitelistService extends BaseService {
         try {
             while (t.IsValid()) {
                 ProcessWhitelistOuterClass.ProcessWhitelist whitelist =
-                        getProcessWhitelist(clusterId, deployment, containerName)
+                        getProcessWhitelist(clusterId, deployment, containerName, 1)
                 if (whitelist == null) {
                     return true
                 }

@@ -17,7 +17,7 @@ class Timer {
             currIteration++
             return true
         }
-        if (currIteration == this.iterations) {
+        if (currIteration >= this.iterations) {
             return false
         }
         sleep(this.delayMilliseconds)

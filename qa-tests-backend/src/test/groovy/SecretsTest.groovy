@@ -3,6 +3,7 @@ import org.junit.experimental.categories.Category
 import groups.BAT
 import objects.Deployment
 import io.stackrox.proto.storage.SecretOuterClass.Secret
+import util.Timer
 
 class SecretsTest extends BaseSpecification {
 
@@ -78,18 +79,15 @@ class SecretsTest extends BaseSpecification {
 
         then:
         "Verify the binding deployment is gone from the secret"
-        sleep(30000)
         Secret secretUpdate = null
-        int maxWaitTime = 30000
-        int intervalSeconds = 3000
+        def timer = new Timer(10, 3000)
 
         //Add waiting logic cause stackrox need some time to response the number of deployments' change
-        for (int waitTime = 0; waitTime < maxWaitTime; waitTime++) {
+        while (timer.IsValid()) {
             secretUpdate = SecretService.getSecret(secID)
             if (secretUpdate.getRelationship().getDeploymentRelationshipsCount() == (preNum - 1)) {
                 break
             }
-            sleep(intervalSeconds)
         }
 
         assert secretUpdate.getRelationship().getDeploymentRelationshipsCount() == (preNum - 1)
