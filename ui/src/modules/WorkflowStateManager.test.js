@@ -85,8 +85,14 @@ describe('WorkflowStateManager', () => {
         ]);
     });
     it('pushes a list onto the stack related to current workflow state', () => {
+        // dashboard
+        const workflowState = new WorkflowState(useCase, []);
+        let workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr.pushList(entityTypes.NAMESPACE);
+        expect(workflowStateMgr.workflowState.stateStack).toEqual([{ t: entityTypes.NAMESPACE }]);
+
         // entity page
-        let workflowStateMgr = new WorkflowStateMgr(getEntityState());
+        workflowStateMgr = new WorkflowStateMgr(getEntityState());
         workflowStateMgr.pushList(entityTypes.NAMESPACE);
         expect(workflowStateMgr.workflowState.stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId1 },
@@ -212,7 +218,16 @@ describe('WorkflowStateManager', () => {
         ]);
     });
     it('pushes a related entity to the stack', () => {
-        const workflowStateMgr = new WorkflowStateMgr(getEntityState());
+        // dashboard
+        const workflowState = new WorkflowState(useCase, []);
+        let workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr.pushRelatedEntity(entityTypes.CLUSTER, entityId2);
+        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+            { t: entityTypes.CLUSTER, i: entityId2 }
+        ]);
+
+        // entity page
+        workflowStateMgr = new WorkflowStateMgr(getEntityState());
         workflowStateMgr.pushRelatedEntity(entityTypes.POLICY, entityId2);
         expect(workflowStateMgr.workflowState.stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId1 },

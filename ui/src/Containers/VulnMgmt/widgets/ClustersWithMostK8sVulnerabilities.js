@@ -1,16 +1,14 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { Link } from 'react-router-dom';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLTo } from 'modules/URLReadWrite';
 
-import Button from 'Components/Button';
+import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NumberedGrid from 'Components/NumberedGrid';
@@ -32,36 +30,14 @@ const CLUSTER_WITH_MOST_K8S_VULNERABILTIES = gql`
     }
 `;
 
-const ViewAllButton = ({ url }) => {
-    return (
-        <Link to={url} className="no-underline">
-            <Button className="btn-sm btn-base" type="button" text="View All" />
-        </Link>
-    );
-};
-
-const getViewAllURL = workflowState => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityTypes.CLUSTER);
-    const url = generateURL(workflowStateMgr.workflowState);
-    return url;
-};
-
-const getSingleEntityURL = (workflowState, id) => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityTypes.CLUSTER).pushListItem(id);
-    const url = generateURL(workflowStateMgr.workflowState);
-    return url;
-};
-
 const processData = (data, workflowState) => {
-    const results = data.results.map(({ id, name, vulns }) => {
-        const text = name;
+    const results = data.results.map(({ id, name: text, vulns }) => {
         const cveCount = vulns.length;
         const fixableCount = vulns.filter(vuln => vuln.isFixable).length;
+        const url = generateURLTo(workflowState, entityTypes.CLUSTER, id);
         return {
             text,
-            url: getSingleEntityURL(workflowState, id),
+            url,
             component: (
                 <div className="flex flex-1 justify-left">
                     <img src={kubeSVG} alt="kube" className="pr-2" />
@@ -97,11 +73,13 @@ const ClustersWithMostK8sVulnerabilities = ({ entityContext }) => {
         );
     }
 
+    const viewAllURL = generateURLTo(workflowState, entityTypes.CLUSTER);
+
     return (
         <Widget
             className="h-full pdf-page"
             header="Clusters With Most K8s Vulnerabilities"
-            headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}
+            headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
         </Widget>
