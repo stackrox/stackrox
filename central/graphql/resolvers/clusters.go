@@ -31,6 +31,7 @@ func init() {
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Cluster", `alertCount: Int!`),
+		schema.AddExtraResolver("Cluster", "latestViolation: Time"),
 		schema.AddExtraResolver("Cluster", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Cluster", `deploymentCount: Int!`),
 		schema.AddExtraResolver("Cluster", `nodes(query: String): [Node!]!`),
@@ -811,4 +812,10 @@ func (resolver *clusterResolver) getClusterRisk(ctx context.Context) (*storage.R
 	risk.Id = id
 
 	return risk, true, nil
+}
+
+func (resolver *clusterResolver) LatestViolation(ctx context.Context) (*graphql.Time, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Latest Violation")
+
+	return getLatestViolationTime(ctx, resolver.root, resolver.getQuery())
 }

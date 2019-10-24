@@ -30,6 +30,7 @@ func init() {
 		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
 		schema.AddExtraResolver("Deployment", `deployAlerts: [Alert!]!`),
 		schema.AddExtraResolver("Deployment", `deployAlertCount: Int!`),
+		schema.AddExtraResolver("Deployment", "latestViolation: Time"),
 		schema.AddExtraResolver("Deployment", `failingPolicies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Deployment", `failingPolicyCount(query: String): Int!`),
 		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
@@ -493,4 +494,10 @@ func (resolver *deploymentResolver) getFailingAlertsQuery(args rawQuery) (*v1.Qu
 		return nil, err
 	}
 	return search.NewConjunctionQuery(q, search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()), nil
+}
+
+func (resolver *deploymentResolver) LatestViolation(ctx context.Context) (*graphql.Time, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Latest Violation")
+
+	return getLatestViolationTime(ctx, resolver.root, resolver.getQuery())
 }

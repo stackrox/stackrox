@@ -6,8 +6,10 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -67,4 +69,28 @@ func (resolver *Resolver) getAlert(ctx context.Context, id string) *storage.Aler
 		return nil
 	}
 	return alert
+}
+
+func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*graphql.Time, error) {
+	if err := readAlerts(ctx); err != nil {
+		return nil, err
+	}
+
+	q.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.ViolationTime.String(),
+				Reversed: true,
+			},
+		},
+		Limit:  1,
+		Offset: 0,
+	}
+
+	alerts, err := root.ViolationsDataStore.SearchRawAlerts(ctx, q)
+	if err != nil || len(alerts) == 0 || alerts[0] == nil {
+		return nil, err
+	}
+
+	return timestamp(alerts[0].GetTime())
 }
