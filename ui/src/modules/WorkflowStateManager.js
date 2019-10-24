@@ -146,42 +146,48 @@ export class WorkflowState {
 export default class WorkflowStateMgr {
     constructor(workflowState) {
         if (workflowState) {
-            const { useCase, stateStack, search } = workflowState;
-            this.workflowState = new WorkflowState(useCase, stateStack, search);
+            const { useCase, stateStack, search, sort, paging } = workflowState;
+            this.workflowState = new WorkflowState(useCase, stateStack, search, sort, paging);
         } else {
             this.workflowState = new WorkflowState();
         }
     }
 
     // Resets the current state based on minimal parameters
-    reset(useCase, entityType, entityId, search) {
+    reset(useCase, entityType, entityId, search, sort, paging) {
         const newUseCase = useCase || this.workflowState.useCase;
         const newStateStack = baseStateStack(entityType, entityId);
         const newSearch = search || this.search;
-        this.workflowState = new WorkflowState(newUseCase, newStateStack, newSearch);
+        this.workflowState = new WorkflowState(newUseCase, newStateStack, newSearch, sort, paging);
         return this;
     }
 
     // sets the stateStack to base state when returning from side panel
     removeSidePanelParams() {
-        const { useCase, stateStack, search } = this.workflowState;
+        const { useCase, stateStack, search, sort, paging } = this.workflowState;
         const baseEntity = this.workflowState.getBaseEntity();
         const newStateStack = baseEntity.entityId ? stateStack.slice(0, 2) : [baseEntity];
         const newSearch = { [searchParams.page]: search[searchParams.page] };
-        this.workflowState = new WorkflowState(useCase, newStateStack, newSearch);
+        this.workflowState = new WorkflowState(useCase, newStateStack, newSearch, sort, paging);
         return this;
     }
 
     // sets statestack to only the first item
     base() {
-        const { useCase, stateStack, search } = this.workflowState;
-        this.workflowState = new WorkflowState(useCase, stateStack.slice(0, 1), search);
+        const { useCase, stateStack, search, sort, paging } = this.workflowState;
+        this.workflowState = new WorkflowState(
+            useCase,
+            stateStack.slice(0, 1),
+            search,
+            sort,
+            paging
+        );
         return this;
     }
 
     // Adds a list of entityType related to the current workflowState
     pushList(type) {
-        const { useCase, stateStack, search } = this.workflowState;
+        const { useCase, stateStack, search, sort, paging } = this.workflowState;
         const newItem = new WorkflowEntity(type);
         const currentItem = this.workflowState.getCurrentEntity();
 
@@ -192,27 +198,33 @@ export default class WorkflowStateMgr {
                 : [...stateStack];
         newStateStack.push(newItem);
 
-        this.workflowState = new WorkflowState(useCase, trimStack(newStateStack), search);
+        this.workflowState = new WorkflowState(
+            useCase,
+            trimStack(newStateStack),
+            search,
+            sort,
+            paging
+        );
 
         return this;
     }
 
     // Selects an item in a list by Id
     pushListItem(id) {
-        const { useCase, stateStack, search } = this.workflowState;
+        const { useCase, stateStack, search, sort, paging } = this.workflowState;
         const currentItem = this.workflowState.getCurrentEntity();
         const newItem = new WorkflowEntity(currentItem.entityType, id);
         // Slice an item off the end of the stack if this push should result in a replacement (e.g. clicking on multiple list items)
         const newStateStack = currentItem.entityId ? stateStack.slice(0, -1) : [...stateStack];
         newStateStack.push(newItem);
 
-        this.workflowState = new WorkflowState(useCase, newStateStack, search);
+        this.workflowState = new WorkflowState(useCase, newStateStack, search, sort, paging);
         return this;
     }
 
     // Shows an entity in relation to the top entity in the workflow
     pushRelatedEntity(type, id) {
-        const { useCase, stateStack, search } = this.workflowState;
+        const { useCase, stateStack, search, sort, paging } = this.workflowState;
         const currentItem = stateStack.slice(-1)[0];
 
         if (currentItem && !currentItem.entityId) {
@@ -221,7 +233,7 @@ export default class WorkflowStateMgr {
 
         const newStateStack = trimStack([...stateStack, new WorkflowEntity(type, id)]);
 
-        this.workflowState = new WorkflowState(useCase, newStateStack, search);
+        this.workflowState = new WorkflowState(useCase, newStateStack, search, sort, paging);
 
         return this;
     }
@@ -232,12 +244,14 @@ export default class WorkflowStateMgr {
             // A state stack has to have at least one item in it
             return this;
 
-        const { useCase, stateStack, search } = this.workflowState;
+        const { useCase, stateStack, search, sort, paging } = this.workflowState;
 
         this.workflowState = new WorkflowState(
             useCase,
             stateStack.slice(0, stateStack.length - 1),
-            search
+            search,
+            sort,
+            paging
         );
         return this;
     }
@@ -251,6 +265,7 @@ export default class WorkflowStateMgr {
             [param]: newProps
         };
         this.workflowState = new WorkflowState(useCase, stateStack, newSearch, sort, paging);
+        return this;
     }
 
     setSort(sortProp) {
@@ -262,6 +277,7 @@ export default class WorkflowStateMgr {
             [param]: sortProp
         };
         this.workflowState = new WorkflowState(useCase, stateStack, search, newSort, paging);
+        return this;
     }
 
     setPage(pagingProp) {
@@ -273,5 +289,6 @@ export default class WorkflowStateMgr {
             [param]: pagingProp
         };
         this.workflowState = new WorkflowState(useCase, stateStack, search, sort, newPaging);
+        return this;
     }
 }
