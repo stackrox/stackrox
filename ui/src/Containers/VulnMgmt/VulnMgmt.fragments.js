@@ -17,8 +17,8 @@ export const CLUSTER_LIST_FRAGMENT = gql`
         policyStatus {
             status
         }
-        # latestViolation
-        # risk
+        latestViolation
+        priority
     }
 `;
 
@@ -84,6 +84,7 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         serviceAccountID
         secretCount
         imageCount
+        latestViolation
         priority
     }
 `;

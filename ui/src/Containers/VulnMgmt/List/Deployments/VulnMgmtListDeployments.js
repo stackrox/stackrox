@@ -13,7 +13,6 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { generateURLToFromTable } from 'modules/URLReadWrite';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
-import { getLatestDatedItemByKey } from 'utils/dateUtils';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
 export const defaultDeploymentSort = [
@@ -68,17 +67,14 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                 }
             },
             {
-                Header: `Latest Violation`,
+                Header: `Latest violation`,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
-                    const { deployAlerts } = original;
-                    if (!deployAlerts || !deployAlerts.length) return '-';
-
-                    const latestAlert = getLatestDatedItemByKey('time', deployAlerts);
-
-                    return <DateTimeField date={latestAlert.time} />;
-                }
+                    const { latestViolation } = original;
+                    return <DateTimeField date={latestViolation} />;
+                },
+                accessor: 'latestViolation'
             },
             entityContext[entityTypes.POLICY]
                 ? null
@@ -122,8 +118,8 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                 ? null
                 : {
                       Header: `Cluster`,
-                      headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                      className: `w-1/8 ${defaultColumnClassName}`,
+                      headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                      className: `w-1/10 ${defaultColumnClassName}`,
                       accessor: 'clusterName',
                       Cell: ({ original, pdf }) => {
                           const { clusterName, clusterId, id } = original;

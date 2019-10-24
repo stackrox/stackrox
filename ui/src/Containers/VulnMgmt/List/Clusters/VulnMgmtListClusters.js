@@ -4,6 +4,7 @@ import gql from 'graphql-tag';
 
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
 import TableCellLink from 'Components/TableCellLink';
 import entityTypes from 'constants/entityTypes';
@@ -151,19 +152,23 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                     );
                 },
                 id: 'policyStatus'
-            } // ,
-            // {
-            //     Header: `Latest violation`,
-            //     headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            //     className: `w-1/8 ${defaultColumnClassName}`,
-            //     accessor: 'latestViolation'
-            // },
-            // {
-            //     Header: `Risk`,
-            //     headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            //     className: `w-1/8 ${defaultColumnClassName}`,
-            //     accessor: 'risk'
-            // }
+            },
+            {
+                Header: `Latest violation`,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original }) => {
+                    const { latestViolation } = original;
+                    return <DateTimeField date={latestViolation} />;
+                },
+                accessor: 'latestViolation'
+            },
+            {
+                Header: `Risk`,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                accessor: 'priority'
+            }
         ];
         return tableColumns;
     }
