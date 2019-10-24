@@ -14,6 +14,8 @@ func TestMigration(t *testing.T) {
 	db, err := bolthelpers.NewTemp(testutils.DBFileNameForT(t))
 	require.NoError(t, err)
 
+	require.NoError(t, rewrite(db))
+
 	err = db.Update(func(tx *bbolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(groupsBucket)
 		require.NoError(t, err)

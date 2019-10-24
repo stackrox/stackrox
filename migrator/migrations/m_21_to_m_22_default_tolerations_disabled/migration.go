@@ -14,7 +14,7 @@ var clustersBucket = []byte("clusters")
 var migration = types.Migration{
 	StartingSeqNum: 21,
 	VersionAfter:   storage.Version{SeqNum: 22},
-	Run: func(db *bolt.DB, badgerDB *badger.DB) error {
+	Run: func(db *bolt.DB, _ *badger.DB) error {
 		return rewrite(db)
 	},
 }
@@ -22,6 +22,9 @@ var migration = types.Migration{
 func rewrite(db *bolt.DB) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(clustersBucket)
+		if bucket == nil {
+			return nil
+		}
 		return bucket.ForEach(func(k, v []byte) error {
 			var cluster storage.Cluster
 			err := proto.Unmarshal(v, &cluster)

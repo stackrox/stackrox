@@ -23,6 +23,9 @@ var migration = types.Migration{
 func rewrite(db *bolt.DB) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(groupsBucket)
+		if bucket == nil {
+			return nil
+		}
 		return bucket.ForEach(func(k, v []byte) error {
 			newKey := bytes.ReplaceAll(k, []byte(":"), []byte("\x00"))
 			if err := bucket.Put(newKey, v); err != nil {
