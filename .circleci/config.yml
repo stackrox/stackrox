@@ -597,11 +597,6 @@ commands:
         type: string
 
     steps:
-      - *restoreGoModCache
-      - run:
-          name: Run `make vet`
-          command: make vet-active-tags
-
       - setup-gcp:
           docker-login: false
 
