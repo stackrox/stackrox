@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -161,6 +162,65 @@ func getLatestRunResults(standardBucket *bbolt.Bucket, flags dsTypes.GetFlags) d
 	}
 
 	return results
+}
+
+func getSpecificRunResults(standardBucket *bbolt.Bucket, runID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
+	cursor := standardBucket.Cursor()
+
+	var results dsTypes.ResultsWithStatus
+	found := false
+	for latestRunBucketKey, _ := cursor.Last(); latestRunBucketKey != nil && !found; latestRunBucketKey, _ = cursor.Prev() {
+		_, bucketRunID := stringutils.Split2(string(latestRunBucketKey), ":")
+		if bucketRunID != runID {
+			continue
+		}
+
+		runBucket := standardBucket.Bucket(latestRunBucketKey)
+		if runBucket == nil {
+			return dsTypes.ResultsWithStatus{}, errors.Errorf("unexpected bolt DB structure: key %v does not reference a bucket", string(latestRunBucketKey))
+		}
+
+		metadata, runResults, err := readResults(runBucket, flags)
+		if err != nil {
+			return dsTypes.ResultsWithStatus{}, errors.Errorf("could not read results from bucket %s: %v", string(latestRunBucketKey), err)
+		}
+
+		if runResults == nil {
+			results.FailedRuns = []*storage.ComplianceRunMetadata{metadata}
+		} else {
+			results.LastSuccessfulResults = runResults
+		}
+
+		found = true // breaks loop
+	}
+	if !found {
+		return dsTypes.ResultsWithStatus{}, errors.Errorf("compliance results for run ID %q not found", runID)
+	}
+
+	return results, nil
+}
+
+func (s *boltStore) GetSpecificRunResults(clusterID, standardID, runID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
+	var results dsTypes.ResultsWithStatus
+	err := s.resultsBucket.View(func(b *bbolt.Bucket) error {
+		clusterBucket := b.Bucket([]byte(clusterID))
+		if clusterBucket == nil {
+			return errors.Errorf("no compliance runs for cluster %q found", clusterID)
+		}
+		standardBucket := clusterBucket.Bucket([]byte(standardID))
+		if standardBucket == nil {
+			return errors.Errorf("no compliance runs for standard %q in cluster %q found", standardID, clusterID)
+		}
+
+		var err error
+		results, err = getSpecificRunResults(standardBucket, runID, flags)
+		return err
+	})
+
+	if err != nil {
+		return dsTypes.ResultsWithStatus{}, err
+	}
+	return results, nil
 }
 
 func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {

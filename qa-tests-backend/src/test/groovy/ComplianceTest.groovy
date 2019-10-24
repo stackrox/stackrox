@@ -6,6 +6,7 @@ import groups.BAT
 import groups.SensorBounce
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.Compliance
 import io.stackrox.proto.storage.Compliance.ComplianceResultValue
 import io.stackrox.proto.storage.Compliance.ComplianceRunResults
@@ -880,21 +881,29 @@ class ComplianceTest extends BaseSpecification {
         and:
         "wait for image to be scanned"
         def start = System.currentTimeMillis()
-        ImageOuterClass.ListImage image = ImageService.getImages().find { it.name == cveDeployment.image }
+        def imageQuery = SearchServiceOuterClass.RawQuery.newBuilder()
+                .setQuery("Deployment ID:${cveDeployment.deploymentUid}+Image:${cveDeployment.image}")
+                .build()
+        ImageOuterClass.ListImage image = ImageService.getImages(imageQuery).find { it.name == cveDeployment.image }
         while (image?.getFixableCves() == 0 && System.currentTimeMillis() - start < 30000) {
             sleep 2000
-            image = ImageService.getImages().find { it.name == cveDeployment.image }
+            image = ImageService.getImages(imageQuery).find { it.name == cveDeployment.image }
         }
+
+        assert image != null
+
+        println "Found scanned image ${image}"
 
         when:
         "trigger compliance runs"
-        def pciRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(PCI_ID, clusterId)
-        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId).results
-        assert pciResults.getRunMetadata().runId == pciRunIds.get(PCI_ID)
+        String pciRunId = ComplianceManagementService.triggerComplianceRunsAndWait(PCI_ID, clusterId).get(PCI_ID)
+        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId, pciRunId).results
+        assert pciResults.getRunMetadata().runId == pciRunId
 
-        def hipaaRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(HIPAA_ID, clusterId)
-        ComplianceRunResults hipaaResults = ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId).results
-        assert hipaaResults.getRunMetadata().runId == hipaaRunIds.get(HIPAA_ID)
+        String hipaaRunId = ComplianceManagementService.triggerComplianceRunsAndWait(HIPAA_ID, clusterId).get(HIPAA_ID)
+        ComplianceRunResults hipaaResults =
+                ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId, hipaaRunId).results
+        assert hipaaResults.getRunMetadata().runId == hipaaRunId
 
         then:
         "confirm state and evidence of expected controls"

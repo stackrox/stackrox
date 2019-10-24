@@ -27,6 +27,26 @@ func (ds *datastoreImpl) QueryControlResults(ctx context.Context, query *v1.Quer
 	return nil, errors.New("not yet implemented")
 }
 
+func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
+	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
+		return types.ResultsWithStatus{}, err
+	} else if !ok {
+		return types.ResultsWithStatus{}, errors.New("not found")
+	}
+
+	res, err := ds.storage.GetSpecificRunResults(clusterID, standardID, runID, flags)
+	if err != nil {
+		return types.ResultsWithStatus{}, err
+	}
+
+	// Filter out results the user is not allowed to see.
+	res.LastSuccessfulResults, err = ds.filter.FilterRunResults(ctx, res.LastSuccessfulResults)
+	if err != nil {
+		return types.ResultsWithStatus{}, err
+	}
+	return res, err
+}
+
 func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err

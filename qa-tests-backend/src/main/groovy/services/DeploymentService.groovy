@@ -15,4 +15,8 @@ class DeploymentService extends BaseService {
     static listDeploymentsSearch(RawQuery query = RawQuery.newBuilder().build()) {
         return getDeploymentService().listDeployments(query)
     }
+
+    static getDeployment(String id) {
+        return getDeploymentService().getDeployment(getResourceByID(id))
+    }
 }

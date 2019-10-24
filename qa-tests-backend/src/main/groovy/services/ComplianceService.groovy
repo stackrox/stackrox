@@ -72,11 +72,13 @@ class ComplianceService extends BaseService {
         ]
     }
 
-    static GetComplianceRunResultsResponse getComplianceRunResult(String standardId, String clusterId) {
+    static GetComplianceRunResultsResponse getComplianceRunResult(String standardId, String clusterId,
+                                                                  String runId = null) {
         return getComplianceClient().getRunResults(
                 ComplianceServiceOuterClass.GetComplianceRunResultsRequest.newBuilder()
                         .setStandardId(standardId)
                         .setClusterId(clusterId)
+                        .setRunId(runId ?: "")
                         .build()
         )
     }

@@ -19,12 +19,14 @@ class ComplianceManagementService extends BaseService {
     }
 
     static triggerComplianceRuns(String standardId = null, String clusterId = null) {
-        ComplianceRunSelection.Builder selection = ComplianceRunSelection.newBuilder()
-        standardId ? selection.setStandardId(standardId) : selection.setStandardId("*")
-        clusterId ? selection.setClusterId(clusterId) : selection.setClusterId("*")
+        ComplianceRunSelection selection =
+                ComplianceRunSelection.newBuilder()
+                    .setStandardId(standardId ?: "*")
+                    .setClusterId(clusterId ?: "*")
+                    .build()
         try {
             return getComplianceManagementClient().triggerRuns(
-                    TriggerComplianceRunsRequest.newBuilder().setSelection(selection.build()).build()
+                    TriggerComplianceRunsRequest.newBuilder().setSelection(selection).build()
             ).startedRunsList
         } catch (Exception e) {
             println "Error triggering compliance runs: ${e.toString()}"

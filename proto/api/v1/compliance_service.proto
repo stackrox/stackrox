@@ -110,6 +110,11 @@ message ComplianceControlResultsResponse {
 message GetComplianceRunResultsRequest {
     string cluster_id = 1;
     string standard_id = 2;
+
+    // Specifies the run ID for which to return results. If empty, the most recent run is returned.
+    // CAVEAT: Setting this field circumvents the results cache on the server-side, which may lead to significantly
+    //         increased memory pressure and decreased performance.
+    string run_id = 3;
 }
 
 message GetComplianceRunResultsResponse {

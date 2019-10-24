@@ -52,6 +52,21 @@ func (mr *MockDataStoreMockRecorder) QueryControlResults(ctx, query interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryControlResults", reflect.TypeOf((*MockDataStore)(nil).QueryControlResults), ctx, query)
 }
 
+// GetSpecificRunResults mocks base method
+func (m *MockDataStore) GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSpecificRunResults", ctx, clusterID, standardID, runID, flags)
+	ret0, _ := ret[0].(types.ResultsWithStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSpecificRunResults indicates an expected call of GetSpecificRunResults
+func (mr *MockDataStoreMockRecorder) GetSpecificRunResults(ctx, clusterID, standardID, runID, flags interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpecificRunResults", reflect.TypeOf((*MockDataStore)(nil).GetSpecificRunResults), ctx, clusterID, standardID, runID, flags)
+}
+
 // GetLatestRunResults mocks base method
 func (m *MockDataStore) GetLatestRunResults(ctx context.Context, clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()

@@ -122,7 +122,13 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 }
 
 func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplianceRunResultsRequest) (*v1.GetComplianceRunResultsResponse, error) {
-	results, err := s.complianceDataStore.GetLatestRunResults(ctx, request.GetClusterId(), request.GetStandardId(), complianceDSTypes.WithMessageStrings)
+	var results complianceDSTypes.ResultsWithStatus
+	var err error
+	if request.GetRunId() != "" {
+		results, err = s.complianceDataStore.GetSpecificRunResults(ctx, request.GetClusterId(), request.GetStandardId(), request.GetRunId(), complianceDSTypes.WithMessageStrings)
+	} else {
+		results, err = s.complianceDataStore.GetLatestRunResults(ctx, request.GetClusterId(), request.GetStandardId(), complianceDSTypes.WithMessageStrings)
+	}
 	if err != nil {
 		return nil, err
 	}

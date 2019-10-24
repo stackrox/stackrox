@@ -35,6 +35,21 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// GetSpecificRunResults mocks base method
+func (m *MockStore) GetSpecificRunResults(clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSpecificRunResults", clusterID, standardID, runID, flags)
+	ret0, _ := ret[0].(types.ResultsWithStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSpecificRunResults indicates an expected call of GetSpecificRunResults
+func (mr *MockStoreMockRecorder) GetSpecificRunResults(clusterID, standardID, runID, flags interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpecificRunResults", reflect.TypeOf((*MockStore)(nil).GetSpecificRunResults), clusterID, standardID, runID, flags)
+}
+
 // GetLatestRunResults mocks base method
 func (m *MockStore) GetLatestRunResults(clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
