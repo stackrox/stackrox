@@ -10,7 +10,7 @@ import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import searchContext from 'Containers/searchContext';
-import searchContexts from 'constants/searchContexts';
+import { searchParams } from 'constants/searchParams';
 import List from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
@@ -57,7 +57,7 @@ const ListPage = ({ match, location, history }) => {
                     onRowClick={onRowClick}
                     query={query[searchParam]}
                 />
-                <searchContext.Provider value={searchContexts.sidePanel}>
+                <searchContext.Provider value={searchParams.sidePanel}>
                     <SidePanelAnimation condition={!!entityId1}>
                         <SidePanel
                             className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel"

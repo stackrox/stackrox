@@ -1,6 +1,6 @@
 import entityRelationships from 'modules/entityRelationships';
 import { cloneDeep } from 'lodash';
-import searchContexts from 'constants/searchContexts';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 
 // An item in the workflow stack
 export class WorkflowEntity {
@@ -86,15 +86,20 @@ function trimStack(stack) {
  * }
  */
 export class WorkflowState {
-    constructor(useCase, stateStack, search) {
+    constructor(useCase, stateStack, search, sort, paging) {
         this.useCase = useCase;
         this.stateStack = cloneDeep(stateStack) || [];
         this.search = search || {};
+        this.sort = sort || {};
+        this.paging = paging || {};
+
+        this.sidePanelActive = this.getPageStack().length !== this.stateStack.length;
 
         Object.freeze(this);
-        Object.freeze(search);
-        Object.freeze(stateStack);
-        Object.freeze(useCase);
+        Object.freeze(this.search);
+        Object.freeze(this.stateStack);
+        Object.freeze(this.sort);
+        Object.freeze(this.paging);
     }
 
     // Returns current entity (top of stack)
@@ -122,14 +127,19 @@ export class WorkflowState {
         return stateStack.slice(0, 2);
     }
 
-    getCurrentSearchContext() {
-        return this.getPageStack().length === this.stateStack.length
-            ? searchContexts.page
-            : searchContexts.sidePanel;
+    getCurrentSearchState() {
+        const param = this.sidePanelActive ? searchParams.sidePanel : searchParams.page;
+        return this.search[param] || {};
     }
 
-    getCurrentSearchState() {
-        return this.search[this.getCurrentSearchContext()] || {};
+    getCurrentSortState() {
+        const param = this.sidePanelActive ? sortParams.sidePanel : sortParams.page;
+        return this.sort[param] || {};
+    }
+
+    getCurrentPagingState() {
+        const param = this.sidePanelActive ? pagingParams.sidePanel : pagingParams.page;
+        return this.paging[param] || {};
     }
 }
 
@@ -157,7 +167,7 @@ export default class WorkflowStateMgr {
         const { useCase, stateStack, search } = this.workflowState;
         const baseEntity = this.workflowState.getBaseEntity();
         const newStateStack = baseEntity.entityId ? stateStack.slice(0, 2) : [baseEntity];
-        const newSearch = { [searchContexts.page]: search[searchContexts.page] };
+        const newSearch = { [searchParams.page]: search[searchParams.page] };
         this.workflowState = new WorkflowState(useCase, newStateStack, newSearch);
         return this;
     }
@@ -179,7 +189,7 @@ export default class WorkflowStateMgr {
         const newStateStack =
             currentItem && currentItem.entityType && !currentItem.entityId
                 ? stateStack.slice(0, -1)
-                : stateStack;
+                : [...stateStack];
         newStateStack.push(newItem);
 
         this.workflowState = new WorkflowState(useCase, trimStack(newStateStack), search);
@@ -193,7 +203,7 @@ export default class WorkflowStateMgr {
         const currentItem = this.workflowState.getCurrentEntity();
         const newItem = new WorkflowEntity(currentItem.entityType, id);
         // Slice an item off the end of the stack if this push should result in a replacement (e.g. clicking on multiple list items)
-        const newStateStack = currentItem.entityId ? stateStack.slice(0, -1) : stateStack;
+        const newStateStack = currentItem.entityId ? stateStack.slice(0, -1) : [...stateStack];
         newStateStack.push(newItem);
 
         this.workflowState = new WorkflowState(useCase, newStateStack, search);
@@ -231,11 +241,35 @@ export default class WorkflowStateMgr {
     }
 
     setSearch(newProps) {
-        const { useCase, stateStack, search } = this.workflowState;
+        const { useCase, stateStack, search, sort, paging, sidePanelActive } = this.workflowState;
+        const param = sidePanelActive ? searchParams.sidePanel : searchParams.page;
+
         const newSearch = {
             ...search,
-            [this.workflowState.getCurrentSearchContext()]: newProps
+            [param]: newProps
         };
-        this.workflowState = new WorkflowState(useCase, stateStack, newSearch);
+        this.workflowState = new WorkflowState(useCase, stateStack, newSearch, sort, paging);
+    }
+
+    setSort(sortProp) {
+        const { useCase, stateStack, search, sort, paging, sidePanelActive } = this.workflowState;
+        const param = sidePanelActive ? sortParams.sidePanel : sortParams.page;
+
+        const newSort = {
+            ...sort,
+            [param]: sortProp
+        };
+        this.workflowState = new WorkflowState(useCase, stateStack, search, newSort, paging);
+    }
+
+    setPage(pagingProp) {
+        const { useCase, stateStack, search, sort, paging, sidePanelActive } = this.workflowState;
+        const param = sidePanelActive ? pagingParams.sidePanel : pagingParams.page;
+
+        const newPaging = {
+            ...paging,
+            [param]: pagingProp
+        };
+        this.workflowState = new WorkflowState(useCase, stateStack, search, sort, newPaging);
     }
 }

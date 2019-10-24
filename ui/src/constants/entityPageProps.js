@@ -68,3 +68,36 @@ export const entityComponentDefaultProps = {
     id: null,
     entityid: null
 };
+
+export const workflowListPropTypes = {
+    selectedRowId: PropTypes.string,
+    search: PropTypes.shape({}),
+    sort: PropTypes.string,
+    page: PropTypes.number,
+    entityContext: PropTypes.shape({})
+};
+
+export const workflowListDefaultProps = {
+    search: null,
+    entityContext: {},
+    sort: null,
+    page: 1,
+    selectedRowId: null
+};
+
+export const workflowEntityPropTypes = {
+    entityId: PropTypes.string.isRequired,
+    entityListType: PropTypes.string,
+    entityContext: PropTypes.shape({}),
+    search: PropTypes.shape({}),
+    sort: PropTypes.string,
+    page: PropTypes.number
+};
+
+export const workflowEntityDefaultProps = {
+    entityListType: null,
+    entityContext: {},
+    search: null,
+    sort: null,
+    page: 1
+};

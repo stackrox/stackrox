@@ -5,7 +5,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
-import searchContexts from 'constants/searchContexts';
+import { searchParams } from 'constants/searchParams';
 import ListTable from './Table';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
@@ -49,7 +49,7 @@ const ComplianceList = ({
                 updateSelectedRow={setSelectedRowId}
                 pdfId="capture-list"
             />
-            <searchContext.Provider value={searchContexts.sidePanel}>
+            <searchContext.Provider value={searchParams.sidePanel}>
                 {sidepanel}
             </searchContext.Provider>
         </div>

@@ -20,6 +20,8 @@ const WorkflowEntityPage = ({
     queryOptions,
     entityContext,
     search,
+    sort,
+    page,
     getListData
 }) => {
     let query = overviewQuery;
@@ -43,6 +45,8 @@ const WorkflowEntityPage = ({
             entityListType={entityListType}
             data={listData}
             search={search}
+            sort={sort}
+            page={page}
             entityContext={{ ...entityContext, [entityType]: entityId }}
         />
     ) : (
@@ -62,6 +66,8 @@ WorkflowEntityPage.propTypes = {
     queryOptions: PropTypes.shape({}),
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
+    sort: PropTypes.string,
+    page: PropTypes.number,
     getListData: PropTypes.func
 };
 
@@ -70,6 +76,8 @@ WorkflowEntityPage.defaultProps = {
     queryOptions: null,
     entityContext: {},
     search: null,
+    sort: null,
+    page: 1,
     getListData: null
 };
 

@@ -13,9 +13,9 @@ import { generateURL } from 'modules/URLReadWrite';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 
 import { CLUSTER_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import { PropTypes } from 'prop-types';
+import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
-const VulnMgmtClusters = ({ selectedRowId, search }) => {
+const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
 
     const query = gql`
@@ -176,18 +176,13 @@ const VulnMgmtClusters = ({ selectedRowId, search }) => {
             getTableColumns={getTableColumns}
             selectedRowId={selectedRowId}
             search={search}
+            sort={sort}
+            page={page}
         />
     );
 };
 
-VulnMgmtClusters.propTypes = {
-    selectedRowId: PropTypes.string,
-    search: PropTypes.shape({})
-};
-
-VulnMgmtClusters.defaultProps = {
-    search: null,
-    selectedRowId: null
-};
+VulnMgmtClusters.propTypes = workflowListPropTypes;
+VulnMgmtClusters.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtClusters;

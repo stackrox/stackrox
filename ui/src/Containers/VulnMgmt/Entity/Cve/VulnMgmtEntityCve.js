@@ -1,6 +1,6 @@
 import React from 'react';
+import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
 import gql from 'graphql-tag';
@@ -8,7 +8,7 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtCveOverview from './VulnMgmtCveOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
 
-const VulmMgmtCve = ({ entityId, entityListType, search, entityContext }) => {
+const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
         query getCve($id: ID!) {
             result: vulnerability(id: $id) {
@@ -74,13 +74,15 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext }) => {
             overviewQuery={overviewQuery}
             getListQuery={getListQuery}
             search={search}
+            sort={sort}
+            page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
         />
     );
 };
 
-VulmMgmtCve.propTypes = entityComponentPropTypes;
-VulmMgmtCve.defaultProps = entityComponentDefaultProps;
+VulmMgmtCve.propTypes = workflowEntityPropTypes;
+VulmMgmtCve.defaultProps = workflowEntityDefaultProps;
 
 export default VulmMgmtCve;

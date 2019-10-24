@@ -5,7 +5,7 @@ import EntityTabs from 'Components/EntityTabs';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { parseURL } from 'modules/URLReadWrite';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
-import searchContexts from 'constants/searchContexts';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { WorkflowState } from 'modules/WorkflowStateManager';
 import entityLabels from 'messages/entity';
 import useEntityName from 'hooks/useEntityName';
@@ -16,20 +16,26 @@ const WorkflowEntityPageLayout = ({ location }) => {
     const workflowState = parseURL(location);
     const { stateStack, useCase, search } = workflowState;
     const pageState = new WorkflowState(useCase, workflowState.getPageStack(), search);
-    const pageSearch = search[searchContexts.page];
+
+    // Entity Component
     const EntityComponent = EntityComponentMap[useCase];
 
-    // Calculate page entity props
-    const pageEntity = stateStack[0];
+    // Page props
+    const pageEntity = workflowState.getBaseEntity();
     const { entityId: pageEntityId, entityType: pageEntityType } = pageEntity;
     const pageListType = stateStack[1] && stateStack[1].entityType;
+    const pageSearch = workflowState.search[searchParams.page];
+    const pageSort = workflowState.sort[sortParams.page];
+    const pagePaging = workflowState.paging[pagingParams.page];
 
-    const {
-        sidePanelEntityId,
-        sidePanelEntityType,
-        sidePanelListType,
-        sidePanelSearch
-    } = getSidePanelEntity(workflowState);
+    // Sidepanel props
+    const { sidePanelEntityId, sidePanelEntityType, sidePanelListType } = getSidePanelEntity(
+        workflowState
+    );
+    const sidePanelSearch = workflowState.search[searchParams.sidePanel];
+    const sidePanelSort = workflowState.sort[sortParams.sidePanel];
+    const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
+
     const [fadeIn, setFadeIn] = useState(false);
     useEffect(() => setFadeIn(false), []);
 
@@ -65,6 +71,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
                             entityId={pageEntityId}
                             entityListType={pageListType}
                             search={pageSearch}
+                            sort={pageSort}
+                            page={pagePaging}
                         />
                     </div>
 
@@ -75,6 +83,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
                                 entityType={sidePanelEntityType}
                                 entityListType={sidePanelListType}
                                 search={sidePanelSearch}
+                                sort={sidePanelSort}
+                                page={sidePanelPaging}
                                 entityContext={{
                                     [pageEntity.entityType]: pageEntity.entityId
                                 }}

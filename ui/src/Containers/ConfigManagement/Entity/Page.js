@@ -5,7 +5,7 @@ import URLService from 'modules/URLService';
 import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
 
 import searchContext from 'Containers/searchContext';
-import searchContexts from 'constants/searchContexts';
+import { searchParams } from 'constants/searchParams';
 import PageHeader from './EntityPageHeader';
 import Tabs from './EntityTabs';
 import SidePanel from '../SidePanel/SidePanel';
@@ -64,7 +64,7 @@ const EntityPage = ({ match, location }) => {
                         query={query}
                     />
                 </div>
-                <searchContext.Provider value={searchContexts.sidePanel}>
+                <searchContext.Provider value={searchParams.sidePanel}>
                     <SidePanelAnimation condition={!!entityId1}>
                         <SidePanel
                             className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel"

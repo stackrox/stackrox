@@ -8,7 +8,7 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtClusterOverview from './VulnMgmtClusterOverview';
 import EntityList from '../../List/VulnMgmtList';
 
-const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext }) => {
+const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, entityContext }) => {
     const overviewQuery = gql`
         query getCluster($id: ID!) {
             result: cluster(id: $id) {
@@ -70,6 +70,8 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext })
             overviewQuery={overviewQuery}
             getListQuery={getListQuery}
             search={search}
+            sort={sort}
+            page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
         />

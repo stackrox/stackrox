@@ -10,7 +10,7 @@ import Loader from 'Components/Loader';
 import Query from 'Components/ThrowingQuery';
 import { standardLabels } from 'messages/standards';
 import isGQLLoading from 'utils/gqlLoading';
-import searchContexts from 'constants/searchContexts';
+import { searchParams } from 'constants/searchParams';
 
 const standardsResultsMap = {
     passing: 'var(--tertiary-400)',
@@ -28,7 +28,7 @@ const DashboardCompliance = ({ match, location }) => {
                 Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
             const link = URLService.getURL(match, location)
                 .base(entityTypes.CONTROL, null, useCases.COMPLIANCE)
-                .query({ [searchContexts.page]: { standard: standardLabels[standard.id] } })
+                .query({ [searchParams.page]: { standard: standardLabels[standard.id] } })
                 .url();
             const modifiedResult = {
                 name: standard.name,

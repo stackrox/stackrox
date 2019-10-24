@@ -1,7 +1,7 @@
 import React from 'react';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
-import searchContexts from 'constants/searchContexts';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import entityLabels from 'messages/entity';
@@ -14,24 +14,32 @@ import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowListPageLayout = ({ location }) => {
     const workflowState = parseURL(location);
-    const { stateStack, useCase, search } = workflowState;
-    const pageState = new WorkflowState(useCase, workflowState.getPageStack(), search);
-    const pageSearch = workflowState.search[searchContexts.page];
+    const { useCase, search, sort, paging } = workflowState;
+    const pageState = new WorkflowState(
+        useCase,
+        workflowState.getPageStack(),
+        search,
+        sort,
+        paging
+    );
 
     // Get the list / entity components
     const ListComponent = ListComponentMap[useCase];
     const EntityComponent = EntityComponentMap[useCase];
 
-    // Calculate page entity props
-    const pageListType = stateStack[0].entityType;
+    // Page props
+    const pageListType = workflowState.getBaseEntity().entityType;
+    const pageSearch = workflowState.search[searchParams.page];
+    const pageSort = workflowState.sort[sortParams.page];
+    const pagePaging = workflowState.paging[pagingParams.page];
 
-    // Calculate sidepanel entity props
-    const {
-        sidePanelEntityId,
-        sidePanelEntityType,
-        sidePanelListType,
-        sidePanelSearch
-    } = getSidePanelEntity(workflowState);
+    // Sidepanel props
+    const { sidePanelEntityId, sidePanelEntityType, sidePanelListType } = getSidePanelEntity(
+        workflowState
+    );
+    const sidePanelSearch = workflowState.search[searchParams.sidePanel];
+    const sidePanelSort = workflowState.sort[sortParams.sidePanel];
+    const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
 
     const header = pluralize(entityLabels[pageListType]);
     const exportFilename = `${pluralize(startCase(header))} Report`;
@@ -58,6 +66,8 @@ const WorkflowListPageLayout = ({ location }) => {
                         entityListType={pageListType}
                         entityId={sidePanelEntityId}
                         search={pageSearch}
+                        sort={pageSort}
+                        page={pagePaging}
                     />
                 </div>
                 <WorkflowSidePanel isOpen={!!sidePanelEntityId}>
@@ -67,6 +77,8 @@ const WorkflowListPageLayout = ({ location }) => {
                             entityType={sidePanelEntityType}
                             entityListType={sidePanelListType}
                             search={sidePanelSearch}
+                            sort={sidePanelSort}
+                            page={sidePanelPaging}
                         />
                     ) : (
                         <span />

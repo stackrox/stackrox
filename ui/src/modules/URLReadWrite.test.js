@@ -1,5 +1,6 @@
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { urlEntityListTypes, urlEntityTypes } from '../routePaths';
 import { parseURL, generateURL } from './URLReadWrite';
 import { WorkflowEntity, WorkflowState } from './WorkflowStateManager';
@@ -13,15 +14,25 @@ function getLocation(search, pathname) {
     };
 }
 
-const searchParams = {
-    s: {
+const searchParamValues = {
+    [searchParams.page]: {
         sk1: 'v1',
         sk2: 'v2'
     },
-    s2: {
+    [searchParams.sidePanel]: {
         sk3: 'v3',
         sk4: 'v4'
     }
+};
+
+const sortParamValues = {
+    [sortParams.page]: entityTypes.CLUSTER,
+    [sortParams.sidePanel]: entityTypes.DEPLOYMENT
+};
+
+const pagingParamValues = {
+    [pagingParams.page]: 1,
+    [pagingParams.sidePanel]: 2
 };
 
 describe('ParseURL', () => {
@@ -77,7 +88,9 @@ describe('ParseURL', () => {
 
     it('reads query params from url', () => {
         const search = {
-            ...searchParams
+            ...searchParamValues,
+            ...sortParamValues,
+            ...pagingParamValues
         };
 
         const context = useCases.CONFIG_MANAGEMENT;
@@ -88,8 +101,10 @@ describe('ParseURL', () => {
         const workflowState = parseURL(location);
 
         // Test workflowState object
-        expect(workflowState.search).not.toBeNull();
-        expect(workflowState.search).toEqual(searchParams);
+        expect(workflowState.search).toEqual(searchParamValues);
+        expect(workflowState.sort).toEqual(sortParamValues);
+        expect(workflowState.paging).toEqual(pagingParamValues);
+
         expect(workflowState.stateStack).toEqual([{ t: entityTypes.DEPLOYMENT }]);
     });
 });
@@ -103,12 +118,14 @@ describe('GenerateURL', () => {
                 new WorkflowEntity(entityTypes.NAMESPACE, 'nsId'),
                 new WorkflowEntity(entityTypes.DEPLOYMENT)
             ],
-            searchParams
+            searchParamValues,
+            sortParamValues,
+            pagingParamValues
         );
 
-        const url = generateURL(workflowState, searchParams);
+        const url = generateURL(workflowState);
         expect(url).toBe(
-            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4'
+            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p=1&p2=2'
         );
     });
 
@@ -121,12 +138,14 @@ describe('GenerateURL', () => {
                 new WorkflowEntity(entityTypes.DEPLOYMENT),
                 new WorkflowEntity(entityTypes.DEPLOYMENT, 'depId')
             ],
-            searchParams
+            searchParamValues,
+            sortParamValues,
+            pagingParamValues
         );
 
-        const url = generateURL(workflowState, searchParams);
+        const url = generateURL(workflowState);
         expect(url).toBe(
-            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&workflowState[2][t]=DEPLOYMENT&workflowState[2][i]=depId&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4'
+            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&workflowState[2][t]=DEPLOYMENT&workflowState[2][i]=depId&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p=1&p2=2'
         );
     });
 
@@ -137,12 +156,14 @@ describe('GenerateURL', () => {
                 new WorkflowEntity(entityTypes.NAMESPACE, 'nsId'),
                 new WorkflowEntity(entityTypes.DEPLOYMENT)
             ],
-            searchParams
+            searchParamValues,
+            sortParamValues,
+            pagingParamValues
         );
 
-        const url = generateURL(workflowState, searchParams);
+        const url = generateURL(workflowState);
         expect(url).toBe(
-            '/main/compliance/namespace/nsId/deployments?s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4'
+            '/main/compliance/namespace/nsId/deployments?s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p=1&p2=2'
         );
     });
 
@@ -154,19 +175,21 @@ describe('GenerateURL', () => {
                 new WorkflowEntity(entityTypes.DEPLOYMENT),
                 new WorkflowEntity(entityTypes.DEPLOYMENT, 'depId')
             ],
-            searchParams
+            searchParamValues,
+            sortParamValues,
+            pagingParamValues
         );
 
-        const url = generateURL(workflowState, searchParams);
+        const url = generateURL(workflowState);
         expect(url).toBe(
-            '/main/compliance/namespace/nsId/deployments?workflowState[0][t]=DEPLOYMENT&workflowState[0][i]=depId&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4'
+            '/main/compliance/namespace/nsId/deployments?workflowState[0][t]=DEPLOYMENT&workflowState[0][i]=depId&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p=1&p2=2'
         );
     });
 
     it('generates a dashboard url from workflowState', () => {
-        const workflowState = new WorkflowState(useCases.COMPLIANCE, [], searchParams);
+        const workflowState = new WorkflowState(useCases.COMPLIANCE, []);
 
-        const url = generateURL(workflowState, searchParams);
-        expect(url).toBe('/main/compliance?s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4');
+        const url = generateURL(workflowState);
+        expect(url).toBe('/main/compliance');
     });
 });

@@ -1,5 +1,6 @@
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import WorkflowStateMgr, { WorkflowEntity, WorkflowState } from './WorkflowStateManager';
 
 const entityId1 = '1234';
@@ -7,13 +8,59 @@ const entityId2 = '5678';
 const entityId3 = '1111';
 const useCase = useCases.CONFIG_MANAGEMENT;
 
+const searchParamValues = {
+    [searchParams.page]: {
+        sk1: 'v1',
+        sk2: 'v2'
+    },
+    [searchParams.sidePanel]: {
+        sk3: 'v3',
+        sk4: 'v4'
+    }
+};
+
+const sortParamValues = {
+    [sortParams.page]: entityTypes.CLUSTER,
+    [sortParams.sidePanel]: entityTypes.DEPLOYMENT
+};
+
+const pagingParamValues = {
+    [pagingParams.page]: 1,
+    [pagingParams.sidePanel]: 2
+};
+
+function getEntityState(isSidePanelOpen) {
+    const stateStack = [new WorkflowEntity(entityTypes.CLUSTER, entityId1)];
+    if (isSidePanelOpen) {
+        stateStack.push(new WorkflowEntity(entityTypes.DEPLOYMENT));
+        stateStack.push(new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2));
+    }
+
+    return new WorkflowState(
+        useCase,
+        stateStack,
+        searchParamValues,
+        sortParamValues,
+        pagingParamValues
+    );
+}
+
+function getListState(isSidePanelOpen) {
+    const stateStack = [new WorkflowEntity(entityTypes.CLUSTER)];
+    if (isSidePanelOpen) stateStack.push(new WorkflowEntity(entityTypes.CLUSTER, entityId1));
+
+    return new WorkflowState(
+        useCase,
+        stateStack,
+        searchParamValues,
+        sortParamValues,
+        pagingParamValues
+    );
+}
+
 describe('WorkflowStateManager', () => {
     it('resets current state based on given parameters', () => {
-        const workflowState = new WorkflowState(useCase, [
-            new WorkflowEntity(entityTypes.NAMESPACE),
-            new WorkflowEntity(entityTypes.NAMESPACE, entityId1)
-        ]);
-        const workflowStateMgr = new WorkflowStateMgr(workflowState);
+        const workflowStateMgr = new WorkflowStateMgr(getEntityState());
         workflowStateMgr.reset(useCase, entityTypes.DEPLOYMENT, entityId2);
 
         expect(workflowStateMgr.workflowState.stateStack).toEqual([
@@ -23,51 +70,35 @@ describe('WorkflowStateManager', () => {
 
     it('Removes sidepanel params state', () => {
         // in list
-        let workflowState = new WorkflowState(useCase, [
-            new WorkflowEntity(entityTypes.DEPLOYMENT),
-            new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)
-        ]);
-        let workflowStateMgr = new WorkflowStateMgr(workflowState);
+        let workflowStateMgr = new WorkflowStateMgr(getListState());
         workflowStateMgr.removeSidePanelParams();
 
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([{ t: entityTypes.DEPLOYMENT }]);
+        expect(workflowStateMgr.workflowState.stateStack).toEqual([{ t: entityTypes.CLUSTER }]);
 
         // in entity
-        workflowState = new WorkflowState(useCase, [
-            new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
-            new WorkflowEntity(entityTypes.NAMESPACE),
-            new WorkflowEntity(entityTypes.NAMESPACE, entityId2)
-        ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr = new WorkflowStateMgr(getEntityState(true));
         workflowStateMgr.removeSidePanelParams();
 
         expect(workflowStateMgr.workflowState.stateStack).toEqual([
-            { t: entityTypes.DEPLOYMENT, i: entityId1 },
-            { t: entityTypes.NAMESPACE }
+            { t: entityTypes.CLUSTER, i: entityId1 },
+            { t: entityTypes.DEPLOYMENT }
         ]);
     });
     it('pushes a list onto the stack related to current workflow state', () => {
         // entity page
-        let workflowState = new WorkflowState(useCase, [
-            new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)
-        ]);
-        let workflowStateMgr = new WorkflowStateMgr(workflowState);
+        let workflowStateMgr = new WorkflowStateMgr(getEntityState());
         workflowStateMgr.pushList(entityTypes.NAMESPACE);
         expect(workflowStateMgr.workflowState.stateStack).toEqual([
-            { t: entityTypes.DEPLOYMENT, i: entityId1 },
+            { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.NAMESPACE }
         ]);
 
         // list page
-        workflowState = new WorkflowState(useCase, [
-            new WorkflowEntity(entityTypes.DEPLOYMENT),
-            new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)
-        ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
+        workflowStateMgr = new WorkflowStateMgr(getListState(true));
         workflowStateMgr.pushList(entityTypes.NAMESPACE);
         expect(workflowStateMgr.workflowState.stateStack).toEqual([
-            { t: entityTypes.DEPLOYMENT },
-            { t: entityTypes.DEPLOYMENT, i: entityId1 },
+            { t: entityTypes.CLUSTER },
+            { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.NAMESPACE }
         ]);
     });
@@ -181,13 +212,10 @@ describe('WorkflowStateManager', () => {
         ]);
     });
     it('pushes a related entity to the stack', () => {
-        const workflowState = new WorkflowState(useCase, [
-            new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)
-        ]);
-        const workflowStateMgr = new WorkflowStateMgr(workflowState);
+        const workflowStateMgr = new WorkflowStateMgr(getEntityState());
         workflowStateMgr.pushRelatedEntity(entityTypes.POLICY, entityId2);
         expect(workflowStateMgr.workflowState.stateStack).toEqual([
-            { t: entityTypes.DEPLOYMENT, i: entityId1 },
+            { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.POLICY, i: entityId2 }
         ]);
     });
@@ -258,14 +286,32 @@ describe('WorkflowStateManager', () => {
     });
 
     it('pops the last entity off of the stack', () => {
-        const workflowState = new WorkflowState(useCase, [
-            new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
-            new WorkflowEntity(entityTypes.NAMESPACE, entityId2)
-        ]);
-        const workflowStateMgr = new WorkflowStateMgr(workflowState);
+        const workflowStateMgr = new WorkflowStateMgr(getEntityState());
         workflowStateMgr.pop();
         expect(workflowStateMgr.workflowState.stateStack).toEqual([
-            { t: entityTypes.DEPLOYMENT, i: entityId1 }
+            { t: entityTypes.CLUSTER, i: entityId1 }
         ]);
+    });
+
+    it('sets search state for page', () => {
+        const workflowStateMgr = new WorkflowStateMgr(getEntityState());
+        workflowStateMgr.setSearch({ testKey: 'testVal' });
+        expect(workflowStateMgr.workflowState.search[searchParams.page]).toEqual({
+            testKey: 'testVal'
+        });
+        expect(workflowStateMgr.workflowState.search[searchParams.sidePanel]).toEqual(
+            searchParamValues[searchParams.sidePanel]
+        );
+    });
+
+    it('sets search state for sidePanel', () => {
+        const workflowStateMgr = new WorkflowStateMgr(getListState(true));
+        workflowStateMgr.setSearch({ testKey: 'testVal' });
+        expect(workflowStateMgr.workflowState.search[searchParams.sidePanel]).toEqual({
+            testKey: 'testVal'
+        });
+        expect(workflowStateMgr.workflowState.search[searchParams.page]).toEqual(
+            searchParamValues[searchParams.page]
+        );
     });
 });

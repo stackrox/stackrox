@@ -1,6 +1,5 @@
 /* eslint-disable react/jsx-no-bind */
 import React from 'react';
-import { PropTypes } from 'prop-types';
 import pluralize from 'pluralize';
 import gql from 'graphql-tag';
 
@@ -14,6 +13,7 @@ import entityTypes from 'constants/entityTypes';
 import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import queryService from 'modules/queryService';
 import { generateURL } from 'modules/URLReadWrite';
+import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
 import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
@@ -197,7 +197,7 @@ export const defaultCveSort = [
     }
 ];
 
-const VulnMgmtCves = ({ selectedRowId, search }) => {
+const VulnMgmtCves = ({ selectedRowId, search, sort, page }) => {
     // TODO: change query line to `query getCves($query: String) {`
     //   after API starts accepting empty string ('') for query
     const CVES_QUERY = gql`
@@ -224,6 +224,8 @@ const VulnMgmtCves = ({ selectedRowId, search }) => {
             getTableColumns={getCveTableColumns}
             selectedRowId={selectedRowId}
             search={search}
+            sort={sort}
+            page={page}
             defaultSorted={defaultCveSort}
             showSubrows
             SubComponent={renderCveDescription}
@@ -231,14 +233,7 @@ const VulnMgmtCves = ({ selectedRowId, search }) => {
     );
 };
 
-VulnMgmtCves.propTypes = {
-    selectedRowId: PropTypes.string,
-    search: PropTypes.shape({})
-};
-
-VulnMgmtCves.defaultProps = {
-    search: null,
-    selectedRowId: null
-};
+VulnMgmtCves.propTypes = workflowListPropTypes;
+VulnMgmtCves.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtCves;

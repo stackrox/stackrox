@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -21,31 +20,11 @@ const entityComponentMap = {
     [entityTypes.POLICY]: VulnMgmtEntityPolicy
 };
 
-const VulnMgmtEntity = ({ entityType, entityId, entityListType, search, entityContext }) => {
+const VulnMgmtEntity = props => {
+    const { entityType } = props;
     const Component = entityComponentMap[entityType];
     if (!Component) return <PageNotFound resourceType={entityType} />;
-    return (
-        <Component
-            entityId={entityId}
-            entityListType={entityListType}
-            search={search}
-            entityContext={entityContext}
-        />
-    );
-};
-
-VulnMgmtEntity.propTypes = {
-    entityType: PropTypes.string.isRequired,
-    entityId: PropTypes.string.isRequired,
-    entityListType: PropTypes.string,
-    search: PropTypes.shape({}),
-    entityContext: PropTypes.shape({})
-};
-
-VulnMgmtEntity.defaultProps = {
-    entityListType: null,
-    search: null,
-    entityContext: {}
+    return <Component {...props} />;
 };
 
 export default VulnMgmtEntity;

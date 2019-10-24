@@ -4,7 +4,7 @@ import { nestedPaths as PATHS } from 'routePaths';
 import PageNotFound from 'Components/PageNotFound';
 import isEqual from 'lodash/isEqual';
 import searchContext from 'Containers/searchContext';
-import searchContexts from 'constants/searchContexts';
+import { searchParams } from 'constants/searchParams';
 import Dashboard from './Dashboard/Page';
 import Entity from './Entity/Page';
 import List from './List/Page';
@@ -16,7 +16,7 @@ class Page extends Component {
 
     render() {
         return (
-            <searchContext.Provider value={searchContexts.page}>
+            <searchContext.Provider value={searchParams.page}>
                 <Switch>
                     <Route exact path={PATHS.DASHBOARD} component={Dashboard} />
                     <Route path={PATHS.LIST} component={List} />

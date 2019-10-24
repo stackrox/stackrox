@@ -1,5 +1,4 @@
 import React from 'react';
-import { PropTypes } from 'prop-types';
 import gql from 'graphql-tag';
 import pluralize from 'pluralize';
 
@@ -16,6 +15,7 @@ import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import { generateURL } from 'modules/URLReadWrite';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
 export function getImageTableColumns(workflowState) {
     const tableColumns = [
@@ -133,7 +133,7 @@ export function getImageTableColumns(workflowState) {
     return tableColumns.filter(col => col);
 }
 
-const VulnMgmtImages = ({ selectedRowId, search }) => {
+const VulnMgmtImages = ({ selectedRowId, search, sort, page }) => {
     const query = gql`
         query getImages {
             results: images {
@@ -164,21 +164,14 @@ const VulnMgmtImages = ({ selectedRowId, search }) => {
             getTableColumns={getImageTableColumns}
             selectedRowId={selectedRowId}
             search={search}
+            sort={sort}
+            page={page}
             defaultSorted={defaultImageSort}
         />
     );
 };
 
-VulnMgmtImages.propTypes = {
-    selectedRowId: PropTypes.string,
-    search: PropTypes.shape({}),
-    entityContext: PropTypes.shape({})
-};
-
-VulnMgmtImages.defaultProps = {
-    search: null,
-    entityContext: {},
-    selectedRowId: null
-};
+VulnMgmtImages.propTypes = workflowListPropTypes;
+VulnMgmtImages.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtImages;

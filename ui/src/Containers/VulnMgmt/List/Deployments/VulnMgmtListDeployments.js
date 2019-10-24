@@ -1,5 +1,4 @@
 import React, { useContext } from 'react';
-import { PropTypes } from 'prop-types';
 import pluralize from 'pluralize';
 import gql from 'graphql-tag';
 
@@ -19,6 +18,7 @@ import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { getLatestDatedItemByKey } from 'utils/dateUtils';
 import { getSeverityCounts } from 'utils/vulnerabilityUtils';
 import { severities } from 'constants/severities';
+import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
 export const defaultDeploymentSort = [
     {
@@ -27,7 +27,7 @@ export const defaultDeploymentSort = [
     }
 ];
 
-const VulnMgmtDeployments = ({ selectedRowId, search, entityContext }) => {
+const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
 
     const query = gql`
@@ -42,6 +42,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext }) => {
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search)
+            // todo: add sort and page criteria
         }
     };
 
@@ -240,20 +241,13 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext }) => {
             defaultSorted={defaultDeploymentSort}
             selectedRowId={selectedRowId}
             search={search}
+            sort={sort}
+            page={page}
         />
     );
 };
 
-VulnMgmtDeployments.propTypes = {
-    selectedRowId: PropTypes.string,
-    search: PropTypes.shape({}),
-    entityContext: PropTypes.shape({})
-};
-
-VulnMgmtDeployments.defaultProps = {
-    search: null,
-    entityContext: {},
-    selectedRowId: null
-};
+VulnMgmtDeployments.propTypes = workflowListPropTypes;
+VulnMgmtDeployments.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtDeployments;

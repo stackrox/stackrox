@@ -2,7 +2,7 @@ import pageTypes from 'constants/pageTypes';
 import useCases from 'constants/useCaseTypes';
 import { generatePath, matchPath } from 'react-router-dom';
 import qs from 'qs';
-import searchContexts from 'constants/searchContexts';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import WorkflowStateMgr, { WorkflowState, WorkflowEntity } from './WorkflowStateManager';
 
 import {
@@ -91,8 +91,12 @@ export function generateURL(workflowState) {
     // generate the querystring using remaining statestack params
     const queryParams = {
         workflowState: qsStack,
-        [searchContexts.page]: workflowState.search[searchContexts.page],
-        [searchContexts.sidePanel]: workflowState.search[searchContexts.sidePanel]
+        [searchParams.page]: workflowState.search[searchParams.page],
+        [searchParams.sidePanel]: workflowState.search[searchParams.sidePanel],
+        [sortParams.page]: workflowState.sort[sortParams.page],
+        [sortParams.sidePanel]: workflowState.sort[sortParams.sidePanel],
+        [pagingParams.page]: workflowState.paging[pagingParams.page],
+        [pagingParams.sidePanel]: workflowState.paging[pagingParams.sidePanel]
     };
 
     const queryString = queryParams
@@ -157,12 +161,20 @@ export function parseURL(location) {
     });
 
     const { params } = entityParams || listParams || dashboardParams;
-    const query = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
+    const queryStr = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
 
     const stateStackFromURLParams = paramsToStateStack(params) || [];
 
-    // eslint-disable-next-line
-    let { workflowState: stateStackFromQueryString = [], [searchContexts.page] : pageSearch, [searchContexts.sidePanel] : sidePanelSearch } = query;
+    let { workflowState: stateStackFromQueryString = [] } = queryStr;
+    const {
+        [searchParams.page]: pageSearch,
+        [searchParams.sidePanel]: sidePanelSearch,
+        [sortParams.page]: pageSort,
+        [sortParams.sidePanel]: sidePanelSort,
+        [pagingParams.page]: pagePaging,
+        [pagingParams.sidePanel]: sidePanelPaging
+    } = queryStr;
+
     stateStackFromQueryString = !Array.isArray(stateStackFromQueryString)
         ? [stateStackFromQueryString]
         : stateStackFromQueryString;
@@ -174,8 +186,16 @@ export function parseURL(location) {
         params.context,
         [...stateStackFromURLParams, ...stateStackFromQueryString],
         {
-            [searchContexts.page]: pageSearch,
-            [searchContexts.sidePanel]: sidePanelSearch
+            [searchParams.page]: pageSearch,
+            [searchParams.sidePanel]: sidePanelSearch
+        },
+        {
+            [sortParams.page]: pageSort,
+            [sortParams.sidePanel]: sidePanelSort
+        },
+        {
+            [pagingParams.page]: parseInt(pagePaging || 1, 10),
+            [pagingParams.sidePanel]: parseInt(sidePanelPaging || 1, 10)
         }
     );
 

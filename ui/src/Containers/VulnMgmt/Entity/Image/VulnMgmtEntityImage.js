@@ -1,5 +1,5 @@
 import React from 'react';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
 import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
@@ -8,7 +8,7 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
 import EntityList from '../../List/VulnMgmtList';
 
-const VulnMgmtImage = ({ entityId, entityListType, search, entityContext }) => {
+const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
         query getImage($id: ID!${entityListType ? ', $query: String' : ''}) {
             result: image(sha: $id) {
@@ -97,13 +97,15 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext }) => {
             overviewQuery={overviewQuery}
             getListQuery={getListQuery}
             search={search}
+            sort={sort}
+            page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
         />
     );
 };
 
-VulnMgmtImage.propTypes = entityComponentPropTypes;
-VulnMgmtImage.defaultProps = entityComponentDefaultProps;
+VulnMgmtImage.propTypes = workflowEntityPropTypes;
+VulnMgmtImage.defaultProps = workflowEntityDefaultProps;
 
 export default VulnMgmtImage;

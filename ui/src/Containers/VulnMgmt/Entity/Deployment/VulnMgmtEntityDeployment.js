@@ -2,7 +2,7 @@ import React from 'react';
 import gql from 'graphql-tag';
 
 import useCases from 'constants/useCaseTypes';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
@@ -10,7 +10,7 @@ import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
 
-const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext }) => {
+const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
         query getDeployment($id: ID!, $query: String) {
             result: deployment(id: $id) {
@@ -106,13 +106,15 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext })
             overviewQuery={overviewQuery}
             getListQuery={getListQuery}
             search={search}
+            sort={sort}
+            page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
         />
     );
 };
 
-VulmMgmtDeployment.propTypes = entityComponentPropTypes;
-VulmMgmtDeployment.defaultProps = entityComponentDefaultProps;
+VulmMgmtDeployment.propTypes = workflowEntityPropTypes;
+VulmMgmtDeployment.defaultProps = workflowEntityDefaultProps;
 
 export default VulmMgmtDeployment;
