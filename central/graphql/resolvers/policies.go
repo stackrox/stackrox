@@ -25,6 +25,7 @@ func init() {
 		schema.AddExtraResolver("Policy", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Policy", `deploymentCount: Int!`),
 		schema.AddExtraResolver("Policy", `policyStatus: String!`),
+		schema.AddExtraResolver("Policy", "latestViolation: Time"),
 	)
 }
 
@@ -162,4 +163,11 @@ func (resolver *policyResolver) anyActiveDeployAlerts(ctx context.Context) (bool
 
 	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
 	return len(results) != 0, err
+}
+
+func (resolver *policyResolver) LatestViolation(ctx context.Context) (*graphql.Time, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "Latest Violation")
+
+	return getLatestViolationTime(ctx, resolver.root,
+		search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).ProtoQuery())
 }
