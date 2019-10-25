@@ -21,7 +21,7 @@ export function getNamespaceTableColumns(workflowState) {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'metadata.id'
         },
         {
             Header: `Namespace`,

@@ -90,7 +90,7 @@ const getTextByEntityType = (entityType, data) => {
     }
 };
 
-const processData = (data, entityType, workflowState) => {
+const processData = (data, entityType, workflowState, limit) => {
     const results = data.results.map(({ id, vulnCounter, ...rest }) => {
         const text = getTextByEntityType(entityType, { ...rest });
         const url = generateURLTo(workflowState, entityType, id);
@@ -100,7 +100,7 @@ const processData = (data, entityType, workflowState) => {
             component: <CVEStackedPill vulnCounter={vulnCounter} url={url} horizontal />
         };
     });
-    return results.splice(0, 8); // @TODO: Remove when we have pagination on image components
+    return results.splice(0, limit); // @TODO: Remove when we have pagination on image components
 };
 
 const getQueryBySelectedEntity = entityType => {
@@ -124,7 +124,7 @@ const getEntitiesByContext = entityContext => {
     return entities;
 };
 
-const TopRiskiestImagesAndComponents = ({ entityContext }) => {
+const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
     const entities = getEntitiesByContext(entityContext);
 
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
@@ -137,7 +137,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext }) => {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             pagination: {
-                limit: 8
+                limit
                 /*
                 @TODO: When priority is a sortable field, uncomment this
 
@@ -153,8 +153,9 @@ const TopRiskiestImagesAndComponents = ({ entityContext }) => {
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
+    const viewAllURL = generateURLTo(workflowState, entityTypes.IMAGE);
     if (!loading) {
-        const processedData = processData(data, selectedEntity, workflowState);
+        const processedData = processData(data, selectedEntity, workflowState, limit);
 
         content = (
             <div className="w-full">
@@ -163,7 +164,6 @@ const TopRiskiestImagesAndComponents = ({ entityContext }) => {
         );
     }
 
-    const viewAllURL = generateURLTo(workflowState, entityTypes.IMAGE);
     return (
         <Widget
             className="h-full pdf-page"
@@ -178,11 +178,13 @@ const TopRiskiestImagesAndComponents = ({ entityContext }) => {
 };
 
 TopRiskiestImagesAndComponents.propTypes = {
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
+    limit: PropTypes.number
 };
 
 TopRiskiestImagesAndComponents.defaultProps = {
-    entityContext: {}
+    entityContext: {},
+    limit: 8
 };
 
 export default TopRiskiestImagesAndComponents;

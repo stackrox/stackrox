@@ -56,8 +56,8 @@ const entityRelationshipMap = {
     [entityTypes.CLUSTER]: {
         children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
         parents: [],
-        matches: [entityTypes.CONTROL],
-        extendedMatches: [entityTypes.POLICY]
+        matches: [entityTypes.CONTROL]
+        // extendedMatches: [entityTypes.POLICY]
     },
     [entityTypes.NODE]: {
         children: [],
@@ -67,8 +67,8 @@ const entityRelationshipMap = {
     [entityTypes.NAMESPACE]: {
         children: [entityTypes.DEPLOYMENT, entityTypes.SERVICE_ACCOUNT, entityTypes.SECRET],
         parents: [entityTypes.CLUSTER],
-        matches: [],
-        extendedMatches: [entityTypes.POLICY]
+        matches: []
+        // extendedMatches: [entityTypes.POLICY]
     },
     [entityTypes.DEPLOYMENT]: {
         children: [entityTypes.IMAGE],

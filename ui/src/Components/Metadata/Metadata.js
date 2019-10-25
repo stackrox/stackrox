@@ -1,50 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
-import Popper from 'Components/Popper';
-import pluralize from 'pluralize';
+import ResourceCountPopper from 'Components/ResourceCountPopper';
 
-const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName }) => {
-    const { length } = data;
-    return (
-        <Popper
-            disabled={!length}
-            placement="bottom"
-            reactOutsideClassName={reactOutsideClassName}
-            buttonClass={`rounded border border-base-400 p-1 px-4 text-center text-sm ${length &&
-                'hover:bg-base-200'}`}
-            buttonContent={
-                <div>
-                    {length} {pluralize(label, length)}
-                </div>
-            }
-            popperContent={
-                <div className="border border-base-300 p-4 shadow bg-base-100 whitespace-no-wrap">
-                    {renderContent(data)}
-                </div>
-            }
-        />
-    );
-};
-
-ResourceCountPopper.propTypes = {
-    data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
-    label: PropTypes.string.isRequired,
-    reactOutsideClassName: PropTypes.string,
-    renderContent: PropTypes.func.isRequired
-};
-
-ResourceCountPopper.defaultProps = {
-    reactOutsideClassName: null
-};
-
-const renderKeyValuePairs = data => {
-    return data.map(({ key, value }) => (
-        <div className="mt-2" key={key}>
-            {key} : {value}
-        </div>
-    ));
-};
 const renderName = data => {
     return data.map(({ name }) => (
         <div className="mt-2" key={name}>
@@ -76,7 +34,6 @@ const Metadata = ({ keyValuePairs, title, labels, annotations, whitelists, secre
                                 data={labels}
                                 reactOutsideClassName="ignore-label-onclickoutside"
                                 label="Label"
-                                renderContent={renderKeyValuePairs}
                             />
                         </li>
                     )}
@@ -86,7 +43,6 @@ const Metadata = ({ keyValuePairs, title, labels, annotations, whitelists, secre
                                 data={annotations}
                                 reactOutsideClassName="ignore-annotation-onclickoutside"
                                 label="Annotation"
-                                renderContent={renderKeyValuePairs}
                             />
                         </li>
                     )}

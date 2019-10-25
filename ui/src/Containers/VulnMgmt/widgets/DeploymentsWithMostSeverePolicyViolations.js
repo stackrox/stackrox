@@ -1,18 +1,16 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import { Link } from 'react-router-dom';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import { severityValues, severities } from 'constants/severities';
 import queryService from 'modules/queryService';
 import sortBy from 'lodash/sortBy';
 
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURL } from 'modules/URLReadWrite';
+import { generateURLTo } from 'modules/URLReadWrite';
 
-import Button from 'Components/Button';
+import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
@@ -30,28 +28,6 @@ const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
         }
     }
 `;
-
-const ViewAllButton = ({ url }) => {
-    return (
-        <Link to={url} className="no-underline">
-            <Button className="btn-sm btn-base" type="button" text="View All" />
-        </Link>
-    );
-};
-
-const getViewAllURL = workflowState => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityTypes.DEPLOYMENT);
-    const url = generateURL(workflowStateMgr.workflowState);
-    return url;
-};
-
-const getSingleEntityURL = (workflowState, id) => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityTypes.DEPLOYMENT).pushListItem(id);
-    const url = generateURL(workflowStateMgr.workflowState);
-    return url;
-};
 
 const getPolicySeverityCounts = failingPolicies => {
     const counts = failingPolicies.reduce(
@@ -80,16 +56,16 @@ const sortBySevereViolations = datum => {
     }, 0);
 };
 
-const processData = (data, workflowState) => {
+const processData = (data, workflowState, limit) => {
     const results = sortBy(data.results, [sortBySevereViolations])
-        .splice(-8)
+        .slice(-limit)
         .reverse(); // @TODO: Remove when we have pagination on Policies
     return results.map(({ id, name, failingPolicies }) => {
         const text = name;
         const { critical, high, medium, low } = getPolicySeverityCounts(failingPolicies);
         return {
             text,
-            url: getSingleEntityURL(workflowState, id),
+            url: generateURLTo(workflowState, entityTypes.DEPLOYMENT, id),
             component: (
                 <>
                     <div className="mr-4">
@@ -108,12 +84,12 @@ const processData = (data, workflowState) => {
     });
 };
 
-const DeploymentsWithMostSeverePolicyViolations = ({ entityContext }) => {
+const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => {
     const { loading, data = {} } = useQuery(DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS, {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             pagination: {
-                limit: 8,
+                limit,
                 sortOption: {
                     field: 'priority',
                     reversed: false
@@ -125,8 +101,9 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext }) => {
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
+    const viewAllURL = generateURLTo(workflowState, entityTypes.DEPLOYMENT);
     if (!loading) {
-        const processedData = processData(data, workflowState);
+        const processedData = processData(data, workflowState, limit);
 
         content = (
             <div className="w-full">
@@ -139,7 +116,7 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext }) => {
         <Widget
             className="h-full pdf-page"
             header="Deployments With Most Severe Policy Violations"
-            headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}
+            headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
         </Widget>
@@ -147,11 +124,13 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext }) => {
 };
 
 DeploymentsWithMostSeverePolicyViolations.propTypes = {
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
+    limit: PropTypes.number
 };
 
 DeploymentsWithMostSeverePolicyViolations.defaultProps = {
-    entityContext: {}
+    entityContext: {},
+    limit: 8
 };
 
 export default DeploymentsWithMostSeverePolicyViolations;
