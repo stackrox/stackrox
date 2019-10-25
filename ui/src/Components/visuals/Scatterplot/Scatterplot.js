@@ -1,17 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-    FlexibleWidthXYPlot,
+    FlexibleXYPlot,
     XAxis,
     YAxis,
     VerticalGridLines,
     HorizontalGridLines,
     MarkSeries
 } from 'react-vis';
+import useGraphHoverHint from 'hooks/useGraphHoverHint';
+import HoverHint from '../HoverHint';
 
 import { getHighValue, getLowValue } from '../visual.helpers';
 
-const Scatterplot = ({ data, lowerX, lowerY, upperX, upperY, xMultiple, yMultiple }) => {
+const Scatterplot = ({ data, lowerX, lowerY, upperX, upperY, xMultiple, yMultiple, plotProps }) => {
+    const { hint, onValueMouseOver, onValueMouseOut, onMouseMove } = useGraphHoverHint();
+
     const lowX = lowerX !== null ? lowerX : getLowValue(data, 'x', xMultiple);
     const highX = upperX !== null ? upperX : getHighValue(data, 'x', xMultiple);
     const xDomain = [lowX, highX];
@@ -21,13 +25,33 @@ const Scatterplot = ({ data, lowerX, lowerY, upperX, upperY, xMultiple, yMultipl
     const yDomain = [lowY, highY];
 
     return (
-        <FlexibleWidthXYPlot height={200} xDomain={xDomain} yDomain={yDomain}>
-            <MarkSeries colorType="literal" data={data} />
-            <VerticalGridLines />
-            <HorizontalGridLines />
-            <XAxis tickSize={0} />
-            <YAxis tickSize={0} />
-        </FlexibleWidthXYPlot>
+        <>
+            <FlexibleXYPlot
+                xDomain={xDomain}
+                yDomain={yDomain}
+                {...plotProps}
+                onMouseMove={onMouseMove}
+            >
+                <MarkSeries
+                    colorType="literal"
+                    data={data}
+                    onValueMouseOver={onValueMouseOver}
+                    onValueMouseOut={onValueMouseOut}
+                />
+                <VerticalGridLines />
+                <HorizontalGridLines />
+                <XAxis tickSize={0} />
+                <YAxis tickSize={0} />
+            </FlexibleXYPlot>
+            {hint && hint.data && (
+                <HoverHint
+                    top={hint.y}
+                    left={hint.x}
+                    title={hint.data.title}
+                    body={hint.data.body}
+                />
+            )}
+        </>
     );
 };
 
@@ -44,7 +68,8 @@ Scatterplot.propTypes = {
     lowerY: PropTypes.number,
     upperY: PropTypes.number,
     xMultiple: PropTypes.number,
-    yMultiple: PropTypes.number
+    yMultiple: PropTypes.number,
+    plotProps: PropTypes.shape({})
 };
 
 Scatterplot.defaultProps = {
@@ -54,7 +79,8 @@ Scatterplot.defaultProps = {
     lowerY: null,
     upperY: null,
     xMultiple: 10,
-    yMultiple: 10
+    yMultiple: 10,
+    plotProps: null
 };
 
 export default Scatterplot;

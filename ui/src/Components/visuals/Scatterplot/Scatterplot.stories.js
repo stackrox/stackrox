@@ -22,17 +22,33 @@ const data = [
 ];
 
 export const withData = () => {
-    return <Scatterplot data={data} />;
+    return (
+        <div className="w-full h-64">
+            <Scatterplot data={data} />
+        </div>
+    );
 };
 
 export const withSetXDomain = () => {
-    return <Scatterplot data={data} lowerX={0} upperX={200} />;
+    return (
+        <div className="w-full h-64">
+            <Scatterplot data={data} lowerX={0} upperX={200} />
+        </div>
+    );
 };
 
 export const withSetYDomain = () => {
-    return <Scatterplot data={data} lowerY={0} upperY={20} />;
+    return (
+        <div className="w-full h-64">
+            <Scatterplot data={data} lowerY={0} upperY={20} />
+        </div>
+    );
 };
 
 export const withSetXandYDomains = () => {
-    return <Scatterplot data={data} lowerX={0} upperX={150} lowerY={0} upperY={25} />;
+    return (
+        <div className="w-full h-64">
+            <Scatterplot data={data} lowerX={0} upperX={150} lowerY={0} upperY={25} />
+        </div>
+    );
 };
