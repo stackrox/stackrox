@@ -80,7 +80,7 @@ class SecretsTest extends BaseSpecification {
         then:
         "Verify the binding deployment is gone from the secret"
         Secret secretUpdate = null
-        def timer = new Timer(10, 3000)
+        def timer = new Timer(10, 3)
 
         //Add waiting logic cause stackrox need some time to response the number of deployments' change
         while (timer.IsValid()) {
