@@ -29,6 +29,7 @@ import services.NetworkPolicyService
 import services.ImageService
 import services.ProcessService
 import spock.lang.Shared
+import util.Timer
 import v1.ComplianceServiceOuterClass.ComplianceControl
 import v1.ComplianceServiceOuterClass.ComplianceStandard
 import v1.ComplianceServiceOuterClass.ComplianceAggregation.Result
@@ -880,17 +881,18 @@ class ComplianceTest extends BaseSpecification {
 
         and:
         "wait for image to be scanned"
-        def start = System.currentTimeMillis()
         def imageQuery = SearchServiceOuterClass.RawQuery.newBuilder()
-                .setQuery("Deployment ID:${cveDeployment.deploymentUid}+Image:${cveDeployment.image}")
+                .setQuery("Deployment ID:${cveDeployment.deploymentUid}")
                 .build()
-        ImageOuterClass.ListImage image = ImageService.getImages(imageQuery).find { it.name == cveDeployment.image }
-        while (image?.getFixableCves() == 0 && System.currentTimeMillis() - start < 30000) {
-            sleep 2000
+
+        def timer = new Timer(15, 2)
+        ImageOuterClass.ListImage image = null
+
+        while (!image?.fixableCves && timer.IsValid()) {
+            println "Image not found or not scanned: ${image}"
             image = ImageService.getImages(imageQuery).find { it.name == cveDeployment.image }
         }
-
-        assert image != null
+        assert image?.fixableCves
 
         println "Found scanned image ${image}"
 
