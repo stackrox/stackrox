@@ -2,10 +2,14 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [33.0]
+### Changed
 - Both the `runAsUser` and `fsGroup` for the central deployment are now 4000. 
 This required changes in the the pod security policy, and the OpenShift Security Context Contraint (scc) objects.
 If you are upgrading from a previous version, please refer to the upgrade instructions on how to apply these changes
 to your existing deployment, pod security policy and OpenShift scc objects.
+- CVEs with a CVSS score of 0 will now be displayed as "Pending" in the UI because it indicates that a CVE
+  is still being analyzed or the CVE has been disputed. The API will continue to return a CVSS score of 0.
+
 ## [32.0]
 ### Changed
 - The port used for prometheus metrics can now be customized with the environment variable `ROX_METRICS_PORT`. Supported

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Table from 'Components/Table';
+import Tooltip from 'rc-tooltip';
 
 const VulnsTable = ({ vulns, containsFixableCVEs }) => {
     const columns = [
@@ -28,13 +29,28 @@ const VulnsTable = ({ vulns, containsFixableCVEs }) => {
             accessor: 'cvss',
             width: 100,
             Cell: ci => {
-                return `${ci.original && ci.original.cvss && ci.original.cvss.toFixed(1)} (${
-                    ci.original.scoreVersion === 'V2' ? 'v2' : 'v3'
-                })`;
+                const cvss = ci.original && ci.original.cvss && ci.original.cvss.toFixed(1);
+                if (!cvss) {
+                    return (
+                        <Tooltip
+                            placement="top"
+                            mouseLeaveDelay={0}
+                            overlay={
+                                <div>
+                                    A CVSS value can be pending when the vulnerability has not been
+                                    scored or has been disputed
+                                </div>
+                            }
+                        >
+                            <div>Pending</div>
+                        </Tooltip>
+                    );
+                }
+                return `${cvss} (${ci.original.scoreVersion === 'V2' ? 'v2' : 'v3'})`;
             },
             headerClassName:
                 'font-600 border-b border-base-300 flex items-end justify-end bg-primary-300',
-            className: 'pointer-events-none flex items-center justify-end italic'
+            className: 'flex items-center justify-end italic'
         }
     ];
     if (containsFixableCVEs) {
