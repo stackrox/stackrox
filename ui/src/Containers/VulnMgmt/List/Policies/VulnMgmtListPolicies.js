@@ -4,7 +4,7 @@ import gql from 'graphql-tag';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
-import LabelChip from 'Components/LabelChip';
+import StatusChip from 'Components/StatusChip';
 import SeverityLabel from 'Components/SeverityLabel';
 import TableCellLink from 'Components/TableCellLink';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -45,13 +45,8 @@ export function getCveTableColumns(workflowState) {
             // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { policyStatus } = original;
-                const policyLabel =
-                    // @TODO: factor out to reusable component
-                    policyStatus === 'pass' ? (
-                        <LabelChip text="Pass" type="success" />
-                    ) : (
-                        <LabelChip text="Fail" type="alert" />
-                    );
+                const policyLabel = <StatusChip status={policyStatus} />;
+
                 return <div className="flex justify-center w-full">{policyLabel}</div>;
             },
             id: 'policyStatus',

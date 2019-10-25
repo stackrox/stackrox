@@ -4,7 +4,7 @@ import gql from 'graphql-tag';
 
 import queryService from 'modules/queryService';
 import DateTimeField from 'Components/DateTimeField';
-import LabelChip from 'Components/LabelChip';
+import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
@@ -105,11 +105,9 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
                     const { policyStatus } = original;
-                    return policyStatus === 'pass' ? (
-                        <LabelChip text="Pass" type="success" />
-                    ) : (
-                        <LabelChip text="Fail" type="alert" />
-                    );
+                    const policyLabel = <StatusChip status={policyStatus} />;
+
+                    return policyLabel;
                 },
                 id: 'policyStatus',
                 accessor: 'policyStatus'

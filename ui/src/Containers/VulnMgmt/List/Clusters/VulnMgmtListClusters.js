@@ -6,6 +6,7 @@ import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
+import StatusChip from 'Components/StatusChip';
 import TableCellLink from 'Components/TableCellLink';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -145,11 +146,9 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                 // eslint-disable-next-line
                 Cell: ({ original }) => {
                     const { policyStatus } = original;
-                    return policyStatus.status === 'pass' ? (
-                        <LabelChip text="Pass" type="success" />
-                    ) : (
-                        <LabelChip text="Fail" type="alert" />
-                    );
+                    const policyLabel = <StatusChip status={policyStatus && policyStatus.status} />;
+
+                    return policyLabel;
                 },
                 id: 'policyStatus'
             },

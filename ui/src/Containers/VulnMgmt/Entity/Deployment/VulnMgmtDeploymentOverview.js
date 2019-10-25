@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
-import LabelChip from 'Components/LabelChip';
+import StatusChip from 'Components/StatusChip';
 import TileList from 'Components/TileList';
 import Widget from 'Components/Widget';
 import entityTypes from 'constants/entityTypes';
@@ -87,11 +87,7 @@ const VulnMgmtDeploymentOverview = ({ data }) => {
                                             </div>
                                             <div className="flex flex-col p-4 flex-grow justify-center text-center">
                                                 <span>Policy status:</span>
-                                                {policyStatus === 'pass' ? (
-                                                    <LabelChip text="Pass" type="success" />
-                                                ) : (
-                                                    <LabelChip text="Fail" type="alert" />
-                                                )}
+                                                <StatusChip status={policyStatus} />
                                             </div>
                                         </div>
                                         <div>

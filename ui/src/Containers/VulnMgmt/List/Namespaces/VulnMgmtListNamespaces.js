@@ -5,7 +5,7 @@ import pluralize from 'pluralize';
 import queryService from 'modules/queryService';
 import TableCellLink from 'Components/TableCellLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
-import LabelChip from 'Components/LabelChip';
+import StatusChip from 'Components/StatusChip';
 import DateTimeField from 'Components/DateTimeField';
 import { sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
@@ -108,11 +108,9 @@ export function getNamespaceTableColumns(workflowState) {
             // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { policyStatus } = original;
-                return policyStatus.status === 'pass' ? (
-                    <LabelChip text="Pass" type="success" />
-                ) : (
-                    <LabelChip text="Fail" type="alert" />
-                );
+                const policyLabel = <StatusChip status={policyStatus && policyStatus.status} />;
+
+                return policyLabel;
             },
             id: 'policyStatus'
         },
