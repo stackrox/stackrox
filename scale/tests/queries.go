@@ -47,15 +47,6 @@ const (
 	getComplianceStandardsQuery = "query complianceStandards($groupBy: [ComplianceAggregation_Scope!], $where: String) {\n  complianceStandards {\n    id\n    name\n    controls {\n      standardId\n      groupId\n      id\n      name\n      description\n      __typename\n    }\n    groups {\n      standardId\n      id\n      name\n      description\n      __typename\n    }\n    __typename\n  }\n  results: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {\n    results {\n      aggregationKeys {\n        id\n        scope\n        __typename\n      }\n      numFailing\n      numPassing\n      unit\n      __typename\n    }\n    __typename\n  }\n  checks: aggregatedResults(groupBy: $groupBy, unit: CHECK, where: $where) {\n    results {\n      aggregationKeys {\n        id\n        scope\n        __typename\n      }\n      numFailing\n      numPassing\n      unit\n      __typename\n    }\n    __typename\n  }\n}\n"
 )
 
-func getTriggerScanResult(resp []byte) []complianceRunsListItem {
-	var unmarshalledResp triggerScanResponse
-	if err := json.Unmarshal(resp, &unmarshalledResp); err != nil {
-		log.Error(string(resp))
-		panic(err)
-	}
-	return unmarshalledResp.Data.ComplianceTriggerRuns
-}
-
 func getRunStatuses(ids []string) []byte {
 	return marshallQuery(
 		getRunStatusesQuery,

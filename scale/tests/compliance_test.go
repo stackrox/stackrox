@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -100,6 +101,15 @@ func getTriggerScan(clusterID, standardID string) []byte {
 			"standardId": standardID,
 		},
 	)
+}
+
+func getTriggerScanResult(resp []byte) []complianceRunsListItem {
+	var unmarshalledResp triggerScanResponse
+	if err := json.Unmarshal(resp, &unmarshalledResp); err != nil {
+		log.Error(string(resp))
+		panic(err)
+	}
+	return unmarshalledResp.Data.ComplianceTriggerRuns
 }
 
 func triggerAndWaitForCompliance(envVars *testEnvVars, client *http.Client) ([]complianceRunsListItem, error) {
