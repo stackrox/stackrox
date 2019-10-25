@@ -137,6 +137,43 @@ export const IMAGE_LIST_FRAGMENT = gql`
     }
 `;
 
+export const COMPONENT_LIST_FRAGMENT = gql`
+    fragment componentListFields on EmbeddedImageScanComponent {
+        id
+        name
+        version
+        vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            medium {
+                total
+                fixable
+            }
+            high {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln {
+            cvss
+            scoreVersion
+        }
+        imageCount
+        deploymentCount
+        priority
+    }
+`;
+
 export const NAMESPACE_LIST_FRAGMENT = gql`
     fragment namespaceListFields on Namespace {
         metadata {
