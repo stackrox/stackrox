@@ -7,6 +7,7 @@ import (
 )
 
 type globalAccessScopeContextKey struct{}
+type sacEnabled struct{}
 
 // GlobalAccessScopeChecker retrieves the global access scope from the context.
 // This function is guaranteed to return a non-nil value.
@@ -27,6 +28,22 @@ func GlobalAccessScopeCheckerOrNil(ctx context.Context) *ScopeChecker {
 	}
 	sc := NewScopeChecker(core)
 	return &sc
+}
+
+// IsContextSACEnabled will return true if SAC is enabled for a context and false if SAC has not been enabled for a
+// context
+func IsContextSACEnabled(ctx context.Context) bool {
+	if contextHasSAC := ctx.Value(sacEnabled{}); contextHasSAC != nil {
+		return true
+	}
+	return false
+}
+
+// SetContextSACEnabled enables SAC for a context.  Note, this must be done separately from setting a
+// GlobalAccessScopeChecker for a context.  All contexts must have a GlobalAccessScopeChecker but not all contexts must
+// have SAC enabled.
+func SetContextSACEnabled(ctx context.Context) context.Context {
+	return context.WithValue(ctx, sacEnabled{}, struct{}{})
 }
 
 // WithGlobalAccessScopeChecker returns a context that is a child of the given context and contains

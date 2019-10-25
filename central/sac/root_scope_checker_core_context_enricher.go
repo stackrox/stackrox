@@ -51,6 +51,7 @@ func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context
 	if client == nil {
 		return ctx, nil
 	}
+	ctx = sac.SetContextSACEnabled(ctx)
 
 	// Check the id of the context and decide scope checker to use.
 	id := authn.IdentityFromContext(ctx)

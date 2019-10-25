@@ -43,11 +43,10 @@ var (
 			"/v1.DeploymentService/CountDeployments",
 			"/v1.DeploymentService/ListDeployments",
 			"/v1.DeploymentService/GetLabels",
-		},
-		user.With(permissions.View(resources.Deployment), permissions.View(resources.ProcessWhitelist), permissions.View(resources.Indicator)): {
 			"/v1.DeploymentService/ListDeploymentsWithProcessInfo",
 		},
 	})
+	whitelistAndIndicatorAuth = user.With(permissions.View(resources.ProcessWhitelist), permissions.View(resources.Indicator))
 )
 
 // serviceImpl provides APIs for deployments.
@@ -68,6 +67,19 @@ func (s *serviceImpl) whitelistResultsForDeployment(ctx context.Context, deploym
 	return whitelistResults, nil
 }
 
+func (s *serviceImpl) fillWhitelistResults(ctx context.Context, resp *v1.ListDeploymentsWithProcessInfoResponse) error {
+	if err := whitelistAndIndicatorAuth.Authorized(ctx, ""); err == nil {
+		for _, depWithProc := range resp.Deployments {
+			whitelistResults, err := s.whitelistResultsForDeployment(ctx, depWithProc.GetDeployment())
+			if err != nil {
+				return err
+			}
+			depWithProc.WhitelistStatuses = whitelistResults.GetWhitelistStatuses()
+		}
+	}
+	return nil
+}
+
 func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListDeploymentsWithProcessInfoResponse, error) {
 	deployments, err := s.ListDeployments(ctx, rawQuery)
 	if err != nil {
@@ -76,19 +88,14 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 
 	resp := &v1.ListDeploymentsWithProcessInfoResponse{}
 	for _, deployment := range deployments.Deployments {
-		whitelistResults, err := s.whitelistResultsForDeployment(ctx, deployment)
-		if err != nil {
-			return nil, err
-		}
-
-		var whitelistStatuses []*storage.ContainerNameAndWhitelistStatus
-		if whitelistResults != nil {
-			whitelistStatuses = whitelistResults.WhitelistStatuses
-		}
-		resp.Deployments = append(resp.Deployments, &v1.ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{
-			Deployment:        deployment,
-			WhitelistStatuses: whitelistStatuses,
-		})
+		resp.Deployments = append(resp.Deployments,
+			&v1.ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{
+				Deployment: deployment,
+			},
+		)
+	}
+	if err := s.fillWhitelistResults(ctx, resp); err != nil {
+		return nil, err
 	}
 	return resp, nil
 }

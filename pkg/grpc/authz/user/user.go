@@ -35,7 +35,9 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	}
 
 	// If sac scope checker is configured, skip role check.
-	if rootScopeChecker := sac.GlobalAccessScopeCheckerOrNil(ctx); rootScopeChecker != nil {
+	contextIsSACEnabled := sac.IsContextSACEnabled(ctx)
+	rootScopeChecker := sac.GlobalAccessScopeCheckerOrNil(ctx)
+	if contextIsSACEnabled && rootScopeChecker != nil {
 		return p.checkGlobalSACPermissions(ctx, *rootScopeChecker)
 	}
 
