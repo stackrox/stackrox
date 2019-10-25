@@ -670,6 +670,9 @@ commands:
           name: Remove all the existing StackRox resources (they can exist when Circle restarts a container)
           command: |
             kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait || true
+            helm del --purge monitoring || true
+            helm del --purge central || true
+            helm del --purge scanner || true
 
   deploy-webhook-server:
     steps:
