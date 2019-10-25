@@ -17,7 +17,7 @@ import { sortDate } from 'sorters/sorters';
 
 import { POLICY_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
-export function getCveTableColumns(workflowState) {
+export function getPolicyTableColumns(workflowState) {
     const tableColumns = [
         {
             Header: 'id',
@@ -150,8 +150,6 @@ export const defaultPolicySort = [
 ];
 
 const VulnMgmtPolicies = ({ selectedRowId, search, sort, page }) => {
-    // TODO: change query line to `query getCves($query: String) {`
-    //   after API starts accepting empty string ('') for query
     const POLICIES_QUERY = gql`
         query getPolicies {
             results: policies {
@@ -171,9 +169,9 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page }) => {
         <WorkflowListPage
             query={POLICIES_QUERY}
             queryOptions={queryOptions}
-            idAttribute="cve"
+            idAttribute="id"
             entityListType={entityTypes.POLICY}
-            getTableColumns={getCveTableColumns}
+            getTableColumns={getPolicyTableColumns}
             selectedRowId={selectedRowId}
             search={search}
             sort={sort}
