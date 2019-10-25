@@ -6,14 +6,27 @@ import {
     YAxis,
     VerticalGridLines,
     HorizontalGridLines,
-    MarkSeries
+    MarkSeries,
+    DiscreteColorLegend
 } from 'react-vis';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
 import HoverHint from '../HoverHint';
 
 import { getHighValue, getLowValue } from '../visual.helpers';
 
-const Scatterplot = ({ data, lowerX, lowerY, upperX, upperY, xMultiple, yMultiple, plotProps }) => {
+const Scatterplot = ({
+    data,
+    lowerX,
+    lowerY,
+    upperX,
+    upperY,
+    xMultiple,
+    yMultiple,
+    plotProps,
+    yAxisTitle,
+    xAxisTitle,
+    legendData
+}) => {
     const { hint, onValueMouseOver, onValueMouseOut, onMouseMove } = useGraphHoverHint();
 
     const lowX = lowerX !== null ? lowerX : getLowValue(data, 'x', xMultiple);
@@ -32,16 +45,23 @@ const Scatterplot = ({ data, lowerX, lowerY, upperX, upperY, xMultiple, yMultipl
                 {...plotProps}
                 onMouseMove={onMouseMove}
             >
+                <VerticalGridLines />
+                <HorizontalGridLines />
                 <MarkSeries
                     colorType="literal"
                     data={data}
                     onValueMouseOver={onValueMouseOver}
                     onValueMouseOut={onValueMouseOut}
                 />
-                <VerticalGridLines />
-                <HorizontalGridLines />
-                <XAxis tickSize={0} />
-                <YAxis tickSize={0} />
+
+                <XAxis tickSize={0} title={xAxisTitle} position="middle" />
+                <YAxis tickSize={0} title={yAxisTitle} position="middle" />
+                <DiscreteColorLegend
+                    orientation="horizontal"
+                    items={legendData}
+                    startTitle="CVSS SCORE"
+                    style={{ position: 'absolute', bottom: '40px', right: '10px' }}
+                />
             </FlexibleXYPlot>
             {hint && hint.data && (
                 <HoverHint
@@ -69,7 +89,10 @@ Scatterplot.propTypes = {
     upperY: PropTypes.number,
     xMultiple: PropTypes.number,
     yMultiple: PropTypes.number,
-    plotProps: PropTypes.shape({})
+    plotProps: PropTypes.shape({}),
+    yAxisTitle: PropTypes.string,
+    xAxisTitle: PropTypes.string,
+    legendData: PropTypes.arrayOf(PropTypes.shape({ title: PropTypes.string, color: PropTypes }))
 };
 
 Scatterplot.defaultProps = {
@@ -80,7 +103,10 @@ Scatterplot.defaultProps = {
     upperY: null,
     xMultiple: 10,
     yMultiple: 10,
-    plotProps: null
+    plotProps: null,
+    yAxisTitle: null,
+    xAxisTitle: null,
+    legendData: null
 };
 
 export default Scatterplot;

@@ -14,6 +14,8 @@ import entityLabels from 'messages/entity';
 import { generateURL } from 'modules/URLReadWrite';
 import isGQLLoading from 'utils/gqlLoading';
 import severityColorMap from 'constants/severityColors';
+import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
+import { severities } from 'constants/severities';
 
 const TopRiskyEntitiesByVulnerabilities = () => {
     const workflowState = useContext(workflowStateContext);
@@ -146,18 +148,7 @@ const TopRiskyEntitiesByVulnerabilities = () => {
         return avgScore.toFixed(1);
     }
 
-    function getColor(CVSS) {
-        if (CVSS > 7) {
-            return severityColorMap.CRITICAL_SEVERITY;
-        }
-
-        if (CVSS > 4) return severityColorMap.HIGH_SEVERITY;
-
-        return severityColorMap.LOW_SEVERITY;
-    }
-
     function getHint(datum) {
-        // TODO
         return {
             title:
                 (datum.name && datum.name.fullName) ||
@@ -183,7 +174,7 @@ const TopRiskyEntitiesByVulnerabilities = () => {
                 return {
                     x: result.vulnCount,
                     y: avgSeverity,
-                    color: getColor(avgSeverity),
+                    color: severityColorMap[getSeverityByCvss(avgSeverity)],
                     hint: getHint({ ...result, avgSeverity })
                 };
             })
@@ -204,7 +195,19 @@ const TopRiskyEntitiesByVulnerabilities = () => {
             titleComponents={titleComponents}
             headerComponents={viewAll}
         >
-            <Scatterplot data={results} xMultiple={10} yMultiple={10} />
+            <Scatterplot
+                data={results}
+                xMultiple={10}
+                yMultiple={10}
+                yAxisTitle="Average CVSS Score"
+                xAxisTitle="Critical Vulnerabilities & Exposures"
+                legendData={[
+                    { title: 'Low', color: severityColorMap[severities.LOW_SEVERITY] },
+                    { title: 'Medium', color: severityColorMap[severities.MEDIUM_SEVERITY] },
+                    { title: 'High', color: severityColorMap[severities.HIGH_SEVERITY] },
+                    { title: 'Critical', color: severityColorMap[severities.CRITICAL_SEVERITY] }
+                ]}
+            />
         </Widget>
     );
 };
