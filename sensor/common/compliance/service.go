@@ -1,11 +1,12 @@
 package compliance
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/orchestrators"
-	"golang.org/x/net/context"
 )
 
 // Service is an interface to receiving ComplianceReturns from launched daemons.

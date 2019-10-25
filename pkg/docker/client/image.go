@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -11,7 +12,6 @@ import (
 	"github.com/docker/docker/api/types/versions"
 	"github.com/mailru/easyjson"
 	internalTypes "github.com/stackrox/rox/pkg/docker/types"
-	"golang.org/x/net/context"
 )
 
 // ImageList returns a list of images in the docker host.

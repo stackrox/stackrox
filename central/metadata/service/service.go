@@ -1,12 +1,13 @@
 package service
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/license/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
-	"golang.org/x/net/context"
 )
 
 var (

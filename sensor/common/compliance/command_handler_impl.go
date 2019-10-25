@@ -72,8 +72,8 @@ func (c *commandHandlerImpl) run() {
 				log.Errorf("received a command with no id: %s", proto.MarshalTextString(command))
 				continue
 			}
-			if update := c.runCommand(command); update != nil {
-				c.sendUpdate(update)
+			if updates := c.runCommand(command); updates != nil {
+				c.sendUpdates(updates)
 			}
 
 		case result, ok := <-c.service.Output():
@@ -88,19 +88,19 @@ func (c *commandHandlerImpl) run() {
 	}
 }
 
-func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) *central.ScrapeUpdate {
+func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) []*central.ScrapeUpdate {
 	switch command.Command.(type) {
 	case *central.ScrapeCommand_StartScrape:
 		return c.startScrape(command.GetScrapeId(), command.GetStartScrape().GetHostnames())
 	case *central.ScrapeCommand_KillScrape:
-		return c.killScrape(command.GetScrapeId())
+		return []*central.ScrapeUpdate{c.killScrape(command.GetScrapeId())}
 	default:
 		log.Errorf("unrecognized scrape command: %s", proto.MarshalTextString(command))
 	}
 	return nil
 }
 
-func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string) *central.ScrapeUpdate {
+func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string) []*central.ScrapeUpdate {
 	// Check that the scrape is not already running.
 	if _, running := c.scrapeIDToState[scrapeID]; running {
 		return nil
@@ -115,9 +115,13 @@ func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string
 	})
 
 	// If we succeeded, start tracking the scrape and send a message to central.
-	c.scrapeIDToState[scrapeID] = newScrapeState(scrapeID, numResults, expectedHosts)
+	scrapeState := newScrapeState(scrapeID, numResults, expectedHosts)
+	c.scrapeIDToState[scrapeID] = scrapeState
 	log.Infof("started scrape %q with %d results desired", scrapeID, numResults)
-	return scrapeStarted(scrapeID, "")
+
+	updates := []*central.ScrapeUpdate{scrapeStarted(scrapeID, "")}
+	updates = append(updates, c.checkScrapeCompleted(scrapeID, scrapeState)...)
+	return updates
 }
 
 func (c *commandHandlerImpl) killScrape(scrapeID string) *central.ScrapeUpdate {
@@ -150,17 +154,22 @@ func (c *commandHandlerImpl) commitResult(result *compliance.ComplianceReturn) (
 	// Pass the update back to central.
 	scrapeState.remainingNodes.Remove(result.GetNodeName())
 	ret = append(ret, scrapeUpdate(result))
-	// If that was the last expected update, kill the scrape.
-	if scrapeState.desiredNodes == 0 || scrapeState.remainingNodes.Cardinality() == 0 {
-		if scrapeState.remainingNodes.Cardinality() != 0 {
-			log.Warnf("compliance data for the following nodes was not collected: %+v", scrapeState.remainingNodes.AsSlice())
-		}
-		if update := c.killScrape(result.GetScrapeId()); update != nil {
-			ret = append(ret, update)
-		}
-	}
+	ret = append(ret, c.checkScrapeCompleted(result.GetScrapeId(), scrapeState)...)
 
 	return
+}
+
+func (c *commandHandlerImpl) checkScrapeCompleted(scrapeID string, state *scrapeState) []*central.ScrapeUpdate {
+	var updates []*central.ScrapeUpdate
+	if state.desiredNodes == 0 || state.remainingNodes.Cardinality() == 0 {
+		if state.remainingNodes.Cardinality() != 0 {
+			log.Warnf("compliance data for the following nodes was not collected: %+v", state.remainingNodes.AsSlice())
+		}
+		if update := c.killScrape(scrapeID); update != nil {
+			updates = append(updates, update)
+		}
+	}
+	return updates
 }
 
 func (c *commandHandlerImpl) sendUpdates(updates []*central.ScrapeUpdate) {

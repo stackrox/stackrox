@@ -1,12 +1,12 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"net/url"
 
 	"github.com/docker/docker/api/types"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 )
 
 // Info returns information about the docker server.

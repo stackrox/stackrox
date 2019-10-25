@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -10,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/mailru/easyjson"
 	internalTypes "github.com/stackrox/rox/pkg/docker/types"
-	"golang.org/x/net/context"
 )
 
 // ContainerList returns the list of containers in the docker host.

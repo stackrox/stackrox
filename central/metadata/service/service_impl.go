@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/license/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -8,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/version"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 

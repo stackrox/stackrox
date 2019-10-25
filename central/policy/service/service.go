@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
@@ -13,7 +15,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
-	"golang.org/x/net/context"
 )
 
 // Service provides the interface to the microservice that serves alert data.

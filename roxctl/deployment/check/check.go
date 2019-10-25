@@ -1,6 +1,7 @@
 package check
 
 import (
+	"context"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
-	"golang.org/x/net/context"
 )
 
 var (

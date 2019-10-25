@@ -1,6 +1,7 @@
 package check
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
-	"golang.org/x/net/context"
 )
 
 // Command checks the image against image build lifecycle policies
