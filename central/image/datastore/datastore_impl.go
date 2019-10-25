@@ -101,7 +101,9 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 	if err != nil {
 		return nil, err
 	}
+
 	ds.updateImagePriority(imgs...)
+
 	return imgs, nil
 }
 
@@ -110,7 +112,9 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 	if err != nil {
 		return nil, err
 	}
+
 	ds.updateListImagePriority(imgs...)
+
 	return imgs, nil
 }
 
@@ -123,7 +127,9 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 	if ok, err := ds.canReadImage(ctx, sha); err != nil || !ok {
 		return nil, false, err
 	}
+
 	ds.updateListImagePriority(img)
+
 	return img, true, nil
 }
 
@@ -169,29 +175,32 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 	if ok, err := ds.canReadImage(ctx, sha); err != nil || !ok {
 		return nil, false, err
 	}
+
 	ds.updateImagePriority(img)
+
 	return img, true, nil
 }
 
 // GetImagesBatch delegates to the underlying store.
 func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error) {
+	var imgs []*storage.Image
 	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
-		imgs, err := ds.storage.GetImagesBatch(shas)
+		imgs, err = ds.storage.GetImagesBatch(shas)
 		if err != nil {
 			return nil, err
 		}
-		return imgs, nil
-	}
-
-	shasQuery := searchPkg.NewQueryBuilder().AddStrings(searchPkg.ImageSHA, shas...).ProtoQuery()
-	imgs, err := ds.SearchRawImages(ctx, shasQuery)
-	if err != nil {
-		return nil, err
+	} else {
+		shasQuery := searchPkg.NewQueryBuilder().AddStrings(searchPkg.ImageSHA, shas...).ProtoQuery()
+		imgs, err = ds.SearchRawImages(ctx, shasQuery)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	ds.updateImagePriority(imgs...)
+
 	return imgs, nil
 }
 
