@@ -101,7 +101,8 @@ class GlobalSearch extends BaseSpecification {
         // The following two tests make sure that global search gives you all categories
         // when you don't specify a category.
         "Deployment:qaglobalsearch" | [] | "" |
-                [SearchServiceOuterClass.SearchCategory.DEPLOYMENTS, SearchServiceOuterClass.SearchCategory.ALERTS]
+                [SearchServiceOuterClass.SearchCategory.IMAGES, SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
+                SearchServiceOuterClass.SearchCategory.ALERTS]
 
         "Image:docker.io/library/busybox:latest" | [] | "" |
                 [SearchServiceOuterClass.SearchCategory.IMAGES, SearchServiceOuterClass.SearchCategory.DEPLOYMENTS]
