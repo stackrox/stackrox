@@ -69,3 +69,46 @@ func TestValidateQuery(t *testing.T) {
 	err = ValidateQuery(query, optionsMap)
 	assert.NoError(t, err)
 }
+
+func TestFilterQuery(t *testing.T) {
+	optionsMap := Walk(v1.SearchCategory_IMAGES, "derp", &storage.Image{})
+
+	query := &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+						},
+					},
+				}},
+			},
+		}},
+	}
+
+	newQuery := FilterQueryWithMap(query, optionsMap)
+	assert.Equal(t, &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchFieldQuery{
+					MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
+				},
+			},
+		},
+	}, newQuery)
+}

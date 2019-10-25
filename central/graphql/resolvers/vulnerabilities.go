@@ -85,12 +85,6 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q rawQuery) ([]*E
 	if err != nil {
 		return nil, err
 	}
-
-	// Check that all search inputs apply to vulnerabilities or images.
-	if err := search.ValidateQuery(query, mappings.VulnerabilityOptionsMap.Merge(mappings.OptionsMap)); err != nil {
-		return nil, err
-	}
-
 	return vulnerabilities(ctx, resolver, query)
 }
 
@@ -107,13 +101,6 @@ func vulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*E
 	if err != nil {
 		return nil, err
 	}
-
-	// Filter the query to just the vulnerability portion.
-	query = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
-	if query == nil {
-		query = search.EmptyQuery()
-	}
-
 	return mapImagesToVulnerabilityResolvers(root, images, query)
 }
 
@@ -228,16 +215,18 @@ func (evr *EmbeddedVulnerabilityResolver) ComponentCount(ctx context.Context) (i
 
 // Images are the images that contain the CVE/Vulnerability.
 func (evr *EmbeddedVulnerabilityResolver) Images(ctx context.Context) ([]*imageResolver, error) {
-	if evr.images == nil {
-		return nil, errors.New("images not available from vulnerabilites resolved as children of an image")
+	err := evr.loadImages(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return evr.images, nil
 }
 
 // ImageCount is the number of images that contain the CVE/Vulnerability.
 func (evr *EmbeddedVulnerabilityResolver) ImageCount(ctx context.Context) (int32, error) {
-	if evr.images == nil {
-		return 0, errors.New("images count not available from vulnerabilites resolved as children of an image")
+	err := evr.loadImages(ctx)
+	if err != nil {
+		return 0, err
 	}
 	return int32(len(evr.images)), nil
 }
@@ -308,36 +297,42 @@ func (evr *EmbeddedVulnerabilityResolver) ImpactScore(ctx context.Context) (floa
 	return float64(0.0), errors.New("impact score not available")
 }
 
-func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) error {
-	if evr.images == nil {
-		return errors.New("deployment info not available from vulnerabilites resolved as children of an image")
-	} else if evr.deployments != nil {
+func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context) error {
+	if evr.images != nil {
 		return nil
+	}
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return err
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).ProtoQuery()
+	evr.images, err = evr.root.wrapImages(imageLoader.FromQuery(ctx, q))
+	return err
+}
+
+func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) error {
+	if evr.deployments != nil {
+		return nil
+	}
+	err := evr.loadImages(ctx)
+	if err != nil {
+		return err
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
 	qb := search.NewQueryBuilder()
 	for _, image := range evr.images {
-		qb.AddExactMatches(search.ImageSHA, image.data.GetId())
+		id := image.Id(ctx)
+		qb.AddExactMatches(search.ImageSHA, string(id))
 	}
 	q := qb.ProtoQuery()
 
 	// Search the deployments.
-	listDeps, err := evr.root.DeploymentDataStore.SearchListDeployments(ctx, q)
+	evr.deployments, err = evr.root.wrapListDeployments(evr.root.DeploymentDataStore.SearchListDeployments(ctx, q))
 	if err != nil {
 		return err
 	}
-
-	// create resolvers.
-	evr.deployments = make([]*deploymentResolver, 0, len(listDeps))
-	for _, listDep := range listDeps {
-		evr.deployments = append(evr.deployments, &deploymentResolver{
-			root: evr.root,
-			list: listDep,
-		})
-	}
-
-	// Return resolvers.
 	return nil
 }
 
@@ -346,8 +341,7 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) e
 
 // Map the images that matched a query to the vulnerabilities it contains.
 func mapImagesToVulnerabilityResolvers(root *Resolver, images []*storage.Image, query *v1.Query) ([]*EmbeddedVulnerabilityResolver, error) {
-	query = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
-	pred, err := vulnPredicateFactory.GeneratePredicate(query)
+	pred, err := vulnPredicateFactory.GeneratePredicate(search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap))
 	if err != nil {
 		return nil, err
 	}

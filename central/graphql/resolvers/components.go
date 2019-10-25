@@ -8,7 +8,6 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/metrics"
@@ -89,12 +88,6 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q rawQuery) ([]*E
 	if err != nil {
 		return nil, err
 	}
-
-	// Check that all search inputs apply to vulnerabilities or images.
-	if err := search.ValidateQuery(query, mappings.ComponentOptionsMap.Merge(mappings.OptionsMap)); err != nil {
-		return nil, err
-	}
-
 	return components(ctx, resolver, query)
 }
 
@@ -110,13 +103,6 @@ func components(ctx context.Context, root *Resolver, query *v1.Query) ([]*Embedd
 	if err != nil {
 		return nil, err
 	}
-
-	// Filter the query to just the component portion.
-	query = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
-	if query == nil {
-		query = search.EmptyQuery()
-	}
-
 	return mapImagesToComponentResolvers(root, images, query)
 }
 
@@ -226,16 +212,18 @@ func (eicr *EmbeddedImageScanComponentResolver) VulnCounter(ctx context.Context)
 
 // Images are the images that contain the CVE/Vulnerability.
 func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context) ([]*imageResolver, error) {
-	if eicr.images == nil {
-		return nil, errors.New("images not available from vulnerabilites resolved as children of an image")
+	err := eicr.loadImages(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return eicr.images, nil
 }
 
 // ImageCount is the number of images that contain the CVE/Vulnerability.
 func (eicr *EmbeddedImageScanComponentResolver) ImageCount(ctx context.Context) (int32, error) {
-	if eicr.images == nil {
-		return 0, errors.New("images count not available from vulnerabilites resolved as children of an image")
+	err := eicr.loadImages(ctx)
+	if err != nil {
+		return 0, err
 	}
 	return int32(len(eicr.images)), nil
 }
@@ -256,36 +244,45 @@ func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Cont
 	return int32(len(eicr.deployments)), nil
 }
 
-func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Context) error {
-	if eicr.images == nil {
-		return errors.New("deployment info not available from vulnerabilites resolved as children of an image")
-	} else if eicr.deployments != nil {
+func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context) error {
+	if eicr.images != nil {
 		return nil
+	}
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return err
+	}
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.Component, eicr.data.GetName()).
+		AddExactMatches(search.ComponentVersion, eicr.data.GetVersion()).
+		ProtoQuery()
+	eicr.images, err = eicr.root.wrapImages(imageLoader.FromQuery(ctx, q))
+	return err
+}
+
+func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Context) error {
+	if eicr.deployments != nil {
+		return nil
+	}
+	err := eicr.loadImages(ctx)
+	if err != nil {
+		return err
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
 	qb := search.NewQueryBuilder()
 	for _, image := range eicr.images {
-		qb.AddExactMatches(search.ImageSHA, image.data.GetId())
+		id := image.Id(ctx)
+		qb.AddExactMatches(search.ImageSHA, string(id))
 	}
 	q := qb.ProtoQuery()
 
 	// Search the deployments.
-	listDeps, err := eicr.root.DeploymentDataStore.SearchListDeployments(ctx, q)
+	eicr.deployments, err = eicr.root.wrapListDeployments(eicr.root.DeploymentDataStore.SearchListDeployments(ctx, q))
 	if err != nil {
 		return err
 	}
-
-	// create resolvers.
-	eicr.deployments = make([]*deploymentResolver, 0, len(listDeps))
-	for _, listDep := range listDeps {
-		eicr.deployments = append(eicr.deployments, &deploymentResolver{
-			root: eicr.root,
-			list: listDep,
-		})
-	}
-
-	// Return resolvers.
 	return nil
 }
 
@@ -311,8 +308,8 @@ func (cID *componentID) toString() string {
 }
 
 // Map the images that matched a query to the image components it contains.
-func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, imageQuery *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
-	pred, err := componentPredicateFactory.GeneratePredicate(imageQuery)
+func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
+	pred, err := componentPredicateFactory.GeneratePredicate(search.FilterQueryWithMap(query, mappings.ComponentOptionsMap))
 	if err != nil {
 		return nil, err
 	}
