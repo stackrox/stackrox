@@ -14,28 +14,23 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
             result: cluster(id: $id) {
                 id
                 name
-                admissionController
-                centralApiEndpoint
-                imageCount
-                nodeCount
-                deploymentCount
-                namespaceCount
-                subjectCount
-                k8sroleCount
-                secretCount
-                policyCount(query: "Lifecycle Stage:DEPLOY")
-                serviceAccountCount
-                complianceControlCount(query: "Standard:CIS") {
-                    passingCount
-                    failingCount
-                    unknownCount
+                priority
+                policyStatus {
+                    status
                 }
+                #createdAt
                 status {
                     orchestratorMetadata {
                         version
-                        buildDate
                     }
                 }
+                #istioEnabled
+                policyCount
+                vulnCount
+                namespaceCount
+                deploymentCount
+                imageCount
+                imageComponentCount
             }
         }
     `;

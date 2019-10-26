@@ -2,6 +2,10 @@
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
+import DateTimeField from 'Components/DateTimeField';
+import RiskScore from 'Components/RiskScore';
+import StatusChip from 'Components/StatusChip';
+
 import Metadata from './Metadata';
 
 export default {
@@ -33,6 +37,39 @@ export const basicMetadata = () => {
     return (
         <MemoryRouter>
             <Metadata title={title} keyValuePairs={cvssScoreBreakdown} />
+        </MemoryRouter>
+    );
+};
+
+export const withStatsListMetadata = () => {
+    const clusterStats = [
+        <RiskScore score={3} />,
+        <>
+            <span className="pr-1">Policy status:</span>
+            <StatusChip status="fail" />
+        </>
+    ];
+
+    const metadataKeyValuePairs = [
+        {
+            key: 'Created',
+            value: <DateTimeField asString date="2019-10-25T21:53:14Z" />
+        },
+        {
+            key: 'K8s version',
+            value: 'v1.14.7'
+        },
+        {
+            key: 'Istio Enabled',
+            value: 'No'
+        }
+    ];
+
+    return (
+        <MemoryRouter>
+            <div className="w-1/2">
+                <Metadata statTiles={clusterStats} keyValuePairs={metadataKeyValuePairs} />
+            </div>
         </MemoryRouter>
     );
 };

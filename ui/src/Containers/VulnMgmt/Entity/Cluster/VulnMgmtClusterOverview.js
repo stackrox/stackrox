@@ -1,101 +1,106 @@
-import React from 'react';
-import CollapsibleSection from 'Components/CollapsibleSection';
-import Metadata from 'Components/Metadata';
-import entityTypes from 'constants/entityTypes';
-import RelatedEntityListCount from 'Components/RelatedEntityListCount';
+import React, { useContext } from 'react';
 
-const VulnMgmtDeploymentOverview = ({ data }) => {
+import CollapsibleSection from 'Components/CollapsibleSection';
+import DateTimeField from 'Components/DateTimeField';
+import Metadata from 'Components/Metadata';
+import RiskScore from 'Components/RiskScore';
+import StatusChip from 'Components/StatusChip';
+import workflowStateContext from 'Containers/workflowStateContext';
+import entityTypes from 'constants/entityTypes';
+
+import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+
+const VulnMgmtClusterOverview = ({ data }) => {
+    const workflowState = useContext(workflowStateContext);
+
     const {
-        nodeCount,
+        priority,
+        policyStatus,
+        createdAt,
+        status: { orchestratorMetadata = null },
+        istioEnabled,
         deploymentCount,
-        namespaceCount,
-        subjectCount,
-        serviceAccountCount,
-        k8sroleCount,
-        secretCount,
+        imageComponentCount,
         imageCount,
-        complianceControlCount,
-        status: { orchestratorMetadata = null }
+        namespaceCount,
+        policyCount,
+        vulnCount
     } = data;
 
     const { version = 'N/A' } = orchestratorMetadata;
 
+    function yesNoMaybe(value) {
+        if (!value && value !== false) {
+            return '—';
+        }
+        return value ? 'Yes' : 'No';
+    }
+
     const metadataKeyValuePairs = [
+        {
+            key: 'Created',
+            value: <DateTimeField date={createdAt} />
+        },
         {
             key: 'K8s version',
             value: version
+        },
+        {
+            key: 'Istio Enabled',
+            value: yesNoMaybe(istioEnabled)
         }
     ];
 
-    const { passingCount, failingCount, unknownCount } = complianceControlCount;
-    const totalControlCount = passingCount + failingCount + unknownCount;
+    const clusterStats = [
+        <RiskScore score={priority} />,
+        <>
+            <span className="pr-1">Policy status:</span>
+            <StatusChip status={policyStatus} />
+        </>
+    ];
+
+    function getCountData(entityType) {
+        switch (entityType) {
+            case entityTypes.DEPLOYMENT:
+                return deploymentCount;
+            case entityTypes.COMPONENT:
+                return imageComponentCount;
+            case entityTypes.CVE:
+                return vulnCount;
+            case entityTypes.IMAGE:
+                return imageCount;
+            case entityTypes.NAMESPACE:
+                return namespaceCount;
+            case entityTypes.POLICY:
+                return policyCount;
+            default:
+                return 0;
+        }
+    }
 
     return (
-        <div className="w-full" id="capture-dashboard-stretch">
-            <CollapsibleSection title="Cluster Details">
-                <div className="flex flex-wrap pdf-page">
-                    <Metadata
-                        className="mx-4 min-w-48 bg-base-100 h-48 mb-4"
-                        keyValuePairs={metadataKeyValuePairs}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Nodes"
-                        value={nodeCount}
-                        entityType={entityTypes.NODE}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Namespaces"
-                        value={namespaceCount}
-                        entityType={entityTypes.NAMESPACE}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Deployments"
-                        value={deploymentCount}
-                        entityType={entityTypes.DEPLOYMENT}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Secrets"
-                        value={secretCount}
-                        entityType={entityTypes.SECRET}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Images"
-                        value={imageCount}
-                        entityType={entityTypes.IMAGE}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Users & Groups"
-                        value={subjectCount}
-                        entityType={entityTypes.SUBJECT}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Service Accounts"
-                        value={serviceAccountCount}
-                        entityType={entityTypes.SERVICE_ACCOUNT}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="Roles"
-                        value={k8sroleCount}
-                        entityType={entityTypes.ROLE}
-                    />
-                    <RelatedEntityListCount
-                        className="mx-4 min-w-48 h-48 mb-4"
-                        name="CIS Controls"
-                        value={totalControlCount}
-                        entityType={entityTypes.CONTROL}
-                    />
+        <div className="w-full h-full" id="capture-dashboard-stretch">
+            <div className="flex h-full">
+                <div className="flex flex-col flex-grow">
+                    <CollapsibleSection title="Cluster Details">
+                        <div className="flex flex-wrap pdf-page">
+                            <Metadata
+                                className="mx-4 min-w-48 bg-base-100 h-48 mb-4"
+                                keyValuePairs={metadataKeyValuePairs}
+                                statTiles={clusterStats}
+                                title="Details & Metadata"
+                            />
+                        </div>
+                    </CollapsibleSection>
                 </div>
-            </CollapsibleSection>
+                <RelatedEntitiesSideList
+                    entityType={entityTypes.CLUSTER}
+                    workflowState={workflowState}
+                    getCountData={getCountData}
+                />
+            </div>
         </div>
     );
 };
 
-export default VulnMgmtDeploymentOverview;
+export default VulnMgmtClusterOverview;
