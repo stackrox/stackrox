@@ -34,10 +34,21 @@ const entityNameKeyMap = {
     }
 };
 
-const getEntityName = (entityType, data, id) => {
+function extractEntityName(entityType, data) {
+    if (!data || isEmpty(data)) return null;
+
+    const fn = entityNameKeyMap[entityType];
+    if (fn) return fn(data);
+
+    // No name extraction method defined. Make an educated guess.
+    const firstKey = Object.keys(data)[0];
+    return data[firstKey].name;
+}
+
+const getEntityName = (entityType, data) => {
     if (isEmpty(data)) return null;
     try {
-        return entityNameKeyMap[entityType](data, id);
+        return extractEntityName(entityType, data);
     } catch (error) {
         throw new Error(
             `Entity (${entityType}) is not mapped correctly in the "entityToNameResolverMapping"`

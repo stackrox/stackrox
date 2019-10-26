@@ -28,6 +28,8 @@ import {
     SUBJECT_NAME
 } from 'queries/subject';
 
+import COMPONENT_NAME from 'queries/components';
+
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,
     [entityTypes.SECRET]: SECRET,
@@ -70,5 +72,6 @@ export const entityNameQueryMap = {
     [entityTypes.CONTROL]: CONTROL_NAME,
     [entityTypes.IMAGE]: IMAGE_NAME,
     [entityTypes.POLICY]: POLICY_NAME,
-    [entityTypes.SUBJECT]: SUBJECT_NAME
+    [entityTypes.SUBJECT]: SUBJECT_NAME,
+    [entityTypes.COMPONENT]: COMPONENT_NAME
 };

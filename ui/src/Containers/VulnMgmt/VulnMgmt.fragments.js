@@ -40,6 +40,20 @@ export const CVE_LIST_FRAGMENT = gql`
     }
 `;
 
+export const CVE_LIST_FRAGMENT_FOR_IMAGE = gql`
+    fragment cveListFields on EmbeddedVulnerability {
+        cve
+        cvss
+        scoreVersion
+        impactScore
+        summary
+        fixedByVersion
+        isFixable
+        lastScanned
+        publishedOn
+    }
+`;
+
 export const DEPLOYMENT_LIST_FRAGMENT = gql`
     fragment deploymentListFields on Deployment {
         id
