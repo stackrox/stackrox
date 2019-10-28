@@ -683,6 +683,7 @@ class Enforcement extends BaseSpecification {
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, wpDeployment)
         assert (whitelist != null)
+        println whitelist
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
                 lockProcessWhitelists(clusterId, wpDeployment, "", true)
         assert lockProcessWhitelists.size() ==  1

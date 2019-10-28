@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -112,39 +113,8 @@ func (m *managerImpl) flushQueuePeriodically() {
 	}
 }
 
-func (m *managerImpl) flushIndicatorQueue() {
-	// This is a potentially long-running operation, and we don't want to have a pile of goroutines queueing up on
-	// this lock.
-	if !m.flushProcessingLock.MaybeLock() {
-		return
-	}
-	defer m.flushProcessingLock.Unlock()
-
-	copiedQueue := m.copyAndResetIndicatorQueue()
-	if len(copiedQueue) == 0 {
-		return
-	}
-
-	// Map copiedQueue to slice
-	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
-	for _, i := range copiedQueue {
-		if deleted, _ := m.deletedDeploymentsCache.Get(i.indicator.GetDeploymentId()).(bool); deleted {
-			continue
-		}
-		if !m.processFilter.Add(i.indicator) {
-			metrics.ProcessFilterCounterInc("NotAdded")
-			continue
-		}
-		metrics.ProcessFilterCounterInc("Added")
-		indicatorSlice = append(indicatorSlice, i.indicator)
-	}
-
-	// Index the process indicators in batch
-	if err := m.processesDataStore.AddProcessIndicators(lifecycleMgrCtx, indicatorSlice...); err != nil {
-		log.Errorf("Error adding process indicators: %v", err)
-	}
-
-	deploymentIDs := uniqueDeploymentIDs(copiedQueue)
+func (m *managerImpl) generateProcessAlertsAndEnforcement(indicators map[string]indicatorWithInjector) {
+	deploymentIDs := uniqueDeploymentIDs(indicators)
 	newAlerts, err := m.runtimeDetector.AlertsForDeployments(deploymentIDs...)
 	if err != nil {
 		log.Errorf("Failed to compute runtime alerts: %s", err)
@@ -152,14 +122,14 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 
 	deploymentToMatchingIndicators := make(map[string][]*storage.ProcessIndicator)
-	for _, ind := range indicatorSlice {
-		userWhitelist, _, err := m.checkWhitelist(ind)
+	for _, ind := range indicators {
+		userWhitelist, _, err := m.checkWhitelist(ind.indicator)
 		if err != nil {
 			log.Debugf("error checking whitelist for indicator: %v - %+v", err, ind)
 			continue
 		}
 		if userWhitelist {
-			deploymentToMatchingIndicators[ind.GetDeploymentId()] = append(deploymentToMatchingIndicators[ind.GetDeploymentId()], ind)
+			deploymentToMatchingIndicators[ind.indicator.GetDeploymentId()] = append(deploymentToMatchingIndicators[ind.indicator.GetDeploymentId()], ind.indicator)
 		}
 	}
 	if len(deploymentToMatchingIndicators) > 0 {
@@ -180,7 +150,44 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 
 	// Create enforcement actions for the new alerts and send them with the stored injectors.
-	m.generateAndSendEnforcements(newAlerts, copiedQueue)
+	m.generateAndSendEnforcements(newAlerts, indicators)
+}
+
+func (m *managerImpl) flushIndicatorQueue() {
+	// This is a potentially long-running operation, and we don't want to have a pile of goroutines queueing up on
+	// this lock.
+	if !m.flushProcessingLock.MaybeLock() {
+		return
+	}
+	defer m.flushProcessingLock.Unlock()
+
+	copiedQueue := m.copyAndResetIndicatorQueue()
+	if len(copiedQueue) == 0 {
+		return
+	}
+
+	// Map copiedQueue to slice
+	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
+	for id, i := range copiedQueue {
+		if deleted, _ := m.deletedDeploymentsCache.Get(i.indicator.GetDeploymentId()).(bool); deleted {
+			delete(copiedQueue, id)
+			continue
+		}
+		if !m.processFilter.Add(i.indicator) {
+			delete(copiedQueue, id)
+			metrics.ProcessFilterCounterInc("NotAdded")
+			continue
+		}
+		metrics.ProcessFilterCounterInc("Added")
+		indicatorSlice = append(indicatorSlice, i.indicator)
+	}
+
+	// Index the process indicators in batch
+	if err := m.processesDataStore.AddProcessIndicators(lifecycleMgrCtx, indicatorSlice...); err != nil {
+		log.Errorf("Error adding process indicators: %v", err)
+	}
+
+	m.generateProcessAlertsAndEnforcement(copiedQueue)
 }
 
 func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector common.MessageInjector) {
@@ -229,10 +236,9 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 			// This updates the risk for deployments after the whitelist gets locked.
 			// This isn't super pretty, but otherwise, our whitelistStatus for the deployment can become stale
 			// since we don't explicit lock a whitelist -- we just set a locked time which is in the future.
-			go func() {
-				time.Sleep(env.WhitelistGenerationDuration.DurationSetting() + whitelistLockingGracePeriod)
+			time.AfterFunc(env.WhitelistGenerationDuration.DurationSetting()+whitelistLockingGracePeriod, func() {
 				m.reprocessor.ReprocessRiskForDeployments(indicator.GetDeploymentId())
-			}()
+			})
 		}
 		return
 	}
@@ -268,7 +274,29 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, inject
 	return nil
 }
 
-func (m *managerImpl) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, injector common.MessageInjector) error {
+func (m *managerImpl) generateRuntimeAlertsOnCreate(deployment *storage.Deployment, injector common.MessageInjector) error {
+	indicatorQuery := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery()
+	indicators, err := m.processesDataStore.SearchRawProcessIndicators(lifecycleMgrCtx, indicatorQuery)
+	if err != nil {
+		return err
+	}
+	if len(indicators) == 0 {
+		return nil
+	}
+
+	indicatorMap := make(map[string]indicatorWithInjector, len(indicators))
+	for _, ind := range indicators {
+		indicatorMap[ind.GetId()] = indicatorWithInjector{
+			indicator:           ind,
+			msgToSensorInjector: injector,
+		}
+	}
+
+	m.generateProcessAlertsAndEnforcement(indicatorMap)
+	return nil
+}
+
+func (m *managerImpl) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, create bool, injector common.MessageInjector) error {
 	retrievedInjector := m.deploymentsPendingEnrichment.removeAndRetrieveInjector(deployment.GetId())
 	// Enforcement-related: IF the pending deployment had an injector, that means we have an enforcement decision pending.
 	// If we deleted it, we would lose the opportunity to perform that enforcement forever.
@@ -286,8 +314,14 @@ func (m *managerImpl) DeploymentUpdated(ctx enricher.EnrichmentContext, deployme
 	if enrichmentPending {
 		m.deploymentsPendingEnrichment.add(ctx, deployment, injector)
 	}
+	if create {
+		if err := m.generateRuntimeAlertsOnCreate(deployment, injector); err != nil {
+			log.Errorf("Could not generate runtime alerts for deployment %s: %v", deployment.GetId(), err)
+		}
+	}
 	return nil
 }
+
 func (m *managerImpl) processDeploymentUpdate(ctx enricher.EnrichmentContext, deployment *storage.Deployment, injector common.MessageInjector) (bool, error) {
 	// Attempt to enrich the image before detection.
 	images, updatedIndices, pendingEnrichment, err := m.enricher.EnrichDeployment(ctx, deployment)

@@ -66,6 +66,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return s.manager.DeploymentUpdated(
 			enricher.EnrichmentContext{IgnoreExisting: true, UseNonBlockingCallsWherePossible: true},
 			deployment,
+			false,
 			nil,
 		)
 	}

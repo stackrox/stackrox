@@ -1033,6 +1033,20 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def execInContainer(Deployment deployment, String cmd) {
+        // Wait for container 0 to be running first.
+        def timer = new Timer(30, 1)
+        while (timer.IsValid()) {
+            println "First container in pod ${deployment.pods.get(0).name} not yet running ..."
+            def p = client.pods().inNamespace(deployment.namespace).withName(deployment.pods.get(0).name).get()
+            if (p == null || p.status.containerStatuses.size() == 0) {
+                continue
+            }
+            def status = p.status.containerStatuses.get(0)
+            if (status.state.running != null) {
+                break
+            }
+        }
+
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(20)
         try {
             CountDownLatch latch = new CountDownLatch(1)
