@@ -1,4 +1,4 @@
-package httputil
+package proxy
 
 import (
 	"net/url"

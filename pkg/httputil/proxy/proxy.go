@@ -1,4 +1,4 @@
-package httputil
+package proxy
 
 import (
 	"context"
@@ -79,6 +79,10 @@ func (r *reloadProxyConfigHandler) OnStableUpdate(val interface{}, err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.proxyURL, _ = val.(*url.URL)
+	r.updateEnvNoLock()
+}
+
+func (r *reloadProxyConfigHandler) updateEnvNoLock() {
 	if !r.setEnv {
 		return
 	}
@@ -106,6 +110,7 @@ func (r *reloadProxyConfigHandler) enableProxySetting(enable bool) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.setEnv = enable
+	r.updateEnvNoLock()
 }
 
 func initHandler() {
@@ -119,15 +124,17 @@ func initHandler() {
 	})
 }
 
-// ProxyFunc returns an function suitable for use as a Proxy field in an *http.Transport instance that will always
+// FromConfig returns an function suitable for use as a Proxy field in an *http.Transport instance that will always
 // use the latest configured proxy setting.
-func ProxyFunc() func(*http.Request) (*url.URL, error) {
+func FromConfig() func(*http.Request) (*url.URL, error) {
 	initHandler()
 	return proxyHandler.proxy
 }
 
 // EnableProxyEnvironmentSetting enables the behavior of mutating the current process's environment to always have
-// the most up to date setting. This is specifically useful when
+// the most up to date setting. This is specifically useful when running child processes that need to access the
+// environment.
+// Note: setting this flag to false after it was set to true will not clear the environment.
 func EnableProxyEnvironmentSetting(enable bool) {
 	initHandler()
 	if enable && (os.Getenv("https_proxy") != "" || os.Getenv("http_proxy") != "") {
