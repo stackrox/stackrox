@@ -106,7 +106,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
 
                     const url = workflowState
                         .pushListItem(original.id)
-                        .pushList(entityTypes.DEPLOYMENT).toURL;
+                        .pushList(entityTypes.DEPLOYMENT).toUrl;
                     return (
                         <TableCellLink
                             pdf={pdf}
@@ -130,7 +130,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                     const url = workflowState
                         .pushListItem(original.id)
                         .pushList(entityTypes.POLICY)
-                        .toURL();
+                        .toUrl();
                     return (
                         <TableCellLink
                             pdf={pdf}

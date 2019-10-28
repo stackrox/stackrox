@@ -17,7 +17,7 @@ const CVES_COUNT_QUERY = gql`
 `;
 
 const getURL = workflowState => {
-    const url = workflowState.pushList(entityTypes.CVE).toURL();
+    const url = workflowState.pushList(entityTypes.CVE).toUrl();
     return url;
 };
 

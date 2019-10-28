@@ -21,7 +21,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
     const isList = firstItem.entityType && !firstItem.entityId;
 
     function onClose() {
-        const url = workflowState.removeSidePanelParams().toURL();
+        const url = workflowState.removeSidePanelParams().toUrl();
         history.push(url);
     }
 
@@ -29,7 +29,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
         onClose();
     };
 
-    const url = workflowState.reset(useCase, currentItem.entityType, currentItem.entityId).toURL();
+    const url = workflowState.reset(useCase, currentItem.entityType, currentItem.entityId).toUrl();
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
             <Link

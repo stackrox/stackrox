@@ -13,7 +13,7 @@ const createOptions = (workflowState, types) => {
     return types.map(type => {
         return {
             label: getLabel(type),
-            link: workflowState.pushList(type).toURL()
+            link: workflowState.pushList(type).toUrl()
         };
     });
 };

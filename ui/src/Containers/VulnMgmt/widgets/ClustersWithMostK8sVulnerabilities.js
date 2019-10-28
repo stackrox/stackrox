@@ -33,7 +33,7 @@ const processData = (data, workflowState) => {
     const results = data.results.map(({ id, name: text, vulns }) => {
         const cveCount = vulns.length;
         const fixableCount = vulns.filter(vuln => vuln.isFixable).length;
-        const url = workflowState.pushRelatedEntity(entityTypes.CLUSTER, id).toURL();
+        const url = workflowState.pushRelatedEntity(entityTypes.CLUSTER, id).toUrl();
         return {
             text,
             url,
@@ -72,7 +72,7 @@ const ClustersWithMostK8sVulnerabilities = ({ entityContext }) => {
         );
     }
 
-    const viewAllURL = workflowState.pushList(entityTypes.CLUSTER).toURL();
+    const viewAllURL = workflowState.pushList(entityTypes.CLUSTER).toUrl();
 
     return (
         <Widget

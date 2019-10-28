@@ -10,7 +10,7 @@ const Icon = (
 );
 
 function getBackLink(workflowState, enabled) {
-    const url = enabled ? null : workflowState.pop().toURL();
+    const url = enabled ? null : workflowState.pop().toUrl();
     return url ? (
         <Link
             className="flex items-center justify-center text-base-600 border-r border-base-300 px-4 mr-4 h-full hover:bg-primary-200 w-16"
@@ -32,8 +32,8 @@ const getUrl = (workflowState, steps) => {
     for (let x = 1; x < steps; x += 1) {
         newState = newState.pop();
     }
-    const newURL = newState.toURL();
-    const currentURL = workflowState.toURL();
+    const newURL = newState.toUrl();
+    const currentURL = workflowState.toUrl();
     return newURL === currentURL ? null : newURL;
 };
 

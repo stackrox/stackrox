@@ -119,7 +119,7 @@ export function getCveTableColumns(workflowState) {
                 const url = workflowState
                     .pushListItem(cve)
                     .pushList(entityTypes.IMAGE)
-                    .toURL();
+                    .toUrl();
                 return (
                     <TableCellLink
                         pdf={pdf}
@@ -142,7 +142,7 @@ export function getCveTableColumns(workflowState) {
                 const url = workflowState
                     .pushListItem(cve)
                     .pushList(entityTypes.IMAGE)
-                    .toURL();
+                    .toUrl();
                 return (
                     <TableCellLink
                         pdf={pdf}
@@ -165,7 +165,7 @@ export function getCveTableColumns(workflowState) {
                 const url = workflowState
                     .pushListItem(cve)
                     .pushList(entityTypes.IMAGE)
-                    .toURL();
+                    .toUrl();
                 return (
                     <TableCellLink
                         pdf={pdf}

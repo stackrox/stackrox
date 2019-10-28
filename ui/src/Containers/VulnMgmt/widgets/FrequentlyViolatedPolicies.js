@@ -73,7 +73,7 @@ const FrequentlyViolatedPolicies = ({ entityContext }) => {
             bodyClassName="px-2"
             header="Frequently Violated Policies"
             headerComponents={
-                <ViewAllButton url={workflowState.pushList(entityTypes.POLICY).toURL()} />
+                <ViewAllButton url={workflowState.pushList(entityTypes.POLICY).toUrl()} />
             }
         >
             {content}
