@@ -173,7 +173,7 @@ const TopRiskyEntitiesByVulnerabilities = () => {
                 const avgSeverity = getAverageSeverity(result.vulns);
                 return {
                     x: result.vulnCount,
-                    y: avgSeverity,
+                    y: +avgSeverity,
                     color: severityColorMap[getSeverityByCvss(avgSeverity)],
                     hint: getHint({ ...result, avgSeverity })
                 };

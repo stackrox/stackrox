@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { severities } from 'constants/severities';
+import severityColorMap from 'constants/severityColors';
 import Scatterplot from './Scatterplot';
 
 export default {
@@ -20,11 +22,17 @@ const data = [
     { x: 81, y: 6.3, color: 'var(--warning-400)' },
     { x: 83, y: 9.1, color: 'var(--alert-400)' }
 ];
+const legendData = [
+    { title: 'Low', color: severityColorMap[severities.LOW_SEVERITY] },
+    { title: 'Medium', color: severityColorMap[severities.MEDIUM_SEVERITY] },
+    { title: 'High', color: severityColorMap[severities.HIGH_SEVERITY] },
+    { title: 'Critical', color: severityColorMap[severities.CRITICAL_SEVERITY] }
+];
 
 export const withData = () => {
     return (
         <div className="w-full h-64">
-            <Scatterplot data={data} />
+            <Scatterplot data={data} legendData={legendData} />
         </div>
     );
 };
@@ -32,7 +40,7 @@ export const withData = () => {
 export const withSetXDomain = () => {
     return (
         <div className="w-full h-64">
-            <Scatterplot data={data} lowerX={0} upperX={200} />
+            <Scatterplot data={data} lowerX={0} upperX={200} legendData={legendData} />
         </div>
     );
 };
@@ -40,7 +48,7 @@ export const withSetXDomain = () => {
 export const withSetYDomain = () => {
     return (
         <div className="w-full h-64">
-            <Scatterplot data={data} lowerY={0} upperY={20} />
+            <Scatterplot data={data} lowerY={0} upperY={20} legendData={legendData} />
         </div>
     );
 };
@@ -48,7 +56,14 @@ export const withSetYDomain = () => {
 export const withSetXandYDomains = () => {
     return (
         <div className="w-full h-64">
-            <Scatterplot data={data} lowerX={0} upperX={150} lowerY={0} upperY={25} />
+            <Scatterplot
+                data={data}
+                lowerX={0}
+                upperX={150}
+                lowerY={0}
+                upperY={25}
+                legendData={legendData}
+            />
         </div>
     );
 };

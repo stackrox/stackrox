@@ -8,6 +8,10 @@ import StatusChip from 'Components/StatusChip';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 
+import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
+import MostRecentVulnerabilities from '../../widgets/MostRecentVulnerabilities';
+import TopRiskiestImagesAndComponents from '../../widgets/TopRiskiestImagesAndComponents';
+import DeploymentsWithMostSeverePolicyViolations from '../../widgets/DeploymentsWithMostSeverePolicyViolations';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
 const VulnMgmtClusterOverview = ({ data }) => {
@@ -52,11 +56,11 @@ const VulnMgmtClusterOverview = ({ data }) => {
     ];
 
     const clusterStats = [
-        <RiskScore score={priority} />,
-        <>
+        <RiskScore key="risk-score" score={priority} />,
+        <React.Fragment key="policy-status">
             <span className="pr-1">Policy status:</span>
-            <StatusChip status={policyStatus} />
-        </>
+            <StatusChip status={policyStatus.status} />
+        </React.Fragment>
     ];
 
     function getCountData(entityType) {
@@ -83,13 +87,27 @@ const VulnMgmtClusterOverview = ({ data }) => {
             <div className="flex h-full">
                 <div className="flex flex-col flex-grow">
                     <CollapsibleSection title="Cluster Details">
-                        <div className="flex flex-wrap pdf-page">
-                            <Metadata
-                                className="mx-4 min-w-48 bg-base-100 h-48 mb-4"
-                                keyValuePairs={metadataKeyValuePairs}
-                                statTiles={clusterStats}
-                                title="Details & Metadata"
-                            />
+                        <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                            <div className="s-1">
+                                <Metadata
+                                    className="h-full mx-4 min-w-48 bg-base-100"
+                                    keyValuePairs={metadataKeyValuePairs}
+                                    statTiles={clusterStats}
+                                    title="Details & Metadata"
+                                />
+                            </div>
+                            <div className="sx-2 sy-1">
+                                <TopRiskyEntitiesByVulnerabilities />
+                            </div>
+                            <div className="s-1">
+                                <MostRecentVulnerabilities />
+                            </div>
+                            <div className="s-1">
+                                <TopRiskiestImagesAndComponents />
+                            </div>
+                            <div className="s-1">
+                                <DeploymentsWithMostSeverePolicyViolations />
+                            </div>
                         </div>
                     </CollapsibleSection>
                 </div>

@@ -15,7 +15,10 @@ import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostK8sVulnerabilities from '../widgets/ClustersWithMostK8sVulnerabilities';
 
-const recentVulnerabilitiesDashboardCount = 8; // layout-specific
+// layout-specific graph widget counts
+const recentVulnerabilitiesDashboardCount = 8;
+const topRiskiestCount = 8;
+const mostSeverePolicyVioloationsCount = 8;
 
 const VulnDashboardPage = () => {
     const headerComponents = (
@@ -34,7 +37,7 @@ const VulnDashboardPage = () => {
                 <TopRiskyEntitiesByVulnerabilities />
             </div>
             <div className="s-2">
-                <TopRiskiestImagesAndComponents />
+                <TopRiskiestImagesAndComponents limit={topRiskiestCount} />
             </div>
             <div className="s-2">
                 <FrequentlyViolatedPolicies />
@@ -46,7 +49,9 @@ const VulnDashboardPage = () => {
                 <MostCommonVulnerabilities />
             </div>
             <div className="s-2">
-                <DeploymentsWithMostSeverePolicyViolations />
+                <DeploymentsWithMostSeverePolicyViolations
+                    limit={mostSeverePolicyVioloationsCount}
+                />
             </div>
             <div className="s-2">
                 <ClustersWithMostK8sVulnerabilities />

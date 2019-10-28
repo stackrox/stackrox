@@ -130,7 +130,7 @@ DeploymentsWithMostSeverePolicyViolations.propTypes = {
 
 DeploymentsWithMostSeverePolicyViolations.defaultProps = {
     entityContext: {},
-    limit: 8
+    limit: 5
 };
 
 export default DeploymentsWithMostSeverePolicyViolations;

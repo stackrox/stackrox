@@ -81,13 +81,13 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
                                 <TopRiskyEntitiesByVulnerabilities />
                             </div>
                             <div>
-                                <MostRecentVulnerabilities limit={5} />
+                                <MostRecentVulnerabilities />
                             </div>
                             <div>
-                                <TopRiskiestImagesAndComponents limit={5} />
+                                <TopRiskiestImagesAndComponents />
                             </div>
                             <div>
-                                <DeploymentsWithMostSeverePolicyViolations limit={5} />
+                                <DeploymentsWithMostSeverePolicyViolations />
                             </div>
                         </div>
                     </CollapsibleSection>

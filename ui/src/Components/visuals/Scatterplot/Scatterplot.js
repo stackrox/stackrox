@@ -92,7 +92,9 @@ Scatterplot.propTypes = {
     plotProps: PropTypes.shape({}),
     yAxisTitle: PropTypes.string,
     xAxisTitle: PropTypes.string,
-    legendData: PropTypes.arrayOf(PropTypes.shape({ title: PropTypes.string, color: PropTypes }))
+    legendData: PropTypes.arrayOf(
+        PropTypes.shape({ title: PropTypes.string, color: PropTypes.string })
+    )
 };
 
 Scatterplot.defaultProps = {
