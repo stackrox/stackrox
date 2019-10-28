@@ -21,14 +21,10 @@ function VulnMgmtComponentOverview({ data }) {
 
     const { version, priority, vulns } = data;
 
-    const topVuln = vulns.reduce(
-        (acc, curr) => {
-            if (curr.cvss > acc.cvss) return curr;
-
-            return acc;
-        },
-        { cvss: 0, scoreVersion: null }
-    );
+    const topVuln = vulns.reduce((max, curr) => (curr.cvss > max.cvss ? curr : max), {
+        cvss: 0,
+        scoreVersion: null
+    });
     const { cvss, scoreVersion } = topVuln;
 
     // Expand all rows to include description

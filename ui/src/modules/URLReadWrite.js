@@ -3,7 +3,7 @@ import useCases from 'constants/useCaseTypes';
 import { generatePath, matchPath } from 'react-router-dom';
 import qs from 'qs';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
-import WorkflowStateMgr, { WorkflowState, WorkflowEntity } from './WorkflowStateManager';
+import { WorkflowState, WorkflowEntity } from './WorkflowStateManager';
 
 import {
     nestedPaths as workflowPaths,
@@ -205,24 +205,22 @@ export function parseURL(location) {
 export function generateURLTo(workflowState, entityType, entityId) {
     if (!entityType && !entityId) return generateURL(workflowState);
 
-    const mgr = new WorkflowStateMgr(workflowState);
     if (!entityId) {
-        mgr.pushList(entityType);
+        workflowState.pushList(entityType);
     } else if (!entityType) {
-        mgr.pushListItem(entityId);
+        workflowState.pushListItem(entityId);
     } else {
-        mgr.pushRelatedEntity(entityType, entityId);
+        workflowState.pushRelatedEntity(entityType, entityId);
     }
-    return generateURL(mgr.workflowState);
+    return generateURL(workflowState);
 }
 
 export function generateURLToFromTable(workflowState, rowEntityId, entityType, entityId) {
-    const mgr = new WorkflowStateMgr(workflowState);
-    mgr.pushListItem(rowEntityId);
+    workflowState.pushListItem(rowEntityId);
     if (!entityId) {
-        mgr.pushList(entityType);
+        workflowState.pushList(entityType);
     } else {
-        mgr.pushRelatedEntity(entityType, entityId);
+        workflowState.pushRelatedEntity(entityType, entityId);
     }
-    return generateURL(mgr.workflowState);
+    return generateURL(workflowState);
 }

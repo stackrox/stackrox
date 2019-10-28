@@ -11,7 +11,6 @@ import { Creatable } from 'Components/ReactSelect';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import searchContext from 'Containers/searchContext';
 import workflowStateContext from 'Containers/workflowStateContext';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import { generateURL } from 'modules/URLReadWrite';
 
 const borderClass = 'border border-primary-300';
@@ -171,11 +170,10 @@ const URLSearchInputWithAutocomplete = ({
         // if (prevQueryJSON.groupBy) queryJSON.groupBy = prevQueryJSON.groupBy;
 
         if (workflowState && workflowState.useCase) {
-            const mgr = new WorkflowStateMgr(workflowState);
-            mgr.setSearch(newSearch);
+            workflowState.setSearch(newSearch);
 
             // Get the full querystring to redirect to
-            const url = generateURL(mgr.workflowState);
+            const url = generateURL(workflowState);
             const qsStart = url.indexOf('?');
             if (qsStart === -1) return '';
             return url.substr(qsStart);

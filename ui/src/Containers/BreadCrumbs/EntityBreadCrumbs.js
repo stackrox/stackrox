@@ -4,7 +4,6 @@ import { ChevronRight, ArrowLeft } from 'react-feather';
 import EntityBreadCrumb from 'Containers/BreadCrumbs/EntityBreadCrumb';
 import { generateURL } from 'modules/URLReadWrite';
 import EntityIcon from 'Components/EntityIcon';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 const Icon = (
@@ -12,9 +11,7 @@ const Icon = (
 );
 
 function getBackLink(workflowState, enabled) {
-    const url = enabled
-        ? null
-        : generateURL(new WorkflowStateMgr(workflowState).pop().workflowState);
+    const url = enabled ? null : generateURL(workflowState.pop());
     return url ? (
         <Link
             className="flex items-center justify-center text-base-600 border-r border-base-300 px-4 mr-4 h-full hover:bg-primary-200 w-16"
@@ -31,11 +28,12 @@ function getBackLink(workflowState, enabled) {
 }
 
 const getUrl = (workflowState, steps) => {
-    const mgr = new WorkflowStateMgr(workflowState);
+    // TODO: do this with .call
+    let newState = workflowState;
     for (let x = 1; x < steps; x += 1) {
-        mgr.pop();
+        newState = newState.pop();
     }
-    const newURL = generateURL(mgr.workflowState);
+    const newURL = generateURL(newState);
     const currentURL = generateURL(workflowState);
     return newURL === currentURL ? null : newURL;
 };

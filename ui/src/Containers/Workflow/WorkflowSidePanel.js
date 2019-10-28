@@ -1,6 +1,5 @@
 import React from 'react';
 import { withRouter, Link } from 'react-router-dom';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import { generateURL, parseURL } from 'modules/URLReadWrite';
 import onClickOutside from 'react-onclickoutside';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -22,9 +21,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
     const isList = firstItem.entityType && !firstItem.entityId;
 
     function onClose() {
-        const workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.removeSidePanelParams();
-        const url = generateURL(workflowStateMgr.workflowState);
+        const url = generateURL(workflowState.removeSidePanelParams());
         history.push(url);
     }
 
@@ -32,9 +29,9 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
         onClose();
     };
 
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.reset(useCase, currentItem.entityType, currentItem.entityId);
-    const url = generateURL(workflowStateMgr.workflowState);
+    const url = generateURL(
+        workflowState.reset(useCase, currentItem.entityType, currentItem.entityId)
+    );
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
             <Link

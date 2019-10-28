@@ -6,7 +6,6 @@ import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 
 import GroupedTabs from 'Components/GroupedTabs';
-import WorkflowStateManager from 'modules/WorkflowStateManager';
 import entityRelationships from 'modules/entityRelationships';
 import { generateURLTo, generateURL } from 'modules/URLReadWrite';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -71,7 +70,7 @@ const EntityTabs = ({ entityType, activeTab }) => {
             group: TAB_GROUPS.OVERVIEW,
             value: '',
             text: 'Overview',
-            to: generateURL(new WorkflowStateManager(workflowState).base().workflowState)
+            to: generateURL(workflowState.base())
         },
         ...entityTabs
     ];
