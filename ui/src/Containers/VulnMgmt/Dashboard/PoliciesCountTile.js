@@ -4,7 +4,6 @@ import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURLTo } from 'modules/URLReadWrite';
 
 import EntityTileLink from 'Components/EntityTileLink';
 
@@ -24,11 +23,6 @@ const POLICIES_COUNT_QUERY = gql`
     }
 `;
 
-const getURL = workflowState => {
-    const url = generateURLTo(workflowState, entityTypes.POLICY);
-    return url;
-};
-
 const PoliciesCountTile = () => {
     const { loading, data = {} } = useQuery(POLICIES_COUNT_QUERY);
 
@@ -43,7 +37,7 @@ const PoliciesCountTile = () => {
     const failingPoliciesCountText = `(${failingPoliciesCount} failing)`;
 
     const workflowState = useContext(workflowStateContext);
-    const url = getURL(workflowState);
+    const url = workflowState.pushList(entityTypes.POLICY).toURL();
 
     return (
         <EntityTileLink

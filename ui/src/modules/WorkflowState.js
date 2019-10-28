@@ -1,6 +1,7 @@
 import entityRelationships from 'modules/entityRelationships';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import cloneDeep from 'lodash/cloneDeep';
+import generateURL from 'modules/URLGenerator';
 
 // An item in the workflow stack
 export class WorkflowEntity {
@@ -261,78 +262,8 @@ export class WorkflowState {
         };
         return new WorkflowState(useCase, stateStack, search, sort, newPaging);
     }
-}
 
-export default class WorkflowStateMgr {
-    constructor(workflowState) {
-        if (workflowState) {
-            this.workflowState = workflowState.clone();
-        } else {
-            this.workflowState = new WorkflowState();
-        }
-    }
-
-    // Resets the current state based on minimal parameters
-    reset(useCase, entityType, entityId, search, sort, paging) {
-        this.workflowState = this.workflowState.reset(
-            useCase,
-            entityType,
-            entityId,
-            search,
-            sort,
-            paging
-        );
-        return this;
-    }
-
-    // sets the stateStack to base state when returning from side panel
-    removeSidePanelParams() {
-        this.workflowState = this.workflowState.removeSidePanelParams();
-        return this;
-    }
-
-    // sets statestack to only the first item
-    base() {
-        this.workflowState = this.workflowState.base();
-        return this;
-    }
-
-    // Adds a list of entityType related to the current workflowState
-    pushList(type) {
-        this.workflowState = this.workflowState.pushList(type);
-        return this;
-    }
-
-    // Selects an item in a list by Id
-    pushListItem(id) {
-        this.workflowState = this.workflowState.pushListItem(id);
-        return this;
-    }
-
-    // Shows an entity in relation to the top entity in the workflow
-    pushRelatedEntity(type, id) {
-        this.workflowState = this.workflowState.pushRelatedEntity(type, id);
-        return this;
-    }
-
-    // Goes back one level to the nearest valid state
-    pop() {
-        this.workflowState = this.workflowState.pop();
-        return this;
-    }
-
-    setSearch(newProps) {
-        this.workflowState = this.workflowState.setSearch(newProps);
-        return this;
-    }
-
-    setSort(sortProp) {
-        this.workflowState = this.workflowState.setSort(sortProp);
-        return this;
-    }
-
-    setPage(pagingProp) {
-        this.workflowState = this.workflowState.setPage(pagingProp);
-        return this;
+    toUrl() {
+        return generateURL(this);
     }
 }

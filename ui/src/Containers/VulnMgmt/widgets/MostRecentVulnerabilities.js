@@ -8,7 +8,6 @@ import sortBy from 'lodash/sortBy';
 import { getTime } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURLTo } from 'modules/URLReadWrite';
 
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
@@ -60,13 +59,13 @@ const MostRecentVulnerabilities = ({ entityContext, limit }) => {
         );
     }
 
-    const viewAllUrl = generateURLTo(workflowState, entityTypes.CVE);
-
     return (
         <Widget
             className="h-full pdf-page"
             header="Most Recent Vulnerabilities"
-            headerComponents={<ViewAllButton url={viewAllUrl} />}
+            headerComponents={
+                <ViewAllButton url={workflowState.pushList(entityTypes.CVE).toUrl()} />
+            }
         >
             {content}
         </Widget>

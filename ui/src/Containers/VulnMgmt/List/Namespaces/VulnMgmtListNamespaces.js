@@ -10,7 +10,6 @@ import DateTimeField from 'Components/DateTimeField';
 import { sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
-import { generateURLToFromTable } from 'modules/URLReadWrite';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { NAMESPACE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
@@ -35,7 +34,10 @@ export function getNamespaceTableColumns(workflowState) {
             className: `w-1/6 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
-                const url = generateURLToFromTable(workflowState, id, entityTypes.CVE);
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.CVE)
+                    .toUrl();
                 return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
             }
         },
@@ -46,12 +48,11 @@ export function getNamespaceTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { metadata } = original;
                 const { clusterName, clusterId, id } = metadata;
-                const url = generateURLToFromTable(
-                    workflowState,
-                    id,
-                    entityTypes.CLUSTER,
-                    clusterId
-                );
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushRelatedEntity(entityTypes.CLUSTER, clusterId)
+                    .toUrl();
+
                 return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
             }
         },
@@ -61,11 +62,11 @@ export function getNamespaceTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, metadata } = original;
-                const url = generateURLToFromTable(
-                    workflowState,
-                    metadata.id,
-                    entityTypes.DEPLOYMENT
-                );
+                const url = workflowState
+                    .pushListItem(metadata.id)
+                    .pushList(entityTypes.DEPLOYMENT)
+                    .toUrl();
+
                 const text = `${deploymentCount} ${pluralize(
                     entityTypes.DEPLOYMENT.toLowerCase(),
                     deploymentCount
@@ -79,7 +80,11 @@ export function getNamespaceTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { imageCount, metadata } = original;
-                const url = generateURLToFromTable(workflowState, metadata.id, entityTypes.IMAGE);
+                const url = workflowState
+                    .pushListItem(metadata.id)
+                    .pushList(entityTypes.IMAGE)
+                    .toUrl();
+
                 const text = `${imageCount} ${pluralize(
                     entityTypes.IMAGE.toLowerCase(),
                     imageCount
@@ -93,7 +98,10 @@ export function getNamespaceTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { policyCount, metadata } = original;
-                const url = generateURLToFromTable(workflowState, metadata.id, entityTypes.POLICY);
+                const url = workflowState
+                    .pushListItem(metadata.id)
+                    .pushList(entityTypes.POLICY)
+                    .toUrl();
                 const text = `${policyCount} ${pluralize(
                     entityTypes.POLICY.toLowerCase(),
                     policyCount

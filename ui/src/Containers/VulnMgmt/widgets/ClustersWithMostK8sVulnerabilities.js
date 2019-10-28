@@ -6,7 +6,6 @@ import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURLTo } from 'modules/URLReadWrite';
 
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
@@ -34,7 +33,7 @@ const processData = (data, workflowState) => {
     const results = data.results.map(({ id, name: text, vulns }) => {
         const cveCount = vulns.length;
         const fixableCount = vulns.filter(vuln => vuln.isFixable).length;
-        const url = generateURLTo(workflowState, entityTypes.CLUSTER, id);
+        const url = workflowState.pushRelatedEntity(entityTypes.CLUSTER, id).toURL();
         return {
             text,
             url,
@@ -73,7 +72,7 @@ const ClustersWithMostK8sVulnerabilities = ({ entityContext }) => {
         );
     }
 
-    const viewAllURL = generateURLTo(workflowState, entityTypes.CLUSTER);
+    const viewAllURL = workflowState.pushList(entityTypes.CLUSTER).toURL();
 
     return (
         <Widget

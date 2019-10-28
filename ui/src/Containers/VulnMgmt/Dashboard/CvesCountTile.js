@@ -4,7 +4,6 @@ import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURLTo } from 'modules/URLReadWrite';
 
 import EntityTileLink from 'Components/EntityTileLink';
 
@@ -18,7 +17,7 @@ const CVES_COUNT_QUERY = gql`
 `;
 
 const getURL = workflowState => {
-    const url = generateURLTo(workflowState, entityTypes.CVE);
+    const url = workflowState.pushList(entityTypes.CVE).toURL();
     return url;
 };
 

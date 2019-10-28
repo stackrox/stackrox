@@ -4,14 +4,12 @@ import pluralize from 'pluralize';
 import { useQuery } from 'react-apollo';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import ViewAllButton from 'Components/ViewAllButton';
 import Widget from 'Components/Widget';
 import Scatterplot from 'Components/visuals/Scatterplot';
 import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
-import { generateURL } from 'modules/URLReadWrite';
 import isGQLLoading from 'utils/gqlLoading';
 import severityColorMap from 'constants/severityColors';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
@@ -36,10 +34,11 @@ const TopRiskyEntitiesByVulnerabilities = () => {
     }
 
     // View all button
-    const viewAllUrl = generateURL(
-        new WorkflowStateMgr(workflowState).pushList(selectedEntityType).setSort('risk')
-            .workflowState
-    );
+    const viewAllUrl = workflowState
+        .pushList(selectedEntityType)
+        .setSort('risk')
+        .toUrl();
+
     const titleComponents = (
         <TextSelect value={selectedEntityType} onChange={onChange} options={entityOptions} />
     );

@@ -6,7 +6,6 @@ import gql from 'graphql-tag';
 import sortBy from 'lodash/sortBy';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURLTo } from 'modules/URLReadWrite';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 
 import ViewAllButton from 'Components/ViewAllButton';
@@ -61,14 +60,14 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
         );
     }
 
-    const viewAllUrl = generateURLTo(workflowState, entityTypes.CVE);
-
     return (
         <Widget
             className="h-full pdf-page"
             bodyClassName="px-2"
             header="Most Common Vulnerabilities"
-            headerComponents={<ViewAllButton url={viewAllUrl} />}
+            headerComponents={
+                <ViewAllButton url={workflowState.pushList(entityTypes.CVE).toUrl()} />
+            }
         >
             {content}
         </Widget>

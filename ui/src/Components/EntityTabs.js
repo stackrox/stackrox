@@ -7,7 +7,6 @@ import pluralize from 'pluralize';
 
 import GroupedTabs from 'Components/GroupedTabs';
 import entityRelationships from 'modules/entityRelationships';
-import { generateURLTo, generateURL } from 'modules/URLReadWrite';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 const TAB_GROUPS = {
@@ -50,7 +49,7 @@ const EntityTabs = ({ entityType, activeTab }) => {
             group: ENTITY_TO_TAB[tabType],
             value: tabType,
             text: `${failingText}${pluralize(entityLabels[tabType])}`,
-            to: generateURLTo(workflowState, tabType)
+            to: workflowState.pushList(tabType).toUrl()
         };
     }
 
@@ -70,7 +69,7 @@ const EntityTabs = ({ entityType, activeTab }) => {
             group: TAB_GROUPS.OVERVIEW,
             value: '',
             text: 'Overview',
-            to: generateURL(workflowState.base())
+            to: workflowState.base().toUrl()
         },
         ...entityTabs
     ];

@@ -11,7 +11,6 @@ import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import queryService from 'modules/queryService';
-import { generateURLToFromTable } from 'modules/URLReadWrite';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { sortDate } from 'sorters/sorters';
 
@@ -93,7 +92,11 @@ export function getPolicyTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, id } = original;
                 if (deploymentCount === 0) return 'No deployments';
-                const url = generateURLToFromTable(workflowState, id, entityTypes.DEPLOYMENT);
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.DEPLOYMENT)
+                    .toUrl();
+
                 return (
                     <TableCellLink
                         pdf={pdf}

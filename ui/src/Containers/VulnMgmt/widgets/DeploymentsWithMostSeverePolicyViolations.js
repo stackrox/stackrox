@@ -8,7 +8,6 @@ import queryService from 'modules/queryService';
 import sortBy from 'lodash/sortBy';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURLTo } from 'modules/URLReadWrite';
 
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
@@ -65,7 +64,7 @@ const processData = (data, workflowState, limit) => {
         const { critical, high, medium, low } = getPolicySeverityCounts(failingPolicies);
         return {
             text,
-            url: generateURLTo(workflowState, entityTypes.DEPLOYMENT, id),
+            url: workflowState.pushRelatedEntity(entityTypes.DEPLOYMENT, id).toUrl(),
             component: (
                 <>
                     <div className="mr-4">
@@ -101,7 +100,7 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
-    const viewAllURL = generateURLTo(workflowState, entityTypes.DEPLOYMENT);
+    const viewAllURL = workflowState.pushList(entityTypes.DEPLOYMENT).toUrl();
     if (!loading) {
         const processedData = processData(data, workflowState, limit);
 

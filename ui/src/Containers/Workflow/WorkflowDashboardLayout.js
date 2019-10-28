@@ -2,7 +2,7 @@ import React from 'react';
 import URLService from 'modules/URLService';
 import useCaseTypes from 'constants/useCaseTypes';
 import { withRouter } from 'react-router-dom';
-import { parseURL } from 'modules/URLReadWrite';
+import parseURL from 'modules/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 import VulnMgmtDashboardPage from 'Containers/VulnMgmt/Dashboard/VulnMgmtDashboardPage';

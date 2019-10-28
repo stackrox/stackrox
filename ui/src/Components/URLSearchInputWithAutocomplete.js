@@ -11,7 +11,6 @@ import { Creatable } from 'Components/ReactSelect';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import searchContext from 'Containers/searchContext';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURL } from 'modules/URLReadWrite';
 
 const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
@@ -173,7 +172,7 @@ const URLSearchInputWithAutocomplete = ({
             workflowState.setSearch(newSearch);
 
             // Get the full querystring to redirect to
-            const url = generateURL(workflowState);
+            const url = workflowState.toUrl();
             const qsStart = url.indexOf('?');
             if (qsStart === -1) return '';
             return url.substr(qsStart);

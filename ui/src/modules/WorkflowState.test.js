@@ -1,7 +1,7 @@
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
-import WorkflowStateMgr, { WorkflowEntity, WorkflowState } from './WorkflowStateManager';
+import { WorkflowEntity, WorkflowState } from './WorkflowState';
 
 const entityId1 = '1234';
 const entityId2 = '5678';
@@ -58,28 +58,21 @@ function getListState(isSidePanelOpen) {
     );
 }
 
-describe('WorkflowStateManager', () => {
+describe('WorkflowState', () => {
     it('resets current state based on given parameters', () => {
-        const workflowStateMgr = new WorkflowStateMgr(getEntityState());
-        workflowStateMgr.reset(useCase, entityTypes.DEPLOYMENT, entityId2);
-
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
-            { t: entityTypes.DEPLOYMENT, i: entityId2 }
-        ]);
+        expect(
+            getEntityState().reset(useCase, entityTypes.DEPLOYMENT, entityId2).stateStack
+        ).toEqual([{ t: entityTypes.DEPLOYMENT, i: entityId2 }]);
     });
 
     it('Removes sidepanel params state', () => {
         // in list
-        let workflowStateMgr = new WorkflowStateMgr(getListState());
-        workflowStateMgr.removeSidePanelParams();
-
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([{ t: entityTypes.CLUSTER }]);
+        expect(getListState().removeSidePanelParams().stateStack).toEqual([
+            { t: entityTypes.CLUSTER }
+        ]);
 
         // in entity
-        workflowStateMgr = new WorkflowStateMgr(getEntityState(true));
-        workflowStateMgr.removeSidePanelParams();
-
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(getEntityState(true).removeSidePanelParams().stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.DEPLOYMENT }
         ]);
@@ -87,22 +80,18 @@ describe('WorkflowStateManager', () => {
     it('pushes a list onto the stack related to current workflow state', () => {
         // dashboard
         const workflowState = new WorkflowState(useCase, []);
-        let workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushList(entityTypes.NAMESPACE);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([{ t: entityTypes.NAMESPACE }]);
+        expect(workflowState.pushList(entityTypes.NAMESPACE).stateStack).toEqual([
+            { t: entityTypes.NAMESPACE }
+        ]);
 
         // entity page
-        workflowStateMgr = new WorkflowStateMgr(getEntityState());
-        workflowStateMgr.pushList(entityTypes.NAMESPACE);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(getEntityState().pushList(entityTypes.NAMESPACE).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.NAMESPACE }
         ]);
 
         // list page
-        workflowStateMgr = new WorkflowStateMgr(getListState(true));
-        workflowStateMgr.pushList(entityTypes.NAMESPACE);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(getListState(true).pushList(entityTypes.NAMESPACE).stateStack).toEqual([
             { t: entityTypes.CLUSTER },
             { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.NAMESPACE }
@@ -115,10 +104,8 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.NAMESPACE, entityId2),
             new WorkflowEntity(entityTypes.SECRET, entityId3)
         ]);
-        let workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushList(entityTypes.DEPLOYMENT);
 
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.DEPLOYMENT).stateStack).toEqual([
             { t: entityTypes.SECRET, i: entityId3 },
             { t: entityTypes.DEPLOYMENT }
         ]);
@@ -132,9 +119,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.SECRET),
             new WorkflowEntity(entityTypes.SECRET, entityId3)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushList(entityTypes.DEPLOYMENT);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.DEPLOYMENT).stateStack).toEqual([
             { t: entityTypes.SECRET, i: entityId3 },
             { t: entityTypes.DEPLOYMENT }
         ]);
@@ -145,9 +130,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.SECRET, entityId3),
             new WorkflowEntity(entityTypes.CLUSTER, entityId2)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushList(entityTypes.NODE);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.NODE).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId2 },
             { t: entityTypes.NODE }
         ]);
@@ -160,9 +143,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.SECRET, entityId3),
             new WorkflowEntity(entityTypes.CLUSTER, entityId2)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushList(entityTypes.NODE);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.NODE).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId2 },
             { t: entityTypes.NODE }
         ]);
@@ -173,9 +154,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.IMAGE, entityId2),
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushList(entityTypes.SERVICE_ACCOUNT);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.SERVICE_ACCOUNT).stateStack).toEqual([
             { t: entityTypes.DEPLOYMENT, i: entityId3 },
             { t: entityTypes.SERVICE_ACCOUNT }
         ]);
@@ -188,9 +167,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.IMAGE, entityId2),
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushList(entityTypes.SERVICE_ACCOUNT);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.SERVICE_ACCOUNT).stateStack).toEqual([
             { t: entityTypes.DEPLOYMENT, i: entityId3 },
             { t: entityTypes.SERVICE_ACCOUNT }
         ]);
@@ -200,9 +177,7 @@ describe('WorkflowStateManager', () => {
         const workflowState = new WorkflowState(useCase, [
             new WorkflowEntity(entityTypes.DEPLOYMENT)
         ]);
-        const workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushListItem(entityId1);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushListItem(entityId1).stateStack).toEqual([
             { t: entityTypes.DEPLOYMENT },
             { t: entityTypes.DEPLOYMENT, i: entityId1 }
         ]);
@@ -211,25 +186,21 @@ describe('WorkflowStateManager', () => {
         const workflowState = new WorkflowState(useCase, [
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1)
         ]);
-        const workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushListItem(entityId2);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushListItem(entityId2).stateStack).toEqual([
             { t: entityTypes.DEPLOYMENT, i: entityId2 }
         ]);
     });
     it('pushes a related entity to the stack', () => {
         // dashboard
         const workflowState = new WorkflowState(useCase, []);
-        let workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushRelatedEntity(entityTypes.CLUSTER, entityId2);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushRelatedEntity(entityTypes.CLUSTER, entityId2).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId2 }
         ]);
 
         // entity page
-        workflowStateMgr = new WorkflowStateMgr(getEntityState());
-        workflowStateMgr.pushRelatedEntity(entityTypes.POLICY, entityId2);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(
+            getEntityState().pushRelatedEntity(entityTypes.POLICY, entityId2).stateStack
+        ).toEqual([
             { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.POLICY, i: entityId2 }
         ]);
@@ -241,9 +212,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2),
             new WorkflowEntity(entityTypes.NAMESPACE, entityId3)
         ]);
-        let workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushRelatedEntity(entityTypes.CLUSTER, entityId2);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushRelatedEntity(entityTypes.CLUSTER, entityId2).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId2 }
         ]);
 
@@ -255,9 +224,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2),
             new WorkflowEntity(entityTypes.NAMESPACE, entityId3)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushRelatedEntity(entityTypes.CLUSTER, entityId2);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushRelatedEntity(entityTypes.CLUSTER, entityId2).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId2 }
         ]);
 
@@ -267,9 +234,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.POLICY, entityId2),
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushRelatedEntity(entityTypes.CLUSTER, entityId1);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushRelatedEntity(entityTypes.CLUSTER, entityId1).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId1 }
         ]);
 
@@ -281,9 +246,7 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.DEPLOYMENT),
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushRelatedEntity(entityTypes.CLUSTER, entityId1);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushRelatedEntity(entityTypes.CLUSTER, entityId1).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId1 }
         ]);
 
@@ -293,40 +256,33 @@ describe('WorkflowStateManager', () => {
             new WorkflowEntity(entityTypes.SUBJECT, entityId1),
             new WorkflowEntity(entityTypes.ROLE, entityId1)
         ]);
-        workflowStateMgr = new WorkflowStateMgr(workflowState);
-        workflowStateMgr.pushRelatedEntity(entityTypes.SUBJECT, entityId2);
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(workflowState.pushRelatedEntity(entityTypes.SUBJECT, entityId2).stateStack).toEqual([
             { t: entityTypes.SUBJECT, i: entityId2 }
         ]);
     });
 
     it('pops the last entity off of the stack', () => {
-        const workflowStateMgr = new WorkflowStateMgr(getEntityState());
-        workflowStateMgr.pop();
-        expect(workflowStateMgr.workflowState.stateStack).toEqual([
+        expect(getEntityState().pop().stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId1 }
         ]);
     });
 
     it('sets search state for page', () => {
-        const workflowStateMgr = new WorkflowStateMgr(getEntityState());
-        workflowStateMgr.setSearch({ testKey: 'testVal' });
-        expect(workflowStateMgr.workflowState.search[searchParams.page]).toEqual({
+        const newState = getEntityState().setSearch({ testKey: 'testVal' });
+        expect(newState.search[searchParams.page]).toEqual({
             testKey: 'testVal'
         });
-        expect(workflowStateMgr.workflowState.search[searchParams.sidePanel]).toEqual(
+        expect(newState.search[searchParams.sidePanel]).toEqual(
             searchParamValues[searchParams.sidePanel]
         );
     });
 
     it('sets search state for sidePanel', () => {
-        const workflowStateMgr = new WorkflowStateMgr(getListState(true));
-        workflowStateMgr.setSearch({ testKey: 'testVal' });
-        expect(workflowStateMgr.workflowState.search[searchParams.sidePanel]).toEqual({
+        const newState = getListState(true).setSearch({ testKey: 'testVal' });
+
+        expect(newState.search[searchParams.sidePanel]).toEqual({
             testKey: 'testVal'
         });
-        expect(workflowStateMgr.workflowState.search[searchParams.page]).toEqual(
-            searchParamValues[searchParams.page]
-        );
+        expect(newState.search[searchParams.page]).toEqual(searchParamValues[searchParams.page]);
     });
 });

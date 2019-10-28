@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { WorkflowState } from 'modules/WorkflowStateManager';
+import { WorkflowState } from 'modules/WorkflowState';
 
 const workflowStateContext = createContext(new WorkflowState());
 

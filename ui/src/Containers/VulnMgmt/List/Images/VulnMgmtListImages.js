@@ -10,7 +10,6 @@ import DateTimeField from 'Components/DateTimeField';
 import { sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
-import { generateURLToFromTable } from 'modules/URLReadWrite';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
@@ -35,7 +34,10 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
-                const url = generateURLToFromTable(workflowState, id, entityTypes.CVE);
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.CVE)
+                    .toUrl();
                 return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
             }
         },
@@ -78,7 +80,10 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, id } = original;
-                const url = generateURLToFromTable(workflowState, id, entityTypes.DEPLOYMENT);
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.DEPLOYMENT)
+                    .toUrl();
                 const text = `${deploymentCount} ${pluralize('deployment', deploymentCount)}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
             }
@@ -91,7 +96,10 @@ export function getImageTableColumns(workflowState) {
                 const { scan, id } = original;
                 if (!scan) return '-';
                 const { components } = scan;
-                const url = generateURLToFromTable(workflowState, id, entityTypes.COMPONENT);
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.COMPONENT)
+                    .toUrl();
                 const text = `${components.length} ${pluralize('component', components.length)}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
             }

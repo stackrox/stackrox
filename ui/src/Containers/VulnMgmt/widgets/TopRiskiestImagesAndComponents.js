@@ -6,7 +6,6 @@ import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURLTo } from 'modules/URLReadWrite';
 
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
@@ -93,7 +92,7 @@ const getTextByEntityType = (entityType, data) => {
 const processData = (data, entityType, workflowState, limit) => {
     const results = data.results.map(({ id, vulnCounter, ...rest }) => {
         const text = getTextByEntityType(entityType, { ...rest });
-        const url = generateURLTo(workflowState, entityType, id);
+        const url = workflowState.pushRelatedEntity(entityType, id).toUrl();
         return {
             text,
             url,
@@ -153,7 +152,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
-    const viewAllURL = generateURLTo(workflowState, entityTypes.IMAGE);
+    const viewAllURL = workflowState.pushList(entityTypes.IMAGE).toUrl();
     if (!loading) {
         const processedData = processData(data, selectedEntity, workflowState, limit);
 

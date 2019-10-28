@@ -7,7 +7,6 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import CVEStackedPill from 'Components/CVEStackedPill';
-import { generateURLToFromTable } from 'modules/URLReadWrite';
 import TableCellLink from 'Components/TableCellLink';
 import queryService from 'modules/queryService';
 
@@ -38,7 +37,10 @@ export function getComponentTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
                 if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
-                const url = generateURLToFromTable(workflowState, id, entityTypes.CVE);
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.CVE)
+                    .toUrl();
                 return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
             }
         },
@@ -59,7 +61,10 @@ export function getComponentTableColumns(workflowState) {
             accessor: 'imageCount',
             Cell: ({ original, pdf }) => {
                 const { imageCount, id } = original;
-                const url = generateURLToFromTable(workflowState, id, entityTypes.IMAGE);
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.IMAGE)
+                    .toUrl();
                 const text = `${imageCount} ${pluralize(
                     entityTypes.IMAGE.toLowerCase(),
                     imageCount
@@ -74,7 +79,10 @@ export function getComponentTableColumns(workflowState) {
             accessor: 'deploymentCount',
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, id } = original;
-                const url = generateURLToFromTable(workflowState, id, entityTypes.DEPLOYMENT);
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.DEPLOYMENT)
+                    .toUrl();
                 const text = `${deploymentCount} ${pluralize(
                     entityTypes.DEPLOYMENT.toLowerCase(),
                     deploymentCount

@@ -4,7 +4,6 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURLTo } from 'modules/URLReadWrite';
 import Panel from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
@@ -33,7 +32,7 @@ const EntityList = ({
 
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
-        const url = generateURLTo(workflowState, null, id);
+        const url = workflowState.pushListItem(id).toUrl();
 
         history.push(url);
     }

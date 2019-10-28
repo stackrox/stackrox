@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 
 import { getEntityTypesByRelationship } from 'modules/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
-import { generateURLTo } from 'modules/URLReadWrite';
 import TileList from 'Components/TileList';
 import pluralize from 'pluralize';
 
@@ -16,7 +15,7 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData }) =>
             return {
                 count,
                 label: pluralize(matchEntity, count),
-                url: generateURLTo(workflowState, matchEntity)
+                url: workflowState.pushList(matchEntity).toUrl()
             };
         })
         .filter(matchObj => matchObj.count);
@@ -26,7 +25,7 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData }) =>
             return {
                 count,
                 label: pluralize(containEntity, count),
-                url: generateURLTo(workflowState, containEntity)
+                url: workflowState.pushList(containEntity).toUrl()
             };
         })
         .filter(containObj => containObj.count);
@@ -53,7 +52,8 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData }) =>
 RelatedEntitiesSideList.propTypes = {
     entityType: PropTypes.string.isRequired,
     workflowState: PropTypes.shape({
-        useCase: PropTypes.string.isRequired
+        useCase: PropTypes.string.isRequired,
+        pushList: PropTypes.func.isRequired
     }).isRequired,
     getCountData: PropTypes.func.isRequired
 };

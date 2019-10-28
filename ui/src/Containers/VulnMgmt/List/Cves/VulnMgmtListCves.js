@@ -10,9 +10,7 @@ import TableCellLink from 'Components/TableCellLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import queryService from 'modules/queryService';
-import { generateURL } from 'modules/URLReadWrite';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
 import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -118,9 +116,10 @@ export function getCveTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, cve } = original;
                 if (deploymentCount === 0) return 'No deployments';
-                const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                workflowStateMgr.pushListItem(cve).pushList(entityTypes.IMAGE);
-                const url = generateURL(workflowStateMgr.workflowState);
+                const url = workflowState
+                    .pushListItem(cve)
+                    .pushList(entityTypes.IMAGE)
+                    .toURL();
                 return (
                     <TableCellLink
                         pdf={pdf}
@@ -140,9 +139,10 @@ export function getCveTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { imageCount, cve } = original;
                 if (imageCount === 0) return 'No images';
-                const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                workflowStateMgr.pushListItem(cve).pushList(entityTypes.IMAGE);
-                const url = generateURL(workflowStateMgr.workflowState);
+                const url = workflowState
+                    .pushListItem(cve)
+                    .pushList(entityTypes.IMAGE)
+                    .toURL();
                 return (
                     <TableCellLink
                         pdf={pdf}
@@ -162,9 +162,10 @@ export function getCveTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { componentCount, cve } = original;
                 if (componentCount === 0) return 'No components';
-                const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                workflowStateMgr.pushListItem(cve).pushList(entityTypes.IMAGE);
-                const url = generateURL(workflowStateMgr.workflowState);
+                const url = workflowState
+                    .pushListItem(cve)
+                    .pushList(entityTypes.IMAGE)
+                    .toURL();
                 return (
                     <TableCellLink
                         pdf={pdf}

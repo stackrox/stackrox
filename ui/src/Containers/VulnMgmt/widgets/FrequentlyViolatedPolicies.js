@@ -8,9 +8,7 @@ import queryService from 'modules/queryService';
 import { severityLabels } from 'messages/common';
 import sortBy from 'lodash/sortBy';
 
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { generateURL } from 'modules/URLReadWrite';
 
 import Button from 'Components/Button';
 import Loader from 'Components/Loader';
@@ -37,24 +35,13 @@ const ViewAllButton = ({ url }) => {
     );
 };
 
-const getViewAllURL = workflowState => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityTypes.POLICY);
-    const url = generateURL(workflowStateMgr.workflowState);
-    return url;
-};
-
-const getSingleEntityURL = (workflowState, id) => {
-    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-    workflowStateMgr.pushList(entityTypes.POLICY).pushListItem(id);
-    const url = generateURL(workflowStateMgr.workflowState);
-    return url;
-};
-
 const processData = (data, workflowState) => {
     const results = sortBy(data.results, [datum => datum.alertCount]).splice(-9); // @TODO: Remove when we have pagination on Policies
     return results.map(({ id, name, enforcementActions, severity, alertCount }) => {
-        const url = getSingleEntityURL(workflowState, id);
+        const url = workflowState
+            .pushList(entityTypes.POLICY)
+            .pushListItem(id)
+            .toUrl();
         const isEnforced = enforcementActions.length ? 'Yes' : 'No';
         return {
             x: alertCount,
@@ -85,7 +72,9 @@ const FrequentlyViolatedPolicies = ({ entityContext }) => {
             className="h-full pdf-page"
             bodyClassName="px-2"
             header="Frequently Violated Policies"
-            headerComponents={<ViewAllButton url={getViewAllURL(workflowState)} />}
+            headerComponents={
+                <ViewAllButton url={workflowState.pushList(entityTypes.POLICY).toURL()} />
+            }
         >
             {content}
         </Widget>

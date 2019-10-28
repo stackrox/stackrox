@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ArrowLeft } from 'react-feather';
 import EntityBreadCrumb from 'Containers/BreadCrumbs/EntityBreadCrumb';
-import { generateURL } from 'modules/URLReadWrite';
 import EntityIcon from 'Components/EntityIcon';
 import workflowStateContext from 'Containers/workflowStateContext';
 
@@ -11,7 +10,7 @@ const Icon = (
 );
 
 function getBackLink(workflowState, enabled) {
-    const url = enabled ? null : generateURL(workflowState.pop());
+    const url = enabled ? null : workflowState.pop().toURL();
     return url ? (
         <Link
             className="flex items-center justify-center text-base-600 border-r border-base-300 px-4 mr-4 h-full hover:bg-primary-200 w-16"
@@ -33,8 +32,8 @@ const getUrl = (workflowState, steps) => {
     for (let x = 1; x < steps; x += 1) {
         newState = newState.pop();
     }
-    const newURL = generateURL(newState);
-    const currentURL = generateURL(workflowState);
+    const newURL = newState.toURL();
+    const currentURL = workflowState.toURL();
     return newURL === currentURL ? null : newURL;
 };
 

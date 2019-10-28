@@ -6,9 +6,9 @@ import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import entityLabels from 'messages/entity';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
-import { parseURL } from 'modules/URLReadWrite';
+import parseURL from 'modules/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { WorkflowState } from 'modules/WorkflowStateManager';
+import { WorkflowState } from 'modules/WorkflowState';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 

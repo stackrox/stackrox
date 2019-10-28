@@ -2,8 +2,10 @@ import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { urlEntityListTypes, urlEntityTypes } from '../routePaths';
-import { parseURL, generateURL } from './URLReadWrite';
-import { WorkflowEntity, WorkflowState } from './WorkflowStateManager';
+import parseURL from './URLParser';
+import generateURL from './URLGenerator';
+
+import { WorkflowEntity, WorkflowState } from './WorkflowState';
 
 function getLocation(search, pathname) {
     return {

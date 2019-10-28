@@ -10,8 +10,6 @@ import StatusChip from 'Components/StatusChip';
 import TableCellLink from 'Components/TableCellLink';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
-import WorkflowStateMgr from 'modules/WorkflowStateManager';
-import { generateURL } from 'modules/URLReadWrite';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 
 import { CLUSTER_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -81,9 +79,11 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                     if (!namespaceCount) {
                         return <LabelChip text="No Namespaces" type="alert" />;
                     }
-                    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                    workflowStateMgr.pushListItem(original.id).pushList(entityTypes.NAMESPACE);
-                    const url = generateURL(workflowStateMgr.workflowState);
+                    const url = workflowState
+                        .pushListItem(original.id)
+                        .pushList(entityTypes.NAMESPACE)
+                        .toUrl();
+
                     return (
                         <TableCellLink
                             pdf={pdf}
@@ -103,9 +103,10 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                     if (!deploymentCount) {
                         return <LabelChip text="No Deployments" type="alert" />;
                     }
-                    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                    workflowStateMgr.pushListItem(original.id).pushList(entityTypes.DEPLOYMENT);
-                    const url = generateURL(workflowStateMgr.workflowState);
+
+                    const url = workflowState
+                        .pushListItem(original.id)
+                        .pushList(entityTypes.DEPLOYMENT).toURL;
                     return (
                         <TableCellLink
                             pdf={pdf}
@@ -126,9 +127,10 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                     if (!policyCount) {
                         return <LabelChip text="No Policies" type="alert" />;
                     }
-                    const workflowStateMgr = new WorkflowStateMgr(workflowState);
-                    workflowStateMgr.pushListItem(original.id).pushList(entityTypes.POLICY);
-                    const url = generateURL(workflowStateMgr.workflowState);
+                    const url = workflowState
+                        .pushListItem(original.id)
+                        .pushList(entityTypes.POLICY)
+                        .toURL();
                     return (
                         <TableCellLink
                             pdf={pdf}
