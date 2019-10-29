@@ -18,18 +18,22 @@ usage() {
 
 curl_central() {
     if [[ -n $ROX_API_TOKEN ]]; then
-        curl -sk -H "Authorization: Bearer $ROX_API_TOKEN" "$@"
+        curl -sSk -H "Authorization: Bearer $ROX_API_TOKEN" "$@"
     else
-        curl -sk -u "admin:$ROX_PASSWORD" "$@"
+        curl -sSk -u "admin:$ROX_PASSWORD" "$@"
     fi
 }
 
 pull_profiles() {
-  echo "Iteration $1"
+  echo "Pulling profiles (iteration $1)"
   formatted_date="$(date +%Y-%m-%d-%H-%M-%S)"
-  curl_central "https://$ENDPOINT/debug/heap" > "$DIR/heap_${formatted_date}.tar.gz"
-  curl_central "https://$ENDPOINT/debug/goroutine" > "$DIR/goroutine_${formatted_date}.tar.gz"
-  curl_central "https://$ENDPOINT/debug/pprof/profile" > "$DIR/cpu_${formatted_date}.tar.gz"
+  echo -n "Pulling heap profile ... "
+  curl_central "https://$ENDPOINT/debug/heap" > "$DIR/heap_${formatted_date}.tar.gz" && echo "done" || echo "failed"
+  echo -n "Pulling goroutine profile ... "
+  curl_central "https://$ENDPOINT/debug/goroutine" > "$DIR/goroutine_${formatted_date}.tar.gz" && echo "done" || echo "failed"
+  echo -n "Pulling CPU profile ... "
+  curl_central "https://$ENDPOINT/debug/pprof/profile" > "$DIR/cpu_${formatted_date}.tar.gz" && echo "done" || echo "failed"
+  echo "Done pulling profile (iteration $1)"
 }
 
 if [[ -z $ROX_PASSWORD && -z $ROX_API_TOKEN ]]; then
@@ -52,7 +56,8 @@ pull_profiles 1
 count=1
 while [ $count -ne "$NUM_ITERATIONS" ]
 do
-  pull_profiles $((count+1))
+  echo "Sleeping for 30s..."
   sleep 30
   count=$((count+1))
+  pull_profiles $((count))
 done
