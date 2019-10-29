@@ -10,34 +10,18 @@ import { Link, withRouter } from 'react-router-dom';
 import gql from 'graphql-tag';
 import max from 'lodash/max';
 import { severityValues, severities } from 'constants/severities';
+import {
+    severityColorMap,
+    severityTextColorMap,
+    severityColorLegend
+} from 'constants/severityColors';
 import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
-const severityColorMap = {
-    CRITICAL_SEVERITY: 'var(--alert-400)',
-    HIGH_SEVERITY: 'var(--caution-400)',
-    MEDIUM_SEVERITY: 'var(--warning-400)',
-    LOW_SEVERITY: 'var(--tertiary-400)'
-};
-
-const severityTextColorMap = {
-    CRITICAL_SEVERITY: 'var(--alert-700)',
-    HIGH_SEVERITY: 'var(--caution-700)',
-    MEDIUM_SEVERITY: 'var(--warning-700)',
-    LOW_SEVERITY: 'var(--tertiary-700)'
-};
-
 const passingLinkColor = 'var(--base-500)';
 const passingChartColor = 'var(--base-400)';
-
-const sunburstLegendData = [
-    { title: 'Low', color: severityColorMap.LOW_SEVERITY },
-    { title: 'Medium', color: severityColorMap.MEDIUM_SEVERITY },
-    { title: 'High', color: severityColorMap.HIGH_SEVERITY },
-    { title: 'Critical', color: severityColorMap.CRITICAL_SEVERITY }
-];
 
 function getPercentage(num, total) {
     return Math.round((num / total) * 100);
@@ -278,7 +262,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                             <Sunburst
                                 data={sunburstData}
                                 rootData={sidePanelData}
-                                legendData={sunburstLegendData}
+                                legendData={severityColorLegend}
                                 totalValue={centerValue}
                                 units="value"
                             />

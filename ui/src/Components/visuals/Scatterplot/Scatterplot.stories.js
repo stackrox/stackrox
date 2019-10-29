@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { severities } from 'constants/severities';
-import severityColorMap from 'constants/severityColors';
+import { severityColorMap } from 'constants/severityColors';
 import Scatterplot from './Scatterplot';
 
 export default {

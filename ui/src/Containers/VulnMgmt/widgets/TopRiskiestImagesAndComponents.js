@@ -13,6 +13,7 @@ import TextSelect from 'Components/TextSelect';
 import Widget from 'Components/Widget';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import NumberedList from 'Components/NumberedList';
+import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 
 const TOP_RISKIEST_IMAGES = gql`
     query topRiskiestImages($query: String, $pagination: Pagination) {
@@ -21,6 +22,7 @@ const TOP_RISKIEST_IMAGES = gql`
             name {
                 fullName
             }
+            priority
             vulnCounter {
                 all {
                     total
@@ -53,6 +55,7 @@ const TOP_RISKIEST_COMPONENTS = gql`
             id
             name
             version
+            priority
             vulnCounter {
                 all {
                     total
@@ -79,6 +82,10 @@ const TOP_RISKIEST_COMPONENTS = gql`
     }
 `;
 
+const sortByPriority = (a, b) => {
+    return a.priority - b.priority;
+};
+
 const getTextByEntityType = (entityType, data) => {
     switch (entityType) {
         case entityTypes.COMPONENT:
@@ -99,7 +106,8 @@ const processData = (data, entityType, workflowState, limit) => {
             component: <CVEStackedPill vulnCounter={vulnCounter} url={url} horizontal />
         };
     });
-    return results.splice(0, limit); // @TODO: Remove when we have pagination on image components
+    const processedData = results.sort(sortByPriority).slice(0, limit); // @TODO: Remove when we have pagination on image components
+    return processedData;
 };
 
 const getQueryBySelectedEntity = entityType => {
@@ -150,17 +158,31 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
     });
 
     let content = <Loader />;
+    let headerComponents = null;
 
     const workflowState = useContext(workflowStateContext);
-    const viewAllURL = workflowState.pushList(entityTypes.IMAGE).toUrl();
-    if (!loading) {
-        const processedData = processData(data, selectedEntity, workflowState, limit);
 
-        content = (
-            <div className="w-full">
-                <NumberedList data={processedData} />
-            </div>
-        );
+    if (!loading) {
+        if (!data || !data.results) {
+            content = (
+                <div className="flex mx-auto items-center">No scanner setup for this registry.</div>
+            );
+        } else {
+            const processedData = processData(data, selectedEntity, workflowState, limit);
+
+            if (processedData.length) {
+                content = (
+                    <div className="w-full">
+                        <NumberedList data={processedData} />
+                    </div>
+                );
+
+                const viewAllURL = workflowState.pushList(entityTypes.IMAGE).toUrl();
+                headerComponents = <ViewAllButton url={viewAllURL} />;
+            } else {
+                content = <NoComponentVulnMessage />;
+            }
+        }
     }
 
     return (
@@ -169,7 +191,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
             titleComponents={
                 <TextSelect value={selectedEntity} options={entities} onChange={onEntityChange} />
             }
-            headerComponents={<ViewAllButton url={viewAllURL} />}
+            headerComponents={headerComponents}
         >
             {content}
         </Widget>
@@ -183,7 +205,7 @@ TopRiskiestImagesAndComponents.propTypes = {
 
 TopRiskiestImagesAndComponents.defaultProps = {
     entityContext: {},
-    limit: 5
+    limit: 8
 };
 
 export default TopRiskiestImagesAndComponents;

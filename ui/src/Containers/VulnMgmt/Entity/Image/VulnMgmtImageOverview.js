@@ -11,20 +11,27 @@ import CVETable from 'Containers/Images/CVETable';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityToColumns } from 'constants/listColumns';
+import { resourceLabels } from 'messages/common';
 
 import { format } from 'date-fns';
+import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
+import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
+import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
-const VulnMgmtImageOverview = ({ data }) => {
+const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
+    if (!workflowState.sidePanelActive) return null;
 
-    const { metadata, scan, topVuln, deploymentCount, vulnCounter } = data;
+    const { metadata, scan, topVuln, deploymentCount, priority, vulnCounter } = data;
     const { cvss, scoreVersion } = topVuln;
 
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
+    const cves = [];
 
     // If we have a scan, then we can try and assume we have layers
     if (scan) {
@@ -32,6 +39,11 @@ const VulnMgmtImageOverview = ({ data }) => {
             layers[i].components = [];
         });
         scan.components.forEach(component => {
+            component.vulns.forEach(cve => {
+                if (cve.isFixable) {
+                    cves.push(cve);
+                }
+            });
             if (component.layerIndex !== undefined && layers[component.layerIndex]) {
                 layers[component.layerIndex].components.push(component);
             }
@@ -70,21 +82,23 @@ const VulnMgmtImageOverview = ({ data }) => {
         }
     }
 
+    const newEntityContext = { ...entityContext, [entityTypes.IMAGE]: data.id };
+
     return (
         <div className="w-full h-full" id="capture-dashboard-stretch">
             <div className="flex h-full">
                 <div className="flex flex-col flex-grow">
                     <CollapsibleSection title="Image Summary">
-                        <div className="flex mb-4 pdf-page">
+                        <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
                             <Widget
                                 header="Details & Metadata"
-                                className="mx-4 bg-base-100 h-48 mb-4 bg-counts-widget flex-grow"
+                                className="mx-4 bg-base-100 h-full mb-4 bg-counts-widget"
                             >
                                 <div className="flex flex-col w-full">
                                     <div className="flex border-b border-base-400">
-                                        <div className="p-4 border-r border-dashed border-base-400">
-                                            {/* <span className="pr-1 font-weight-600">Risk:</span>
-                                        <span className="text-xl">3</span> */}
+                                        <div className="px-4 py-3 border-r border-dashed border-base-400">
+                                            <span className="pr-1 font-weight-600">Risk:</span>
+                                            <span className="text-xl">{priority + 1}</span>
                                         </div>
                                         <div className="flex flex-col p-4">
                                             <TopCvssLabel
@@ -94,8 +108,8 @@ const VulnMgmtImageOverview = ({ data }) => {
                                             />
                                         </div>
                                     </div>
-                                    <div className="flex flex-col border-base-400 p-4">
-                                        <div className="flex p-3 border-b border-base-400">
+                                    <div className="flex flex-col border-base-400">
+                                        <div className="flex mx-3 py-2 border-b border-base-400">
                                             <span className="text-base-700 font-600 mr-2">
                                                 Created:
                                             </span>
@@ -104,7 +118,7 @@ const VulnMgmtImageOverview = ({ data }) => {
                                                 format(metadata.v1.created, dateTimeFormat)) ||
                                                 'N/A'}
                                         </div>
-                                        <div className="flex p-3 border-b border-base-400">
+                                        <div className="flex mx-3 py-2">
                                             <span className="text-base-700 font-600 mr-2">
                                                 Scan time:
                                             </span>
@@ -114,36 +128,46 @@ const VulnMgmtImageOverview = ({ data }) => {
                                     </div>
                                 </div>
                             </Widget>
-                            <Widget
-                                header="CVEs By CVSS Score"
-                                className="mx-4 bg-base-100 h-48 mb-4 "
-                            >
-                                <div>hi</div>
-                            </Widget>
-                            <Widget
-                                header="Top Riskiest Components"
-                                className="mx-4 bg-base-100 h-48 mb-4 "
-                            >
-                                <div>hi</div>
-                            </Widget>
+                            <CvesByCvssScore entityContext={newEntityContext} />
+                            <TopRiskiestImagesAndComponents
+                                limit={5}
+                                entityContext={newEntityContext}
+                            />
                         </div>
                     </CollapsibleSection>
                     <CollapsibleSection title="Image Findings">
                         <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                             <Tabs
                                 hasTabSpacing
-                                headers={[{ text: 'Dockerfile' }, { text: 'CVEs' }]}
+                                headers={[{ text: 'CVEs' }, { text: 'Dockerfile' }]}
                             >
                                 <TabContent>
-                                    {layers.length === 0 && (
+                                    {cves.length ? (
+                                        <TableWidget
+                                            header={`${cves.length} fixable ${pluralize(
+                                                resourceLabels.CVE,
+                                                cves.length
+                                            )} found across this image`}
+                                            rows={cves}
+                                            noDataText="No CVEs"
+                                            className="bg-base-100"
+                                            columns={getCveTableColumns(workflowState, false)}
+                                            idAttribute="id"
+                                        />
+                                    ) : (
                                         <NoResultsMessage
-                                            message="No layers available in this image"
+                                            message="No fixable CVEs available in this image"
                                             className="p-6"
                                         />
                                     )}
-                                    {layers.length > 0 && (
+                                </TabContent>
+                                <TabContent>
+                                    {layers.length ? (
                                         <TableWidget
-                                            header={`${layers.length} layers across this image`}
+                                            header={`${layers.length} ${pluralize(
+                                                'layer',
+                                                layers.length
+                                            )} layers across this image`}
                                             rows={layers}
                                             noDataText="No Layers"
                                             className="bg-base-100"
@@ -151,10 +175,12 @@ const VulnMgmtImageOverview = ({ data }) => {
                                             SubComponent={renderCVEsTable}
                                             idAttribute="id"
                                         />
+                                    ) : (
+                                        <NoResultsMessage
+                                            message="No layers available in this image"
+                                            className="p-6"
+                                        />
                                     )}
-                                </TabContent>
-                                <TabContent>
-                                    <div>hello cves</div>
                                 </TabContent>
                             </Tabs>
                         </div>

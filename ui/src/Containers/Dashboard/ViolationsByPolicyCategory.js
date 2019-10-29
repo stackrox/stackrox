@@ -8,7 +8,7 @@ import { createStructuredSelector } from 'reselect';
 
 import * as Icon from 'react-feather';
 import { severityLabels } from 'messages/common';
-import severityColorMap from 'constants/severityColors';
+import { severityColorMap } from 'constants/severityColors';
 import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
 import severityPropType from './severityPropTypes';
 

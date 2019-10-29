@@ -1118,18 +1118,16 @@ h6 {
 }
 .toggle-switch-checkbox:checked + .toggle-switch-label,
 .toggle-switch-checkbox:checked + .toggle-switch-label:before {
-
 }
 .toggle-switch-checkbox:checked + .toggle-switch-label {
     @apply bg-success-500;
 }
 .toggle-switch-alert .toggle-switch-checkbox:checked + .toggle-switch-label {
-    @apply bg-alert-600 ;
+    @apply bg-alert-600;
 }
 .toggle-switch-checkbox:checked + .toggle-switch-label:before {
     @apply pin-r;
 }
-
 
 /* React-vis */
 @import "../node_modules/react-vis/dist/style.css";
@@ -1306,7 +1304,6 @@ h6 {
 
 .bg-counts-widget {
     background: url("images/counts-widget-blocks.svg");
-    width: 100% !important;
     background-repeat: repeat-x;
     background-position: bottom right;
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
 import isGQLLoading from 'utils/gqlLoading';
@@ -24,6 +25,7 @@ const WorkflowEntityPage = ({
     page,
     getListData
 }) => {
+    const { isDarkMode } = useTheme();
     let query = overviewQuery;
     const getSubList = getListData || getSubListFromEntity;
     if (entityListType) {
@@ -50,7 +52,13 @@ const WorkflowEntityPage = ({
             entityContext={{ ...entityContext, [entityType]: entityId }}
         />
     ) : (
-        <OverviewComponent data={result} entityContext={entityContext} />
+        <div
+            className={`w-full flex ${
+                !isDarkMode && !entityListType ? 'bg-side-panel-wave min-h-full' : 'h-full'
+            }`}
+        >
+            <OverviewComponent data={result} entityContext={entityContext} />
+        </div>
     );
 };
 

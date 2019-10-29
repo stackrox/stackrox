@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Table, { defaultHeaderClassName } from 'Components/Table';
+import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import { sortValue } from 'sorters/sorters';
 
 import VulnsTable from './VulnsTable';
@@ -68,26 +69,7 @@ const CVETable = props => {
     if (!scan) return <div className="p-3">No scanner setup for this registry</div>;
     const { components } = scan;
     if (components.length === 0) {
-        return (
-            <div className="p-3">
-                <div className="pl-3">No components or vulnerabilities found in this image.</div>
-                <div className="pl-3 pt-3">This can happen when:</div>
-                <div className="pl-3 pt-1">
-                    <ul className="pl-4">
-                        <li className="pt-1">
-                            custom binaries or other files are added to the image without using a
-                            package manager;
-                        </li>
-                        <li className="pt-1">
-                            packages are added to the image using an unsupported package manager; or
-                        </li>
-                        <li className="pt-1">
-                            certain important metadata files are removed from the image.
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        );
+        return <NoComponentVulnMessage />;
     }
 
     return (

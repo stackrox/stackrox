@@ -34,6 +34,7 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                         total
                     }
                 }
+                priority
                 topVuln {
                     cvss
                     scoreVersion
@@ -47,6 +48,8 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                 scan {
                     scanTime
                     components {
+                        id
+                        priority
                         name
                         layerIndex
                         version
@@ -55,8 +58,35 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                             type
                             url
                         }
+                        vulnCount
+                        vulnCounter {
+                            all {
+                                total
+                                fixable
+                            }
+                            low {
+                                total
+                                fixable
+                            }
+                            medium {
+                                total
+                                fixable
+                            }
+                            high {
+                                total
+                                fixable
+                            }
+                            critical {
+                                total
+                                fixable
+                            }
+                        }
                         vulns {
                             cve
+                            isFixable
+                            lastScanned
+                            impactScore
+                            publishedOn
                             cvss
                             link
                             summary
@@ -69,8 +99,8 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getDeployment${entityListType}($id: ID!, $query: String) {
-            result: deployment(id: $id) {
+        query getImage${entityListType}($id: ID!, $query: String) {
+            result: image(id: $id) {
                 id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
             }

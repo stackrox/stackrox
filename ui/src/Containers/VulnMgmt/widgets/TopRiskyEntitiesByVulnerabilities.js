@@ -11,7 +11,7 @@ import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import isGQLLoading from 'utils/gqlLoading';
-import severityColorMap from 'constants/severityColors';
+import { severityColorMap } from 'constants/severityColors';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { severities } from 'constants/severities';
 

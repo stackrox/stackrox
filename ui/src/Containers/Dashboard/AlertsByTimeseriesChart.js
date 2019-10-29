@@ -8,7 +8,7 @@ import { Line } from 'recharts';
 import Slider from 'react-slick';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import CustomLineChart from 'Components/visuals/CustomLineChart';
-import severityColorMap from 'constants/severityColors';
+import { severityColorMap } from 'constants/severityColors';
 import slickSettings from 'constants/slickSettings';
 import cloneDeep from 'lodash/cloneDeep';
 import { format, subDays } from 'date-fns';

@@ -10,6 +10,10 @@ const getOrientationClassName = orientation => {
 };
 
 const FixableCVECount = ({ cves, fixable, url, orientation, pdf }) => {
+    function onClick(e) {
+        e.stopPropagation();
+    }
+
     const className = `text-sm leading-normal whitespace-no-wrap ${getOrientationClassName(
         orientation
     )}`;
@@ -30,7 +34,7 @@ const FixableCVECount = ({ cves, fixable, url, orientation, pdf }) => {
     }
     if (url)
         content = (
-            <Link to={url} className="w-full">
+            <Link to={url} onClick={onClick} className="w-full">
                 {content}
             </Link>
         );

@@ -34,7 +34,8 @@ function entityContextToQueryObject(entityContext) {
     if (!entityContext) return {};
 
     return Object.keys(entityContext).reduce((acc, key) => {
-        return { ...acc, [`${key} ID`]: entityContext[key] };
+        const entityQueryKey = `${key} ${key === entityTypes.IMAGE ? 'SHA' : 'ID'}`;
+        return { ...acc, [entityQueryKey]: entityContext[key] };
     }, {});
 }
 

@@ -15,7 +15,8 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 
 import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
-export function getCveTableColumns(workflowState) {
+export function getCveTableColumns(workflowState, linksOn = true) {
+    const { entityType } = workflowState.getBaseEntity();
     const tableColumns = [
         {
             expander: true,
@@ -108,7 +109,7 @@ export function getCveTableColumns(workflowState) {
             accessor: 'publishedOn',
             id: 'published'
         },
-        {
+        entityType !== entityTypes.IMAGE && {
             Header: `Deployments`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
@@ -116,22 +117,18 @@ export function getCveTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, cve } = original;
                 if (deploymentCount === 0) return 'No deployments';
+                const text = `${deploymentCount} ${pluralize('deployment', deploymentCount)}`;
+                if (!linksOn) return text;
                 const url = workflowState
                     .pushListItem(cve)
                     .pushList(entityTypes.IMAGE)
                     .toUrl();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${deploymentCount} ${pluralize('deployment', deploymentCount)}`}
-                    />
-                );
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
             accessor: 'deploymentCount',
             id: 'deploymentCount'
         },
-        {
+        entityType !== entityTypes.IMAGE && {
             Header: `Images`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
@@ -139,22 +136,18 @@ export function getCveTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { imageCount, cve } = original;
                 if (imageCount === 0) return 'No images';
+                const text = `${imageCount} ${pluralize('image', imageCount)}`;
+                if (!linksOn) return text;
                 const url = workflowState
                     .pushListItem(cve)
                     .pushList(entityTypes.IMAGE)
                     .toUrl();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${imageCount} ${pluralize('image', imageCount)}`}
-                    />
-                );
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
             accessor: 'imageCount',
             id: 'imageCount'
         },
-        {
+        entityType !== entityTypes.IMAGE && {
             Header: `Components`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
@@ -162,17 +155,13 @@ export function getCveTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { componentCount, cve } = original;
                 if (componentCount === 0) return 'No components';
+                const text = `${componentCount} ${pluralize('component', componentCount)}`;
+                if (!linksOn) return text;
                 const url = workflowState
                     .pushListItem(cve)
                     .pushList(entityTypes.IMAGE)
                     .toUrl();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${componentCount} ${pluralize('component', componentCount)}`}
-                    />
-                );
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
             accessor: 'componentCount',
             id: 'componentCount'

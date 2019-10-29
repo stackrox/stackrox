@@ -18,7 +18,7 @@ import {
 } from 'recharts';
 import Slider from 'react-slick';
 import slickSettings from 'constants/slickSettings';
-import severityColorMap from 'constants/severityColors';
+import { severityColorMap } from 'constants/severityColors';
 import { severityLabels } from 'messages/common';
 import NoResultsMessage from 'Components/NoResultsMessage';
 

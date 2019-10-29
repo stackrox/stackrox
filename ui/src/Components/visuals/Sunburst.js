@@ -71,7 +71,8 @@ class BasicSunburst extends React.Component {
         onValueDeselect: PropTypes.func,
         staticDetails: PropTypes.bool,
         history: ReactRouterPropTypes.history.isRequired,
-        units: PropTypes.string
+        units: PropTypes.string,
+        small: PropTypes.bool
     };
 
     static defaultProps = {
@@ -81,7 +82,8 @@ class BasicSunburst extends React.Component {
         onValueSelect: null,
         onValueDeselect: null,
         staticDetails: false,
-        units: 'percentage'
+        units: 'percentage',
+        small: false
     };
 
     constructor(props) {
@@ -142,8 +144,9 @@ class BasicSunburst extends React.Component {
     getSunburstProps = () => {
         const defaultSunburstProps = {
             colorType: 'literal',
-            width: 265,
-            height: 271,
+            // TO DO: factor out into dimension mapping
+            width: this.props.small ? 200 : 265,
+            height: this.props.small ? 200 : 271,
             className: 'cursor-pointer pointer-events-none my-auto',
             onValueMouseOver: this.onValueMouseOverHandler,
             onValueMouseOut: this.onValueMouseOutHandler,
@@ -160,8 +163,8 @@ class BasicSunburst extends React.Component {
             children: data.map(({ children, ...rest }) => {
                 const result = {
                     ...rest,
-                    radius: 20,
-                    radius0: 60,
+                    radius: this.props.small ? 15 : 20,
+                    radius0: this.props.small ? 50 : 60,
                     stroke: 2,
                     style: {
                         stroke: 'var(--base-100)'
@@ -170,8 +173,8 @@ class BasicSunburst extends React.Component {
                     children: children.map(({ ...props }) => {
                         const childResult = {
                             ...props,
-                            radius: 60,
-                            radius0: 120,
+                            radius: this.props.small ? 50 : 60,
+                            radius0: this.props.small ? 90 : 120,
                             size: 1,
                             style: {
                                 stroke: 'var(--base-100)',
@@ -209,12 +212,13 @@ class BasicSunburst extends React.Component {
                     <Sunburst data={data} {...sunburstProps} hideRootNode>
                         {this.getCenterLabel()}
                     </Sunburst>
-                    <DiscreteColorLegend
-                        orientation="horizontal"
-                        items={legendData.map(item => item.title)}
-                        colors={legendData.map(item => item.color)}
-                        className="w-full horizontal-bar-legend border-t border-base-300 h-7 flex justify-between items-center"
-                    />
+                    {legendData && (
+                        <DiscreteColorLegend
+                            orientation="horizontal"
+                            items={legendData}
+                            className="w-full horizontal-bar-legend border-t border-base-300 h-7 flex justify-between items-center"
+                        />
+                    )}
                 </div>
                 <SunburstDetailSection
                     selectedDatum={!staticDetails ? selectedDatum : null}

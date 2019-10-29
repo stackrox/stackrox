@@ -1,4 +1,4 @@
-import severityColorMap from '../../src/constants/severityColors';
+import { severityColorMap } from '../../src/constants/severityColors';
 
 export const url = '/main/dashboard';
 export const selectors = {

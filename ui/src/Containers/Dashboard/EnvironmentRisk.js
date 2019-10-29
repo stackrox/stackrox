@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
-import severityColorMap from 'constants/severityColors';
+import { severityColorMap } from 'constants/severityColors';
 import severityPropType from './severityPropTypes';
 
 const EnvironmentRisk = ({ globalViolationsCounts }) => {

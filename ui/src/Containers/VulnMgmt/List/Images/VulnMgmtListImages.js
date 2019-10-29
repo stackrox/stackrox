@@ -43,8 +43,8 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: `Top CVSS`,
-            headerClassName: `w-10 ${defaultHeaderClassName}`,
-            className: `w-10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
                 const { cvss, scoreVersion } = topVuln;
