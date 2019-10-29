@@ -211,9 +211,7 @@ export class WorkflowState {
         const { useCase, stateStack, search, sort, paging } = this;
         const currentItem = stateStack.slice(-1)[0];
 
-        if (currentItem && !currentItem.entityId) {
-            throw new Error(`Can't push related entity onto a list. Use pushListItem(id) instead.`);
-        }
+        if (currentItem && !currentItem.entityId) return this;
 
         const newStateStack = trimStack([...stateStack, new WorkflowEntity(type, id)]);
 
