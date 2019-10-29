@@ -45,6 +45,7 @@ const TOP_RISKIEST_IMAGES = gql`
                     fixable
                 }
             }
+            priority
         }
     }
 `;
@@ -78,6 +79,7 @@ const TOP_RISKIEST_COMPONENTS = gql`
                     fixable
                 }
             }
+            priority
         }
     }
 `;
@@ -97,15 +99,29 @@ const getTextByEntityType = (entityType, data) => {
 };
 
 const processData = (data, entityType, workflowState, limit) => {
-    const results = data.results.map(({ id, vulnCounter, ...rest }) => {
-        const text = getTextByEntityType(entityType, { ...rest });
-        const url = workflowState.pushRelatedEntity(entityType, id).toUrl();
-        return {
-            text,
-            url,
-            component: <CVEStackedPill vulnCounter={vulnCounter} url={url} horizontal />
-        };
-    });
+    const results = data.results
+        .sort((a, b) => {
+            const d = a.priority - b.priority;
+            if (d === 0) {
+                return d;
+            }
+            if (a.priority === 0) {
+                return 1;
+            }
+            if (b.priority === 0) {
+                return -1;
+            }
+            return d;
+        })
+        .map(({ id, vulnCounter, ...rest }) => {
+            const text = getTextByEntityType(entityType, { ...rest });
+            const url = workflowState.pushRelatedEntity(entityType, id).toUrl();
+            return {
+                text,
+                url,
+                component: <CVEStackedPill vulnCounter={vulnCounter} url={url} horizontal />
+            };
+        });
     const processedData = results.sort(sortByPriority).slice(0, limit); // @TODO: Remove when we have pagination on image components
     return processedData;
 };
@@ -144,15 +160,15 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             pagination: {
-                limit
                 /*
+                limit
                 @TODO: When priority is a sortable field, uncomment this
 
                 sortOption: {
                     field: 'priority',
                     reversed: true
                 }
-                */
+            } */
             }
         }
     });
