@@ -86,14 +86,7 @@ const processData = (data, workflowState, limit) => {
 const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => {
     const { loading, data = {} } = useQuery(DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext),
-            pagination: {
-                limit,
-                sortOption: {
-                    field: 'priority',
-                    reversed: false
-                }
-            }
+            query: queryService.entityContextToQueryString(entityContext)
         }
     });
 
