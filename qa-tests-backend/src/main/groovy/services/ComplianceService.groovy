@@ -72,6 +72,13 @@ class ComplianceService extends BaseService {
         ]
     }
 
+    static Compliance.ComplianceRunResults triggerComplianceRunAndWaitForResult(String standardId, String clusterId) {
+        def runId = ComplianceManagementService.triggerComplianceRunsAndWait(standardId, clusterId).get(standardId)
+        def result = getComplianceRunResult(standardId, clusterId, runId).results
+        assert result.runMetadata.runId == runId
+        return result
+    }
+
     static GetComplianceRunResultsResponse getComplianceRunResult(String standardId, String clusterId,
                                                                   String runId = null) {
         return getComplianceClient().getRunResults(

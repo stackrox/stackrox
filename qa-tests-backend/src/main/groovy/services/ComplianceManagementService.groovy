@@ -33,7 +33,7 @@ class ComplianceManagementService extends BaseService {
         }
     }
 
-    static triggerComplianceRunsAndWait(String standardId = null, String clusterId = null) {
+    static Map<String, String> triggerComplianceRunsAndWait(String standardId = null, String clusterId = null) {
         List<ComplianceRun> complianceRuns = triggerComplianceRuns(standardId, clusterId)
         println "triggered ${standardId ?: "all"} compliance run${standardId ? "" : "s"}"
         println "waiting for the run${standardId ? "" : "s"} to finish..."

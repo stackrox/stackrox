@@ -76,7 +76,7 @@ class ComplianceTest extends BaseSpecification {
         def complianceRuns = ComplianceManagementService.triggerComplianceRunsAndWait()
         for (String standard : complianceRuns.keySet()) {
             def runId = complianceRuns.get(standard)
-            ComplianceRunResults results = ComplianceService.getComplianceRunResult(standard, clusterId).results
+            ComplianceRunResults results = ComplianceService.getComplianceRunResult(standard, clusterId, runId).results
             assert runId == results.runMetadata.runId
             BASE_RESULTS.put(standard, results)
         }
@@ -534,17 +534,9 @@ class ComplianceTest extends BaseSpecification {
 
         when:
         "trigger compliance runs"
-        def pciRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(PCI_ID, clusterId)
-        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId).results
-        assert pciResults.getRunMetadata().runId == pciRunIds.get(PCI_ID)
-
-        def nistRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(NIST_ID, clusterId)
-        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
-        assert nistResults.getRunMetadata().runId == nistRunIds.get(NIST_ID)
-
-        def hipaaRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(HIPAA_ID, clusterId)
-        ComplianceRunResults hipaaResults = ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId).results
-        assert hipaaResults.getRunMetadata().runId == hipaaRunIds.get(HIPAA_ID)
+        def pciResults = ComplianceService.triggerComplianceRunAndWaitForResult(PCI_ID, clusterId)
+        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_ID, clusterId)
+        def hipaaResults = ComplianceService.triggerComplianceRunAndWaitForResult(HIPAA_ID, clusterId)
 
         then:
         "confirm state and evidence of expected controls"
@@ -658,17 +650,9 @@ class ComplianceTest extends BaseSpecification {
 
         when:
         "trigger compliance runs"
-        def pciRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(PCI_ID, clusterId)
-        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId).results
-        assert pciResults.getRunMetadata().runId == pciRunIds.get(PCI_ID)
-
-        def nistRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(NIST_ID, clusterId)
-        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
-        assert nistResults.getRunMetadata().runId == nistRunIds.get(NIST_ID)
-
-        def hipaaRunids = ComplianceManagementService.triggerComplianceRunsAndWait(HIPAA_ID, clusterId)
-        ComplianceRunResults hipaaResults = ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId).results
-        assert hipaaResults.getRunMetadata().runId == hipaaRunids.get(HIPAA_ID)
+        def pciResults = ComplianceService.triggerComplianceRunAndWaitForResult(PCI_ID, clusterId)
+        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_ID, clusterId)
+        def hipaaResults = ComplianceService.triggerComplianceRunAndWaitForResult(HIPAA_ID, clusterId)
 
         then:
         "confirm state and evidence of expected controls"
@@ -770,9 +754,7 @@ class ComplianceTest extends BaseSpecification {
 
         when:
         "trigger compliance runs"
-        def nistRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(NIST_ID, clusterId)
-        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
-        assert nistResults.getRunMetadata().runId == nistRunIds.get(NIST_ID)
+        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_ID, clusterId)
 
         then:
         "confirm state and evidence of expected controls"
@@ -828,13 +810,8 @@ class ComplianceTest extends BaseSpecification {
 
         given:
         "re-run PCI and HIPAA to make sure they see the run CIS standards"
-        def pciRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(PCI_ID, clusterId)
-        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId).results
-        assert pciResults.getRunMetadata().runId == pciRunIds.get(PCI_ID)
-
-        def nistRunIds = ComplianceManagementService.triggerComplianceRunsAndWait(NIST_ID, clusterId)
-        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
-        assert nistResults.getRunMetadata().runId == nistRunIds.get(NIST_ID)
+        def pciResults = ComplianceService.triggerComplianceRunAndWaitForResult(PCI_ID, clusterId)
+        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_ID, clusterId)
 
         expect:
         "check the CIS based controls for state"
@@ -898,14 +875,8 @@ class ComplianceTest extends BaseSpecification {
 
         when:
         "trigger compliance runs"
-        String pciRunId = ComplianceManagementService.triggerComplianceRunsAndWait(PCI_ID, clusterId).get(PCI_ID)
-        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId, pciRunId).results
-        assert pciResults.getRunMetadata().runId == pciRunId
-
-        String hipaaRunId = ComplianceManagementService.triggerComplianceRunsAndWait(HIPAA_ID, clusterId).get(HIPAA_ID)
-        ComplianceRunResults hipaaResults =
-                ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId, hipaaRunId).results
-        assert hipaaResults.getRunMetadata().runId == hipaaRunId
+        def pciResults = ComplianceService.triggerComplianceRunAndWaitForResult(PCI_ID, clusterId)
+        def hipaaResults = ComplianceService.triggerComplianceRunAndWaitForResult(HIPAA_ID, clusterId)
 
         then:
         "confirm state and evidence of expected controls"
