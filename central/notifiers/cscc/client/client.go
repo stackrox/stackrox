@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2/google"
 )
@@ -64,7 +65,8 @@ func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
 
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout:   timeout,
+		Transport: proxy.RoundTripper(),
 	}
 	resp, err := client.Do(req)
 	if err != nil {

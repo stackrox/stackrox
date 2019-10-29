@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -25,6 +26,7 @@ var (
 // slack notifier plugin
 type slack struct {
 	*storage.Notifier
+	client *http.Client
 }
 
 // notification json struct for richly-formatted notifications
@@ -107,7 +109,7 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(webhook, jsonPayload)
+			return s.postMessage(webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -165,7 +167,7 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(webhook, jsonPayload)
+			return s.postMessage(webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -179,6 +181,9 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 func newSlack(notifier *storage.Notifier) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
+		client: &http.Client{
+			Transport: proxy.RoundTripper(),
+		},
 	}, nil
 }
 
@@ -202,7 +207,7 @@ func (s *slack) Test() error {
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(webhook, jsonPayload)
+			return s.postMessage(webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -213,17 +218,14 @@ func (s *slack) Test() error {
 	)
 }
 
-func postMessage(url string, jsonPayload []byte) error {
+func (s *slack) postMessage(url string, jsonPayload []byte) error {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{
-		Timeout: notifiers.Timeout,
-	}
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		log.Errorf("Error posting to slack: %v", err)
 		return errors.Wrap(err, "Error posting to slack")

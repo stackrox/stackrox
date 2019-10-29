@@ -17,6 +17,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -132,6 +133,7 @@ func newGeneric(notifier *storage.Notifier) (*generic, error) {
 					InsecureSkipVerify: conf.GetSkipTLSVerify(),
 					RootCAs:            rootCAs,
 				},
+				Proxy: proxy.FromConfig(),
 			},
 		},
 		fullyQualifiedEndpoint: fullyQualifiedEndpoint,

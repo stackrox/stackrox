@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -154,15 +155,16 @@ func newJira(notifier *storage.Notifier) (*jira, error) {
 	if err != nil {
 		return nil, err
 	}
-	httpClient := &http.Client{
-		Timeout: timeout,
-	}
 	bat := &jiraLib.BasicAuthTransport{
 		Username:  conf.GetUsername(),
 		Password:  conf.GetPassword(),
-		Transport: httpClient.Transport,
+		Transport: proxy.RoundTripper(),
 	}
-	client, err := jiraLib.NewClient(bat.Client(), url)
+	httpClient := &http.Client{
+		Timeout:   timeout,
+		Transport: bat,
+	}
+	client, err := jiraLib.NewClient(httpClient, url)
 	if err != nil {
 		return nil, err
 	}

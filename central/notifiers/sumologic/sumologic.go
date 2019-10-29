@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
@@ -105,6 +106,7 @@ func newSumoLogic(notifier *storage.Notifier) (*sumologic, error) {
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: sumoConf.GetSkipTLSVerify(),
 				},
+				Proxy: proxy.FromConfig(),
 			},
 		},
 		fullyQualifiedEndpoint: fullyQualifiedEndpoint,

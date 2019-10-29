@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -430,7 +431,8 @@ func postMessage(url string, jsonPayload []byte) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{
-		Timeout: notifiers.Timeout,
+		Timeout:   notifiers.Timeout,
+		Transport: proxy.RoundTripper(),
 	}
 	resp, err := client.Do(req)
 	if err != nil {

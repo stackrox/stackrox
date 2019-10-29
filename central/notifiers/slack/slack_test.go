@@ -23,34 +23,30 @@ func skip(t *testing.T) string {
 
 func TestSlackAlertNotify(t *testing.T) {
 	webhook := skip(t)
-	s := slack{
-		Notifier: &storage.Notifier{
-			UiEndpoint:   "http://google.com",
-			LabelDefault: webhook,
-		},
-	}
+	s, err := newSlack(&storage.Notifier{
+		UiEndpoint:   "http://google.com",
+		LabelDefault: webhook,
+	})
+	assert.NoError(t, err)
 	assert.NoError(t, s.AlertNotify(fixtures.GetAlert()))
 }
 
 func TestSlackNetworkPolicyYAMLNotify(t *testing.T) {
 	webhook := skip(t)
-	s := slack{
-		Notifier: &storage.Notifier{
-			UiEndpoint:   "http://google.com",
-			LabelDefault: webhook,
-		},
-	}
-
+	s, err := newSlack(&storage.Notifier{
+		UiEndpoint:   "http://google.com",
+		LabelDefault: webhook,
+	})
+	assert.NoError(t, err)
 	assert.NoError(t, s.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestSlackTest(t *testing.T) {
 	webhook := skip(t)
-	s := slack{
-		Notifier: &storage.Notifier{
-			UiEndpoint:   "http://google.com",
-			LabelDefault: webhook,
-		},
-	}
+	s, err := newSlack(&storage.Notifier{
+		UiEndpoint:   "http://google.com",
+		LabelDefault: webhook,
+	})
+	assert.NoError(t, err)
 	assert.NoError(t, s.Test())
 }

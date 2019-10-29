@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,9 +23,10 @@ const (
 )
 
 var (
-	log          = logging.LoggerForModule()
-	proxyHandler *reloadProxyConfigHandler
-	proxyOnce    sync.Once
+	log            = logging.LoggerForModule()
+	proxyHandler   *reloadProxyConfigHandler
+	proxyTransport *http.Transport
+	proxyOnce      sync.Once
 )
 
 type proxyConfig struct {
@@ -121,6 +123,26 @@ func initHandler() {
 		}
 		proxyHandler = &reloadProxyConfigHandler{}
 		_ = k8scfgwatch.WatchConfigMountDir(context.Background(), proxyConfigPath, proxyHandler, opts)
+		trans, _ := http.DefaultTransport.(*http.Transport)
+		if trans != nil {
+			proxyTransport = trans.Clone()
+			proxyTransport.Proxy = proxyHandler.proxy
+		} else {
+			// fallback copied from go http/transport.go, circa 1.13.1.
+			proxyTransport = &http.Transport{
+				Proxy: proxyHandler.proxy,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+					DualStack: true,
+				}).DialContext,
+				ForceAttemptHTTP2:     true,
+				MaxIdleConns:          100,
+				IdleConnTimeout:       90 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+			}
+		}
 	})
 }
 
@@ -142,4 +164,11 @@ func EnableProxyEnvironmentSetting(enable bool) {
 		return
 	}
 	proxyHandler.enableProxySetting(enable)
+}
+
+// RoundTripper returns something very similar to http.DefaultTransport, but with the Proxy setting changed to use
+// the configuration supported by this package.
+func RoundTripper() http.RoundTripper {
+	initHandler()
+	return proxyTransport
 }

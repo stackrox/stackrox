@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -40,6 +41,7 @@ var (
 type pagerDuty struct {
 	apikey string
 	*storage.Notifier
+	client *http.Client
 }
 
 func init() {
@@ -59,8 +61,12 @@ func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
 		return nil, err
 	}
 	return &pagerDuty{
-		conf.ApiKey,
-		notifier}, nil
+		apikey:   conf.ApiKey,
+		Notifier: notifier,
+		client: &http.Client{
+			Transport: proxy.RoundTripper(),
+		},
+	}, nil
 }
 
 func validate(conf *storage.PagerDuty) error {
@@ -112,7 +118,7 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 		return err
 	}
 
-	resp, err := pd.ManageEvent(pagerDutyEvent)
+	resp, err := pd.ManageEventWithHTTPClient(pagerDutyEvent, p.client)
 	if err != nil {
 		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
 

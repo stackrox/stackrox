@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
@@ -139,6 +140,7 @@ func (s *splunk) sendHTTPPayload(msg proto.Message) error {
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: s.conf.Insecure},
+		Proxy:           proxy.FromConfig(),
 	}
 
 	client := &http.Client{Timeout: timeout, Transport: tr}

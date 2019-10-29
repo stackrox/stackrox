@@ -37,8 +37,6 @@ github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cq
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/PaesslerAG/gval v1.0.1/go.mod h1:y/nm5yEyTeX6av0OfKJNp9rBNj2XrGhAf5+v24IBN1I=
 github.com/PaesslerAG/jsonpath v0.1.0/go.mod h1:4BzmtoM/PI8fPO4aQGIusjGxGir2BzcV0grWtFzq1Y8=
-github.com/PagerDuty/go-pagerduty v0.0.0-20181104233218-fe8f9c4593d0 h1:okO94JirzbcMIAH5z1wtWySIXEA/Q48VzOB1fpN6Who=
-github.com/PagerDuty/go-pagerduty v0.0.0-20181104233218-fe8f9c4593d0/go.mod h1:6hH58nzwYc9mw+TPyM1anW0ivbI0ti4lYc+ZBaKmWts=
 github.com/PuerkitoBio/purell v1.0.0 h1:0GoNN3taZV6QI81IXgCbxMyEaJDXMSIjArYBCYzVVvs=
 github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2 h1:JCHLVE3B+kJde7bIEo5N4J+ZbLhp0J1Fs+ulyRws4gE=
@@ -421,6 +419,8 @@ github.com/stackrox/docker-registry-client v0.0.0-20181115184320-3d98b2b79d1b h1
 github.com/stackrox/docker-registry-client v0.0.0-20181115184320-3d98b2b79d1b/go.mod h1:ftVRYPg9kyRYpu5y5rE+8c8P6KtAitUy57PlHhMraL8=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191017214444-0f09bd56ec39 h1:LKLe/o0D257yjGXRb0558xczJPcwy9VMZzpT8FVR2Z4=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191017214444-0f09bd56ec39/go.mod h1:13vPFaMtP66fobTXqiv3SB32ZCZfa9btx3O6uOlTCDY=
+github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca h1:teIgFfrO9MJjja7m3vCWjXeFfYh90/yOLhRNW1BoIfM=
+github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca/go.mod h1:4DO5Bk5QEsgH2AyJowQ/hP+RzfAb9JanP6W3USogT9E=
 github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 h1:JNEGSiWg6D3lcBCMCBqN3ELniXujt+0QNHLhNnO0w3s=
 github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2/go.mod h1:mjqs7N0Q6m5HpR7QfXVBZXZWSqTjQLeTujjA/xUp2uw=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

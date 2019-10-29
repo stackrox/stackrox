@@ -10,7 +10,7 @@ require (
 	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f // indirect
 	github.com/Microsoft/go-winio v0.4.12 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PagerDuty/go-pagerduty v0.0.0-20181104233218-fe8f9c4593d0
+	github.com/PagerDuty/go-pagerduty v0.0.0-20191002190746-f60f4fc45222
 	github.com/RoaringBitmap/roaring v0.4.17
 	github.com/VividCortex/ewma v1.1.1
 	github.com/andygrunwald/go-jira v1.10.0
@@ -157,6 +157,7 @@ require (
 )
 
 replace (
+	github.com/PagerDuty/go-pagerduty => github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca
 	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20190918030150-5ebdc2278ffe
 	github.com/dgraph-io/badger => github.com/stackrox/badger v1.6.1-0.20191025195058-f2b50b9f079c
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
