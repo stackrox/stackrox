@@ -49,7 +49,19 @@ envsubst < "$DIR/replay.yaml.tmp" > "$newYAML"
 
 kubectl apply -f "${newYAML}"
 
-pod=$(kubectl -n stackrox get pod -l app=replay -o jsonpath={.items[].metadata.name})
+pod="$(kubectl -n stackrox get pod -l app=replay -o jsonpath={.items[].metadata.name} 2>/dev/null || true)"
+tries=0
+while [[ -z "$pod" && "$tries" -lt 3 ]]; do
+	tries=$((tries + 1))
+	sleep 5
+	pod=$(kubectl -n stackrox get pod -l app=replay -o jsonpath={.items[].metadata.name} 2>/dev/null || true)
+done
+
+if [[ -z "$pod" ]]; then
+	echo >&2 "No replay pod found"
+	exit 1
+fi
+
 kubectl -n stackrox wait --for=condition=ready po/${pod} --timeout=60s
 
 # Clean up the replay artifacts
