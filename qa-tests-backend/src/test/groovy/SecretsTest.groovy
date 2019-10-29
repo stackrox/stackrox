@@ -70,27 +70,36 @@ class SecretsTest extends BaseSpecification {
 
         orchestrator.createDeployment(deployment)
 
-        Secret secretInfo = SecretService.getSecret(secID)
-        int preNum = secretInfo.getRelationship().getDeploymentRelationshipsCount()
+        def timer = new Timer(30, 1)
+        def found = false
+        while (!found && timer.IsValid()) {
+            Secret secretInfo = SecretService.getSecret(secID)
+
+            def match = secretInfo.relationship.deploymentRelationshipsList.find { it.id == deployment.deploymentUid }
+            found = match != null
+        }
+        assert found : "Secret-to-deployment relationship not found"
 
         and:
         "Delete the binding deployment"
         orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
-        then:
-        "Verify the binding deployment is gone from the secret"
-        Secret secretUpdate = null
-        def timer = new Timer(10, 3)
+        and:
+        "Wait until the binding deployment is gone from the secret"
+        timer = new Timer(10, 3)
 
         //Add waiting logic cause stackrox need some time to response the number of deployments' change
-        while (timer.IsValid()) {
-            secretUpdate = SecretService.getSecret(secID)
-            if (secretUpdate.getRelationship().getDeploymentRelationshipsCount() == (preNum - 1)) {
-                break
-            }
+        found = true
+        while (found && timer.IsValid()) {
+            def secretUpdate = SecretService.getSecret(secID)
+
+            def match = secretUpdate.relationship.deploymentRelationshipsList.find { it.id == deployment.deploymentUid }
+            found = match != null
         }
 
-        assert secretUpdate.getRelationship().getDeploymentRelationshipsCount() == (preNum - 1)
+        then:
+        "The Secret-to-deployment relationship should no longer exist"
+        assert !found : "Secret-to-deployment relationship still exists"
 
         cleanup:
         "Remove Secret #secretName"
