@@ -20,19 +20,17 @@ import (
 // int represents a generic type that we want to have a set of.
 
 // IntSet will get translated to generic sets.
-type IntSet struct {
-	underlying map[int]struct{}
-}
+type IntSet map[int]struct{}
 
 // Add adds an element of type int.
 func (k *IntSet) Add(i int) bool {
-	if k.underlying == nil {
-		k.underlying = make(map[int]struct{})
+	if *k == nil {
+		*k = make(map[int]struct{})
 	}
 
-	oldLen := len(k.underlying)
-	k.underlying[i] = struct{}{}
-	return len(k.underlying) > oldLen
+	oldLen := len(*k)
+	(*k)[i] = struct{}{}
+	return len(*k) > oldLen
 }
 
 // AddAll adds all elements of type int. The return value is true if any new element
@@ -41,109 +39,109 @@ func (k *IntSet) AddAll(is ...int) bool {
 	if len(is) == 0 {
 		return false
 	}
-	if k.underlying == nil {
-		k.underlying = make(map[int]struct{})
+	if *k == nil {
+		*k = make(map[int]struct{})
 	}
 
-	oldLen := len(k.underlying)
+	oldLen := len(*k)
 	for _, i := range is {
-		k.underlying[i] = struct{}{}
+		(*k)[i] = struct{}{}
 	}
-	return len(k.underlying) > oldLen
+	return len(*k) > oldLen
 }
 
 // Remove removes an element of type int.
 func (k *IntSet) Remove(i int) bool {
-	if len(k.underlying) == 0 {
+	if len(*k) == 0 {
 		return false
 	}
 
-	oldLen := len(k.underlying)
-	delete(k.underlying, i)
-	return len(k.underlying) < oldLen
+	oldLen := len(*k)
+	delete(*k, i)
+	return len(*k) < oldLen
 }
 
 // RemoveAll removes the given elements.
 func (k *IntSet) RemoveAll(is ...int) bool {
-	if len(k.underlying) == 0 {
+	if len(*k) == 0 {
 		return false
 	}
 
-	oldLen := len(k.underlying)
+	oldLen := len(*k)
 	for _, i := range is {
-		delete(k.underlying, i)
+		delete(*k, i)
 	}
-	return len(k.underlying) < oldLen
+	return len(*k) < oldLen
 }
 
 // RemoveMatching removes all elements that match a given predicate.
 func (k *IntSet) RemoveMatching(pred func(int) bool) bool {
-	if len(k.underlying) == 0 {
+	if len(*k) == 0 {
 		return false
 	}
 
-	oldLen := len(k.underlying)
-	for elem := range k.underlying {
+	oldLen := len(*k)
+	for elem := range *k {
 		if pred(elem) {
-			delete(k.underlying, elem)
+			delete(*k, elem)
 		}
 	}
-	return len(k.underlying) < oldLen
+	return len(*k) < oldLen
 }
 
 // Contains returns whether the set contains an element of type int.
 func (k IntSet) Contains(i int) bool {
-	_, ok := k.underlying[i]
+	_, ok := k[i]
 	return ok
 }
 
 // Cardinality returns the number of elements in the set.
 func (k IntSet) Cardinality() int {
-	return len(k.underlying)
+	return len(k)
 }
 
 // IsEmpty returns whether the underlying set is empty (includes uninitialized).
 func (k IntSet) IsEmpty() bool {
-	return len(k.underlying) == 0
+	return len(k) == 0
 }
 
 // Clone returns a copy of this set.
 func (k IntSet) Clone() IntSet {
-	if k.underlying == nil {
-		return IntSet{}
+	if k == nil {
+		return nil
 	}
-	cloned := make(map[int]struct{}, len(k.underlying))
-	for elem := range k.underlying {
+	cloned := make(map[int]struct{}, len(k))
+	for elem := range k {
 		cloned[elem] = struct{}{}
 	}
-	return IntSet{underlying: cloned}
+	return cloned
 }
 
 // Difference returns a new set with all elements of k not in other.
 func (k IntSet) Difference(other IntSet) IntSet {
-	if len(k.underlying) == 0 || len(other.underlying) == 0 {
+	if len(k) == 0 || len(other) == 0 {
 		return k.Clone()
 	}
 
-	retained := make(map[int]struct{}, len(k.underlying))
-	for elem := range k.underlying {
+	retained := make(map[int]struct{}, len(k))
+	for elem := range k {
 		if !other.Contains(elem) {
 			retained[elem] = struct{}{}
 		}
 	}
-	return IntSet{underlying: retained}
+	return retained
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k IntSet) Intersect(other IntSet) IntSet {
-	maxIntLen := len(k.underlying)
-	smaller, larger := k.underlying, other.underlying
-	if l := len(other.underlying); l < maxIntLen {
+	maxIntLen := len(k)
+	smaller, larger := k, other
+	if l := len(other); l < maxIntLen {
 		maxIntLen = l
 		smaller, larger = larger, smaller
 	}
 	if maxIntLen == 0 {
-		return IntSet{}
+		return nil
 	}
 
 	retained := make(map[int]struct{}, maxIntLen)
@@ -152,38 +150,38 @@ func (k IntSet) Intersect(other IntSet) IntSet {
 			retained[elem] = struct{}{}
 		}
 	}
-	return IntSet{underlying: retained}
+	return retained
 }
 
 // Union returns a new set with the union of the members of both sets.
 func (k IntSet) Union(other IntSet) IntSet {
-	if len(k.underlying) == 0 {
+	if len(k) == 0 {
 		return other.Clone()
-	} else if len(other.underlying) == 0 {
+	} else if len(other) == 0 {
 		return k.Clone()
 	}
 
-	underlying := make(map[int]struct{}, len(k.underlying)+len(other.underlying))
-	for elem := range k.underlying {
+	underlying := make(map[int]struct{}, len(k)+len(other))
+	for elem := range k {
 		underlying[elem] = struct{}{}
 	}
-	for elem := range other.underlying {
+	for elem := range other {
 		underlying[elem] = struct{}{}
 	}
-	return IntSet{underlying: underlying}
+	return underlying
 }
 
 // Equal returns a bool if the sets are equal
 func (k IntSet) Equal(other IntSet) bool {
-	thisL, otherL := len(k.underlying), len(other.underlying)
+	thisL, otherL := len(k), len(other)
 	if thisL == 0 && otherL == 0 {
 		return true
 	}
 	if thisL != otherL {
 		return false
 	}
-	for elem := range k.underlying {
-		if _, ok := other.underlying[elem]; !ok {
+	for elem := range k {
+		if _, ok := other[elem]; !ok {
 			return false
 		}
 	}
@@ -192,11 +190,11 @@ func (k IntSet) Equal(other IntSet) bool {
 
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k IntSet) AsSlice() []int {
-	if len(k.underlying) == 0 {
+	if len(k) == 0 {
 		return nil
 	}
-	elems := make([]int, 0, len(k.underlying))
-	for elem := range k.underlying {
+	elems := make([]int, 0, len(k))
+	for elem := range k {
 		elems = append(elems, elem)
 	}
 	return elems
@@ -217,12 +215,12 @@ func (k IntSet) AsSortedSlice(less func(i, j int) bool) []int {
 
 // Clear empties the set
 func (k *IntSet) Clear() {
-	k.underlying = nil
+	*k = nil
 }
 
 // Freeze returns a new, frozen version of the set.
 func (k IntSet) Freeze() FrozenIntSet {
-	return NewFrozenIntSetFromMap(k.underlying)
+	return NewFrozenIntSetFromMap(k)
 }
 
 // NewIntSet returns a new thread unsafe set with the given key type.
@@ -231,7 +229,7 @@ func NewIntSet(initial ...int) IntSet {
 	for _, elem := range initial {
 		underlying[elem] = struct{}{}
 	}
-	return IntSet{underlying: underlying}
+	return underlying
 }
 
 type sortableIntSlice struct {
