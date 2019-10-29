@@ -17,12 +17,9 @@ describe('Risk page', () => {
 
     const mockGetDeployment = () => {
         cy.fixture('risks/firstDeployment.json').as('firstDeploymentJson');
-        cy.route('GET', api.risks.getDeployment, '@firstDeploymentJson').as('firstDeployment');
-    };
-
-    const mockGetRisk = () => {
-        cy.fixture('risks/firstDeploymentRisk.json').as('firstDeploymentRiskJson');
-        cy.route('GET', api.risks.getRisk, '@firstDeploymentRiskJson').as('firstDeploymentRisk');
+        cy.route('GET', api.risks.getDeploymentWithRisk, '@firstDeploymentJson').as(
+            'firstDeployment'
+        );
     };
 
     it('should have selected item in nav bar', () => {
@@ -47,11 +44,9 @@ describe('Risk page', () => {
     });
 
     it('should display error message in process discovery tab', () => {
-        mockGetRisk();
         mockGetDeployment();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.wait('@firstDeployment');
-        cy.wait('@firstDeploymentRisk');
 
         cy.get(RiskPageSelectors.panelTabs.processDiscovery).click();
         cy.get(RiskPageSelectors.errMgBox).contains(errorMessages.processNotFound);
@@ -59,33 +54,27 @@ describe('Risk page', () => {
     });
 
     it('should open the panel to view risk indicators', () => {
-        mockGetRisk();
         mockGetDeployment();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.wait('@firstDeployment');
-        cy.wait('@firstDeploymentRisk');
 
         cy.get(RiskPageSelectors.panelTabs.riskIndicators);
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 
     it('should open the panel to view deployment details', () => {
-        mockGetRisk();
         mockGetDeployment();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.wait('@firstDeployment');
-        cy.wait('@firstDeploymentRisk');
 
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails);
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 
     it('should navigate from Risk Page to Images Page', () => {
-        mockGetRisk();
         mockGetDeployment();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.wait('@firstDeployment');
-        cy.wait('@firstDeploymentRisk');
 
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click({ force: true });
         cy.get(RiskPageSelectors.imageLink)
@@ -103,11 +92,9 @@ describe('Risk page', () => {
     });
 
     it('should navigate to network page with selected deployment', () => {
-        mockGetRisk();
         mockGetDeployment();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.wait('@firstDeployment');
-        cy.wait('@firstDeploymentRisk');
 
         cy.get(RiskPageSelectors.networkNodeLink).click({ force: true });
         cy.url().should('contain', '/main/network');

@@ -7,6 +7,7 @@ import { deployment as deploymentSchema, deploymentDetail } from './schemas';
 
 const deploymentsUrl = '/v1/deploymentswithprocessinfo';
 const deploymentByIdUrl = '/v1/deployments';
+const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
 
 /**
@@ -52,6 +53,16 @@ export function fetchDeploymentsCount(options) {
 export function fetchDeployment(id) {
     if (!id) throw new Error('Deployment ID must be specified');
     return axios.get(`${deploymentByIdUrl}/${id}`).then(response => response.data);
+}
+
+/**
+ * Fetches a deployment and its risk by deployment ID.
+ *
+ * @returns {Promise<Object, Error>} fulfilled with a composite object containing deployment and risk (as defined in .proto)
+ */
+export function fetchDeploymentWithRisk(id) {
+    if (!id) throw new Error('Deployment ID must be specified');
+    return axios.get(`${deploymentWithRiskUrl}/${id}`).then(response => response.data);
 }
 
 /**

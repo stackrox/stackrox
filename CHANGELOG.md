@@ -29,6 +29,7 @@ All notable changes to this project that require documentation updates will be d
   probes for new Linux kernel versions become available. This decreases the need to rely on module downloads via
   the internet. If you configure StackRox to pull collector images from your private registry, you need to configure a
   periodic mirroring to take advantage of this effect.
+- `GetRisk(/v1/risks/{subjectType}/{subjectID})` endpoint is removed. For obtaining deployment risk, use `GetDeploymentWithRisk(/v1/deploymentswithrisk/{id})`.
 
 ## [31.0]
 ### Changed

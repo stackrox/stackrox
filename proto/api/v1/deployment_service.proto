@@ -8,6 +8,7 @@ import "api/v1/common.proto";
 import "api/v1/search_service.proto";
 import "api/v1/empty.proto";
 import "storage/deployment.proto";
+import "storage/risk.proto";
 import "storage/process_whitelist.proto";
 
 package v1;
@@ -37,6 +38,11 @@ message ListDeploymentsWithProcessInfoResponse {
     repeated DeploymentWithProcessInfo deployments = 1;
 }
 
+message GetDeploymentWithRiskResponse {
+    storage.Deployment deployment = 1;
+    storage.Risk       risk       = 2;
+}
+
 // DeploymentService APIs can be used to manage deployments.
 service DeploymentService {
 
@@ -44,6 +50,13 @@ service DeploymentService {
     rpc GetDeployment (ResourceByID) returns (storage.Deployment) {
         option (google.api.http) = {
             get: "/v1/deployments/{id}"
+        };
+    }
+
+    // GetDeploymentWithRisk returns a deployment and its risk given its ID.
+    rpc GetDeploymentWithRisk (ResourceByID) returns (GetDeploymentWithRiskResponse) {
+        option(google.api.http) = {
+            get: "/v1/deploymentswithrisk/{id}"
         };
     }
 

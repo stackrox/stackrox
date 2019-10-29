@@ -44,31 +44,29 @@ func (d *datastoreImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*sto
 }
 
 // TODO: if subject is namespace or cluster, compute risk based on all visible child subjects
-func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, error) {
+func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error) {
 	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
-		return nil, err
+		return nil, false, err
 	}
 	id, err := GetID(subjectID, subjectType)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	risk, exists, err := d.getRisk(id)
-	if err != nil {
-		return nil, err
+	if err != nil || !exists {
+		return nil, false, err
 	}
-	if !exists {
-		return nil, errors.Errorf("risk %s not found", id)
-	}
-	return risk, nil
+
+	return risk, true, nil
 }
 
 func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, riskIndicatorNames []string) (*storage.Risk, error) {
 	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
 		return nil, err
 	}
-	risk, err := d.GetRisk(ctx, subjectID, subjectType)
-	if err != nil {
+	risk, found, err := d.GetRisk(ctx, subjectID, subjectType)
+	if err != nil || !found {
 		return nil, err
 	}
 

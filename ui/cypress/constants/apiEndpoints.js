@@ -16,7 +16,7 @@ export const risks = {
     // The * at the end exists because sometimes we add ?query= at the end.
     riskyDeployments: 'v1/deploymentswithprocessinfo*',
     getDeployment: 'v1/deployments/*',
-    getRisk: 'v1/risks/deployment/*'
+    getDeploymentWithRisk: 'v1/deploymentswithrisk/*'
 };
 
 export const search = {

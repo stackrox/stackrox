@@ -1,8 +1,7 @@
+import io.stackrox.proto.api.v1.DeploymentServiceOuterClass
 import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
-import io.stackrox.proto.api.v1.RiskServiceGrpc
-import io.stackrox.proto.api.v1.RiskServiceOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
@@ -66,10 +65,6 @@ class Services extends BaseService {
         return DeploymentServiceGrpc.newBlockingStub(getChannel())
       }
 
-    static getRiskClient() {
-        return RiskServiceGrpc.newBlockingStub(getChannel())
-    }
-
     static getSearchServiceClient() {
         return SearchServiceGrpc.newBlockingStub(getChannel())
       }
@@ -114,12 +109,8 @@ class Services extends BaseService {
         return getDeploymentClient().getDeployment(getResourceByID(id))
       }
 
-    static RiskOuterClass.Risk getRisk(String subjectID, RiskOuterClass.RiskSubjectType subjectType) {
-        RiskServiceOuterClass.GetRiskRequest request =
-                RiskServiceOuterClass.GetRiskRequest.newBuilder()
-                        .setSubjectID(subjectID)
-                        .setSubjectType(subjectType.toString()).build()
-        return getRiskClient().getRisk(request)
+    static DeploymentServiceOuterClass.GetDeploymentWithRiskResponse getDeploymentWithRisk(String id) {
+        return getDeploymentClient().getDeploymentWithRisk(getResourceByID(id))
     }
 
     static SearchServiceOuterClass.SearchResponse getSearchResponse(
@@ -136,7 +127,7 @@ class Services extends BaseService {
         int iterations = timeoutSeconds / intervalSeconds
         Timer t = new Timer(iterations, intervalSeconds)
         while (t.IsValid()) {
-            RiskOuterClass.Risk risk = Services.getRisk(deploymentId, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
+            RiskOuterClass.Risk risk = Services.getDeploymentWithRisk(deploymentId).risk
             RiskOuterClass.Risk.Result result = risk.resultsList
                     .find { it.name == "Suspicious Process Executions" }
             if (result != null) {

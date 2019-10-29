@@ -68,14 +68,16 @@ func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
 	err := suite.datastore.UpsertRisk(suite.hasWriteCtx, risk)
 	suite.Require().NoError(err)
 
-	result, err := suite.datastore.GetRisk(suite.hasReadCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
+	result, found, err := suite.datastore.GetRisk(suite.hasReadCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	suite.Require().NoError(err)
+	suite.Require().True(found)
 	suite.Require().NotNil(result)
 
 	err = suite.datastore.RemoveRisk(suite.hasWriteCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	suite.Require().NoError(err)
 
-	result, err = suite.datastore.GetRisk(suite.hasReadCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
-	suite.Require().Error(err)
+	result, found, err = suite.datastore.GetRisk(suite.hasReadCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
+	suite.Require().NoError(err)
+	suite.Require().False(found)
 	suite.Require().Nil(result)
 }

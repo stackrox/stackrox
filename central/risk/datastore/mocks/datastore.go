@@ -67,12 +67,13 @@ func (mr *MockDataStoreMockRecorder) SearchRawRisks(ctx, q interface{}) *gomock.
 }
 
 // GetRisk mocks base method
-func (m *MockDataStore) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, error) {
+func (m *MockDataStore) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRisk", ctx, subjectID, subjectType)
 	ret0, _ := ret[0].(*storage.Risk)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetRisk indicates an expected call of GetRisk

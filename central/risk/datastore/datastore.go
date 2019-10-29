@@ -19,7 +19,7 @@ type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawRisks(ctx context.Context, q *v1.Query) ([]*storage.Risk, error)
 
-	GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, error)
+	GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error)
 	GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, riskIndicatorNames []string) (risk *storage.Risk, err error)
 	UpsertRisk(ctx context.Context, risk *storage.Risk) error
 	RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error

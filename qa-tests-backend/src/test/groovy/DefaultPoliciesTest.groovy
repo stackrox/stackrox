@@ -182,7 +182,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         and:
         "The struts deployment details"
         Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
-        RiskOuterClass.Risk risk = Services.getRisk(dep.deploymentUid, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
+        RiskOuterClass.Risk risk = Services.getDeploymentWithRisk(dep.deploymentUid).risk
 
         expect:
         "Risk factors are present"
@@ -190,7 +190,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         def waitTime = 30000
         def start = System.currentTimeMillis()
         while (riskResult == null && (System.currentTimeMillis() - start) < waitTime) {
-            risk = Services.getRisk(dep.deploymentUid, RiskOuterClass.RiskSubjectType.DEPLOYMENT)
+            risk = Services.getDeploymentWithRisk(dep.deploymentUid).risk
             riskResult = risk.resultsList.find { it.name == riskFactor }
             sleep 2000
         }

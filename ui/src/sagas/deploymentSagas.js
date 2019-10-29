@@ -3,7 +3,8 @@ import { all, takeLatest, call, fork, put, select } from 'redux-saga/effects';
 import { dashboardPath, policiesPath } from 'routePaths';
 import {
     fetchDeploymentsLegacy as fetchDeployments,
-    fetchDeploymentLegacy as fetchDeployment
+    fetchDeploymentLegacy as fetchDeployment,
+    fetchDeploymentWithRisk
 } from 'services/DeploymentsService';
 import { actions } from 'reducers/deployments';
 import { types as dashboardTypes } from 'reducers/dashboard';
@@ -25,6 +26,15 @@ export function* getDeployment(id) {
         yield put(actions.fetchDeployment.success(result.response, { id }));
     } catch (error) {
         yield put(actions.fetchDeployment.failure(error));
+    }
+}
+
+export function* getDeploymentWithRisk(id) {
+    try {
+        const result = yield call(fetchDeploymentWithRisk, id);
+        yield put(actions.fetchDeploymentWithRisk.success(result.response, { id }));
+    } catch (error) {
+        yield put(actions.fetchDeploymentWithRisk.failure(error));
     }
 }
 

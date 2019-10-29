@@ -40,6 +40,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
 			"/v1.DeploymentService/GetDeployment",
+			"/v1.DeploymentService/GetDeploymentWithRisk",
 			"/v1.DeploymentService/CountDeployments",
 			"/v1.DeploymentService/ListDeployments",
 			"/v1.DeploymentService/GetLabels",
@@ -125,6 +126,27 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
 	return deployment, nil
+}
+
+// GetDeploymentWithRisk returns the deployment and its risk with given id.
+func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.ResourceByID) (*v1.GetDeploymentWithRiskResponse, error) {
+	deployment, exists, err := s.datastore.GetDeployment(ctx, request.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", request.GetId())
+	}
+
+	risk, _, err := s.risks.GetRisk(ctx, request.GetId(), storage.RiskSubjectType_DEPLOYMENT)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &v1.GetDeploymentWithRiskResponse{
+		Deployment: deployment,
+		Risk:       risk,
+	}, nil
 }
 
 // CountDeployments counts the number of deployments that match the input query.
