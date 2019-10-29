@@ -47,8 +47,8 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
         query getCve${entityListType}($id: ID!, $query: String) {
-            result: cve(id: $id) {
-                id
+            result: vulnerability(id: $id) {
+                cve
                 ${listFieldName}(query: $query) { ...${fragmentName} }
             }
         }

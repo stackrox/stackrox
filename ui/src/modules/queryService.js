@@ -11,7 +11,7 @@ import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 import { CONTROL_FRAGMENT } from 'queries/controls';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
-import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { COMPONENT_LIST_FRAGMENT, CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 function objectToWhereClause(query) {
     if (!query) return '';
@@ -106,6 +106,8 @@ function getFragmentName(entityType) {
             return 'controlFields';
         case entityTypes.CVE:
             return 'cveListFields';
+        case entityTypes.COMPONENT:
+            return 'componentListFields';
         default:
             return '';
     }
@@ -142,6 +144,8 @@ function getFragment(entityType, appContext) {
                 return CONTROL_FRAGMENT;
             case entityTypes.CVE:
                 return CVE_LIST_FRAGMENT;
+            case entityTypes.COMPONENT:
+                return COMPONENT_LIST_FRAGMENT;
             default:
                 return '';
         }
@@ -154,6 +158,7 @@ function getFragmentInfo(entityType, listType, appContext) {
     const listFieldName = getListFieldName(entityType, listType);
     const fragmentName = getFragmentName(listType);
     const fragment = getFragment(listType, appContext);
+
     return {
         listFieldName,
         fragmentName,

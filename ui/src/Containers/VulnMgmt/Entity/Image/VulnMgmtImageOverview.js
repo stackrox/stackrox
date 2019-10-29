@@ -24,7 +24,6 @@ import TableWidget from '../TableWidget';
 
 const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
-    if (!workflowState.sidePanelActive) return null;
 
     const { metadata, scan, topVuln, deploymentCount, priority, vulnCounter } = data;
     const { cvss, scoreVersion } = topVuln;
