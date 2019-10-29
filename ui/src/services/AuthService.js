@@ -54,10 +54,7 @@ export function fetchLoginAuthProviders() {
  */
 export function saveAuthProvider(authProvider) {
     return authProvider.id
-        ? axios.patch(`${authProvidersUrl}/${authProvider.id}`, {
-              name: authProvider.name,
-              enabled: authProvider.enabled
-          })
+        ? axios.put(`${authProvidersUrl}/${authProvider.id}`, authProvider)
         : axios.post(authProvidersUrl, authProvider);
 }
 

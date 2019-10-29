@@ -14,7 +14,8 @@ class AuthProvider extends Component {
         selectedAuthProvider: PropTypes.shape({
             name: PropTypes.string,
             id: PropTypes.string,
-            type: PropTypes.string
+            type: PropTypes.string,
+            active: PropTypes.bool
         }),
         isEditing: PropTypes.bool.isRequired,
         onSave: PropTypes.func.isRequired,
@@ -117,7 +118,13 @@ class AuthProvider extends Component {
                 ? `"${selectedAuthProvider.name}" Auth Provider`
                 : `Create New ${selectedAuthProvider.type} Auth Provider`;
             headerComponents = (
-                <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel} />
+                <Button
+                    isEditing={isEditing}
+                    onEdit={onEdit}
+                    onSave={onSave}
+                    onCancel={onCancel}
+                    disabled={selectedAuthProvider.active}
+                />
             );
         }
         const panelHeaderClassName = `${headerClassName} bg-base-100`;

@@ -10,6 +10,7 @@ function Button(props) {
                 className="border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase"
                 type="button"
                 onClick={props.onEdit}
+                disabled={props.disabled}
             >
                 Edit provider
             </button>
@@ -27,7 +28,8 @@ function Button(props) {
 Button.propTypes = {
     isEditing: PropTypes.bool.isRequired,
     onEdit: PropTypes.func.isRequired,
-    onCancel: PropTypes.func.isRequired
+    onCancel: PropTypes.func.isRequired,
+    disabled: PropTypes.bool.isRequired
 };
 
 export default Button;

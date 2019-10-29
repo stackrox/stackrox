@@ -6,6 +6,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac"
+)
+
+var (
+	internalUpdateProviderCtx = sac.WithAllAccess(context.Background())
 )
 
 // ProviderOption is a function that modifies a providerImpl.
@@ -86,10 +91,21 @@ func WithEnabled(enabled bool) ProviderOption {
 	}
 }
 
-// WithValidated sets the validated flag for the provider.
-func WithValidated(validated bool) ProviderOption {
+// WithValidateCallback adds a callback to validate the auth provider
+func WithValidateCallback(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
-		pr.storedInfo.Validated = validated
+		pr.validateCallback = func() error {
+			return pr.ApplyOptions(WithActive(true), UpdateStore(internalUpdateProviderCtx, store))
+		}
+		return nil
+	}
+}
+
+// WithActive sets the active flag for the provider.
+func WithActive(active bool) ProviderOption {
+	return func(pr *providerImpl) error {
+		pr.storedInfo.Validated = active
+		pr.storedInfo.Active = active
 		return nil
 	}
 }

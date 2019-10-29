@@ -187,13 +187,17 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	return provider, nil
 }
 
-func (r *registryImpl) DeleteProvider(ctx context.Context, id string) error {
+func (r *registryImpl) DeleteProvider(ctx context.Context, id string, ignoreActive bool) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
 	provider := r.providers[id]
 	if provider == nil {
 		return nil
+	}
+
+	if provider.Active() && !ignoreActive {
+		return errors.New("cannot update an auth provider once it has been used. Please delete and then re-add to modify")
 	}
 
 	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store), UnregisterSource(r.issuerFactory)); err != nil {

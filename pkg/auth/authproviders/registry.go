@@ -23,7 +23,7 @@ type Registry interface {
 
 	CreateProvider(ctx context.Context, options ...ProviderOption) (Provider, error)
 	UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error)
-	DeleteProvider(ctx context.Context, id string) error
+	DeleteProvider(ctx context.Context, id string, ignoreActive bool) error
 	ExchangeToken(ctx context.Context, externalToken string, typ string, state string) (string, string, error)
 
 	// RegisterBackendFactory registers the given factory (creator) under the specified type. The creation of the

@@ -92,6 +92,13 @@ service AuthProviderService {
         };
     }
 
+    rpc PutAuthProvider (storage.AuthProvider) returns (storage.AuthProvider) {
+        option (google.api.http) = {
+            put: "/v1/authProviders/{id}"
+            body: "*"
+        };
+    }
+
     rpc DeleteAuthProvider (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/authProviders/{id}"

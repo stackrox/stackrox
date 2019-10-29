@@ -23,6 +23,8 @@ type Provider interface {
 	Issuer() tokens.Issuer
 
 	ApplyOptions(options ...ProviderOption) error
+	Active() bool
+	MarkAsActive() error
 }
 
 // NewProvider creates a new provider with the input options.

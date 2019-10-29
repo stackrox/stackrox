@@ -26,6 +26,8 @@ type providerImpl struct {
 	issuer     tokens.Issuer
 
 	doNotStore bool
+
+	validateCallback func() error
 }
 
 // Accessor functions.
@@ -57,6 +59,13 @@ func (p *providerImpl) Enabled() bool {
 	defer p.mutex.RUnlock()
 
 	return p.backend != nil && p.storedInfo.Enabled
+}
+
+func (p *providerImpl) Active() bool {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.storedInfo.GetActive()
 }
 
 func (p *providerImpl) StorageView() *storage.AuthProvider {
@@ -117,6 +126,13 @@ func (p *providerImpl) ApplyOptions(options ...ProviderOption) error {
 	// If updates succeed, apply them.
 	copyWithoutMutex(p, modifiedProvider)
 	return nil
+}
+
+func (p *providerImpl) MarkAsActive() error {
+	if p.Active() || p.validateCallback == nil {
+		return nil
+	}
+	return p.validateCallback()
 }
 
 // Does a deep copy of the proto field 'storedInfo' so that it can support nested message fields.

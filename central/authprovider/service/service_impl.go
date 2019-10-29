@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/authprovider/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,6 +35,7 @@ var (
 		user.With(permissions.Modify(resources.AuthProvider)): {
 			"/v1.AuthProviderService/PostAuthProvider",
 			"/v1.AuthProviderService/UpdateAuthProvider",
+			"/v1.AuthProviderService/PutAuthProvider",
 			"/v1.AuthProviderService/DeleteAuthProvider",
 		},
 	})
@@ -136,7 +138,30 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	if providerReq.GetLoginUrl() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider loginUrl field must be empty")
 	}
-	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq))
+
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq), authproviders.WithValidateCallback(datastore.Singleton()))
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not create auth provider: %v", err)
+	}
+	return provider.StorageView(), nil
+}
+
+func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Auth Provider id must not be empty")
+	}
+
+	provider := s.registry.GetProvider(request.GetId())
+	if provider == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "Provider with id %q does not exist", request.GetId())
+	}
+
+	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
+	if err := s.registry.DeleteProvider(ctx, request.GetId(), false); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request), authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not create auth provider: %v", err)
 	}
@@ -167,7 +192,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id is required")
 	}
-	if err := s.registry.DeleteProvider(ctx, request.GetId()); err != nil {
+	if err := s.registry.DeleteProvider(ctx, request.GetId(), true); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil

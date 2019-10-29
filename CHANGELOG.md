@@ -11,6 +11,7 @@ All notable changes to this project that require documentation updates will be d
   is still being analyzed or the CVE has been disputed. The API will continue to return a CVSS score of 0.
 - Scopes now include support for Regex on the namespace and label fields including both Policy Scope and Whitelist Scope.
   The supported Regex syntax can be found here: https://github.com/google/re2/wiki/Syntax.
+- The `validated` field in an auth provider is deprecated and will be removed in 3 releases. Please use the `active` field instead.
 
 ## [32.0]
 ### Changed

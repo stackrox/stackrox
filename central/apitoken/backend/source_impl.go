@@ -90,3 +90,11 @@ func (s *sourceImpl) ApplyOptions(options ...authproviders.ProviderOption) error
 	// API token sources are not modified through Options methods as they aren't in the registry
 	return nil
 }
+
+func (s *sourceImpl) Active() bool {
+	return true
+}
+
+func (s *sourceImpl) MarkAsActive() error {
+	return nil
+}

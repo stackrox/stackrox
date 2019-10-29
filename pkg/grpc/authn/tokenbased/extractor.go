@@ -147,7 +147,9 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	if role == nil {
 		return nil, fmt.Errorf("external user %s has no assigned role", token.ExternalUser.UserID)
 	}
-
+	if err := authProvider.MarkAsActive(); err != nil {
+		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())
+	}
 	id := createRoleBasedIdentity(role, token, authProvider)
 	return id, nil
 }

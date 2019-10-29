@@ -43,7 +43,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Reg
 	typ := basicAuthProvider.TypeName
 	existingBasicAuthProviders := registry.GetProviders(nil, &typ)
 	for _, provider := range existingBasicAuthProviders {
-		if err := registry.DeleteProvider(ctx, provider.ID()); err != nil {
+		if err := registry.DeleteProvider(ctx, provider.ID(), true); err != nil {
 			log.Panicf("Could not delete existing basic auth provider %s: %v", provider.Name(), err)
 		}
 	}
@@ -53,7 +53,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Reg
 		authproviders.WithName("Login with username/password"),
 		authproviders.WithID(basicAuthProviderID),
 		authproviders.WithEnabled(true),
-		authproviders.WithValidated(true),
+		authproviders.WithActive(true),
 		authproviders.WithRoleMapper(mapper.AlwaysAdminRoleMapper()),
 		authproviders.DoNotStore(),
 	}
