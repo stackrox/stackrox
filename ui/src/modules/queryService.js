@@ -33,9 +33,18 @@ function objectToWhereClause(query) {
 function entityContextToQueryObject(entityContext) {
     if (!entityContext) return {};
 
+    // TO DO: waiting for backend to use COMPONENT ID instead of NAME and VERSION. workaround for now
     return Object.keys(entityContext).reduce((acc, key) => {
-        const entityQueryKey = `${key} ${key === entityTypes.IMAGE ? 'SHA' : 'ID'}`;
-        return { ...acc, [entityQueryKey]: entityContext[key] };
+        const entityQueryObj = {};
+        if (key === entityTypes.IMAGE) {
+            entityQueryObj[`${key} SHA`] = entityContext[key];
+        } else if (key === entityTypes.COMPONENT) {
+            const parsedComponentID = entityContext[key].split(':');
+            [entityQueryObj[`${key} NAME`], entityQueryObj[`${key} VERSION`]] = parsedComponentID;
+        } else {
+            entityQueryObj[`${key} ID`] = entityContext[key];
+        }
+        return { ...acc, ...entityQueryObj };
     }, {});
 }
 

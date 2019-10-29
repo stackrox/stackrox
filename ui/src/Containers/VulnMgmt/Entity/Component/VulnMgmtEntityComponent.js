@@ -16,6 +16,8 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
                 name
                 version
                 priority
+                vulnCount
+                deploymentCount
                 vulns {
                     ...cveListFields
                 }

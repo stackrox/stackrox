@@ -1,25 +1,23 @@
 import React, { useContext } from 'react';
+import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import TopCvssLabel from 'Components/TopCvssLabel';
-import Widget from 'Components/Widget';
-import NoResultsMessage from 'Components/NoResultsMessage';
-// import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
-import {
-    getCveTableColumns,
-    renderCveDescription,
-    defaultCveSort
-} from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
-import EntityList from 'Components/EntityList';
+import RiskScore from 'Components/RiskScore';
+import Metadata from 'Components/Metadata';
+import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
+import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 
-// import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidget from '../TableWidget';
+import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
-function VulnMgmtComponentOverview({ data }) {
+function VulnMgmtComponentOverview({ data, entityContext }) {
     const workflowState = useContext(workflowStateContext);
 
-    const { version, priority, vulns } = data;
+    const { version, priority, vulns, id, vulnCount, deploymentCount } = data;
+    const fixableCVEs = vulns.filter(vuln => vuln.isFixable);
 
     const topVuln = vulns.reduce((max, curr) => (curr.cvss > max.cvss ? curr : max), {
         cvss: 0,
@@ -27,97 +25,74 @@ function VulnMgmtComponentOverview({ data }) {
     });
     const { cvss, scoreVersion } = topVuln;
 
-    // Expand all rows to include description
-    function getDefaultExpandedRows(items) {
-        return items.map((_element, index) => {
-            return { [index]: true };
-        });
+    const metadataKeyValuePairs = [
+        {
+            key: 'Component Version',
+            value: version
+        }
+    ];
+
+    const imageStats = [
+        <RiskScore key="risk-score" score={priority} />,
+        <React.Fragment key="top-cvss">
+            <TopCvssLabel cvss={cvss} version={scoreVersion} expanded />
+        </React.Fragment>
+    ];
+
+    function getCountData(entityType) {
+        switch (entityType) {
+            case entityTypes.DEPLOYMENT:
+                return deploymentCount;
+            case entityTypes.CVE:
+                return vulnCount;
+            default:
+                return 0;
+        }
     }
 
-    const cveTableColumns = getCveTableColumns(workflowState).filter(
-        col => !['Deployments', 'Images', 'Components'].includes(col.Header)
-    );
-    const expandedCveRows = getDefaultExpandedRows(vulns);
     return (
         <div className="w-full h-full" id="capture-dashboard-stretch">
             <div className="flex h-full">
                 <div className="flex flex-col flex-grow">
                     <CollapsibleSection title="Component Summary" />
-                    <div className="flex mb-4 pdf-page">
-                        <Widget
-                            header="Details & Metadata"
-                            className="mx-4 bg-base-100 h-48 mb-4 bg-counts-widget flex-grow"
-                        >
-                            <div className="flex flex-col w-full">
-                                <div className="flex border-b border-base-400">
-                                    <div className="flex flex-grow p-4 justify-center items-center border-r-2 border-base-300 border-dotted">
-                                        <span className="pr-1">Risk score:</span>
-                                        <span className="pl-1 text-3xl">{priority}</span>
-                                    </div>
-                                    <div className="flex flex-col p-4 flex-grow justify-center text-center">
-                                        <TopCvssLabel cvss={cvss} version={scoreVersion} expanded />
-                                    </div>
-                                </div>
-                                <div className="flex flex-col border-base-400 pl-2 pr-2">
-                                    <div className="flex p-3 border-b border-base-400">
-                                        <span className="text-base-700 font-600 mr-2">
-                                            Component Version:
-                                        </span>
-                                        {version}
-                                    </div>
-                                </div>
-                            </div>
-                        </Widget>
-                        <Widget header="CVEs By CVSS Score" className="mx-4 bg-base-100 h-48 mb-4 ">
-                            <div>hi</div>
-                        </Widget>
-                        <Widget
-                            header="Top Riskiest Components"
-                            className="mx-4 bg-base-100 h-48 mb-4 "
-                        >
-                            <div>hi</div>
-                        </Widget>
+                    <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                        <div className="s-1">
+                            <Metadata
+                                className="h-full min-w-48 bg-base-100"
+                                keyValuePairs={metadataKeyValuePairs}
+                                statTiles={imageStats}
+                                title="Details & Metadata"
+                            />
+                        </div>
+                        <div className="s-1">
+                            <CvesByCvssScore
+                                entityContext={{ ...entityContext, [entityTypes.COMPONENT]: id }}
+                            />
+                        </div>
                     </div>
                     <CollapsibleSection title="Component Findings">
                         <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                            {vulns.length === 0 ? (
-                                <NoResultsMessage
-                                    message="No fixable CVEs found across this component"
-                                    className="p-6"
-                                />
-                            ) : (
-                                <EntityList
-                                    entityType={entityTypes.CVE}
-                                    idAttribute="cve"
-                                    rowData={vulns}
-                                    tableColumns={cveTableColumns}
-                                    selectedRowId={null}
-                                    search={null}
-                                    SubComponent={renderCveDescription}
-                                    defaultSorted={defaultCveSort}
-                                    defaultExpanded={expandedCveRows}
-                                />
-                                // <TableWidget
-                                //     header={`${
-                                //         vulns.length
-                                //     } fixable CVEs have been found across this component`}
-                                //     rows={vulns}
-                                //     noDataText="No fixable CVEs"
-                                //     className="bg-base-100"
-                                //     columns={entityToColumns[entityTypes.CVE]}
-                                //     // SubComponent={renderCVEsTable}
-                                //     idAttribute="id"
-                                // />
-                            )}
+                            <TableWidget
+                                header={`${fixableCVEs.length} fixable ${pluralize(
+                                    entityTypes.CVE,
+                                    fixableCVEs.length
+                                )} found across this image`}
+                                rows={fixableCVEs}
+                                entityType={entityTypes.CVE}
+                                noDataText="No fixable CVEs available in this component"
+                                className="bg-base-100"
+                                columns={getCveTableColumns(workflowState, false)}
+                                idAttribute="cve"
+                            />
                         </div>
                     </CollapsibleSection>
                 </div>
-                {/* Tabs are dynamic. We shouldn't have to define a count function for every related entity type we expect */}
-                {/* <RelatedEntitiesSideList
-                    entityType={entityTypes.IMAGE}
+                {/* TO DO: Tabs are dynamic. We shouldn't have to define a count function for every related entity type we expect */}
+                <RelatedEntitiesSideList
+                    entityType={entityTypes.COMPONENT}
                     workflowState={workflowState}
                     getCountData={getCountData}
-                /> */}
+                />
             </div>
         </div>
     );
