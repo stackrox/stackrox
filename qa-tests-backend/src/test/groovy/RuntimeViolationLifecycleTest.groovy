@@ -128,10 +128,12 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         then:
         "Verify initial violation is triggered and has the properties we expect"
-        assert aptGetViolations?.size() == 1
-        def originalAptGetViolation = aptGetViolations[0]
-        assert originalAptGetViolation.getDeployment().getId() == DEPLOYMENT.getDeploymentUid()
-        assert originalAptGetViolation.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
+        // TODO(ROX-3577): Check that there is exactly one matching violation.
+        assert !aptGetViolations?.empty
+        def originalAptGetViolation = aptGetViolations.find {
+            it.deployment.id == DEPLOYMENT.deploymentUid && it.lifecycleStage == PolicyOuterClass.LifecycleStage.RUNTIME
+        }
+        assert originalAptGetViolation : "Matching violation not found among ${aptGetViolations}"
 
         when:
         "Fetch the alert corresponding to the original apt-get violation"
