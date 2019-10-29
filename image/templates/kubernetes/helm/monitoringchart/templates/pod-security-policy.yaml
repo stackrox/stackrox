@@ -2,6 +2,9 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox-monitoring-psp
+  labels:
+    app.kubernetes.io/name: stackrox
+    app: monitoring
 rules:
   - apiGroups:
       - extensions
@@ -17,6 +20,9 @@ kind: RoleBinding
 metadata:
   name: stackrox-monitoring-psp
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
+    app: monitoring
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -30,6 +36,9 @@ apiVersion: extensions/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: stackrox-monitoring
+  labels:
+    app.kubernetes.io/name: stackrox
+    app: monitoring
 spec:
   privileged: false
   allowPrivilegeEscalation: false
