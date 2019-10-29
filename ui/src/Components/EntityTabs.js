@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
-import { uniq } from 'lodash';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 
 import GroupedTabs from 'Components/GroupedTabs';
-import entityRelationships from 'modules/entityRelationships';
+import { getEntityTypesByRelationship } from 'modules/entityRelationships';
+import relationshipTypes from 'constants/relationshipTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 const TAB_GROUPS = {
@@ -53,12 +53,18 @@ const EntityTabs = ({ entityType, activeTab }) => {
         };
     }
 
-    const relationships = uniq([
-        ...entityRelationships.getContains(entityType),
-        ...entityRelationships.getMatches(entityType)
-    ]);
-
-    // TODO filter tabs by useCase
+    const relationships = [
+        ...getEntityTypesByRelationship(
+            entityType,
+            relationshipTypes.MATCHES,
+            workflowState.useCase
+        ),
+        ...getEntityTypesByRelationship(
+            entityType,
+            relationshipTypes.CONTAINS,
+            workflowState.useCase
+        )
+    ];
 
     if (!relationships) return null;
     const entityTabs = relationships.map(relationship => getTab(relationship, entityType));

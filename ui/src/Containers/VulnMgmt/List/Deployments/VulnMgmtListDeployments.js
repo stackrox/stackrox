@@ -62,7 +62,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                     const { vulnCounter, id } = original;
                     if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
                     const url = workflowState
-                        .pushList(id)
+                        .pushListItem(id)
                         .pushList(entityTypes.CVE)
                         .toUrl();
 
@@ -90,7 +90,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                           const { failingPolicyCount, id } = original;
                           if (failingPolicyCount === 0) return 'No failing policies';
                           const url = workflowState
-                              .pushList(id)
+                              .pushListItem(id)
                               .pushList(entityTypes.POLICY)
                               .toUrl();
                           return (
@@ -128,7 +128,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                       Cell: ({ original, pdf }) => {
                           const { clusterName, clusterId, id } = original;
                           const url = workflowState
-                              .pushList(id)
+                              .pushListItem(id)
                               .pushRelatedEntity(entityTypes.CLUSTER, clusterId)
                               .toUrl();
                           return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
@@ -144,7 +144,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                       Cell: ({ original, pdf }) => {
                           const { namespace, namespaceId, id } = original;
                           const url = workflowState
-                              .pushList(id)
+                              .pushListItem(id)
                               .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
                               .toUrl();
                           return <TableCellLink pdf={pdf} url={url} text={namespace} />;
@@ -158,7 +158,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, entityContext, sort, page 
                     const { imageCount, id } = original;
                     if (imageCount === 0) return 'No images';
                     const url = workflowState
-                        .pushList(id)
+                        .pushListItem(id)
                         .pushList(entityTypes.IMAGE)
                         .toUrl();
                     return (
