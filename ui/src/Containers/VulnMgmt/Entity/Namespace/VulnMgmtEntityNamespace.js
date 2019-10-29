@@ -26,6 +26,17 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
                 }
                 policyStatus {
                     status
+                    failingPolicies {
+                        id
+                        name
+                        description
+                        policyStatus
+                        latestViolation
+                        severity
+                        deploymentCount
+                        lifecycleStages
+                        enforcementActions
+                    }
                 }
                 policyCount
                 vulnCount

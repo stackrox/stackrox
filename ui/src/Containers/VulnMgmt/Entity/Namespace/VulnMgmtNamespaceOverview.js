@@ -1,19 +1,22 @@
 import React, { useContext } from 'react';
 import workflowStateContext from 'Containers/workflowStateContext';
-
+import pluralize from 'pluralize';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import StatusChip from 'Components/StatusChip';
-import Widget from 'Components/Widget';
+import RiskScore from 'Components/RiskScore';
+import Metadata from 'Components/Metadata';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
-import ResourceCountPopper from 'Components/ResourceCountPopper';
 import entityTypes from 'constants/entityTypes';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
 import MostRecentVulnerabilities from 'Containers/VulnMgmt/widgets/MostRecentVulnerabilities';
 import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
 import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widgets/DeploymentsWithMostSeverePolicyViolations';
+import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
+import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidget from '../TableWidget';
 
 const VulnMgmtNamespaceOverview = ({ data }) => {
     const workflowState = useContext(workflowStateContext);
@@ -25,10 +28,27 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
         deploymentCount,
         imageCount,
         imageComponentCount,
-        vulnCount
+        vulnCount,
+        vulnerabilities
     } = data;
 
     const { clusterName, priority, labels } = metadata;
+    const { failingPolicies, status } = policyStatus;
+
+    const metadataKeyValuePairs = [
+        {
+            key: 'Cluster',
+            value: clusterName
+        }
+    ];
+
+    const namespaceStats = [
+        <RiskScore key="risk-score" score={priority} />,
+        <React.Fragment key="policy-status">
+            <span className="pr-1">Policy status:</span>
+            <StatusChip status={status} />
+        </React.Fragment>
+    ];
 
     function getCountData(entityType) {
         switch (entityType) {
@@ -53,40 +73,25 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
                 <div className="flex flex-col flex-grow">
                     <CollapsibleSection title="Namespace summary">
                         <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
-                            <div className="">
-                                {/* TODO: abstract this into a new, more powerful Metadata component */}
-                                <Widget
-                                    header="Details & Metadata"
-                                    className="bg-base-100 h-48 mb-4 flex-grow max-w-6xl h-full"
-                                >
-                                    <div className="flex flex-col w-full bg-counts-widget">
-                                        <div className="border-b border-base-300 text-base-500 flex justify-between items-center">
-                                            <div className="flex flex-grow p-4 justify-center items-center border-r-2 border-base-300 border-dotted">
-                                                <span className="pr-1">Risk score:</span>
-                                                <span className="pl-1 text-3xl">{priority}</span>
-                                            </div>
-                                            <div className="flex flex-col p-4 flex-grow justify-center text-center">
-                                                <span>Policy status:</span>
-                                                <StatusChip status={policyStatus.status} />
-                                            </div>
-                                        </div>
-                                        <div>Cluster: {clusterName}</div>
-                                        <div>
-                                            <ResourceCountPopper data={labels} label="Labels" />
-                                        </div>
-                                    </div>
-                                </Widget>
+                            <div className="s-1">
+                                <Metadata
+                                    className="h-full min-w-48 bg-base-100"
+                                    keyValuePairs={metadataKeyValuePairs}
+                                    statTiles={namespaceStats}
+                                    labels={labels}
+                                    title="Details & Metadata"
+                                />
                             </div>
-                            <div>
+                            <div className="sx-2 sy-1">
                                 <TopRiskyEntitiesByVulnerabilities />
                             </div>
-                            <div>
+                            <div className="s-1">
                                 <MostRecentVulnerabilities />
                             </div>
-                            <div>
+                            <div className="s-1">
                                 <TopRiskiestImagesAndComponents />
                             </div>
-                            <div>
+                            <div className="s-1">
                                 <DeploymentsWithMostSeverePolicyViolations />
                             </div>
                         </div>
@@ -98,10 +103,31 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
                                 headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
                             >
                                 <TabContent>
-                                    <div>policies</div>
+                                    <TableWidget
+                                        header={`${failingPolicies.length} failing ${pluralize(
+                                            entityTypes.POLICY,
+                                            failingPolicies.length
+                                        )} across this image`}
+                                        rows={failingPolicies}
+                                        noDataText="No failing policies"
+                                        className="bg-base-100"
+                                        columns={getPolicyTableColumns(workflowState, false)}
+                                        idAttribute="id"
+                                    />
                                 </TabContent>
                                 <TabContent>
-                                    <div>fixable CVEs</div>
+                                    <TableWidget
+                                        header={`${vulnerabilities.length} fixable ${pluralize(
+                                            entityTypes.CVE,
+                                            vulnerabilities.length
+                                        )} found across this image`}
+                                        rows={vulnerabilities}
+                                        entityType={entityTypes.CVE}
+                                        noDataText="No fixable CVEs available in this namespace"
+                                        className="bg-base-100"
+                                        columns={getCveTableColumns(workflowState, false)}
+                                        idAttribute="cve"
+                                    />
                                 </TabContent>
                             </Tabs>
                         </div>

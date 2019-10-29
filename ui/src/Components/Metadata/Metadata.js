@@ -38,7 +38,7 @@ const Metadata = ({
         <Widget header={title} {...rest}>
             <div className="flex flex-col w-full">
                 {statTiles && statTiles.length > 0 && <MetadataStatsList statTiles={statTiles} />}
-                <div className="flex w-full text-sm">
+                <div className="flex w-full h-full text-sm">
                     <ul className={keyValueClasses}>{keyValueList}</ul>
                     <ul className="list-reset">
                         {labels && (
