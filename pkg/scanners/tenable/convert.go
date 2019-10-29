@@ -6,6 +6,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -21,7 +22,7 @@ func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []p
 		vulnerability := &storage.EmbeddedVulnerability{
 			Cvss:    float32(cvssScore),
 			Cve:     finding.NVDFinding.CVE,
-			Summary: stringutils.Truncate(finding.NVDFinding.Description, 64, stringutils.WordOriented{}),
+			Summary: stringutils.TruncateIf(finding.NVDFinding.Description, 64, !features.VulnMgmtUI.Enabled(), stringutils.WordOriented{}),
 			Link:    scans.GetVulnLink(finding.NVDFinding.CVE),
 			CvssV2:  convertCVSS(finding.NVDFinding),
 		}

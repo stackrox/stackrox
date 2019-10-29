@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
@@ -47,7 +48,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	}
 	vul := &storage.EmbeddedVulnerability{
 		Cve:     v.Name,
-		Summary: stringutils.Truncate(v.Description, 64, stringutils.WordOriented{}),
+		Summary: stringutils.TruncateIf(v.Description, 64, !features.VulnMgmtUI.Enabled(), stringutils.WordOriented{}),
 		Link:    v.Link,
 		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: v.FixedBy,

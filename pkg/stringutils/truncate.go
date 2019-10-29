@@ -25,7 +25,7 @@ func (WordOriented) process(s string) string {
 	return s
 }
 
-// Truncate truncates the string if necessary at maxlen
+// Truncate truncates the string if necessary at maxlen.
 func Truncate(s string, maxLen int, options ...TruncateOptions) string {
 	if len(s) <= maxLen {
 		return s
@@ -33,6 +33,14 @@ func Truncate(s string, maxLen int, options ...TruncateOptions) string {
 	s = s[:maxLen]
 	for _, o := range options {
 		s = o.process(s)
+	}
+	return s
+}
+
+// TruncateIf truncates the string if ifVal is true and necessary at maxlen.
+func TruncateIf(s string, maxLen int, ifVal bool, options ...TruncateOptions) string {
+	if ifVal {
+		return Truncate(s, maxLen, options...)
 	}
 	return s
 }
