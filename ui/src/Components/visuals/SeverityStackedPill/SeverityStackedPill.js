@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import PercentageStackedPill from 'Components/visuals/PercentageStackedPill';
 
-const getPercentageValue = (value, total) => Math.round((value / total) * 100);
+import PercentageStackedPill from 'Components/visuals/PercentageStackedPill';
+import { getPercentage } from 'utils/mathUtils';
 
 const SeverityStackedPill = ({ low, medium, high, critical, tooltip }) => {
     const total = low + medium + high + critical;
@@ -10,25 +10,25 @@ const SeverityStackedPill = ({ low, medium, high, critical, tooltip }) => {
     if (low) {
         data.push({
             colorType: 'base',
-            value: getPercentageValue(low, total)
+            value: getPercentage(low, total)
         });
     }
     if (medium) {
         data.push({
             colorType: 'warning',
-            value: getPercentageValue(medium, total)
+            value: getPercentage(medium, total)
         });
     }
     if (high) {
         data.push({
             colorType: 'caution',
-            value: getPercentageValue(high, total)
+            value: getPercentage(high, total)
         });
     }
     if (critical) {
         data.push({
             colorType: 'alert',
-            value: getPercentageValue(critical, total)
+            value: getPercentage(critical, total)
         });
     }
     return <PercentageStackedPill data={data} tooltip={tooltip} />;

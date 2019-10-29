@@ -2,55 +2,91 @@
     "extends": [
         "prettier/react"
     ],
-    "env" : {
+    "env": {
         "browser": true
     },
     "settings": {
         // in build scripts we use NODE_PATH, so need to configure eslint-plugin-import
         "import/resolver": {
             "node": {
-                "moduleDirectory": ["../node_modules", "./"]
+                "moduleDirectory": [
+                    "../node_modules",
+                    "./"
+                ]
             }
         }
     },
     "rules": {
         // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-filename-extension.md
         // allow JSX in .js files
-        "react/jsx-filename-extension": ["error", { "extensions": [".js"] }],
-
+        "react/jsx-filename-extension": [
+            "error",
+            {
+                "extensions": [
+                    ".js"
+                ]
+            }
+        ],
         // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-no-bind.md
         // forbid arrow functions as well
-        "react/jsx-no-bind": ["error", {
-            "ignoreRefs": true,
-            "allowArrowFunctions": false,  // Airbnb code style doesn't support ES7 property initializers
-            "allowBind": false
-        }],
-
+        "react/jsx-no-bind": [
+            "error",
+            {
+                "ignoreRefs": true,
+                "allowArrowFunctions": false, // Airbnb code style doesn't support ES7 property initializers
+                "allowBind": false
+            }
+        ],
         // Reconfigure for using react-router Link
-        "jsx-a11y/anchor-is-valid": [ "error", {
-            "components": [ "Link" ],
-            "specialLink": [ "to", "hrefLeft", "hrefRight" ],
-            "aspects": [ "noHref", "invalidHref", "preferButton" ]
-        }],
-
-        "jsx-a11y/label-has-associated-control": [ "error", {
-            "assert": "either",
-            "depth": 12
-          }],
-
+        "jsx-a11y/anchor-is-valid": [
+            "error",
+            {
+                "components": [
+                    "Link"
+                ],
+                "specialLink": [
+                    "to",
+                    "hrefLeft",
+                    "hrefRight"
+                ],
+                "aspects": [
+                    "noHref",
+                    "invalidHref",
+                    "preferButton"
+                ]
+            }
+        ],
+        "jsx-a11y/label-has-associated-control": [
+            "error",
+            {
+                "assert": "either",
+                "depth": 12
+            }
+        ],
         // disallow use of console in favor of raven-js for error capturing
         "no-console": "error",
-
-        "no-restricted-imports": ["error", {
-            "paths": [{
-                "name": "axios",
-                "message": "Please use the axios exported from 'src/services/instance.js' since we've made modifications to it there."
-            }]
-        }],
-
+        "no-restricted-imports": [
+            "error",
+            {
+                "paths": [
+                    {
+                        "name": "axios",
+                        "message": "Please use the axios exported from 'src/services/instance.js' since we've made modifications to it there."
+                    }
+                ]
+            }
+        ],
+        // allow function hoisting
+        "no-use-before-define": [
+            "error",
+            {
+                "functions": false
+            }
+        ],
         // stepping away from Airbnb and into more inconsistent world to avoid huge refactoring
-        "react/destructuring-assignment": ["off"],
-
+        "react/destructuring-assignment": [
+            "off"
+        ],
         // TODO-ivan: rules below are to be removed after fixing all violations in the code
         "react/no-array-index-key": "warn"
     },

@@ -5,17 +5,16 @@ import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import StatusChip from 'Components/StatusChip';
 import entityTypes from 'constants/entityTypes';
+import PolicyViolationsBySeverity from 'Containers/VulnMgmt/widgets/PolicyViolationsBySeverity';
+import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import MostRecentVulnerabilities from 'Containers/VulnMgmt/widgets/MostRecentVulnerabilities';
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
 import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
 import workflowStateContext from 'Containers/workflowStateContext';
 
-// @TODO: update to usable for Vuln Mgmt
-import PolicyViolationsBySeverity from 'Containers/ConfigManagement/Dashboard/widgets/PolicyViolationsBySeverity';
-
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
-const VulnMgmtDeploymentOverview = ({ data }) => {
+const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
     const {
@@ -44,11 +43,11 @@ const VulnMgmtDeploymentOverview = ({ data }) => {
     ];
 
     const deploymentStats = [
-        <RiskScore score={priority} />,
-        <>
+        <RiskScore key="risk-score" score={priority} />,
+        <React.Fragment key="policy-status">
             <span className="pr-1">Policy status:</span>
             <StatusChip status={policyStatus} />
-        </>
+        </React.Fragment>
     ];
 
     function getCountData(entityType) {
@@ -66,6 +65,8 @@ const VulnMgmtDeploymentOverview = ({ data }) => {
         }
     }
 
+    const newEntityContext = { ...entityContext, [entityTypes.DEPLOYMENT]: data.id };
+
     return (
         <div className="w-full h-full" id="capture-dashboard-stretch">
             <div className="flex h-full">
@@ -74,7 +75,7 @@ const VulnMgmtDeploymentOverview = ({ data }) => {
                         <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
                             <div className="s-1">
                                 <Metadata
-                                    className="h-full min-w-48 bg-base-100"
+                                    className="h-full min-w-48 bg-base-100 bg-counts-widget"
                                     keyValuePairs={metadataKeyValuePairs}
                                     statTiles={deploymentStats}
                                     title="Details & Metadata"
@@ -83,19 +84,22 @@ const VulnMgmtDeploymentOverview = ({ data }) => {
                                 />
                             </div>
                             <div className="s-1">
-                                <PolicyViolationsBySeverity />
+                                <PolicyViolationsBySeverity entityContext={newEntityContext} />
                             </div>
                             <div className="s-1">
-                                <div className="h-full">CvesByCvssScore goes here</div>
+                                <CvesByCvssScore entityContext={newEntityContext} />
                             </div>
                             <div className="s-1">
-                                <MostRecentVulnerabilities />
+                                <MostRecentVulnerabilities entityContext={newEntityContext} />
                             </div>
                             <div className="s-1">
                                 <MostCommonVulnerabiltiesInDeployment deploymentId={id} />
                             </div>
                             <div className="s-1">
-                                <TopRiskiestImagesAndComponents limit={5} />
+                                <TopRiskiestImagesAndComponents
+                                    limit={5}
+                                    entityContext={newEntityContext}
+                                />
                             </div>
                         </div>
                     </CollapsibleSection>

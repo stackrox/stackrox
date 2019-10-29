@@ -156,6 +156,13 @@ export class WorkflowState {
         return new WorkflowState(newUseCase, newStateStack, newSearch, sort, paging);
     }
 
+    resetPage(type, id) {
+        const newStateStack = [new WorkflowEntity(type, id)];
+
+        const { useCase, search, sort, paging } = this;
+        return new WorkflowState(useCase, newStateStack, search, sort, paging);
+    }
+
     // sets the stateStack to base state when returning from side panel
     removeSidePanelParams() {
         const { useCase, stateStack, search, sort, paging } = this;

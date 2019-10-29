@@ -19,13 +19,10 @@ import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+import { getPercentage } from 'utils/mathUtils';
 
 const passingLinkColor = 'var(--base-500)';
 const passingChartColor = 'var(--base-400)';
-
-function getPercentage(num, total) {
-    return Math.round((num / total) * 100);
-}
 
 const QUERY = gql`
     query policyViolationsBySeverity($query: String) {
