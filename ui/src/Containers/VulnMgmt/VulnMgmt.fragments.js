@@ -234,8 +234,8 @@ export const POLICY_LIST_FRAGMENT = gql`
         name
         description
         policyStatus
-        #lastUpdated
-        #lastestViolation
+        lastUpdated
+        latestViolation
         severity
         deploymentCount
         lifecycleStages

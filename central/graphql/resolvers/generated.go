@@ -627,6 +627,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"enforcementActions: [EnforcementAction!]!",
 		"fields: PolicyFields",
 		"id: ID!",
+		"lastUpdated: Time",
 		"lifecycleStages: [LifecycleStage!]!",
 		"name: String!",
 		"notifiers: [String!]!",
@@ -5694,6 +5695,11 @@ func (resolver *policyResolver) Fields(ctx context.Context) (*policyFieldsResolv
 func (resolver *policyResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *policyResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastUpdated()
+	return timestamp(value)
 }
 
 func (resolver *policyResolver) LifecycleStages(ctx context.Context) []string {

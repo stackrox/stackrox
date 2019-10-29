@@ -12,14 +12,14 @@ import "storage/deployment.proto";
 package storage;
 
 message Policy {
-    string id                                   = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
-    string name                                 = 2 [(gogoproto.moretags) = "search:\"Policy,store\""];
-    string description                          = 3 [(gogoproto.moretags) = "search:\"Description\""];
-    string rationale                            = 4;
-    string remediation                          = 5;
-    bool disabled                               = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
-    repeated string categories                  = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
-    PolicyFields fields                         = 8;
+    string id                                      = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
+    string name                                    = 2 [(gogoproto.moretags) = "search:\"Policy,store\""];
+    string description                             = 3 [(gogoproto.moretags) = "search:\"Description\""];
+    string rationale                               = 4;
+    string remediation                             = 5;
+    bool disabled                                  = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
+    repeated string categories                     = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
+    PolicyFields fields                            = 8;
 
     repeated LifecycleStage lifecycle_stages       = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
     repeated Whitelist whitelists                  = 10;
@@ -27,6 +27,7 @@ message Policy {
     Severity severity                              = 12 [(gogoproto.moretags) = "search:\"Severity,store\""];
     repeated EnforcementAction enforcement_actions = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
     repeated string notifiers                      = 14;
+    google.protobuf.Timestamp last_updated         = 15;
 }
 
 message ListPolicy {
@@ -37,6 +38,7 @@ message ListPolicy {
     bool     disabled                           = 5;
     repeated LifecycleStage lifecycle_stages    = 6;
     repeated string notifiers                   = 7;
+    google.protobuf.Timestamp last_updated      = 8;
 }
 
 enum EnforcementAction {

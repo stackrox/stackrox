@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -70,6 +71,7 @@ func (b *storeImpl) GetPolicies() ([]*storage.Policy, error) {
 // AddPolicy adds a policy to bolt
 func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Policy")
+
 	if policy.Id == "" {
 		policy.Id = uuid.NewV4().String()
 	}
@@ -97,6 +99,7 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 // UpdatePolicy updates a policy to bolt
 func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Policy")
+
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)
 		// If the update is changing the name, check if the name has already been taken
@@ -143,6 +146,7 @@ func (b *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest
 			modified := false
 			for i, c := range policy.GetCategories() {
 				if c == request.GetOldCategory() {
+					policy.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
 					policy.Categories[i] = request.GetNewCategory()
 					modified = true
 				}

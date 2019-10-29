@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -154,6 +156,8 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 
 // PostPolicy inserts a new policy into the system.
 func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (*storage.Policy, error) {
+	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
+
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
 	}
@@ -175,6 +179,8 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (
 
 // PutPolicy updates a current policy in the system.
 func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*v1.Empty, error) {
+	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
+
 	if err := s.validator.validate(ctx, request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
