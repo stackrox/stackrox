@@ -838,10 +838,22 @@ commands:
           command: |
             extra_args=(<< parameters.provision-extra-args >>)
 
-            docker run --rm -t \
-              -v $PWD/openshift:/data \
-              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              "stackrox/openshift-automation:terraform-${OPENSHIFT_AUTOMATION_VERSION}" create "${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>" "${extra_args[@]}"
+            try=0
+            success=0
+            while (( ! success && try < 3 )); do
+              rm -f openshift/terraform.tfplan || true
+
+              success=1
+              docker run --rm -t \
+                -v $PWD/openshift:/data \
+                -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
+                "stackrox/openshift-automation:terraform-${OPENSHIFT_AUTOMATION_VERSION}" \
+                create "${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>" "${extra_args[@]}" || success=0
+            done
+            if (( ! success )); then
+              echo >&2 "Failed to provision openshift cluster."
+              exit 1
+            fi
 
       - store_artifacts:
           path: openshift
