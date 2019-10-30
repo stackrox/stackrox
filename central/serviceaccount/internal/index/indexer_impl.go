@@ -36,7 +36,7 @@ func (b *indexerImpl) AddServiceAccount(serviceaccount *storage.ServiceAccount) 
 	}); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) AddServiceAccounts(serviceaccounts []*storage.ServiceAccount) error {
@@ -51,7 +51,7 @@ func (b *indexerImpl) AddServiceAccounts(serviceaccounts []*storage.ServiceAccou
 			return err
 		}
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) processBatch(serviceaccounts []*storage.ServiceAccount) error {
@@ -72,7 +72,7 @@ func (b *indexerImpl) DeleteServiceAccount(id string) error {
 	if err := b.index.Delete(id); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) DeleteServiceAccounts(ids []string) error {
@@ -84,11 +84,7 @@ func (b *indexerImpl) DeleteServiceAccounts(ids []string) error {
 	if err := b.index.Batch(batch); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
-}
-
-func (b *indexerImpl) GetTxnCount() uint64 {
-	return b.index.GetTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) ResetIndex() error {
@@ -99,8 +95,4 @@ func (b *indexerImpl) ResetIndex() error {
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ServiceAccount")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_SERVICE_ACCOUNTS, q, b.index.Index, mappings.OptionsMap, opts...)
-}
-
-func (b *indexerImpl) SetTxnCount(seq uint64) error {
-	return b.index.SetTxnCount(seq)
 }

@@ -36,7 +36,7 @@ func (b *indexerImpl) AddSecret(secret *storage.Secret) error {
 	}); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) AddSecrets(secrets []*storage.Secret) error {
@@ -51,7 +51,7 @@ func (b *indexerImpl) AddSecrets(secrets []*storage.Secret) error {
 			return err
 		}
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) processBatch(secrets []*storage.Secret) error {
@@ -72,7 +72,7 @@ func (b *indexerImpl) DeleteSecret(id string) error {
 	if err := b.index.Delete(id); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) DeleteSecrets(ids []string) error {
@@ -84,11 +84,7 @@ func (b *indexerImpl) DeleteSecrets(ids []string) error {
 	if err := b.index.Batch(batch); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
-}
-
-func (b *indexerImpl) GetTxnCount() uint64 {
-	return b.index.GetTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) ResetIndex() error {
@@ -99,8 +95,4 @@ func (b *indexerImpl) ResetIndex() error {
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Secret")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_SECRETS, q, b.index.Index, mappings.OptionsMap, opts...)
-}
-
-func (b *indexerImpl) SetTxnCount(seq uint64) error {
-	return b.index.SetTxnCount(seq)
 }

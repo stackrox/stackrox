@@ -16,10 +16,8 @@ type Indexer interface {
 	AddServiceAccounts(serviceaccounts []*storage.ServiceAccount) error
 	DeleteServiceAccount(id string) error
 	DeleteServiceAccounts(ids []string) error
-	GetTxnCount() uint64
 	ResetIndex() error
 	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
-	SetTxnCount(seq uint64) error
 }
 
 func New(index bleve.Index) Indexer {

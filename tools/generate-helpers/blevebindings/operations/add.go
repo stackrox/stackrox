@@ -27,7 +27,7 @@ func generateAdd(props GeneratorProperties) (Code, Code) {
 				Id(props.Object): Id(strings.ToLower(props.Singular)),
 			}),
 		)),
-		Return(incrementTxnCount()),
+		Return(incrementTxnCount(props.NeedsTxManager)),
 	)
 
 	return interfaceMethod, implementation

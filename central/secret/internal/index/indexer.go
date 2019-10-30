@@ -16,10 +16,8 @@ type Indexer interface {
 	AddSecrets(secrets []*storage.Secret) error
 	DeleteSecret(id string) error
 	DeleteSecrets(ids []string) error
-	GetTxnCount() uint64
 	ResetIndex() error
 	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
-	SetTxnCount(seq uint64) error
 }
 
 func New(index bleve.Index) Indexer {

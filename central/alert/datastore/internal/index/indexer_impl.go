@@ -87,10 +87,6 @@ func (b *indexerImpl) DeleteListAlerts(ids []string) error {
 	return b.index.IncTxnCount()
 }
 
-func (b *indexerImpl) GetTxnCount() uint64 {
-	return b.index.GetTxnCount()
-}
-
 func (b *indexerImpl) ResetIndex() error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "ListAlert")
 	return blevesearch.ResetIndex(v1.SearchCategory_ALERTS, b.index.Index)
@@ -99,6 +95,10 @@ func (b *indexerImpl) ResetIndex() error {
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ListAlert")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, q, b.index.Index, mappings.OptionsMap, opts...)
+}
+
+func (b *indexerImpl) GetTxnCount() uint64 {
+	return b.index.GetTxnCount()
 }
 
 func (b *indexerImpl) SetTxnCount(seq uint64) error {

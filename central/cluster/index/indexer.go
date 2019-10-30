@@ -16,10 +16,8 @@ type Indexer interface {
 	AddClusters(clusters []*storage.Cluster) error
 	DeleteCluster(id string) error
 	DeleteClusters(ids []string) error
-	GetTxnCount() uint64
 	ResetIndex() error
 	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
-	SetTxnCount(seq uint64) error
 }
 
 func New(index bleve.Index) Indexer {

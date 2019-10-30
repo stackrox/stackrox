@@ -19,19 +19,21 @@ type GeneratorProperties struct {
 	OptionsPath    string
 	ObjectPathName string
 	Tag            string
+	NeedsTxManager bool
 }
 
 // methodGenerator generates an interface and implementation for a specific kind of DB operation.
 type methodGenerator func(props GeneratorProperties) (interfaceMethod Code, implementation Code)
 
 var (
-	supportedMethods = make(map[string]methodGenerator)
+	supportedMethods    = make(map[string]methodGenerator)
+	supportedTxnMethods = make(map[string]methodGenerator)
 )
 
-func getOpNames() []string {
+func getOpNames(methods map[string]methodGenerator) []string {
 	// get deterministically sorted op names so the style checker won't complain about stale generated code
-	opNames := make([]string, 0, len(supportedMethods))
-	for opName := range supportedMethods {
+	opNames := make([]string, 0, len(methods))
+	for opName := range methods {
 		opNames = append(opNames, opName)
 	}
 	sort.Strings(opNames)
@@ -42,7 +44,7 @@ func getOpNames() []string {
 func GenerateInterfaceAndImplementation(props GeneratorProperties) ([]Code, []Code) {
 	interfaceMethods := make([]Code, 0, len(supportedMethods))
 	implementations := make([]Code, 0, len(supportedMethods))
-	for _, opName := range getOpNames() {
+	for _, opName := range getOpNames(supportedMethods) {
 		method, ok := supportedMethods[opName]
 		if !ok {
 			panic(fmt.Sprintf("UNEXPECTED: method %s not found", opName))
@@ -51,6 +53,18 @@ func GenerateInterfaceAndImplementation(props GeneratorProperties) ([]Code, []Co
 		interfaceMethods = append(interfaceMethods, interfaceMethod)
 		implementations = append(implementations, implementation)
 	}
+	if props.NeedsTxManager {
+		for _, opName := range getOpNames(supportedTxnMethods) {
+			method, ok := supportedTxnMethods[opName]
+			if !ok {
+				panic(fmt.Sprintf("UNEXPECTED: method %s not found", opName))
+			}
+			interfaceMethod, implementation := method(props)
+			interfaceMethods = append(interfaceMethods, interfaceMethod)
+			implementations = append(implementations, implementation)
+		}
+	}
+
 	return interfaceMethods, implementations
 }
 

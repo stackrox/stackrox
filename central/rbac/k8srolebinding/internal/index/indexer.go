@@ -16,10 +16,8 @@ type Indexer interface {
 	AddK8sRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error
 	DeleteK8sRoleBinding(id string) error
 	DeleteK8sRoleBindings(ids []string) error
-	GetTxnCount() uint64
 	ResetIndex() error
 	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
-	SetTxnCount(seq uint64) error
 }
 
 func New(index bleve.Index) Indexer {

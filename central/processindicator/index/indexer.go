@@ -16,9 +16,9 @@ type Indexer interface {
 	AddProcessIndicators(processindicators []*storage.ProcessIndicator) error
 	DeleteProcessIndicator(id string) error
 	DeleteProcessIndicators(ids []string) error
-	GetTxnCount() uint64
 	ResetIndex() error
 	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+	GetTxnCount() uint64
 	SetTxnCount(seq uint64) error
 }
 

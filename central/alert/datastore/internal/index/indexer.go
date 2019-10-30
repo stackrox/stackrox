@@ -16,9 +16,9 @@ type Indexer interface {
 	AddListAlerts(listalerts []*storage.ListAlert) error
 	DeleteListAlert(id string) error
 	DeleteListAlerts(ids []string) error
-	GetTxnCount() uint64
 	ResetIndex() error
 	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+	GetTxnCount() uint64
 	SetTxnCount(seq uint64) error
 }
 

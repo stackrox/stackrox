@@ -4,8 +4,11 @@ import (
 	. "github.com/dave/jennifer/jen"
 )
 
-func incrementTxnCount() *Statement {
-	return bIndex().Dot("IncTxnCount").Call()
+func incrementTxnCount(needsTxManager bool) *Statement {
+	if needsTxManager {
+		return bIndex().Dot("IncTxnCount").Call()
+	}
+	return Nil()
 }
 
 func generateSetTxn(_ GeneratorProperties) (Code, Code) {
@@ -25,7 +28,6 @@ func generateGetTxn(_ GeneratorProperties) (Code, Code) {
 }
 
 func init() {
-	supportedMethods["set_txn"] = generateSetTxn
-	supportedMethods["get_txn"] = generateGetTxn
-
+	supportedTxnMethods["set_txn"] = generateSetTxn
+	supportedTxnMethods["get_txn"] = generateGetTxn
 }
