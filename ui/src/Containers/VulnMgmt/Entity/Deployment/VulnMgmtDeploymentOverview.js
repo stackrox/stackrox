@@ -1,9 +1,12 @@
 import React, { useContext } from 'react';
+import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import StatusChip from 'Components/StatusChip';
+import Tabs from 'Components/Tabs';
+import TabContent from 'Components/TabContent';
 import entityTypes from 'constants/entityTypes';
 import PolicyViolationsBySeverity from 'Containers/VulnMgmt/widgets/PolicyViolationsBySeverity';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
@@ -11,8 +14,11 @@ import MostRecentVulnerabilities from 'Containers/VulnMgmt/widgets/MostRecentVul
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
 import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
 import workflowStateContext from 'Containers/workflowStateContext';
+import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
+import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidget from '../TableWidget';
 
 const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
@@ -23,13 +29,17 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         priority,
         namespace,
         policyStatus,
+        failingPolicies,
         labels,
         annotations,
         failingPolicyCount,
         imageCount,
         imageComponentCount,
-        vulnCount
+        vulnCount,
+        vulnerabilities
     } = data;
+
+    const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
 
     const metadataKeyValuePairs = [
         {
@@ -101,6 +111,43 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                                     entityContext={newEntityContext}
                                 />
                             </div>
+                        </div>
+                    </CollapsibleSection>
+
+                    <CollapsibleSection title="Deployment findings">
+                        <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                            <Tabs
+                                hasTabSpacing
+                                headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
+                            >
+                                <TabContent>
+                                    <TableWidget
+                                        header={`${failingPolicies.length} failing ${pluralize(
+                                            entityTypes.POLICY,
+                                            failingPolicies.length
+                                        )} across this image`}
+                                        rows={failingPolicies}
+                                        noDataText="No failing policies"
+                                        className="bg-base-100"
+                                        columns={getPolicyTableColumns(workflowState, false)}
+                                        idAttribute="id"
+                                    />
+                                </TabContent>
+                                <TabContent>
+                                    <TableWidget
+                                        header={`${fixableCves.length} fixable ${pluralize(
+                                            entityTypes.CVE,
+                                            fixableCves.length
+                                        )} found across this image`}
+                                        rows={fixableCves}
+                                        entityType={entityTypes.CVE}
+                                        noDataText="No fixable CVEs available in this namespace"
+                                        className="bg-base-100"
+                                        columns={getCveTableColumns(workflowState, false)}
+                                        idAttribute="cve"
+                                    />
+                                </TabContent>
+                            </Tabs>
                         </div>
                     </CollapsibleSection>
                 </div>

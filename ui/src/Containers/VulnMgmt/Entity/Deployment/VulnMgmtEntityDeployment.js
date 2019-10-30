@@ -17,6 +17,17 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
                 id
                 priority
                 policyStatus
+                failingPolicies {
+                    id
+                    name
+                    description
+                    policyStatus
+                    latestViolation
+                    severity
+                    deploymentCount
+                    lifecycleStages
+                    enforcementActions
+                }
                 annotations {
                     key
                     value
