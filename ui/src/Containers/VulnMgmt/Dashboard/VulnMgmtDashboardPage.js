@@ -2,6 +2,7 @@ import React from 'react';
 
 import DashboardLayout from 'Components/DashboardLayout';
 
+import { dashboardLimit } from 'constants/workflowPages.constants';
 import PoliciesCountTile from './PoliciesCountTile';
 import CvesCountTile from './CvesCountTile';
 import ApplicationDashboardMenu from './ApplicationDashboardMenu';
@@ -16,9 +17,6 @@ import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWit
 import ClustersWithMostK8sVulnerabilities from '../widgets/ClustersWithMostK8sVulnerabilities';
 
 // layout-specific graph widget counts
-const recentVulnerabilitiesDashboardCount = 8;
-const topRiskiestCount = 8;
-const mostSeverePolicyVioloationsCount = 8;
 
 const VulnDashboardPage = () => {
     const headerComponents = (
@@ -37,21 +35,19 @@ const VulnDashboardPage = () => {
                 <TopRiskyEntitiesByVulnerabilities />
             </div>
             <div className="s-2">
-                <TopRiskiestImagesAndComponents limit={topRiskiestCount} />
+                <TopRiskiestImagesAndComponents limit={dashboardLimit} />
             </div>
             <div className="s-2">
                 <FrequentlyViolatedPolicies />
             </div>
             <div className="s-2">
-                <MostRecentVulnerabilities limit={recentVulnerabilitiesDashboardCount} />
+                <MostRecentVulnerabilities limit={dashboardLimit} />
             </div>
             <div className="sx-2 sy-4">
                 <MostCommonVulnerabilities />
             </div>
             <div className="s-2">
-                <DeploymentsWithMostSeverePolicyViolations
-                    limit={mostSeverePolicyVioloationsCount}
-                />
+                <DeploymentsWithMostSeverePolicyViolations limit={dashboardLimit} />
             </div>
             <div className="s-2">
                 <ClustersWithMostK8sVulnerabilities />

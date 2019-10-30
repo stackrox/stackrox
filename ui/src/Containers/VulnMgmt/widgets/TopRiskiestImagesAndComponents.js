@@ -221,7 +221,7 @@ TopRiskiestImagesAndComponents.propTypes = {
 
 TopRiskiestImagesAndComponents.defaultProps = {
     entityContext: {},
-    limit: 8
+    limit: 5
 };
 
 export default TopRiskiestImagesAndComponents;

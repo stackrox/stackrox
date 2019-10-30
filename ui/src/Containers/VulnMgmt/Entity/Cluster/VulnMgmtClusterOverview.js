@@ -1,18 +1,25 @@
 import React, { useContext } from 'react';
+import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import DateTimeField from 'Components/DateTimeField';
 import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import StatusChip from 'Components/StatusChip';
+import Tabs from 'Components/Tabs';
+import TabContent from 'Components/TabContent';
 import workflowStateContext from 'Containers/workflowStateContext';
+import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
+import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import entityTypes from 'constants/entityTypes';
+import { overviewLimit } from 'constants/workflowPages.constants';
 
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
 import MostRecentVulnerabilities from '../../widgets/MostRecentVulnerabilities';
 import TopRiskiestImagesAndComponents from '../../widgets/TopRiskiestImagesAndComponents';
 import DeploymentsWithMostSeverePolicyViolations from '../../widgets/DeploymentsWithMostSeverePolicyViolations';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidget from '../TableWidget';
 
 const VulnMgmtClusterOverview = ({ data }) => {
     const workflowState = useContext(workflowStateContext);
@@ -28,10 +35,13 @@ const VulnMgmtClusterOverview = ({ data }) => {
         imageCount,
         namespaceCount,
         policyCount,
-        vulnCount
+        vulnCount,
+        vulnerabilities
     } = data;
 
     const { version = 'N/A' } = orchestratorMetadata;
+    const { failingPolicies } = policyStatus;
+    const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
 
     function yesNoMaybe(value) {
         if (!value && value !== false) {
@@ -90,24 +100,61 @@ const VulnMgmtClusterOverview = ({ data }) => {
                         <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
                             <div className="s-1">
                                 <Metadata
-                                    className="h-full mx-4 min-w-48 bg-base-100"
+                                    className="h-full min-w-48 bg-base-100"
                                     keyValuePairs={metadataKeyValuePairs}
                                     statTiles={clusterStats}
                                     title="Details & Metadata"
                                 />
                             </div>
                             <div className="sx-2 sy-1">
-                                <TopRiskyEntitiesByVulnerabilities />
+                                <TopRiskyEntitiesByVulnerabilities limit={overviewLimit} />
                             </div>
                             <div className="s-1">
-                                <MostRecentVulnerabilities />
+                                <MostRecentVulnerabilities limit={overviewLimit} />
                             </div>
                             <div className="s-1">
-                                <TopRiskiestImagesAndComponents />
+                                <TopRiskiestImagesAndComponents limit={overviewLimit} />
                             </div>
                             <div className="s-1">
-                                <DeploymentsWithMostSeverePolicyViolations />
+                                <DeploymentsWithMostSeverePolicyViolations limit={overviewLimit} />
                             </div>
+                        </div>
+                    </CollapsibleSection>
+
+                    <CollapsibleSection title="Cluster findings">
+                        <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                            <Tabs
+                                hasTabSpacing
+                                headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
+                            >
+                                <TabContent>
+                                    <TableWidget
+                                        header={`${failingPolicies.length} failing ${pluralize(
+                                            entityTypes.POLICY,
+                                            failingPolicies.length
+                                        )} across this image`}
+                                        rows={failingPolicies}
+                                        noDataText="No failing policies"
+                                        className="bg-base-100"
+                                        columns={getPolicyTableColumns(workflowState, false)}
+                                        idAttribute="id"
+                                    />
+                                </TabContent>
+                                <TabContent>
+                                    <TableWidget
+                                        header={`${fixableCves.length} fixable ${pluralize(
+                                            entityTypes.CVE,
+                                            fixableCves.length
+                                        )} found across this image`}
+                                        rows={fixableCves}
+                                        entityType={entityTypes.CVE}
+                                        noDataText="No fixable CVEs available in this namespace"
+                                        className="bg-base-100"
+                                        columns={getCveTableColumns(workflowState, false)}
+                                        idAttribute="cve"
+                                    />
+                                </TabContent>
+                            </Tabs>
                         </div>
                     </CollapsibleSection>
                 </div>

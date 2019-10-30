@@ -34,6 +34,7 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
 
     const { clusterName, priority, labels } = metadata;
     const { failingPolicies, status } = policyStatus;
+    const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
 
     const metadataKeyValuePairs = [
         {
@@ -117,11 +118,11 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
                                 </TabContent>
                                 <TabContent>
                                     <TableWidget
-                                        header={`${vulnerabilities.length} fixable ${pluralize(
+                                        header={`${fixableCves.length} fixable ${pluralize(
                                             entityTypes.CVE,
-                                            vulnerabilities.length
+                                            fixableCves.length
                                         )} found across this image`}
-                                        rows={vulnerabilities}
+                                        rows={fixableCves}
                                         entityType={entityTypes.CVE}
                                         noDataText="No fixable CVEs available in this namespace"
                                         className="bg-base-100"

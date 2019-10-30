@@ -1,9 +1,11 @@
 import React from 'react';
+import gql from 'graphql-tag';
+
 import useCases from 'constants/useCaseTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
-import gql from 'graphql-tag';
+import queryService from 'modules/queryService';
+import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtClusterOverview from './VulnMgmtClusterOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -17,6 +19,17 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
                 priority
                 policyStatus {
                     status
+                    failingPolicies {
+                        id
+                        name
+                        description
+                        policyStatus
+                        latestViolation
+                        severity
+                        deploymentCount
+                        lifecycleStages
+                        enforcementActions
+                    }
                 }
                 #createdAt
                 status {
@@ -26,13 +39,17 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
                 }
                 #istioEnabled
                 policyCount
-                vulnCount
                 namespaceCount
                 deploymentCount
                 imageCount
                 imageComponentCount
+                vulnCount
+                vulnerabilities: vulns {
+                    ...cveListFields
+                }
             }
         }
+        ${CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
