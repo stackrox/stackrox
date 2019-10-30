@@ -84,7 +84,10 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
                                 />
                             </div>
                             <div className="sx-2 sy-1">
-                                <TopRiskyEntitiesByVulnerabilities />
+                                <TopRiskyEntitiesByVulnerabilities
+                                    defaultSelection={entityTypes.DEPLOYMENT}
+                                    riskEntityTypes={[entityTypes.DEPLOYMENT, entityTypes.IMAGE]}
+                                />
                             </div>
                             <div className="s-1">
                                 <MostRecentVulnerabilities />

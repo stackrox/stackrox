@@ -107,7 +107,15 @@ const VulnMgmtClusterOverview = ({ data }) => {
                                 />
                             </div>
                             <div className="sx-2 sy-1">
-                                <TopRiskyEntitiesByVulnerabilities limit={overviewLimit} />
+                                <TopRiskyEntitiesByVulnerabilities
+                                    defaultSelection={entityTypes.NAMESPACE}
+                                    limit={overviewLimit}
+                                    riskEntityTypes={[
+                                        entityTypes.NAMESPACE,
+                                        entityTypes.DEPLOYMENT,
+                                        entityTypes.IMAGE
+                                    ]}
+                                />
                             </div>
                             <div className="s-1">
                                 <MostRecentVulnerabilities limit={overviewLimit} />

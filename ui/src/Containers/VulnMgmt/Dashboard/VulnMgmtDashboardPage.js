@@ -1,5 +1,6 @@
 import React from 'react';
 
+import entityTypes from 'constants/entityTypes';
 import DashboardLayout from 'Components/DashboardLayout';
 
 import { dashboardLimit } from 'constants/workflowPages.constants';
@@ -32,7 +33,7 @@ const VulnDashboardPage = () => {
     return (
         <DashboardLayout headerText="Vulnerability Management" headerComponents={headerComponents}>
             <div className="sx-4 sy-2">
-                <TopRiskyEntitiesByVulnerabilities />
+                <TopRiskyEntitiesByVulnerabilities defaultSelection={entityTypes.DEPLOYMENT} />
             </div>
             <div className="s-2">
                 <TopRiskiestImagesAndComponents limit={dashboardLimit} />

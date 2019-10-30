@@ -14,18 +14,13 @@ import isGQLLoading from 'utils/gqlLoading';
 import { severityColorMap } from 'constants/severityColors';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { severities } from 'constants/severities';
+import PropTypes from 'prop-types';
 
-const TopRiskyEntitiesByVulnerabilities = () => {
+const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }) => {
     const workflowState = useContext(workflowStateContext);
-
     // Entity Type selection
-    const [selectedEntityType, setEntityType] = useState(entityTypes.DEPLOYMENT);
-    const entityOptions = [
-        entityTypes.DEPLOYMENT,
-        entityTypes.NAMESPACE,
-        entityTypes.IMAGE,
-        entityTypes.CLUSTER
-    ].map(entityType => ({
+    const [selectedEntityType, setEntityType] = useState(defaultSelection);
+    const entityOptions = riskEntityTypes.map(entityType => ({
         label: `top risky ${pluralize(entityLabels[entityType])} by CVE count & CVSS score`,
         value: entityType
     }));
@@ -209,6 +204,20 @@ const TopRiskyEntitiesByVulnerabilities = () => {
             />
         </Widget>
     );
+};
+
+TopRiskyEntitiesByVulnerabilities.propTypes = {
+    defaultSelection: PropTypes.string.isRequired,
+    riskEntityTypes: PropTypes.arrayOf(PropTypes.string)
+};
+
+TopRiskyEntitiesByVulnerabilities.defaultProps = {
+    riskEntityTypes: [
+        entityTypes.DEPLOYMENT,
+        entityTypes.NAMESPACE,
+        entityTypes.IMAGE,
+        entityTypes.CLUSTER
+    ]
 };
 
 export default TopRiskyEntitiesByVulnerabilities;
