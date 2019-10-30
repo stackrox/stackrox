@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -296,15 +297,25 @@ type componentID struct {
 }
 
 func componentIDFromString(str string) (*componentID, error) {
-	nameAndVersion := strings.Split(str, ":")
-	if len(nameAndVersion) != 2 {
+	nameAndVersionEncoded := strings.Split(str, ":")
+	if len(nameAndVersionEncoded) != 2 {
 		return nil, fmt.Errorf("invalid id: %s", str)
 	}
-	return &componentID{Name: nameAndVersion[0], Version: nameAndVersion[1]}, nil
+	name, err := base64.URLEncoding.DecodeString(nameAndVersionEncoded[0])
+	if err != nil {
+		return nil, err
+	}
+	version, err := base64.URLEncoding.DecodeString(nameAndVersionEncoded[1])
+	if err != nil {
+		return nil, err
+	}
+	return &componentID{Name: string(name), Version: string(version)}, nil
 }
 
 func (cID *componentID) toString() string {
-	return fmt.Sprintf("%s:%s", cID.Name, cID.Version)
+	nameEncoded := base64.URLEncoding.EncodeToString([]byte(cID.Name))
+	versionEncoded := base64.URLEncoding.EncodeToString([]byte(cID.Version))
+	return fmt.Sprintf("%s:%s", nameEncoded, versionEncoded)
 }
 
 // Map the images that matched a query to the image components it contains.
