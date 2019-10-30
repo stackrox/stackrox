@@ -1,11 +1,12 @@
 import React from 'react';
+import gql from 'graphql-tag';
 
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
-import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
-import gql from 'graphql-tag';
+import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import queryService from 'modules/queryService';
 import VulnMgmtPolicyOverview from './VulnMgmtPolicyOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
 
@@ -143,8 +144,12 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
                     name
                 }
                 deploymentCount
+                deployments {
+                    ...deploymentListFields
+                }
             }
         }
+        ${DEPLOYMENT_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

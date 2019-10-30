@@ -86,6 +86,9 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
             isFixable
         }
         deployAlerts {
+            policy {
+                id
+            }
             time
         }
         failingPolicyCount

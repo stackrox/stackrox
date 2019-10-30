@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { format } from 'date-fns';
+import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
@@ -9,12 +10,16 @@ import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
+import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidget from '../TableWidget';
+import PolicyConfigurationFields from './PolicyConfigurationFields';
 
 const VulnMgmtPolicyOverview = ({ data }) => {
     const workflowState = useContext(workflowStateContext);
 
     const {
+        id,
         name,
         policyStatus,
         description,
@@ -26,10 +31,26 @@ const VulnMgmtPolicyOverview = ({ data }) => {
         lastUpdated,
         enforcementActions,
         lifecycleStages,
+        fields,
         deploymentCount,
         scope,
-        whitelists
+        whitelists,
+        deployments
     } = data;
+
+    // @TODO: extract this out to make it re-usable and easier to test
+    const failingDeployments = deployments.filter(singleDeploy => {
+        if (
+            singleDeploy.policyStatus === 'pass' ||
+            !singleDeploy.deployAlerts ||
+            !singleDeploy.deployAlerts.length
+        ) {
+            return false;
+        }
+        return singleDeploy.deployAlerts.some(alert => {
+            return alert && alert.policy && alert.policy.id === id;
+        });
+    });
 
     const drrMetadata = [
         {
@@ -104,7 +125,7 @@ const VulnMgmtPolicyOverview = ({ data }) => {
     }
 
     return (
-        <div className="w-full h-full" id="capture-dashboard-stretch">
+        <div className="w-full" id="capture-dashboard-stretch">
             <div className="flex h-full">
                 <div className="flex flex-col flex-grow">
                     <CollapsibleSection title="Policy summary">
@@ -112,7 +133,7 @@ const VulnMgmtPolicyOverview = ({ data }) => {
                             <Widget
                                 header="Description, Rationale, & Remdediation"
                                 headerComponents={null}
-                                className="ml-4 mr-2 bg-base-100 h-48 mb-4 w-2/3"
+                                className="ml-4 mr-2 bg-base-100 min-h-48 mb-4 w-2/3"
                             >
                                 <div className="flex flex-col w-full">
                                     <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
@@ -146,18 +167,15 @@ const VulnMgmtPolicyOverview = ({ data }) => {
                                 </div>
                             </Widget>
                             <Metadata
-                                className="w-1/3 mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                                className="w-1/3 mx-2 min-w-48 bg-base-100 min-h-48 mb-4"
                                 keyValuePairs={details}
                                 title="Details"
                             />
                         </div>
                         <div className="flex mb-4 pdf-page">
-                            <Metadata
+                            <PolicyConfigurationFields
                                 className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
-                                keyValuePairs={[
-                                    { key: 'Key:', value: 'a wonderland of fun coming soon' }
-                                ]}
-                                title="Policy Criteria"
+                                fields={fields}
                             />
                             <Metadata
                                 className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
@@ -168,6 +186,22 @@ const VulnMgmtPolicyOverview = ({ data }) => {
                                 className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
                                 keyValuePairs={whitelistDetails}
                                 title="Whitelist"
+                            />
+                        </div>
+                    </CollapsibleSection>
+                    <CollapsibleSection title="Policy Findings">
+                        <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                            <TableWidget
+                                header={`${failingDeployments.length} ${pluralize(
+                                    entityTypes.DEPLOYMENT,
+                                    failingDeployments.length
+                                )} have failed across this policy`}
+                                rows={failingDeployments}
+                                entityType={entityTypes.DEPLOYMENT}
+                                noDataText="No deployments have failed across this component"
+                                className="bg-base-100"
+                                columns={getDeploymentTableColumns(workflowState, false)}
+                                idAttribute="cve"
                             />
                         </div>
                     </CollapsibleSection>
