@@ -468,7 +468,7 @@ class NetworkSimulator extends BaseSpecification {
 
     @Unroll
     @Category([NetworkPolicySimulation])
-    def "Verify NetworkPolicy Simulator results"() {
+    def "Verify NetworkPolicy Simulator results for #policy.name"() {
         when:
         "Get Base Graph"
         def baseline = NetworkPolicyService.getNetworkPolicyGraph()
@@ -548,7 +548,7 @@ class NetworkSimulator extends BaseSpecification {
         // Deny all egress traffic
         // Add 2 deployments to verify communication
         // source edges should drop to 0
-        new NetworkPolicy("deny-all-namespace-egress")
+        new NetworkPolicy("deny-all-egress")
                 .setNamespace("qa")
                 .addPolicyType(NetworkPolicyTypes.EGRESS)       | 0       | _
 

@@ -37,7 +37,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
     @Unroll
     @Category([BAT])
-    def "Verify Email Integration"() {
+    def "Verify Email Integration (port #port, disable TLS=#disableTLS, startTLS=#startTLS)"() {
         given:
         "a configuration that is expected to work"
         NotifierOuterClass.Notifier notifier = Services.addEmailNotifier(
@@ -205,7 +205,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
     @Unroll
     @Category(BAT)
-    def "Verify Generic Integration Test Endpoint"() {
+    def "Verify Generic Integration Test Endpoint (#tlsOptsDesc, audit=#audit)"() {
         when:
         "the integration is tested"
 
@@ -219,16 +219,16 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         where:
         "data"
 
-        enableTLS | caCert | skipTLSVerification | auditLoggingEnabled | shouldSucceed
+        enableTLS | caCert | skipTLSVerification | auditLoggingEnabled | shouldSucceed | tlsOptsDesc
 
-        false | ""         | false               | false | true
-        true  | ""         | true                | false | true
-        true  | CA_CERT    | false               | false | true
-        true  | ""         | false               | false | false
-        false | ""         | false               | true | true
-        true  | ""         | true                | true | true
-        true  | CA_CERT    | false               | true | true
-        true  | ""         | false               | true | false
+        false | ""         | false               | false | true | "no TLS"
+        true  | ""         | true                | false | true | "TLS, no verify"
+        true  | CA_CERT    | false               | false | true | "TLS, verify custom CA"
+        true  | ""         | false               | false | false | "TLS, verify system CA"
+        false | ""         | false               | true | true | "no TLS"
+        true  | ""         | true                | true | true | "TLS, no verify"
+        true  | CA_CERT    | false               | true | true | "TLS, verify custom CA"
+        true  | ""         | false               | true | false | "TLS, verify system CA"
     }
 
     @Category(BAT)

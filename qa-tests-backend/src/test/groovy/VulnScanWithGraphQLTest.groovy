@@ -7,7 +7,7 @@ import spock.lang.Unroll
 import org.junit.experimental.categories.Category
 import util.Timer
 
-class VulnScanWIthGraphQLTest extends BaseSpecification {
+class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()
             .setName (STRUTSDEPLOYMENT_VULN_SCAN)
@@ -116,7 +116,7 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
 
     @Unroll
     @Category(GraphQL)
-    def "Verify image vuln,cves,cvss in GraphQL"() {
+    def "Verify image vuln,cves,cvss on #depName in GraphQL"() {
         when:
         "Fetch the results of the images from GraphQL "
         gqlService = new GraphQLService()
@@ -134,7 +134,7 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
         assert image?.scan?.components?.vulns != null
         int cve =  getCVEs(image.scan.components.vulns)
         assert cve >= vuln_cve
-        where :
+        where:
         "Data inputs are :"
         depName | vuln_cve
         STRUTSDEPLOYMENT_VULN_SCAN | 219
@@ -142,7 +142,7 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
 
     @Unroll
     @Category(GraphQL)
-    def "Verify image info from cve in GraphQL"() {
+    def "Verify image info from #CVEID in GraphQL"() {
         when:
         "Fetch the results of the CVE,image from GraphQL "
         GraphQLService.Response result2Ret = waitForImagesTobeFetched(CVEID)
@@ -152,7 +152,7 @@ class VulnScanWIthGraphQLTest extends BaseSpecification {
         assert imagesReturned != null
         String imgName = imagesReturned.find { it.name.fullName == imageToBeVerified }
         assert !(StringUtils.isEmpty(imgName))
-        where :
+        where:
         "Data inputs are :"
         CVEID | imageToBeVerified
         "CVE-2016-0682" | STRUTS_DEP.getImage()

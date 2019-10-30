@@ -29,7 +29,7 @@ class GlobalSearch extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify Global search"(
+    def "Verify Global search (#searchCategories)"(
             String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
             String expectedResultPrefix,
             List<SearchServiceOuterClass.SearchCategory> expectedCategoriesInResult) {

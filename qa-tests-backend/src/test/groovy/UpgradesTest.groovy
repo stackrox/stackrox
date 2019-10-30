@@ -7,12 +7,10 @@ import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ConfigService
 import services.ProcessService
-import spock.lang.Unroll
 
 class UpgradesTest extends BaseSpecification {
     static final private String CLUSTERID = "260e11a3-cbea-464c-95f0-588fa7695b49"
 
-    @Unroll
     @Category(Upgrade)
     def "Verify cluster exists and that field values are retained"() {
         expect:
@@ -54,7 +52,6 @@ class UpgradesTest extends BaseSpecification {
         cluster == expectedCluster
     }
 
-    @Unroll
     @Category(Upgrade)
     def "Verify process indicators have cluster IDs and namespaces added"() {
         expect:
@@ -67,7 +64,6 @@ class UpgradesTest extends BaseSpecification {
         }
     }
 
-    @Unroll
     @Category(Upgrade)
     def "Verify private config contains the correct retention duration for alerts and images"() {
         expect:

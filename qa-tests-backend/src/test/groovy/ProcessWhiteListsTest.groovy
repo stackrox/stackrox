@@ -97,7 +97,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify processes risk indicators for the given key after soft-lock "() {
+    def "Verify processes risk indicators for the given key after soft-lock on #deploymentName"() {
         when:
         "exec into the container and run a process and wait for soft lock to kick in"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -172,7 +172,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify whitelist process violation after resolve whitelist "() {
+    def "Verify whitelist process violation after resolve whitelist on #deploymentName"() {
                /*
                     a)Lock the whitelists for the key
                     b)exec into the container and run a process
@@ -246,7 +246,6 @@ class ProcessWhiteListsTest extends BaseSpecification {
         DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION | "/usr/sbin/nginx"      | true             | 0
      }
 
-    @Unroll
     @Category(BAT)
     def "Verify whitelists are deleted when their deployment is deleted"() {
         /*
@@ -279,7 +278,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify  removed whitelist process not getting added back to whitelist after rerun "() {
+    def "Verify removed whitelist process not getting added back to whitelist after rerun on #deploymentName"() {
         /*
                 1.run a process and verify if it exists in the whitelist
                 2.remove the process
