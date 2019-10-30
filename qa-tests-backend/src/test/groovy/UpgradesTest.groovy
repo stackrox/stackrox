@@ -9,8 +9,6 @@ import services.ConfigService
 import services.ProcessService
 import spock.lang.Unroll
 
-import javax.validation.constraints.Null
-
 class UpgradesTest extends BaseSpecification {
     static final private String CLUSTERID = "260e11a3-cbea-464c-95f0-588fa7695b49"
 
@@ -75,8 +73,8 @@ class UpgradesTest extends BaseSpecification {
         expect:
         "Alert retention duration is nil, image rentention duration is 7 days"
         def config = ConfigService.getConfig()
-        config != Null
-        config.getPrivateConfig().getAlertConfig() != Null
+        config != null
+        config.getPrivateConfig().getAlertConfig() != null
         config.getPrivateConfig().getAlertConfig().getAllRuntimeRetentionDurationDays() == 0
         config.getPrivateConfig().getAlertConfig().getResolvedDeployRetentionDurationDays() == 0
         config.getPrivateConfig().getAlertConfig().getDeletedRuntimeRetentionDurationDays() == 0

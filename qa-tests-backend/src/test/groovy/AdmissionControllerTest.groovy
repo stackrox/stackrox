@@ -9,6 +9,7 @@ import services.ClusterService
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
+import util.Timer
 
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
@@ -77,7 +78,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
-    def "Verify Admission Controller Config"() {
+    def "Verify Admission Controller Config (#desc)"() {
         when:
         Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
 
@@ -100,21 +101,29 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         "Revert Cluster"
         if (created) {
-            try {
-                orchestrator.deleteDeployment(deployment)
-            } catch (NullPointerException ignore) {
-                orchestrator.deleteDeployment(deployment)
+            def timer = new Timer(30, 1)
+            def deleted = false
+            while (!deleted && timer.IsValid()) {
+                try {
+                    orchestrator.deleteDeployment(deployment)
+                    deleted = true
+                } catch (NullPointerException ignore) {
+                    println "Caught NPE while deleting deployment, retrying in 1s..."
+                }
+            }
+            if (!deleted) {
+                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
             }
         }
 
         where:
         "Data inputs are: "
 
-        timeout | scan  | bypassable | deployment                   | launched
-        3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false
-        3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false
-        3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true
-        30      | true  | false      | GCR_NGINX_DEPLOYMENT         | false
+        timeout | scan  | bypassable | deployment                   | launched | desc
+        3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"
+        3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"
+        3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"
+        30      | true  | false      | GCR_NGINX_DEPLOYMENT         | false    | "nginx w/ inline scan"
     }
 
 }
