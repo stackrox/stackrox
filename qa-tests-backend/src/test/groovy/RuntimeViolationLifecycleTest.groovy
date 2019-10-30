@@ -47,16 +47,18 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         return disappearedFromStackRox
     }
 
-    def assertAlertExistsForDeploymentUid(String policyName, String deploymentUid) {
+    def assertAlertExistsForDeploymentUidAndGetViolations(String policyName, String deploymentUid) {
         checkPolicyExists(APTGETPOLICY)
         def violations = Services.getViolationsByDeploymentID(deploymentUid, policyName, 60)
-        assert violations?.size() == 1
-        def violation = violations[0]
-        assert violation.getDeployment().getId() == deploymentUid
-        assert violation.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
-        def alert = AlertService.getViolation(violation.getId())
-        assert alert.getState() == ViolationState.ACTIVE
-        return true
+        assert !violations?.empty
+
+        for (def violation : violations) {
+            assert violation.getDeployment().getId() == deploymentUid
+            assert violation.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
+            def alert = AlertService.getViolation(violation.getId())
+            assert alert.getState() == ViolationState.ACTIVE
+        }
+        return violations
     }
 
 /*
@@ -186,7 +188,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         orchestrator.createDeployment(DEPLOYMENT)
         assert Services.waitForDeployment(DEPLOYMENT)
 
-        assertAlertExistsForDeploymentUid(APTGETPOLICY, DEPLOYMENT.getDeploymentUid())
+        def violations = assertAlertExistsForDeploymentUidAndGetViolations(APTGETPOLICY, DEPLOYMENT.getDeploymentUid())
 
         //// We delete the deployment in the middle of this test, but we keep this flag so that we know to clean up
         //// in case the test didn't make it that far.
@@ -200,7 +202,9 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         then:
         assert deploymentDeleted
-        assert assertAlertExistsForDeploymentUid(APTGETPOLICY, DEPLOYMENT.getDeploymentUid())
+        def newViolations =
+                assertAlertExistsForDeploymentUidAndGetViolations(APTGETPOLICY, DEPLOYMENT.getDeploymentUid())
+        assert (newViolations*.id).toSet().containsAll(violations*.id)
 
         cleanup:
         if (!deploymentDeleted) {
