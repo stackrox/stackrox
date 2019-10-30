@@ -12,14 +12,20 @@ func TestScoreRanker(t *testing.T) {
 	rnk.add(1.0)
 	assert.Equal(t, int64(1), rnk.getRankForScore(1.0))
 	assert.Equal(t, float32(1.0), rnk.getScoreForRank(1))
+	assert.Equal(t, int64(2), rnk.getRankForScore(0.0))
+	assert.Equal(t, float32(0.0), rnk.getScoreForRank(2))
 
 	rnk.add(1.0)
 	assert.Equal(t, int64(1), rnk.getRankForScore(1.0))
 	assert.Equal(t, float32(1.0), rnk.getScoreForRank(1))
+	assert.Equal(t, int64(2), rnk.getRankForScore(0.0))
+	assert.Equal(t, float32(0.0), rnk.getScoreForRank(2))
 
 	rnk.remove(1.0)
 	assert.Equal(t, int64(1), rnk.getRankForScore(1.0))
 	assert.Equal(t, float32(1.0), rnk.getScoreForRank(1))
+	assert.Equal(t, int64(2), rnk.getRankForScore(0.0))
+	assert.Equal(t, float32(0.0), rnk.getScoreForRank(2))
 
 	rnk.add(1.0)
 	assert.Equal(t, int64(1), rnk.getRankForScore(1.0))
@@ -30,6 +36,8 @@ func TestScoreRanker(t *testing.T) {
 	assert.Equal(t, float32(2.0), rnk.getScoreForRank(1))
 	assert.Equal(t, int64(2), rnk.getRankForScore(1.0))
 	assert.Equal(t, float32(1.0), rnk.getScoreForRank(2))
+	assert.Equal(t, int64(3), rnk.getRankForScore(0.0))
+	assert.Equal(t, float32(0.0), rnk.getScoreForRank(3))
 
 	rnk.add(1.5)
 	assert.Equal(t, int64(1), rnk.getRankForScore(2.0))
@@ -38,6 +46,8 @@ func TestScoreRanker(t *testing.T) {
 	assert.Equal(t, float32(1.5), rnk.getScoreForRank(2))
 	assert.Equal(t, int64(3), rnk.getRankForScore(1.0))
 	assert.Equal(t, float32(1.0), rnk.getScoreForRank(3))
+	assert.Equal(t, int64(4), rnk.getRankForScore(0.0))
+	assert.Equal(t, float32(0.0), rnk.getScoreForRank(4))
 
 	rnk.add(1.5)
 	assert.Equal(t, int64(1), rnk.getRankForScore(2.0))
@@ -60,4 +70,6 @@ func TestScoreRanker(t *testing.T) {
 	assert.Equal(t, float32(2.0), rnk.getScoreForRank(1))
 	assert.Equal(t, int64(2), rnk.getRankForScore(1.0))
 	assert.Equal(t, float32(1.0), rnk.getScoreForRank(2))
+	assert.Equal(t, int64(3), rnk.getRankForScore(0.0))
+	assert.Equal(t, float32(0.0), rnk.getScoreForRank(3))
 }

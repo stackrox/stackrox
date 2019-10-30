@@ -25,7 +25,11 @@ type scoreRankerImpl struct {
 }
 
 func (s *scoreRankerImpl) getRankForScore(score float32) int64 {
-	return s.scoreToRank[score]
+	rank, ok := s.scoreToRank[score]
+	if !ok {
+		return int64(len(s.rankToScore) + 1)
+	}
+	return rank
 }
 
 func (s *scoreRankerImpl) getScoreForRank(rank int64) float32 {
