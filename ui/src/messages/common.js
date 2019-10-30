@@ -39,7 +39,7 @@ const common = Object.freeze({
         DEPLOYMENT: 'deployment',
         SECRET: 'secret',
         CONTROL: 'control',
-        CVE: 'cve',
+        CVE: 'CVE',
         COMPONENT: 'component',
         IMAGE: 'image',
         POLICY: 'policy'

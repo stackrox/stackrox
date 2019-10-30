@@ -5,37 +5,13 @@ import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 
 import GroupedTabs from 'Components/GroupedTabs';
-import { getEntityTypesByRelationship } from 'modules/entityRelationships';
+import {
+    getEntityTypesByRelationship,
+    entityGroups,
+    entityGroupMap
+} from 'modules/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
-
-const TAB_GROUPS = {
-    OVERVIEW: 'Overview',
-    POLICIES: 'Policies & CIS Controls',
-    VIOLATIONS_AND_FINDINGS: 'Violations & Findings',
-    APPLICATION_RESOURCES: 'Application & Infrastructure Resources',
-    RBAC_CONFIG: 'RBAC Visibility & Configurations',
-    SECURITY: 'Security Findings'
-};
-
-const ENTITY_TO_TAB = {
-    [entityTypes.ROLE]: TAB_GROUPS.RBAC_CONFIG,
-    [entityTypes.SUBJECT]: TAB_GROUPS.RBAC_CONFIG,
-    [entityTypes.SERVICE_ACCOUNT]: TAB_GROUPS.RBAC_CONFIG,
-
-    [entityTypes.DEPLOYMENT]: TAB_GROUPS.APPLICATION_RESOURCES,
-    [entityTypes.SECRET]: TAB_GROUPS.APPLICATION_RESOURCES,
-    [entityTypes.NODE]: TAB_GROUPS.APPLICATION_RESOURCES,
-    [entityTypes.CLUSTER]: TAB_GROUPS.APPLICATION_RESOURCES,
-    [entityTypes.NAMESPACE]: TAB_GROUPS.APPLICATION_RESOURCES,
-    [entityTypes.IMAGE]: TAB_GROUPS.APPLICATION_RESOURCES,
-
-    [entityTypes.POLICY]: TAB_GROUPS.POLICIES,
-    [entityTypes.CONTROL]: TAB_GROUPS.POLICIES,
-
-    [entityTypes.COMPONENT]: TAB_GROUPS.SECURITY,
-    [entityTypes.CVE]: TAB_GROUPS.SECURITY
-};
 
 // eslint-disable-next-line
 const EntityTabs = ({ entityType, activeTab }) => {
@@ -46,7 +22,7 @@ const EntityTabs = ({ entityType, activeTab }) => {
                 ? 'failing '
                 : '';
         return {
-            group: ENTITY_TO_TAB[tabType],
+            group: entityGroupMap[tabType],
             value: tabType,
             text: `${failingText}${pluralize(entityLabels[tabType])}`,
             to: workflowState.pushList(tabType).toUrl()
@@ -68,11 +44,11 @@ const EntityTabs = ({ entityType, activeTab }) => {
 
     if (!relationships) return null;
     const entityTabs = relationships.map(relationship => getTab(relationship, entityType));
-    const groups = Object.values(TAB_GROUPS);
+    const groups = Object.values(entityGroups);
 
     const tabs = [
         {
-            group: TAB_GROUPS.OVERVIEW,
+            group: entityGroups.OVERVIEW,
             value: '',
             text: 'Overview',
             to: workflowState.base().toUrl()

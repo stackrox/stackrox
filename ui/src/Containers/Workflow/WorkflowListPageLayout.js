@@ -4,11 +4,13 @@ import startCase from 'lodash/startCase';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
+import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import entityLabels from 'messages/entity';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import parseURL from 'modules/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { WorkflowState } from 'modules/WorkflowState';
+import { useCaseEntityMap } from 'modules/entityRelationships';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
@@ -47,17 +49,18 @@ const WorkflowListPageLayout = ({ location }) => {
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-col relative min-h-full">
-                <PageHeader header={header} subHeader="Entity List">
-                    <div className="flex flex-1 justify-end">
-                        <div className="flex">
-                            <div className="flex items-center">
-                                <ExportButton
-                                    fileName={exportFilename}
-                                    type={pageListType}
-                                    page="configManagement"
-                                    pdfId="capture-list"
-                                />
-                            </div>
+                <PageHeader header={header} subHeader="Entity List" classes="pr-0">
+                    <div className="flex flex-1 justify-end h-full">
+                        <div className="flex items-center pr-2">
+                            <ExportButton
+                                fileName={exportFilename}
+                                type={pageListType}
+                                page="configManagement"
+                                pdfId="capture-list"
+                            />
+                        </div>
+                        <div className="flex items-center pl-2">
+                            <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
                         </div>
                     </div>
                 </PageHeader>
@@ -69,21 +72,21 @@ const WorkflowListPageLayout = ({ location }) => {
                         sort={pageSort}
                         page={pagePaging}
                     />
+                    <WorkflowSidePanel isOpen={!!sidePanelEntityId}>
+                        {sidePanelEntityId ? (
+                            <EntityComponent
+                                entityId={sidePanelEntityId}
+                                entityType={sidePanelEntityType}
+                                entityListType={sidePanelListType}
+                                search={sidePanelSearch}
+                                sort={sidePanelSort}
+                                page={sidePanelPaging}
+                            />
+                        ) : (
+                            <span />
+                        )}
+                    </WorkflowSidePanel>
                 </div>
-                <WorkflowSidePanel isOpen={!!sidePanelEntityId}>
-                    {sidePanelEntityId ? (
-                        <EntityComponent
-                            entityId={sidePanelEntityId}
-                            entityType={sidePanelEntityType}
-                            entityListType={sidePanelListType}
-                            search={sidePanelSearch}
-                            sort={sidePanelSort}
-                            page={sidePanelPaging}
-                        />
-                    ) : (
-                        <span />
-                    )}
-                </WorkflowSidePanel>
             </div>
         </workflowStateContext.Provider>
     );

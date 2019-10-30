@@ -56,19 +56,20 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
         {
             key: 'Created',
             value:
-                (metadata && metadata.v1 && <DateTimeField date={metadata.v1.created} />) || 'N/A'
+                (metadata && metadata.v1 && (
+                    <DateTimeField date={metadata.v1.created} asString />
+                )) ||
+                'N/A'
         },
         {
             key: 'Scan time',
-            value: (scan && <DateTimeField date={scan.scanTime} />) || 'N/A'
+            value: (scan && <DateTimeField date={scan.scanTime} asString />) || 'N/A'
         }
     ];
 
     const imageStats = [
         <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="top-cvss">
-            <TopCvssLabel cvss={cvss} version={scoreVersion} expanded />
-        </React.Fragment>
+        <TopCvssLabel key="top-cvss" cvss={cvss} version={scoreVersion} expanded />
     ];
 
     function renderCVEsTable(row) {

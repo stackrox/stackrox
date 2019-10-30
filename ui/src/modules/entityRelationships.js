@@ -34,6 +34,34 @@ export const useCaseEntityMap = {
     ]
 };
 
+export const entityGroups = {
+    OVERVIEW: 'Overview',
+    POLICIES: 'Policies & CIS Controls',
+    VIOLATIONS_AND_FINDINGS: 'Violations & Findings',
+    APPLICATION_RESOURCES: 'Application & Infrastructure Resources',
+    RBAC_CONFIG: 'RBAC Visibility & Configurations',
+    SECURITY: 'Security Findings'
+};
+
+export const entityGroupMap = {
+    [entityTypes.ROLE]: entityGroups.RBAC_CONFIG,
+    [entityTypes.SUBJECT]: entityGroups.RBAC_CONFIG,
+    [entityTypes.SERVICE_ACCOUNT]: entityGroups.RBAC_CONFIG,
+
+    [entityTypes.DEPLOYMENT]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.SECRET]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.NODE]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.CLUSTER]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.NAMESPACE]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.IMAGE]: entityGroups.APPLICATION_RESOURCES,
+
+    [entityTypes.POLICY]: entityGroups.POLICIES,
+    [entityTypes.CONTROL]: entityGroups.POLICIES,
+
+    [entityTypes.COMPONENT]: entityGroups.SECURITY,
+    [entityTypes.CVE]: entityGroups.SECURITY
+};
+
 // const edgeTypes = {
 //     VIOLATIONS: 'VIOLATIONS',
 //     EVIDENCE: 'EVIDENCE'

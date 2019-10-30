@@ -2,11 +2,12 @@ import React from 'react';
 
 import entityTypes from 'constants/entityTypes';
 import DashboardLayout from 'Components/DashboardLayout';
+import EntitiesMenu from 'Components/workflow/EntitiesMenu';
+import entityTypes from 'constants/entityTypes';
 
 import { dashboardLimit } from 'constants/workflowPages.constants';
 import PoliciesCountTile from './PoliciesCountTile';
 import CvesCountTile from './CvesCountTile';
-import ApplicationDashboardMenu from './ApplicationDashboardMenu';
 import FilterCvesRadioButtonGroup from './FilterCvesRadioButtonGroup';
 
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
@@ -20,12 +21,23 @@ import ClustersWithMostK8sVulnerabilities from '../widgets/ClustersWithMostK8sVu
 // layout-specific graph widget counts
 
 const VulnDashboardPage = () => {
+    const entityMenuTypes = [
+        entityTypes.CLUSTER,
+        entityTypes.NAMESPACE,
+        entityTypes.DEPLOYMENT,
+        entityTypes.IMAGE,
+        entityTypes.COMPONENT
+    ];
     const headerComponents = (
         <>
             <PoliciesCountTile />
             <CvesCountTile />
             <div className="flex w-32">
-                <ApplicationDashboardMenu />
+                <EntitiesMenu
+                    text="Application & Infrastructure"
+                    options={entityMenuTypes}
+                    dashboard
+                />
             </div>
             <FilterCvesRadioButtonGroup />
         </>

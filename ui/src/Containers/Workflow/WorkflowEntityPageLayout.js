@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { withRouter } from 'react-router-dom';
 import PageHeader from 'Components/PageHeader';
-import EntityTabs from 'Components/EntityTabs';
+import EntityTabs from 'Components/workflow/EntityTabs';
+import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'modules/URLParser';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { WorkflowState } from 'modules/WorkflowState';
+import { useCaseEntityMap } from 'modules/entityRelationships';
 import entityLabels from 'messages/entity';
 import useEntityName from 'hooks/useEntityName';
 import WorkflowSidePanel from './WorkflowSidePanel';
@@ -57,7 +59,11 @@ const WorkflowEntityPageLayout = ({ location }) => {
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-1 flex-col bg-base-200" style={style}>
-                <PageHeader header={entityName} subHeader={subheaderText} />
+                <PageHeader header={entityName} subHeader={subheaderText} classes="pr-0">
+                    <div className="flex flex-1 justify-end h-full">
+                        <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                    </div>
+                </PageHeader>
                 <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
                 <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-hidden">
                     <div

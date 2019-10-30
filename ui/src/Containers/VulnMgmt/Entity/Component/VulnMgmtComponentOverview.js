@@ -32,11 +32,9 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         }
     ];
 
-    const imageStats = [
+    const componentStats = [
         <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="top-cvss">
-            <TopCvssLabel cvss={cvss} version={scoreVersion} expanded />
-        </React.Fragment>
+        <TopCvssLabel key="top-cvss" cvss={cvss} version={scoreVersion} expanded />
     ];
 
     function getCountData(entityType) {
@@ -60,7 +58,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                             <Metadata
                                 className="h-full min-w-48 bg-base-100"
                                 keyValuePairs={metadataKeyValuePairs}
-                                statTiles={imageStats}
+                                statTiles={componentStats}
                                 title="Details & Metadata"
                             />
                         </div>
