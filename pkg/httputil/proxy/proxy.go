@@ -99,6 +99,9 @@ func (r *reloadProxyConfigHandler) updateEnvNoLock() {
 }
 
 func (r *reloadProxyConfigHandler) OnWatchError(err error) {
+	if os.IsNotExist(err) {
+		return
+	}
 	log.Errorf("Error watching for proxy config changes: %v", err)
 }
 
@@ -122,7 +125,7 @@ func initHandler() {
 			Interval: proxyReloadInterval,
 		}
 		proxyHandler = &reloadProxyConfigHandler{}
-		_ = k8scfgwatch.WatchConfigMountDir(context.Background(), proxyConfigPath, proxyHandler, opts)
+		_ = k8scfgwatch.WatchConfigMountDir(context.Background(), proxyConfigPath, k8scfgwatch.DeduplicateWatchErrors(proxyHandler), opts)
 		trans, _ := http.DefaultTransport.(*http.Transport)
 		if trans != nil {
 			proxyTransport = trans.Clone()
