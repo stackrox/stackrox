@@ -72,6 +72,8 @@ type managerImpl struct {
 	indicatorFlushTicker *time.Ticker
 
 	deploymentsPendingEnrichment *deploymentsPendingEnrichment
+
+	policyAlertsLock *concurrency.KeyedMutex
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorWithInjector {
@@ -392,6 +394,8 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 
 	var presentAlerts []*storage.Alert
 
+	m.policyAlertsLock.Lock(policy.GetId())
+	defer m.policyAlertsLock.Unlock(policy.GetId())
 	// Add policy to set.
 	if policies.AppliesAtDeployTime(policy) {
 		if err := m.deploytimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
@@ -436,6 +440,9 @@ func (m *managerImpl) RecompilePolicy(policy *storage.Policy) error {
 
 	var presentAlerts []*storage.Alert
 
+	// Prevent two processes from writing/deleting the alerts for a policy at the same time
+	m.policyAlertsLock.Lock(policy.GetId())
+	defer m.policyAlertsLock.Unlock(policy.GetId())
 	if policies.AppliesAtDeployTime(policy) {
 		if err := m.deploytimeDetector.PolicySet().Recompile(policy.GetId()); err != nil {
 			return errors.Wrapf(err, "adding policy %s to deploy time detector", policy.GetName())
@@ -483,6 +490,8 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 	// Asynchronously update all deployments' risk after processing.
 	defer m.reprocessor.ReprocessRisk()
 
+	m.policyAlertsLock.Lock(policyID)
+	defer m.policyAlertsLock.Unlock(policyID)
 	if err := m.deploytimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
