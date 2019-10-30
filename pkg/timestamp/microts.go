@@ -2,6 +2,7 @@ package timestamp
 
 import (
 	"math"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -22,6 +23,22 @@ const InfiniteFuture MicroTS = math.MaxInt64
 // Now returns the current time as a microtimestamp.
 func Now() MicroTS {
 	return FromGoTime(time.Now())
+}
+
+// LoadAtomic atomically gets this timestamp value.
+func (ts *MicroTS) LoadAtomic() MicroTS {
+	return MicroTS(atomic.LoadInt64((*int64)(ts)))
+}
+
+// StoreAtomic atomically sets this timestamp value.
+func (ts *MicroTS) StoreAtomic(newTS MicroTS) {
+	atomic.StoreInt64((*int64)(ts), int64(newTS))
+}
+
+// CompareAndSwapAtomic atomically sets the value of this timestamp value to newTS if its current value matches oldTS.
+// The return value indicates whether a swap happened.
+func (ts *MicroTS) CompareAndSwapAtomic(oldTS, newTS MicroTS) bool {
+	return atomic.CompareAndSwapInt64((*int64)(ts), int64(oldTS), int64(newTS))
 }
 
 // GoTime returns this microtimestamp as a `time.Time` object.

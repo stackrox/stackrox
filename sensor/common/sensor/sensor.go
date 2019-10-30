@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,13 +16,17 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/kocache"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/common/compliance"
@@ -32,6 +37,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/common/upgrade"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
 
@@ -120,6 +126,39 @@ type startable interface {
 	Start()
 }
 
+func createKOCacheHandler(centralEndpoint string) (http.Handler, error) {
+	kernelObjsBaseURL := fmt.Sprintf("https://%s/kernel-objects", centralEndpoint)
+	serverName, _, _, err := netutil.ParseEndpoint(centralEndpoint)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing central endpoint %q", centralEndpoint)
+	}
+	if netutil.IsIPAddress(serverName) {
+		serverName = mtls.CentralSubject.Hostname()
+	}
+
+	tlsConfig, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
+		UseClientCert: true,
+		ServerName:    serverName,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "instantiating TLS config for HTTP access to central")
+	}
+
+	tlsConfig.NextProtos = []string{"http/1.1", "http/1.0"}
+	transport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+	if err := http2.ConfigureTransport(transport); err != nil {
+		log.Warnf("Could not configure transport for HTTP/2 usage: %v", err)
+	}
+
+	kernelObjsClient := &http.Client{
+		Transport: transport,
+	}
+
+	return kocache.New(context.Background(), kernelObjsClient, kernelObjsBaseURL, kocache.Options{}), nil
+}
+
 // Start registers APIs and starts background tasks.
 // It returns once tasks have succesfully started.
 func (s *Sensor) Start() {
@@ -143,6 +182,19 @@ func (s *Sensor) Start() {
 	}
 
 	customRoutes := []routes.CustomRoute{admissionControllerRoute}
+
+	koCacheHandler, err := createKOCacheHandler(s.centralEndpoint)
+	if err != nil {
+		utils.Should(errors.Wrap(err, "Failed to create kernel object download/caching layer"))
+	} else {
+		koCacheRoute := routes.CustomRoute{
+			Route:         "/kernel-objects/",
+			Authorizer:    idcheck.CollectorOnly(),
+			ServerHandler: http.StripPrefix("/kernel-objects", koCacheHandler),
+			Compression:   false, // kernel objects are compressed
+		}
+		customRoutes = append(customRoutes, koCacheRoute)
+	}
 
 	// Create grpc server with custom routes
 	mtlsServiceIDExtractor, err := serviceAuthn.NewExtractor()

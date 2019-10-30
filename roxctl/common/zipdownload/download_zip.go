@@ -148,7 +148,7 @@ func GetZip(opts GetZipOptions) error {
 		return storeZipFile(resp.Body, zipFileName, opts.OutputDir, opts.BundleType)
 	}
 
-	buf := ioutils.NewRWBuf(inMemFileSizeThreshold)
+	buf := ioutils.NewRWBuf(ioutils.RWBufOptions{MemLimit: inMemFileSizeThreshold})
 	defer utils.IgnoreError(buf.Close)
 
 	if _, err := io.Copy(buf, resp.Body); err != nil {

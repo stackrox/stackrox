@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/cli"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
+	"github.com/stackrox/rox/central/clusters"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	complianceManager "github.com/stackrox/rox/central/compliance/manager"
@@ -112,15 +114,19 @@ import (
 	authnUserpki "github.com/stackrox/rox/pkg/grpc/authn/userpki"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/kocache"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
 
@@ -468,7 +474,13 @@ func uiRoute(uiHandler http.Handler) routes.CustomRoute {
 		ServerHandler: uiHandler,
 		Compression:   true,
 	}
+}
 
+func createKOCacheHandler() (http.Handler, error) {
+	httpClient := &http.Client{
+		Transport: proxy.RoundTripper(),
+	}
+	return kocache.New(context.Background(), httpClient, clusters.CollectorModuleDownloadBaseURL.Setting(), kocache.Options{}), nil
 }
 
 func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
@@ -543,6 +555,19 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: backupRestoreService.Singleton().ResumeRestoreHandler(),
 		},
+	}
+
+	koCacheHandler, err := createKOCacheHandler()
+	if err != nil {
+		utils.Should(errors.Wrap(err, "creating kernel object download/cache layer"))
+	} else {
+		koCacheRoute := routes.CustomRoute{
+			Route:         "/kernel-objects/",
+			Authorizer:    idcheck.SensorsOnly(),
+			ServerHandler: http.StripPrefix("/kernel-objects", koCacheHandler),
+			Compression:   false,
+		}
+		customRoutes = append(customRoutes, koCacheRoute)
 	}
 
 	logImbueRoute := "/api/logimbue"

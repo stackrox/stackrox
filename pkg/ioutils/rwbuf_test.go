@@ -8,7 +8,7 @@ import (
 )
 
 func TestRWBuf_InMemLimit(t *testing.T) {
-	b := NewRWBuf(10)
+	b := NewRWBuf(RWBufOptions{MemLimit: 10})
 	n, err := b.Write([]byte("foobar"))
 	require.NoError(t, err)
 	assert.EqualValues(t, 6, n)
@@ -28,7 +28,7 @@ func TestRWBuf_InMemLimit(t *testing.T) {
 }
 
 func TestRWBuf_OutOfMemLimit_Immediately(t *testing.T) {
-	b := NewRWBuf(4)
+	b := NewRWBuf(RWBufOptions{MemLimit: 4})
 	n, err := b.Write([]byte("foobar"))
 	require.NoError(t, err)
 	assert.EqualValues(t, 6, n)
@@ -48,7 +48,7 @@ func TestRWBuf_OutOfMemLimit_Immediately(t *testing.T) {
 }
 
 func TestRWBuf_OutOfMemLimit_AfterOneWrite(t *testing.T) {
-	b := NewRWBuf(4)
+	b := NewRWBuf(RWBufOptions{MemLimit: 4})
 	n, err := b.Write([]byte("foo"))
 	require.NoError(t, err)
 	assert.EqualValues(t, 3, n)
@@ -70,4 +70,15 @@ func TestRWBuf_OutOfMemLimit_AfterOneWrite(t *testing.T) {
 	assert.Equal(t, "ooba", string(buf))
 
 	assert.NoError(t, b.Close())
+}
+
+func TestRWBuf_ExceedsHardLimit(t *testing.T) {
+	b := NewRWBuf(RWBufOptions{HardLimit: 4})
+	n, err := b.Write([]byte("foo"))
+	require.NoError(t, err)
+	assert.EqualValues(t, 3, n)
+	assert.Nil(t, b.tmpFile)
+
+	_, err = b.Write([]byte("bar"))
+	assert.Error(t, err)
 }

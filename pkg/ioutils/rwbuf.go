@@ -12,8 +12,8 @@ import (
 // RWBuf is a buffer that acts as a combination of a `bytes.Buffer` and a `bytes.Reader`, additionally supporting
 // file-backed storage to avoid consuming too much memory.
 type RWBuf struct {
-	memBuf   bytes.Buffer
-	memLimit int
+	memBuf bytes.Buffer
+	opts   RWBufOptions
 
 	err  error
 	size int64
@@ -21,14 +21,20 @@ type RWBuf struct {
 	tmpFile *os.File
 }
 
+// RWBufOptions controls the behavior of an RWBuf.
+type RWBufOptions struct {
+	MemLimit  int // Maximum amount of data to store in memory. -1 means no memory storage, 0 means unlimited.
+	HardLimit int // Maximum amount of data to store regardless of medium. <= 0 means no limit.
+}
+
 // NewRWBuf returns a buffer that can be used for reading and writing. The buffer is memory-backed up to a given size,
 // and then switches to being file-backed.
 // The object itself serves as an `io.WriteCloser`. Contents can be accessed via a call to the `Contents()` method.
 // This method must be called before a call to `Close()`; after `Close()` has been invoked, the buffer contents might no
 // longer be accessible.
-func NewRWBuf(memLimit int) *RWBuf {
+func NewRWBuf(opts RWBufOptions) *RWBuf {
 	return &RWBuf{
-		memLimit: memLimit,
+		opts: opts,
 	}
 }
 
@@ -60,8 +66,12 @@ func (b *RWBuf) Write(buf []byte) (int, error) {
 }
 
 func (b *RWBuf) doWrite(buf []byte) (int, error) {
+	if b.opts.HardLimit > 0 && b.size+int64(len(buf)) > int64(b.opts.HardLimit) {
+		return 0, errors.Errorf("write would exceed hard limit of %d bytes", b.opts.HardLimit)
+	}
+
 	if b.tmpFile == nil {
-		if b.memBuf.Len()+len(buf) <= b.memLimit {
+		if b.opts.MemLimit == 0 || b.memBuf.Len()+len(buf) <= b.opts.MemLimit {
 			return b.memBuf.Write(buf)
 		}
 

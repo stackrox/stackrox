@@ -116,7 +116,7 @@ func fieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 
 		"CollectorRegistry":              collectorRegistry,
 		"CollectorImage":                 collectorImageName.GetFullName(),
-		"CollectorModuleDownloadBaseURL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
+		"CollectorModuleDownloadBaseURL": CollectorModuleDownloadBaseURL.Setting(),
 		"CollectionMethod":               c.CollectionMethod.String(),
 
 		"MonitoringEndpoint": netutil.WithDefaultPort(c.MonitoringEndpoint, defaultMonitoringPort),
