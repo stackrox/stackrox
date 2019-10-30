@@ -3,7 +3,6 @@ import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import DashboardLayout from 'Components/DashboardLayout';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
-import entityTypes from 'constants/entityTypes';
 
 import { dashboardLimit } from 'constants/workflowPages.constants';
 import PoliciesCountTile from './PoliciesCountTile';
