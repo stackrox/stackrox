@@ -78,6 +78,10 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.Dat
 	}
 
 	run, err := r.doRun(dataPromise)
+	defer concurrency.WithLock(&r.mutex, func() {
+		r.finishTime = time.Now()
+		r.status = v1.ComplianceRun_FINISHED
+	})
 
 	if err == nil {
 		results := r.collectResults(run)
@@ -101,10 +105,6 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, e
 	concurrency.WithLock(&r.mutex, func() {
 		r.startTime = time.Now()
 		r.status = v1.ComplianceRun_STARTED
-	})
-	defer concurrency.WithLock(&r.mutex, func() {
-		r.finishTime = time.Now()
-		r.status = v1.ComplianceRun_FINISHED
 	})
 
 	log.Infof("Starting compliance run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
