@@ -91,7 +91,7 @@ export function getComponentTableColumns(workflowState) {
             }
         },
         {
-            Header: `Risk`,
+            Header: `Risk Priority`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'priority'

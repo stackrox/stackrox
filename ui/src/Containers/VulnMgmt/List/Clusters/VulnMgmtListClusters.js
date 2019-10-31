@@ -165,7 +165,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                 accessor: 'latestViolation'
             },
             {
-                Header: `Risk`,
+                Header: `Risk Priority`,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 accessor: 'priority'

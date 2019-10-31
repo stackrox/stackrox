@@ -134,7 +134,7 @@ export function getNamespaceTableColumns(workflowState) {
             sortMethod: sortDate
         },
         {
-            Header: `Risk`,
+            Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'metadata.priority'
