@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSearchPredicate(t *testing.T) {
+func TestImagePredicate(t *testing.T) {
 	imageFactory := NewFactory(&storage.Image{})
 
 	baseTime, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
@@ -79,6 +79,13 @@ func TestSearchPredicate(t *testing.T) {
 			expectation: true,
 		},
 		{
+			name: "single base",
+			query: search.NewQueryBuilder().
+				AddRegexes(search.CVE, ".+").
+				ProtoQuery(),
+			expectation: true,
+		},
+		{
 			name: "basic conjunction",
 			query: search.NewQueryBuilder().
 				AddStrings(search.ImageSHA, "sha").
@@ -135,6 +142,74 @@ func TestSearchPredicate(t *testing.T) {
 			assert.NotNil(t, pred)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expectation, pred(passingImage))
+		})
+	}
+}
+
+func TestVulnPredicate(t *testing.T) {
+	vulnFactory := NewFactory(&storage.EmbeddedVulnerability{})
+
+	// Pass the predicate
+	vuln := &storage.EmbeddedVulnerability{
+		Cve:  "cve-2018-1",
+		Cvss: 1.4,
+		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+			FixedBy: "1.5",
+		},
+	}
+
+	cases := []struct {
+		name        string
+		query       *v1.Query
+		expectation bool
+	}{
+		{
+			name:        "empty query",
+			query:       &v1.Query{},
+			expectation: true,
+		},
+		{
+			name: "single base",
+			query: search.NewQueryBuilder().
+				AddRegexes(search.CVE, ".+").
+				ProtoQuery(),
+			expectation: true,
+		},
+		{
+			name: "basic conjunction",
+			query: search.NewQueryBuilder().
+				AddStrings(search.CVSS, "<4").
+				AddStrings(search.FixedBy, "1.5").
+				ProtoQuery(),
+			expectation: true,
+		},
+		{
+			name: "linked fields within struct match",
+			query: search.NewQueryBuilder().
+				AddLinkedFields(
+					[]search.FieldLabel{search.CVE, search.CVSS},
+					[]string{search.ExactMatchString("cve-2018-1"), "<=1.6"},
+				).
+				ProtoQuery(),
+			expectation: true,
+		},
+		{
+			name: "linked fields within struct do not match",
+			query: search.NewQueryBuilder().
+				AddLinkedFields(
+					[]search.FieldLabel{search.CVE, search.CVSS},
+					[]string{search.ExactMatchString("cve-2019-1"), "<=1.6"},
+				).
+				ProtoQuery(),
+			expectation: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			pred, err := vulnFactory.GeneratePredicate(c.query)
+			assert.NotNil(t, pred)
+			assert.NoError(t, err)
+			assert.Equal(t, c.expectation, pred(vuln))
 		})
 	}
 }

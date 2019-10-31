@@ -164,6 +164,9 @@ func (tb Factory) matchLinked(q *v1.MatchLinkedFieldsQuery) (internalPredicate, 
 	}
 
 	// Package all the of predicates as an AND on the common path.
+	if len(commonPath) == 0 {
+		return andOf(preds...), nil
+	}
 	linked, err := createLinkedNestedPredicate(commonPath[len(commonPath)-1].Type, preds...)
 	if err != nil {
 		return nil, err
