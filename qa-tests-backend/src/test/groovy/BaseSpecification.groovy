@@ -8,6 +8,7 @@ import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.storage.RoleOuterClass
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
+import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -149,4 +150,20 @@ class BaseSpecification extends Specification {
     }
 
     def cleanup() { }
+
+    static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
+        for (int i = 0; i < retries - 1; i++) {
+            try {
+                return closure()
+            } catch (Exception | PowerAssertionError t) {
+                print "Caught exception: ${t}. Retrying in ${pauseSecs}s"
+            }
+            sleep pauseSecs * 1000
+        }
+        return closure()
+    }
+
+    static void withRetry(int retries, int pauseSecs, Closure<?> closure) {
+        evaluateWithRetry(retries, pauseSecs, closure)
+    }
 }

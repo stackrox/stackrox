@@ -113,7 +113,7 @@ class SecretsTest extends BaseSpecification {
         String secretName = "qasec"
         String deploymentName = "depwithsecrets"
 
-        String secID = orchestrator.createSecret("qasec")
+        String secID = orchestrator.createSecret(secretName)
         Deployment deployment = renderDeployment(deploymentName, secretName)
         orchestrator.createDeployment(deployment)
 
@@ -127,9 +127,11 @@ class SecretsTest extends BaseSpecification {
 
         then:
         "Verify the secret should show the new bounding deployment"
-        Secret secretInfo = SecretService.getSecret(secID)
-        assert secretInfo.getRelationship().getDeploymentRelationshipsCount() == 1
-        assert secretInfo.getRelationship().getDeploymentRelationships(0).getName() == deploymentSecName
+        withRetry(30, 1) {
+            Secret secretInfo = SecretService.getSecret(secID)
+            assert secretInfo.getRelationship().getDeploymentRelationshipsCount() == 1
+            assert secretInfo.getRelationship().getDeploymentRelationships(0).getName() == deploymentSecName
+        }
 
         cleanup:
         "Remove Deployment #deploymentName and Secret #secretName"
