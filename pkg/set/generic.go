@@ -34,6 +34,21 @@ func (k *KeyTypeSet) Add(i KeyType) bool {
 	return len(*k) > oldLen
 }
 
+// AddMatching is a utility function that adds all the elements that match the given function to the set.
+func (k *KeyTypeSet) AddMatching(matchFunc func(KeyType) bool, elems ...KeyType) bool {
+	oldLen := len(*k)
+	for _, elem := range elems {
+		if !matchFunc(elem) {
+			continue
+		}
+		if *k == nil {
+			*k = make(map[KeyType]struct{})
+		}
+		(*k)[elem] = struct{}{}
+	}
+	return len(*k) > oldLen
+}
+
 // AddAll adds all elements of type KeyType. The return value is true if any new element
 // was added.
 func (k *KeyTypeSet) AddAll(is ...KeyType) bool {

@@ -33,6 +33,21 @@ func (k *StringSet) Add(i string) bool {
 	return len(*k) > oldLen
 }
 
+// AddMatching is a utility function that adds all the elements that match the given function to the set.
+func (k *StringSet) AddMatching(matchFunc func(string) bool, elems ...string) bool {
+	oldLen := len(*k)
+	for _, elem := range elems {
+		if !matchFunc(elem) {
+			continue
+		}
+		if *k == nil {
+			*k = make(map[string]struct{})
+		}
+		(*k)[elem] = struct{}{}
+	}
+	return len(*k) > oldLen
+}
+
 // AddAll adds all elements of type string. The return value is true if any new element
 // was added.
 func (k *StringSet) AddAll(is ...string) bool {

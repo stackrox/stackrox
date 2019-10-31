@@ -33,6 +33,21 @@ func (k *StageSet) Add(i Stage) bool {
 	return len(*k) > oldLen
 }
 
+// AddMatching is a utility function that adds all the elements that match the given function to the set.
+func (k *StageSet) AddMatching(matchFunc func(Stage) bool, elems ...Stage) bool {
+	oldLen := len(*k)
+	for _, elem := range elems {
+		if !matchFunc(elem) {
+			continue
+		}
+		if *k == nil {
+			*k = make(map[Stage]struct{})
+		}
+		(*k)[elem] = struct{}{}
+	}
+	return len(*k) > oldLen
+}
+
 // AddAll adds all elements of type Stage. The return value is true if any new element
 // was added.
 func (k *StageSet) AddAll(is ...Stage) bool {

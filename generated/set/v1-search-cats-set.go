@@ -35,6 +35,21 @@ func (k *V1SearchCategorySet) Add(i v1.SearchCategory) bool {
 	return len(*k) > oldLen
 }
 
+// AddMatching is a utility function that adds all the elements that match the given function to the set.
+func (k *V1SearchCategorySet) AddMatching(matchFunc func(v1.SearchCategory) bool, elems ...v1.SearchCategory) bool {
+	oldLen := len(*k)
+	for _, elem := range elems {
+		if !matchFunc(elem) {
+			continue
+		}
+		if *k == nil {
+			*k = make(map[v1.SearchCategory]struct{})
+		}
+		(*k)[elem] = struct{}{}
+	}
+	return len(*k) > oldLen
+}
+
 // AddAll adds all elements of type v1.SearchCategory. The return value is true if any new element
 // was added.
 func (k *V1SearchCategorySet) AddAll(is ...v1.SearchCategory) bool {

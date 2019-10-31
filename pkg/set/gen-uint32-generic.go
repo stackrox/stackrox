@@ -33,6 +33,21 @@ func (k *Uint32Set) Add(i uint32) bool {
 	return len(*k) > oldLen
 }
 
+// AddMatching is a utility function that adds all the elements that match the given function to the set.
+func (k *Uint32Set) AddMatching(matchFunc func(uint32) bool, elems ...uint32) bool {
+	oldLen := len(*k)
+	for _, elem := range elems {
+		if !matchFunc(elem) {
+			continue
+		}
+		if *k == nil {
+			*k = make(map[uint32]struct{})
+		}
+		(*k)[elem] = struct{}{}
+	}
+	return len(*k) > oldLen
+}
+
 // AddAll adds all elements of type uint32. The return value is true if any new element
 // was added.
 func (k *Uint32Set) AddAll(is ...uint32) bool {

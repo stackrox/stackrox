@@ -35,6 +35,21 @@ func (k *StorageUpgradeProgress_UpgradeStateSet) Add(i storage.UpgradeProgress_U
 	return len(*k) > oldLen
 }
 
+// AddMatching is a utility function that adds all the elements that match the given function to the set.
+func (k *StorageUpgradeProgress_UpgradeStateSet) AddMatching(matchFunc func(storage.UpgradeProgress_UpgradeState) bool, elems ...storage.UpgradeProgress_UpgradeState) bool {
+	oldLen := len(*k)
+	for _, elem := range elems {
+		if !matchFunc(elem) {
+			continue
+		}
+		if *k == nil {
+			*k = make(map[storage.UpgradeProgress_UpgradeState]struct{})
+		}
+		(*k)[elem] = struct{}{}
+	}
+	return len(*k) > oldLen
+}
+
 // AddAll adds all elements of type storage.UpgradeProgress_UpgradeState. The return value is true if any new element
 // was added.
 func (k *StorageUpgradeProgress_UpgradeStateSet) AddAll(is ...storage.UpgradeProgress_UpgradeState) bool {

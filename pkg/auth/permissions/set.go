@@ -33,6 +33,21 @@ func (k *ResourceSet) Add(i Resource) bool {
 	return len(*k) > oldLen
 }
 
+// AddMatching is a utility function that adds all the elements that match the given function to the set.
+func (k *ResourceSet) AddMatching(matchFunc func(Resource) bool, elems ...Resource) bool {
+	oldLen := len(*k)
+	for _, elem := range elems {
+		if !matchFunc(elem) {
+			continue
+		}
+		if *k == nil {
+			*k = make(map[Resource]struct{})
+		}
+		(*k)[elem] = struct{}{}
+	}
+	return len(*k) > oldLen
+}
+
 // AddAll adds all elements of type Resource. The return value is true if any new element
 // was added.
 func (k *ResourceSet) AddAll(is ...Resource) bool {

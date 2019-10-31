@@ -37,6 +37,28 @@ func assertSetContainsExactly(t *testing.T, set StringSet, elements ...string) {
 	}))
 }
 
+func TestAddMatching(t *testing.T) {
+	a := assert.New(t)
+
+	var set StringSet
+	a.False(set.AddMatching(func(s string) bool {
+		return s == "matching"
+	}, "1", "2"))
+	a.Nil(set)
+
+	a.True(set.AddMatching(func(s string) bool {
+		return s != ""
+	}, "1", "2"))
+	a.NotNil(set)
+	a.ElementsMatch([]string{"1", "2"}, set.AsSlice())
+
+	a.False(set.AddMatching(func(s string) bool {
+		return s != ""
+	}, "1", "2"))
+	a.NotNil(set)
+	a.ElementsMatch([]string{"1", "2"}, set.AsSlice())
+}
+
 func TestStringSet(t *testing.T) {
 	elements := []string{"a", "bcd"}
 	set := NewStringSet(elements...)
