@@ -480,7 +480,11 @@ func createKOCacheHandler() (http.Handler, error) {
 	httpClient := &http.Client{
 		Transport: proxy.RoundTripper(),
 	}
-	return kocache.New(context.Background(), httpClient, clusters.CollectorModuleDownloadBaseURL.Setting(), kocache.Options{}), nil
+	var baseURL string
+	if env.OfflineModeEnv.Setting() != "true" {
+		baseURL = clusters.CollectorModuleDownloadBaseURL.Setting()
+	}
+	return kocache.New(context.Background(), httpClient, baseURL, kocache.Options{}), nil
 }
 
 func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
@@ -560,7 +564,7 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 	koCacheHandler, err := createKOCacheHandler()
 	if err != nil {
 		utils.Should(errors.Wrap(err, "creating kernel object download/cache layer"))
-	} else {
+	} else if koCacheHandler != nil {
 		koCacheRoute := routes.CustomRoute{
 			Route:         "/kernel-objects/",
 			Authorizer:    idcheck.SensorsOnly(),

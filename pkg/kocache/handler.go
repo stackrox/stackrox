@@ -26,6 +26,11 @@ func (c *koCache) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
+	if c.upstreamBaseURL == "" {
+		// Probably offline mode.
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
 
 	entry := c.GetOrAddEntry(req.URL.Path)
 	if entry == nil {
