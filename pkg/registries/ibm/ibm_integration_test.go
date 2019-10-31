@@ -12,11 +12,12 @@ import (
 )
 
 const (
-	testImage = "us.gcr.io/sr-testing/nginx:1.10"
+	testImage = "us.icr.io/sr-testing/nginx:1.10"
 	apiToken  = "Z_t3ZI1AcDB_513s91kHw_RXpGVcY-GFUQLLx-UwZqzB"
 )
 
 func TestIBM(t *testing.T) {
+	t.Skip("This registry is currently broken (ROX-3589)")
 	reg, err := newRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Ibm{
 			Ibm: &storage.IBMRegistryConfig{
