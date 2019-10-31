@@ -8,9 +8,11 @@ export const url = {
         namespaces: `${baseURL}/namespaces`,
         deployments: `${baseURL}/deployments`,
         images: `${baseURL}/images`,
-        components: `${baseURL}/components`
+        components: `${baseURL}/components`,
+        cves: `${baseURL}/cves`
     }
 };
+
 export const dashboardSelectors = {
     widgets: "[data-test-id='widget']",
     tileLinks: "[data-test-id='tile-link']",
@@ -18,7 +20,11 @@ export const dashboardSelectors = {
     applicationAndInfrastructureDropdown: 'button:contains("Application & Infrastructure")',
     getMenuListItem: name => {
         return `[data-test-id="menu-list"] [data-test-id="${name}"]`;
-    }
+    },
+    getWidget: title => {
+        return `[data-test-id="widget"]:contains('${title}')`;
+    },
+    viewAllButton: 'button:contains("View All")'
 };
 export const selectors = {
     ...dashboardSelectors
