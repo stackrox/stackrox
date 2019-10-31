@@ -1393,7 +1393,7 @@ jobs:
 
             success="false"
             for i in {1..10}; do
-              if docker pull registry.redhat.io/rhel7:7.6; then
+              if docker pull registry.access.redhat.com/ubi7/ubi-minimal; then
                 success="true"
                 break
               fi
