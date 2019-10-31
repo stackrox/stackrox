@@ -101,7 +101,7 @@ func TestFilterQuery(t *testing.T) {
 		}},
 	}
 
-	newQuery := FilterQueryWithMap(query, optionsMap)
+	newQuery, _ := FilterQueryWithMap(query, optionsMap)
 	assert.Equal(t, &v1.Query{
 		Query: &v1.Query_BaseQuery{
 			BaseQuery: &v1.BaseQuery{

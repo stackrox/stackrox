@@ -87,6 +87,7 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
 		},
+		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 	}
 
 	if cvssVector, err := v2.ParseCVSSV2(strings.TrimPrefix(vulnerability.LongDescription, "NIST vectors: ")); err == nil {

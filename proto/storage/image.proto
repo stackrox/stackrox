@@ -62,6 +62,13 @@ message EmbeddedVulnerability {
         V2 = 0; // No unset for automatic backwards compatibility
         V3 = 1;
     }
+
+    enum VulnerabilityType {
+        UNKNOWN_VULNERABILITY = 0;
+        IMAGE_VULNERABILITY = 1;
+        K8S_VULNERABILITY = 2;
+    }
+
     string cve                              = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
     float  cvss                             = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     string summary                          = 3;
@@ -74,6 +81,7 @@ message EmbeddedVulnerability {
     CVSSV3 cvss_v3                          = 7;
     google.protobuf.Timestamp published_on  = 9;
     google.protobuf.Timestamp last_modified = 10;
+    VulnerabilityType vulnerability_type    = 11;
 }
 
 message CVSSV2 {

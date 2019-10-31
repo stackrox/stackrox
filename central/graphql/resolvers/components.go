@@ -104,6 +104,13 @@ func components(ctx context.Context, root *Resolver, query *v1.Query) ([]*Embedd
 	if err != nil {
 		return nil, err
 	}
+
+	// Filter the query to just the component portion.
+	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
+	if query == nil {
+		query = search.EmptyQuery()
+	}
+
 	return mapImagesToComponentResolvers(root, images, query)
 }
 
@@ -320,7 +327,8 @@ func (cID *componentID) toString() string {
 
 // Map the images that matched a query to the image components it contains.
 func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
-	pred, err := componentPredicateFactory.GeneratePredicate(search.FilterQueryWithMap(query, mappings.ComponentOptionsMap))
+	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
+	pred, err := componentPredicateFactory.GeneratePredicate(query)
 	if err != nil {
 		return nil, err
 	}

@@ -389,6 +389,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"path: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_ScoreVersion(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_VulnerabilityType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
@@ -3869,6 +3870,24 @@ func toEmbeddedVulnerability_ScoreVersions(values *[]string) []storage.EmbeddedV
 	output := make([]storage.EmbeddedVulnerability_ScoreVersion, len(*values))
 	for i, v := range *values {
 		output[i] = toEmbeddedVulnerability_ScoreVersion(&v)
+	}
+	return output
+}
+
+func toEmbeddedVulnerability_VulnerabilityType(value *string) storage.EmbeddedVulnerability_VulnerabilityType {
+	if value != nil {
+		return storage.EmbeddedVulnerability_VulnerabilityType(storage.EmbeddedVulnerability_VulnerabilityType_value[*value])
+	}
+	return storage.EmbeddedVulnerability_VulnerabilityType(0)
+}
+
+func toEmbeddedVulnerability_VulnerabilityTypes(values *[]string) []storage.EmbeddedVulnerability_VulnerabilityType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.EmbeddedVulnerability_VulnerabilityType, len(*values))
+	for i, v := range *values {
+		output[i] = toEmbeddedVulnerability_VulnerabilityType(&v)
 	}
 	return output
 }

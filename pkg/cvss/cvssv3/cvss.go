@@ -41,6 +41,24 @@ var scopeMap = map[string]storage.CVSSV3_Scope{
 	"C": storage.CVSSV3_CHANGED,
 }
 
+var severityMap = map[string]storage.CVSSV3_Severity{
+	"U": storage.CVSSV3_UNKNOWN,
+	"N": storage.CVSSV3_NONE,
+	"L": storage.CVSSV3_LOW,
+	"M": storage.CVSSV3_MEDIUM,
+	"H": storage.CVSSV3_HIGH,
+	"C": storage.CVSSV3_CRITICAL,
+}
+
+// GetSeverityMapProtoVal returns the proto enum value of severity
+func GetSeverityMapProtoVal(s string) (storage.CVSSV3_Severity, error) {
+	v, ok := severityMap[s]
+	if !ok {
+		return -1, fmt.Errorf("key %q not found in severityMap", s)
+	}
+	return v, nil
+}
+
 // ParseCVSSV3 parses the vector string and returns an internal representation of CVSS V3
 func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
 	cvssV3 := &storage.CVSSV3{

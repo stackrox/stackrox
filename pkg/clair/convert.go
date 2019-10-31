@@ -53,6 +53,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: v.FixedBy,
 		},
+		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 	}
 	nvdMap := v.Metadata["NVD"]
 	d, err := json.Marshal(nvdMap)

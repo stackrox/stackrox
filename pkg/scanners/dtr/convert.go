@@ -15,10 +15,11 @@ func convertVulns(dockerVulnDetails []*vulnerabilityDetails) []*storage.Embedded
 	for i, vulnDetails := range dockerVulnDetails {
 		vuln := vulnDetails.Vulnerability
 		vulns[i] = &storage.EmbeddedVulnerability{
-			Cve:     vuln.CVE,
-			Cvss:    vuln.CVSS,
-			Summary: stringutils.TruncateIf(vuln.Summary, 64, !features.VulnMgmtUI.Enabled(), stringutils.WordOriented{}),
-			Link:    scans.GetVulnLink(vuln.CVE),
+			Cve:               vuln.CVE,
+			Cvss:              vuln.CVSS,
+			Summary:           stringutils.TruncateIf(vuln.Summary, 64, !features.VulnMgmtUI.Enabled(), stringutils.WordOriented{}),
+			Link:              scans.GetVulnLink(vuln.CVE),
+			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		}
 	}
 	return vulns

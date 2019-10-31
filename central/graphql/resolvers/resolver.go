@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/cve/fetcher"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -66,6 +67,7 @@ type Resolver struct {
 	SecretsDataStore            secretDataStore.DataStore
 	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
+	k8sCVEManager               fetcher.K8sCveManager
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -96,6 +98,7 @@ func New() *Resolver {
 		SecretsDataStore:            secretDataStore.Singleton(),
 		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
 		ViolationsDataStore:         violationsDatastore.Singleton(),
+		k8sCVEManager:               fetcher.SingletonManager(),
 	}
 	return resolver
 }

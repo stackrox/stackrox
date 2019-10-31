@@ -31,6 +31,22 @@ var impactMap = map[string]storage.CVSSV2_Impact{
 	"C": storage.CVSSV2_IMPACT_COMPLETE,
 }
 
+var severityMap = map[string]storage.CVSSV2_Severity{
+	"U": storage.CVSSV2_UNKNOWN,
+	"L": storage.CVSSV2_LOW,
+	"M": storage.CVSSV2_MEDIUM,
+	"H": storage.CVSSV2_HIGH,
+}
+
+// GetSeverityMapProtoVal returns the proto enum value of severity
+func GetSeverityMapProtoVal(s string) (storage.CVSSV2_Severity, error) {
+	v, ok := severityMap[s]
+	if !ok {
+		return -1, fmt.Errorf("key %q not found in severityMap", s)
+	}
+	return v, nil
+}
+
 // ParseCVSSV2 parses the vector string and returns an internal representation of CVSS V2
 func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
 	cvssV2 := &storage.CVSSV2{
@@ -41,7 +57,7 @@ func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
 	for _, vector := range vectors {
 		vals := strings.Split(vector, ":")
 		if len(vals) != 2 {
-			return nil, fmt.Errorf("Invalid format for vector subfield %q", vector)
+			return nil, fmt.Errorf("invalid format for vector subfield %q", vector)
 		}
 		k, v := strings.TrimSpace(vals[0]), strings.TrimSpace(vals[1])
 		var ok bool

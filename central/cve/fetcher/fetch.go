@@ -6,6 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
+	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -18,13 +20,15 @@ var (
 // K8sCveManager is the interface for k8s CVEs
 type K8sCveManager interface {
 	Fetch()
-	GetK8sCves() []nvd.CVEEntry
+	GetK8sCves() []*nvd.CVEEntry
+	GetK8sEmbeddedVulnerabilities() []*storage.EmbeddedVulnerability
 }
 
 // K8sCveManager manages the state of k8s CVEs
 type k8sCveManager struct {
-	k8sCVEs []nvd.CVEEntry
-	mutex   sync.Mutex
+	k8sCVEs                    []*nvd.CVEEntry
+	k8sEmbeddedVulnerabilities []*storage.EmbeddedVulnerability
+	mutex                      sync.Mutex
 }
 
 // SingletonManager returns a singleton instance of k8sCveManager
@@ -49,7 +53,11 @@ func (m *k8sCveManager) initialize() error {
 	if err != nil {
 		return err
 	}
-	m.updateK8sCves(newCVEs)
+
+	if err := m.updateK8sCves(newCVEs); err != nil {
+		return err
+	}
+
 	log.Infof("successfully loaded %d cves", len(m.GetK8sCves()))
 	return nil
 }
@@ -65,16 +73,28 @@ func (m *k8sCveManager) Fetch() {
 }
 
 // GetK8sCves returns the current CVE loaded in memory
-func (m *k8sCveManager) GetK8sCves() []nvd.CVEEntry {
+func (m *k8sCveManager) GetK8sCves() []*nvd.CVEEntry {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	return m.k8sCVEs
 }
 
-func (m *k8sCveManager) updateK8sCves(newCves []nvd.CVEEntry) {
+func (m *k8sCveManager) GetK8sEmbeddedVulnerabilities() []*storage.EmbeddedVulnerability {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	m.k8sCVEs = newCves
+	return m.k8sEmbeddedVulnerabilities
+}
+
+func (m *k8sCveManager) updateK8sCves(newCVEs []*nvd.CVEEntry) error {
+	newEmbeddedVulns, err := converter.NvdCVEsToEmbeddedVulnerabilities(newCVEs)
+	if err != nil {
+		return err
+	}
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	m.k8sCVEs = newCVEs
+	m.k8sEmbeddedVulnerabilities = newEmbeddedVulns
+	return nil
 }
 
 func (m *k8sCveManager) reconcileCVEs() error {
@@ -108,7 +128,9 @@ func (m *k8sCveManager) reconcileCVEs() error {
 		return err
 	}
 
-	m.updateK8sCves(newCVEs)
+	if err := m.updateK8sCves(newCVEs); err != nil {
+		return err
+	}
 
 	log.Infof("successfully reconciled %d new CVEs", len(newCVEs))
 	return nil

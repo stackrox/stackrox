@@ -69,6 +69,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 				Availability:     storage.CVSSV2_IMPACT_NONE,
 				Severity:         storage.CVSSV2_MEDIUM,
 			},
+			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		},
 		{
 			Cve:     "CVE-2017-7247",
@@ -107,6 +108,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 				Availability:        storage.CVSSV3_IMPACT_NONE,
 				Severity:            storage.CVSSV3_HIGH,
 			},
+			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		},
 	}
 	return quayVulns, protoVulns

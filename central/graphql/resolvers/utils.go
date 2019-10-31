@@ -236,3 +236,47 @@ func getComplianceControlNodeCountFromAggregationResults(results []*v1.Complianc
 	}
 	return ret
 }
+
+// K8sCVEInfoResolver holds CVE and fixable count for a cluster
+type K8sCVEInfoResolver struct {
+	cveIDs        []string
+	fixableCveIDs []string
+}
+
+// CveIDs returns IDs of CVEs that affect this cluster
+func (resolver *K8sCVEInfoResolver) CveIDs() []string {
+	if resolver == nil {
+		return []string{}
+	}
+	return resolver.cveIDs
+}
+
+// FixableCveIDs returns IDs of fixable CVEs that affect this cluster
+func (resolver *K8sCVEInfoResolver) FixableCveIDs() []string {
+	if resolver == nil {
+		return []string{}
+	}
+	return resolver.fixableCveIDs
+}
+
+// ClusterWithK8sCVEInfoResolver holds a cluster with its K8s info
+type ClusterWithK8sCVEInfoResolver struct {
+	cluster    *clusterResolver
+	k8sCVEInfo *K8sCVEInfoResolver
+}
+
+// Cluster returns cluster on a ClusterWithK8sCVEInfoResolver
+func (resolver *ClusterWithK8sCVEInfoResolver) Cluster() *clusterResolver {
+	if resolver == nil {
+		return nil
+	}
+	return resolver.cluster
+}
+
+// K8sCVEInfo returns k8sCVEInfo on ClusterWithK8sCVEInfoResolver
+func (resolver *ClusterWithK8sCVEInfoResolver) K8sCVEInfo() *K8sCVEInfoResolver {
+	if resolver == nil {
+		return nil
+	}
+	return resolver.k8sCVEInfo
+}

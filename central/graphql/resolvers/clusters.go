@@ -8,6 +8,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
+	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
@@ -520,7 +522,18 @@ func (resolver *clusterResolver) Vulns(ctx context.Context) ([]*EmbeddedVulnerab
 	if err != nil {
 		return nil, err
 	}
-	return mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
+	imageVulns, err := mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	k8sVulns, err := resolver.root.clusterK8sVulnerabilities(resolver.data)
+	if err != nil {
+		return nil, err
+	}
+
+	imageVulns = append(imageVulns, k8sVulns...)
+	return imageVulns, nil
 }
 
 func (resolver *clusterResolver) VulnCount(ctx context.Context) (int32, error) {
@@ -832,4 +845,15 @@ func (resolver *clusterResolver) LatestViolation(ctx context.Context) (*graphql.
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Latest Violation")
 
 	return getLatestViolationTime(ctx, resolver.root, resolver.getQuery())
+}
+
+func (resolver *Resolver) clusterK8sVulnerabilities(cluster *storage.Cluster) ([]*EmbeddedVulnerabilityResolver, error) {
+	var cves []*nvd.CVEEntry
+	for _, cve := range resolver.k8sCVEManager.GetK8sCves() {
+		if isClusterAffectedByCVE(cluster, cve) {
+			cves = append(cves, cve)
+		}
+	}
+
+	return resolver.wrapEmbeddedVulnerabilities(converter.NvdCVEsToEmbeddedVulnerabilities(cves))
 }

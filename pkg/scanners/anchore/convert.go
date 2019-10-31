@@ -59,7 +59,8 @@ func convertVulnToProtoVuln(vuln anchoreClient.Vulnerability) *storage.EmbeddedV
 		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: vuln.Fix,
 		},
-		Cvss: getSeverity(vuln.Severity),
+		Cvss:              getSeverity(vuln.Severity),
+		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 	}
 
 	if len(vuln.NVDData) != 0 {

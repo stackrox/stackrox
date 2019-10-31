@@ -20,11 +20,12 @@ func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []p
 			log.Warn(err)
 		}
 		vulnerability := &storage.EmbeddedVulnerability{
-			Cvss:    float32(cvssScore),
-			Cve:     finding.NVDFinding.CVE,
-			Summary: stringutils.TruncateIf(finding.NVDFinding.Description, 64, !features.VulnMgmtUI.Enabled(), stringutils.WordOriented{}),
-			Link:    scans.GetVulnLink(finding.NVDFinding.CVE),
-			CvssV2:  convertCVSS(finding.NVDFinding),
+			Cvss:              float32(cvssScore),
+			Cve:               finding.NVDFinding.CVE,
+			Summary:           stringutils.TruncateIf(finding.NVDFinding.Description, 64, !features.VulnMgmtUI.Enabled(), stringutils.WordOriented{}),
+			Link:              scans.GetVulnLink(finding.NVDFinding.CVE),
+			CvssV2:            convertCVSS(finding.NVDFinding),
+			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		}
 		for _, affectedPackage := range finding.Packages {
 			packagesToVulnerabilities[affectedPackage] = append(packagesToVulnerabilities[affectedPackage], vulnerability)

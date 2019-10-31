@@ -74,6 +74,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.11.4-0.20191004150533-c677e419aa5c
 	github.com/hako/durafmt v0.0.0-20180520121703-7b7ae1e72ead
+	github.com/hashicorp/go-version v1.2.0
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c // indirect
@@ -118,7 +119,7 @@ require (
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
-	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191017214444-0f09bd56ec39
+	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
 	github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v1.0.0 // indirect

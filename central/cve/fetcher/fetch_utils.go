@@ -129,7 +129,7 @@ func getLocalCVEsHash(cveHashFile string) (string, error) {
 	return string(b), nil
 }
 
-func getLocalCVEs(cveFile string) ([]nvd.CVEEntry, error) {
+func getLocalCVEs(cveFile string) ([]*nvd.CVEEntry, error) {
 	b, err := ioutil.ReadFile(cveFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed read CVEs file: %q", cveFile)
@@ -139,7 +139,13 @@ func getLocalCVEs(cveFile string) ([]nvd.CVEEntry, error) {
 	if err = json.Unmarshal(b, &cveEntries); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal CVEs in file: %q", cveFile)
 	}
-	return cveEntries, nil
+
+	ret := make([]*nvd.CVEEntry, 0, len(cveEntries))
+	for i := 0; i < len(cveEntries); i++ {
+		ret = append(ret, &cveEntries[i])
+	}
+
+	return ret, nil
 }
 
 func overwriteCVEs(cveFile, cveHashFile, hash, CVEs string) error {

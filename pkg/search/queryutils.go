@@ -44,7 +44,8 @@ func ValidateQuery(q *v1.Query, optionsMap OptionsMap) error {
 }
 
 // FilterQueryWithMap removes match fields portions of the query that are not in the input options map.
-func FilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) *v1.Query {
+func FilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, bool) {
+	var areFieldsFiltered bool
 	filtered, _ := FilterQuery(q, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok {
@@ -52,9 +53,10 @@ func FilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) *v1.Query {
 				return true
 			}
 		}
+		areFieldsFiltered = true
 		return false
 	})
-	return filtered
+	return filtered, areFieldsFiltered
 }
 
 // FilterQuery applies the given function on every base query, and returns a new

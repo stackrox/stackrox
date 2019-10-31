@@ -228,6 +228,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	}
 
 	enricher.FillScanStats(image)
+
 	if err = ds.storage.UpsertImage(image); err != nil {
 		return err
 	}
