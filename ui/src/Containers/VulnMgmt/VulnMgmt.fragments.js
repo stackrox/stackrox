@@ -228,6 +228,7 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
         policyStatus {
             status
         }
+        latestViolation
     }
 `;
 
