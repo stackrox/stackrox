@@ -30,6 +30,7 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData }) =>
         })
         .filter(containObj => containObj.count);
 
+    if (!matches.length && !contains.length) return null;
     return (
         <div className="bg-primary-300 h-full relative">
             {/* TODO: decide if this should be added as custom tailwind class, or a "component" CSS class in app.css */}

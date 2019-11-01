@@ -36,9 +36,8 @@ export const useCaseEntityMap = {
 
 export const entityGroups = {
     OVERVIEW: 'Overview',
-    POLICIES: 'Policies & CIS Controls',
     VIOLATIONS_AND_FINDINGS: 'Violations & Findings',
-    APPLICATION_RESOURCES: 'Application & Infrastructure Resources',
+    APPLICATION_RESOURCES: 'Application & Infrastructure',
     RBAC_CONFIG: 'RBAC Visibility & Configurations',
     SECURITY: 'Security Findings'
 };
@@ -54,11 +53,10 @@ export const entityGroupMap = {
     [entityTypes.CLUSTER]: entityGroups.APPLICATION_RESOURCES,
     [entityTypes.NAMESPACE]: entityGroups.APPLICATION_RESOURCES,
     [entityTypes.IMAGE]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.COMPONENT]: entityGroups.APPLICATION_RESOURCES,
 
-    [entityTypes.POLICY]: entityGroups.POLICIES,
-    [entityTypes.CONTROL]: entityGroups.POLICIES,
-
-    [entityTypes.COMPONENT]: entityGroups.SECURITY,
+    [entityTypes.POLICY]: entityGroups.SECURITY,
+    [entityTypes.CONTROL]: entityGroups.SECURITY,
     [entityTypes.CVE]: entityGroups.SECURITY
 };
 

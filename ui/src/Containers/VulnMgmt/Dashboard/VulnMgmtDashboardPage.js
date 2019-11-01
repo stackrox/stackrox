@@ -32,11 +32,7 @@ const VulnDashboardPage = () => {
             <PoliciesCountTile />
             <CvesCountTile />
             <div className="flex w-32">
-                <EntitiesMenu
-                    text="Application & Infrastructure"
-                    options={entityMenuTypes}
-                    dashboard
-                />
+                <EntitiesMenu text="Application & Infrastructure" options={entityMenuTypes} />
             </div>
             <FilterCvesRadioButtonGroup />
         </>

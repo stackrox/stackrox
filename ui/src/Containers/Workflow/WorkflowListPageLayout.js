@@ -60,7 +60,11 @@ const WorkflowListPageLayout = ({ location }) => {
                             />
                         </div>
                         <div className="flex items-center pl-2">
-                            <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                            <EntitiesMenu
+                                text="All Entities"
+                                options={useCaseEntityMap[useCase]}
+                                grouped
+                            />
                         </div>
                     </div>
                 </PageHeader>

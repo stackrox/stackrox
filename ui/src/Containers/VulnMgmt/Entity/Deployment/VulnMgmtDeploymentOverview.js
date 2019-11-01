@@ -78,85 +78,83 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     const newEntityContext = { ...entityContext, [entityTypes.DEPLOYMENT]: data.id };
 
     return (
-        <div className="w-full h-full" id="capture-dashboard-stretch">
-            <div className="flex h-full">
-                <div className="flex flex-col flex-grow">
-                    <CollapsibleSection title="Deployment summary">
-                        <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
-                            <div className="s-1">
-                                <Metadata
-                                    className="h-full min-w-48 bg-base-100 bg-counts-widget"
-                                    keyValuePairs={metadataKeyValuePairs}
-                                    statTiles={deploymentStats}
-                                    title="Details & Metadata"
-                                    labels={labels}
-                                    annotations={annotations}
-                                />
-                            </div>
-                            <div className="s-1">
-                                <PolicyViolationsBySeverity entityContext={newEntityContext} />
-                            </div>
-                            <div className="s-1">
-                                <CvesByCvssScore entityContext={newEntityContext} />
-                            </div>
-                            <div className="s-1">
-                                <MostRecentVulnerabilities entityContext={newEntityContext} />
-                            </div>
-                            <div className="s-1">
-                                <MostCommonVulnerabiltiesInDeployment deploymentId={id} />
-                            </div>
-                            <div className="s-1">
-                                <TopRiskiestImagesAndComponents
-                                    limit={5}
-                                    entityContext={newEntityContext}
-                                />
-                            </div>
+        <div className="flex h-full">
+            <div className="flex flex-col flex-grow">
+                <CollapsibleSection title="Deployment summary">
+                    <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                        <div className="s-1">
+                            <Metadata
+                                className="h-full min-w-48 bg-base-100 bg-counts-widget"
+                                keyValuePairs={metadataKeyValuePairs}
+                                statTiles={deploymentStats}
+                                title="Details & Metadata"
+                                labels={labels}
+                                annotations={annotations}
+                            />
                         </div>
-                    </CollapsibleSection>
+                        <div className="s-1">
+                            <PolicyViolationsBySeverity entityContext={newEntityContext} />
+                        </div>
+                        <div className="s-1">
+                            <CvesByCvssScore entityContext={newEntityContext} />
+                        </div>
+                        <div className="s-1">
+                            <MostRecentVulnerabilities entityContext={newEntityContext} />
+                        </div>
+                        <div className="s-1">
+                            <MostCommonVulnerabiltiesInDeployment deploymentId={id} />
+                        </div>
+                        <div className="s-1">
+                            <TopRiskiestImagesAndComponents
+                                limit={5}
+                                entityContext={newEntityContext}
+                            />
+                        </div>
+                    </div>
+                </CollapsibleSection>
 
-                    <CollapsibleSection title="Deployment findings">
-                        <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                            <Tabs
-                                hasTabSpacing
-                                headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
-                            >
-                                <TabContent>
-                                    <TableWidget
-                                        header={`${failingPolicies.length} failing ${pluralize(
-                                            entityTypes.POLICY,
-                                            failingPolicies.length
-                                        )} across this image`}
-                                        rows={failingPolicies}
-                                        noDataText="No failing policies"
-                                        className="bg-base-100"
-                                        columns={getPolicyTableColumns(workflowState, false)}
-                                        idAttribute="id"
-                                    />
-                                </TabContent>
-                                <TabContent>
-                                    <TableWidget
-                                        header={`${fixableCves.length} fixable ${pluralize(
-                                            entityTypes.CVE,
-                                            fixableCves.length
-                                        )} found across this image`}
-                                        rows={fixableCves}
-                                        entityType={entityTypes.CVE}
-                                        noDataText="No fixable CVEs available in this namespace"
-                                        className="bg-base-100"
-                                        columns={getCveTableColumns(workflowState, false)}
-                                        idAttribute="cve"
-                                    />
-                                </TabContent>
-                            </Tabs>
-                        </div>
-                    </CollapsibleSection>
-                </div>
-                <RelatedEntitiesSideList
-                    entityType={entityTypes.DEPLOYMENT}
-                    workflowState={workflowState}
-                    getCountData={getCountData}
-                />
+                <CollapsibleSection title="Deployment findings">
+                    <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                        <Tabs
+                            hasTabSpacing
+                            headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
+                        >
+                            <TabContent>
+                                <TableWidget
+                                    header={`${failingPolicies.length} failing ${pluralize(
+                                        entityTypes.POLICY,
+                                        failingPolicies.length
+                                    )} across this image`}
+                                    rows={failingPolicies}
+                                    noDataText="No failing policies"
+                                    className="bg-base-100"
+                                    columns={getPolicyTableColumns(workflowState, false)}
+                                    idAttribute="id"
+                                />
+                            </TabContent>
+                            <TabContent>
+                                <TableWidget
+                                    header={`${fixableCves.length} fixable ${pluralize(
+                                        entityTypes.CVE,
+                                        fixableCves.length
+                                    )} found across this image`}
+                                    rows={fixableCves}
+                                    entityType={entityTypes.CVE}
+                                    noDataText="No fixable CVEs available in this namespace"
+                                    className="bg-base-100"
+                                    columns={getCveTableColumns(workflowState, false)}
+                                    idAttribute="cve"
+                                />
+                            </TabContent>
+                        </Tabs>
+                    </div>
+                </CollapsibleSection>
             </div>
+            <RelatedEntitiesSideList
+                entityType={entityTypes.DEPLOYMENT}
+                workflowState={workflowState}
+                getCountData={getCountData}
+            />
         </div>
     );
 };

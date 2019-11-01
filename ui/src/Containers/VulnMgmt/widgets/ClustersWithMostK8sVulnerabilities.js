@@ -30,21 +30,26 @@ const CLUSTER_WITH_MOST_K8S_VULNERABILTIES = gql`
 `;
 
 const processData = (data, workflowState) => {
+    const stacked = data.results.length < 4;
     const results = data.results.map(({ id, name: text, vulns }) => {
         const cveCount = vulns.length;
         const fixableCount = vulns.filter(vuln => vuln.isFixable).length;
         const url = workflowState.pushRelatedEntity(entityTypes.CLUSTER, id).toUrl();
+        const imgComponent = (
+            <img src={kubeSVG} alt="kube" className={`${stacked ? 'pl-2' : 'pr-2'}`} />
+        );
         return {
             text,
             url,
             component: (
                 <div className="flex flex-1 justify-left">
-                    <img src={kubeSVG} alt="kube" className="pr-2" />
+                    {!stacked && imgComponent}
                     <FixableCVECount
                         cves={cveCount}
                         fixable={fixableCount}
-                        orientation="vertical"
+                        orientation={stacked ? 'horizontal' : 'vertical'}
                     />
+                    {stacked && imgComponent}
                 </div>
             )
         };

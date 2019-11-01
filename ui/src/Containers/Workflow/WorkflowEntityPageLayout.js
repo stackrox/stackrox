@@ -61,7 +61,11 @@ const WorkflowEntityPageLayout = ({ location }) => {
             <div className="flex flex-1 flex-col bg-base-200" style={style}>
                 <PageHeader header={entityName} subHeader={subheaderText} classes="pr-0">
                     <div className="flex flex-1 justify-end h-full">
-                        <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                        <EntitiesMenu
+                            text="All Entities"
+                            options={useCaseEntityMap[useCase]}
+                            grouped
+                        />
                     </div>
                 </PageHeader>
                 <EntityTabs entityType={pageEntityType} activeTab={pageListType} />

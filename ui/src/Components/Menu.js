@@ -3,9 +3,17 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 const optionsClass =
-    'flex items-center relative text-left px-2 py-3 border-b border-base-300 hover:bg-base-200 capitalize';
+    'flex items-center relative text-left px-2 py-3 border-b border-primary-300 hover:bg-base-200 capitalize';
 
-const Menu = ({ buttonClass, buttonContent, className, options, disabled }) => {
+const Menu = ({
+    buttonClass,
+    buttonContent,
+    menuClassName,
+    className,
+    options,
+    disabled,
+    grouped
+}) => {
     const [isMenuOpen, setMenuState] = useState(false);
 
     const hideMenu = () => {
@@ -21,34 +29,52 @@ const Menu = ({ buttonClass, buttonContent, className, options, disabled }) => {
         else hideMenu();
     };
 
-    const renderOptions = options.map(option => {
-        if (option.link) {
-            return (
-                <Link
-                    to={option.link}
-                    className={`${optionsClass} ${option.className} no-underline text-base-600`}
-                    key={option.label}
-                    data-test-id={option.label}
-                >
-                    {option.icon}
-                    {option.label && <span className="pl-2">{option.label}</span>}
-                </Link>
-            );
-        }
+    function renderOptions(formattedOptions) {
+        // TO DO: use accessibility friendly semantic HTML elements (<li>, <ul>)
+        return formattedOptions.map(
+            ({ className: optionClassName, link, label, icon, onClick }) => {
+                if (link) {
+                    return (
+                        <Link
+                            to={link}
+                            className={`${optionsClass} ${optionClassName} no-underline text-base-600`}
+                            key={label}
+                            data-test-id={label}
+                        >
+                            {icon}
+                            {label && <span className="pl-2">{label}</span>}
+                        </Link>
+                    );
+                }
 
-        return (
-            <button
-                type="button"
-                className={`${optionsClass} ${option.className}`}
-                onClick={option.onClick}
-                key={option.label}
-                data-test-id={option.label}
-            >
-                {option.icon}
-                {option.label && <span className="pl-2">{option.label}</span>}
-            </button>
+                return (
+                    <button
+                        type="button"
+                        className={`${optionsClass} ${optionClassName}`}
+                        onClick={onClick}
+                        key={label}
+                        data-test-id={label}
+                    >
+                        {icon}
+                        {label && <span className="pl-2">{label}</span>}
+                    </button>
+                );
+            }
         );
-    });
+    }
+
+    function renderGroupedOptions(formattedOptions) {
+        return Object.keys(formattedOptions).map(group => {
+            return (
+                <>
+                    <div className="uppercase font-condensed p-3 border-b border-primary-300 text-lg">
+                        {group}
+                    </div>
+                    <div className="px-2">{renderOptions(options[group])}</div>
+                </>
+            );
+        });
+    }
 
     return (
         <div className={`${className} inline-block relative z-50`}>
@@ -62,10 +88,10 @@ const Menu = ({ buttonClass, buttonContent, className, options, disabled }) => {
             </button>
             {isMenuOpen && (
                 <div
-                    className="absolute bg-white flex flex-col flex-no-wrap menu pin-r z-50 min-w-43 bg-base-100 shadow"
+                    className={`absolute bg-white flex flex-col flex-no-wrap menu pin-r z-50 min-w-43 bg-base-100 shadow ${menuClassName}`}
                     data-test-id="menu-list"
                 >
-                    {renderOptions}
+                    {grouped ? renderGroupedOptions(options) : renderOptions(options)}
                 </div>
             )}
         </div>
@@ -75,6 +101,7 @@ const Menu = ({ buttonClass, buttonContent, className, options, disabled }) => {
 Menu.propTypes = {
     buttonClass: PropTypes.string,
     buttonContent: PropTypes.node.isRequired,
+    menuClassName: PropTypes.string,
     className: PropTypes.string,
     options: PropTypes.arrayOf(
         PropTypes.shape({
@@ -85,13 +112,16 @@ Menu.propTypes = {
             onClick: PropTypes.func
         })
     ).isRequired,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
+    grouped: PropTypes.bool
 };
 
 Menu.defaultProps = {
     buttonClass: '',
     disabled: false,
-    className: ''
+    menuClassName: '',
+    className: '',
+    grouped: false
 };
 
 export default Menu;

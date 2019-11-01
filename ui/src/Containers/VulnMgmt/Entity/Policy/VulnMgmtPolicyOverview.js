@@ -125,93 +125,91 @@ const VulnMgmtPolicyOverview = ({ data }) => {
     }
 
     return (
-        <div className="w-full" id="capture-dashboard-stretch">
-            <div className="flex h-full">
-                <div className="flex flex-col flex-grow">
-                    <CollapsibleSection title="Policy summary">
-                        <div className="flex mb-4 pdf-page">
-                            <Widget
-                                header="Description, Rationale, & Remdediation"
-                                headerComponents={null}
-                                className="ml-4 mr-2 bg-base-100 min-h-48 mb-4 w-2/3"
-                            >
-                                <div className="flex flex-col w-full">
-                                    <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
-                                        <div className="w-full flex-grow p-4">
-                                            <span>{name}</span>
-                                        </div>
-                                        <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
-                                            <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
-                                                <span>Severity:</span>
-                                                <SeverityLabel severity={severity} />
-                                            </span>
-                                            <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
-                                                <span>Status:</span>
-                                                <StatusChip status={policyStatus} />
-                                            </span>
-                                        </div>
+        <div className="flex h-full">
+            <div className="flex flex-col flex-grow">
+                <CollapsibleSection title="Policy summary">
+                    <div className="flex mb-4 pdf-page">
+                        <Widget
+                            header="Description, Rationale, & Remdediation"
+                            headerComponents={null}
+                            className="ml-4 mr-2 bg-base-100 min-h-48 mb-4 w-2/3"
+                        >
+                            <div className="flex flex-col w-full">
+                                <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
+                                    <div className="w-full flex-grow p-4">
+                                        <span>{name}</span>
                                     </div>
-                                    <ul className="flex-1 list-reset border-r border-base-300">
-                                        {drrMetadata.map(({ key, value }) => (
-                                            <li
-                                                className="border-b border-base-300 px-4 py-2"
-                                                key={key}
-                                            >
-                                                <span className="text-base-700 font-600 mr-2">
-                                                    {key}:
-                                                </span>
-                                                {value}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
+                                        <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
+                                            <span>Severity:</span>
+                                            <SeverityLabel severity={severity} />
+                                        </span>
+                                        <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
+                                            <span>Status:</span>
+                                            <StatusChip status={policyStatus} />
+                                        </span>
+                                    </div>
                                 </div>
-                            </Widget>
-                            <Metadata
-                                className="w-1/3 mx-2 min-w-48 bg-base-100 min-h-48 mb-4"
-                                keyValuePairs={details}
-                                title="Details"
-                            />
-                        </div>
-                        <div className="flex mb-4 pdf-page">
-                            <PolicyConfigurationFields
-                                className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
-                                fields={fields}
-                            />
-                            <Metadata
-                                className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
-                                keyValuePairs={scopeDetails}
-                                title="Scope"
-                            />
-                            <Metadata
-                                className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
-                                keyValuePairs={whitelistDetails}
-                                title="Whitelist"
-                            />
-                        </div>
-                    </CollapsibleSection>
-                    <CollapsibleSection title="Policy Findings">
-                        <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                            <TableWidget
-                                header={`${failingDeployments.length} ${pluralize(
-                                    entityTypes.DEPLOYMENT,
-                                    failingDeployments.length
-                                )} have failed across this policy`}
-                                rows={failingDeployments}
-                                entityType={entityTypes.DEPLOYMENT}
-                                noDataText="No deployments have failed across this component"
-                                className="bg-base-100"
-                                columns={getDeploymentTableColumns(workflowState, false)}
-                                idAttribute="cve"
-                            />
-                        </div>
-                    </CollapsibleSection>
-                </div>
-                <RelatedEntitiesSideList
-                    entityType={entityTypes.POLICY}
-                    workflowState={workflowState}
-                    getCountData={getCountData}
-                />
+                                <ul className="flex-1 list-reset border-r border-base-300">
+                                    {drrMetadata.map(({ key, value }) => (
+                                        <li
+                                            className="border-b border-base-300 px-4 py-2"
+                                            key={key}
+                                        >
+                                            <span className="text-base-700 font-600 mr-2">
+                                                {key}:
+                                            </span>
+                                            {value}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </Widget>
+                        <Metadata
+                            className="w-1/3 mx-2 min-w-48 bg-base-100 min-h-48 mb-4"
+                            keyValuePairs={details}
+                            title="Details"
+                        />
+                    </div>
+                    <div className="flex mb-4 pdf-page">
+                        <PolicyConfigurationFields
+                            className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                            fields={fields}
+                        />
+                        <Metadata
+                            className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                            keyValuePairs={scopeDetails}
+                            title="Scope"
+                        />
+                        <Metadata
+                            className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                            keyValuePairs={whitelistDetails}
+                            title="Whitelist"
+                        />
+                    </div>
+                </CollapsibleSection>
+                <CollapsibleSection title="Policy Findings">
+                    <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                        <TableWidget
+                            header={`${failingDeployments.length} ${pluralize(
+                                entityTypes.DEPLOYMENT,
+                                failingDeployments.length
+                            )} have failed across this policy`}
+                            rows={failingDeployments}
+                            entityType={entityTypes.DEPLOYMENT}
+                            noDataText="No deployments have failed across this component"
+                            className="bg-base-100"
+                            columns={getDeploymentTableColumns(workflowState, false)}
+                            idAttribute="cve"
+                        />
+                    </div>
+                </CollapsibleSection>
             </div>
+            <RelatedEntitiesSideList
+                entityType={entityTypes.POLICY}
+                workflowState={workflowState}
+                getCountData={getCountData}
+            />
         </div>
     );
 };

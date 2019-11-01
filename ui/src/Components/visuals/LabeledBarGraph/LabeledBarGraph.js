@@ -53,6 +53,7 @@ const LabeledBarGraph = ({ data, title, history }) => {
             xDomain={[0, upperBoundX]}
             yType="ordinal"
         >
+            <VerticalGridLines tickTotal={upperBoundX / 2} />
             <GradientDefs>
                 <BarGradient />
             </GradientDefs>
@@ -68,7 +69,6 @@ const LabeledBarGraph = ({ data, title, history }) => {
                 data={formattedData}
                 onValueClick={onValueClickHandler}
             />
-            <VerticalGridLines />
             <XAxis title={title} />
             <LabelSeries
                 className="text-xs text-base-600"

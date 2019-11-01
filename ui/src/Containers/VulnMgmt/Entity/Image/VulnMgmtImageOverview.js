@@ -103,70 +103,65 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const newEntityContext = { ...entityContext, [entityTypes.IMAGE]: data.id };
 
     return (
-        <div className="w-full h-full" id="capture-dashboard-stretch">
-            <div className="flex h-full">
-                <div className="flex flex-col flex-grow">
-                    <CollapsibleSection title="Image Summary">
-                        <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
-                            <div className="s-1">
-                                <Metadata
-                                    className="h-full min-w-48 bg-base-100"
-                                    keyValuePairs={metadataKeyValuePairs}
-                                    statTiles={imageStats}
-                                    title="Details & Metadata"
-                                />
-                            </div>
-                            <CvesByCvssScore entityContext={newEntityContext} />
-                            <TopRiskiestImagesAndComponents
-                                limit={5}
-                                entityContext={newEntityContext}
+        <div className="flex h-full">
+            <div className="flex flex-col flex-grow">
+                <CollapsibleSection title="Image Summary">
+                    <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                        <div className="s-1">
+                            <Metadata
+                                className="h-full min-w-48 bg-base-100"
+                                keyValuePairs={metadataKeyValuePairs}
+                                statTiles={imageStats}
+                                title="Details & Metadata"
                             />
                         </div>
-                    </CollapsibleSection>
-                    <CollapsibleSection title="Image Findings">
-                        <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                            <Tabs
-                                hasTabSpacing
-                                headers={[{ text: 'CVEs' }, { text: 'Dockerfile' }]}
-                            >
-                                <TabContent>
-                                    <TableWidget
-                                        header={`${cves.length} fixable ${pluralize(
-                                            resourceLabels.CVE,
-                                            cves.length
-                                        )} found across this image`}
-                                        rows={cves}
-                                        entityType={entityTypes.CVE}
-                                        noDataText="No fixable CVEs available in this image"
-                                        className="bg-base-100"
-                                        columns={getCveTableColumns(workflowState, false)}
-                                        idAttribute="cve"
-                                    />
-                                </TabContent>
-                                <TabContent>
-                                    <TableWidget
-                                        header={`${layers.length} ${pluralize(
-                                            'layer',
-                                            layers.length
-                                        )} layers across this image`}
-                                        rows={layers}
-                                        noDataText="No layers available in this image"
-                                        className="bg-base-100"
-                                        columns={entityToColumns[entityTypes.IMAGE]}
-                                        SubComponent={renderCVEsTable}
-                                        idAttribute="id"
-                                    />
-                                </TabContent>
-                            </Tabs>
-                        </div>
-                    </CollapsibleSection>
-                </div>
-                <RelatedEntitiesSideList
-                    entityType={entityTypes.IMAGE}
-                    workflowState={workflowState}
-                    getCountData={getCountData}
-                />
+                        <CvesByCvssScore entityContext={newEntityContext} />
+                        <TopRiskiestImagesAndComponents
+                            limit={5}
+                            entityContext={newEntityContext}
+                        />
+                    </div>
+                </CollapsibleSection>
+                <CollapsibleSection title="Image Findings">
+                    <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                        <Tabs hasTabSpacing headers={[{ text: 'CVEs' }, { text: 'Dockerfile' }]}>
+                            <TabContent>
+                                <TableWidget
+                                    header={`${cves.length} fixable ${pluralize(
+                                        resourceLabels.CVE,
+                                        cves.length
+                                    )} found across this image`}
+                                    rows={cves}
+                                    entityType={entityTypes.CVE}
+                                    noDataText="No fixable CVEs available in this image"
+                                    className="bg-base-100"
+                                    columns={getCveTableColumns(workflowState, false)}
+                                    idAttribute="cve"
+                                />
+                            </TabContent>
+                            <TabContent>
+                                <TableWidget
+                                    header={`${layers.length} ${pluralize(
+                                        'layer',
+                                        layers.length
+                                    )} layers across this image`}
+                                    rows={layers}
+                                    noDataText="No layers available in this image"
+                                    className="bg-base-100"
+                                    columns={entityToColumns[entityTypes.IMAGE]}
+                                    SubComponent={renderCVEsTable}
+                                    idAttribute="id"
+                                />
+                            </TabContent>
+                        </Tabs>
+                    </div>
+                </CollapsibleSection>
             </div>
+            <RelatedEntitiesSideList
+                entityType={entityTypes.IMAGE}
+                workflowState={workflowState}
+                getCountData={getCountData}
+            />
         </div>
     );
 };

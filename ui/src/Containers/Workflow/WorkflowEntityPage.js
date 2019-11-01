@@ -57,7 +57,9 @@ const WorkflowEntityPage = ({
                 !isDarkMode && !entityListType ? 'bg-side-panel-wave min-h-full' : 'h-full'
             }`}
         >
-            <OverviewComponent data={result} entityContext={entityContext} />
+            <div className="w-full min-h-full" id="capture-dashboard-stretch">
+                <OverviewComponent data={result} entityContext={entityContext} />
+            </div>
         </div>
     );
 };

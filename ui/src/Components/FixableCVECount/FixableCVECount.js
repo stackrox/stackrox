@@ -14,7 +14,7 @@ const FixableCVECount = ({ cves, fixable, url, orientation, pdf }) => {
         e.stopPropagation();
     }
 
-    const className = `text-sm leading-normal whitespace-no-wrap ${getOrientationClassName(
+    const className = `text-sm items-center leading-normal whitespace-no-wrap ${getOrientationClassName(
         orientation
     )}`;
     let content = (

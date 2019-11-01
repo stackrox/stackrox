@@ -98,70 +98,68 @@ const VulnMgmtCveOverview = ({ data }) => {
     const severityStyle = getSeverityChipType(cvss);
 
     return (
-        <div className="w-full h-full" id="capture-dashboard-stretch">
-            <div className="flex h-full">
-                <div className="flex flex-col flex-grow">
-                    <CollapsibleSection title="CVE summary">
-                        <div className="flex mb-4 pdf-page">
-                            <Widget
-                                header="Details"
-                                headerComponents={linkToNVD}
-                                className="ml-4 mr-2 bg-base-100 h-48 mb-4 flex-grow"
-                            >
-                                <div className="flex flex-col w-full">
-                                    <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
-                                        <div className="w-full flex-grow p-4">
-                                            <span>{cve}</span>
-                                        </div>
-                                        <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
-                                            {// eslint-disable-next-line eqeqeq
-                                            envImpact == Number(envImpact) && (
-                                                <span className="px-4 py-6 border-base-400 border-l whitespace-no-wrap">
-                                                    <span>
-                                                        {' '}
-                                                        {`Env. Impact: ${(envImpact * 100).toFixed(
-                                                            0
-                                                        )}%`}
-                                                    </span>
-                                                </span>
-                                            )}
-                                            <span className="px-4 py-4 border-base-400 border-l">
-                                                <LabelChip
-                                                    text={`CVSS ${cvss && cvss.toFixed(1)}`}
-                                                    type={severityStyle}
-                                                />
-                                            </span>
-                                            <span className="px-4 py-4 border-base-400 border-l">
-                                                {isFixable ? (
-                                                    <LabelChip text="Fixable" type="success" />
-                                                ) : (
-                                                    <LabelChip text="Not fixable" type="base" />
-                                                )}
-                                            </span>
-                                        </div>
+        <div className="flex h-full">
+            <div className="flex flex-col flex-grow">
+                <CollapsibleSection title="CVE summary">
+                    <div className="flex mb-4 pdf-page">
+                        <Widget
+                            header="Details"
+                            headerComponents={linkToNVD}
+                            className="ml-4 mr-2 bg-base-100 h-48 mb-4 flex-grow"
+                        >
+                            <div className="flex flex-col w-full">
+                                <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
+                                    <div className="w-full flex-grow p-4">
+                                        <span>{cve}</span>
                                     </div>
-                                    <div className="p-4">{summary}</div>
+                                    <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
+                                        {// eslint-disable-next-line eqeqeq
+                                        envImpact == Number(envImpact) && (
+                                            <span className="px-4 py-6 border-base-400 border-l whitespace-no-wrap">
+                                                <span>
+                                                    {' '}
+                                                    {`Env. Impact: ${(envImpact * 100).toFixed(
+                                                        0
+                                                    )}%`}
+                                                </span>
+                                            </span>
+                                        )}
+                                        <span className="px-4 py-4 border-base-400 border-l">
+                                            <LabelChip
+                                                text={`CVSS ${cvss && cvss.toFixed(1)}`}
+                                                type={severityStyle}
+                                            />
+                                        </span>
+                                        <span className="px-4 py-4 border-base-400 border-l">
+                                            {isFixable ? (
+                                                <LabelChip text="Fixable" type="success" />
+                                            ) : (
+                                                <LabelChip text="Not fixable" type="base" />
+                                            )}
+                                        </span>
+                                    </div>
                                 </div>
-                            </Widget>
-                            <Metadata
-                                className="mx-2 min-w-48 bg-base-100 h-48 mb-4"
-                                keyValuePairs={cvssScoreBreakdown}
-                                title="CVSS Score Breakdown"
-                            />
-                            <Metadata
-                                className="mx-2 min-w-48 bg-base-100 h-48 mb-4"
-                                keyValuePairs={scanningDetails}
-                                title="Scanning Details"
-                            />
-                        </div>
-                    </CollapsibleSection>
-                </div>
-                <RelatedEntitiesSideList
-                    entityType={entityTypes.CVE}
-                    workflowState={workflowState}
-                    getCountData={getCountData}
-                />
+                                <div className="p-4">{summary}</div>
+                            </div>
+                        </Widget>
+                        <Metadata
+                            className="mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                            keyValuePairs={cvssScoreBreakdown}
+                            title="CVSS Score Breakdown"
+                        />
+                        <Metadata
+                            className="mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                            keyValuePairs={scanningDetails}
+                            title="Scanning Details"
+                        />
+                    </div>
+                </CollapsibleSection>
             </div>
+            <RelatedEntitiesSideList
+                entityType={entityTypes.CVE}
+                workflowState={workflowState}
+                getCountData={getCountData}
+            />
         </div>
     );
 };
