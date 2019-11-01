@@ -12,6 +12,7 @@ import (
 	imageComponentScorer "github.com/stackrox/rox/central/risk/scorer/image_component"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -92,6 +93,10 @@ func (e *managerImpl) ReprocessDeploymentRiskWithImages(deployment *storage.Depl
 func (e *managerImpl) ReprocessImageRisk(image *storage.Image) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
 
+	if !features.VulnMgmtUI.Enabled() {
+		return
+	}
+
 	risk := e.imageScorer.Score(allAccessCtx, image)
 	if risk == nil {
 		return
@@ -111,6 +116,10 @@ func (e *managerImpl) ReprocessImageRisk(image *storage.Image) {
 // Image Component ID is generated as <component_name>:<component_version>
 func (e *managerImpl) ReprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
+
+	if !features.VulnMgmtUI.Enabled() {
+		return
+	}
 
 	risk := e.imageComponentScorer.Score(allAccessCtx, imageComponent)
 	if risk == nil {
