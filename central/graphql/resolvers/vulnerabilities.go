@@ -17,7 +17,6 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -29,6 +28,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("EmbeddedVulnerability", []string{
+			"id: ID!",
 			"cve: String!",
 			"cvss: Float!",
 			"scoreVersion: String!",
@@ -38,12 +38,12 @@ func init() {
 			"fixedByVersion: String!",
 			"isFixable: Boolean!",
 			"lastScanned: Time",
-			"components: [EmbeddedImageScanComponent!]!",
-			"componentCount: Int!",
-			"images: [Image!]!",
-			"imageCount: Int!",
-			"deployments: [Deployment!]!",
-			"deploymentCount: Int!",
+			"components(query: String): [EmbeddedImageScanComponent!]!",
+			"componentCount(query: String): Int!",
+			"images(query: String): [Image!]!",
+			"imageCount(query: String): Int!",
+			"deployments(query: String): [Deployment!]!",
+			"deploymentCount(query: String): Int!",
 			"envImpact: Float!",
 			"severity: String!",
 			"publishedOn: Time",
@@ -88,7 +88,7 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q rawQuery) ([]*E
 	}
 
 	// Convert to query, but link the fields for the search.
-	query, err := search.ParseQuery(q.String(), search.MatchAllIfEmpty())
+	query, err := q.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
@@ -248,12 +248,9 @@ func (resolver *Resolver) wrapEmbeddedVulnerabilities(values []*storage.Embedded
 // If using the top level vulnerability resolver (as opposed to the resolver under the top level image resolver) you get
 // a couple of extensions that allow you to resolve some relationships.
 type EmbeddedVulnerabilityResolver struct {
-	root *Resolver
-	data *storage.EmbeddedVulnerability
-
-	images      []*imageResolver
-	components  []*EmbeddedImageScanComponentResolver
-	deployments []*deploymentResolver
+	root        *Resolver
+	lastScanned *protoTypes.Timestamp
+	data        *storage.EmbeddedVulnerability
 }
 
 // Vectors returns either the CVSSV2 or CVSSV3 data.
@@ -269,6 +266,11 @@ func (evr *EmbeddedVulnerabilityResolver) Vectors() *EmbeddedVulnerabilityVector
 		}
 	}
 	return nil
+}
+
+// ID returns the CVE string (which is effectively an id)
+func (evr *EmbeddedVulnerabilityResolver) ID(ctx context.Context) graphql.ID {
+	return graphql.ID(evr.data.GetCve())
 }
 
 // Cve returns the CVE string (which is effectively an id)
@@ -310,63 +312,92 @@ func (evr *EmbeddedVulnerabilityResolver) IsFixable(ctx context.Context) bool {
 
 // LastScanned is the last time the vulnerability was scanned in an image.
 func (evr *EmbeddedVulnerabilityResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
-	var latestTime *protoTypes.Timestamp
-	for _, image := range evr.images {
-		if latestTime == nil || image.data.GetScan().GetScanTime().Compare(latestTime) > 0 {
-			latestTime = image.data.GetScan().GetScanTime()
-		}
-	}
-	return timestamp(latestTime)
+	return timestamp(evr.lastScanned)
 }
 
 // Components are the components that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Components(ctx context.Context) ([]*EmbeddedImageScanComponentResolver, error) {
-	if evr.components == nil {
-		return nil, errors.New("components not available from vulnerabilites resolved as children of an image")
+func (evr *EmbeddedVulnerabilityResolver) Components(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
 	}
-	return evr.components, nil
+	query, err = search.AddAsConjunction(evr.vulnQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+	return components(ctx, evr.root, query)
 }
 
 // ComponentCount is the number of components that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) ComponentCount(ctx context.Context) (int32, error) {
-	if evr.components == nil {
-		return 0, errors.New("component count not available from vulnerabilites resolved as children of an image")
+func (evr *EmbeddedVulnerabilityResolver) ComponentCount(ctx context.Context, args rawQuery) (int32, error) {
+	components, err := evr.Components(ctx, args)
+	if err != nil {
+		return 0, err
 	}
-	return int32(len(evr.components)), nil
+	return int32(len(components)), nil
 }
 
 // Images are the images that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Images(ctx context.Context) ([]*imageResolver, error) {
-	err := evr.loadImages(ctx)
+func (evr *EmbeddedVulnerabilityResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+	// Convert to query, but link the fields for the search.
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return evr.images, nil
+	images, err := evr.loadImages(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return images, nil
 }
 
 // ImageCount is the number of images that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) ImageCount(ctx context.Context) (int32, error) {
-	err := evr.loadImages(ctx)
+func (evr *EmbeddedVulnerabilityResolver) ImageCount(ctx context.Context, args rawQuery) (int32, error) {
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(evr.images)), nil
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	query, err = search.AddAsConjunction(evr.vulnQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	return imageLoader.CountFromQuery(ctx, query)
 }
 
 // Deployments are the deployments that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
-	if err := evr.loadDeployments(ctx); err != nil {
+func (evr *EmbeddedVulnerabilityResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	return evr.deployments, nil
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	return evr.loadDeployments(ctx, query)
 }
 
 // DeploymentCount is the number of deployments that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) DeploymentCount(ctx context.Context) (int32, error) {
-	if err := evr.loadDeployments(ctx); err != nil {
+func (evr *EmbeddedVulnerabilityResolver) DeploymentCount(ctx context.Context, args rawQuery) (int32, error) {
+	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
-	return int32(len(evr.deployments)), nil
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	deploymentBaseQuery, err := evr.getDeploymentBaseQuery(ctx)
+	if err != nil || deploymentBaseQuery == nil {
+		return 0, err
+	}
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return deploymentLoader.CountFromQuery(ctx, search.ConjunctionQuery(deploymentBaseQuery, query))
 }
 
 func (resolver *Resolver) getNvdCVE(id string) *nvd.CVEEntry {
@@ -414,16 +445,22 @@ func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float6
 	if err != nil {
 		return 0, err
 	}
-
 	if allDepsCount == 0 {
 		return 0, errors.New("deployments count not available")
 	}
-
-	if err := evr.loadDeployments(ctx); err != nil {
+	deploymentBaseQuery, err := evr.getDeploymentBaseQuery(ctx)
+	if err != nil || deploymentBaseQuery == nil {
 		return 0, err
 	}
-
-	return float64(float64(len(evr.deployments)) / float64(allDepsCount)), nil
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	withThisCVECount, err := deploymentLoader.CountFromQuery(ctx, search.ConjunctionQuery(deploymentBaseQuery, deploymentBaseQuery))
+	if err != nil {
+		return 0, err
+	}
+	return float64(float64(withThisCVECount) / float64(allDepsCount)), nil
 }
 
 // Severity return the severity of the vulnerability (CVSSv3 or CVSSv2).
@@ -458,43 +495,49 @@ func (evr *EmbeddedVulnerabilityResolver) ImpactScore(ctx context.Context) (floa
 	return float64(0.0), errors.New("impact score not available")
 }
 
-func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context) error {
-	if evr.images != nil {
-		return nil
-	}
+func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	q := search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).ProtoQuery()
-	evr.images, err = evr.root.wrapImages(imageLoader.FromQuery(ctx, q))
-	return err
+	query, err = search.AddAsConjunction(evr.vulnQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+	return evr.root.wrapImages(imageLoader.FromQuery(ctx, query))
 }
 
-func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context) error {
-	if evr.deployments != nil {
-		return nil
+func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {
+	q, err := evr.getDeploymentBaseQuery(ctx)
+	if err != nil || q == nil {
+		return nil, err
 	}
-	err := evr.loadImages(ctx)
+	// Search the deployments.
+	ListDeploymentLoader, err := loaders.GetListDeploymentLoader(ctx)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	return evr.root.wrapListDeployments(ListDeploymentLoader.FromQuery(ctx, search.ConjunctionQuery(q, query)))
+}
+
+func (evr *EmbeddedVulnerabilityResolver) getDeploymentBaseQuery(ctx context.Context) (*v1.Query, error) {
+	imageQuery := evr.vulnQuery()
+	results, err := evr.root.ImageDataStore.Search(ctx, imageQuery)
+	if err != nil || len(results) == 0 {
+		return nil, err
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
-	qb := search.NewQueryBuilder()
-	for _, image := range evr.images {
-		id := image.Id(ctx)
-		qb.AddExactMatches(search.ImageSHA, string(id))
+	var qb []*v1.Query
+	for _, id := range search.ResultsToIDs(results) {
+		qb = append(qb, search.NewQueryBuilder().AddExactMatches(search.ImageSHA, id).ProtoQuery())
 	}
-	q := qb.ProtoQuery()
+	return search.DisjunctionQuery(qb...), nil
+}
 
-	// Search the deployments.
-	evr.deployments, err = evr.root.wrapListDeployments(evr.root.DeploymentDataStore.SearchListDeployments(ctx, q))
-	if err != nil {
-		return err
-	}
-	return nil
+func (evr *EmbeddedVulnerabilityResolver) vulnQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).ProtoQuery()
 }
 
 // VulnerabilityType returns the type of vulnerability
@@ -507,51 +550,49 @@ func (evr *EmbeddedVulnerabilityResolver) VulnerabilityType() string {
 
 // Map the images that matched a query to the vulnerabilities it contains.
 func mapImagesToVulnerabilityResolvers(root *Resolver, images []*storage.Image, query *v1.Query) ([]*EmbeddedVulnerabilityResolver, error) {
-	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
-	pred, err := vulnPredicateFactory.GeneratePredicate(query)
+	vulnQuery, _ := search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
+	vulnPred, err := vulnPredicateFactory.GeneratePredicate(vulnQuery)
+	if err != nil {
+		return nil, err
+	}
 
+	componentQuery, _ := search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
+	componentPred, err := componentPredicateFactory.GeneratePredicate(componentQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	// Use the images to map CVEs to the images and components.
-	cveToVuln := make(map[string]*storage.EmbeddedVulnerability)
-	cveToImages := make(map[string][]*imageResolver)
-	cveToComponents := make(map[string][]*EmbeddedImageScanComponentResolver)
+	cveToResolver := make(map[string]*EmbeddedVulnerabilityResolver)
 	for _, image := range images {
-		cvesWithImage := set.NewStringSet()
 		for _, component := range image.GetScan().GetComponents() {
+			if !componentPred(component) {
+				log.Errorf("component discarded: %+v", component)
+				continue
+			}
 			for _, vuln := range component.GetVulns() {
-				if !pred(vuln) {
+				if !vulnPred(vuln) {
+					log.Errorf("vuln discarded: %+v", vuln)
 					continue
 				}
-				if _, exists := cveToVuln[vuln.GetCve()]; !exists {
-					cveToVuln[vuln.GetCve()] = vuln
-				}
-				if !cvesWithImage.Contains(vuln.GetCve()) {
-					cvesWithImage.Add(vuln.GetCve())
-					cveToImages[vuln.GetCve()] = append(cveToImages[vuln.GetCve()], &imageResolver{
+				if _, exists := cveToResolver[vuln.GetCve()]; !exists {
+					cveToResolver[vuln.GetCve()] = &EmbeddedVulnerabilityResolver{
+						data: vuln,
 						root: root,
-						data: image,
-					})
+					}
 				}
-				cveToComponents[vuln.GetCve()] = append(cveToComponents[vuln.GetCve()], &EmbeddedImageScanComponentResolver{
-					root: root,
-					data: component,
-				})
+				latestTime := cveToResolver[vuln.GetCve()].lastScanned
+				if latestTime == nil || image.GetScan().GetScanTime().Compare(latestTime) > 0 {
+					cveToResolver[vuln.GetCve()].lastScanned = image.GetScan().GetScanTime()
+				}
 			}
 		}
 	}
 
 	// Create the resolvers.
-	var resolvers []*EmbeddedVulnerabilityResolver
-	for cve, vuln := range cveToVuln {
-		resolvers = append(resolvers, &EmbeddedVulnerabilityResolver{
-			root:       root,
-			data:       vuln,
-			images:     cveToImages[cve],
-			components: cveToComponents[cve],
-		})
+	resolvers := make([]*EmbeddedVulnerabilityResolver, 0, len(cveToResolver))
+	for _, vuln := range cveToResolver {
+		resolvers = append(resolvers, vuln)
 	}
 	return resolvers, nil
 }

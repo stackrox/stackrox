@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var imageLoadertype = reflect.TypeOf(storage.Image{})
+var imageLoaderType = reflect.TypeOf(storage.Image{})
 
 func init() {
 	RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
@@ -30,7 +30,7 @@ func NewImageLoader(ds datastore.DataStore) ImageLoader {
 
 // GetImageLoader returns the ImageLoader from the context if it exists.
 func GetImageLoader(ctx context.Context) (ImageLoader, error) {
-	loader, err := GetLoader(ctx, imageLoadertype)
+	loader, err := GetLoader(ctx, imageLoaderType)
 	if err != nil {
 		return nil, err
 	}

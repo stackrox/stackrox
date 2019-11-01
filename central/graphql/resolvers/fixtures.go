@@ -1,10 +1,18 @@
 package resolvers
 
 import (
+	"time"
+
+	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func testImages() []*storage.Image {
+	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	utils.Must(err)
+	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	utils.Must(err)
 	return []*storage.Image{
 		{
 			Id: "sha1",
@@ -50,6 +58,7 @@ func testImages() []*storage.Image {
 						},
 					},
 				},
+				ScanTime: t1,
 			},
 		},
 		{
@@ -96,6 +105,7 @@ func testImages() []*storage.Image {
 						},
 					},
 				},
+				ScanTime: t2,
 			},
 		},
 	}

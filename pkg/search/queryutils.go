@@ -2,6 +2,7 @@ package search
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
@@ -57,6 +58,24 @@ func FilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, bool) {
 		return false
 	})
 	return filtered, areFieldsFiltered
+}
+
+// AddAsConjunction adds the input toAdd query to the input addTo query at the top level, either by appending it to the
+// conjunction list, or, if it is a base query, by making it a conjunction. Explicity disallows nested queries, as the
+// resulting query is expected to be either a base query, or a flat query.
+func AddAsConjunction(toAdd *v1.Query, addTo *v1.Query) (*v1.Query, error) {
+	if addTo.Query == nil {
+		return toAdd, nil
+	}
+	switch typedQ := addTo.GetQuery().(type) {
+	case *v1.Query_Conjunction:
+		typedQ.Conjunction.Queries = append(typedQ.Conjunction.Queries, toAdd)
+		return addTo, nil
+	case *v1.Query_BaseQuery:
+		return ConjunctionQuery(toAdd, addTo), nil
+	default:
+		return nil, errors.New("cannot add to a non-nil, non-conjunction, non-base query")
+	}
 }
 
 // FilterQuery applies the given function on every base query, and returns a new

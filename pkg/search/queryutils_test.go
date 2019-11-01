@@ -112,3 +112,127 @@ func TestFilterQuery(t *testing.T) {
 		},
 	}, newQuery)
 }
+
+func TestAddAsConjunction(t *testing.T) {
+	toAdd := &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchFieldQuery{
+					MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
+				},
+			},
+		},
+	}
+
+	addTo := &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+						},
+					},
+				}},
+			},
+		}},
+	}
+
+	expected := &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
+						},
+					},
+				}},
+			},
+		}},
+	}
+
+	added, err := AddAsConjunction(toAdd, addTo)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, added)
+
+	addTo = &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchFieldQuery{
+					MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+				},
+			},
+		},
+	}
+
+	expected = &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+						},
+					},
+				}},
+			},
+		}},
+	}
+
+	added, err = AddAsConjunction(toAdd, addTo)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, added)
+
+	addTo = &v1.Query{
+		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
+						},
+					},
+				}},
+			},
+		}},
+	}
+
+	_, err = AddAsConjunction(toAdd, addTo)
+	assert.Error(t, err)
+}

@@ -362,8 +362,15 @@ func (resolver *deploymentResolver) ImageComponents(ctx context.Context) ([]*Emb
 	}
 
 	imageShas := resolver.getImageShas(ctx)
+	if len(imageShas) == 0 {
+		return nil, nil
+	}
 	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, imageShaQuery)
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := imageLoader.FromQuery(ctx, imageShaQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -377,8 +384,15 @@ func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context) (in
 	}
 
 	imageShas := resolver.getImageShas(ctx)
+	if len(imageShas) == 0 {
+		return 0, nil
+	}
 	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, imageShaQuery)
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	images, err := imageLoader.FromQuery(ctx, imageShaQuery)
 	if err != nil {
 		return 0, err
 	}
@@ -397,8 +411,15 @@ func (resolver *deploymentResolver) Vulns(ctx context.Context) ([]*EmbeddedVulne
 	}
 
 	imageShas := resolver.getImageShas(ctx)
+	if len(imageShas) == 0 {
+		return nil, nil
+	}
 	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, imageShaQuery)
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := imageLoader.FromQuery(ctx, imageShaQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -412,8 +433,15 @@ func (resolver *deploymentResolver) VulnCount(ctx context.Context) (int32, error
 	}
 
 	imageShas := resolver.getImageShas(ctx)
+	if len(imageShas) == 0 {
+		return 0, nil
+	}
 	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, imageShaQuery)
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	images, err := imageLoader.FromQuery(ctx, imageShaQuery)
 	if err != nil {
 		return 0, err
 	}
@@ -432,6 +460,9 @@ func (resolver *deploymentResolver) VulnCounter(ctx context.Context) (*Vulnerabi
 	}
 
 	imageShas := resolver.getImageShas(ctx)
+	if len(imageShas) == 0 {
+		return emptyVulnerabilityCounter(), nil
+	}
 	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
 	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, imageShaQuery)
 	if err != nil {

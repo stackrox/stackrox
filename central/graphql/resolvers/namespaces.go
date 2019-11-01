@@ -207,12 +207,11 @@ func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error
 	if err := readNamespaces(ctx); err != nil {
 		return 0, err
 	}
-	q := resolver.getClusterNamespaceQuery()
-	results, err := resolver.root.ImageDataStore.Search(ctx, q)
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return imageLoader.CountFromQuery(ctx, resolver.getClusterNamespaceQuery())
 }
 
 func (resolver *namespaceResolver) filterPoliciesApplicableToNamespace(policies []*storage.Policy) []*storage.Policy {
@@ -348,12 +347,14 @@ func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context) ([]*EmbeddedImageScanComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
-
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := imageLoader.FromQuery(ctx, resolver.getClusterNamespaceQuery())
 	if err != nil {
 		return nil, err
 	}
@@ -366,11 +367,14 @@ func (resolver *namespaceResolver) ImageComponentCount(ctx context.Context) (int
 		return 0, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-
+	images, err := imageLoader.FromQuery(ctx, resolver.getClusterNamespaceQuery())
+	if err != nil {
+		return 0, err
+	}
 	vulns, err := mapImagesToComponentResolvers(resolver.root, images, search.EmptyQuery())
 	if err != nil {
 		return 0, err
@@ -385,7 +389,11 @@ func (resolver *namespaceResolver) Vulns(ctx context.Context) ([]*EmbeddedVulner
 		return nil, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := imageLoader.FromQuery(ctx, resolver.getClusterNamespaceQuery())
 	if err != nil {
 		return nil, err
 	}
@@ -398,11 +406,14 @@ func (resolver *namespaceResolver) VulnCount(ctx context.Context) (int32, error)
 		return 0, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-
+	images, err := imageLoader.FromQuery(ctx, resolver.getClusterNamespaceQuery())
+	if err != nil {
+		return 0, err
+	}
 	vulns, err := mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
 	if err != nil {
 		return 0, err
@@ -416,7 +427,11 @@ func (resolver *namespaceResolver) VulnCounter(ctx context.Context) (*Vulnerabil
 		return nil, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getClusterNamespaceQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := imageLoader.FromQuery(ctx, resolver.getClusterNamespaceQuery())
 	if err != nil {
 		return nil, err
 	}

@@ -5,8 +5,11 @@ import (
 	"errors"
 	"reflect"
 
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+var log = logging.LoggerForModule()
 
 type dataLoaderContextKey struct{}
 
@@ -76,6 +79,7 @@ func (lc *loaderContext) createLoader(lt reflect.Type) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
+		lc.loaders[lt] = loader
 	}
 	return loader, nil
 }

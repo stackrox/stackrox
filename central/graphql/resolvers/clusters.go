@@ -486,7 +486,11 @@ func (resolver *clusterResolver) ImageComponents(ctx context.Context) ([]*Embedd
 		return nil, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +503,11 @@ func (resolver *clusterResolver) ImageComponentCount(ctx context.Context) (int32
 		return 0, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
 	if err != nil {
 		return 0, err
 	}
@@ -518,7 +526,11 @@ func (resolver *clusterResolver) Vulns(ctx context.Context) ([]*EmbeddedVulnerab
 		return nil, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
 	if err != nil {
 		return nil, err
 	}
@@ -542,7 +554,11 @@ func (resolver *clusterResolver) VulnCount(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
 	if err != nil {
 		return 0, err
 	}
@@ -560,7 +576,11 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context) (*Vulnerabilit
 		return nil, err
 	}
 
-	images, err := resolver.root.ImageDataStore.SearchRawImages(ctx, resolver.getQuery())
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
 	if err != nil {
 		return nil, err
 	}

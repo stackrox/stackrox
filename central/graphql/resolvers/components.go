@@ -33,15 +33,14 @@ func init() {
 			"name: String!",
 			"version: String!",
 			"topVuln: EmbeddedVulnerability",
-			"vulns: [EmbeddedVulnerability]!",
-			"vulnCount: Int!",
+			"vulns(query: String): [EmbeddedVulnerability]!",
+			"vulnCount(query: String): Int!",
 			"vulnCounter: VulnerabilityCounter!",
 			"lastScanned: Time",
-			"images: [Image!]!",
-			"imageCount: Int!",
-			"imageCount: Int!",
-			"deployments: [Deployment!]!",
-			"deploymentCount: Int!",
+			"images(query: String): [Image!]!",
+			"imageCount(query: String): Int!",
+			"deployments(query: String): [Deployment!]!",
+			"deploymentCount(query: String): Int!",
 			"priority: Int!",
 		}),
 		schema.AddExtraResolver("ImageScan", `components: [EmbeddedImageScanComponent!]!`),
@@ -85,7 +84,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q rawQuery) ([]*E
 	}
 
 	// Convert to query, but link the fields for the search.
-	query, err := search.ParseQuery(q.String(), search.MatchAllIfEmpty())
+	query, err := q.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
@@ -132,11 +131,9 @@ func (resolver *Resolver) wrapEmbeddedImageScanComponents(values []*storage.Embe
 
 // EmbeddedImageScanComponentResolver resolves data about an image scan component.
 type EmbeddedImageScanComponentResolver struct {
-	root *Resolver
-	data *storage.EmbeddedImageScanComponent
-
-	images      []*imageResolver
-	deployments []*deploymentResolver
+	root        *Resolver
+	lastScanned *protoTypes.Timestamp
+	data        *storage.EmbeddedImageScanComponent
 }
 
 // License return the license for the image component.
@@ -182,13 +179,7 @@ func (eicr *EmbeddedImageScanComponentResolver) LayerIndex() *int32 {
 
 // LastScanned is the last time the vulnerability was scanned in an image.
 func (eicr *EmbeddedImageScanComponentResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
-	var latestTime *protoTypes.Timestamp
-	for _, image := range eicr.images {
-		if latestTime == nil || image.data.GetScan().GetScanTime().Compare(latestTime) > 0 {
-			latestTime = image.data.GetScan().GetScanTime()
-		}
-	}
-	return timestamp(latestTime)
+	return timestamp(eicr.lastScanned)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -203,14 +194,25 @@ func (eicr *EmbeddedImageScanComponentResolver) TopVuln(ctx context.Context) (*E
 }
 
 // Vulns resolves the vulnerabilities contained in the image component.
-func (eicr *EmbeddedImageScanComponentResolver) Vulns(ctx context.Context) ([]*EmbeddedVulnerabilityResolver, error) {
-	value := eicr.data.GetVulns()
-	return eicr.root.wrapEmbeddedVulnerabilities(value, nil)
+func (eicr *EmbeddedImageScanComponentResolver) Vulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+	return vulnerabilities(ctx, eicr.root, query)
 }
 
 // VulnCount resolves the number of vulnerabilities contained in the image component.
-func (eicr *EmbeddedImageScanComponentResolver) VulnCount(ctx context.Context) (int32, error) {
-	return int32(len(eicr.data.GetVulns())), nil
+func (eicr *EmbeddedImageScanComponentResolver) VulnCount(ctx context.Context, args rawQuery) (int32, error) {
+	vulns, err := eicr.Vulns(ctx, args)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(vulns)), nil
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
@@ -218,80 +220,115 @@ func (eicr *EmbeddedImageScanComponentResolver) VulnCounter(ctx context.Context)
 	return mapVulnsToVulnerabilityCounter(eicr.data.GetVulns()), nil
 }
 
-// Images are the images that contain the CVE/Vulnerability.
-func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context) ([]*imageResolver, error) {
-	err := eicr.loadImages(ctx)
+// Images are the images that contain the Component.
+func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
+	// Convert to query, but link the fields for the search.
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return eicr.images, nil
-}
-
-// ImageCount is the number of images that contain the CVE/Vulnerability.
-func (eicr *EmbeddedImageScanComponentResolver) ImageCount(ctx context.Context) (int32, error) {
-	err := eicr.loadImages(ctx)
+	images, err := eicr.loadImages(ctx, query)
 	if err != nil {
-		return 0, err
-	}
-	return int32(len(eicr.images)), nil
-}
-
-// Deployments are the deployments that contain the CVE/Vulnerability.
-func (eicr *EmbeddedImageScanComponentResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
-	if err := eicr.loadDeployments(ctx); err != nil {
 		return nil, err
 	}
-	return eicr.deployments, nil
+	return images, nil
 }
 
-// DeploymentCount is the number deployments that contain the CVE/Vulnerability.
-func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Context) (int32, error) {
-	if err := eicr.loadDeployments(ctx); err != nil {
-		return 0, err
-	}
-	return int32(len(eicr.deployments)), nil
-}
-
-func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context) error {
-	if eicr.images != nil {
-		return nil
-	}
+// ImageCount is the number of images that contain the Component.
+func (eicr *EmbeddedImageScanComponentResolver) ImageCount(ctx context.Context, args rawQuery) (int32, error) {
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-
-	q := search.NewQueryBuilder().
-		AddExactMatches(search.Component, eicr.data.GetName()).
-		AddExactMatches(search.ComponentVersion, eicr.data.GetVersion()).
-		ProtoQuery()
-	eicr.images, err = eicr.root.wrapImages(imageLoader.FromQuery(ctx, q))
-	return err
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	return imageLoader.CountFromQuery(ctx, query)
 }
 
-func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Context) error {
-	if eicr.deployments != nil {
-		return nil
+// Deployments are the deployments that contain the Component.
+func (eicr *EmbeddedImageScanComponentResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+	if err := readDeployments(ctx); err != nil {
+		return nil, err
 	}
-	err := eicr.loadImages(ctx)
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
-		return err
+		return nil, err
+	}
+	return eicr.loadDeployments(ctx, query)
+}
+
+// DeploymentCount is the number of deployments that contain the Component.
+func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Context, args rawQuery) (int32, error) {
+	if err := readDeployments(ctx); err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	deploymentBaseQuery, err := eicr.getDeploymentBaseQuery(ctx)
+	if err != nil || deploymentBaseQuery == nil {
+		return 0, err
+	}
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return deploymentLoader.CountFromQuery(ctx, search.ConjunctionQuery(deploymentBaseQuery, query))
+}
+
+func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+	return eicr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+}
+
+func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {
+	q, err := eicr.getDeploymentBaseQuery(ctx)
+	if err != nil || q == nil {
+		return nil, err
+	}
+
+	ListDeploymentLoader, err := loaders.GetListDeploymentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return eicr.root.wrapListDeployments(ListDeploymentLoader.FromQuery(ctx, search.ConjunctionQuery(q, query)))
+}
+
+func (eicr *EmbeddedImageScanComponentResolver) getDeploymentBaseQuery(ctx context.Context) (*v1.Query, error) {
+	imageQuery := eicr.componentQuery()
+	results, err := eicr.root.ImageDataStore.Search(ctx, imageQuery)
+	if err != nil || len(results) == 0 {
+		return nil, err
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
-	qb := search.NewQueryBuilder()
-	for _, image := range eicr.images {
-		id := image.Id(ctx)
-		qb.AddExactMatches(search.ImageSHA, string(id))
+	var qb []*v1.Query
+	for _, id := range search.ResultsToIDs(results) {
+		qb = append(qb, search.NewQueryBuilder().AddExactMatches(search.ImageSHA, id).ProtoQuery())
 	}
-	q := qb.ProtoQuery()
+	return search.DisjunctionQuery(qb...), nil
+}
 
-	// Search the deployments.
-	eicr.deployments, err = eicr.root.wrapListDeployments(eicr.root.DeploymentDataStore.SearchListDeployments(ctx, q))
-	if err != nil {
-		return err
-	}
-	return nil
+func (eicr *EmbeddedImageScanComponentResolver) componentQuery() *v1.Query {
+	return search.NewQueryBuilder().
+		AddExactMatches(search.Component, eicr.data.GetName()).
+		AddExactMatches(search.ComponentVersion, eicr.data.GetVersion()).
+		ProtoQuery()
 }
 
 // Static helpers.
@@ -328,41 +365,36 @@ func (cID *componentID) toString() string {
 // Map the images that matched a query to the image components it contains.
 func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
 	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
-	pred, err := componentPredicateFactory.GeneratePredicate(query)
+	componentPred, err := componentPredicateFactory.GeneratePredicate(query)
 	if err != nil {
 		return nil, err
 	}
 
 	// Use the images to map CVEs to the images and components.
-	componentToImages := make(map[componentID][]*imageResolver)
-	idToComponent := make(map[componentID]*storage.EmbeddedImageScanComponent)
+	idToComponent := make(map[componentID]*EmbeddedImageScanComponentResolver)
 	for _, image := range images {
-		componentsWithImage := make(map[componentID]struct{})
 		for _, component := range image.GetScan().GetComponents() {
-			if !pred(component) {
+			if !componentPred(component) {
 				continue
 			}
 			thisComponentID := componentID{Name: component.GetName(), Version: component.GetVersion()}
-
-			idToComponent[thisComponentID] = component
-			if _, hasImageAlready := componentsWithImage[thisComponentID]; !hasImageAlready {
-				componentsWithImage[thisComponentID] = struct{}{}
-				componentToImages[thisComponentID] = append(componentToImages[thisComponentID], &imageResolver{
+			if _, exists := idToComponent[thisComponentID]; !exists {
+				idToComponent[thisComponentID] = &EmbeddedImageScanComponentResolver{
 					root: root,
-					data: image,
-				})
+					data: component,
+				}
+			}
+			latestTime := idToComponent[thisComponentID].lastScanned
+			if latestTime == nil || image.GetScan().GetScanTime().Compare(latestTime) > 0 {
+				idToComponent[thisComponentID].lastScanned = image.GetScan().GetScanTime()
 			}
 		}
 	}
 
 	// Create the resolvers.
-	var resolvers []*EmbeddedImageScanComponentResolver
-	for id, component := range idToComponent {
-		resolvers = append(resolvers, &EmbeddedImageScanComponentResolver{
-			root:   root,
-			data:   component,
-			images: componentToImages[id],
-		})
+	resolvers := make([]*EmbeddedImageScanComponentResolver, 0, len(idToComponent))
+	for _, component := range idToComponent {
+		resolvers = append(resolvers, component)
 	}
 	return resolvers, nil
 }
