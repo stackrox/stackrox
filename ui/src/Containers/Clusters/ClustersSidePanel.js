@@ -57,7 +57,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
 
     useEffect(
         () => {
-            const clusterIdToRetrieve = selectedCluster.id || selectedClusterId;
+            const clusterIdToRetrieve = selectedClusterId;
             if (clusterIdToRetrieve && clusterIdToRetrieve !== 'new') {
                 setMessageState(null);
                 // don't want to cache or memoize, because we always want the latest real-time data
