@@ -4,7 +4,7 @@ All notable changes to this project that require documentation updates will be d
 ## [33.0]
 ### Changed
 - Proxy configuration can now changed at runtime by editing and applying `proxy-config-secret.yaml` where central and scanner run.
-- Both the `runAsUser` and `fsGroup` for the central deployment are now 4000. 
+- Both the `runAsUser` and `fsGroup` for the central deployment are now 4000.
   This required changes in the the pod security policy, and the OpenShift Security Context Contraint (scc) objects.
   If you are upgrading from a previous version, please refer to the upgrade instructions on how to apply these changes
   to your existing deployment, pod security policy and OpenShift scc objects.
@@ -13,6 +13,9 @@ All notable changes to this project that require documentation updates will be d
 - Scopes now include support for Regex on the namespace and label fields including both Policy Scope and Whitelist Scope.
   The supported Regex syntax can be found here: https://github.com/google/re2/wiki/Syntax.
 - The `validated` field in an auth provider is deprecated and will be removed in 3 releases. Please use the `active` field instead.
+- RHSA vulnerabilities will now be displayed with the highest CVSS score from the CVEs it references. The referenced CVEs will
+  now also be available. (ROX-3519, ROX-3550; d36f2ccf)
+- `GetRisk(/v1/risks/{subjectType}/{subjectID})` endpoint is removed. For obtaining deployment risk, use `GetDeploymentWithRisk(/v1/deploymentswithrisk/{id})`. (8844549b)
 
 ## [32.0]
 ### Changed
@@ -23,14 +26,11 @@ All notable changes to this project that require documentation updates will be d
   that can be used to extract the bundle files to a custom directory. (ROX-2529)
 - The `roxctl central debug dump` subcommand now accepts an optional `--output-dir <dir>` flag
   that can be used to specify a custom directory for the debug zip file.
-- RHSA vulnerabilities will now be displayed with the highest CVSS score from the CVEs it references. The referenced CVEs will
-  now also be available.
 - The format of collector tags changed from `<version>` to `<version>-latest`. This tag references a *mutable* image in
   canonical upstream repository (`collector.stackrox.io/collector`) that will get updated whenever kernel modules/eBPF
   probes for new Linux kernel versions become available. This decreases the need to rely on module downloads via
   the internet. If you configure StackRox to pull collector images from your private registry, you need to configure a
   periodic mirroring to take advantage of this effect.
-- `GetRisk(/v1/risks/{subjectType}/{subjectID})` endpoint is removed. For obtaining deployment risk, use `GetDeploymentWithRisk(/v1/deploymentswithrisk/{id})`.
 
 ## [31.0]
 ### Changed
