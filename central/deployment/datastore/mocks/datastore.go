@@ -214,3 +214,18 @@ func (mr *MockDataStoreMockRecorder) GetImagesForDeployment(ctx, deployment inte
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesForDeployment", reflect.TypeOf((*MockDataStore)(nil).GetImagesForDeployment), ctx, deployment)
 }
+
+// GetDeploymentIDs mocks base method
+func (m *MockDataStore) GetDeploymentIDs() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDeploymentIDs")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDeploymentIDs indicates an expected call of GetDeploymentIDs
+func (mr *MockDataStoreMockRecorder) GetDeploymentIDs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentIDs", reflect.TypeOf((*MockDataStore)(nil).GetDeploymentIDs))
+}

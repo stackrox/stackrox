@@ -304,3 +304,22 @@ func (s *CRUDTestSuite) TestDeleteMany() {
 		s.Len(msgs, 0)
 	}
 }
+
+func (s *CRUDTestSuite) TestGetIDs() {
+	s.NoError(s.crud.UpsertBatch([]proto.Message{alert1, alert2}))
+
+	ids, err := s.crud.GetKeys()
+	s.NoError(err)
+	s.Equal([]string{alert1ID, alert2ID}, ids)
+
+	s.NoError(s.crud.DeleteBatch([]string{alert1ID}))
+	ids, err = s.crud.GetKeys()
+	s.NoError(err)
+	s.Equal([]string{alert2ID}, ids)
+
+	s.NoError(s.crud.Delete(alert2ID))
+
+	ids, err = s.crud.GetKeys()
+	s.NoError(err)
+	s.Len(ids, 0)
+}

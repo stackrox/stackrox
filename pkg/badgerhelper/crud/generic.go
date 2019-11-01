@@ -44,6 +44,8 @@ type Crud interface {
 
 	GetTxnCount() (txNum uint64)
 	IncTxnCount() error
+
+	GetKeys() ([]string, error)
 }
 
 func deserializerFunc(alloc allocFunc) Deserializer {

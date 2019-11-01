@@ -266,3 +266,16 @@ func (b *storeImpl) IncTxnCount() error {
 		return nil
 	})
 }
+
+func (b *storeImpl) GetDeploymentIDs() ([]string, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "IDs")
+	var keys []string
+	err := b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(deploymentBucket)
+		return bucket.ForEach(func(k, _ []byte) error {
+			keys = append(keys, string(k))
+			return nil
+		})
+	})
+	return keys, err
+}

@@ -48,6 +48,7 @@ type DataStore interface {
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
 
 	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)
+	GetDeploymentIDs() ([]string, error)
 }
 
 func newDataStore(storage store.Store, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {

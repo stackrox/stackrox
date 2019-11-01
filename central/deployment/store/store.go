@@ -21,4 +21,5 @@ type Store interface {
 
 	GetTxnCount() (txNum uint64, err error)
 	IncTxnCount() error
+	GetDeploymentIDs() ([]string, error)
 }

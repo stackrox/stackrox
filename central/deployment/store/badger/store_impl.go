@@ -193,3 +193,8 @@ func (b *storeImpl) GetTxnCount() (txNum uint64, err error) {
 func (b *storeImpl) IncTxnCount() error {
 	return b.deploymentCRUD.IncTxnCount()
 }
+
+func (b *storeImpl) GetDeploymentIDs() ([]string, error) {
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "IDs")
+	return b.deploymentCRUD.GetKeys()
+}

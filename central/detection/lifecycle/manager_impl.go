@@ -91,7 +91,21 @@ func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorWithInjec
 func (m *managerImpl) buildIndicatorFilter() {
 	ctx := sac.WithAllAccess(context.Background())
 	var processesToRemove []string
-	err := m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
+
+	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs()
+	if err != nil {
+		utils.Should(errors.Wrap(err, "error getting deployment IDs"))
+		return
+	}
+
+	deploymentIDSet := set.NewStringSet(deploymentIDs...)
+
+	err = m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
+		// If the deployment is not the database then ignore and don't add into the filter
+		if !deploymentIDSet.Contains(pi.GetDeploymentId()) {
+			processesToRemove = append(processesToRemove, pi.GetId())
+			return nil
+		}
 		if !m.processFilter.Add(pi) {
 			processesToRemove = append(processesToRemove, pi.GetId())
 		}

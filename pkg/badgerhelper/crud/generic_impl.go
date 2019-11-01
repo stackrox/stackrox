@@ -334,3 +334,14 @@ func (c *crudImpl) GetTxnCount() uint64 {
 func (c *crudImpl) IncTxnCount() error {
 	return errors.Wrapf(c.txnHelper.IncTxnCount(), "error incrementing txn count in %s", string(c.prefixString))
 }
+
+func (c *crudImpl) GetKeys() ([]string, error) {
+	var keys []string
+	err := c.db.View(func(tx *badger.Txn) error {
+		return badgerhelper.BucketKeyForEach(tx, c.prefix, badgerhelper.ForEachOptions{StripKeyPrefix: true}, func(k []byte) error {
+			keys = append(keys, string(k))
+			return nil
+		})
+	})
+	return keys, err
+}
