@@ -563,11 +563,17 @@ func (resolver *clusterResolver) VulnCount(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 
-	vulns, err := mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
+	imageVulns, err := mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(vulns)), nil
+
+	k8sVulns, err := resolver.root.clusterK8sVulnerabilities(resolver.data)
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(len(imageVulns)) + int32(len(k8sVulns)), nil
 }
 
 func (resolver *clusterResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {

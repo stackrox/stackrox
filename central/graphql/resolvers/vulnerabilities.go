@@ -72,12 +72,25 @@ func (resolver *Resolver) Vulnerability(ctx context.Context, args struct{ *graph
 	vulns, err := vulnerabilities(ctx, resolver, query)
 	if err != nil {
 		return nil, err
-	} else if len(vulns) == 0 {
-		return nil, nil
 	} else if len(vulns) > 1 {
 		return nil, fmt.Errorf("multiple vulns matched: %s this should not happen", string(*args.ID))
 	}
-	return vulns[0], nil
+
+	if len(vulns) == 1 {
+		return vulns[0], nil
+	}
+
+	evs := resolver.k8sCVEManager.GetK8sEmbeddedVulnerabilities()
+	k8sVulns, err := resolver.wrapEmbeddedVulnerabilities(filterEmbeddedVulnerabilities(evs, query))
+	if err != nil {
+		return nil, err
+	} else if len(k8sVulns) == 0 {
+		return nil, nil
+	} else if len(k8sVulns) > 1 {
+		return nil, fmt.Errorf("multiple k8s vulns matched: %s this should not happen", string(*args.ID))
+	}
+
+	return k8sVulns[0], nil
 }
 
 // Vulnerabilities resolves a set of vulnerabilities based on a query.
@@ -420,10 +433,10 @@ func (resolver *Resolver) getAffectedClusterPercentage(ctx context.Context, cve 
 			affectedClusterCount++
 		}
 	}
-	return float64(affectedClusterCount) / float64(len(clusters)) * 100, nil
+	return float64(affectedClusterCount) / float64(len(clusters)), nil
 }
 
-func (evr *EmbeddedVulnerabilityResolver) getEnvImpactForK8sVulns(ctx context.Context) (float64, error) {
+func (evr *EmbeddedVulnerabilityResolver) getEnvImpactForK8sVuln(ctx context.Context) (float64, error) {
 	cve := evr.root.getNvdCVE(evr.data.Cve)
 	if cve == nil {
 		return 0.0, fmt.Errorf("cve: %q not found", evr.data.Cve)
@@ -438,7 +451,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactForK8sVulns(ctx context.Co
 // EnvImpact is the fraction of deployments that contains the CVE
 func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float64, error) {
 	if evr.data.VulnerabilityType == storage.EmbeddedVulnerability_K8S_VULNERABILITY {
-		return evr.getEnvImpactForK8sVulns(ctx)
+		return evr.getEnvImpactForK8sVuln(ctx)
 	}
 
 	allDepsCount, err := evr.root.DeploymentDataStore.CountDeployments(ctx)
