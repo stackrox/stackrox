@@ -13,7 +13,7 @@ import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
-import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
+import { getVulnerabilityChips, parseCVESearch } from 'utils/vulnerabilityUtils';
 
 const MOST_RECENT_VULNERABILITIES = gql`
     query mostRecentVulnerabilities($query: String) {
@@ -39,10 +39,17 @@ const processData = (data, workflowState, limit) => {
     return getVulnerabilityChips(workflowState, results);
 };
 
-const MostRecentVulnerabilities = ({ entityContext, limit }) => {
+const MostRecentVulnerabilities = ({ entityContext, search, limit }) => {
+    const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
+
+    const parsedSearch = parseCVESearch(search); // hack until isFixable is allowed in search
+
+    const queryObject = { ...entityContextObject, ...parsedSearch }; // Combine entity context and search
+    const query = queryService.objectToWhereClause(queryObject); // get final gql query string
+
     const { loading, data = {} } = useQuery(MOST_RECENT_VULNERABILITIES, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext)
+            query
         }
     });
 
@@ -74,11 +81,13 @@ const MostRecentVulnerabilities = ({ entityContext, limit }) => {
 
 MostRecentVulnerabilities.propTypes = {
     entityContext: PropTypes.shape({}),
+    search: PropTypes.shape({}),
     limit: PropTypes.number
 };
 
 MostRecentVulnerabilities.defaultProps = {
     entityContext: {},
+    search: {},
     limit: 5
 };
 

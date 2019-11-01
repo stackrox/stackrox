@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 
 import entityTypes from 'constants/entityTypes';
 import DashboardLayout from 'Components/DashboardLayout';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
+import workflowStateContext from 'Containers/workflowStateContext';
 
 import { dashboardLimit } from 'constants/workflowPages.constants';
 import PoliciesCountTile from './PoliciesCountTile';
@@ -20,6 +21,10 @@ import ClustersWithMostK8sVulnerabilities from '../widgets/ClustersWithMostK8sVu
 // layout-specific graph widget counts
 
 const VulnDashboardPage = () => {
+    const workflowState = useContext(workflowStateContext);
+
+    const searchState = workflowState.getCurrentSearchState();
+
     const entityMenuTypes = [
         entityTypes.CLUSTER,
         entityTypes.NAMESPACE,
@@ -49,10 +54,10 @@ const VulnDashboardPage = () => {
                 <FrequentlyViolatedPolicies />
             </div>
             <div className="s-2">
-                <MostRecentVulnerabilities limit={dashboardLimit} />
+                <MostRecentVulnerabilities search={searchState} limit={dashboardLimit} />
             </div>
             <div className="sx-2 sy-4">
-                <MostCommonVulnerabilities />
+                <MostCommonVulnerabilities search={searchState} />
             </div>
             <div className="s-2">
                 <DeploymentsWithMostSeverePolicyViolations limit={dashboardLimit} />

@@ -169,10 +169,8 @@ const URLSearchInputWithAutocomplete = ({
         // if (prevQueryJSON.groupBy) queryJSON.groupBy = prevQueryJSON.groupBy;
 
         if (workflowState && workflowState.useCase) {
-            workflowState.setSearch(newSearch);
-
             // Get the full querystring to redirect to
-            const url = workflowState.toUrl();
+            const url = workflowState.setSearch(newSearch).toUrl();
             const qsStart = url.indexOf('?');
             if (qsStart === -1) return '';
             return url.substr(qsStart);

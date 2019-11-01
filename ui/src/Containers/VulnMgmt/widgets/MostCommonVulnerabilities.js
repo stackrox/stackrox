@@ -13,6 +13,7 @@ import Button from 'Components/Button';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
+import { parseCVESearch } from 'utils/vulnerabilityUtils';
 
 const MOST_COMMON_VULNERABILITIES = gql`
     query mostCommonVulnerabilities($query: String) {
@@ -53,10 +54,17 @@ const processData = (data, workflowState) => {
     });
 };
 
-const MostCommonVulnerabilities = ({ entityContext }) => {
+const MostCommonVulnerabilities = ({ entityContext, search }) => {
+    const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
+
+    const parsedSearch = parseCVESearch(search); // hack until isFixable is allowed in search
+
+    const queryObject = { ...entityContextObject, ...parsedSearch }; // Combine entity context and search
+    const query = queryService.objectToWhereClause(queryObject); // get final gql query string
+
     const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext)
+            query
         }
     });
 
@@ -84,11 +92,13 @@ const MostCommonVulnerabilities = ({ entityContext }) => {
 };
 
 MostCommonVulnerabilities.propTypes = {
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
+    search: PropTypes.shape({})
 };
 
 MostCommonVulnerabilities.defaultProps = {
-    entityContext: {}
+    entityContext: {},
+    search: {}
 };
 
 export default MostCommonVulnerabilities;
