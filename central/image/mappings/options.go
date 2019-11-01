@@ -12,6 +12,7 @@ var OptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)
 	Add(search.Cluster, mappings.OptionsMap.MustGet(search.Cluster.String())).
 	Add(search.ClusterID, mappings.OptionsMap.MustGet(search.ClusterID.String())).
 	Add(search.Namespace, mappings.OptionsMap.MustGet(search.Namespace.String())).
+	Add(search.NamespaceID, mappings.OptionsMap.MustGet(search.NamespaceID.String())).
 	Add(search.Label, mappings.OptionsMap.MustGet(search.Label.String())).
 	Add(search.DeploymentName, mappings.OptionsMap.MustGet(search.DeploymentName.String())).
 	Add(search.DeploymentID, mappings.OptionsMap.MustGet(search.DeploymentID.String()))

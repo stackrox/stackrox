@@ -18,7 +18,7 @@ import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCv
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
-const VulnMgmtNamespaceOverview = ({ data }) => {
+const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
     const {
@@ -68,6 +68,8 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
         }
     }
 
+    const newEntityContext = { ...entityContext, [entityTypes.NAMESPACE]: data.metadata.id };
+
     return (
         <div className="w-full h-full" id="capture-dashboard-stretch">
             <div className="flex h-full">
@@ -90,13 +92,15 @@ const VulnMgmtNamespaceOverview = ({ data }) => {
                                 />
                             </div>
                             <div className="s-1">
-                                <MostRecentVulnerabilities />
+                                <MostRecentVulnerabilities entityContext={newEntityContext} />
                             </div>
                             <div className="s-1">
-                                <TopRiskiestImagesAndComponents />
+                                <TopRiskiestImagesAndComponents entityContext={newEntityContext} />
                             </div>
                             <div className="s-1">
-                                <DeploymentsWithMostSeverePolicyViolations />
+                                <DeploymentsWithMostSeverePolicyViolations
+                                    entityContext={newEntityContext}
+                                />
                             </div>
                         </div>
                     </CollapsibleSection>

@@ -21,7 +21,7 @@ import DeploymentsWithMostSeverePolicyViolations from '../../widgets/Deployments
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
-const VulnMgmtClusterOverview = ({ data }) => {
+const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
     const {
@@ -92,6 +92,8 @@ const VulnMgmtClusterOverview = ({ data }) => {
         }
     }
 
+    const newEntityContext = { ...entityContext, [entityTypes.CLUSTER]: data.id };
+
     return (
         <div className="w-full h-full" id="capture-dashboard-stretch">
             <div className="flex h-full">
@@ -118,13 +120,22 @@ const VulnMgmtClusterOverview = ({ data }) => {
                                 />
                             </div>
                             <div className="s-1">
-                                <MostRecentVulnerabilities limit={overviewLimit} />
+                                <MostRecentVulnerabilities
+                                    limit={overviewLimit}
+                                    entityContext={newEntityContext}
+                                />
                             </div>
                             <div className="s-1">
-                                <TopRiskiestImagesAndComponents limit={overviewLimit} />
+                                <TopRiskiestImagesAndComponents
+                                    limit={overviewLimit}
+                                    entityContext={newEntityContext}
+                                />
                             </div>
                             <div className="s-1">
-                                <DeploymentsWithMostSeverePolicyViolations limit={overviewLimit} />
+                                <DeploymentsWithMostSeverePolicyViolations
+                                    limit={overviewLimit}
+                                    entityContext={newEntityContext}
+                                />
                             </div>
                         </div>
                     </CollapsibleSection>
