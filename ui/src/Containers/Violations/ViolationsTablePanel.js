@@ -116,7 +116,7 @@ function ViolationsTablePanel({
 
     return (
         <Panel headerTextComponent={headerTextComponent} headerComponents={headerComponents}>
-            <div className="w-full">
+            <div className="h-full w-full">
                 <ViolationsTable
                     violations={violations}
                     selectedAlertId={selectedAlertId}

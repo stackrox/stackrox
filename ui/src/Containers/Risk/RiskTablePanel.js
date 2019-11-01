@@ -28,7 +28,7 @@ function RiskTablePanel({
     );
     return (
         <Panel headerTextComponent={headerComponent} headerComponents={paginationComponent}>
-            <div className="w-full">
+            <div className="h-full w-full">
                 <RiskTable
                     currentDeployments={currentDeployments}
                     setSelectedDeploymentId={setSelectedDeploymentId}

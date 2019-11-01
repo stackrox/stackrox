@@ -8,19 +8,13 @@ import getColumns from './tableColumnDescriptors';
 
 // Reads the table's state and chooses a sort option based on the sort column and direction.
 function createSortOptionFromTableState(columns, state) {
-    let sortOption;
+    let sortOption = null;
     if (state.sorted.length && state.sorted[0].id) {
         // Column is selected for sorting.
         const column = columns.find(col => col.accessor === state.sorted[0].id);
         sortOption = {
             field: column.searchField,
             reversed: state.sorted[0].desc
-        };
-    } else {
-        // Default to sorting by the Time column.
-        sortOption = {
-            field: columns.find(c => c.accessor === 'time').searchField,
-            reversed: true
         };
     }
     return sortOption;
@@ -70,7 +64,9 @@ function ViolationsTable({
 
     // Use the table's 'onFetchData' prop to set our sort option.
     function setSortOptionOnFetch(state) {
-        setSortOption(createSortOptionFromTableState(columns, state));
+        const newSortOption = createSortOptionFromTableState(columns, state);
+        if (!newSortOption) return;
+        setSortOption(newSortOption);
     }
 
     return (

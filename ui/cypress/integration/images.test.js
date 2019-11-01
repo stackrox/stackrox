@@ -64,7 +64,7 @@ describe('Images page', () => {
         cy.route('GET', api.images.get, '@imageJson').as('image');
 
         cy.get(imageSelectors.firstTableRow).click();
-        cy.wait('@images');
+        cy.wait('@image');
 
         cy.fixture('images/images.json').then(json => {
             cy.url().should('contain', `${imagesUrl}/${json.images[0].id}`);
@@ -76,7 +76,7 @@ describe('Images page', () => {
         cy.route('GET', api.images.get, '@imageJson').as('image');
 
         cy.get(imageSelectors.firstTableRow).click();
-        cy.wait('@images');
+        cy.wait('@image');
 
         cy.get(imageSelectors.viewDeploymentsButton).click();
         cy.url().should('contain', riskUrl);

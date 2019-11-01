@@ -27,7 +27,7 @@ function ImagesTablePanel({
 
     return (
         <Panel headerTextComponent={headerComponent} headerComponents={paginationComponent}>
-            <div className="w-full">
+            <div className="h-full w-full">
                 <ImagesTable
                     currentImages={currentImages}
                     setSelectedImageId={setSelectedImageId}

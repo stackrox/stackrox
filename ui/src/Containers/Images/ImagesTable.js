@@ -62,17 +62,12 @@ const columns = [
 ];
 
 function getSortOptionFromState(state) {
-    let sortOption;
+    let sortOption = null;
     if (state.sorted.length && state.sorted[0].id) {
         const column = columns.find(col => col.accessor === state.sorted[0].id);
         sortOption = {
             field: column.searchField,
             reversed: state.sorted[0].desc
-        };
-    } else {
-        sortOption = {
-            field: columns[0].searchField,
-            reversed: false
         };
     }
     return sortOption;
@@ -90,7 +85,9 @@ function ImagesTable({ currentImages, selectedImageId, setSelectedImageId, setSo
 
     // Use the table's 'onFetchData' prop to set our sort option.
     function setSortOptionOnFetch(state) {
-        setSortOption(getSortOptionFromState(state));
+        const newSortOption = getSortOptionFromState(state);
+        if (!newSortOption) return;
+        setSortOption(newSortOption);
     }
 
     // Render the Table.

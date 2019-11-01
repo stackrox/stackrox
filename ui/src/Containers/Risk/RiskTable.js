@@ -7,17 +7,12 @@ import Table from 'Components/TableV2';
 import columns from './tableColumnDescriptor';
 
 function sortOptionFromTableState(state) {
-    let sortOption;
+    let sortOption = null;
     if (state.sorted.length && state.sorted[0].id) {
         const column = columns.find(col => col.accessor === state.sorted[0].id);
         sortOption = {
             field: column.searchField,
             reversed: state.sorted[0].desc
-        };
-    } else {
-        sortOption = {
-            field: 'Priority',
-            reversed: false
         };
     }
     return sortOption;
@@ -30,7 +25,9 @@ function RiskTable({
     setSortOption
 }) {
     function onFetchData(state) {
-        setSortOption(sortOptionFromTableState(state));
+        const newSortOption = sortOptionFromTableState(state);
+        if (!newSortOption) return;
+        setSortOption(newSortOption);
     }
 
     function updateSelectedDeployment({ deployment }) {
