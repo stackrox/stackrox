@@ -104,12 +104,6 @@ func components(ctx context.Context, root *Resolver, query *v1.Query) ([]*Embedd
 		return nil, err
 	}
 
-	// Filter the query to just the component portion.
-	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
-	if query == nil {
-		query = search.EmptyQuery()
-	}
-
 	return mapImagesToComponentResolvers(root, images, query)
 }
 

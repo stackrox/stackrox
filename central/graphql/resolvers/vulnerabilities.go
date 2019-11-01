@@ -106,11 +106,6 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q rawQuery) ([]*E
 		return nil, err
 	}
 
-	// Check that all search inputs apply to vulnerabilities or images.
-	if err := search.ValidateQuery(query, mappings.VulnerabilityOptionsMap.Merge(mappings.OptionsMap)); err != nil {
-		return nil, err
-	}
-
 	imageVulnResolvers, err := vulnerabilities(ctx, resolver, query)
 	if err != nil {
 		return nil, err
@@ -194,14 +189,14 @@ func (resolver *Resolver) ClustersK8sVulnerabilities(ctx context.Context) ([]*Cl
 func filterEmbeddedVulnerabilities(evs []*storage.EmbeddedVulnerability, query *v1.Query) ([]*storage.EmbeddedVulnerability, error) {
 	var filteredEvs []*storage.EmbeddedVulnerability
 
-	query, areFieldsFiltered := search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
+	filteredQuery, areFieldsFiltered := search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 
 	// If fields got filtered out, it means that all the search fields in the query did not belong to storage.EmbeddedVulnerability
 	// Those might have been fields on image and components which are not applicable for k8s storage.EmbeddedVulnerability
 	if areFieldsFiltered {
 		return []*storage.EmbeddedVulnerability{}, nil
 	}
-	pred, err := vulnPredicateFactory.GeneratePredicate(query)
+	pred, err := vulnPredicateFactory.GeneratePredicate(filteredQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -229,13 +224,6 @@ func vulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*E
 	if err != nil {
 		return nil, err
 	}
-
-	// Filter the query to just the vulnerability portion.
-	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
-	if query == nil {
-		query = search.EmptyQuery()
-	}
-
 	return mapImagesToVulnerabilityResolvers(root, images, query)
 }
 
@@ -580,12 +568,10 @@ func mapImagesToVulnerabilityResolvers(root *Resolver, images []*storage.Image, 
 	for _, image := range images {
 		for _, component := range image.GetScan().GetComponents() {
 			if !componentPred(component) {
-				log.Errorf("component discarded: %+v", component)
 				continue
 			}
 			for _, vuln := range component.GetVulns() {
 				if !vulnPred(vuln) {
-					log.Errorf("vuln discarded: %+v", vuln)
 					continue
 				}
 				if _, exists := cveToResolver[vuln.GetCve()]; !exists {
