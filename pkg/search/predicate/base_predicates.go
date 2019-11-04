@@ -1,13 +1,15 @@
 package predicate
 
 import (
-	"errors"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -28,6 +30,9 @@ func createBasePredicate(fieldType reflect.Type, value string) (internalPredicat
 	case reflect.Bool:
 		return createBoolPredicate(value)
 	case reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Int:
+		if enum, ok := reflect.Zero(fieldType).Interface().(protoreflect.ProtoEnum); ok {
+			return createEnumPredicate(value, enum)
+		}
 		return createIntPredicate(value)
 	case reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8, reflect.Uint:
 		return createUintPredicate(value)
@@ -113,6 +118,40 @@ func createBoolPredicate(value string) (internalPredicate, error) {
 			return false
 		}
 		return instance.Bool() == boolValue
+	}, nil
+}
+
+func createEnumPredicate(value string, enumRef protoreflect.ProtoEnum) (internalPredicate, error) {
+	// Map the enum strings to integer values.
+	enumDesc, err := protoreflect.GetEnumDescriptor(enumRef)
+	if err != nil {
+		return nil, err
+	}
+	nameToNumber := mapEnumValues(enumDesc)
+
+	// Get the comparator if needed.
+	cmpStr, value := getNumericComparator(value)
+
+	// Translate input value to an int if needed.
+	var int64Value int64
+	int32Value, hasIntValue := nameToNumber[strings.ToLower(value)]
+	if hasIntValue {
+		int64Value = int64(int32Value)
+	} else {
+		return nil, errors.Errorf("unrecognized enum value: %s", value)
+	}
+
+	// Generate the comparator for the integer values.
+	comparator, err := intComparator(cmpStr)
+	if err != nil {
+		return nil, err
+	}
+	return func(instance reflect.Value) bool {
+		switch instance.Kind() {
+		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
+			return comparator(instance.Int(), int64Value)
+		}
+		return false
 	}, nil
 }
 
@@ -227,4 +266,13 @@ func wrapStringPredicate(pred func(string) bool) internalPredicate {
 		}
 		return pred(instance.String())
 	}
+}
+
+func mapEnumValues(enumDesc *descriptor.EnumDescriptorProto) (nameToNumber map[string]int32) {
+	nameToNumber = make(map[string]int32)
+	for _, v := range enumDesc.GetValue() {
+		lName := strings.ToLower(v.GetName())
+		nameToNumber[lName] = v.GetNumber()
+	}
+	return
 }

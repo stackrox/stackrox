@@ -6,22 +6,27 @@ import (
 )
 
 func mapSearchTagsToFieldPaths(toWalk interface{}) map[string]FieldPath {
-	ret := make(map[string]FieldPath)
+	fieldMap := make(map[string]FieldPath)
 	VisitFields(toWalk, func(fieldPath FieldPath) {
+		// Current field is the last field in the path.
 		currentField := fieldPath[len(fieldPath)-1]
+
+		// Get the proto tags for the field.
 		protoTag, oneofTag := getProtobufTags(currentField)
 		if protoTag == "" && oneofTag == "" {
 			// Skip non-protobuf fields.
 			return
 		}
+
+		// Get the search tags for the field.
 		searchTag := getSearchTagForField(currentField)
 		if searchTag == "-" || searchTag == "" {
 			return
 		}
 
-		ret[searchTag] = fieldPath
+		fieldMap[searchTag] = fieldPath
 	})
-	return ret
+	return fieldMap
 }
 
 func getSearchTagForField(field reflect.StructField) string {

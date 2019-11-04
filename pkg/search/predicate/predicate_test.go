@@ -36,6 +36,7 @@ func TestSearchPredicate(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "1.1",
 							},
+							ScoreVersion: storage.EmbeddedVulnerability_V2,
 						},
 					},
 				},
@@ -48,6 +49,7 @@ func TestSearchPredicate(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "1.5",
 							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
 						},
 					},
 				},
@@ -56,10 +58,12 @@ func TestSearchPredicate(t *testing.T) {
 					Version: "1.0",
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
-							Cve: "cve-2019-1",
+							Cve:          "cve-2019-1",
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
 						},
 						{
-							Cve: "cve-2019-2",
+							Cve:          "cve-2019-2",
+							ScoreVersion: storage.EmbeddedVulnerability_V2,
 						},
 					},
 				},
@@ -135,6 +139,58 @@ func TestSearchPredicate(t *testing.T) {
 			assert.NotNil(t, pred)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expectation, pred(passingImage))
+		})
+	}
+}
+
+func TestSearchPredicateWithEnums(t *testing.T) {
+	policyFactory := NewFactory(&storage.Policy{})
+
+	// Pass the predicate
+	testPolicy := &storage.Policy{
+		Id: "p1",
+		LifecycleStages: []storage.LifecycleStage{
+			storage.LifecycleStage_BUILD,
+		},
+	}
+
+	cases := []struct {
+		name        string
+		query       *v1.Query
+		expectation bool
+	}{
+		{
+			name:        "empty query",
+			query:       &v1.Query{},
+			expectation: true,
+		},
+		{
+			name:        "enums by name",
+			query:       search.NewQueryBuilder().AddStrings(search.LifecycleStage, "BUILD").ProtoQuery(),
+			expectation: true,
+		},
+		{
+			name:        "enums by name fail",
+			query:       search.NewQueryBuilder().AddStrings(search.LifecycleStage, "RUNTIME").ProtoQuery(),
+			expectation: false,
+		},
+		{
+			name:        "enums with comparator by name",
+			query:       search.NewQueryBuilder().AddStrings(search.LifecycleStage, "<RUNTIME").ProtoQuery(),
+			expectation: true,
+		},
+		{
+			name:        "enums with comparator by name fail",
+			query:       search.NewQueryBuilder().AddStrings(search.LifecycleStage, "<DEPLOY").ProtoQuery(),
+			expectation: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			pred, err := policyFactory.GeneratePredicate(c.query)
+			assert.NotNil(t, pred)
+			assert.NoError(t, err)
+			assert.Equal(t, c.expectation, pred(testPolicy))
 		})
 	}
 }
