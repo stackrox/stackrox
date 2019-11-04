@@ -161,7 +161,7 @@ export function getDeploymentTableColumns(workflowState) {
             accessor: 'imageCount'
         },
         {
-            Header: `Risk`,
+            Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'priority'

@@ -4,7 +4,28 @@ export const CLUSTER_LIST_FRAGMENT = gql`
     fragment clusterListFields on Cluster {
         id
         name
-        # cves
+        vulnCounter {
+            all {
+                fixable
+                total
+            }
+            critical {
+                fixable
+                total
+            }
+            high {
+                fixable
+                total
+            }
+            medium {
+                fixable
+                total
+            }
+            low {
+                fixable
+                total
+            }
+        }
         status {
             orchestratorMetadata {
                 version

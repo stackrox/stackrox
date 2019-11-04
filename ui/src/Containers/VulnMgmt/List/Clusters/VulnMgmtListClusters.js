@@ -11,6 +11,7 @@ import TableCellLink from 'Components/TableCellLink';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
+import CVEStackedPill from 'Components/CVEStackedPill';
 
 import { CLUSTER_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
@@ -49,13 +50,21 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                 className: `w-1/8 ${defaultColumnClassName}`,
                 accessor: 'name'
             },
-            // {
-            // TODO: enable this column after data is available from the API
-            //     Header: `CVEs`,
-            //     headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            //     className: `w-1/8 ${defaultColumnClassName}`,
-            //     accessor: 'cves'
-            // },
+            {
+                Header: `CVEs`,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const { vulnCounter, id } = original;
+                    if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
+                    const url = workflowState
+                        .pushListItem(id)
+                        .pushList(entityTypes.CVE)
+                        .toUrl();
+
+                    return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
+                }
+            },
             {
                 Header: `K8S version`,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
@@ -71,8 +80,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
             // },
             {
                 Header: `Namespaces`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
                 Cell: ({ original, pdf }) => {
                     const { namespaceCount } = original;
@@ -95,18 +104,19 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
             },
             {
                 Header: `Deployments`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
                 Cell: ({ original, pdf }) => {
                     const { deploymentCount } = original;
                     if (!deploymentCount) {
                         return <LabelChip text="No Deployments" type="alert" />;
                     }
-
                     const url = workflowState
                         .pushListItem(original.id)
-                        .pushList(entityTypes.DEPLOYMENT).toUrl;
+                        .pushList(entityTypes.DEPLOYMENT)
+                        .toUrl();
+
                     return (
                         <TableCellLink
                             pdf={pdf}
@@ -119,8 +129,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
             },
             {
                 Header: `Policies`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
                 Cell: ({ original, pdf }) => {
                     const { policyCount } = original;
@@ -131,6 +141,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                         .pushListItem(original.id)
                         .pushList(entityTypes.POLICY)
                         .toUrl();
+
                     return (
                         <TableCellLink
                             pdf={pdf}
@@ -143,8 +154,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
             },
             {
                 Header: `Policy status`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
                 Cell: ({ original }) => {
                     const { policyStatus } = original;
@@ -156,8 +167,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
             },
             {
                 Header: `Latest violation`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
                     const { latestViolation } = original;
                     return <DateTimeField date={latestViolation} />;
@@ -166,8 +177,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
             },
             {
                 Header: `Risk Priority`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
                 accessor: 'priority'
             }
         ];

@@ -118,7 +118,7 @@ export function getImageTableColumns(workflowState) {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'priority',
-            Cell: ({ original }) => original.priority + 1
+            Cell: ({ original }) => original.priority
         }
     ];
     return tableColumns.filter(col => col);
