@@ -100,7 +100,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                             text={`${namespaceCount} ${pluralize('Namespace', namespaceCount)}`}
                         />
                     );
-                }
+                },
+                accessor: 'namespaceCount'
             },
             {
                 Header: `Deployments`,
@@ -125,7 +126,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                         />
                     );
                 },
-                id: 'deploymentCount'
+                id: 'deploymentCount',
+                accessor: 'deploymentCount'
             },
             {
                 Header: `Policies`,
@@ -150,7 +152,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
                         />
                     );
                 },
-                id: 'policyCount'
+                id: 'policyCount',
+                accessor: 'policyCount'
             },
             {
                 Header: `Policy status`,
@@ -163,7 +166,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
 
                     return policyLabel;
                 },
-                id: 'policyStatus'
+                id: 'policyStatus',
+                accessor: 'policyStatus.status'
             },
             {
                 Header: `Latest violation`,

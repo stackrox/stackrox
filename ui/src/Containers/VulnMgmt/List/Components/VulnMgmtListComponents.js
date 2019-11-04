@@ -28,7 +28,8 @@ export function getComponentTableColumns(workflowState) {
             Cell: ({ original }) => {
                 const { version, name } = original;
                 return `${name} ${version}`;
-            }
+            },
+            accessor: 'name'
         },
         {
             Header: `CVEs`,
@@ -50,7 +51,8 @@ export function getComponentTableColumns(workflowState) {
                         hideLink={pdf}
                     />
                 );
-            }
+            },
+            accessor: 'vulnCounter.all.total'
         },
         {
             Header: `Top CVSS`,
@@ -60,7 +62,8 @@ export function getComponentTableColumns(workflowState) {
                 const { topVuln } = original;
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
-            }
+            },
+            accessor: 'topVuln.cvss'
         },
         {
             Header: `Images`,

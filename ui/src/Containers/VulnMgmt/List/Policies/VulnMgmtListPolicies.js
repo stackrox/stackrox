@@ -12,7 +12,6 @@ import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import { sortDate } from 'sorters/sorters';
 
 import { POLICY_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
@@ -59,8 +58,7 @@ export function getPolicyTableColumns(workflowState) {
                 const { lastUpdated } = original;
                 return <DateTimeField date={lastUpdated} />;
             },
-            accessor: 'lastUpdated',
-            sortMethod: sortDate
+            accessor: 'lastUpdated'
         },
         {
             Header: `Latest violation`,
@@ -70,8 +68,7 @@ export function getPolicyTableColumns(workflowState) {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} />;
             },
-            accessor: 'latestViolation',
-            sortMethod: sortDate
+            accessor: 'latestViolation'
         },
         {
             Header: `Severity`,
