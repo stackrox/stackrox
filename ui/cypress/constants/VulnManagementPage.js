@@ -18,6 +18,14 @@ export const dashboardSelectors = {
     tileLinks: "[data-test-id='tile-link']",
     tileLinkValue: "[data-test-id='tile-link-value']",
     applicationAndInfrastructureDropdown: 'button:contains("Application & Infrastructure")',
+    topRiskyItems: {
+        widget: '[data-test-id="widget"]',
+        select: {
+            input: '[data-test-id="widget"] .react-select__control',
+            value: '[data-test-id="widget"] .react-select__single-value',
+            options: '[data-test-id="widget"] .react-select__option'
+        }
+    },
     getMenuListItem: name => {
         return `[data-test-id="menu-list"] [data-test-id="${name}"]`;
     },

@@ -1,6 +1,31 @@
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
+function validateTopRiskyEntities(entityName) {
+    cy.visit(url.dashboard);
+    cy.get(selectors.topRiskyItems.select.value).should(
+        'contain',
+        'top risky deployments by CVE count & CVSS score'
+    );
+    cy.get(selectors.topRiskyItems.select.input)
+        .first()
+        .click();
+    cy.get(selectors.topRiskyItems.select.options)
+        .contains(`top risky ${entityName} by CVE count & CVSS score`)
+        .click();
+    cy.get(selectors.topRiskyItems.select.value).should(
+        'contain',
+        `top risky ${entityName} by CVE count & CVSS score`
+    );
+    cy.get(selectors.getWidget(`top risky ${entityName} by CVE count & CVSS score`))
+        .find(selectors.viewAllButton)
+        .click();
+    if (entityName === 'clusters') cy.url().should('contain', url.list.clusters);
+    else if (entityName === 'images') cy.url().should('contain', url.list.images);
+    else if (entityName === 'namespaces') cy.url().should('contain', url.list.namespaces);
+    else if (entityName === 'deployments') cy.url().should('contain', url.list.deployments);
+}
+
 describe('Vuln Management Dashboard Page', () => {
     withAuth();
     // TODO re-enable the following test after bug ROX-3571 is fixed
@@ -124,5 +149,20 @@ describe('Vuln Management Dashboard Page', () => {
             .find(selectors.viewAllButton)
             .click();
         cy.url().should('contain', url.list.clusters);
+    });
+    it('clicking the "Top risky deployments by CVE count & CVSS score" widget\'s "View All" button should take you to the clusters list', () => {
+        validateTopRiskyEntities('deployments');
+    });
+
+    it('clicking the "Top risky namespaces by CVE count & CVSS score" widget\'s "View All" button should take you to the namespaces list', () => {
+        validateTopRiskyEntities('namespaces');
+    });
+
+    it('clicking the "Top risky images by CVE count & CVSS score" widget\'s "View All" button should take you to the images list', () => {
+        validateTopRiskyEntities('images');
+    });
+
+    it('clicking the "Top risky clusters by CVE count & CVSS score" widget\'s "View All" button should take you to the clusters list', () => {
+        validateTopRiskyEntities('clusters');
     });
 });
