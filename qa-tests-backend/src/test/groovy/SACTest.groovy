@@ -48,6 +48,11 @@ class SACTest extends BaseSpecification {
 
     static final private List<Deployment> DEPLOYMENTS = [DEPLOYMENT_QA1, DEPLOYMENT_QA2,]
 
+    static final private UNSTABLE_FLOWS = [
+            // monitoring doesn't keep a persistent outgoing connection, so we might or might not see this flow.
+            "stackrox/monitoring -> INTERNET",
+    ] as Set
+
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
@@ -468,6 +473,7 @@ class SACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
+        allAccessFlows.removeAll(UNSTABLE_FLOWS)
         println allAccessFlows
 
         and:
@@ -475,12 +481,14 @@ class SACTest extends BaseSpecification {
         useToken("stackroxNetFlowsToken")
         def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def sacFlows = NetworkGraphUtil.flowStrings(networkGraphWithSAC)
+        sacFlows.removeAll(UNSTABLE_FLOWS)
         println sacFlows
 
         and:
         "Obtaining the network graph for the StackRox namespace with a SAC restricted token and no query"
         def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph()
         def sacFlowsNoQuery = NetworkGraphUtil.flowStrings(networkGraphWithSACNoQuery)
+        sacFlowsNoQuery.removeAll(UNSTABLE_FLOWS)
         println sacFlowsNoQuery
 
         then:
