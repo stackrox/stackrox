@@ -193,11 +193,26 @@ func (eicr *EmbeddedImageScanComponentResolver) Vulns(ctx context.Context, args 
 	if err != nil {
 		return nil, err
 	}
-	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+
+	vulnQuery, _ := search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
+	vulnPred, err := vulnPredicateFactory.GeneratePredicate(vulnQuery)
 	if err != nil {
 		return nil, err
 	}
-	return vulnerabilities(ctx, eicr.root, query)
+
+	// Use the images to map CVEs to the images and components.
+	vulns := make([]*EmbeddedVulnerabilityResolver, 0, len(eicr.data.GetVulns()))
+	for _, vuln := range eicr.data.GetVulns() {
+		if !vulnPred(vuln) {
+			continue
+		}
+		vulns = append(vulns, &EmbeddedVulnerabilityResolver{
+			data:        vuln,
+			root:        eicr.root,
+			lastScanned: eicr.lastScanned,
+		})
+	}
+	return vulns, nil
 }
 
 // VulnCount resolves the number of vulnerabilities contained in the image component.
