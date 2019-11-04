@@ -33,8 +33,39 @@ const vulnCounter = {
 
 export const withVerticalOrientation = () => <CVEStackedPill vulnCounter={vulnCounter} />;
 
-export const withURLAndHorizontalOrientation = () => (
+export const withHorizontalOrientation = () => (
+    <CVEStackedPill vulnCounter={vulnCounter} horizontal />
+);
+
+export const withUrlsAndVerticalOrientation = () => (
     <MemoryRouter>
-        <CVEStackedPill vulnCounter={vulnCounter} url="/main/" horizontal />
+        <CVEStackedPill
+            vulnCounter={vulnCounter}
+            url="/main"
+            fixableUrl="/main?s[Is%20Fixable]=true"
+        />
+    </MemoryRouter>
+);
+
+export const withUrlsAndHorizontalOrientation = () => (
+    <MemoryRouter>
+        <CVEStackedPill
+            vulnCounter={vulnCounter}
+            url="/main"
+            fixableUrl="/main?s[Is%20Fixable]=true"
+            horizontal
+        />
+    </MemoryRouter>
+);
+
+export const withUrlHiddenForPdf = () => (
+    <MemoryRouter>
+        <CVEStackedPill
+            vulnCounter={vulnCounter}
+            url="/main"
+            fixableUrl="/main?s[Is%20Fixable]=true"
+            horizontal
+            hideLink
+        />
     </MemoryRouter>
 );

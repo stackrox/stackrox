@@ -37,11 +37,19 @@ export function getComponentTableColumns(workflowState) {
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
                 if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.CVE)
-                    .toUrl();
-                return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
+
+                const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                const url = newState.toUrl();
+                const fixableUrl = newState.setSearch({ 'Is Fixable': true }).toUrl();
+
+                return (
+                    <CVEStackedPill
+                        vulnCounter={vulnCounter}
+                        url={url}
+                        fixableUrl={fixableUrl}
+                        hideLink={pdf}
+                    />
+                );
             }
         },
         {

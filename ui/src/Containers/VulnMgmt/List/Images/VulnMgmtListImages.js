@@ -34,11 +34,20 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.CVE)
-                    .toUrl();
-                return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
+                if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
+
+                const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                const url = newState.toUrl();
+                const fixableUrl = newState.setSearch({ 'Is Fixable': true }).toUrl();
+
+                return (
+                    <CVEStackedPill
+                        vulnCounter={vulnCounter}
+                        url={url}
+                        fixableUrl={fixableUrl}
+                        hideLink={pdf}
+                    />
+                );
             }
         },
         {

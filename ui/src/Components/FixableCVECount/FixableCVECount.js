@@ -4,57 +4,81 @@ import { Link } from 'react-router-dom';
 
 const orientations = ['horizontal', 'vertical'];
 
-const getOrientationClassName = orientation => {
-    if (orientation === 'vertical') return '';
-    return 'flex';
-};
+function getOrientationClassName(orientation) {
+    return orientation === 'vertical' ? 'inline-flex flex-col' : 'inline-flex';
+}
 
-const FixableCVECount = ({ cves, fixable, url, orientation, pdf }) => {
-    function onClick(e) {
-        e.stopPropagation();
-    }
+function stopPropagation(e) {
+    e.stopPropagation();
+}
 
-    const className = `text-sm items-center leading-normal whitespace-no-wrap ${getOrientationClassName(
-        orientation
-    )}`;
-    let content = (
-        <div className={className}>
-            {!!cves && (
-                <div className="text-primary-800 font-600 mx-1">
-                    {cves} {cves.length === 1 ? 'CVE' : 'CVEs'}
-                </div>
-            )}
-            {!!fixable && <div className="text-success-800 font-600">({fixable} Fixable)</div>}
-        </div>
+const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
+    const classes = fixable ? 'text-success-800 font-600' : 'text-primary-800 font-600';
+
+    // can't just pluralize() because of special requirements
+    //   1 CVE or 2 CVEs
+    //   1 Fixable or 2 Fixable
+    // @TODO: we could do this:
+    //   const type = fixable ? 'Fixable' : pluralize('CVE', count);
+    //
+    //   after this bug in pluralize is fixed,
+    //   https://github.com/blakeembrey/pluralize/issues/127
+    const type = fixable ? 'Fixable' : 'CVE';
+    const pluralized = count === 1 || fixable ? type : `${type}s`;
+
+    const cveText = (
+        <span className={`${classes} ${individualClasses}`}>{`${count} ${pluralized}`}</span>
     );
 
-    // This field is necessary to exclude rendering the Link during PDF generation. It causes an error where the Link can't be rendered outside a Router
-    if (pdf) {
-        return content;
-    }
-    if (url)
-        content = (
-            <Link to={url} onClick={onClick} className="w-full">
-                {content}
-            </Link>
-        );
-    return content;
+    return url && !hideLink ? (
+        <Link to={url} onClick={stopPropagation} className="w-full">
+            {cveText}
+        </Link>
+    ) : (
+        cveText
+    );
+};
+
+const FixableCVECount = ({ cves, fixable, url, fixableUrl, orientation, hideLink }) => {
+    const className = `text-sm items-center leading-normal whitespace-no-wrap ${getOrientationClassName(
+        orientation
+    )} `;
+    const individualClasses = orientation === 'horizontal' ? 'mr-1' : '';
+
+    return (
+        <div className={className}>
+            {!!cves && (
+                <CountElement
+                    count={cves}
+                    url={url}
+                    hideLink={hideLink}
+                    individualClasses={individualClasses}
+                />
+            )}
+            {!!fixable && (
+                <CountElement count={fixable} url={fixableUrl} fixable hideLink={hideLink} />
+            )}
+        </div>
+    );
 };
 
 FixableCVECount.propTypes = {
     cves: PropTypes.number,
     fixable: PropTypes.number,
     url: PropTypes.string,
+    fixableUrl: PropTypes.string,
     orientation: PropTypes.oneOf(orientations),
-    pdf: PropTypes.bool
+    // This field is necessary to exclude rendering the Link during PDF generation. It causes an error where the Link can't be rendered outside a Router
+    hideLink: PropTypes.bool
 };
 
 FixableCVECount.defaultProps = {
     cves: 0,
     fixable: 0,
     url: null,
+    fixableUrl: null,
     orientation: 'horizontal',
-    pdf: false
+    hideLink: false
 };
 
 export default FixableCVECount;

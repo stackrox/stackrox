@@ -115,11 +115,21 @@ const processData = (data, entityType, workflowState, limit) => {
         })
         .map(({ id, vulnCounter, ...rest }) => {
             const text = getTextByEntityType(entityType, { ...rest });
-            const url = workflowState.pushRelatedEntity(entityType, id).toUrl();
+            const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+            const url = newState.toUrl();
+            const fixableUrl = newState.setSearch({ 'Is Fixable': true }).toUrl();
+
             return {
                 text,
                 url,
-                component: <CVEStackedPill vulnCounter={vulnCounter} url={url} horizontal />
+                component: (
+                    <CVEStackedPill
+                        vulnCounter={vulnCounter}
+                        url={url}
+                        fixableUrl={fixableUrl}
+                        horizontal
+                    />
+                )
             };
         });
     const processedData = results.sort(sortByPriority).slice(0, limit); // @TODO: Remove when we have pagination on image components
