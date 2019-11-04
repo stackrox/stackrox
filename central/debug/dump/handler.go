@@ -70,6 +70,24 @@ func getCPU(zipWriter *zip.Writer, duration time.Duration) error {
 	return nil
 }
 
+func getBlock(zipWriter *zip.Writer) error {
+	w, err := zipWriter.Create("block.txt")
+	if err != nil {
+		return err
+	}
+	p := pprof.Lookup("block")
+	return p.WriteTo(w, 2)
+}
+
+func getMutex(zipWriter *zip.Writer) error {
+	w, err := zipWriter.Create("mutex.txt")
+	if err != nil {
+		return err
+	}
+	p := pprof.Lookup("mutex")
+	return p.WriteTo(w, 2)
+}
+
 func getGoroutines(zipWriter *zip.Writer) error {
 	w, err := zipWriter.Create("goroutine.txt")
 	if err != nil {
@@ -145,6 +163,14 @@ func DebugHandler() http.HandlerFunc {
 		}
 
 		if err := getGoroutines(zipWriter); err != nil {
+			log.Error(err)
+		}
+
+		if err := getBlock(zipWriter); err != nil {
+			log.Error(err)
+		}
+
+		if err := getMutex(zipWriter); err != nil {
 			log.Error(err)
 		}
 
