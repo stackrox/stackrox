@@ -55,7 +55,11 @@ const WorkflowEntityPageLayout = ({ location }) => {
 
     const subheaderText = entityLabels[pageEntityType];
     const { entityName = '' } = useEntityName(pageEntityType, pageEntityId);
+    const entityContext = {};
 
+    if (pageEntity) {
+        entityContext[pageEntity.entityType] = pageEntity.entityId;
+    }
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-1 flex-col bg-base-200" style={style}>
@@ -95,9 +99,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                                 search={sidePanelSearch}
                                 sort={sidePanelSort}
                                 page={sidePanelPaging}
-                                entityContext={{
-                                    [pageEntity.entityType]: pageEntity.entityId
-                                }}
+                                entityContext={entityContext}
                             />
                         ) : (
                             <span />

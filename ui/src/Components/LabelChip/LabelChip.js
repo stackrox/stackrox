@@ -23,7 +23,7 @@ const LabelChip = ({ text, type, size }) => {
     let className = 'inline-block border rounded font-600 text-center';
     className = getClassNameBySize(className, size);
     const colorType = colorTypes.find(datum => datum === type) || defaultColorType;
-    className = `${className} bg-${colorType}-200 border-${colorType}-400 text-${colorType}-800`;
+    className = `${className} bg-${colorType}-200 border-${colorType}-400 text-${colorType}-800 capitalize`;
     return <span className={className}>{text}</span>;
 };
 

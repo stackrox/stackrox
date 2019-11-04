@@ -25,7 +25,7 @@ import TableWidget from '../TableWidget';
 const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
-    const { metadata, scan, topVuln, deploymentCount, priority, vulnCounter } = data;
+    const { metadata, scan, topVuln, deploymentCount, priority, vulnCount } = data;
     const { cvss, scoreVersion } = topVuln;
 
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
@@ -94,7 +94,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 if (scan && scan.components) return scan.components.length;
                 return 0;
             case entityTypes.CVE:
-                return vulnCounter.all.total;
+                return vulnCount;
             default:
                 return 0;
         }
@@ -161,6 +161,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 entityType={entityTypes.IMAGE}
                 workflowState={workflowState}
                 getCountData={getCountData}
+                entityContext={newEntityContext}
             />
         </div>
     );

@@ -20,6 +20,18 @@ export const failingStatusChip = () => {
     return <StatusChip status={badStatusChip} />;
 };
 
+export const activeStatusChip = () => {
+    const activeStatus = 'active';
+
+    return <StatusChip status={activeStatus} />;
+};
+
+export const inactiveStatusChip = () => {
+    const inactiveStatus = 'inactive';
+
+    return <StatusChip status={inactiveStatus} />;
+};
+
 export const unknownStatusChip = () => {
     const whatStatusChip = 'foo';
 

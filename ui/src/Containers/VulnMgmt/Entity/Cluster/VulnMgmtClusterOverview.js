@@ -36,7 +36,8 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         namespaceCount,
         policyCount,
         vulnCount,
-        vulnerabilities
+        vulnerabilities,
+        id
     } = data;
 
     const { version = 'N/A' } = orchestratorMetadata;
@@ -92,7 +93,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         }
     }
 
-    const newEntityContext = { ...entityContext, [entityTypes.CLUSTER]: data.id };
+    const newEntityContext = { ...entityContext, [entityTypes.CLUSTER]: id };
 
     return (
         <div className="flex h-full">
@@ -163,10 +164,10 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     header={`${fixableCves.length} fixable ${pluralize(
                                         entityTypes.CVE,
                                         fixableCves.length
-                                    )} found across this image`}
+                                    )} found across this cluster`}
                                     rows={fixableCves}
                                     entityType={entityTypes.CVE}
-                                    noDataText="No fixable CVEs available in this namespace"
+                                    noDataText="No fixable CVEs available in this cluster"
                                     className="bg-base-100"
                                     columns={getCveTableColumns(workflowState, false)}
                                     idAttribute="cve"
@@ -180,6 +181,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                 entityType={entityTypes.CLUSTER}
                 workflowState={workflowState}
                 getCountData={getCountData}
+                entityContext={newEntityContext}
             />
         </div>
     );

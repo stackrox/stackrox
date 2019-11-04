@@ -12,7 +12,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
-const VulnMgmtCveOverview = ({ data }) => {
+const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
     const {
@@ -96,6 +96,7 @@ const VulnMgmtCveOverview = ({ data }) => {
     }
 
     const severityStyle = getSeverityChipType(cvss);
+    const newEntityContext = { ...entityContext, [entityTypes.CVE]: cve };
 
     return (
         <div className="flex h-full">
@@ -159,6 +160,7 @@ const VulnMgmtCveOverview = ({ data }) => {
                 entityType={entityTypes.CVE}
                 workflowState={workflowState}
                 getCountData={getCountData}
+                entityContext={newEntityContext}
             />
         </div>
     );

@@ -75,7 +75,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         }
     }
 
-    const newEntityContext = { ...entityContext, [entityTypes.DEPLOYMENT]: data.id };
+    const newEntityContext = { ...entityContext, [entityTypes.DEPLOYMENT]: id };
 
     return (
         <div className="flex h-full">
@@ -124,7 +124,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                                     header={`${failingPolicies.length} failing ${pluralize(
                                         entityTypes.POLICY,
                                         failingPolicies.length
-                                    )} across this image`}
+                                    )} across this deployment`}
                                     rows={failingPolicies}
                                     noDataText="No failing policies"
                                     className="bg-base-100"
@@ -137,10 +137,10 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                                     header={`${fixableCves.length} fixable ${pluralize(
                                         entityTypes.CVE,
                                         fixableCves.length
-                                    )} found across this image`}
+                                    )} found across this deployment`}
                                     rows={fixableCves}
                                     entityType={entityTypes.CVE}
-                                    noDataText="No fixable CVEs available in this namespace"
+                                    noDataText="No fixable CVEs available in this deployment"
                                     className="bg-base-100"
                                     columns={getCveTableColumns(workflowState, false)}
                                     idAttribute="cve"
@@ -154,6 +154,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                 entityType={entityTypes.DEPLOYMENT}
                 workflowState={workflowState}
                 getCountData={getCountData}
+                entityContext={newEntityContext}
             />
         </div>
     );

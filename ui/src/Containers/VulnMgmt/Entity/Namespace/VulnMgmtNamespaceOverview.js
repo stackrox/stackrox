@@ -32,7 +32,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         vulnerabilities
     } = data;
 
-    const { clusterName, priority, labels } = metadata;
+    const { clusterName, priority, labels, id } = metadata;
     const { failingPolicies, status } = policyStatus;
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
 
@@ -68,7 +68,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         }
     }
 
-    const newEntityContext = { ...entityContext, [entityTypes.NAMESPACE]: data.metadata.id };
+    const newEntityContext = { ...entityContext, [entityTypes.NAMESPACE]: id };
 
     return (
         <div className="flex h-full">
@@ -114,7 +114,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     header={`${failingPolicies.length} failing ${pluralize(
                                         entityTypes.POLICY,
                                         failingPolicies.length
-                                    )} across this image`}
+                                    )} across this namespace`}
                                     rows={failingPolicies}
                                     noDataText="No failing policies"
                                     className="bg-base-100"
@@ -127,7 +127,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     header={`${fixableCves.length} fixable ${pluralize(
                                         entityTypes.CVE,
                                         fixableCves.length
-                                    )} found across this image`}
+                                    )} found across this namespace`}
                                     rows={fixableCves}
                                     entityType={entityTypes.CVE}
                                     noDataText="No fixable CVEs available in this namespace"
@@ -145,6 +145,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                 entityType={entityTypes.NAMESPACE}
                 workflowState={workflowState}
                 getCountData={getCountData}
+                entityContext={newEntityContext}
             />
         </div>
     );

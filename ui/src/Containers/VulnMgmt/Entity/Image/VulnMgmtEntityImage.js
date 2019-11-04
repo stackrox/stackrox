@@ -29,11 +29,7 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                         digest
                     }
                 }
-                vulnCounter {
-                    all {
-                        total
-                    }
-                }
+                vulnCount
                 priority
                 topVuln {
                     cvss
@@ -58,7 +54,6 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                             type
                             url
                         }
-                        vulnCount
                         vulnCounter {
                             all {
                                 total

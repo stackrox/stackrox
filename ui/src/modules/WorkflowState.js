@@ -133,6 +133,12 @@ export class WorkflowState {
         return stateStack.slice(0, 2);
     }
 
+    // Gets selected table row (first side panel entity)
+    getSelectedTableRow() {
+        if (this.stateStack.length < 2 || !this.sidePanelActive) return null;
+        return this.stateStack.slice(1, 2)[0];
+    }
+
     getCurrentSearchState() {
         const param = this.sidePanelActive ? searchParams.sidePanel : searchParams.page;
         return this.search[param] || {};

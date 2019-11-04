@@ -3,16 +3,18 @@ import PropTypes from 'prop-types';
 
 import LabelChip from 'Components/LabelChip';
 
+const successStates = ['active', 'pass'];
+const alertStates = ['inactive', 'fail'];
+
 const StatusChip = ({ status }) => {
-    if (!status || !['pass', 'fail'].includes(status)) {
-        return '—';
+    let type = null;
+    if (successStates.includes(status)) {
+        type = 'success';
+    } else if (alertStates.includes(status)) {
+        type = 'alert';
     }
 
-    return status === 'pass' ? (
-        <LabelChip text="Pass" type="success" />
-    ) : (
-        <LabelChip text="Fail" type="alert" />
-    );
+    return type ? <LabelChip text={status} type={type} /> : '—';
 };
 
 StatusChip.propTypes = {

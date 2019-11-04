@@ -206,7 +206,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
                     </div>
                 );
 
-                const viewAllURL = workflowState.pushList(entityTypes.IMAGE).toUrl();
+                const viewAllURL = workflowState.pushList(selectedEntity).toUrl();
                 headerComponents = <ViewAllButton url={viewAllURL} />;
             } else {
                 content = <NoComponentVulnMessage />;

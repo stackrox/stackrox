@@ -15,7 +15,7 @@ import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 import PolicyConfigurationFields from './PolicyConfigurationFields';
 
-const VulnMgmtPolicyOverview = ({ data }) => {
+const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
     const {
@@ -124,6 +124,8 @@ const VulnMgmtPolicyOverview = ({ data }) => {
         }
     }
 
+    const newEntityContext = { ...entityContext, [entityTypes.POLICY]: id };
+
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow">
@@ -197,7 +199,7 @@ const VulnMgmtPolicyOverview = ({ data }) => {
                             )} have failed across this policy`}
                             rows={failingDeployments}
                             entityType={entityTypes.DEPLOYMENT}
-                            noDataText="No deployments have failed across this component"
+                            noDataText="No deployments have failed across this policy"
                             className="bg-base-100"
                             columns={getDeploymentTableColumns(workflowState, false)}
                             idAttribute="cve"
@@ -209,6 +211,7 @@ const VulnMgmtPolicyOverview = ({ data }) => {
                 entityType={entityTypes.POLICY}
                 workflowState={workflowState}
                 getCountData={getCountData}
+                entityContext={newEntityContext}
             />
         </div>
     );

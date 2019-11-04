@@ -42,10 +42,16 @@ const WorkflowListPageLayout = ({ location }) => {
     const sidePanelSearch = workflowState.search[searchParams.sidePanel];
     const sidePanelSort = workflowState.sort[sortParams.sidePanel];
     const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
+    const selectedRow = workflowState.getSelectedTableRow();
 
     const header = pluralize(entityLabels[pageListType]);
     const exportFilename = `${pluralize(startCase(header))} Report`;
+    const entityContext = {};
 
+    if (selectedRow) {
+        const { entityType, entityId } = selectedRow;
+        entityContext[entityType] = entityId;
+    }
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-col relative min-h-full">
@@ -71,7 +77,7 @@ const WorkflowListPageLayout = ({ location }) => {
                 <div className="flex flex-1 h-full bg-base-100 relative z-0" id="capture-list">
                     <ListComponent
                         entityListType={pageListType}
-                        entityId={sidePanelEntityId}
+                        selectedRowId={selectedRow && selectedRow.entityId}
                         search={pageSearch}
                         sort={pageSort}
                         page={pagePaging}
@@ -85,6 +91,7 @@ const WorkflowListPageLayout = ({ location }) => {
                                 search={sidePanelSearch}
                                 sort={sidePanelSort}
                                 page={sidePanelPaging}
+                                entityContext={entityContext}
                             />
                         ) : (
                             <span />

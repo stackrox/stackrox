@@ -6,7 +6,7 @@ import relationshipTypes from 'constants/relationshipTypes';
 import TileList from 'Components/TileList';
 import pluralize from 'pluralize';
 
-const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData }) => {
+const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData, entityContext }) => {
     const { useCase } = workflowState;
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
@@ -15,20 +15,22 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData }) =>
             return {
                 count,
                 label: pluralize(matchEntity, count),
+                entity: matchEntity,
                 url: workflowState.pushList(matchEntity).toUrl()
             };
         })
-        .filter(matchObj => matchObj.count);
+        .filter(matchObj => matchObj.count && !entityContext[matchObj.entity]);
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
         .map(containEntity => {
             const count = getCountData(containEntity);
             return {
                 count,
                 label: pluralize(containEntity, count),
+                entity: containEntity,
                 url: workflowState.pushList(containEntity).toUrl()
             };
         })
-        .filter(containObj => containObj.count);
+        .filter(containObj => containObj.count && !entityContext[containObj.entity]);
 
     if (!matches.length && !contains.length) return null;
     return (
@@ -56,7 +58,8 @@ RelatedEntitiesSideList.propTypes = {
         useCase: PropTypes.string.isRequired,
         pushList: PropTypes.func.isRequired
     }).isRequired,
-    getCountData: PropTypes.func.isRequired
+    getCountData: PropTypes.func.isRequired,
+    entityContext: PropTypes.shape({}).isRequired
 };
 
 export default RelatedEntitiesSideList;

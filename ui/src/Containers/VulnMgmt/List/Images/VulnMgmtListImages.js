@@ -5,9 +5,10 @@ import pluralize from 'pluralize';
 import queryService from 'modules/queryService';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import TableCellLink from 'Components/TableCellLink';
+import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
-import { sortDate } from 'sorters/sorters';
+import { sortDate, sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -48,7 +49,8 @@ export function getImageTableColumns(workflowState) {
                         hideLink={pdf}
                     />
                 );
-            }
+            },
+            accessor: 'vulnCounter.all.total'
         },
         {
             Header: `Top CVSS`,
@@ -58,7 +60,8 @@ export function getImageTableColumns(workflowState) {
                 const { topVuln } = original;
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
-            }
+            },
+            accessor: 'topVuln.cvss'
         },
         {
             Header: `Created`,
@@ -69,7 +72,8 @@ export function getImageTableColumns(workflowState) {
                 if (!metadata || !metadata.v1) return '-';
                 return <DateTimeField date={metadata.v1.created} />;
             },
-            sortMethod: sortDate
+            sortMethod: sortDate,
+            accessor: 'metadata.v1.created'
         },
         {
             Header: `Scan time`,
@@ -80,9 +84,20 @@ export function getImageTableColumns(workflowState) {
                 if (!scan) return '-';
                 return <DateTimeField date={scan.scanTime} />;
             },
-            sortMethod: sortDate
+            sortMethod: sortDate,
+            accessor: 'scan.scanTime'
         },
-        // TO DO: add image status column once backend is ready
+        {
+            Header: 'Image Status',
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { deploymentCount } = original;
+                const imageStatus = deploymentCount === 0 ? 'inactive' : 'active';
+                return <StatusChip status={imageStatus} />;
+            },
+            accessor: 'deploymentCount'
+        },
         {
             Header: `Deployments`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
@@ -95,7 +110,8 @@ export function getImageTableColumns(workflowState) {
                     .toUrl();
                 const text = `${deploymentCount} ${pluralize('deployment', deploymentCount)}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
-            }
+            },
+            accessor: 'deploymentCount'
         },
         {
             Header: `Components`,
@@ -111,14 +127,15 @@ export function getImageTableColumns(workflowState) {
                     .toUrl();
                 const text = `${components.length} ${pluralize('component', components.length)}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
-            }
+            },
+            accessor: 'scan.components',
+            sortMethod: sortValueByLength
         },
         {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'priority',
-            Cell: ({ original }) => original.priority
+            accessor: 'priority'
         }
     ];
     return tableColumns.filter(col => col);

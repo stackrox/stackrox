@@ -48,6 +48,8 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         }
     }
 
+    const newEntityContext = { ...entityContext, [entityTypes.COMPONENT]: id };
+
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow">
@@ -73,7 +75,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                             header={`${fixableCVEs.length} fixable ${pluralize(
                                 entityTypes.CVE,
                                 fixableCVEs.length
-                            )} found across this image`}
+                            )} found across this component`}
                             rows={fixableCVEs}
                             entityType={entityTypes.CVE}
                             noDataText="No fixable CVEs available in this component"
@@ -89,6 +91,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                 entityType={entityTypes.COMPONENT}
                 workflowState={workflowState}
                 getCountData={getCountData}
+                entityContext={newEntityContext}
             />
         </div>
     );
