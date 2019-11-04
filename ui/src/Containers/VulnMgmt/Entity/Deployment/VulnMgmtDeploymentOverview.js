@@ -43,11 +43,11 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
 
     const metadataKeyValuePairs = [
         {
-            key: 'Cluster:',
+            key: 'Cluster',
             value: cluster && cluster.name
         },
         {
-            key: 'Namespace:',
+            key: 'Namespace',
             value: namespace
         }
     ];

@@ -13,11 +13,7 @@ import ViewAllButton from 'Components/ViewAllButton';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { severityValues, severities } from 'constants/severities';
 
-import {
-    severityColorMap,
-    severityTextColorMap,
-    severityColorLegend
-} from 'constants/severityColors';
+import { severityColorMap, severityTextColorMap } from 'constants/severityColors';
 import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -105,7 +101,6 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                     <Sunburst
                         data={sunburstData}
                         rootData={sidePanelData}
-                        legendData={severityColorLegend}
                         totalValue={centerValue}
                         units="value"
                         small

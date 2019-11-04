@@ -9,6 +9,7 @@ import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
+import { sortDate } from 'sorters/sorters';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
@@ -56,7 +57,8 @@ export function getDeploymentTableColumns(workflowState) {
                         hideLink={pdf}
                     />
                 );
-            }
+            },
+            accessor: 'vulnCounter.all.total'
         },
         {
             Header: `Latest violation`,
@@ -66,7 +68,8 @@ export function getDeploymentTableColumns(workflowState) {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} />;
             },
-            accessor: 'latestViolation'
+            accessor: 'latestViolation',
+            sortMethod: sortDate
         },
         entityContext[entityTypes.POLICY]
             ? null
