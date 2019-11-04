@@ -115,9 +115,12 @@ const processData = (data, entityType, workflowState, limit) => {
         })
         .map(({ id, vulnCounter, ...rest }) => {
             const text = getTextByEntityType(entityType, { ...rest });
-            const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+            const newState = workflowState.pushRelatedEntity(entityType, id);
+
             const url = newState.toUrl();
-            const fixableUrl = newState.setSearch({ 'Is Fixable': true }).toUrl();
+            const cveListState = newState.pushList(entityTypes.CVE);
+            const cvesUrl = cveListState.toUrl();
+            const fixableUrl = cveListState.setSearch({ 'Is Fixable': true }).toUrl();
 
             return {
                 text,
@@ -125,7 +128,7 @@ const processData = (data, entityType, workflowState, limit) => {
                 component: (
                     <CVEStackedPill
                         vulnCounter={vulnCounter}
-                        url={url}
+                        url={cvesUrl}
                         fixableUrl={fixableUrl}
                         horizontal
                     />

@@ -100,7 +100,7 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
         query getImage${entityListType}($id: ID!, $query: String) {
-            result: image(id: $id) {
+            result: image(sha: $id) {
                 id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
             }
