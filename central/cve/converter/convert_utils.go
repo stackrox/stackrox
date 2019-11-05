@@ -16,7 +16,8 @@ const (
 	timeFormat = "2006-01-02T15:04Z"
 )
 
-func nvdCveToEmbeddedVulnerability(cve *nvd.CVEEntry) (*storage.EmbeddedVulnerability, error) {
+// NvdCveToEmbeddedVulnerability converts a nvd.CVEEntry object to an EmbeddedVulnerability which is used elsewhere.
+func NvdCveToEmbeddedVulnerability(cve *nvd.CVEEntry) (*storage.EmbeddedVulnerability, error) {
 	ev := &storage.EmbeddedVulnerability{
 		Cve:               cve.CVE.Metadata.CVEID,
 		VulnerabilityType: storage.EmbeddedVulnerability_K8S_VULNERABILITY,
@@ -129,7 +130,7 @@ func nvdCvssv3ToProtoCvssv3(nvdCVSSv3 nvd.BaseMetricV3) (*storage.CVSSV3, error)
 func NvdCVEsToEmbeddedVulnerabilities(cves []*nvd.CVEEntry) ([]*storage.EmbeddedVulnerability, error) {
 	evs := make([]*storage.EmbeddedVulnerability, 0, len(cves))
 	for _, cve := range cves {
-		ev, err := nvdCveToEmbeddedVulnerability(cve)
+		ev, err := NvdCveToEmbeddedVulnerability(cve)
 		if err != nil {
 			return nil, err
 		}

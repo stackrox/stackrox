@@ -9,6 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
+	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
+	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/metrics"
@@ -51,13 +53,8 @@ func init() {
 			"impactScore: Float!",
 			"vulnerabilityType: String!",
 		}),
-		schema.AddType("K8sCVEInfo", []string{"cveIDs: [String!]!", "fixableCveIDs: [String!]!"}),
-		schema.AddType("ClusterWithK8sCVEInfo", []string{"cluster: Cluster!", "k8sCVEInfo: K8sCVEInfo!"}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String): [EmbeddedVulnerability!]!"),
-		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("k8sVulnerabilities(query: String): [EmbeddedVulnerability!]!"),
-		schema.AddQuery("clustersK8sVulnerabilities: [ClusterWithK8sCVEInfo!]!"),
 	)
 }
 
@@ -75,22 +72,7 @@ func (resolver *Resolver) Vulnerability(ctx context.Context, args struct{ *graph
 	} else if len(vulns) > 1 {
 		return nil, fmt.Errorf("multiple vulns matched: %s this should not happen", string(*args.ID))
 	}
-
-	if len(vulns) == 1 {
-		return vulns[0], nil
-	}
-
-	evs := resolver.k8sCVEManager.GetK8sEmbeddedVulnerabilities()
-	k8sVulns, err := resolver.wrapEmbeddedVulnerabilities(filterEmbeddedVulnerabilities(evs, query))
-	if err != nil {
-		return nil, err
-	} else if len(k8sVulns) == 0 {
-		return nil, nil
-	} else if len(k8sVulns) > 1 {
-		return nil, fmt.Errorf("multiple k8s vulns matched: %s this should not happen", string(*args.ID))
-	}
-
-	return k8sVulns[0], nil
+	return vulns[0], nil
 }
 
 // Vulnerabilities resolves a set of vulnerabilities based on a query.
@@ -106,56 +88,7 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q rawQuery) ([]*E
 		return nil, err
 	}
 
-	imageVulnResolvers, err := vulnerabilities(ctx, resolver, query)
-	if err != nil {
-		return nil, err
-	}
-
-	evs := resolver.k8sCVEManager.GetK8sEmbeddedVulnerabilities()
-
-	k8sVulnResolvers, err := resolver.wrapEmbeddedVulnerabilities(filterEmbeddedVulnerabilities(evs, query))
-	if err != nil {
-		return nil, err
-	}
-
-	imageVulnResolvers = append(imageVulnResolvers, k8sVulnResolvers...)
-	return imageVulnResolvers, nil
-}
-
-// K8sVulnerability returns the k8s vuln that matches the ID
-func (resolver *Resolver) K8sVulnerability(ctx context.Context, args struct{ *graphql.ID }) (*EmbeddedVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerability")
-
-	evs := resolver.k8sCVEManager.GetK8sEmbeddedVulnerabilities()
-
-	query := search.NewQueryBuilder().AddExactMatches(search.CVE, string(*args.ID)).ProtoQuery()
-	evs, err := filterEmbeddedVulnerabilities(evs, query)
-	if err != nil {
-		return nil, err
-	} else if len(evs) == 0 {
-		return nil, nil
-	} else if len(evs) > 1 {
-		return nil, fmt.Errorf("multiple vulns matched: %s this should not happen", string(*args.ID))
-	}
-
-	return resolver.wrapEmbeddedVulnerability(evs[0], nil)
-}
-
-// K8sVulnerabilities return all the k8s vulns that matches the query
-func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, q rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerabilities")
-
-	query, err := search.ParseQuery(q.String(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, err
-	}
-
-	filteredEvs, err := filterEmbeddedVulnerabilities(resolver.k8sCVEManager.GetK8sEmbeddedVulnerabilities(), query)
-	if err != nil {
-		return nil, err
-	}
-
-	return resolver.wrapEmbeddedVulnerabilities(filteredEvs, nil)
+	return vulnerabilities(ctx, resolver, query)
 }
 
 // ClustersK8sVulnerabilities returns the k8s CVEs on a cluster
@@ -186,31 +119,6 @@ func (resolver *Resolver) ClustersK8sVulnerabilities(ctx context.Context) ([]*Cl
 	return resolvers, nil
 }
 
-func filterEmbeddedVulnerabilities(evs []*storage.EmbeddedVulnerability, query *v1.Query) ([]*storage.EmbeddedVulnerability, error) {
-	var filteredEvs []*storage.EmbeddedVulnerability
-
-	filteredQuery, areFieldsFiltered := search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
-
-	// If fields got filtered out, it means that all the search fields in the query did not belong to storage.EmbeddedVulnerability
-	// Those might have been fields on image and components which are not applicable for k8s storage.EmbeddedVulnerability
-	if areFieldsFiltered {
-		return []*storage.EmbeddedVulnerability{}, nil
-	}
-	pred, err := vulnPredicateFactory.GeneratePredicate(filteredQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, ev := range evs {
-		if !pred(ev) {
-			continue
-		}
-		filteredEvs = append(filteredEvs, ev)
-	}
-
-	return filteredEvs, nil
-}
-
 // Helper function that actually runs the queries and produces the resolvers from the images.
 func vulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*EmbeddedVulnerabilityResolver, error) {
 	// Get the image loader from the context.
@@ -224,7 +132,64 @@ func vulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*E
 	if err != nil {
 		return nil, err
 	}
-	return mapImagesToVulnerabilityResolvers(root, images, query)
+
+	imageVulnResolvers, err := mapImagesToVulnerabilityResolvers(root, images, query)
+	if err != nil {
+		return nil, err
+	}
+
+	k8sVulnResolvers, err := k8sVulnerabilities(ctx, root, query)
+	if err != nil {
+		return nil, err
+	}
+
+	imageVulnResolvers = append(imageVulnResolvers, k8sVulnResolvers...)
+	return imageVulnResolvers, nil
+}
+
+// k8sVulnerabilities returns the vulnerabilities in k8s that match the input query.
+func k8sVulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*EmbeddedVulnerabilityResolver, error) {
+	_, containsUnmatchableFields := search.FilterQueryWithMap(query, search.CombineOptionsMaps(clusterMappings.OptionsMap, mappings.VulnerabilityOptionsMap))
+	if containsUnmatchableFields {
+		return nil, nil
+	}
+
+	vulnQuery, _ := search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
+	vulnPred, err := vulnPredicateFactory.GeneratePredicate(vulnQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterQuery, _ := search.FilterQueryWithMap(query, clusterMappings.OptionsMap)
+	clusters, err := root.ClusterDataStore.SearchRawClusters(ctx, clusterQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	k8sCVEs := root.k8sCVEManager.GetK8sCves()
+	ret := make([]*EmbeddedVulnerabilityResolver, 0, len(k8sCVEs))
+	for _, cve := range k8sCVEs {
+		for _, cluster := range clusters {
+			if !isClusterAffectedByCVE(cluster, cve) {
+				continue
+			}
+			embedded, err := converter.NvdCveToEmbeddedVulnerability(cve)
+			if err != nil {
+				return nil, err
+			}
+			if !vulnPred(embedded) {
+				continue
+			}
+			r := &EmbeddedVulnerabilityResolver{
+				data: embedded,
+				root: root,
+			}
+			ret = append(ret, r)
+			break // No need to continue the clusters loop since the CVE was already added to the list.
+		}
+
+	}
+	return ret, nil
 }
 
 func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulnerability, err error) (*EmbeddedVulnerabilityResolver, error) {
@@ -232,17 +197,6 @@ func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulne
 		return nil, err
 	}
 	return &EmbeddedVulnerabilityResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapEmbeddedVulnerabilities(values []*storage.EmbeddedVulnerability, err error) ([]*EmbeddedVulnerabilityResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*EmbeddedVulnerabilityResolver, len(values))
-	for i, v := range values {
-		output[i] = &EmbeddedVulnerabilityResolver{root: resolver, data: v}
-	}
-	return output, nil
 }
 
 // EmbeddedVulnerabilityResolver resolves data about a CVE/Vulnerability.

@@ -8,8 +8,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
@@ -55,11 +53,13 @@ func init() {
 		schema.AddExtraResolver("Cluster", `subjectCount: Int!`),
 		schema.AddExtraResolver("Cluster", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Cluster", `imageCount: Int!`),
-		schema.AddExtraResolver("Cluster", `imageComponents: [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("Cluster", `imageComponentCount: Int!`),
-		schema.AddExtraResolver("Cluster", `vulns: [EmbeddedVulnerability!]!`),
-		schema.AddExtraResolver("Cluster", `vulnCount: Int!`),
+		schema.AddExtraResolver("Cluster", `imageComponents(query: String): [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver("Cluster", `imageComponentCount(query: String): Int!`),
+		schema.AddExtraResolver("Cluster", `vulns(query: String): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Cluster", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `vulnCounter: VulnerabilityCounter!`),
+		schema.AddExtraResolver("Cluster", `k8sVulns(query: String): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Cluster", `k8sVulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policyStatus: PolicyStatus!`),
@@ -468,10 +468,10 @@ func (resolver *clusterResolver) Images(ctx context.Context, args rawQuery) ([]*
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageCount")
-
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
+
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
@@ -479,101 +479,80 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) 
 	return imageLoader.CountFromQuery(ctx, resolver.getQuery())
 }
 
-func (resolver *clusterResolver) ImageComponents(ctx context.Context) ([]*EmbeddedImageScanComponentResolver, error) {
+func (resolver *clusterResolver) ImageComponents(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
-
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
 
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
+	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
 	if err != nil {
 		return nil, err
 	}
-	return mapImagesToComponentResolvers(resolver.root, images, search.EmptyQuery())
+	return components(ctx, resolver.root, nested)
 }
 
-func (resolver *clusterResolver) ImageComponentCount(ctx context.Context) (int32, error) {
+func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args rawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
 
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
-	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
+	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
 	if err != nil {
+		return 0, err
+	}
+	comps, err := components(ctx, resolver.root, nested)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(comps)), nil
+}
+
+func (resolver *clusterResolver) Vulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+	return vulnerabilities(ctx, resolver.root, nested)
+}
+
+func (resolver *clusterResolver) VulnCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
+	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
 
-	vulns, err := mapImagesToComponentResolvers(resolver.root, images, search.EmptyQuery())
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	vulns, err := vulnerabilities(ctx, resolver.root, nested)
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(vulns)), nil
-}
-
-func (resolver *clusterResolver) Vulns(ctx context.Context) ([]*EmbeddedVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
-
-	if err := readImages(ctx); err != nil {
-		return nil, err
-	}
-
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
-	if err != nil {
-		return nil, err
-	}
-	imageVulns, err := mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
-	if err != nil {
-		return nil, err
-	}
-
-	k8sVulns, err := resolver.root.clusterK8sVulnerabilities(resolver.data)
-	if err != nil {
-		return nil, err
-	}
-
-	imageVulns = append(imageVulns, k8sVulns...)
-	return imageVulns, nil
-}
-
-func (resolver *clusterResolver) VulnCount(ctx context.Context) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
-	if err := readImages(ctx); err != nil {
-		return 0, err
-	}
-
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return 0, err
-	}
-	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
-	if err != nil {
-		return 0, err
-	}
-
-	imageVulns, err := mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-
-	k8sVulns, err := resolver.root.clusterK8sVulnerabilities(resolver.data)
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(len(imageVulns)) + int32(len(k8sVulns)), nil
 }
 
 func (resolver *clusterResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
@@ -593,9 +572,46 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context) (*Vulnerabilit
 	return mapImagesToVulnerabilityCounter(images), nil
 }
 
+func (resolver *clusterResolver) K8sVulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sVulns")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+	return k8sVulnerabilities(ctx, resolver.root, nested)
+}
+
+func (resolver *clusterResolver) K8sVulnCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sVulnCount")
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	vulns, err := k8sVulnerabilities(ctx, resolver.root, nested)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(vulns)), nil
+}
+
 func (resolver *clusterResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Policies")
-
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
@@ -871,15 +887,4 @@ func (resolver *clusterResolver) LatestViolation(ctx context.Context) (*graphql.
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Latest Violation")
 
 	return getLatestViolationTime(ctx, resolver.root, resolver.getQuery())
-}
-
-func (resolver *Resolver) clusterK8sVulnerabilities(cluster *storage.Cluster) ([]*EmbeddedVulnerabilityResolver, error) {
-	var cves []*nvd.CVEEntry
-	for _, cve := range resolver.k8sCVEManager.GetK8sCves() {
-		if isClusterAffectedByCVE(cluster, cve) {
-			cves = append(cves, cve)
-		}
-	}
-
-	return resolver.wrapEmbeddedVulnerabilities(converter.NvdCVEsToEmbeddedVulnerabilities(cves))
 }

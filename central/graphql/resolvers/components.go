@@ -43,7 +43,8 @@ func init() {
 			"deploymentCount(query: String): Int!",
 			"priority: Int!",
 		}),
-		schema.AddExtraResolver("ImageScan", `components: [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver("ImageScan", `components(query: String): [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
 		schema.AddQuery("imageComponent(id: ID): EmbeddedImageScanComponent"),
 		schema.AddQuery("imageComponents(query: String): [EmbeddedImageScanComponent!]!"),
 	)
@@ -107,20 +108,34 @@ func components(ctx context.Context, root *Resolver, query *v1.Query) ([]*Embedd
 	return mapImagesToComponentResolvers(root, images, query)
 }
 
-func (resolver *imageScanResolver) Components(ctx context.Context) ([]*EmbeddedImageScanComponentResolver, error) {
-	value := resolver.data.GetComponents()
-	return resolver.root.wrapEmbeddedImageScanComponents(value, nil)
-}
-
-func (resolver *Resolver) wrapEmbeddedImageScanComponents(values []*storage.EmbeddedImageScanComponent, err error) ([]*EmbeddedImageScanComponentResolver, error) {
-	if err != nil || len(values) == 0 {
+func (resolver *imageScanResolver) Components(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
 		return nil, err
 	}
-	output := make([]*EmbeddedImageScanComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &EmbeddedImageScanComponentResolver{root: resolver, data: v}
+
+	return mapImagesToComponentResolvers(resolver.root, []*storage.Image{
+		{
+			Scan: resolver.data,
+		},
+	}, query)
+}
+
+func (resolver *imageScanResolver) ComponentCount(ctx context.Context, args rawQuery) (int32, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
 	}
-	return output, nil
+
+	resolvers, err := mapImagesToComponentResolvers(resolver.root, []*storage.Image{
+		{
+			Scan: resolver.data,
+		},
+	}, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(resolvers)), nil
 }
 
 // EmbeddedImageScanComponentResolver resolves data about an image scan component.

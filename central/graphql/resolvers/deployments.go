@@ -38,10 +38,10 @@ func init() {
 		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
 		schema.AddExtraResolver("Deployment", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Deployment", `imageCount: Int!`),
-		schema.AddExtraResolver("Deployment", `imageComponents: [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("Deployment", `imageComponentCount: Int!`),
-		schema.AddExtraResolver("Deployment", `vulns: [EmbeddedVulnerability!]!`),
-		schema.AddExtraResolver("Deployment", `vulnCount: Int!`),
+		schema.AddExtraResolver("Deployment", `imageComponents(query: String): [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver("Deployment", `imageComponentCount(query: String): Int!`),
+		schema.AddExtraResolver("Deployment", `vulns(query: String): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Deployment", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Deployment", `vulnCounter: VulnerabilityCounter!`),
 		schema.AddExtraResolver("Deployment", "secrets(query: String): [Secret!]!"),
 		schema.AddExtraResolver("Deployment", "secretCount: Int!"),
@@ -355,98 +355,72 @@ func (resolver *deploymentResolver) ImageCount(ctx context.Context) (int32, erro
 	return int32(len(imageShas)), nil
 }
 
-func (resolver *deploymentResolver) ImageComponents(ctx context.Context) ([]*EmbeddedImageScanComponentResolver, error) {
+func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-
-	imageShas := resolver.getImageShas(ctx)
-	if len(imageShas) == 0 {
-		return nil, nil
-	}
-	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	images, err := imageLoader.FromQuery(ctx, imageShaQuery)
+	nested, err := search.AddAsConjunction(resolver.getImageQuery(ctx), query)
 	if err != nil {
 		return nil, err
 	}
-	return mapImagesToComponentResolvers(resolver.root, images, search.EmptyQuery())
+	return components(ctx, resolver.root, nested)
 }
 
-func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context) (int32, error) {
+func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args rawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
-
-	imageShas := resolver.getImageShas(ctx)
-	if len(imageShas) == 0 {
-		return 0, nil
-	}
-	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
-	images, err := imageLoader.FromQuery(ctx, imageShaQuery)
+	nested, err := search.AddAsConjunction(resolver.getImageQuery(ctx), query)
 	if err != nil {
 		return 0, err
 	}
-
-	vulns, err := mapImagesToComponentResolvers(resolver.root, images, search.EmptyQuery())
+	comps, err := components(ctx, resolver.root, nested)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(vulns)), nil
+	return int32(len(comps)), nil
 }
 
-func (resolver *deploymentResolver) Vulns(ctx context.Context) ([]*EmbeddedVulnerabilityResolver, error) {
+func (resolver *deploymentResolver) Vulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-
-	imageShas := resolver.getImageShas(ctx)
-	if len(imageShas) == 0 {
-		return nil, nil
-	}
-	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	images, err := imageLoader.FromQuery(ctx, imageShaQuery)
+	nested, err := search.AddAsConjunction(resolver.getImageQuery(ctx), query)
 	if err != nil {
 		return nil, err
 	}
-	return mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
+	return vulnerabilities(ctx, resolver.root, nested)
 }
 
-func (resolver *deploymentResolver) VulnCount(ctx context.Context) (int32, error) {
+func (resolver *deploymentResolver) VulnCount(ctx context.Context, args rawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
-
-	imageShas := resolver.getImageShas(ctx)
-	if len(imageShas) == 0 {
-		return 0, nil
-	}
-	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
-	images, err := imageLoader.FromQuery(ctx, imageShaQuery)
+	nested, err := search.AddAsConjunction(resolver.getImageQuery(ctx), query)
 	if err != nil {
 		return 0, err
 	}
-
-	vulns, err := mapImagesToVulnerabilityResolvers(resolver.root, images, search.EmptyQuery())
+	vulns, err := vulnerabilities(ctx, resolver.root, nested)
 	if err != nil {
 		return 0, err
 	}
@@ -519,6 +493,14 @@ func (resolver *deploymentResolver) unresolvedAlertsExists(ctx context.Context, 
 
 func (resolver *deploymentResolver) getQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
+}
+
+func (resolver *deploymentResolver) getImageQuery(ctx context.Context) *v1.Query {
+	imageShas := resolver.getImageShas(ctx)
+	if len(imageShas) == 0 {
+		return search.EmptyQuery()
+	}
+	return search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
 }
 
 func (resolver *deploymentResolver) getConjunctionQuery(args rawQuery) (*v1.Query, error) {

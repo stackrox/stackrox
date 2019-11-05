@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -22,9 +21,9 @@ func init() {
 		schema.AddQuery("image(sha:ID!): Image"),
 		schema.AddExtraResolver("Image", "deployments(query: String): [Deployment!]!"),
 		schema.AddExtraResolver("Image", "deploymentCount: Int!"),
-		schema.AddExtraResolver("Image", "topVuln: EmbeddedVulnerability"),
-		schema.AddExtraResolver("Image", "vulns: [EmbeddedVulnerability]!"),
-		schema.AddExtraResolver("Image", "vulnCount: Int!"),
+		schema.AddExtraResolver("Image", "topVuln(query: String): EmbeddedVulnerability"),
+		schema.AddExtraResolver("Image", "vulns(query: String): [EmbeddedVulnerability]!"),
+		schema.AddExtraResolver("Image", "vulnCount(query: String): Int!"),
 		schema.AddExtraResolver("Image", "vulnCounter: VulnerabilityCounter!"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
 	)
@@ -114,59 +113,52 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context) (int32, erro
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
-func (resolver *imageResolver) TopVuln(ctx context.Context) (*EmbeddedVulnerabilityResolver, error) {
+func (resolver *imageResolver) TopVuln(ctx context.Context, args rawQuery) (*EmbeddedVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVulnerability")
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	resolvers, err := mapImagesToVulnerabilityResolvers(resolver.root, []*storage.Image{resolver.data}, query)
+	if err != nil {
+		return nil, err
+	}
 
 	// create a set of the CVEs to return.
 	var maxCvss *storage.EmbeddedVulnerability
-	for _, component := range resolver.data.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			if maxCvss == nil || vuln.GetCvss() > maxCvss.GetCvss() {
-				maxCvss = vuln
-			}
+	for _, resolver := range resolvers {
+		if maxCvss == nil || resolver.data.GetCvss() > maxCvss.GetCvss() {
+			maxCvss = resolver.data
 		}
 	}
 	return resolver.root.wrapEmbeddedVulnerability(maxCvss, nil)
 }
 
 // Vulns returns all of the vulnerabilities in the image.
-func (resolver *imageResolver) Vulns(ctx context.Context) ([]*EmbeddedVulnerabilityResolver, error) {
+func (resolver *imageResolver) Vulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Vulnerabilities")
 
-	// create a set of the CVEs to return.
-	cveToVuln := make(map[string]*storage.EmbeddedVulnerability)
-	for _, component := range resolver.data.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			if _, exists := cveToVuln[vuln.GetCve()]; exists {
-				continue
-			}
-			cveToVuln[vuln.GetCve()] = vuln
-		}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
 	}
-
-	// Create the resolvers.
-	var resolvers []*EmbeddedVulnerabilityResolver
-	for _, vuln := range cveToVuln {
-		resolvers = append(resolvers, &EmbeddedVulnerabilityResolver{
-			root: resolver.root,
-			data: vuln,
-		})
-	}
-	return resolvers, nil
+	return mapImagesToVulnerabilityResolvers(resolver.root, []*storage.Image{resolver.data}, query)
 }
 
 // VulnCount returns the number of vulnerabilities the image has.
-func (resolver *imageResolver) VulnCount(ctx context.Context) (int32, error) {
+func (resolver *imageResolver) VulnCount(ctx context.Context, args rawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCount")
 
-	// Get a string set of all the CVEs that appear in all of the image's components.
-	cves := set.NewStringSet()
-	for _, component := range resolver.data.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			cves.Add(vuln.GetCve())
-		}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
 	}
-	return int32(cves.Cardinality()), nil
+	resolvers, err := mapImagesToVulnerabilityResolvers(resolver.root, []*storage.Image{resolver.data}, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(resolvers)), nil
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
