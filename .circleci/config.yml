@@ -381,17 +381,6 @@ checkKopsLabel: &checkKopsLabel
         fi
       fi
 
-checkScaleLabel: &checkScaleLabel
-  run:
-    name: Determine whether to run Scale tests
-    command: |
-      set +e
-      .circleci/pr_has_label.sh ci-scale-tests
-      if [ $? -eq 1 ]; then
-        echo "Skipping tests because we're on a PR. Apply the ci-scale-tests label to your PR if you want to run them."
-        circleci step halt
-      fi
-
 check-qa-tests-kernel-module-label: &check-qa-tests-kernel-module-label
   run:
     name: Determine whether to run qa tests with kernel module
@@ -457,6 +446,9 @@ commands:
     parameters:
       label:
         type: string
+      run-on-master:
+        type: boolean
+        default: true
     steps:
       - when:
           condition: << parameters.label >>
@@ -465,10 +457,15 @@ commands:
                 name: Determine whether to run tests
                 command: |
                   set +e
-                  .circleci/pr_has_label.sh "<< parameters.label >>"
-                  if [ $? -eq 1 ]; then
-                    echo "Skipping tests because we're on a PR. Apply the << parameters.label >> label to your PR if you want to run them."
-                    circleci step halt
+                  if [[ "${CIRCLE_BRANCH}" == "master" && "<< parameters.run-on-master >>" != "true" ]]; then
+                     echo "Skipping tests because we're on master, but this test is not on master by default."
+                     circleci step halt
+                  elif [[ -z "${CIRCLE_TAG}" ]]; then
+                    .circleci/pr_has_label.sh "<< parameters.label >>"
+                    if [ $? -eq 1 ]; then
+                      echo "Skipping tests because we're on a PR. Apply the << parameters.label >> label to your PR if you want to run them."
+                      circleci step halt
+                    fi
                   fi
 
   get-and-store-debug-dump:
@@ -1163,6 +1160,8 @@ commands:
         when: always
 
 jobs:
+
+
 
   provision-cluster-k8s-tests:
     <<: *defaults
@@ -2085,14 +2084,89 @@ jobs:
 
       - teardown-gke
 
+  provision-cluster-scale-nightly:
+    <<: *defaults
+    steps:
+      - checkout
+      - check-backend-changes
+      - provision-gke-cluster:
+          cluster-id: scale-test
+
   provision-cluster-scale:
     <<: *defaults
     steps:
       - checkout
       - check-backend-changes
-      - *checkScaleLabel
+      - check-label-exists-or-skip:
+          label: ci-scale-tests
+          run-on-master: false
       - provision-gke-cluster:
           cluster-id: scale-test
+
+  scale-nightly:
+    <<: *defaults
+    environment:
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - STORAGE: pvc
+      - LOAD_BALANCER: lb
+      - OUTPUT_FORMAT: helm
+
+    steps:
+      - checkout
+      - check-backend-changes
+      - check-label-exists-or-skip:
+          label: ci-scale-tests
+          run-on-master: true
+      - setup_remote_docker
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *setupRoxctl
+      - setup-gcp
+      - attach-gke-cluster:
+          cluster-id: scale-test
+      - remove-existing-stackrox-resources
+
+      - *setupHelm
+      - *setupGoogleAppCreds
+      - *setupLicense
+
+      - run:
+          name: Launch Central only
+          command: |
+            ./deploy/k8s/central.sh
+
+            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
+            cci-export ROX_RECORDER_DB_CREDS /tmp/gcp.json
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
+
+      - *waitForAPI
+
+      - run:
+          name: Launch Replay
+          command: |
+            ./scale/flightreplay/launch_replay.sh
+            mkdir /tmp/pprof
+            # 65 min run so that we are confident that the run has completely finished
+            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 65
+      - *storeProfilingResults
+      - *verifyNoStackRoxRestarts
+      - *connectToMonitoring
+      - *collectMonitoringImages
+      - *storeMonitoringImages
+      - *storeMonitoringMetrics
+      - *benchmarkDashboard
+      - *storeDashBenchImages
+      - *benchmarkCompliance
+      - *storeComplianceBenchImages
+      - *collectK8sLogs
+      - *verifyNoStackRoxRestarts
+      - *storeK8sLogs
+
+      - teardown-gke
 
   scale:
     <<: *defaults
@@ -2106,7 +2180,9 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
-      - *checkScaleLabel
+      - check-label-exists-or-skip:
+          label: ci-scale-tests
+          run-on-master: false
       - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -2612,6 +2688,23 @@ jobs:
 
 workflows:
   version: 2
+
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 1 * * *"
+          filters:
+            branches:
+              only: master
+
+    jobs:
+      - provision-cluster-scale-nightly:
+          context: docker-io-pull
+      - scale-nightly:
+          context: docker-io-pull
+          requires:
+            - provision-cluster-scale-nightly
+
   build_all:
     jobs:
       - pre-build-ui:
