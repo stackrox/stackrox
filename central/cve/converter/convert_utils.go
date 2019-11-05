@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/scans"
 )
 
 const (
@@ -49,9 +50,7 @@ func nvdCveToEmbeddedVulnerability(cve *nvd.CVEEntry) (*storage.EmbeddedVulnerab
 		ev.Summary = cve.CVE.Descriptions.Description[0].Value
 	}
 
-	if len(cve.CVE.References.Reference) > 0 {
-		ev.Link = cve.CVE.References.Reference[0].URL
-	}
+	ev.Link = scans.GetVulnLink(ev.Cve)
 
 	if cve.Impact.BaseMetricV3.CVSSv3.Score != 0.0 {
 		ev.Cvss = float32(cve.Impact.BaseMetricV3.CVSSv3.Score)

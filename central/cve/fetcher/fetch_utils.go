@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"time"
@@ -37,11 +36,6 @@ var (
 
 	log = logging.LoggerForModule()
 )
-
-type queryParam struct {
-	key   string
-	value string
-}
 
 func fetchRemote(baseURL string) (string, error) {
 	url, err := addLicenseIDAsQueryParam(baseURL)
@@ -83,32 +77,18 @@ func addLicenseIDAsQueryParam(baseURL string) (string, error) {
 		return "", err
 	}
 
-	queryParams := []queryParam{
+	queryParams := []utils.QueryParam{
 		{
-			key:   "license_id",
-			value: licenseID,
+			Key:   "license_id",
+			Value: licenseID,
 		},
 	}
 
-	url, err := getURLWithQueryParams(baseURL, queryParams)
+	url, err := utils.GetURLWithQueryParams(baseURL, queryParams)
 	if err != nil {
 		return "", err
 	}
 	return url, nil
-}
-
-func getURLWithQueryParams(baseURL string, queryParams []queryParam) (string, error) {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return "", err
-	}
-
-	q := u.Query()
-	for _, queryParam := range queryParams {
-		q.Add(queryParam.key, queryParam.value)
-	}
-	u.RawQuery = q.Encode()
-	return u.String(), nil
 }
 
 func getCurrentLicenseID() (string, error) {

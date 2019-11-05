@@ -15,23 +15,6 @@ const (
 	cveChecksumFile = "testdata/cve_checksum"
 )
 
-func TestCorrectURLFormatting(t *testing.T) {
-	baseURL := "https://www.example.com"
-	queryParams := []queryParam{
-		{
-			key:   "foo",
-			value: "foo",
-		},
-		{
-			key:   "bar",
-			value: "bar",
-		},
-	}
-	url, err := getURLWithQueryParams(baseURL, queryParams)
-	assert.Nil(t, err)
-	assert.Equal(t, url, "https://www.example.com?bar=bar&foo=foo")
-}
-
 func TestUnmarshalCorrectCVEs(t *testing.T) {
 	dat, err := ioutil.ReadFile(correctCVEFile)
 	require.Nil(t, err)
