@@ -16,7 +16,7 @@ import CVEStackedPill from 'Components/CVEStackedPill';
 import { CLUSTER_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
-const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
+const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const workflowState = useContext(workflowStateContext);
 
     const query = gql`
@@ -191,6 +191,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page }) => {
 
     return (
         <WorkflowListPage
+            data={data}
             query={query}
             queryOptions={queryOptions}
             entityListType={entityTypes.CLUSTER}

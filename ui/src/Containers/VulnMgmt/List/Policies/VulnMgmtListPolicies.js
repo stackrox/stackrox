@@ -149,11 +149,11 @@ export const defaultPolicySort = [
     }
 ];
 
-const VulnMgmtPolicies = ({ selectedRowId, search, sort, page }) => {
+const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data }) => {
     const POLICIES_QUERY = gql`
         query getPolicies {
             results: policies {
-                ...policyListFields
+                ...policyFields
             }
         }
         ${POLICY_LIST_FRAGMENT}
@@ -167,6 +167,7 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page }) => {
 
     return (
         <WorkflowListPage
+            data={data}
             query={POLICIES_QUERY}
             queryOptions={queryOptions}
             idAttribute="id"

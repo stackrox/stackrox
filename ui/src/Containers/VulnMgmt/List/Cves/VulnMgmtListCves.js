@@ -13,7 +13,7 @@ import entityTypes from 'constants/entityTypes';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
-import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 export function getCveTableColumns(workflowState, linksOn = true) {
     const { entityType } = workflowState.getBaseEntity();
@@ -190,16 +190,16 @@ export const defaultCveSort = [
     }
 ];
 
-const VulnMgmtCves = ({ selectedRowId, search, sort, page }) => {
+const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
     // TODO: change query line to `query getCves($query: String) {`
     //   after API starts accepting empty string ('') for query
     const CVES_QUERY = gql`
         query getCves {
             results: vulnerabilities {
-                ...cveListFields
+                ...cveFields
             }
         }
-        ${CVE_LIST_FRAGMENT}
+        ${VULN_CVE_LIST_FRAGMENT}
     `;
 
     const queryOptions = {
@@ -210,6 +210,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page }) => {
 
     return (
         <WorkflowListPage
+            data={data}
             query={CVES_QUERY}
             queryOptions={queryOptions}
             idAttribute="cve"

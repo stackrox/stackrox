@@ -7,7 +7,6 @@ import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
 import { useQuery } from 'react-apollo';
 import queryService from 'modules/queryService';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
 
 const WorkflowEntityPage = ({
     ListComponent,
@@ -22,18 +21,18 @@ const WorkflowEntityPage = ({
     entityContext,
     search,
     sort,
-    page,
-    getListData
+    page
 }) => {
     const { isDarkMode } = useTheme();
     let query = overviewQuery;
-    const getSubList = getListData || getSubListFromEntity;
+    let fieldName;
     if (entityListType) {
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityType,
             entityListType,
             useCase
         );
+        fieldName = listFieldName;
         query = getListQuery(listFieldName, fragmentName, fragment);
     }
     const { loading, data } = useQuery(query, queryOptions);
@@ -41,7 +40,7 @@ const WorkflowEntityPage = ({
     if (!data || !data.result) return <PageNotFound resourceType={entityType} />;
     const { result } = data;
 
-    const listData = entityListType ? getSubList(result, entityListType) : null;
+    const listData = entityListType ? result[fieldName] : null;
     return entityListType ? (
         <ListComponent
             entityListType={entityListType}
@@ -77,8 +76,7 @@ WorkflowEntityPage.propTypes = {
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
     sort: PropTypes.string,
-    page: PropTypes.number,
-    getListData: PropTypes.func
+    page: PropTypes.number
 };
 
 WorkflowEntityPage.defaultProps = {
@@ -87,8 +85,7 @@ WorkflowEntityPage.defaultProps = {
     entityContext: {},
     search: null,
     sort: null,
-    page: 1,
-    getListData: null
+    page: 1
 };
 
 export default WorkflowEntityPage;

@@ -4,7 +4,7 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import { CVE_LIST_FRAGMENT_FOR_IMAGE } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { VULN_CVE_LIST_FRAGMENT_FOR_IMAGE } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import EntityList from '../../List/VulnMgmtList';
 import VulnMgmtComponentOverview from './VulnMgmtComponentOverview';
 
@@ -19,11 +19,11 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
                 vulnCount
                 deploymentCount
                 vulns {
-                    ...cveListFields
+                    ...cveFields
                 }
             }
         }
-        ${CVE_LIST_FRAGMENT_FOR_IMAGE}
+        ${VULN_CVE_LIST_FRAGMENT_FOR_IMAGE}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

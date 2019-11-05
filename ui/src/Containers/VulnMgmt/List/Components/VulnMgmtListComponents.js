@@ -10,7 +10,7 @@ import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
 import queryService from 'modules/queryService';
 
-import { COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 
 export function getComponentTableColumns(workflowState) {
@@ -119,14 +119,14 @@ export const defaultComponentSort = [
     }
 ];
 
-const VulnMgmtComponents = ({ selectedRowId, search, sort, page }) => {
+const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
         query getComponents($query: String) {
             results: imageComponents(query: $query) {
-                ...componentListFields
+                ...componentFields
             }
         }
-        ${COMPONENT_LIST_FRAGMENT}
+        ${VULN_COMPONENT_LIST_FRAGMENT}
     `;
 
     const queryOptions = {
@@ -137,6 +137,7 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page }) => {
 
     return (
         <WorkflowListPage
+            data={data}
             query={query}
             queryOptions={queryOptions}
             idAttribute="id"

@@ -5,7 +5,7 @@ import useCases from 'constants/useCaseTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'modules/queryService';
-import { CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtClusterOverview from './VulnMgmtClusterOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -45,11 +45,11 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
                 imageComponentCount
                 vulnCount
                 vulnerabilities: vulns {
-                    ...cveListFields
+                    ...cveFields
                 }
             }
         }
-        ${CVE_LIST_FRAGMENT}
+        ${VULN_CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

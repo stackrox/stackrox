@@ -173,11 +173,11 @@ export function getDeploymentTableColumns(workflowState) {
     return tableColumns.filter(col => col);
 }
 
-const VulnMgmtDeployments = ({ selectedRowId, search, sort, page }) => {
+const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
         query getDeployments($query: String) {
             results: deployments(query: $query) {
-                ...deploymentListFields
+                ...deploymentFields
             }
         }
         ${DEPLOYMENT_LIST_FRAGMENT}
@@ -192,6 +192,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page }) => {
 
     return (
         <WorkflowListPage
+            data={data}
             query={query}
             queryOptions={queryOptions}
             entityListType={entityTypes.DEPLOYMENT}

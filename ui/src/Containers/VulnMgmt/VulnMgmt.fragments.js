@@ -43,8 +43,8 @@ export const CLUSTER_LIST_FRAGMENT = gql`
     }
 `;
 
-export const CVE_LIST_FRAGMENT = gql`
-    fragment cveListFields on EmbeddedVulnerability {
+export const VULN_CVE_LIST_FRAGMENT = gql`
+    fragment cveFields on EmbeddedVulnerability {
         cve
         cvss
         scoreVersion
@@ -61,8 +61,8 @@ export const CVE_LIST_FRAGMENT = gql`
     }
 `;
 
-export const CVE_LIST_FRAGMENT_FOR_IMAGE = gql`
-    fragment cveListFields on EmbeddedVulnerability {
+export const VULN_CVE_LIST_FRAGMENT_FOR_IMAGE = gql`
+    fragment cveFields on EmbeddedVulnerability {
         cve
         cvss
         scoreVersion
@@ -76,7 +76,7 @@ export const CVE_LIST_FRAGMENT_FOR_IMAGE = gql`
 `;
 
 export const DEPLOYMENT_LIST_FRAGMENT = gql`
-    fragment deploymentListFields on Deployment {
+    fragment deploymentFields on Deployment {
         id
         name
         vulnCounter {
@@ -128,7 +128,7 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
 `;
 
 export const IMAGE_LIST_FRAGMENT = gql`
-    fragment imageListFields on Image {
+    fragment imageFields on Image {
         id
         name {
             fullName
@@ -175,8 +175,8 @@ export const IMAGE_LIST_FRAGMENT = gql`
     }
 `;
 
-export const COMPONENT_LIST_FRAGMENT = gql`
-    fragment componentListFields on EmbeddedImageScanComponent {
+export const VULN_COMPONENT_LIST_FRAGMENT = gql`
+    fragment componentFields on EmbeddedImageScanComponent {
         id
         name
         version
@@ -213,7 +213,7 @@ export const COMPONENT_LIST_FRAGMENT = gql`
 `;
 
 export const NAMESPACE_LIST_FRAGMENT = gql`
-    fragment namespaceListFields on Namespace {
+    fragment namespaceFields on Namespace {
         metadata {
             id
             clusterName
@@ -254,7 +254,7 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
 `;
 
 export const POLICY_LIST_FRAGMENT = gql`
-    fragment policyListFields on Policy {
+    fragment policyFields on Policy {
         id
         name
         description

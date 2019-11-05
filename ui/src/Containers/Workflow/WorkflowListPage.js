@@ -19,6 +19,7 @@ export function getDefaultExpandedRows(data) {
 }
 
 const WorkflowListPage = ({
+    data,
     query,
     queryOptions,
     defaultSorted,
@@ -43,10 +44,16 @@ const WorkflowListPage = ({
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
 
-    const { loading, error, data } = useQuery(query, queryOptions);
+    const queryOptionsWithSkip = !data ? queryOptions : { skip: true };
+    const { loading, error, data: ownQueryData } = useQuery(query, queryOptionsWithSkip);
 
-    if (isGQLLoading(loading, data)) return <Loader />;
-    if (!data || !data.results || error) return <PageNotFound resourceType={entityListType} />;
+    let displayData = data;
+    if (!data) {
+        if (isGQLLoading(loading, ownQueryData)) return <Loader />;
+        if (!ownQueryData || !ownQueryData.results || error)
+            return <PageNotFound resourceType={entityListType} />;
+        displayData = ownQueryData.results;
+    }
 
     const tableColumns = getTableColumns(workflowState);
     const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(data) : null;
@@ -55,7 +62,7 @@ const WorkflowListPage = ({
         <EntityList
             entityType={entityListType}
             idAttribute={idAttribute}
-            rowData={data.results}
+            rowData={displayData}
             tableColumns={tableColumns}
             selectedRowId={selectedRowId}
             search={search}
@@ -70,9 +77,11 @@ const WorkflowListPage = ({
 };
 
 WorkflowListPage.propTypes = {
-    // eslint-disable-next-line
-    query: PropTypes.any.isRequired,
-    queryOptions: PropTypes.shape({}),
+    query: PropTypes.shape({}),
+    data: PropTypes.arrayOf(PropTypes.shape({})),
+    queryOptions: PropTypes.shape({
+        options: PropTypes.shape({})
+    }),
     defaultSorted: PropTypes.arrayOf(PropTypes.shape({})),
     entityListType: PropTypes.string.isRequired,
     getTableColumns: PropTypes.func.isRequired,
@@ -87,7 +96,9 @@ WorkflowListPage.propTypes = {
 };
 
 WorkflowListPage.defaultProps = {
+    query: null,
     queryOptions: null,
+    data: null,
     defaultSorted: [],
     entityContext: {},
     selectedRowId: null,

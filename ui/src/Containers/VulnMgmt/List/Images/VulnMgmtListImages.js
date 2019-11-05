@@ -141,11 +141,11 @@ export function getImageTableColumns(workflowState) {
     return tableColumns.filter(col => col);
 }
 
-const VulnMgmtImages = ({ selectedRowId, search, sort, page }) => {
+const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
         query getImages {
             results: images {
-                ...imageListFields
+                ...imageFields
             }
         }
         ${IMAGE_LIST_FRAGMENT}
@@ -166,6 +166,7 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page }) => {
 
     return (
         <WorkflowListPage
+            data={data}
             query={query}
             queryOptions={queryOptions}
             entityListType={entityTypes.IMAGE}

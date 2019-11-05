@@ -11,7 +11,15 @@ import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 import { CONTROL_FRAGMENT } from 'queries/controls';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
-import { COMPONENT_LIST_FRAGMENT, CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    VULN_COMPONENT_LIST_FRAGMENT,
+    VULN_CVE_LIST_FRAGMENT,
+    IMAGE_LIST_FRAGMENT as VULN_IMAGE_LIST_FRAGMENT,
+    CLUSTER_LIST_FRAGMENT as VULN_CLUSTER_LIST_FRAGMENT,
+    DEPLOYMENT_LIST_FRAGMENT as VULN_DEPLOYMENT_LIST_FRAGMENT,
+    NAMESPACE_LIST_FRAGMENT as VULN_NAMESPACE_LIST_FRAGMENT,
+    POLICY_LIST_FRAGMENT as VULN_POLICY_LIST_FRAGMENT
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 function objectToWhereClause(query) {
     if (!query) return '';
@@ -126,53 +134,44 @@ function getFragmentName(entityType) {
         case entityTypes.CONTROL:
             return 'controlFields';
         case entityTypes.CVE:
-            return 'cveListFields';
+            return 'cveFields';
         case entityTypes.COMPONENT:
-            return 'componentListFields';
+            return 'componentFields';
         default:
             return '';
     }
 }
 
-function getFragment(entityType, appContext) {
-    const standardFields = [
-        useCases.CONFIG_MANAGEMENT,
-        useCases.COMPLIANCE,
-        useCases.VULN_MANAGEMENT
-    ];
+function getFragment(entityType, useCase) {
+    const defaultFragments = {
+        [entityTypes.IMAGE]: IMAGE_FRAGMENT,
+        [entityTypes.NODE]: NODE_FRAGMENT,
+        [entityTypes.DEPLOYMENT]: DEPLOYMENT_FRAGMENT,
+        [entityTypes.NAMESPACE]: NAMESPACE_FRAGMENT,
+        [entityTypes.SUBJECT]: SUBJECT_WITH_CLUSTER_FRAGMENT,
+        [entityTypes.ROLE]: ROLE_FRAGMENT,
+        [entityTypes.SECRET]: SECRET_FRAGMENT,
+        [entityTypes.POLICY]: POLICY_FRAGMENT,
+        [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_FRAGMENT,
+        [entityTypes.CONTROL]: CONTROL_FRAGMENT
+    };
 
-    if (standardFields.includes(appContext)) {
-        switch (entityType) {
-            case entityTypes.IMAGE:
-                return IMAGE_FRAGMENT;
-            case entityTypes.NODE:
-                return NODE_FRAGMENT;
-            case entityTypes.DEPLOYMENT:
-                return DEPLOYMENT_FRAGMENT;
-            case entityTypes.NAMESPACE:
-                return NAMESPACE_FRAGMENT;
-            case entityTypes.SUBJECT:
-                return SUBJECT_WITH_CLUSTER_FRAGMENT;
-            case entityTypes.ROLE:
-                return ROLE_FRAGMENT;
-            case entityTypes.SECRET:
-                return SECRET_FRAGMENT;
-            case entityTypes.POLICY:
-                return POLICY_FRAGMENT;
-            case entityTypes.SERVICE_ACCOUNT:
-                return SERVICE_ACCOUNT_FRAGMENT;
-            case entityTypes.CONTROL:
-                return CONTROL_FRAGMENT;
-            case entityTypes.CVE:
-                return CVE_LIST_FRAGMENT;
-            case entityTypes.COMPONENT:
-                return COMPONENT_LIST_FRAGMENT;
-            default:
-                return '';
+    const fragmentsByUseCase = {
+        [useCases.VULN_MANAGEMENT]: {
+            ...defaultFragments,
+            [entityTypes.COMPONENT]: VULN_COMPONENT_LIST_FRAGMENT,
+            [entityTypes.CVE]: VULN_CVE_LIST_FRAGMENT,
+            [entityTypes.IMAGE]: VULN_IMAGE_LIST_FRAGMENT,
+            [entityTypes.CLUSTER]: VULN_CLUSTER_LIST_FRAGMENT,
+            [entityTypes.NAMESPACE]: VULN_NAMESPACE_LIST_FRAGMENT,
+            [entityTypes.POLICY]: VULN_POLICY_LIST_FRAGMENT,
+            [entityTypes.DEPLOYMENT]: VULN_DEPLOYMENT_LIST_FRAGMENT
         }
-    }
+    };
 
-    throw new Error(`No fragment found for ${entityType} in app context ${appContext}`);
+    const fragmentMap = fragmentsByUseCase[useCase] || defaultFragments;
+
+    return fragmentMap[entityType];
 }
 
 function getFragmentInfo(entityType, listType, appContext) {
