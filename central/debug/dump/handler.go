@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"runtime"
 	"runtime/pprof"
 	"strconv"
 	"time"
@@ -30,6 +31,11 @@ var (
 		Timeout: time.Second * 5,
 	}
 )
+
+func init() {
+	runtime.SetBlockProfileRate(10)
+	runtime.SetMutexProfileFraction(10)
+}
 
 func getPrometheusMetrics(zipWriter *zip.Writer, name string) error {
 	resp, err := client.Get(prometheus)
@@ -71,21 +77,21 @@ func getCPU(zipWriter *zip.Writer, duration time.Duration) error {
 }
 
 func getBlock(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("block.txt")
+	w, err := zipWriter.Create("block.tar.gz")
 	if err != nil {
 		return err
 	}
 	p := pprof.Lookup("block")
-	return p.WriteTo(w, 2)
+	return p.WriteTo(w, 0)
 }
 
 func getMutex(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("mutex.txt")
+	w, err := zipWriter.Create("mutex.tar.gz")
 	if err != nil {
 		return err
 	}
 	p := pprof.Lookup("mutex")
-	return p.WriteTo(w, 2)
+	return p.WriteTo(w, 0)
 }
 
 func getGoroutines(zipWriter *zip.Writer) error {
