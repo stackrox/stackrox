@@ -447,7 +447,7 @@ func (evr *EmbeddedVulnerabilityResolver) ImpactScore(ctx context.Context) (floa
 	if val := evr.data.GetCvssV2(); val != nil {
 		return float64(evr.data.GetCvssV2().GetImpactScore()), nil
 	}
-	return float64(0.0), errors.New("impact score not available")
+	return float64(0.0), nil
 }
 
 func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {

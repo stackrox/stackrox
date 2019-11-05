@@ -29,7 +29,7 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
         query getComponentSubEntity${entityListType}($id: ID!, $query: String) {
-            result: deployment(id: $id) {
+            result: imageComponent(id: $id) {
                 id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
             }
