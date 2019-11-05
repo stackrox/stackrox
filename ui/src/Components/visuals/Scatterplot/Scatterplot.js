@@ -10,7 +10,8 @@ import {
     VerticalGridLines,
     HorizontalGridLines,
     MarkSeries,
-    DiscreteColorLegend
+    DiscreteColorLegend,
+    ChartLabel
 } from 'react-vis';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
 import HoverHint from '../HoverHint';
@@ -62,9 +63,24 @@ const Scatterplot = ({
                     onValueMouseOut={onValueMouseOut}
                     onValueClick={onValueClickHandler}
                 />
-
-                <XAxis tickSize={0} title={xAxisTitle} position="middle" />
-                <YAxis tickSize={0} title={yAxisTitle} position="middle" />
+                <XAxis tickSize={0} />
+                <YAxis tickSize={0} />
+                <ChartLabel
+                    text={xAxisTitle}
+                    className="alt-x-label"
+                    includeMargin={false}
+                    xPercent={0.5}
+                    yPercent={1.01}
+                    style={{ transform: 'translate(0, 40)', textAnchor: 'middle' }}
+                />
+                <ChartLabel
+                    text={yAxisTitle}
+                    className="alt-y-label"
+                    includeMargin={false}
+                    xPercent={-0.01}
+                    yPercent={0.5}
+                    style={{ transform: 'translate(-18, 0), rotate(-90)', textAnchor: 'middle' }}
+                />
                 <DiscreteColorLegend
                     orientation="horizontal"
                     items={legendData}
