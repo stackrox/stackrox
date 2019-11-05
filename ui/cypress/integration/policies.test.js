@@ -291,13 +291,18 @@ describe('Policies page', () => {
     it('should delete a policy when the hover delete policy clicked', () => {
         cy.get(selectors.tableFirstRow).click({ force: true });
         cy.get(selectors.sidePanel).should('exist');
-        const policyName = cy.get(selectors.sidePanelHeader).text;
-        cy.get(selectors.hoverActionButtons)
-            .eq(1)
-            .click({ force: true });
-        cy.get(selectors.tableFirstRow).click({ force: true });
-        cy.get(selectors.sidePanel).should('exist');
-        cy.get(selectors.sidePanelHeader).should('not.have.text', policyName);
+        cy.get(selectors.tableFirstRowName)
+            .invoke('text')
+            .then(policyName => {
+                cy.get(selectors.tableFirstRow).should('contain', policyName);
+                cy.get(selectors.hoverActionButtons)
+                    .eq(1)
+                    .click({ force: true });
+                cy.get(selectors.tableFirstRow).should('not.contain', policyName);
+                cy.get(selectors.tableFirstRow).click({ force: true });
+                cy.get(selectors.sidePanel).should('exist');
+                cy.get(selectors.sidePanelHeader).should('not.have.text', policyName);
+            });
     });
 
     it('should allow creating new categories and savnig them (ROX-1409)', () => {
