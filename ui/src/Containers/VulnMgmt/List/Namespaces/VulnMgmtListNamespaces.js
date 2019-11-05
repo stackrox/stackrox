@@ -48,7 +48,8 @@ export function getNamespaceTableColumns(workflowState) {
                         hideLink={pdf}
                     />
                 );
-            }
+            },
+            accessor: 'vulnCounter.all.total'
         },
         {
             Header: `Cluster`,
@@ -63,7 +64,8 @@ export function getNamespaceTableColumns(workflowState) {
                     .toUrl();
 
                 return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-            }
+            },
+            accessor: 'metadata.clusterName'
         },
         {
             Header: `Deployments`,
@@ -81,7 +83,8 @@ export function getNamespaceTableColumns(workflowState) {
                     deploymentCount
                 )}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
-            }
+            },
+            accessor: 'deploymentCount'
         },
         {
             Header: `Images`,
@@ -99,7 +102,8 @@ export function getNamespaceTableColumns(workflowState) {
                     imageCount
                 )}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
-            }
+            },
+            accessor: 'imageCount'
         },
         {
             Header: `Policies`,
@@ -116,7 +120,8 @@ export function getNamespaceTableColumns(workflowState) {
                     policyCount
                 )}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
-            }
+            },
+            accessor: 'policyCount'
         },
         {
             Header: `Policy status`,
@@ -129,7 +134,8 @@ export function getNamespaceTableColumns(workflowState) {
 
                 return policyLabel;
             },
-            id: 'policyStatus'
+            id: 'policyStatus',
+            accessor: 'policyStatus.status'
         },
         {
             Header: `Latest violation`,

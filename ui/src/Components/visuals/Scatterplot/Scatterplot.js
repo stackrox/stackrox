@@ -1,5 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { withRouter } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
+
 import {
     FlexibleXYPlot,
     XAxis,
@@ -25,7 +28,8 @@ const Scatterplot = ({
     plotProps,
     yAxisTitle,
     xAxisTitle,
-    legendData
+    legendData,
+    history
 }) => {
     const { hint, onValueMouseOver, onValueMouseOut, onMouseMove } = useGraphHoverHint();
 
@@ -36,6 +40,10 @@ const Scatterplot = ({
     const lowY = lowerY !== null ? lowerY : getLowValue(data, 'y', yMultiple);
     const highY = upperY !== null ? upperY : getHighValue(data, 'y', yMultiple);
     const yDomain = [lowY, highY];
+
+    function onValueClickHandler(datum) {
+        if (datum.url) history.push(datum.url);
+    }
 
     return (
         <>
@@ -52,6 +60,7 @@ const Scatterplot = ({
                     data={data}
                     onValueMouseOver={onValueMouseOver}
                     onValueMouseOut={onValueMouseOut}
+                    onValueClick={onValueClickHandler}
                 />
 
                 <XAxis tickSize={0} title={xAxisTitle} position="middle" />
@@ -80,7 +89,8 @@ Scatterplot.propTypes = {
         PropTypes.shape({
             color: PropTypes.string,
             x: PropTypes.number.isRequired,
-            y: PropTypes.number.isRequired
+            y: PropTypes.number.isRequired,
+            url: PropTypes.string
         })
     ),
     lowerX: PropTypes.number,
@@ -94,7 +104,8 @@ Scatterplot.propTypes = {
     xAxisTitle: PropTypes.string,
     legendData: PropTypes.arrayOf(
         PropTypes.shape({ title: PropTypes.string, color: PropTypes.string })
-    )
+    ),
+    history: ReactRouterPropTypes.isRequired
 };
 
 Scatterplot.defaultProps = {
@@ -111,4 +122,4 @@ Scatterplot.defaultProps = {
     legendData: null
 };
 
-export default Scatterplot;
+export default withRouter(Scatterplot);

@@ -11,9 +11,8 @@ import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import isGQLLoading from 'utils/gqlLoading';
-import { severityColorMap } from 'constants/severityColors';
+import { severityColorMap, severityColorLegend } from 'constants/severityColors';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
-import { severities } from 'constants/severities';
 import PropTypes from 'prop-types';
 
 const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }) => {
@@ -84,6 +83,7 @@ const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }
                 metadata {
                     clusterName
                     name
+                    id
                 }
                 vulnCount
                 vulns {
@@ -169,7 +169,10 @@ const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }
                     x: result.vulnCount,
                     y: +avgSeverity,
                     color: severityColorMap[getSeverityByCvss(avgSeverity)],
-                    hint: getHint({ ...result, avgSeverity })
+                    hint: getHint({ ...result, avgSeverity }),
+                    url: workflowState
+                        .resetPage(selectedEntityType, result.id || result.metadata.id)
+                        .toUrl()
                 };
             })
             .sort((a, b) => {
@@ -195,12 +198,7 @@ const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }
                 yMultiple={10}
                 yAxisTitle="Average CVSS Score"
                 xAxisTitle="Critical Vulnerabilities & Exposures"
-                legendData={[
-                    { title: 'Low', color: severityColorMap[severities.LOW_SEVERITY] },
-                    { title: 'Medium', color: severityColorMap[severities.MEDIUM_SEVERITY] },
-                    { title: 'High', color: severityColorMap[severities.HIGH_SEVERITY] },
-                    { title: 'Critical', color: severityColorMap[severities.CRITICAL_SEVERITY] }
-                ]}
+                legendData={severityColorLegend}
             />
         </Widget>
     );
