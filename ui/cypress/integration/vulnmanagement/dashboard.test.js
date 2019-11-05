@@ -20,6 +20,7 @@ function validateTopRiskyEntities(entityName) {
     cy.get(selectors.getWidget(`top risky ${entityName} by CVE count & CVSS score`))
         .find(selectors.viewAllButton)
         .click();
+    cy.wait(500);
     if (entityName === 'clusters') cy.url().should('contain', url.list.clusters);
     else if (entityName === 'images') cy.url().should('contain', url.list.images);
     else if (entityName === 'namespaces') cy.url().should('contain', url.list.namespaces);
@@ -150,7 +151,7 @@ describe('Vuln Management Dashboard Page', () => {
             .click();
         cy.url().should('contain', url.list.clusters);
     });
-    it('clicking the "Top risky deployments by CVE count & CVSS score" widget\'s "View All" button should take you to the clusters list', () => {
+    it('clicking the "Top risky deployments by CVE count & CVSS score" widget\'s "View All" button should take you to the deployments list', () => {
         validateTopRiskyEntities('deployments');
     });
 
