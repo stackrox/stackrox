@@ -17,6 +17,7 @@ import (
 func Command() *cobra.Command {
 	var (
 		image string
+		force bool
 	)
 	c := &cobra.Command{
 		Use:   "scan",
@@ -26,15 +27,16 @@ func Command() *cobra.Command {
 			if image == "" {
 				return errors.New("--image must be set")
 			}
-			return scanImage(image, flags.Timeout(c))
+			return scanImage(image, force, flags.Timeout(c))
 		},
 	}
 
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
+	c.Flags().BoolVarP(&force, "force", "f", false, "the --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
 	return c
 }
 
-func scanImage(image string, timeout time.Duration) error {
+func scanImage(image string, force bool, timeout time.Duration) error {
 	// Create the connection to the central detection service.
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
@@ -49,7 +51,10 @@ func scanImage(image string, timeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	imageResult, err := service.ScanImage(ctx, &v1.ScanImageRequest{ImageName: image})
+	imageResult, err := service.ScanImage(ctx, &v1.ScanImageRequest{
+		ImageName: image,
+		Force:     force,
+	})
 	if err != nil {
 		return err
 	}

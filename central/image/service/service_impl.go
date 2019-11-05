@@ -145,8 +145,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	img := types.ToImage(containerImage)
 
 	enrichmentResult, err := s.enricher.EnrichImage(enricher.EnrichmentContext{
-		NoExternalMetadata: false,
-		IgnoreExisting:     true,
+		ForceRefetch: request.GetForce(),
 	}, img)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

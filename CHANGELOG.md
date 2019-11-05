@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [34.0]
+### Added
+- The `roxctl image scan` command now has a `--force` flag, which causes Central to re-pull the data from the registry and
+  the scanner.
+
 ## [33.0]
 ### Changed
 - Proxy configuration can now changed at runtime by editing and applying `proxy-config-secret.yaml` where central and scanner run.
