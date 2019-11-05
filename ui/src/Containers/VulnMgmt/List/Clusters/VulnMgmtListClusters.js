@@ -22,7 +22,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
         query getClusters($query: String) {
             results: clusters(query: $query) {
-                ...clusterListFields
+                ...clusterFields
             }
         }
         ${CLUSTER_LIST_FRAGMENT}

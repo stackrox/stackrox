@@ -1,7 +1,7 @@
 import gql from 'graphql-tag';
 
 export const CLUSTER_LIST_FRAGMENT = gql`
-    fragment clusterListFields on Cluster {
+    fragment clusterFields on Cluster {
         id
         name
         vulnCounter {

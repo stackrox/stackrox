@@ -27,7 +27,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         remediation,
         severity,
         categories,
-        lastViolated,
+        latestViolation,
         lastUpdated,
         enforcementActions,
         lifecycleStages,
@@ -74,7 +74,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         },
         {
             key: 'Last violated',
-            value: format(lastViolated, dateTimeFormat)
+            value: format(latestViolation, dateTimeFormat)
         },
         {
             key: 'Last updated',

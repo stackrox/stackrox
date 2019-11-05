@@ -22,8 +22,8 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
                 severity
                 policyStatus
                 categories
-                #lastViolated
-                #lastUpdated
+                latestViolation
+                lastUpdated
                 enforcementActions
                 lifecycleStages
                 fields {
@@ -145,7 +145,7 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
                 }
                 deploymentCount
                 deployments {
-                    ...deploymentListFields
+                    ...deploymentFields
                 }
             }
         }
