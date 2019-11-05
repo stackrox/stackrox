@@ -36,6 +36,7 @@ func init() {
 						"aws/051999192406",
 						"aws/880732477823", // k@stackrox.com"
 						"aws/522993616158", // rhama@stackrox.com
+						"aws/598979716678", // akshat@stackrox.com
 					},
 				})
 		},
