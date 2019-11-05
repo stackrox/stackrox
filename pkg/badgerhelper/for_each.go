@@ -12,6 +12,14 @@ type ForEachOptions struct {
 	IteratorOptions *badger.IteratorOptions
 }
 
+// DefaultIteratorOptions defines the default iterator options for Badger
+// These should be used instead of badger.DefaultIteratorOptions
+func DefaultIteratorOptions() *badger.IteratorOptions {
+	return &badger.IteratorOptions{
+		PrefetchValues: false,
+	}
+}
+
 // ForEachItemWithPrefix invokes a callbacks for all key/item pairs with the given prefix.
 func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k []byte, item *badger.Item) error) error {
 	defer func() {
@@ -20,13 +28,13 @@ func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOption
 		}
 	}()
 
-	itOpts := badger.DefaultIteratorOptions
+	itOpts := DefaultIteratorOptions()
 	if opts.IteratorOptions != nil {
-		itOpts = *opts.IteratorOptions
+		itOpts = opts.IteratorOptions
 	}
 	itOpts.Prefix = keyPrefix
 
-	it := txn.NewIterator(itOpts)
+	it := txn.NewIterator(*itOpts)
 	defer it.Close()
 	for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
 		item := it.Item()
@@ -83,8 +91,9 @@ func ForEachOverKeySet(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, d
 	closure := func(k []byte, _ *badger.Item) error {
 		return do(k)
 	}
+	itOpts := DefaultIteratorOptions()
 	if opts.IteratorOptions == nil {
-		opts.IteratorOptions = &badger.DefaultIteratorOptions
+		opts.IteratorOptions = itOpts
 	}
 	opts.IteratorOptions.PrefetchValues = false
 	return ForEachItemWithPrefix(txn, keyPrefix, opts, closure)

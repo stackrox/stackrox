@@ -128,11 +128,8 @@ func (b *storeImpl) GetProcessInfoToArgs() (map[processindicator.ProcessWithCont
 	processNamesToArgs := make(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)
 
 	forEachOpts := badgerhelper.ForEachOptions{
-		StripKeyPrefix: true,
-		IteratorOptions: &badger.IteratorOptions{
-			PrefetchValues: true,
-			PrefetchSize:   1000,
-		},
+		StripKeyPrefix:  true,
+		IteratorOptions: badgerhelper.DefaultIteratorOptions(),
 	}
 	err := b.View(func(tx *badger.Txn) error {
 		return badgerhelper.BucketForEach(tx, uniqueProcessesBucket, forEachOpts, func(k, v []byte) error {
@@ -385,10 +382,8 @@ func (b *storeImpl) IncTxnCount() error {
 }
 
 func (b *storeImpl) WalkAll(fn func(pi *storage.ProcessIndicator) error) error {
-	badgerOpts := badger.DefaultIteratorOptions
-
 	opts := badgerhelper.ForEachOptions{
-		IteratorOptions: &badgerOpts,
+		IteratorOptions: badgerhelper.DefaultIteratorOptions(),
 	}
 	return b.DB.View(func(tx *badger.Txn) error {
 		return badgerhelper.BucketForEach(tx, processIndicatorBucket, opts, func(k, v []byte) error {

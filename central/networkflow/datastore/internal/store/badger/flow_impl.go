@@ -154,10 +154,9 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 	// The entry for this should be present, but make sure we have a sane default if it is not
 	lastUpdateTS = *types.TimestampNow()
 
-	iteratorOpts := badger.DefaultIteratorOptions
-
+	iteratorOpts := badgerhelper.DefaultIteratorOptions()
 	err = s.db.View(func(txn *badger.Txn) error {
-		return badgerhelper.ForEachItemWithPrefix(txn, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true, IteratorOptions: &iteratorOpts},
+		return badgerhelper.ForEachItemWithPrefix(txn, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true, IteratorOptions: iteratorOpts},
 			func(k []byte, item *badger.Item) error {
 				if bytes.Equal(k, updatedTSKey) {
 					return badgerhelper.UnmarshalProtoValue(item, &lastUpdateTS)

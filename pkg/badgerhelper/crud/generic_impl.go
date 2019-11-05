@@ -138,10 +138,7 @@ func (c *crudImpl) ReadBatchPartial(ids []string) (msgs []proto.Message, indices
 
 func (c *crudImpl) readAll(prefix []byte, deserializer Deserializer) (msgs []proto.Message, err error) {
 	foreachOptions := badgerhelper.ForEachOptions{
-		IteratorOptions: &badger.IteratorOptions{
-			PrefetchValues: true,
-			PrefetchSize:   1000,
-		},
+		IteratorOptions: badgerhelper.DefaultIteratorOptions(),
 	}
 
 	err = c.db.View(func(tx *badger.Txn) error {
