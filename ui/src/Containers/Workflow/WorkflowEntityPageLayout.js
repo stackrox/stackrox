@@ -25,7 +25,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
     // Page props
     const pageEntity = workflowState.getBaseEntity();
     const { entityId: pageEntityId, entityType: pageEntityType } = pageEntity;
-    const pageListType = stateStack[1] && stateStack[1].entityType;
+    const pageListType = stateStack[1] && !stateStack[1].entityId && stateStack[1].entityType;
     const pageSearch = workflowState.search[searchParams.page];
     const pageSort = workflowState.sort[sortParams.page];
     const pagePaging = workflowState.paging[pagingParams.page];

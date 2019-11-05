@@ -32,7 +32,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
                     key
                     value
                 }
-                ${entityContext[entityTypes.CLUSTER] ? '' : 'cluster { id name}'}
+                ${entityContext[entityTypes.CLUSTER] ? '' : 'cluster { id name }'}
                 hostNetwork: id
                 imagePullSecrets
                 inactive

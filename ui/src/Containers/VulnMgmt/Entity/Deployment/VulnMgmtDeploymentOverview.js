@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
@@ -16,6 +17,7 @@ import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiski
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
+import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
@@ -28,6 +30,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         cluster,
         priority,
         namespace,
+        namespaceId,
         policyStatus,
         failingPolicies,
         labels,
@@ -40,15 +43,19 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     } = data;
 
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
+    const clusterLink = workflowState.pushRelatedEntity(entityTypes.CLUSTER, cluster.id).toUrl();
+    const namespaceLink = workflowState
+        .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
+        .toUrl();
 
     const metadataKeyValuePairs = [
         {
             key: 'Cluster',
-            value: cluster && cluster.name
+            value: cluster && cluster.name && <Link to={clusterLink}>{cluster.name}</Link>
         },
         {
             key: 'Namespace',
-            value: namespace
+            value: <Link to={namespaceLink}>{namespace}</Link>
         }
     ];
 
@@ -81,7 +88,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         <div className="flex h-full">
             <div className="flex flex-col flex-grow">
                 <CollapsibleSection title="Deployment summary">
-                    <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                    <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
                                 className="h-full min-w-48 bg-base-100 bg-counts-widget"

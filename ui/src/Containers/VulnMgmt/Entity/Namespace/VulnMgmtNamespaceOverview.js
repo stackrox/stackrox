@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { Link } from 'react-router-dom';
 import workflowStateContext from 'Containers/workflowStateContext';
 import pluralize from 'pluralize';
 import CollapsibleSection from 'Components/CollapsibleSection';
@@ -14,6 +15,7 @@ import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiski
 import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widgets/DeploymentsWithMostSeverePolicyViolations';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
+import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
@@ -32,22 +34,23 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         vulnerabilities
     } = data;
 
-    const { clusterName, priority, labels, id } = metadata;
+    const { clusterName, clusterId, priority, labels, id } = metadata;
     const { failingPolicies, status } = policyStatus;
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
+    const clusterLink = workflowState.pushRelatedEntity(entityTypes.CLUSTER, clusterId).toUrl();
 
     const metadataKeyValuePairs = [
         {
             key: 'Cluster',
-            value: clusterName
+            value: <Link to={clusterLink}>{clusterName}</Link>
         }
     ];
 
     const namespaceStats = [
         <RiskScore key="risk-score" score={priority} />,
         <React.Fragment key="policy-status">
-            <span className="pr-1">Policy status:</span>
-            <StatusChip status={status} />
+            <span className="pb-2">Policy status:</span>
+            <StatusChip status={status} size="large" />
         </React.Fragment>
     ];
 
@@ -72,22 +75,24 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
 
     return (
         <div className="flex h-full">
-            <div className="flex flex-col flex-grow">
+            <div className="flex flex-col flex-grow min-w-0">
                 <CollapsibleSection title="Namespace summary">
-                    <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                    <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100"
+                                className="h-full min-w-48 bg-base-100 bg-counts-widget"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={namespaceStats}
                                 labels={labels}
                                 title="Details & Metadata"
                             />
                         </div>
-                        <div className="sx-2 sy-1">
+                        <div className="sx-1 lg:sx-2 sy-1 h-55">
                             <TopRiskyEntitiesByVulnerabilities
                                 defaultSelection={entityTypes.DEPLOYMENT}
                                 riskEntityTypes={[entityTypes.DEPLOYMENT, entityTypes.IMAGE]}
+                                entityContext={newEntityContext}
+                                small
                             />
                         </div>
                         <div className="s-1">

@@ -18,6 +18,7 @@ import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
 import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
+import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
@@ -106,20 +107,24 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
         <div className="flex h-full">
             <div className="flex flex-col flex-grow">
                 <CollapsibleSection title="Image Summary">
-                    <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                    <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100"
+                                className="h-full min-w-48 bg-base-100 bg-counts-widget"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={imageStats}
                                 title="Details & Metadata"
                             />
                         </div>
-                        <CvesByCvssScore entityContext={newEntityContext} />
-                        <TopRiskiestImagesAndComponents
-                            limit={5}
-                            entityContext={newEntityContext}
-                        />
+                        <div className="s-1">
+                            <CvesByCvssScore entityContext={newEntityContext} />
+                        </div>
+                        <div className="s-1">
+                            <TopRiskiestImagesAndComponents
+                                limit={5}
+                                entityContext={newEntityContext}
+                            />
+                        </div>
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Image Findings">

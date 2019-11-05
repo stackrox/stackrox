@@ -8,8 +8,8 @@ const MetadataStatsList = ({ statTiles }) => {
                 return (
                     <div
                         key={stat.key}
-                        className={`flex flex-col p-4 flex-grow justify-center text-center ${
-                            i !== arr.length - 1 ? 'border-r-2 border-base-300 border-dotted' : ''
+                        className={`flex flex-col p-4 flex-grow justify-center text-center items-center ${
+                            i === arr.length - 1 ? 'border-l-2 border-base-300 border-dotted' : ''
                         }`}
                     >
                         {stat}

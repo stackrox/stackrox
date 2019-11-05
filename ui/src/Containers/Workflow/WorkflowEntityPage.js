@@ -8,6 +8,9 @@ import Loader from 'Components/Loader';
 import { useQuery } from 'react-apollo';
 import queryService from 'modules/queryService';
 
+export const entityGridContainerClassName =
+    'mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4 pdf-page';
+
 const WorkflowEntityPage = ({
     ListComponent,
     OverviewComponent,

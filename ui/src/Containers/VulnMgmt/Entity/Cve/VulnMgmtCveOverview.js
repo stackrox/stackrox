@@ -108,7 +108,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                             headerComponents={linkToNVD}
                             className="ml-4 mr-2 bg-base-100 h-48 mb-4 flex-grow"
                         >
-                            <div className="flex flex-col w-full">
+                            <div className="flex flex-col w-full bg-counts-widget">
                                 <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
                                     <div className="w-full flex-grow p-4">
                                         <span>{cve}</span>

@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import gql from 'graphql-tag';
 import pluralize from 'pluralize';
 import { useQuery } from 'react-apollo';
+import queryService from 'modules/queryService';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViewAllButton from 'Components/ViewAllButton';
@@ -15,7 +16,12 @@ import { severityColorMap, severityColorLegend } from 'constants/severityColors'
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import PropTypes from 'prop-types';
 
-const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }) => {
+const TopRiskyEntitiesByVulnerabilities = ({
+    entityContext,
+    defaultSelection,
+    riskEntityTypes,
+    small
+}) => {
     const workflowState = useContext(workflowStateContext);
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);
@@ -181,7 +187,10 @@ const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }
         return results;
     }
     let results = [];
-    const { data, loading } = useQuery(query);
+    const variables = {
+        query: queryService.entityContextToQueryString(entityContext)
+    };
+    const { data, loading } = useQuery(query, { variables });
     if (!isGQLLoading(loading, data)) {
         results = processData(data);
     }
@@ -191,6 +200,7 @@ const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }
             className="h-full pdf-page"
             titleComponents={titleComponents}
             headerComponents={viewAll}
+            bodyClassName="pr-2"
         >
             <Scatterplot
                 data={results}
@@ -198,24 +208,28 @@ const TopRiskyEntitiesByVulnerabilities = ({ defaultSelection, riskEntityTypes }
                 yMultiple={10}
                 yAxisTitle="Average CVSS Score"
                 xAxisTitle="Critical Vulnerabilities & Exposures"
-                legendData={severityColorLegend}
+                legendData={!small && severityColorLegend}
             />
         </Widget>
     );
 };
 
 TopRiskyEntitiesByVulnerabilities.propTypes = {
+    entityContext: PropTypes.shape({}),
     defaultSelection: PropTypes.string.isRequired,
-    riskEntityTypes: PropTypes.arrayOf(PropTypes.string)
+    riskEntityTypes: PropTypes.arrayOf(PropTypes.string),
+    small: PropTypes.bool
 };
 
 TopRiskyEntitiesByVulnerabilities.defaultProps = {
+    entityContext: {},
     riskEntityTypes: [
         entityTypes.DEPLOYMENT,
         entityTypes.NAMESPACE,
         entityTypes.IMAGE,
         entityTypes.CLUSTER
-    ]
+    ],
+    small: false
 };
 
 export default TopRiskyEntitiesByVulnerabilities;

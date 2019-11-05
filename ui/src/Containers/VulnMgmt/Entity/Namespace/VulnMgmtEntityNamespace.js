@@ -18,6 +18,7 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
                     priority
                     name
                     clusterName
+                    clusterId
                     id
                     labels {
                         key

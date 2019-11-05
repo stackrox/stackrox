@@ -13,6 +13,7 @@ import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgm
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import entityTypes from 'constants/entityTypes';
 import { overviewLimit } from 'constants/workflowPages.constants';
+import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
 import MostRecentVulnerabilities from '../../widgets/MostRecentVulnerabilities';
@@ -69,7 +70,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const clusterStats = [
         <RiskScore key="risk-score" score={priority} />,
         <React.Fragment key="policy-status">
-            <span className="pr-1">Policy status:</span>
+            <span className="pb-2">Policy status:</span>
             <StatusChip status={policyStatus.status} />
         </React.Fragment>
     ];
@@ -99,7 +100,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         <div className="flex h-full">
             <div className="flex flex-col flex-grow">
                 <CollapsibleSection title="Cluster Details">
-                    <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                    <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
                                 className="h-full min-w-48 bg-base-100"
@@ -108,7 +109,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                 title="Details & Metadata"
                             />
                         </div>
-                        <div className="sx-2 sy-1">
+                        <div className="sx-1 lg:sx-2 sy-1 h-55">
                             <TopRiskyEntitiesByVulnerabilities
                                 defaultSelection={entityTypes.NAMESPACE}
                                 limit={overviewLimit}
@@ -117,6 +118,8 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     entityTypes.DEPLOYMENT,
                                     entityTypes.IMAGE
                                 ]}
+                                entityContext={newEntityContext}
+                                small
                             />
                         </div>
                         <div className="s-1">
@@ -151,7 +154,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     header={`${failingPolicies.length} failing ${pluralize(
                                         entityTypes.POLICY,
                                         failingPolicies.length
-                                    )} across this image`}
+                                    )} across this cluster`}
                                     rows={failingPolicies}
                                     noDataText="No failing policies"
                                     className="bg-base-100"

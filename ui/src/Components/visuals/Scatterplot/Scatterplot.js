@@ -81,12 +81,14 @@ const Scatterplot = ({
                     yPercent={0.5}
                     style={{ transform: 'translate(-18, 0), rotate(-90)', textAnchor: 'middle' }}
                 />
-                <DiscreteColorLegend
-                    orientation="horizontal"
-                    items={legendData}
-                    startTitle="CVSS SCORE"
-                    style={{ position: 'absolute', bottom: '40px', right: '10px' }}
-                />
+                {legendData && (
+                    <DiscreteColorLegend
+                        orientation="horizontal"
+                        items={legendData}
+                        startTitle="CVSS SCORE"
+                        style={{ position: 'absolute', bottom: '40px', right: '10px' }}
+                    />
+                )}
             </FlexibleXYPlot>
             {hint && hint.data && (
                 <HoverHint

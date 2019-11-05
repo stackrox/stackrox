@@ -9,6 +9,7 @@ import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
+import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
 import TableWidget from '../TableWidget';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
@@ -54,10 +55,10 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         <div className="flex h-full">
             <div className="flex flex-col flex-grow">
                 <CollapsibleSection title="Component Summary" />
-                <div className="mx-4 grid grid-gap-6 xxxl:grid-gap-8 md:grid-columns-3 mb-4 pdf-page">
+                <div className={entityGridContainerClassName}>
                     <div className="s-1">
                         <Metadata
-                            className="h-full min-w-48 bg-base-100"
+                            className="h-full min-w-48 bg-base-100 bg-counts-widget"
                             keyValuePairs={metadataKeyValuePairs}
                             statTiles={componentStats}
                             title="Details & Metadata"

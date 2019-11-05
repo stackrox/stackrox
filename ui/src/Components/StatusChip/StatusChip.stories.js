@@ -32,6 +32,12 @@ export const inactiveStatusChip = () => {
     return <StatusChip status={inactiveStatus} />;
 };
 
+export const inactiveSmallStatusChip = () => {
+    const inactiveStatus = 'inactive';
+
+    return <StatusChip status={inactiveStatus} size="small" />;
+};
+
 export const unknownStatusChip = () => {
     const whatStatusChip = 'foo';
 
