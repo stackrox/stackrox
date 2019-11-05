@@ -127,7 +127,7 @@ describe('GenerateURL', () => {
 
         const url = generateURL(workflowState);
         expect(url).toBe(
-            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p=1&p2=2'
+            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p2=2'
         );
     });
 
@@ -147,7 +147,7 @@ describe('GenerateURL', () => {
 
         const url = generateURL(workflowState);
         expect(url).toBe(
-            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&workflowState[2][t]=DEPLOYMENT&workflowState[2][i]=depId&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p=1&p2=2'
+            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&workflowState[2][t]=DEPLOYMENT&workflowState[2][i]=depId&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p2=2'
         );
     });
 
@@ -165,7 +165,7 @@ describe('GenerateURL', () => {
 
         const url = generateURL(workflowState);
         expect(url).toBe(
-            '/main/compliance/namespace/nsId/deployments?s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p=1&p2=2'
+            '/main/compliance/namespace/nsId/deployments?s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p2=2'
         );
     });
 
@@ -184,7 +184,7 @@ describe('GenerateURL', () => {
 
         const url = generateURL(workflowState);
         expect(url).toBe(
-            '/main/compliance/namespace/nsId/deployments?workflowState[0][t]=DEPLOYMENT&workflowState[0][i]=depId&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p=1&p2=2'
+            '/main/compliance/namespace/nsId/deployments?workflowState[0][t]=DEPLOYMENT&workflowState[0][i]=depId&s[sk1]=v1&s[sk2]=v2&s2[sk3]=v3&s2[sk4]=v4&sort=CLUSTER&sort2=DEPLOYMENT&p2=2'
         );
     });
 

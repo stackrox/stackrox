@@ -88,6 +88,10 @@ function generateURL(workflowState) {
         [pagingParams.sidePanel]: workflowState.paging[pagingParams.sidePanel]
     };
 
+    // Don't write urs with p=1, since that's the default value anyway
+    if (queryParams[pagingParams.page] === 1) delete queryParams[pagingParams.page];
+    if (queryParams[pagingParams.sidePanel] === 1) delete queryParams[pagingParams.sidePanel];
+
     const queryString = queryParams
         ? qs.stringify(queryParams, {
               addQueryPrefix: true,
