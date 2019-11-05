@@ -160,9 +160,9 @@ export function getNamespaceTableColumns(workflowState) {
 
 const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
-        query getNamespaces {
-            results: namespaces {
-                ...namespaceFields
+        query getNamespaces($query: String, $policyQuery: String) {
+            results: namespaces(query: $query) {
+                ...namespaceListFields
             }
         }
         ${NAMESPACE_LIST_FRAGMENT}
@@ -170,7 +170,10 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
 
     const queryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(search)
+            query: queryService.objectToWhereClause(search),
+            policyQuery: queryService.objectToWhereClause({
+                Category: 'Vulnerability Management'
+            })
         }
     };
 

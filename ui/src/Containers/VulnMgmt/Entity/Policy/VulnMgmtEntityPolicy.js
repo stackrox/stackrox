@@ -167,7 +167,10 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
     const queryOptions = {
         variables: {
             id: entityId,
-            query: queryService.objectToWhereClause(search)
+            query: queryService.objectToWhereClause({
+                ...search,
+                Category: 'Vulnerability Management'
+            })
         }
     };
 
