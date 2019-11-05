@@ -55,7 +55,9 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
         return gql`
         query getNamespace${entityListType}($id: ID!, $query: String) {
             result: namespace(id: $id) {
-                id
+                metadata {
+                    id
+                }
                 ${listFieldName}(query: $query) { ...${fragmentName} }
             }
         }

@@ -63,6 +63,12 @@ function getQueryBasedOnSearchContext(query, searchParam) {
 
 function getListFieldName(entityType, listType) {
     // TODO: Back end should rename these fields and these exceptions should be removed
+    if (entityType === entityTypes.NAMESPACE) {
+        if (listType === entityTypes.CVE) {
+            return 'vulns';
+        }
+    }
+
     if (entityType === entityTypes.IMAGE) {
         if (listType === entityTypes.CVE) {
             return 'vulns';

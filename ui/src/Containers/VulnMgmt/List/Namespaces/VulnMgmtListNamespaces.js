@@ -33,17 +33,17 @@ export function getNamespaceTableColumns(workflowState) {
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const { vulnCounter, id } = original;
+                const { vulnCounter, metadata } = original;
                 if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
 
-                const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
-                const url = newState.toUrl();
+                const newState = workflowState.pushListItem(metadata.id).pushList(entityTypes.CVE);
+                const cvesUrl = newState.toUrl();
                 const fixableUrl = newState.setSearch({ 'Is Fixable': true }).toUrl();
 
                 return (
                     <CVEStackedPill
                         vulnCounter={vulnCounter}
-                        url={url}
+                        url={cvesUrl}
                         fixableUrl={fixableUrl}
                         hideLink={pdf}
                     />
