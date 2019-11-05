@@ -20,7 +20,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const workflowState = useContext(workflowStateContext);
 
     const query = gql`
-        query getClusters($query: String, $policyQuery: String) {
+        query getClusters($query: String) {
             results: clusters(query: $query) {
                 ...clusterListFields
             }
@@ -29,12 +29,11 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     `;
 
     const queryOptions = {
-        variables: {
-            policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            }),
-            query: queryService.objectToWhereClause(search)
-        }
+        variables: search
+            ? {
+                  query: queryService.objectToWhereClause(search)
+              }
+            : null
     };
 
     function getTableColumns() {
@@ -58,19 +57,12 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id } = original;
                     if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
+                    const url = workflowState
+                        .pushListItem(id)
+                        .pushList(entityTypes.CVE)
+                        .toUrl();
 
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
-                    const url = newState.toUrl();
-                    const fixableUrl = newState.setSearch({ 'Is Fixable': true }).toUrl();
-
-                    return (
-                        <CVEStackedPill
-                            vulnCounter={vulnCounter}
-                            url={url}
-                            fixableUrl={fixableUrl}
-                            hideLink={pdf}
-                        />
-                    );
+                    return <CVEStackedPill vulnCounter={vulnCounter} url={url} pdf={pdf} />;
                 }
             },
             {

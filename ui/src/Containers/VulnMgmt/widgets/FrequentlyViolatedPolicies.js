@@ -36,28 +36,25 @@ const ViewAllButton = ({ url }) => {
 };
 
 const processData = (data, workflowState) => {
-    const results = sortBy(data.results, [datum => datum.alertCount]).slice(-9); // @TODO: Remove when we have pagination on Policies
-    return results
-        .filter(datum => datum.alertCount)
-        .map(({ id, name, enforcementActions, severity, alertCount }) => {
-            const url = workflowState
-                .pushList(entityTypes.POLICY)
-                .pushListItem(id)
-                .toUrl();
-            const isEnforced = enforcementActions.length ? 'Yes' : 'No';
-            return {
-                x: alertCount,
-                y: `${name} / Enforced: ${isEnforced} / Severity: ${severityLabels[severity]}`,
-                url
-            };
-        });
+    const results = sortBy(data.results, [datum => datum.alertCount]).splice(-9); // @TODO: Remove when we have pagination on Policies
+    return results.map(({ id, name, enforcementActions, severity, alertCount }) => {
+        const url = workflowState
+            .pushList(entityTypes.POLICY)
+            .pushListItem(id)
+            .toUrl();
+        const isEnforced = enforcementActions.length ? 'Yes' : 'No';
+        return {
+            x: alertCount,
+            y: `${name} / Enforced: ${isEnforced} / Severity: ${severityLabels[severity]}`,
+            url
+        };
+    });
 };
 
 const FrequentlyViolatedPolicies = ({ entityContext }) => {
     const { loading, data = {} } = useQuery(FREQUENTLY_VIOLATED_POLICIES, {
         variables: {
-            query: `${queryService.entityContextToQueryString(entityContext)}+
-            ${queryService.objectToWhereClause({ Category: 'Vulnerability Management' })}`
+            query: queryService.entityContextToQueryString(entityContext)
         }
     });
 

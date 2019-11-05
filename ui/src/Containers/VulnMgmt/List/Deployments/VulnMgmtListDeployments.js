@@ -175,7 +175,7 @@ export function getDeploymentTableColumns(workflowState) {
 
 const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
-        query getDeployments($query: String, $policyQuery: String) {
+        query getDeployments($query: String) {
             results: deployments(query: $query) {
                 ...deploymentFields
             }
@@ -185,9 +185,6 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {
 
     const queryOptions = {
         variables: {
-            policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            }),
             query: queryService.objectToWhereClause(search)
             // todo: add sort and page criteria
         }

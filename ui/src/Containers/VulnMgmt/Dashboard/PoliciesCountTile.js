@@ -4,33 +4,36 @@ import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 
 import workflowStateContext from 'Containers/workflowStateContext';
+
 import EntityTileLink from 'Components/EntityTileLink';
-import queryService from 'modules/queryService';
 
 const POLICIES_COUNT_QUERY = gql`
-    query policiesCount($query: String) {
-        policies(query: $query) {
+    query policiesCount {
+        policies {
             id
+            fields {
+                cve
+                cvss {
+                    scoreVersion: op
+                    cvss: value
+                }
+            }
             alertCount
         }
     }
 `;
 
 const PoliciesCountTile = () => {
-    const { loading, data = {} } = useQuery(POLICIES_COUNT_QUERY, {
-        variables: {
-            query: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            })
-        }
-    });
+    const { loading, data = {} } = useQuery(POLICIES_COUNT_QUERY);
 
     const { policies = [] } = data;
 
-    const policyCount = policies.length;
-    const failingPoliciesCount = policies.reduce((sum, policy) => {
-        return policy.alertCount ? sum + 1 : sum;
-    }, 0);
+    const vulnPolicies = policies.filter(policy => {
+        return policy.fields && (policy.fields.cve !== '' || policy.fields.cvss !== null);
+    });
+
+    const policyCount = vulnPolicies.length;
+    const failingPoliciesCount = vulnPolicies.filter(policy => !!policy.alertCount).length;
     const failingPoliciesCountText = `(${failingPoliciesCount} failing)`;
 
     const workflowState = useContext(workflowStateContext);
