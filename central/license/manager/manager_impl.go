@@ -126,11 +126,11 @@ func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.Licen
 
 	m.populateLicenseFromSecretNoLock()
 
-	m.checkLicensesNoLock(false)
+	m.checkLicensesNoLock(m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID(false))
 
 	if m.activeLicense == nil && m.licenseStatus != v1.Metadata_NONE {
 		log.Info("No valid license found, but invalid licenses exist. Retrying after getting valid deployment environment information...")
-		m.checkLicensesNoLock(true)
+		m.checkLicensesNoLock(m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID(true))
 	}
 
 	// Only set the listener now to prevent any event delivery during initial license selection.
@@ -248,15 +248,15 @@ func (m *manager) run() {
 }
 
 func (m *manager) checkLicenses() time.Time {
+	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID(true)
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	return m.checkLicensesNoLock(true)
+	return m.checkLicensesNoLock(deploymentEnvsByClusterID)
 }
 
-func (m *manager) checkLicensesNoLock(waitForDeploymentEnvs bool) time.Time {
-	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID(waitForDeploymentEnvs)
-
+func (m *manager) checkLicensesNoLock(deploymentEnvsByClusterID map[string][]string) time.Time {
 	if m.activeLicense != nil {
 		err := m.checkLicenseIsUsable(m.activeLicense, deploymentEnvsByClusterID)
 		if err == nil {
