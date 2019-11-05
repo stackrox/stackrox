@@ -45,3 +45,22 @@ func (k *KeyedMutex) Lock(key string) {
 func (k *KeyedMutex) Unlock(key string) {
 	k.mutexPool[k.indexFromKey(key)].Unlock()
 }
+
+// DoWithLock calls the given function while holding the lock. The lock is acquired in a safe manner, making sure
+// it's released even if `do` panics.
+func (k *KeyedMutex) DoWithLock(key string, do func()) {
+	m := &k.mutexPool[k.indexFromKey(key)]
+	m.Lock()
+	defer m.Unlock()
+	do()
+}
+
+// DoStatusWithLock calls the given function while holding the lock, and passes through any error returned by it. The
+// lock is acquired in a safe manner, making sure it's released even if `do` panics.
+func (k *KeyedMutex) DoStatusWithLock(key string, do func() error) error {
+	m := &k.mutexPool[k.indexFromKey(key)]
+	m.Lock()
+	defer m.Unlock()
+
+	return do()
+}

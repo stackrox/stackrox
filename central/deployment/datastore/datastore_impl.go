@@ -199,15 +199,19 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 	ds.processFilter.Update(deployment)
 
-	ds.keyedMutex.Lock(deployment.GetId())
-	defer ds.keyedMutex.Unlock(deployment.GetId())
-	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
-		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
-	}
-	if indexingRequired {
-		if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
-			return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
+	err := ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
+		if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
+			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 		}
+		if indexingRequired {
+			if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
+				return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	if ds.indicators == nil {
@@ -241,14 +245,17 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	ds.deletedDeploymentCache.Add(id, true)
 	ds.processFilter.Delete(id)
 
-	ds.keyedMutex.Lock(id)
-	defer ds.keyedMutex.Unlock(id)
+	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
+		if err := ds.deploymentStore.RemoveDeployment(id); err != nil {
+			return err
+		}
 
-	if err := ds.deploymentStore.RemoveDeployment(id); err != nil {
-		return err
-	}
-
-	if err := ds.deploymentIndexer.DeleteDeployment(id); err != nil {
+		if err := ds.deploymentIndexer.DeleteDeployment(id); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
