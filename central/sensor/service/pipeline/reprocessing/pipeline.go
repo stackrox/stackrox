@@ -64,7 +64,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		s.riskManager.ReprocessDeploymentRisk(deployment)
 	} else {
 		return s.manager.DeploymentUpdated(
-			enricher.EnrichmentContext{ForceRefetch: true, UseNonBlockingCallsWherePossible: true},
+			enricher.EnrichmentContext{IgnoreExisting: true, UseNonBlockingCallsWherePossible: true},
 			deployment,
 			false,
 			nil,

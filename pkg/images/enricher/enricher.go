@@ -28,8 +28,8 @@ type EnrichmentContext struct {
 	// EnforcementOnly indicates that we don't care about any violations unless they have enforcement enabled.
 	EnforcementOnly bool
 
-	// ForceRefetch indicates that we should go to the external sources and repull the image data
-	ForceRefetch bool
+	// IgnoreExisting ensures that, if an image has existing metadata or scans, we don't attempt to re-fetch the metadata.
+	IgnoreExisting bool
 
 	// UseNonBlockingCallsWherePossible tells the enricher to make non-blocking calls to image scanners where that is
 	// possible. Note that, if NoExternalMetadata is true, this param is irrelevant since no external calls are made at all.
