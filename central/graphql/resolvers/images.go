@@ -26,6 +26,7 @@ func init() {
 		schema.AddExtraResolver("Image", "vulnCount(query: String): Int!"),
 		schema.AddExtraResolver("Image", "vulnCounter: VulnerabilityCounter!"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
+		schema.AddExtraResolver("Image", "components(query: String): [EmbeddedImageScanComponent!]!"),
 	)
 }
 
@@ -164,6 +165,17 @@ func (resolver *imageResolver) VulnCount(ctx context.Context, args rawQuery) (in
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
 func (resolver *imageResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
 	return mapImagesToVulnerabilityCounter([]*storage.Image{resolver.data}), nil
+}
+
+// Vulns returns all of the vulnerabilities in the image.
+func (resolver *imageResolver) Components(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	return mapImagesToComponentResolvers(resolver.root, []*storage.Image{resolver.data}, query)
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {

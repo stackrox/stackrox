@@ -480,7 +480,7 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) 
 }
 
 func (resolver *clusterResolver) ImageComponents(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -497,7 +497,7 @@ func (resolver *clusterResolver) ImageComponents(ctx context.Context, args rawQu
 }
 
 func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args rawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponentsCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
