@@ -33,7 +33,7 @@ _Note: Similar instructions apply when using [Minikube](https://kubernetes.io/do
 1. **Docker for Mac** - Make sure you have Kubernetes enabled in your Docker for Mac and `kubectl` is
 pointing to `docker-desktop` (see [docker docs](https://docs.docker.com/docker-for-mac/#kubernetes)).
 
-1. **Deploy** - Run `yarn deploy-local` (wraps `../deploy/k8s/deploy-local.sh`) to deploy the StackRox software. Make sure that your git working directory is clean and that the branch that you're on has a corresponding tag from CI (see Roxbot comment in a PR). Alternatively, you can check out master before deploying or specify the image tag you want to deploy by setting the `MAIN_IMAGE_TAG` var in your shell.
+1. **Deploy** - Run `yarn deploy-local` (wraps `../deploy/k8s/deploy-local.sh`) to deploy the StackRox software. Make sure that your git working directory is clean and that the branch that you're on has a corresponding tag from CI (see Roxbot comment in a PR). Alternatively, you can check out master before deploying or specify the image tag you want to deploy by setting the `MAIN_IMAGE_TAG` var in your shell. (If `yarn deploy-local` fails, see this [Knowledge Base artice for debugging instructions](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/883229760/Troubleshooting+local+deployment+of+StackRox).)
 
 1. **Start** - Start your local server by running `yarn start`.
 
