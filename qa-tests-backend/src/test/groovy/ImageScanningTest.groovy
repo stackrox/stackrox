@@ -16,7 +16,7 @@ class ImageScanningTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT, Integration])
-    def "Verify Image Scan Results - #image - #component:#version - #cve - #layer idx"() {
+    def "Verify Image Scan Results - #image - #component:#version - #cve - #layerIdx"() {
         when:
         "Scan Image and verify results"
         ImageOuterClass.Image img = Services.scanImage(image)

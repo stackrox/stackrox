@@ -26,7 +26,6 @@ import util.NetworkGraphUtil
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkGraph
-import com.google.protobuf.util.Timestamps
 import com.jayway.restassured.response.Response
 
 class NetworkFlowTest extends BaseSpecification {
@@ -411,7 +410,7 @@ class NetworkFlowTest extends BaseSpecification {
         "Check timestamp for each edge"
         for (Edge edge : NetworkGraphUtil.findEdges(currentGraph, null, null)) {
             assert edge.lastActiveTimestamp <= currentTime + 2000 //allow up to 2 sec leeway
-            assert edge.lastActiveTimestamp >= Timestamps.toMillis(testStartTime)
+            assert edge.lastActiveTimestamp >= testStartTimeMillis
         }
     }
 

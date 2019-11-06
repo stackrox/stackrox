@@ -12,7 +12,7 @@ principal.authProvider.type == "api-token" && \
     )
 
 principal.authProvider.type == "api-token" && \
-    principal.attributes["name"][0] == "allAccessToken"
+    principal.attributes["name"][0] =~ "^allAccessToken(-.+)?$"
 
 principal.authProvider.type == "api-token" && \
     principal.attributes["name"][0] == "getSummaryCountsToken" && \

@@ -1,7 +1,6 @@
 package services
 
 import io.stackrox.proto.api.v1.Common
-import io.stackrox.proto.api.v1.EmptyOuterClass.Empty
 import io.stackrox.proto.api.v1.NamespaceServiceGrpc
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
 
@@ -12,7 +11,7 @@ class NamespaceService extends BaseService {
     }
 
     static List<Namespace> getNamespaces() {
-        return getNamespaceClient().getNamespaces(Empty.newBuilder().build()).namespacesList
+        return getNamespaceClient().getNamespaces(EMPTY).namespacesList
     }
     static Namespace getNamespace(String id) {
         try {

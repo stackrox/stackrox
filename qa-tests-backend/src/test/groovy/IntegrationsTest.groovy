@@ -205,7 +205,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
     @Unroll
     @Category(BAT)
-    def "Verify Generic Integration Test Endpoint (#tlsOptsDesc, audit=#audit)"() {
+    def "Verify Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
         when:
         "the integration is tested"
 

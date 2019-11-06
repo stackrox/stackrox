@@ -4,7 +4,7 @@ import io.stackrox.proto.api.v1.ConfigServiceGrpc
 
 class ConfigService extends BaseService {
     static getConfigClient() {
-        return ConfigServiceGrpc.newBlockingStub(getChannelInstance())
+        return ConfigServiceGrpc.newBlockingStub(getChannel())
     }
 
     static getConfig() {

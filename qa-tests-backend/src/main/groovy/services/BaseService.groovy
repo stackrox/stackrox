@@ -1,9 +1,9 @@
 package services
 
+import groovy.transform.EqualsAndHashCode
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
-import io.grpc.ClientCall.Listener
 import io.grpc.ClientInterceptor
 import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
@@ -15,36 +15,54 @@ import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import io.stackrox.proto.api.v1.Common.ResourceByID
+import io.stackrox.proto.api.v1.EmptyOuterClass
 import util.Env
 import util.Keys
 
-import java.util.concurrent.TimeUnit
-
 class BaseService {
 
-    private static String apiToken = null
-    private static boolean useClientCert = false
+    static final BASIC_AUTH_USERNAME = System.getenv("ROX_USERNAME") ?: ""
+    static final BASIC_AUTH_PASSWORD = System.getenv("ROX_PASSWORD") ?: ""
 
-    private static boolean updated = false
+    static final EMPTY = EmptyOuterClass.Empty.newBuilder().build()
+
+    static ResourceByID getResourceByID(String id) {
+        return ResourceByID.newBuilder().setId(id).build()
+    }
 
     static useApiToken(String apiToken) {
-        this.apiToken = apiToken
-        updated = true
+        updateAuthConfig(useClientCert, new AuthInterceptor(apiToken))
     }
 
     static useBasicAuth() {
-        apiToken = null
-        updated = true
+        updateAuthConfig(useClientCert, new AuthInterceptor(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD))
     }
 
     static useNoAuthorizationHeader() {
-        apiToken = ""
-        updated = true
+        updateAuthConfig(useClientCert, null)
     }
 
     static setUseClientCert(boolean use) {
-        useClientCert = use
-        updated = true
+        updateAuthConfig(use, authInterceptor)
+    }
+
+    private static updateAuthConfig(boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
+        if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
+            return
+        }
+        if (useClientCert != newUseClientCert) {
+            if (transportChannel != null) {
+                transportChannel.shutdownNow()
+                transportChannel = null
+                effectiveChannel = null
+            }
+        }
+        if (authInterceptor != newAuthInterceptor) {
+            effectiveChannel = null
+        }
+
+        useClientCert = newUseClientCert
+        authInterceptor = newAuthInterceptor
     }
 
     private static class CallWithAuthorizationHeader<ReqT, RespT>
@@ -61,12 +79,13 @@ class BaseService {
         }
 
         @Override
-        protected void checkedStart(Listener<RespT> responseListener, Metadata headers) throws Exception {
+        protected void checkedStart(ClientCall.Listener<RespT> responseListener, Metadata headers) throws Exception {
             headers.put(AUTHORIZATION, authHeaderContents)
             delegate().start(responseListener, headers)
         }
     }
 
+    @EqualsAndHashCode(includeFields = true)
     private static class AuthInterceptor implements ClientInterceptor {
         private final String authHeaderContents
 
@@ -85,58 +104,40 @@ class BaseService {
         }
     }
 
-    private static List<ClientInterceptor> interceptors() {
-        String username = System.getenv("ROX_USERNAME") ?: ""
-        String password = System.getenv("ROX_PASSWORD") ?: ""
-        def interceptors = new ArrayList<ClientInterceptor>()
-
-        if (apiToken != null) {
-            if (apiToken != "") {
-                interceptors.add(new AuthInterceptor(apiToken))
-            }
-        } else if (!username.empty && !password.empty) {
-            interceptors.add(new AuthInterceptor(username, password))
-        }
-
-        return interceptors
-    }
-
-    static ManagedChannel channelInstance = null
+    static ManagedChannel transportChannel = null
+    static ClientInterceptor authInterceptor = null
+    static Channel effectiveChannel = null
+    private static boolean useClientCert = false
 
     static initializeChannel() {
-        SslContextBuilder sslContextBuilder = GrpcSslContexts
-                .forClient()
-                .trustManager(InsecureTrustManagerFactory.INSTANCE)
-        if (useClientCert) {
-            sslContextBuilder = sslContextBuilder.keyManager(Keys.keyManagerFactory())
-        }
-        def sslContext = sslContextBuilder.build()
+        if (transportChannel == null) {
+            SslContextBuilder sslContextBuilder = GrpcSslContexts
+                    .forClient()
+                    .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            if (useClientCert) {
+                sslContextBuilder = sslContextBuilder.keyManager(Keys.keyManagerFactory())
+            }
+            def sslContext = sslContextBuilder.build()
 
-        channelInstance = NettyChannelBuilder
-                        .forAddress(Env.mustGetHostname(), Env.mustGetPort())
-                        .negotiationType(NegotiationType.TLS)
-                        .sslContext(sslContext)
-                        .intercept(interceptors())
-                        .build()
+            transportChannel = NettyChannelBuilder
+                    .forAddress(Env.mustGetHostname(), Env.mustGetPort())
+                    .negotiationType(NegotiationType.TLS)
+                    .sslContext(sslContext)
+                    .build()
+            effectiveChannel = null
+        }
+
+        if (authInterceptor == null) {
+            effectiveChannel = transportChannel
+        } else {
+            effectiveChannel = ClientInterceptors.intercept(transportChannel, authInterceptor)
+        }
     }
 
     static getChannel() {
-        if (channelInstance == null) {
+        if (effectiveChannel == null) {
             initializeChannel()
-        } else if (updated) {
-            channelInstance.shutdownNow()
-            try {
-                channelInstance.awaitTermination(30, TimeUnit.SECONDS)
-            } catch (InterruptedException ie) {
-                println "Channel did not terminate within timeout...: ${ie}"
-            }
-            initializeChannel()
-            updated = false
         }
-        return channelInstance
-    }
-
-    static ResourceByID getResourceByID(String id) {
-        return ResourceByID.newBuilder().setId(id).build()
+        return effectiveChannel
     }
 }

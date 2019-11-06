@@ -1,4 +1,5 @@
 import groups.BAT
+import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AuthproviderService
 import orchestratormanager.OrchestratorTypes
@@ -63,10 +64,23 @@ class RbacAuthTest extends BaseSpecification {
     }
 
     def canDo(Closure closure, String token) {
+        BaseService.setUseClientCert(false)
         BaseService.useApiToken(token)
-        def result = closure()
-        BaseService.useBasicAuth()
-        return !(result instanceof StatusRuntimeException)
+
+        try {
+            def result = closure()
+            if (result instanceof Throwable) {
+                throw (Throwable)result
+            }
+            return true
+        } catch (StatusRuntimeException ex) {
+            if (ex.status.code == Status.Code.PERMISSION_DENIED) {
+                return false
+            }
+            throw ex
+        } finally {
+            resetAuth()
+        }
     }
 
     @Unroll
@@ -108,6 +122,8 @@ class RbacAuthTest extends BaseSpecification {
         }
 
         cleanup:
+        resetAuth()
+
         "remove role and token"
         if (resourceAccess.containsKey("NetworkPolicy") &&
                 resourceAccess.get("NetworkPolicy") == RoleOuterClass.Access.READ_WRITE_ACCESS &&

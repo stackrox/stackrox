@@ -1,4 +1,3 @@
-import com.google.protobuf.Timestamp
 import com.jayway.restassured.RestAssured
 import common.Constants
 import groovy.util.logging.Slf4j
@@ -12,7 +11,6 @@ import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
-import services.AuthService
 import services.BaseService
 import services.RoleService
 import services.SACService
@@ -21,10 +19,73 @@ import spock.lang.Specification
 import testrailintegration.TestRailconfig
 import util.Env
 
+import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
 @Slf4j
 class BaseSpecification extends Specification {
+
+    static final String RUN_ID
+
+    static {
+        String idStr = null
+        try {
+            idStr = new File("/proc/self").getCanonicalFile().getName()
+        } catch (Exception ex) {
+            println "Could not determine pid, using a random ID"
+            idStr = new SecureRandom().nextInt().toString()
+        }
+        RUN_ID = idStr
+    }
+
+    private static boolean globalSetupDone = false
+
+    private static String allAccessToken = null
+
+    private static globalSetup() {
+        if (globalSetupDone) {
+            return
+        }
+
+        println "Performing global setup"
+
+        RoleOuterClass.Role testRole = null
+        ApiTokenService.GenerateTokenResponse tokenResp = null
+
+        BaseService.useBasicAuth()
+        BaseService.setUseClientCert(false)
+
+        withRetry(30, 1) {
+            def allResources = RoleService.getResources()
+            Map<String, RoleOuterClass.Access> resourceAccess = [:]
+            allResources.getResourcesList().each { res ->
+                resourceAccess.put(res, RoleOuterClass.Access.READ_WRITE_ACCESS) }
+
+            testRole = RoleOuterClass.Role.newBuilder()
+                    .setName("Test Automation Role - ${RUN_ID}")
+                    .putAllResourceToAccess(resourceAccess)
+                    .build()
+
+            RoleService.deleteRole(testRole.name)
+            RoleService.createRole(testRole)
+
+            tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRole.name)
+        }
+
+        allAccessToken = tokenResp.token
+
+        addShutdownHook {
+            println "Performing global shutdown"
+            BaseService.useBasicAuth()
+            BaseService.setUseClientCert(false)
+            withRetry(30, 1) {
+                services.ApiTokenService.revokeToken(tokenResp.metadata.id)
+                RoleService.deleteRole(testRole.name)
+            }
+        }
+
+        globalSetupDone = true
+    }
 
     @Rule
     Timeout globalTimeout = new Timeout(500000, TimeUnit.MILLISECONDS)
@@ -41,20 +102,15 @@ class BaseSpecification extends Specification {
             Env.mustGetOrchestratorType(),
             Constants.ORCHESTRATOR_NAMESPACE
     )
-    @Shared
-    private ApiTokenService.GenerateTokenResponse allAccessToken
 
     @Shared
-    private testStartTime
+    private long testStartTimeMillis
 
     @Shared
     private dtrId = ""
 
     @Shared
     private boolean stackroxScannerIntegrationDidPreExist
-
-    @Shared
-    private roleName = ""
 
     @Shared
     private String pluginConfigID
@@ -64,22 +120,18 @@ class BaseSpecification extends Specification {
             SACService.deleteAuthPluginConfig(pluginConfigID)
         }
         pluginConfigID = null
-        if (allAccessToken != null) {
-            services.ApiTokenService.revokeToken(allAccessToken.metadata.id)
-            allAccessToken = null
-        }
     }
 
     def setupSpec() {
-        def startTime = System.currentTimeMillis()
-        testStartTime = Timestamp.newBuilder().setSeconds(startTime / 1000 as Long)
-                .setNanos((int) ((startTime % 1000) * 1000000)).build()
+        testStartTimeMillis = System.currentTimeMillis()
+
         RestAssured.useRelaxedHTTPSValidation()
+        globalSetup()
+
         try {
             dtrId = Services.addDockerTrustedRegistry()
             stackroxScannerIntegrationDidPreExist = Services.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
             orchestrator.setup()
-            orchestrator.createNamespace("default")
         } catch (Exception e) {
             println "Error setting up orchestrator: ${e.message}"
             throw e
@@ -90,42 +142,34 @@ class BaseSpecification extends Specification {
             tc.createRun()
         }*/
 
-        def allResources = RoleService.getResources()
-        Map<String,RoleOuterClass.Access> resourceAccess = [:]
-        allResources.getResourcesList().each { it -> resourceAccess.put(it, RoleOuterClass.Access.READ_WRITE_ACCESS) }
         BaseService.useBasicAuth()
+        BaseService.setUseClientCert(false)
         try {
             def response = SACService.addAuthPlugin()
             pluginConfigID = response.getId()
             println response.toString()
-            "Create a test role"
-            def testRole = RoleOuterClass.Role.newBuilder()
-                    .setName("Test Automation Role")
-                    .putAllResourceToAccess(resourceAccess)
-                    .build()
-            roleName = testRole.name
-            RoleService.createRole(testRole)
-            allAccessToken = services.ApiTokenService.generateToken("allAccessToken", testRole.name)
-            BaseService.useApiToken(allAccessToken.token)
-            println AuthService.getAuthStatus().toString()
         } catch (StatusRuntimeException e) {
             println("Unable to enable the authz plugin, defaulting to basic auth: ${e.message}")
         }
     }
 
+    def resetAuth() {
+        BaseService.setUseClientCert(false)
+        if (allAccessToken) {
+            BaseService.useApiToken(allAccessToken)
+        } else {
+            BaseService.useBasicAuth()
+        }
+    }
+
     def setup() {
         //Always make sure to revert back to the allAccessToken before each test
-        if (allAccessToken == null) {
-            println("Using basic auth")
-            BaseService.useBasicAuth()
-            return
-        }
-        println("Using the allAccessToken")
-        BaseService.useApiToken(allAccessToken.token)
+        resetAuth()
     }
 
     def cleanupSpec() {
         BaseService.useBasicAuth()
+        BaseService.setUseClientCert(false)
         try {
             Services.deleteImageIntegration(dtrId)
             if (stackroxScannerIntegrationDidPreExist) {
@@ -146,7 +190,6 @@ class BaseSpecification extends Specification {
             tc.addStatusForCase(testcaseId, status);
         }*/
         disableAuthzPlugin()
-        RoleService.deleteRole(roleName)
     }
 
     def cleanup() { }

@@ -22,14 +22,9 @@ class ClusterService extends BaseService {
     }
 
     static getClusterId(String name = "remote") {
-        try {
-            return getClusterServiceClient().getClusters(
+        return getClusterServiceClient().getClusters(
                 GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
             ).clustersList.find { it.name == name }?.id
-        } catch (Exception e) {
-            println "Error getting cluster ID: ${e}"
-            return e
-        }
     }
 
     static createCluster(String name, String mainImage, String centralEndpoint) {

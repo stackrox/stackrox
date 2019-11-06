@@ -1,7 +1,6 @@
 package services
 
 import io.stackrox.proto.api.v1.Common
-import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.RoleServiceGrpc
 import io.stackrox.proto.api.v1.RoleServiceOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
@@ -12,7 +11,7 @@ class RoleService extends BaseService {
     }
 
     static getRoles() {
-        return getRoleService().getRoles(EmptyOuterClass.Empty.newBuilder().build())
+        return getRoleService().getRoles(EMPTY)
     }
 
     static getRole(String roleId) {
@@ -21,7 +20,7 @@ class RoleService extends BaseService {
 
     static RoleServiceOuterClass.GetResourcesResponse getResources() {
         try {
-            return getRoleService().getResources(EmptyOuterClass.Empty.newBuilder().build())
+            return getRoleService().getResources(EMPTY)
         } catch (Exception e) {
             println "Failed to fetch resources: ${e}"
         }

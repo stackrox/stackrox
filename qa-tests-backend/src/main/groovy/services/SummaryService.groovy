@@ -1,6 +1,5 @@
 package services
 
-import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.SummaryServiceGrpc
 
 class SummaryService extends BaseService {
@@ -9,6 +8,6 @@ class SummaryService extends BaseService {
     }
 
     static getCounts() {
-        return getClient().getSummaryCounts(EmptyOuterClass.Empty.newBuilder().build())
+        return getClient().getSummaryCounts(EMPTY)
     }
 }
