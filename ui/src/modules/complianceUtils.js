@@ -50,26 +50,3 @@ export function getResourceCountFromAggregatedResults(type, data) {
 
     return result.length;
 }
-
-export function getResourceCountFromComplianceResults(type, data) {
-    const { clusters } = data;
-    let count = 0;
-    if (clusters && type === entityTypes.NODE) {
-        clusters.forEach(cluster => {
-            cluster.nodes.forEach(node => {
-                count += node.complianceResults.length;
-            });
-        });
-    } else if (clusters && type === entityTypes.DEPLOYMENT) {
-        clusters.forEach(cluster => {
-            cluster.deployments.forEach(deployment => {
-                count += deployment.complianceResults.length;
-            });
-        });
-    } else if (clusters && type === entityTypes.CLUSTER) {
-        clusters.forEach(cluster => {
-            count += cluster.complianceResults.length;
-        });
-    }
-    return count;
-}

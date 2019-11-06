@@ -8,11 +8,7 @@ import pluralize from 'pluralize';
 import Query from 'Components/ThrowingQuery';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'modules/queryService';
-import {
-    getResourceCountFromAggregatedResults,
-    getResourceCountFromComplianceResults
-} from 'modules/complianceUtils';
-import entityTypes from 'constants/entityTypes';
+import { getResourceCountFromAggregatedResults } from 'modules/complianceUtils';
 
 const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match, location }) => {
     function getLinkToListType(listEntityType) {
@@ -34,12 +30,7 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
 
         if (resourceTabs.length && data) {
             resourceTabs.forEach(type => {
-                let count;
-                if (entityType === entityTypes.CONTROL) {
-                    count = getResourceCountFromComplianceResults(type, data);
-                } else {
-                    count = getResourceCountFromAggregatedResults(type, data);
-                }
+                const count = getResourceCountFromAggregatedResults(type, data);
                 if (count > 0)
                     tabData.push({
                         title: `${count} ${pluralize(resourceLabels[type], count)}`,
