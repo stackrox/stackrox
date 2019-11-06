@@ -12,6 +12,7 @@ import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import removeEntityContextColumns from 'utils/tableUtils';
 
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
@@ -112,6 +113,7 @@ export function getCveTableColumns(workflowState, linksOn = true) {
         entityType !== entityTypes.IMAGE &&
             entityType !== entityTypes.COMPONENT && {
                 Header: `Deployments`,
+                entityType: entityTypes.DEPLOYMENT,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
@@ -132,6 +134,7 @@ export function getCveTableColumns(workflowState, linksOn = true) {
         entityType !== entityTypes.IMAGE &&
             entityType !== entityTypes.COMPONENT && {
                 Header: `Images`,
+                entityType: entityTypes.IMAGE,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
@@ -152,6 +155,7 @@ export function getCveTableColumns(workflowState, linksOn = true) {
         entityType !== entityTypes.IMAGE &&
             entityType !== entityTypes.COMPONENT && {
                 Header: `Components`,
+                entityType: entityTypes.COMPONENT,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
@@ -171,7 +175,13 @@ export function getCveTableColumns(workflowState, linksOn = true) {
             }
     ];
 
-    return tableColumns.filter(col => col); // filter out columns that are nulled based on context
+    const cols = removeEntityContextColumns(tableColumns, workflowState);
+    // TODO: What is this about??
+    // If the base page is a component or image list, then get rid of the component and image columns
+    // This is a different type of logic than found on other pages. We need to erify business rules for this.
+    return [entityTypes.COMPONENT, entityTypes.IMAGE].includes(entityType)
+        ? cols.filter(col => ![entityTypes.COMPONENT, entityTypes.IMAGE].includes(col.entityType))
+        : cols;
 }
 
 export function renderCveDescription(row) {

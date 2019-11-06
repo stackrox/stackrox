@@ -15,6 +15,7 @@ import CVEStackedPill from 'Components/CVEStackedPill';
 
 import { CLUSTER_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import removeEntityContextColumns from 'utils/tableUtils';
 
 const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const workflowState = useContext(workflowStateContext);
@@ -52,6 +53,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             },
             {
                 Header: `CVEs`,
+                entityType: entityTypes.CVE,
                 headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
@@ -87,6 +89,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             // },
             {
                 Header: `Namespaces`,
+                entityType: entityTypes.NAMESPACE,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
@@ -112,6 +115,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             },
             {
                 Header: `Deployments`,
+                entityType: entityTypes.DEPLOYMENT,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
@@ -138,6 +142,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             },
             {
                 Header: `Policies`,
+                entityType: entityTypes.POLICY,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
@@ -193,7 +198,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 accessor: 'priority'
             }
         ];
-        return tableColumns;
+        return removeEntityContextColumns(tableColumns, workflowState);
     }
 
     return (

@@ -12,6 +12,7 @@ import queryService from 'modules/queryService';
 
 import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import removeEntityContextColumns from 'utils/tableUtils';
 
 export function getComponentTableColumns(workflowState) {
     const tableColumns = [
@@ -33,6 +34,7 @@ export function getComponentTableColumns(workflowState) {
         },
         {
             Header: `CVEs`,
+            entityType: entityTypes.CVE,
             headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
@@ -67,6 +69,7 @@ export function getComponentTableColumns(workflowState) {
         },
         {
             Header: `Images`,
+            entityType: entityTypes.IMAGE,
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
             accessor: 'imageCount',
@@ -85,6 +88,7 @@ export function getComponentTableColumns(workflowState) {
         },
         {
             Header: `Deployments`,
+            entityType: entityTypes.DEPLOYMENT,
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
             accessor: 'deploymentCount',
@@ -109,7 +113,7 @@ export function getComponentTableColumns(workflowState) {
         }
     ];
 
-    return tableColumns.filter(col => col); // filter out columns that are nulled based on context
+    return removeEntityContextColumns(tableColumns, workflowState);
 }
 
 export const defaultComponentSort = [

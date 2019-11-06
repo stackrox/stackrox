@@ -285,4 +285,21 @@ describe('WorkflowState', () => {
         });
         expect(newState.search[searchParams.page]).toEqual(searchParamValues[searchParams.page]);
     });
+
+    it('generates correct entityContext', () => {
+        let workflowState = new WorkflowState();
+        expect(workflowState.getEntityContext()).toEqual({});
+
+        workflowState = new WorkflowState(useCase, [
+            new WorkflowEntity(entityTypes.CLUSTER),
+            new WorkflowEntity(entityTypes.CLUSTER, entityId1),
+            new WorkflowEntity(entityTypes.DEPLOYMENT),
+            new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2),
+            new WorkflowEntity(entityTypes.POLICY)
+        ]);
+        expect(workflowState.getEntityContext()).toEqual({
+            [entityTypes.CLUSTER]: entityId1,
+            [entityTypes.DEPLOYMENT]: entityId2
+        });
+    });
 });

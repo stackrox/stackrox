@@ -13,6 +13,7 @@ import { sortDate } from 'sorters/sorters';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import removeEntityContextColumns from 'utils/tableUtils';
 
 export const defaultDeploymentSort = [
     {
@@ -22,8 +23,6 @@ export const defaultDeploymentSort = [
 ];
 
 export function getDeploymentTableColumns(workflowState) {
-    const entityContext = workflowState.getBaseEntity();
-
     const tableColumns = [
         {
             Header: 'Id',
@@ -41,6 +40,7 @@ export function getDeploymentTableColumns(workflowState) {
             Header: `CVEs`,
             headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
+            entityType: entityTypes.CVE,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
                 if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
@@ -71,32 +71,28 @@ export function getDeploymentTableColumns(workflowState) {
             accessor: 'latestViolation',
             sortMethod: sortDate
         },
-        entityContext[entityTypes.POLICY]
-            ? null
-            : {
-                  Header: `Policies`,
-                  headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                  className: `w-1/10 ${defaultColumnClassName}`,
-                  accessor: 'failingPolicyCount',
-                  Cell: ({ original, pdf }) => {
-                      const { failingPolicyCount, id } = original;
-                      if (failingPolicyCount === 0) return 'No failing policies';
-                      const url = workflowState
-                          .pushListItem(id)
-                          .pushList(entityTypes.POLICY)
-                          .toUrl();
-                      return (
-                          <TableCellLink
-                              pdf={pdf}
-                              url={url}
-                              text={`${failingPolicyCount} ${pluralize(
-                                  'policies',
-                                  failingPolicyCount
-                              )}`}
-                          />
-                      );
-                  }
-              },
+        {
+            Header: `Policies`,
+            entityType: entityTypes.POLICY,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            accessor: 'failingPolicyCount',
+            Cell: ({ original, pdf }) => {
+                const { failingPolicyCount, id } = original;
+                if (failingPolicyCount === 0) return 'No failing policies';
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushList(entityTypes.POLICY)
+                    .toUrl();
+                return (
+                    <TableCellLink
+                        pdf={pdf}
+                        url={url}
+                        text={`${failingPolicyCount} ${pluralize('policies', failingPolicyCount)}`}
+                    />
+                );
+            }
+        },
         {
             Header: `Policy Status`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
@@ -110,38 +106,36 @@ export function getDeploymentTableColumns(workflowState) {
             id: 'policyStatus',
             accessor: 'policyStatus'
         },
-        entityContext[entityTypes.CLUSTER]
-            ? null
-            : {
-                  Header: `Cluster`,
-                  headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                  className: `w-1/10 ${defaultColumnClassName}`,
-                  accessor: 'clusterName',
-                  Cell: ({ original, pdf }) => {
-                      const { clusterName, clusterId, id } = original;
-                      const url = workflowState
-                          .pushListItem(id)
-                          .pushRelatedEntity(entityTypes.CLUSTER, clusterId)
-                          .toUrl();
-                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-                  }
-              },
-        entityContext[entityTypes.NAMESPACE]
-            ? null
-            : {
-                  Header: `Namespace`,
-                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                  className: `w-1/8 ${defaultColumnClassName}`,
-                  accessor: 'namespace',
-                  Cell: ({ original, pdf }) => {
-                      const { namespace, namespaceId, id } = original;
-                      const url = workflowState
-                          .pushListItem(id)
-                          .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
-                          .toUrl();
-                      return <TableCellLink pdf={pdf} url={url} text={namespace} />;
-                  }
-              },
+        {
+            Header: `Cluster`,
+            entityType: entityTypes.CLUSTER,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            accessor: 'clusterName',
+            Cell: ({ original, pdf }) => {
+                const { clusterName, clusterId, id } = original;
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushRelatedEntity(entityTypes.CLUSTER, clusterId)
+                    .toUrl();
+                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+            }
+        },
+        {
+            Header: `Namespace`,
+            entityType: entityTypes.NAMESPACE,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'namespace',
+            Cell: ({ original, pdf }) => {
+                const { namespace, namespaceId, id } = original;
+                const url = workflowState
+                    .pushListItem(id)
+                    .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
+                    .toUrl();
+                return <TableCellLink pdf={pdf} url={url} text={namespace} />;
+            }
+        },
         {
             Header: `Images`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
@@ -170,7 +164,7 @@ export function getDeploymentTableColumns(workflowState) {
             accessor: 'priority'
         }
     ];
-    return tableColumns.filter(col => col);
+    return removeEntityContextColumns(tableColumns, workflowState);
 }
 
 const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {

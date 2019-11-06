@@ -279,4 +279,12 @@ export class WorkflowState {
     toUrl() {
         return generateURL(this);
     }
+
+    getEntityContext() {
+        return this.stateStack
+            .filter(item => !!item.entityId)
+            .reduce((entityContext, item) => {
+                return { ...entityContext, [item.entityType]: item.entityId };
+            }, {});
+    }
 }

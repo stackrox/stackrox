@@ -13,6 +13,7 @@ import entityTypes from 'constants/entityTypes';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { NAMESPACE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import removeEntityContextColumns from 'utils/tableUtils';
 
 export function getNamespaceTableColumns(workflowState) {
     const tableColumns = [
@@ -30,6 +31,7 @@ export function getNamespaceTableColumns(workflowState) {
         },
         {
             Header: `CVEs`,
+            entityType: entityTypes.CVE,
             headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
@@ -53,6 +55,7 @@ export function getNamespaceTableColumns(workflowState) {
         },
         {
             Header: `Cluster`,
+            entityType: entityTypes.CLUSTER,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
@@ -69,6 +72,7 @@ export function getNamespaceTableColumns(workflowState) {
         },
         {
             Header: `Deployments`,
+            entityType: entityTypes.DEPLOYMENT,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
@@ -88,6 +92,7 @@ export function getNamespaceTableColumns(workflowState) {
         },
         {
             Header: `Images`,
+            entityType: entityTypes.IMAGE,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
@@ -107,6 +112,7 @@ export function getNamespaceTableColumns(workflowState) {
         },
         {
             Header: `Policies`,
+            entityType: entityTypes.POLICY,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
@@ -155,7 +161,7 @@ export function getNamespaceTableColumns(workflowState) {
             accessor: 'metadata.priority'
         }
     ];
-    return tableColumns.filter(col => col);
+    return removeEntityContextColumns(tableColumns, workflowState);
 }
 
 const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {

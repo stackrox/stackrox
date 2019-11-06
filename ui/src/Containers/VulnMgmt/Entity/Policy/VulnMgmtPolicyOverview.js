@@ -201,7 +201,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                             entityType={entityTypes.DEPLOYMENT}
                             noDataText="No deployments have failed across this policy"
                             className="bg-base-100"
-                            columns={getDeploymentTableColumns(workflowState, false)}
+                            columns={getDeploymentTableColumns(workflowState)}
                             idAttribute="cve"
                         />
                     </div>

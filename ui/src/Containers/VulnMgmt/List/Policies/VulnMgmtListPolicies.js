@@ -12,6 +12,7 @@ import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import removeEntityContextColumns from 'utils/tableUtils';
 
 import { POLICY_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
@@ -83,6 +84,7 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: `Deployments`,
+            entityType: entityTypes.DEPLOYMENT,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
@@ -139,7 +141,7 @@ export function getPolicyTableColumns(workflowState) {
         }
     ];
 
-    return tableColumns.filter(col => col); // filter out columns that are nulled based on context
+    return removeEntityContextColumns(tableColumns, workflowState);
 }
 
 export const defaultPolicySort = [
