@@ -52,8 +52,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             },
             {
                 Header: `CVEs`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
+                headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
+                className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id } = original;
                     if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';

@@ -24,7 +24,7 @@ const CVEStackedPill = ({ horizontal, vulnCounter, hideLink, url, fixableUrl }) 
 
     const tooltip = { title: 'Criticality Distribution', body: tooltipBody };
     return (
-        <div className="flex items-center w-full justify-end">
+        <div className="flex items-center">
             <div className="mr-4">
                 <FixableCVECount
                     cves={all.total}

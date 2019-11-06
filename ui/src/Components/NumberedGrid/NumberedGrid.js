@@ -37,7 +37,11 @@ const NumberedGrid = ({ data }) => {
                 </Link>
             );
         }
-        return <li className={className}>{content}</li>;
+        return (
+            <li key={text} className={className}>
+                {content}
+            </li>
+        );
     });
     return (
         <ul

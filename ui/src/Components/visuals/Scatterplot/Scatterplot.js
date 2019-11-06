@@ -123,7 +123,7 @@ Scatterplot.propTypes = {
     legendData: PropTypes.arrayOf(
         PropTypes.shape({ title: PropTypes.string, color: PropTypes.string })
     ),
-    history: ReactRouterPropTypes.isRequired
+    history: ReactRouterPropTypes.history.isRequired
 };
 
 Scatterplot.defaultProps = {
