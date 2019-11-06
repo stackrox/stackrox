@@ -11,7 +11,7 @@ import TabContent from 'Components/TabContent';
 import entityTypes from 'constants/entityTypes';
 import PolicyViolationsBySeverity from 'Containers/VulnMgmt/widgets/PolicyViolationsBySeverity';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
-import MostRecentVulnerabilities from 'Containers/VulnMgmt/widgets/MostRecentVulnerabilities';
+import RecentlyDetectedVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedVulnerabilities';
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
 import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -106,7 +106,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                             <CvesByCvssScore entityContext={newEntityContext} />
                         </div>
                         <div className="s-1">
-                            <MostRecentVulnerabilities entityContext={newEntityContext} />
+                            <RecentlyDetectedVulnerabilities entityContext={newEntityContext} />
                         </div>
                         <div className="s-1">
                             <MostCommonVulnerabiltiesInDeployment deploymentId={id} />

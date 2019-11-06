@@ -13,7 +13,7 @@ import FilterCvesRadioButtonGroup from './FilterCvesRadioButtonGroup';
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
 import TopRiskiestImagesAndComponents from '../widgets/TopRiskiestImagesAndComponents';
 import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
-import MostRecentVulnerabilities from '../widgets/MostRecentVulnerabilities';
+import RecentlyDetectedVulnerabilities from '../widgets/RecentlyDetectedVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostK8sVulnerabilities from '../widgets/ClustersWithMostK8sVulnerabilities';
@@ -54,7 +54,7 @@ const VulnDashboardPage = () => {
                 <FrequentlyViolatedPolicies />
             </div>
             <div className="s-2">
-                <MostRecentVulnerabilities search={searchState} limit={dashboardLimit} />
+                <RecentlyDetectedVulnerabilities search={searchState} limit={dashboardLimit} />
             </div>
             <div className="sx-2 sy-4">
                 <MostCommonVulnerabilities search={searchState} />

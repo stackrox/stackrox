@@ -15,8 +15,8 @@ import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
 import { getVulnerabilityChips, parseCVESearch } from 'utils/vulnerabilityUtils';
 
-const MOST_RECENT_VULNERABILITIES = gql`
-    query mostRecentVulnerabilities($query: String) {
+const RECENTLY_DETECTED_VULNERABILITIES = gql`
+    query recentlyDetectedVulnerabilities($query: String) {
         results: vulnerabilities(query: $query) {
             id: cve
             cve
@@ -31,15 +31,20 @@ const MOST_RECENT_VULNERABILITIES = gql`
 `;
 
 const processData = (data, workflowState, limit) => {
-    const results = sortBy(data.results, [datum => getTime(new Date(datum.lastScanned))])
-        .splice(-limit) // @TODO: filter on the client side until we have pagination on Vulnerabilities
-        .reverse(); // @TODO: Remove when we have pagination on Vulnerabilities
+    let results = data.results
+        .filter(datum => datum.lastScanned)
+        .map(datum => {
+            return { ...datum, lastScanned: getTime(new Date(datum.lastScanned)) };
+        });
+    results = sortBy(results, datum => {
+        return [datum.lastScanned, datum.cve];
+    }).slice(-limit); // @TODO: filter on the client side until we have pagination on Vulnerabilities
 
     // @TODO: remove JSX generation from processing data and into Numbered List function
     return getVulnerabilityChips(workflowState, results);
 };
 
-const MostRecentVulnerabilities = ({ entityContext, search, limit }) => {
+const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
     const parsedSearch = parseCVESearch(search); // hack until isFixable is allowed in search
@@ -47,7 +52,7 @@ const MostRecentVulnerabilities = ({ entityContext, search, limit }) => {
     const queryObject = { ...entityContextObject, ...parsedSearch }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
 
-    const { loading, data = {} } = useQuery(MOST_RECENT_VULNERABILITIES, {
+    const { loading, data = {} } = useQuery(RECENTLY_DETECTED_VULNERABILITIES, {
         variables: {
             query
         }
@@ -69,7 +74,7 @@ const MostRecentVulnerabilities = ({ entityContext, search, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Recent Vulnerabilities"
+            header="Recently Detected Vulnerabilities"
             headerComponents={
                 <ViewAllButton url={workflowState.pushList(entityTypes.CVE).toUrl()} />
             }
@@ -79,16 +84,16 @@ const MostRecentVulnerabilities = ({ entityContext, search, limit }) => {
     );
 };
 
-MostRecentVulnerabilities.propTypes = {
+RecentlyDetectedVulnerabilities.propTypes = {
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
     limit: PropTypes.number
 };
 
-MostRecentVulnerabilities.defaultProps = {
+RecentlyDetectedVulnerabilities.defaultProps = {
     entityContext: {},
     search: {},
     limit: 5
 };
 
-export default MostRecentVulnerabilities;
+export default RecentlyDetectedVulnerabilities;

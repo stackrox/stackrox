@@ -4,6 +4,7 @@ import entityTypes from 'constants/entityTypes';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
+import sortBy from 'lodash/sortBy';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 
@@ -22,7 +23,6 @@ const TOP_RISKIEST_IMAGES = gql`
             name {
                 fullName
             }
-            priority
             vulnCounter {
                 all {
                     total
@@ -56,7 +56,6 @@ const TOP_RISKIEST_COMPONENTS = gql`
             id
             name
             version
-            priority
             vulnCounter {
                 all {
                     total
@@ -83,10 +82,6 @@ const TOP_RISKIEST_COMPONENTS = gql`
         }
     }
 `;
-
-const sortByPriority = (a, b) => {
-    return a.priority - b.priority;
-};
 
 const getTextByEntityType = (entityType, data) => {
     switch (entityType) {
@@ -135,7 +130,7 @@ const processData = (data, entityType, workflowState, limit) => {
                 )
             };
         });
-    const processedData = results.sort(sortByPriority).slice(0, limit); // @TODO: Remove when we have pagination on image components
+    const processedData = sortBy(results, [datum => datum.priority]).slice(0, limit); // @TODO: Remove when we have pagination on image components
     return processedData;
 };
 

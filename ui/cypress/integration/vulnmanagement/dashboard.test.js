@@ -120,9 +120,9 @@ describe('Vuln Management Dashboard Page', () => {
         cy.url().should('contain', url.list.policies);
     });
     // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
-    it('clicking the "Most Recent Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
+    it('clicking the "Recently Detected Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('Most Recent Vulnerabilities'))
+        cy.get(selectors.getWidget('Recently Detected Vulnerabilities'))
             .find(selectors.viewAllButton)
             .click();
         cy.url().should('contain', url.list.cves);

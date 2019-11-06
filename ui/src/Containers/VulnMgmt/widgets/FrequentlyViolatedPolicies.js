@@ -38,10 +38,7 @@ const ViewAllButton = ({ url }) => {
 const processData = (data, workflowState) => {
     const results = sortBy(data.results, [datum => datum.alertCount]).splice(-9); // @TODO: Remove when we have pagination on Policies
     return results.map(({ id, name, enforcementActions, severity, alertCount }) => {
-        const url = workflowState
-            .pushList(entityTypes.POLICY)
-            .pushListItem(id)
-            .toUrl();
+        const url = workflowState.pushRelatedEntity(entityTypes.POLICY, id).toUrl();
         const isEnforced = enforcementActions.length ? 'Yes' : 'No';
         return {
             x: alertCount,

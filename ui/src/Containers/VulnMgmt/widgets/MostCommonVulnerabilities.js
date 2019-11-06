@@ -40,10 +40,7 @@ const ViewAllButton = ({ url }) => {
 const processData = (data, workflowState) => {
     const results = sortBy(data.results, [datum => datum.deploymentCount]).splice(-18); // @TODO: Remove when we have pagination on Vulnerabilities
     return results.map(({ id, cve, cvss, scoreVersion, isFixable, deploymentCount }) => {
-        const url = workflowState
-            .pushList(entityTypes.CVE)
-            .pushListItem(id)
-            .toUrl();
+        const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
         return {
             x: deploymentCount,
             y: `${cve} / CVSS: ${cvss.toFixed(1)} (${scoreVersion}) ${
