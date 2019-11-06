@@ -144,6 +144,71 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 }
 
+func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
+	t1 := time.Now().Add(-5 * time.Minute)
+	t2 := time.Now()
+	flows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+				DstPort:    1,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t1),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				DstPort:    2,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t2),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode2"},
+				DstPort:    3,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+		},
+	}
+	updateTS := timestamp.Now() - 1000000
+	err := suite.tested.UpsertFlows(flows, updateTS)
+	suite.NoError(err)
+
+	// Match none delete none
+	err = suite.tested.RemoveMatchingFlows(func(props *storage.NetworkFlowProperties) bool {
+		return false
+	}, nil)
+	suite.NoError(err)
+
+	currFlows, _, err := suite.tested.GetAllFlows(nil)
+	suite.NoError(err)
+	suite.ElementsMatch(flows, currFlows)
+
+	// Match dst port 1
+	err = suite.tested.RemoveMatchingFlows(func(props *storage.NetworkFlowProperties) bool {
+		return props.DstPort == 1
+	}, nil)
+	suite.NoError(err)
+
+	currFlows, _, err = suite.tested.GetAllFlows(nil)
+	suite.NoError(err)
+	suite.ElementsMatch(flows[1:], currFlows)
+
+	err = suite.tested.RemoveMatchingFlows(nil, func(flow *storage.NetworkFlow) bool {
+		return flow.LastSeenTimestamp.Compare(protoconv.ConvertTimeToTimestamp(t2)) == 0
+	})
+	suite.NoError(err)
+
+	currFlows, _, err = suite.tested.GetAllFlows(nil)
+	suite.NoError(err)
+	suite.ElementsMatch(flows[2:], currFlows)
+}
+
 func TestGetDeploymentIDsFromKey(t *testing.T) {
 	s := &flowStoreImpl{}
 	id := s.getID(&storage.NetworkFlowProperties{

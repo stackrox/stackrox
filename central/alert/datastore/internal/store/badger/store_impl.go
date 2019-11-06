@@ -165,3 +165,18 @@ func (b *storeImpl) DeleteAlerts(ids ...string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
 	return b.alertCRUD.DeleteBatch(ids)
 }
+
+func (b *storeImpl) WalkAll(fn func(*storage.ListAlert) error) error {
+	opts := badgerhelper.ForEachOptions{
+		IteratorOptions: badgerhelper.DefaultIteratorOptions(),
+	}
+	return b.db.View(func(tx *badger.Txn) error {
+		return badgerhelper.BucketForEach(tx, alertListBucket, opts, func(k, v []byte) error {
+			var alert storage.ListAlert
+			if err := proto.Unmarshal(v, &alert); err != nil {
+				return err
+			}
+			return fn(&alert)
+		})
+	})
+}

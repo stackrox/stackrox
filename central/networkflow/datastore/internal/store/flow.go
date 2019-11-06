@@ -17,4 +17,5 @@ type FlowStore interface {
 	RemoveFlow(props *storage.NetworkFlowProperties) error
 
 	RemoveFlowsForDeployment(id string) error
+	RemoveMatchingFlows(keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 }

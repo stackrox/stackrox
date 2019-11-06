@@ -17,4 +17,5 @@ type FlowDataStore interface {
 	// need to use it afterwards, create a copy.
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
+	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 }

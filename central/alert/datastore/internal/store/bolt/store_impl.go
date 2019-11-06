@@ -257,6 +257,19 @@ func (b *storeImpl) DeleteAlerts(ids ...string) error {
 	})
 }
 
+func (b *storeImpl) WalkAll(fn func(*storage.ListAlert) error) error {
+	return b.DB.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(alertListBucket)
+		return bucket.ForEach(func(k, v []byte) error {
+			var alert storage.ListAlert
+			if err := proto.Unmarshal(v, &alert); err != nil {
+				return err
+			}
+			return fn(&alert)
+		})
+	})
+}
+
 func getAlert(id string, bucket *bolt.Bucket) (alert *storage.Alert, exists bool, err error) {
 	alert = new(storage.Alert)
 	val := bucket.Get([]byte(id))

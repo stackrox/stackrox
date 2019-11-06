@@ -11,6 +11,7 @@ type Store interface {
 	ListAlerts() ([]*storage.ListAlert, error)
 	GetListAlerts([]string) ([]*storage.ListAlert, []int, error)
 
+	WalkAll(fn func(*storage.ListAlert) error) error
 	GetAlertIDs() ([]string, error)
 	GetAlert(id string) (*storage.Alert, bool, error)
 	GetAlerts(ids []string) ([]*storage.Alert, []int, error)

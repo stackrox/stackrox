@@ -286,3 +286,13 @@ func (ds *datastoreImpl) buildIndex() error {
 
 	return nil
 }
+
+func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert) error) error {
+	if ok, err := alertSAC.ReadAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	return ds.storage.WalkAll(fn)
+}

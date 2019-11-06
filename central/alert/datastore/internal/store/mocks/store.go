@@ -80,6 +80,20 @@ func (mr *MockStoreMockRecorder) GetListAlerts(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetListAlerts", reflect.TypeOf((*MockStore)(nil).GetListAlerts), arg0)
 }
 
+// WalkAll mocks base method
+func (m *MockStore) WalkAll(fn func(*storage.ListAlert) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkAll", fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkAll indicates an expected call of WalkAll
+func (mr *MockStoreMockRecorder) WalkAll(fn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockStore)(nil).WalkAll), fn)
+}
+
 // GetAlertIDs mocks base method
 func (m *MockStore) GetAlertIDs() ([]string, error) {
 	m.ctrl.T.Helper()

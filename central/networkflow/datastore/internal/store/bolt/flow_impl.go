@@ -30,6 +30,10 @@ func (s *flowStoreImpl) GetMatchingFlows(pred func(*storage.NetworkFlowPropertie
 	panic("implement me")
 }
 
+func (s *flowStoreImpl) RemoveMatchingFlows(keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+	panic("implement me")
+}
+
 // GetAllFlows returns all the flows in the store.
 func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")

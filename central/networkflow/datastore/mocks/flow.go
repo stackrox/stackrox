@@ -95,3 +95,17 @@ func (mr *MockFlowDataStoreMockRecorder) RemoveFlowsForDeployment(ctx, id interf
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFlowsForDeployment", reflect.TypeOf((*MockFlowDataStore)(nil).RemoveFlowsForDeployment), ctx, id)
 }
+
+// RemoveMatchingFlows mocks base method
+func (m *MockFlowDataStore) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(*storage.NetworkFlowProperties) bool, valueMatchFn func(*storage.NetworkFlow) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveMatchingFlows", ctx, keyMatchFn, valueMatchFn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveMatchingFlows indicates an expected call of RemoveMatchingFlows
+func (mr *MockFlowDataStoreMockRecorder) RemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMatchingFlows", reflect.TypeOf((*MockFlowDataStore)(nil).RemoveMatchingFlows), ctx, keyMatchFn, valueMatchFn)
+}

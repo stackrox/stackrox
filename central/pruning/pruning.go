@@ -4,34 +4,35 @@ import (
 	"context"
 	"time"
 
+	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/role/resources"
+	networkFlowDatastore "github.com/stackrox/rox/central/networkflow/datastore"
+	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
 	pruneInterval = 1 * time.Hour
+	orphanWindow  = 30 * time.Minute
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	pruningCtx = sac.WithGlobalAccessScopeChecker(
-		context.Background(),
-		sac.OneStepSCC{
-			sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
-				sac.ResourceScopeKeys(resources.Alert, resources.Config, resources.Deployment, resources.Image)),
-			sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-				sac.ResourceScopeKeys(resources.Alert, resources.Image)),
-		})
+	pruningCtx = sac.WithAllAccess(context.Background())
 )
 
 // GarbageCollector implements a generic garbage collection mechanism
@@ -40,22 +41,29 @@ type GarbageCollector interface {
 	Stop()
 }
 
-func newGarbageCollector(alerts alertDatastore.DataStore, images imageDatastore.DataStore, deployments deploymentDatastore.DataStore, config configDatastore.DataStore) GarbageCollector {
+func newGarbageCollector(alerts alertDatastore.DataStore, images imageDatastore.DataStore, clusters clusterDatastore.DataStore, deployments deploymentDatastore.DataStore,
+	processes processDatastore.DataStore, networkflows networkFlowDatastore.ClusterDataStore, config configDatastore.DataStore) GarbageCollector {
 	return &garbageCollectorImpl{
-		alerts:      alerts,
-		images:      images,
-		deployments: deployments,
-		config:      config,
-		stopSig:     concurrency.NewSignal(),
-		stoppedSig:  concurrency.NewSignal(),
+		alerts:       alerts,
+		clusters:     clusters,
+		images:       images,
+		deployments:  deployments,
+		processes:    processes,
+		networkflows: networkflows,
+		config:       config,
+		stopSig:      concurrency.NewSignal(),
+		stoppedSig:   concurrency.NewSignal(),
 	}
 }
 
 type garbageCollectorImpl struct {
-	alerts      alertDatastore.DataStore
-	images      imageDatastore.DataStore
-	deployments deploymentDatastore.DataStore
-	config      configDatastore.DataStore
+	alerts       alertDatastore.DataStore
+	clusters     clusterDatastore.DataStore
+	images       imageDatastore.DataStore
+	deployments  deploymentDatastore.DataStore
+	processes    processDatastore.DataStore
+	networkflows networkFlowDatastore.ClusterDataStore
+	config       configDatastore.DataStore
 
 	stopSig    concurrency.Signal
 	stoppedSig concurrency.Signal
@@ -80,8 +88,8 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	// Run collection initially then run on a ticker
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
+	g.removeOrphanedResources()
 	log.Info("[Pruning] Finished garbage collection cycle")
-
 }
 
 func (g *garbageCollectorImpl) runGC() {
@@ -99,8 +107,107 @@ func (g *garbageCollectorImpl) runGC() {
 	}
 }
 
-func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
+func (g *garbageCollectorImpl) removeOrphanedResources() {
+	deploymentIDs, err := g.deployments.GetDeploymentIDs()
+	if err != nil {
+		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
+		return
+	}
+	deploymentSet := set.NewFrozenStringSet(deploymentIDs...)
+	g.removeOrphanedProcesses(deploymentSet)
+	g.markOrphanedAlertsAsResolved(deploymentSet)
+	g.removeOrphanedNetworkFlows(deploymentSet)
+}
 
+func (g *garbageCollectorImpl) removeOrphanedProcesses(deployments set.FrozenStringSet) {
+	var processesToPrune []string
+	now := types.TimestampNow()
+	err := g.processes.WalkAll(pruningCtx, func(pi *storage.ProcessIndicator) error {
+		if deployments.Contains(pi.GetDeploymentId()) {
+			return nil
+		}
+		if protoutils.Sub(now, pi.GetSignal().GetTime()) < orphanWindow {
+			return nil
+		}
+		processesToPrune = append(processesToPrune, pi.GetId())
+		return nil
+	})
+	if err != nil {
+		log.Error(errors.Wrap(err, "unable to walk processes and mark for pruning"))
+		return
+	}
+	log.Infof("[Process pruning] Found %d orphaned processes", len(processesToPrune))
+	if err := g.processes.RemoveProcessIndicators(pruningCtx, processesToPrune); err != nil {
+		log.Error(errors.Wrap(err, "error removing process indicators"))
+	}
+}
+
+func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
+	var alertsToResolve []string
+	now := types.TimestampNow()
+	err := g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
+		// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
+		// This will only happen when there is data inconsistency
+		if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
+			return nil
+		}
+		if alert.GetState() != storage.ViolationState_ACTIVE {
+			return nil
+		}
+		if deployments.Contains(alert.GetDeployment().GetId()) {
+			return nil
+		}
+		if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
+			return nil
+		}
+		alertsToResolve = append(alertsToResolve, alert.GetId())
+		return nil
+	})
+	if err != nil {
+		log.Error(errors.Wrap(err, "unable to walk alerts and mark for pruning"))
+		return
+	}
+	log.Infof("[Alert pruning] Found %d orphaned alerts", len(alertsToResolve))
+	for _, a := range alertsToResolve {
+		if err := g.alerts.MarkAlertStale(pruningCtx, a); err != nil {
+			log.Error(errors.Wrapf(err, "error marking alert %q as stale", a))
+		}
+	}
+}
+
+func isOrphanedEntity(deployments set.FrozenStringSet, info *storage.NetworkEntityInfo) bool {
+	return info.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && !deployments.Contains(info.GetId())
+}
+
+func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments set.FrozenStringSet) {
+	clusters, err := g.clusters.GetClusters(pruningCtx)
+	if err != nil {
+		utils.Should(errors.Wrap(err, "could not fetch clusters for orphaned network flows"))
+		return
+	}
+
+	for _, c := range clusters {
+		store := g.networkflows.GetFlowStore(pruningCtx, c.GetId())
+		if store == nil {
+			continue
+		}
+		now := types.TimestampNow()
+
+		keyMatchFn := func(props *storage.NetworkFlowProperties) bool {
+			return isOrphanedEntity(deployments, props.GetSrcEntity()) ||
+				isOrphanedEntity(deployments, props.GetDstEntity())
+		}
+		valueMatchFn := func(flow *storage.NetworkFlow) bool {
+			return flow.LastSeenTimestamp != nil && protoutils.Sub(now, flow.LastSeenTimestamp) > orphanWindow
+		}
+		err := store.RemoveMatchingFlows(pruningCtx, keyMatchFn, valueMatchFn)
+		if err != nil {
+			log.Errorf("error removing orphaned flows for cluster %q: %v", c.GetName(), err)
+		}
+	}
+}
+
+func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	pruneImageAfterDays := config.GetImageRetentionDurationDays()
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 	imageResults, err := g.images.Search(pruningCtx, qb)
@@ -146,7 +253,6 @@ func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, p
 }
 
 func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
-
 	alertRetention := config.GetAlertRetention()
 	if alertRetention == nil {
 		log.Info("[Alert pruning] Alert pruning has been disabled.")

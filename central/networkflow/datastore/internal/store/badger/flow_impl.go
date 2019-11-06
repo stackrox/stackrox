@@ -111,13 +111,54 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
 				}
 				srcID, dstID := s.getDeploymentIDsFromKey(k)
 				if bytes.Equal(idBytes, srcID) || bytes.Equal(idBytes, dstID) {
-					// Delete is lazy, so we must ensure the byte slice is not modified until the transaction is
-					// complete.
-					b := make([]byte, len(k))
-					copy(b, k)
 					keysToDelete = append(keysToDelete, s.getFullKey(k))
 					return nil
 				}
+				return nil
+			})
+	})
+	if err != nil {
+		return err
+	}
+	batch := s.db.NewWriteBatch()
+	defer batch.Cancel()
+	for _, key := range keysToDelete {
+		if err := batch.Delete(key); err != nil {
+			return err
+		}
+	}
+	return batch.Flush()
+}
+
+func (s *flowStoreImpl) RemoveMatchingFlows(keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+	var keysToDelete [][]byte
+	err := s.db.View(func(tx *badger.Txn) error {
+		return badgerhelper.ForEachOverKeySet(tx, s.keyPrefix, badgerhelper.ForEachOptions{IteratorOptions: &badger.IteratorOptions{PrefetchValues: false}},
+			func(k []byte) error {
+				strippedKey := badgerhelper.StripPrefix(s.keyPrefix, k)
+				if bytes.Equal(strippedKey, updatedTSKey) {
+					return nil
+				}
+				props, err := parseID(strippedKey)
+				if err != nil {
+					return err
+				}
+				if keyMatchFn != nil && !keyMatchFn(props) {
+					return nil
+				}
+				// No need to read the flow if valueMatchFn is nil
+				if valueMatchFn != nil {
+					flow, err := readFlow(tx, k)
+					if err != nil {
+						return err
+					}
+					if !valueMatchFn(flow) {
+						return nil
+					}
+				}
+
+				b := append([]byte{}, k...)
+				keysToDelete = append(keysToDelete, b)
 				return nil
 			})
 	})

@@ -67,3 +67,12 @@ func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id s
 
 	return fds.storage.RemoveFlowsForDeployment(id)
 }
+
+func (fds *flowDataStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+	return fds.storage.RemoveMatchingFlows(keyMatchFn, valueMatchFn)
+}

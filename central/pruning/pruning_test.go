@@ -5,16 +5,19 @@ import (
 	"testing"
 	"time"
 
+	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/alert/convert"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	processWhitelistDatastoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -25,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -226,7 +230,7 @@ func TestImagePruning(t *testing.T) {
 			// So to test need to update them separately
 			alerts, config, images, deployments := generateImageDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, images, deployments, config).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, config).(*garbageCollectorImpl)
 
 			// Add images and deployments into the datastores
 			if c.deployment != nil {
@@ -338,7 +342,7 @@ func TestAlertPruning(t *testing.T) {
 			// So to test need to update them separately
 			alerts, config, images, deployments := generateAlertDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, images, deployments, config).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, config).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -372,6 +376,355 @@ func TestAlertPruning(t *testing.T) {
 			}
 
 			assert.ElementsMatch(t, c.expectedIDsRemaining, ids)
+		})
+	}
+}
+
+func timestampNowMinus(t time.Duration) *protoTypes.Timestamp {
+	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
+func newListAlertWithDeployment(id string, age time.Duration, deploymentID string, stage storage.LifecycleStage, state storage.ViolationState) *storage.ListAlert {
+	return &storage.ListAlert{
+		Id: id,
+		Deployment: &storage.ListAlertDeployment{
+			Id: deploymentID,
+		},
+		State:          state,
+		LifecycleStage: stage,
+		Time:           timestampNowMinus(age),
+	}
+}
+
+func newIndicatorWithDeployment(id string, age time.Duration, deploymentID string) *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
+		Id:                id,
+		DeploymentId:      deploymentID,
+		DeploymentStateTs: 0,
+		ContainerName:     "",
+		PodId:             "",
+		Signal: &storage.ProcessSignal{
+			Time: timestampNowMinus(age),
+		},
+	}
+}
+
+func TestRemoveOrphanedProcesses(t *testing.T) {
+	cases := []struct {
+		name              string
+		initialProcesses  []*storage.ProcessIndicator
+		deployments       set.FrozenStringSet
+		expectedDeletions []string
+	}{
+		{
+			name: "no deployments - remove all old indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeployment("pi1", 1*time.Hour, "dep1"),
+				newIndicatorWithDeployment("pi2", 1*time.Hour, "dep2"),
+				newIndicatorWithDeployment("pi3", 1*time.Hour, "dep3"),
+			},
+			deployments:       set.NewFrozenStringSet(),
+			expectedDeletions: []string{"pi1", "pi2", "pi3"},
+		},
+		{
+			name: "no deployments - remove no new orphaned indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeployment("pi1", 20*time.Minute, "dep1"),
+				newIndicatorWithDeployment("pi2", 20*time.Minute, "dep2"),
+				newIndicatorWithDeployment("pi3", 20*time.Minute, "dep3"),
+			},
+			deployments:       set.NewFrozenStringSet(),
+			expectedDeletions: []string{},
+		},
+		{
+			name: "all deployments - remove no indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeployment("pi1", 1*time.Hour, "dep1"),
+				newIndicatorWithDeployment("pi2", 1*time.Hour, "dep2"),
+				newIndicatorWithDeployment("pi3", 1*time.Hour, "dep3"),
+			},
+			deployments:       set.NewFrozenStringSet("dep1", "dep2", "dep3"),
+			expectedDeletions: []string{},
+		},
+		{
+			name: "some deployments - remove some indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeployment("pi1", 1*time.Hour, "dep1"),
+				newIndicatorWithDeployment("pi2", 20*time.Minute, "dep2"),
+				newIndicatorWithDeployment("pi3", 1*time.Hour, "dep3"),
+			},
+			deployments:       set.NewFrozenStringSet("dep3"),
+			expectedDeletions: []string{"pi1"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			processes := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
+			gci := &garbageCollectorImpl{
+				processes: processes,
+			}
+			processes.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
+				func(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
+					for _, a := range c.initialProcesses {
+						assert.NoError(t, fn(a))
+					}
+					return nil
+				})
+			processes.EXPECT().RemoveProcessIndicators(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
+			gci.removeOrphanedProcesses(c.deployments)
+		})
+	}
+}
+
+func TestMarkOrphanedAlerts(t *testing.T) {
+	cases := []struct {
+		name              string
+		initialAlerts     []*storage.ListAlert
+		deployments       set.FrozenStringSet
+		expectedDeletions []string
+	}{
+		{
+			name: "no deployments - remove all old alerts",
+			initialAlerts: []*storage.ListAlert{
+				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert2", 1*time.Hour, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+			},
+			deployments:       set.NewFrozenStringSet(),
+			expectedDeletions: []string{"alert1", "alert2"},
+		},
+		{
+			name: "no deployments - remove no new orphaned alerts",
+			initialAlerts: []*storage.ListAlert{
+				newListAlertWithDeployment("alert1", 20*time.Minute, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert2", 20*time.Minute, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert3", 20*time.Minute, "dep3", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+			},
+			deployments:       set.NewFrozenStringSet(),
+			expectedDeletions: []string{},
+		},
+		{
+			name: "all deployments - remove no alerts",
+			initialAlerts: []*storage.ListAlert{
+				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert2", 1*time.Hour, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert3", 1*time.Hour, "dep3", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+			},
+			deployments:       set.NewFrozenStringSet("dep1", "dep2", "dep3"),
+			expectedDeletions: []string{},
+		},
+		{
+			name: "some deployments - remove some alerts",
+			initialAlerts: []*storage.ListAlert{
+				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert2", 20*time.Minute, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert3", 1*time.Hour, "dep3", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+			},
+			deployments:       set.NewFrozenStringSet("dep3"),
+			expectedDeletions: []string{"alert1"},
+		},
+		{
+			name: "some deployments - remove some alerts due to stages",
+			initialAlerts: []*storage.ListAlert{
+				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert2", 1*time.Hour, "dep2", storage.LifecycleStage_BUILD, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert3", 1*time.Hour, "dep3", storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
+			},
+			deployments:       set.NewFrozenStringSet("dep3"),
+			expectedDeletions: []string{"alert1"},
+		},
+		{
+			name: "some deployments - remove some alerts due to state",
+			initialAlerts: []*storage.ListAlert{
+				newListAlertWithDeployment("alert1", 1*time.Hour, "dep1", storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
+				newListAlertWithDeployment("alert2", 1*time.Hour, "dep2", storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
+				newListAlertWithDeployment("alert3", 1*time.Hour, "dep3", storage.LifecycleStage_DEPLOY, storage.ViolationState_SNOOZED),
+			},
+			deployments:       set.NewFrozenStringSet("dep3"),
+			expectedDeletions: []string{"alert1"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
+			gci := &garbageCollectorImpl{
+				alerts: alerts,
+			}
+			alerts.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
+				func(ctx context.Context, fn func(la *storage.ListAlert) error) error {
+					for _, a := range c.initialAlerts {
+						assert.NoError(t, fn(a))
+					}
+					return nil
+				})
+			for _, a := range c.expectedDeletions {
+				alerts.EXPECT().MarkAlertStale(pruningCtx, a)
+			}
+			gci.markOrphanedAlertsAsResolved(c.deployments)
+		})
+	}
+}
+
+func TestRemoveOrphanedNetworkFlows(t *testing.T) {
+	cases := []struct {
+		name             string
+		flows            []*storage.NetworkFlow
+		deployments      set.FrozenStringSet
+		expectedDeletion bool
+	}{
+		{
+			name: "no deployments - remove all flows",
+			flows: []*storage.NetworkFlow{
+				{
+					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep1",
+						},
+						DstEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep2",
+						},
+					},
+				},
+			},
+			deployments:      set.NewFrozenStringSet(),
+			expectedDeletion: true,
+		},
+		{
+			name: "no deployments - but no flows with deployments",
+			flows: []*storage.NetworkFlow{
+				{
+					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_INTERNET,
+							Id:   "i1",
+						},
+						DstEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_INTERNET,
+							Id:   "i2",
+						},
+					},
+				},
+			},
+			deployments:      set.NewFrozenStringSet(),
+			expectedDeletion: false,
+		},
+		{
+			name: "no deployments - but flows too recent",
+			flows: []*storage.NetworkFlow{
+				{
+					LastSeenTimestamp: timestampNowMinus(20 * time.Minute),
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep1",
+						},
+						DstEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep2",
+						},
+					},
+				},
+			},
+			deployments:      set.NewFrozenStringSet(),
+			expectedDeletion: false,
+		},
+		{
+			name: "some deployments with matching flows",
+			flows: []*storage.NetworkFlow{
+				{
+					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep1",
+						},
+						DstEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep2",
+						},
+					},
+				},
+			},
+			deployments:      set.NewFrozenStringSet("dep1", "dep2"),
+			expectedDeletion: false,
+		},
+		{
+			name: "some deployments with matching src",
+			flows: []*storage.NetworkFlow{
+				{
+					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep1",
+						},
+						DstEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep2",
+						},
+					},
+				},
+			},
+			deployments:      set.NewFrozenStringSet("dep1"),
+			expectedDeletion: true,
+		},
+		{
+			name: "some deployments with matching dst",
+			flows: []*storage.NetworkFlow{
+				{
+					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep1",
+						},
+						DstEntity: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "dep2",
+						},
+					},
+				},
+			},
+			deployments:      set.NewFrozenStringSet("dep2"),
+			expectedDeletion: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			clusters := clusterDatastoreMocks.NewMockDataStore(ctrl)
+			clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(ctrl)
+			flows := networkFlowDatastoreMocks.NewMockFlowDataStore(ctrl)
+
+			clusters.EXPECT().GetClusters(pruningCtx).Return([]*storage.Cluster{{Id: "cluster"}}, nil)
+			clusterFlows.EXPECT().GetFlowStore(pruningCtx, "cluster").Return(flows)
+
+			flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
+				func(ctx context.Context, keyFn func(props *storage.NetworkFlowProperties) bool, valueFn func(flow *storage.NetworkFlow) bool) error {
+					var deleted bool
+					for _, f := range c.flows {
+						if !keyFn(f.Props) || !valueFn(f) {
+							continue
+						}
+						deleted = true
+					}
+					assert.Equal(t, c.expectedDeletion, deleted)
+					return nil
+				})
+
+			gci := &garbageCollectorImpl{
+				clusters:     clusters,
+				networkflows: clusterFlows,
+			}
+			gci.removeOrphanedNetworkFlows(c.deployments)
 		})
 	}
 }

@@ -101,9 +101,9 @@ func (m *managerImpl) buildIndicatorFilter() {
 	deploymentIDSet := set.NewStringSet(deploymentIDs...)
 
 	err = m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
-		// If the deployment is not the database then ignore and don't add into the filter
 		if !deploymentIDSet.Contains(pi.GetDeploymentId()) {
-			processesToRemove = append(processesToRemove, pi.GetId())
+			// Don't remove as these processes will be removed by GC
+			// but don't add to the filter
 			return nil
 		}
 		if !m.processFilter.Add(pi) {
