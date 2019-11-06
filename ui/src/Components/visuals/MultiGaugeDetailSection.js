@@ -109,9 +109,9 @@ class MultiGaugeDetailSection extends Component {
                     <button
                         type="button"
                         title="Passing"
-                        className={`text-sm text-base-600 font-600 hover:text-success-600 underline pl-2 cursor-pointer ${selectedData &&
-                            selectedData.index === idx &&
-                            passingClassName}`}
+                        className={`text-sm text-base-600 font-600 hover:text-success-600 underline pl-2 cursor-pointer ${
+                            selectedData === d ? passingClassName : ''
+                        }`}
                         onClick={this.onClick(d, 'passing', idx)}
                     >
                         {passingValue} Passing
@@ -120,9 +120,9 @@ class MultiGaugeDetailSection extends Component {
                     <button
                         type="button"
                         title="Failing"
-                        className={`text-sm text-base-600 hover:text-alert-600 font-600 underline cursor-pointer ${selectedData &&
-                            selectedData.index === idx &&
-                            failingClassName}`}
+                        className={`text-sm text-base-600 hover:text-alert-600 font-600 underline cursor-pointer ${
+                            selectedData === d ? failingClassName : ''
+                        }`}
                         onClick={this.onClick(d, 'failing', idx)}
                     >
                         {failingValue} Failing

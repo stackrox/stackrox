@@ -30,11 +30,15 @@ const GaugeWithDetail = ({ data, history }) => {
 
     const failingSelected = selectedData && selectedData.failing.selected;
     const passingSelected = selectedData && selectedData.passing.selected;
-    const totalPassing = data.reduce((acc, datum) => acc + datum.passing.value, 0);
-    const totalFailing = data.reduce((acc, datum) => acc + datum.failing.value, 0);
-    const totalChecks = totalPassing + totalFailing;
-    const pctPassing = totalChecks ? Math.round((totalPassing / totalChecks) * 100) : 0;
-    const pctFailing = totalChecks ? Math.round((totalFailing / totalChecks) * 100) : 0;
+    const numPassing = selectedData
+        ? selectedData.passing.value
+        : data.reduce((acc, datum) => acc + datum.passing.value, 0);
+    const numFailing = selectedData
+        ? selectedData.failing.value
+        : data.reduce((acc, datum) => acc + datum.failing.value, 0);
+    const totalChecks = numPassing + numFailing;
+    const pctPassing = totalChecks ? Math.round((numPassing / totalChecks) * 100) : 0;
+    const pctFailing = totalChecks ? Math.round((numFailing / totalChecks) * 100) : 0;
 
     function calculateGaugeData(inputData) {
         if (!inputData.length) return null;
@@ -72,7 +76,7 @@ const GaugeWithDetail = ({ data, history }) => {
                 radius: radius1,
                 index,
                 arc: 'inner',
-                opacity: d.failing.selected ? 0.2 : 1
+                opacity: d.passing.selected ? 1 : 0.2
             };
             returnData.push(failingCircle, passingCircle);
         });

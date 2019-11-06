@@ -79,7 +79,7 @@ const LinkListWidget = ({
 
             return (
                 <Widget
-                    className={`${className} h-full`}
+                    className={`${className} w-full h-full`}
                     header={headline}
                     headerComponents={headerComponents}
                     id={id}
@@ -111,7 +111,7 @@ LinkListWidget.defaultProps = {
     getHeadline() {
         return null;
     },
-    className: null,
+    className: '',
     headerComponents: null,
     limit: 10,
     showEmpty: false,

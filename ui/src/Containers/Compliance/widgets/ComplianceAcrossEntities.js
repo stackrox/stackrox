@@ -154,7 +154,11 @@ const ComplianceAcrossEntities = ({ match, location, entityType, groupBy, query 
                     }
                 }
                 return (
-                    <Widget header={headerText} bodyClassName="p-2" id="compliance-across-entities">
+                    <Widget
+                        header={headerText}
+                        bodyClassName="flex-1 p-2"
+                        id="compliance-across-entities"
+                    >
                         {contents}
                     </Widget>
                 );
