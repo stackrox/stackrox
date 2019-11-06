@@ -41,7 +41,9 @@ export function getImageTableColumns(workflowState) {
 
                 const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
                 const url = newState.toUrl();
-                const fixableUrl = newState.setSearch({ 'Is Fixable': true }).toUrl();
+
+                // If `Fixed By` is set, it means vulnerability is fixable.
+                const fixableUrl = newState.setSearch({ 'Fixed By': 'r/.*' }).toUrl();
 
                 return (
                     <CVEStackedPill

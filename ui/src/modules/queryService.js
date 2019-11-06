@@ -71,7 +71,7 @@ function getQueryBasedOnSearchContext(query, searchParam) {
 
 function getListFieldName(entityType, listType) {
     // TODO: Back end should rename these fields and these exceptions should be removed
-    if (entityType === entityTypes.NAMESPACE) {
+    if (entityType === entityTypes.COMPONENT) {
         if (listType === entityTypes.CVE) {
             return 'vulns';
         }
@@ -84,6 +84,10 @@ function getListFieldName(entityType, listType) {
     }
 
     if (entityType === entityTypes.CLUSTER) {
+        if (listType === entityTypes.CVE) {
+            return 'vulns';
+        }
+
         if (listType === entityTypes.ROLE) {
             return 'k8sroles';
         }
@@ -91,12 +95,20 @@ function getListFieldName(entityType, listType) {
     }
 
     if (entityType === entityTypes.DEPLOYMENT) {
+        if (listType === entityTypes.CVE) {
+            return 'vulns';
+        }
+
         if (listType === entityTypes.POLICY) {
             return 'failingPolicies';
         }
     }
 
     if (entityType === entityTypes.NAMESPACE) {
+        if (listType === entityTypes.CVE) {
+            return 'vulns';
+        }
+
         if (listType === entityTypes.ROLE) {
             return 'k8sroles';
         }

@@ -115,7 +115,7 @@ const processData = (data, entityType, workflowState, limit) => {
             const url = newState.toUrl();
             const cveListState = newState.pushList(entityTypes.CVE);
             const cvesUrl = cveListState.toUrl();
-            const fixableUrl = cveListState.setSearch({ 'Is Fixable': true }).toUrl();
+            const fixableUrl = cveListState.setSearch({ 'Fixed By': 'r/.*' }).toUrl();
 
             return {
                 text,
