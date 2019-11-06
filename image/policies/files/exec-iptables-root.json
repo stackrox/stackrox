@@ -5,7 +5,7 @@
   "rationale": "Processes that are running with UID 0 run as the root user. iptables can be used in privileged containers to modify the node's network routing.",
   "remediation": "Specify the USER instruction in the Docker image or the runAsUser field within the Pod Security Context",
   "categories": [
-    "Networking Tools",
+    "Network Tools",
     "Security Best Practices"
   ],
   "fields": {
