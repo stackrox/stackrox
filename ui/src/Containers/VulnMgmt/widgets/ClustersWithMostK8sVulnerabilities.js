@@ -18,14 +18,12 @@ import kubeSVG from 'images/kube.svg';
 // need to add query for fixable cves for dashboard once it's supported
 const CLUSTER_WITH_MOST_K8S_VULNERABILTIES = gql`
     query clustersWithMostK8sVulnerabilities {
-        results: clustersK8sVulnerabilities {
-            cluster {
-                id
-                name
-            }
-            k8sCVEInfo {
-                cveIDs
-                fixableCveIDs
+        results: clusters {
+            id
+            name
+            k8sVulns {
+                cve
+                isFixable
             }
         }
     }
@@ -33,11 +31,9 @@ const CLUSTER_WITH_MOST_K8S_VULNERABILTIES = gql`
 
 const processData = (data, workflowState) => {
     const stacked = data.results.length < 4;
-    const results = data.results.map(({ cluster, k8sCVEInfo }) => {
-        const { id, name } = cluster;
-        const { cveIDs, fixableCveIDs } = k8sCVEInfo;
-        const cveCount = cveIDs.length;
-        const fixableCount = fixableCveIDs.length;
+    const results = data.results.map(({ id, name, k8sVulns }) => {
+        const cveCount = k8sVulns.length;
+        const fixableCount = k8sVulns.filter(vuln => vuln.isFixable).length;
         const url = workflowState.pushRelatedEntity(entityTypes.CLUSTER, id).toUrl();
         const imgComponent = (
             <img src={kubeSVG} alt="kube" className={`${stacked ? 'pl-2' : 'pr-2'}`} />
