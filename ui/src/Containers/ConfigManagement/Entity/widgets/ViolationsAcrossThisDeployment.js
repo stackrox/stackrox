@@ -21,7 +21,6 @@ const QUERY = gql`
             }
             violations {
                 message
-                link
             }
         }
     }
