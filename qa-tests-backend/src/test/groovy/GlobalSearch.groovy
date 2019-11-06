@@ -1,6 +1,5 @@
 import static Services.getSearchResponse
 import static Services.waitForViolation
-import io.stackrox.proto.api.v1.SearchServiceOuterClass.SearchResponse.Count
 import objects.Deployment
 import spock.lang.Unroll
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
@@ -38,45 +37,37 @@ class GlobalSearch extends BaseSpecification {
         // If searchCategories are specified in the request, then the expected categories in the result
         // will be exactly the categories specified in searchCategories.
         // We only want to specify expectedCategoriesInResult if we're a search across all categories.
+        def expectedCategoriesSet = expectedCategoriesInResult.toSet()
         if (searchCategories.size() > 0) {
-            assert expectedCategoriesInResult.isEmpty()
+            assert expectedCategoriesInResult.empty
+            expectedCategoriesSet = searchCategories.toSet()
         }
 
         when:
         "Run a global search request"
-        def searchResponse = getSearchResponse(query, searchCategories)
+        SearchServiceOuterClass.SearchResponse searchResponse = null
+        Set<SearchServiceOuterClass.SearchCategory> presentCategories = null
+        withRetry(30, 1) {
+            searchResponse = getSearchResponse(query, searchCategories)
+            presentCategories = searchResponse.countsList.collectMany {
+                count -> count.count > 0 ? [count.category] : [] } .toSet()
+            assert presentCategories.size() >= expectedCategoriesSet.size()
+        }
 
         then:
         "Verify that the search response contains what we expect"
-        assert searchResponse.resultsList.size() > 0
+        assert !searchResponse?.resultsList?.empty
 
         // If the test case has an expectedResultPrefix, assert that the result starts with the prefix.
         // Doing a prefix match instead of an exact match because we do prefix search, and if a query happens
         // to match something else.
         if (expectedResultPrefix.size() > 0) {
-            assert searchResponse.resultsList.get(0).getName().startsWith(expectedResultPrefix)
-        }
-
-        Set<SearchServiceOuterClass.SearchCategory> presentCategories = [] as Set
-        for (Count count : searchResponse.getCountsList()) {
-            if (count.getCount() > 0) {
-                presentCategories.add(count.getCategory())
+            searchResponse.resultsList.each {
+                assert it.name.startsWith(expectedResultPrefix)
             }
         }
 
-        // If searchCategories are explicitly specified, we expect results for all of them (and no others!).
-        if (searchCategories.size() > 0) {
-            assert searchCategories.toSet() == presentCategories
-        } else {
-            println "Present categories: ${presentCategories}"
-            println "Expected categories: ${expectedCategoriesInResult}"
-
-            assert presentCategories.size() == expectedCategoriesInResult.size()
-            // Iterate over the expectedCategoriesInResult so we can at least see which one was missing in the report
-            for (SearchServiceOuterClass.SearchCategory category : expectedCategoriesInResult ) {
-                assert presentCategories.contains(category)
-            }
-        }
+        assert expectedCategoriesSet == presentCategories
 
         where:
         "Data inputs are :"
