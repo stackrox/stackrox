@@ -33,7 +33,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
 		schema.AddExtraResolver("Namespace", `k8sroles(query: String): [K8SRole!]!`),
 		schema.AddExtraResolver("Namespace", `policyCount(query: String): Int!`),
-		schema.AddExtraResolver("Namespace", `policyStatus: PolicyStatus!`),
+		schema.AddExtraResolver("Namespace", `policyStatus(query: String): PolicyStatus!`),
 		schema.AddExtraResolver("Namespace", `policies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Namespace", `failingPolicyCounter: PolicyCounter`),
 		schema.AddExtraResolver("Namespace", `images(query: String): [Image!]!`),
@@ -295,9 +295,19 @@ func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Poli
 }
 
 // PolicyStatus returns true if there is no policy violation for this cluster
-func (resolver *namespaceResolver) PolicyStatus(ctx context.Context) (*policyStatusResolver, error) {
+func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args rawQuery) (*policyStatusResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyStatus")
-	alerts, err := resolver.getActiveDeployAlerts(ctx)
+
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	alerts, err := resolver.getActiveDeployAlerts(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -314,19 +324,19 @@ func (resolver *namespaceResolver) PolicyStatus(ctx context.Context) (*policySta
 	return &policyStatusResolver{resolver.root, "fail", policyIDs.AsSlice()}, nil
 }
 
-func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {
+func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 
 	namespace := resolver.data
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
-		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
-
-	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx,
+		search.NewConjunctionQuery(q,
+			search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
+				AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
+				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+				AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
 }
 
 func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {

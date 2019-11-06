@@ -7,6 +7,10 @@ import gql from 'graphql-tag';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
 import EntityList from '../../List/VulnMgmtList';
+import {
+    getPolicyQueryVar,
+    tryUpdateQueryWithVulMgmtPolicyClause
+} from '../VulnMgmtPolicyQueryUtil';
 
 const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
@@ -94,7 +98,9 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getImage${entityListType}($id: ID!, $query: String) {
+        query getImage${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
+            entityListType
+        )}) {
             result: image(sha: $id) {
                 id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
@@ -107,7 +113,8 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
     const queryOptions = {
         variables: {
             id: entityId,
-            query: queryService.objectToWhereClause(search)
+            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
+            policyQuery: queryService.objectToWhereClause({ Category: 'Vulnerability Management' })
         }
     };
 

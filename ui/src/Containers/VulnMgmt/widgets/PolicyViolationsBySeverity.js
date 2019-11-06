@@ -23,11 +23,11 @@ const passingLinkColor = 'var(--base-500)';
 const passingChartColor = 'var(--base-400)';
 
 const POLICIES_QUERY = gql`
-    query policyViolationsBySeverity($query: String) {
+    query policyViolationsBySeverity($query: String, $policyQuery: String) {
         deployments(query: $query) {
             id
             name
-            failingPolicies {
+            failingPolicies(query: $policyQuery) {
                 id
                 name
                 categories
@@ -63,7 +63,10 @@ function getCategorySeverity(category, violationsByCategory) {
 const PolicyViolationsBySeverity = ({ entityContext }) => {
     const { loading, data = {} } = useQuery(POLICIES_QUERY, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext)
+            query: queryService.entityContextToQueryString(entityContext),
+            policyQuery: queryService.objectToWhereClause({
+                Category: 'Vulnerability Management'
+            })
         }
     });
 

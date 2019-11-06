@@ -7,6 +7,10 @@ import useCases from 'constants/useCaseTypes';
 import { VULN_CVE_LIST_FRAGMENT_FOR_IMAGE } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import EntityList from '../../List/VulnMgmtList';
 import VulnMgmtComponentOverview from './VulnMgmtComponentOverview';
+import {
+    getPolicyQueryVar,
+    tryUpdateQueryWithVulMgmtPolicyClause
+} from '../VulnMgmtPolicyQueryUtil';
 
 const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
@@ -28,7 +32,9 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getComponentSubEntity${entityListType}($id: ID!, $query: String) {
+        query getComponentSubEntity${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
+            entityListType
+        )}) {
             result: imageComponent(id: $id) {
                 id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
@@ -41,7 +47,8 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
     const queryOptions = {
         variables: {
             id: entityId,
-            query: queryService.objectToWhereClause(search)
+            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
+            policyQuery: queryService.objectToWhereClause({ Category: 'Vulnerability Management' })
         }
     };
 

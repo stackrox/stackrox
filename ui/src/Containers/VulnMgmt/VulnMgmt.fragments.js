@@ -34,8 +34,8 @@ export const CLUSTER_LIST_FRAGMENT = gql`
         # createdAt
         namespaceCount
         deploymentCount
-        policyCount
-        policyStatus {
+        policyCount(query: $policyQuery)
+        policyStatus(query: $policyQuery) {
             status
         }
         latestViolation
@@ -112,8 +112,8 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
             }
             time
         }
-        failingPolicyCount
-        policyStatus
+        failingPolicyCount(query: $policyQuery)
+        policyStatus(query: $policyQuery)
         clusterName
         clusterId
         namespace
@@ -245,8 +245,8 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
         }
         deploymentCount
         imageCount
-        policyCount
-        policyStatus {
+        policyCount(query: $policyQuery)
+        policyStatus(query: $policyQuery) {
             status
         }
         latestViolation

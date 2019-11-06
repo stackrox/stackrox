@@ -9,10 +9,14 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtNamespaceOverview from './VulnMgmtNamespaceOverview';
 import EntityList from '../../List/VulnMgmtList';
+import {
+    getPolicyQueryVar,
+    tryUpdateQueryWithVulMgmtPolicyClause
+} from '../VulnMgmtPolicyQueryUtil';
 
 const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
-        query getNamespace($id: ID!) {
+        query getNamespace($id: ID!, $policyQuery: String) {
             result: namespace(id: $id) {
                 metadata {
                     priority
@@ -25,7 +29,7 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
                         value
                     }
                 }
-                policyStatus {
+                policyStatus(query: $policyQuery) {
                     status
                     failingPolicies {
                         id
@@ -39,7 +43,7 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
                         enforcementActions
                     }
                 }
-                policyCount
+                policyCount(query: $policyQuery)
                 vulnCount
                 deploymentCount
                 imageCount
@@ -54,7 +58,9 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getNamespace${entityListType}($id: ID!, $query: String) {
+        query getNamespace${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
+            entityListType
+        )}) {
             result: namespace(id: $id) {
                 metadata {
                     id
@@ -69,7 +75,8 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
     const queryOptions = {
         variables: {
             id: entityId,
-            query: queryService.objectToWhereClause(search)
+            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
+            policyQuery: queryService.objectToWhereClause({ Category: 'Vulnerability Management' })
         }
     };
 

@@ -21,7 +21,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const workflowState = useContext(workflowStateContext);
 
     const query = gql`
-        query getClusters($query: String) {
+        query getClusters($query: String, $policyQuery: String) {
             results: clusters(query: $query) {
                 ...clusterFields
             }
@@ -30,11 +30,12 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     `;
 
     const queryOptions = {
-        variables: search
-            ? {
-                  query: queryService.objectToWhereClause(search)
-              }
-            : null
+        variables: {
+            policyQuery: queryService.objectToWhereClause({
+                Category: 'Vulnerability Management'
+            }),
+            query: queryService.objectToWhereClause(search)
+        }
     };
 
     function getTableColumns() {

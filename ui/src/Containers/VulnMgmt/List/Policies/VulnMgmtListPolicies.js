@@ -153,8 +153,8 @@ export const defaultPolicySort = [
 
 const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data }) => {
     const POLICIES_QUERY = gql`
-        query getPolicies {
-            results: policies {
+        query getPolicies($policyQuery: String) {
+            results: policies(query: $policyQuery) {
                 ...policyFields
             }
         }
@@ -163,7 +163,10 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data }) => {
 
     const queryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(search)
+            policyQuery: queryService.objectToWhereClause({
+                ...search,
+                Category: 'Vulnerability Management'
+            })
         }
     };
 

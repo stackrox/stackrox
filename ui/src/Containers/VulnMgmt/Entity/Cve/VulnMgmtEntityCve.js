@@ -7,6 +7,10 @@ import gql from 'graphql-tag';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtCveOverview from './VulnMgmtCveOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
+import {
+    getPolicyQueryVar,
+    tryUpdateQueryWithVulMgmtPolicyClause
+} from '../VulnMgmtPolicyQueryUtil';
 
 const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
@@ -46,7 +50,9 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getCve${entityListType}($id: ID!, $query: String) {
+        query getCve${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
+            entityListType
+        )}) {
             result: vulnerability(id: $id) {
                 cve
                 ${listFieldName}(query: $query) { ...${fragmentName} }
@@ -59,7 +65,8 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
     const queryOptions = {
         variables: {
             id: entityId,
-            query: queryService.objectToWhereClause(search)
+            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
+            policyQuery: queryService.objectToWhereClause({ Category: 'Vulnerability Management' })
         }
     };
 

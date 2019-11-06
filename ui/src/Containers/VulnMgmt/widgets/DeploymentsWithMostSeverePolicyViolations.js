@@ -16,11 +16,15 @@ import NumberedList from 'Components/NumberedList';
 import LabelChip from 'Components/LabelChip';
 
 const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
-    query deploymentsWithMostSeverePolicyViolations($query: String, $pagination: Pagination) {
+    query deploymentsWithMostSeverePolicyViolations(
+        $query: String
+        $policyQuery: String
+        $pagination: Pagination
+    ) {
         results: deployments(query: $query, pagination: $pagination) {
             id
             name
-            failingPolicies {
+            failingPolicies(query: $policyQuery) {
                 id
                 severity
             }
@@ -86,7 +90,10 @@ const processData = (data, workflowState, limit) => {
 const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => {
     const { loading, data = {} } = useQuery(DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext)
+            query: queryService.entityContextToQueryString(entityContext),
+            policyQuery: queryService.objectToWhereClause({
+                Category: 'Vulnerability Management'
+            })
         }
     });
 

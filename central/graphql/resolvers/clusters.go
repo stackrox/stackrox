@@ -62,7 +62,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `k8sVulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `policyStatus: PolicyStatus!`),
+		schema.AddExtraResolver("Cluster", `policyStatus(query: String): PolicyStatus!`),
 		schema.AddExtraResolver("Cluster", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
 		schema.AddExtraResolver("Cluster", `controlStatus(query: String): String!`),
@@ -672,10 +672,19 @@ func (resolver *clusterResolver) PolicyCount(ctx context.Context, args rawQuery)
 }
 
 // PolicyStatus returns true if there is no policy violation for this cluster
-func (resolver *clusterResolver) PolicyStatus(ctx context.Context) (*policyStatusResolver, error) {
+func (resolver *clusterResolver) PolicyStatus(ctx context.Context, args rawQuery) (*policyStatusResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PolicyStatus")
 
-	alerts, err := resolver.getActiveDeployAlerts(ctx)
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	alerts, err := resolver.getActiveDeployAlerts(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -828,14 +837,14 @@ func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx contex
 	return r, nil
 }
 
-func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context) ([]*storage.ListAlert, error) {
+func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
 	cluster := resolver.data
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).
-		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()
-
-	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx,
+		search.NewConjunctionQuery(q,
+			search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).
+				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+				AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
 }
 
 func (resolver *clusterResolver) Risk(ctx context.Context) (*riskResolver, error) {

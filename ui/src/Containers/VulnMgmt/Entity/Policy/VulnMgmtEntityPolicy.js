@@ -12,7 +12,7 @@ import VulnMgmtList from '../../List/VulnMgmtList';
 
 const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
-        query getPolicy($id: ID!) {
+        query getPolicy($id: ID!, $policyQuery: String) {
             result: policy(id: $id) {
                 id
                 name
@@ -154,7 +154,7 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getPolicy${entityListType}($id: ID!, $query: String) {
+        query getPolicy${entityListType}($id: ID!, $query: String, $policyQuery: String) {
             result: policy(id: $id) {
                 id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
@@ -167,7 +167,10 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
     const queryOptions = {
         variables: {
             id: entityId,
-            query: queryService.objectToWhereClause(search)
+            query: queryService.objectToWhereClause(search),
+            policyQuery: queryService.objectToWhereClause({
+                Category: 'Vulnerability Management'
+            })
         }
     };
 
