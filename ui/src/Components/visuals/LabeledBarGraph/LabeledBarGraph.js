@@ -9,7 +9,8 @@ import {
     VerticalGridLines,
     HorizontalBarSeries,
     LabelSeries,
-    GradientDefs
+    GradientDefs,
+    ChartLabel
 } from 'react-vis';
 import BarGradient from 'Components/visuals/BarGradient';
 
@@ -69,7 +70,15 @@ const LabeledBarGraph = ({ data, title, history }) => {
                 data={formattedData}
                 onValueClick={onValueClickHandler}
             />
-            <XAxis title={title} />
+            <XAxis />
+            <ChartLabel
+                text={title}
+                className="alt-x-label"
+                includeMargin={false}
+                xPercent={1.0}
+                yPercent={1.01}
+                style={{ transform: 'translate(0, 40)', textAnchor: 'end' }}
+            />
             <LabelSeries
                 className="text-xs text-base-600"
                 labelAnchorY="text-top"
