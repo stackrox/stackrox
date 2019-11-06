@@ -247,6 +247,7 @@ const ListTable = ({
                 if (!loading || (data && data.results)) {
                     const formattedData = formatData(data, entityType);
                     if (!formattedData) {
+                        headerText = `0 ${pluralize(entityType, totalRows)}`;
                         contents = <NoResultsMessage message="No data matched your search." />;
                     } else {
                         tableData = filterByComplianceState(formattedData, query, isControlList);
@@ -292,17 +293,13 @@ const ListTable = ({
                                 ]}
                             />
                         );
-                        headerComponent = (
-                            <>
-                                <div className="flex flex-1 justify-start">{searchComponent}</div>
-                                <TablePagination
-                                    page={page}
-                                    dataLength={totalRows}
-                                    setPage={setPage}
-                                />
-                            </>
-                        );
                     }
+                    headerComponent = (
+                        <>
+                            <div className="flex flex-1 justify-start">{searchComponent}</div>
+                            <TablePagination page={page} dataLength={totalRows} setPage={setPage} />
+                        </>
+                    );
                 }
                 return (
                     <Panel

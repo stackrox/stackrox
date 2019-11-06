@@ -34,8 +34,8 @@ const TablePagination = ({ dataLength, setPage, page, searchOptions }) => {
         setPage(0);
     }
 
-    const curPage = `${page + 1}`;
     const totalPages = getTotalPages();
+    const curPage = totalPages === 0 ? 0 : `${page + 1}`;
 
     useEffect(resetPage, [searchOptions]);
 
