@@ -425,7 +425,7 @@ const NetworkGraph = ({
         const isEdge = target.isEdge && target.isEdge();
 
         // Canvas or Selected node click: clear selection
-        if (!evData || (selectedNode && evData && id === selectedNode.id)) {
+        if (!id || !evData || (selectedNode && evData && id === selectedNode.id)) {
             setSelectedNode();
             onClickOutside();
             history.push('/main/network');
@@ -681,7 +681,7 @@ const NetworkGraph = ({
 
     return (
         <div className="h-full w-full relative">
-            <div id="cytoscapeContainer" className="w-full h-full">
+            <div id="cytoscapeContainer" className="w-full h-full cursor-pointer">
                 <CytoscapeComponent
                     elements={normalizedElements}
                     layout={{ name: 'grid' }}
