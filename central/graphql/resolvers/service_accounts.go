@@ -196,13 +196,7 @@ func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) (
 func (resolver *serviceAccountResolver) SaNamespace(ctx context.Context) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "SaNamespace")
 	sa := resolver.data
-	r, err := resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(sa.GetClusterId()), sa.GetNamespace()})
-
-	if err != nil {
-		return resolver.root.wrapNamespace(r.data, false, err)
-	}
-
-	return resolver.root.wrapNamespace(r.data, true, err)
+	return resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(sa.GetClusterId()), sa.GetNamespace()})
 }
 
 // Cluster returns the cluster of the service account

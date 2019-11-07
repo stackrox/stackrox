@@ -147,8 +147,22 @@ func (resolver *clusterResolver) getSubjects(ctx context.Context, q *v1.Query) (
 	return subjects, nil
 }
 
+func (resolver *clusterResolver) getQueryBuilder() *search.QueryBuilder {
+	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId())
+}
+
 func (resolver *clusterResolver) getQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	return resolver.getQueryBuilder().ProtoQuery()
+}
+
+func (resolver *clusterResolver) getRawConjunctionQuery(q rawQuery) rawQuery {
+	clusterQuery := resolver.getQueryBuilder().Query()
+	if q.Query != nil && *q.Query != "" {
+		clusterQuery += "+" + *q.Query
+	}
+	return rawQuery{
+		Query: &clusterQuery,
+	}
 }
 
 func (resolver *clusterResolver) getConjunctionQuery(q *v1.Query) *v1.Query {

@@ -40,28 +40,22 @@ func (resolver *subjectResolver) SubjectWithClusterID(ctx context.Context) ([]*s
 	if err := readK8sRoleBindings(ctx); err != nil {
 		return nil, err
 	}
-	clusters, err := resolver.root.ClusterDataStore.GetClusters(ctx)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.SubjectName, resolver.data.GetName()).
+		AddExactMatches(search.SubjectKind, resolver.data.GetKind().String()).ProtoQuery()
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+
 	var resolvers []*subjectWithClusterIDResolver
-	for _, cluster := range clusters {
-		q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.Id).
-			AddExactMatches(search.SubjectName, resolver.data.GetName()).
-			AddExactMatches(search.SubjectKind, resolver.data.GetKind().String()).ProtoQuery()
-		bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
-		if err != nil {
+	seenClusterIDs := set.NewStringSet()
+	for _, binding := range bindings {
+		if !seenClusterIDs.Add(binding.GetClusterId()) {
 			continue
 		}
-
-		if bindings == nil {
-			return nil, errors.Errorf("subject %s does not exist", resolver.data.GetName())
-		}
-		subjectResolver, err := resolver.root.wrapSubject(resolver.data, true, nil)
-		if err != nil {
-			return nil, err
-		}
-		resolvers = append(resolvers, wrapSubject(cluster.GetId(), cluster.GetName(), subjectResolver))
+		resolvers = append(resolvers, wrapSubject(binding.GetClusterId(), binding.GetClusterName(), resolver))
 	}
 	return resolvers, nil
 }

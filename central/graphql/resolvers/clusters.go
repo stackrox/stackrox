@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/namespace"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -235,14 +234,8 @@ func (resolver *clusterResolver) Namespaces(ctx context.Context, args rawQuery) 
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
 
-	return resolver.root.wrapNamespaces(namespace.ResolveByClusterID(ctx, resolver.data.GetId(),
-		resolver.root.NamespaceDataStore, resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore,
-		resolver.root.NetworkPoliciesStore, resolver.getConjunctionQuery(q)))
+	return resolver.root.Namespaces(ctx, resolver.getRawConjunctionQuery(args))
 }
 
 // Namespace returns a given namespace on a cluster.

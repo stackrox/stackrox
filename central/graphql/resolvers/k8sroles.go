@@ -227,13 +227,7 @@ func (resolver *k8SRoleResolver) RoleNamespace(ctx context.Context) (*namespaceR
 	if role.GetNamespace() == "" {
 		return nil, nil
 	}
-	r, err := resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(role.GetClusterId()), role.GetNamespace()})
-
-	if err != nil {
-		return resolver.root.wrapNamespace(r.data, false, err)
-	}
-
-	return resolver.root.wrapNamespace(r.data, true, err)
+	return resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(role.GetClusterId()), role.GetNamespace()})
 }
 
 func (resolver *k8SRoleResolver) convertSubjectToServiceAccount(ctx context.Context, clusterID string, subject *storage.Subject, filterQ *v1.Query) (*storage.ServiceAccount, error) {
