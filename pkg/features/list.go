@@ -11,4 +11,7 @@ var (
 	// VulnMgmtUI enables the vulnerability management UI.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	VulnMgmtUI = registerFeature("Enable Vulnerability Management UI", "ROX_VULN_MGMT_UI", false)
+
+	// ProbeUpload enables the possibility to upload collector probes to central.
+	ProbeUpload = registerFeature("Enable support for uploading collector probes", "ROX_PROBE_UPLOAD", false)
 )

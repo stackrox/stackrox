@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+
+package v1;
+
+message ProbeUploadManifest {
+    message File {
+        string name  = 1;
+        int64  size  = 2;
+        uint32 crc32 = 3;
+    }
+
+    repeated File files = 1;
+}
+
+message GetExistingProbesRequest {
+    repeated string files_to_check = 1;
+}
+
+message GetExistingProbesResponse {
+    repeated ProbeUploadManifest.File existing_files = 1;
+}
+
+service ProbeUploadService {
+
+    rpc GetExistingProbes(GetExistingProbesRequest) returns (GetExistingProbesResponse) {
+        option (google.api.http) = {
+            post: "/v1/probeupload/getexisting"
+        };
+    }
+
+}

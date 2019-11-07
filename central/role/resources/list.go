@@ -48,6 +48,7 @@ var (
 	K8sRole               = newResourceMetadata("K8sRole", permissions.NamespaceScope)
 	K8sRoleBinding        = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject            = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
+	ProbeUpload           = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
 
 	resourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
 )

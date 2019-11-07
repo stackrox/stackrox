@@ -64,6 +64,7 @@ import (
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	pingService "github.com/stackrox/rox/central/ping/service"
 	policyService "github.com/stackrox/rox/central/policy/service"
+	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	processWhitelistService "github.com/stackrox/rox/central/processwhitelist/service"
 	"github.com/stackrox/rox/central/pruning"
@@ -304,6 +305,10 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 		backupRestoreService.Singleton(),
+	}
+
+	if features.ProbeUpload.Enabled() {
+		servicesToRegister = append(servicesToRegister, probeUploadService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
