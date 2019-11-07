@@ -47,7 +47,7 @@ function entityContextToQueryObject(entityContext) {
         if (key === entityTypes.IMAGE) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
         } else if (key === entityTypes.COMPONENT) {
-            const parsedComponentID = entityContext[key].split(':');
+            const parsedComponentID = entityContext[key].split(':').map(atob);
             [entityQueryObj[`${key} NAME`], entityQueryObj[`${key} VERSION`]] = parsedComponentID;
         } else {
             entityQueryObj[`${key} ID`] = entityContext[key];
