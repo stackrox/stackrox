@@ -11,6 +11,7 @@ import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
+import org.spockframework.runtime.SpockAssertionError
 import services.BaseService
 import services.RoleService
 import services.SACService
@@ -198,8 +199,8 @@ class BaseSpecification extends Specification {
         for (int i = 0; i < retries - 1; i++) {
             try {
                 return closure()
-            } catch (Exception | PowerAssertionError t) {
-                print "Caught exception: ${t}. Retrying in ${pauseSecs}s"
+            } catch (Exception | PowerAssertionError | SpockAssertionError t) {
+                println "Caught exception: ${t}. Retrying in ${pauseSecs}s"
             }
             sleep pauseSecs * 1000
         }
