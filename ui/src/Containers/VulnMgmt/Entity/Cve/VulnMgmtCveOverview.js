@@ -55,11 +55,11 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'Impact Score',
-            value: vectors.impactScore && vectors.impactScore.toFixed(1)
+            value: vectors && vectors.impactScore && vectors.impactScore.toFixed(1)
         },
         {
             key: 'Exploitability Score',
-            value: vectors.exploitabilityScore && vectors.exploitabilityScore.toFixed(1)
+            value: vectors && vectors.exploitabilityScore && vectors.exploitabilityScore.toFixed(1)
         }
     ];
 
