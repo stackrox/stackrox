@@ -1,7 +1,9 @@
 package manager
 
 import (
+	"bytes"
 	"context"
+	"hash/crc32"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -34,6 +36,7 @@ func (s *managerTestSuite) SetupTest() {
 
 	s.dataDir = dataDir
 	s.mgr = newManager(s.dataDir)
+	s.mgr.freeDiskThreshold = 0 // not interested in testing this
 }
 
 func (s *managerTestSuite) TearDownTest() {
@@ -77,4 +80,26 @@ func (s *managerTestSuite) TestGetExistingProbeFilesWithInvalidPath() {
 	allAccessCtx := sac.WithAllAccess(context.Background())
 	_, err := s.mgr.GetExistingProbeFiles(allAccessCtx, []string{invalidFilePath})
 	s.Error(err)
+}
+
+func (s *managerTestSuite) TestStoreFile() {
+	s.Require().NoError(s.mgr.Initialize())
+
+	data := []byte("foobarbaz")
+	crc32Sum := crc32.ChecksumIEEE(data)
+
+	allAccessCtx := sac.WithAllAccess(context.Background())
+	s.Require().NoError(s.mgr.StoreFile(allAccessCtx, validFilePath, bytes.NewReader(data), int64(len(data)), crc32Sum))
+
+	fileDataDir := s.mgr.getDataDir(validFilePath)
+	_, err := os.Stat(fileDataDir)
+	s.Require().NoError(err)
+
+	dataContents, err := ioutil.ReadFile(filepath.Join(fileDataDir, dataFileName))
+	s.NoError(err)
+	s.Equal(data, dataContents)
+
+	checksumContents, err := ioutil.ReadFile(filepath.Join(fileDataDir, crc32FileName))
+	s.NoError(err)
+	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), checksumContents)
 }

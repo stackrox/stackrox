@@ -171,6 +171,13 @@ type APIService interface {
 	RegisterServiceHandler(context.Context, *runtime.ServeMux, *grpc.ClientConn) error
 }
 
+// APIServiceWithCustomRoutes is the interface for a service that also defines custom routes.
+type APIServiceWithCustomRoutes interface {
+	APIService
+
+	CustomRoutes() []routes.CustomRoute
+}
+
 // API listens for new connections on port 443, and redirects them to the gRPC-Gateway
 type API interface {
 	// Start runs the API in a goroutine, and returns a signal that can be checked for when the API server is started.
@@ -318,6 +325,15 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	mux := http.NewServeMux()
 	for _, route := range a.config.CustomRoutes {
 		mux.Handle(route.Route, httpInterceptors(route.Handler(postAuthHTTPInterceptor)))
+	}
+	for _, apiService := range a.apiServices {
+		srvWithRoutes, _ := apiService.(APIServiceWithCustomRoutes)
+		if srvWithRoutes == nil {
+			continue
+		}
+		for _, route := range srvWithRoutes.CustomRoutes() {
+			mux.Handle(route.Route, httpInterceptors(route.Handler(postAuthHTTPInterceptor)))
+		}
 	}
 
 	if a.config.AuthProviders != nil {

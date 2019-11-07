@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"io"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
@@ -10,4 +11,6 @@ import (
 type Manager interface {
 	Initialize() error
 	GetExistingProbeFiles(ctx context.Context, files []string) ([]*v1.ProbeUploadManifest_File, error)
+
+	StoreFile(ctx context.Context, file string, data io.Reader, size int64, crc32 uint32) error
 }

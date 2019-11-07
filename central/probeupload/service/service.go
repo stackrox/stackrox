@@ -7,7 +7,7 @@ import (
 
 // Service is the service for collector probe upload handling.
 type Service interface {
-	grpc.APIService
+	grpc.APIServiceWithCustomRoutes
 
 	v1.ProbeUploadServiceServer
 }

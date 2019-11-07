@@ -3,17 +3,23 @@ package manager
 import (
 	"context"
 	"encoding/binary"
+	"hash/crc32"
+	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/binenc"
+	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sac"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -23,6 +29,9 @@ const (
 	rootDirName = `probe-uploads`
 
 	tempUploadPrefix = ".temp-upload-"
+
+	defaultFreeDiskThreshold = 1 << 30 // 1 GB
+	fileSizeOverhead         = 16384   // 16KB of overhead for directory entry etc should be fairly conservative
 )
 
 var (
@@ -32,12 +41,14 @@ var (
 )
 
 type manager struct {
-	rootDir string
+	rootDir           string
+	freeDiskThreshold int64
 }
 
 func newManager(persistenceRoot string) *manager {
 	return &manager{
-		rootDir: filepath.Join(persistenceRoot, rootDirName),
+		rootDir:           filepath.Join(persistenceRoot, rootDirName),
+		freeDiskThreshold: defaultFreeDiskThreshold,
 	}
 }
 
@@ -112,6 +123,14 @@ func (m *manager) cleanUpRootDir() error {
 	return nil
 }
 
+func (m *manager) freeBytes() (int64, error) {
+	var stfs unix.Statfs_t
+	if err := unix.Statfs(m.rootDir, &stfs); err != nil {
+		return 0, err
+	}
+	return int64(stfs.Bavail) * int64(stfs.Bsize), nil
+}
+
 func (m *manager) Initialize() error {
 	// Ensure the root directory exists and is a directory
 	rootDirSt, err := os.Stat(m.rootDir)
@@ -129,13 +148,16 @@ func (m *manager) Initialize() error {
 	return m.cleanUpRootDir()
 }
 
+func (m *manager) getDataDir(file string) string {
+	return filepath.Join(m.rootDir, filepath.FromSlash(file))
+}
+
 func (m *manager) getFileInfo(file string) (*v1.ProbeUploadManifest_File, error) {
 	if !probeupload.IsValidFilePath(file) {
 		return nil, errors.Errorf("invalid file path %q", file)
 	}
-	fp := filepath.FromSlash(file)
 
-	dataDir := filepath.Join(m.rootDir, fp)
+	dataDir := m.getDataDir(file)
 	st, err := os.Stat(dataDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -192,4 +214,87 @@ func (m *manager) GetExistingProbeFiles(ctx context.Context, files []string) ([]
 		}
 	}
 	return result, nil
+}
+
+func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, size int64, crc32Sum uint32) error {
+	if ok, err := probeUploadSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	if !probeupload.IsValidFilePath(file) {
+		return errors.Errorf("invalid file name %q", file)
+	}
+
+	if freeBytes, err := m.freeBytes(); err == nil {
+		if freeBytes-size-fileSizeOverhead < m.freeDiskThreshold {
+			return errors.Errorf("only %d bytes left on partition, not storing probes to avoid impacting database health", freeBytes)
+		}
+	}
+
+	dir, basename := path.Split(file)
+	modVerDir := filepath.Join(m.rootDir, dir)
+
+	if err := os.MkdirAll(modVerDir, 0700); err != nil {
+		return errors.Wrap(err, "failed to create directory for module version")
+	}
+
+	tempDataDir, err := ioutil.TempDir(modVerDir, tempUploadPrefix)
+	if err != nil {
+		return errors.Wrap(err, "failed to create temporary directory for uploaded data")
+	}
+
+	defer func() {
+		if tempDataDir != "" {
+			if err := os.RemoveAll(tempDataDir); err != nil {
+				log.Warnf("Failed to remove temporary upload data directory %q", tempDataDir)
+			}
+		}
+	}()
+
+	verifyingReader := ioutils.NewCRC32ChecksumReader(io.LimitReader(data, size), crc32.IEEETable, crc32Sum)
+
+	outFileName := filepath.Join(tempDataDir, dataFileName)
+	outFile, err := os.Create(outFileName)
+	if err != nil {
+		return errors.Wrap(err, "could not create probe data file")
+	}
+	defer func() {
+		if outFile != nil {
+			_ = outFile.Close()
+		}
+	}()
+
+	if n, err := io.Copy(outFile, verifyingReader); err != nil {
+		return errors.Wrap(err, "error writing to probe data file")
+	} else if n != size {
+		return errors.Errorf("unexpected number of bytes read: got %d, expected %d", n, size)
+	}
+
+	if err := verifyingReader.Close(); err != nil {
+		return errors.Wrap(err, "error closing probe data reader (possible checksum violation)")
+	}
+	if err := outFile.Close(); err != nil {
+		return errors.Wrap(err, "error closing written probe data file")
+	}
+	outFile = nil
+
+	crc32FileName := filepath.Join(tempDataDir, crc32FileName)
+	checksumBytes := binenc.BigEndian.EncodeUint32(crc32Sum)
+	if err := ioutil.WriteFile(crc32FileName, checksumBytes, 0600); err != nil {
+		return errors.Wrap(err, "could not write probe checksum file")
+	}
+
+	// OK, we're done writing to the temp dir. Now remove the existing directory, if any, and then do an atomic rename.
+	dataDir := filepath.Join(modVerDir, basename)
+
+	if err := os.RemoveAll(dataDir); err != nil {
+		log.Warn("Failed to remove existing data directory for kernel probe. Atomic rename might fail...")
+	}
+	if err := os.Rename(tempDataDir, dataDir); err != nil {
+		return errors.Wrapf(err, "failed to atomically rename temporary data directory %q to %q", tempDataDir, dataDir)
+	}
+	tempDataDir = ""
+	return nil
 }
