@@ -85,7 +85,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 			// This sets the top level score for use in policies. It will be overwritten if v3 exists
 			vul.Cvss = n.CvssV2.Score
 			vul.ScoreVersion = storage.EmbeddedVulnerability_V2
-			vul.GetCvssV2().Severity = cvssV2Severity(vul.GetCvss())
+			vul.GetCvssV2().Severity = cvssv2.Severity(vul.GetCvss())
 		} else {
 			log.Error(err)
 		}
@@ -100,7 +100,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 			vul.CvssV3 = cvssV3
 			vul.Cvss = n.CvssV3.Score
 			vul.ScoreVersion = storage.EmbeddedVulnerability_V3
-			vul.GetCvssV3().Severity = cvssV3Severity(vul.GetCvss())
+			vul.GetCvssV3().Severity = cvssv3.Severity(vul.GetCvss())
 		} else {
 			log.Error(err)
 		}
@@ -166,32 +166,4 @@ func ConvertFeatures(image *storage.Image, features []clairV1.Feature) (componen
 		components = append(components, convertedComponent)
 	}
 	return
-}
-
-func cvssV3Severity(score float32) storage.CVSSV3_Severity {
-	switch {
-	case score == 0.0:
-		return storage.CVSSV3_NONE
-	case score <= 3.9:
-		return storage.CVSSV3_LOW
-	case score <= 6.9:
-		return storage.CVSSV3_MEDIUM
-	case score <= 8.9:
-		return storage.CVSSV3_HIGH
-	case score <= 10.0:
-		return storage.CVSSV3_CRITICAL
-	}
-	return storage.CVSSV3_UNKNOWN
-}
-
-func cvssV2Severity(score float32) storage.CVSSV2_Severity {
-	switch {
-	case score <= 3.9:
-		return storage.CVSSV2_LOW
-	case score <= 6.9:
-		return storage.CVSSV2_MEDIUM
-	case score <= 10.0:
-		return storage.CVSSV2_HIGH
-	}
-	return storage.CVSSV2_UNKNOWN
 }

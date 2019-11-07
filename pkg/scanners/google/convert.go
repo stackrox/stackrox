@@ -88,10 +88,18 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
 		},
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+		// On looking up cvss for a cve (CVE-2015-5186 in image gcr.io/ultra-current-825/srox/jump-host:latest) on nvd,
+		// it is concluded that score version is v2.
+		ScoreVersion: storage.EmbeddedVulnerability_V2,
 	}
+
+	vuln.CvssV2 = &storage.CVSSV2{}
 
 	if cvssVector, err := v2.ParseCVSSV2(strings.TrimPrefix(vulnerability.LongDescription, "NIST vectors: ")); err == nil {
 		vuln.CvssV2 = cvssVector
 	}
+
+	vuln.CvssV2.Severity = v2.Severity(vulnerability.GetCvssScore())
+
 	return vuln
 }

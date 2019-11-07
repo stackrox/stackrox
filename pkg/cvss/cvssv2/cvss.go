@@ -81,3 +81,16 @@ func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
 	}
 	return cvssV2, nil
 }
+
+// Severity returns the severity for the cvss v2 score
+func Severity(score float32) storage.CVSSV2_Severity {
+	switch {
+	case score <= 3.9:
+		return storage.CVSSV2_LOW
+	case score <= 6.9:
+		return storage.CVSSV2_MEDIUM
+	case score <= 10.0:
+		return storage.CVSSV2_HIGH
+	}
+	return storage.CVSSV2_UNKNOWN
+}

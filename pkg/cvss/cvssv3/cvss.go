@@ -99,3 +99,20 @@ func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
 	}
 	return cvssV3, nil
 }
+
+// Severity returns the severity for the cvss v3 score
+func Severity(score float32) storage.CVSSV3_Severity {
+	switch {
+	case score == 0.0:
+		return storage.CVSSV3_NONE
+	case score <= 3.9:
+		return storage.CVSSV3_LOW
+	case score <= 6.9:
+		return storage.CVSSV3_MEDIUM
+	case score <= 8.9:
+		return storage.CVSSV3_HIGH
+	case score <= 10.0:
+		return storage.CVSSV3_CRITICAL
+	}
+	return storage.CVSSV3_UNKNOWN
+}
