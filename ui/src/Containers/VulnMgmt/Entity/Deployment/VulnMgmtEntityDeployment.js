@@ -81,7 +81,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
                 created
                 secretCount
                 imageCount
-                imageComponentCount
+                componentCount
                 vulnCount
                 vulnerabilities: vulns {
                     ...cveFields

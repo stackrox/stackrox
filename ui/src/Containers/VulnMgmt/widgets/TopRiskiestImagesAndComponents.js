@@ -52,7 +52,7 @@ const TOP_RISKIEST_IMAGES = gql`
 
 const TOP_RISKIEST_COMPONENTS = gql`
     query topRiskiestComponents($query: String) {
-        results: imageComponents(query: $query) {
+        results: components(query: $query) {
             id
             name
             version

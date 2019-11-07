@@ -32,7 +32,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         status: { orchestratorMetadata = null },
         istioEnabled,
         deploymentCount,
-        imageComponentCount,
+        componentCount,
         imageCount,
         namespaceCount,
         policyCount,
@@ -80,7 +80,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
             case entityTypes.DEPLOYMENT:
                 return deploymentCount;
             case entityTypes.COMPONENT:
-                return imageComponentCount;
+                return componentCount;
             case entityTypes.CVE:
                 return vulnCount;
             case entityTypes.IMAGE:

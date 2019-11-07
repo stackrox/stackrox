@@ -118,7 +118,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
 
     const COMPONENT_QUERY = gql`
         query topRiskyComponents($query: String) {
-            results: imageComponents(query: $query) {
+            results: components(query: $query) {
                 id
                 name
                 vulnCount

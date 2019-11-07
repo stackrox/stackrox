@@ -38,8 +38,8 @@ func init() {
 		schema.AddExtraResolver("Namespace", `failingPolicyCounter: PolicyCounter`),
 		schema.AddExtraResolver("Namespace", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Namespace", `imageCount: Int!`),
-		schema.AddExtraResolver("Namespace", `imageComponents(query: String): [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("Namespace", `imageComponentCount(query: String): Int!`),
+		schema.AddExtraResolver("Namespace", `components(query: String): [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver("Namespace", `componentCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `vulns(query: String): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Namespace", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `vulnCounter: VulnerabilityCounter!`),
@@ -355,8 +355,8 @@ func (resolver *namespaceResolver) Images(ctx context.Context, args rawQuery) ([
 	return resolver.root.wrapImages(imageLoader.FromQuery(ctx, q))
 }
 
-func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
+func (resolver *namespaceResolver) Components(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Components")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -371,8 +371,8 @@ func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args raw
 	return components(ctx, resolver.root, nested)
 }
 
-func (resolver *namespaceResolver) ImageComponentCount(ctx context.Context, args rawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponentsCount")
+func (resolver *namespaceResolver) ComponentCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComponentCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}

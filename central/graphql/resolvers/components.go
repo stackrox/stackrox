@@ -45,13 +45,13 @@ func init() {
 		}),
 		schema.AddExtraResolver("ImageScan", `components(query: String): [EmbeddedImageScanComponent!]!`),
 		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
-		schema.AddQuery("imageComponent(id: ID): EmbeddedImageScanComponent"),
-		schema.AddQuery("imageComponents(query: String): [EmbeddedImageScanComponent!]!"),
+		schema.AddQuery("component(id: ID): EmbeddedImageScanComponent"),
+		schema.AddQuery("components(query: String): [EmbeddedImageScanComponent!]!"),
 	)
 }
 
-// ImageComponent returns a component based on an input id (name:version)
-func (resolver *Resolver) ImageComponent(ctx context.Context, args struct{ *graphql.ID }) (*EmbeddedImageScanComponentResolver, error) {
+// Component returns an image scan component based on an input id (name:version)
+func (resolver *Resolver) Component(ctx context.Context, args struct{ *graphql.ID }) (*EmbeddedImageScanComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -77,8 +77,8 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args struct{ *grap
 	return comps[0], nil
 }
 
-// ImageComponents returns the image scan components that match the input query.
-func (resolver *Resolver) ImageComponents(ctx context.Context, q rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+// Components returns the image scan components that match the input query.
+func (resolver *Resolver) Components(ctx context.Context, q rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 	if err := readImages(ctx); err != nil {
 		return nil, err

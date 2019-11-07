@@ -29,7 +29,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         policyCount,
         deploymentCount,
         imageCount,
-        imageComponentCount,
+        componentCount,
         vulnCount,
         vulnerabilities
     } = data;
@@ -59,7 +59,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
             case entityTypes.DEPLOYMENT:
                 return deploymentCount;
             case entityTypes.COMPONENT:
-                return imageComponentCount;
+                return componentCount;
             case entityTypes.CVE:
                 return vulnCount;
             case entityTypes.IMAGE:

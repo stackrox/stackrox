@@ -52,8 +52,8 @@ func init() {
 		schema.AddExtraResolver("Cluster", `subjectCount: Int!`),
 		schema.AddExtraResolver("Cluster", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Cluster", `imageCount: Int!`),
-		schema.AddExtraResolver("Cluster", `imageComponents(query: String): [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("Cluster", `imageComponentCount(query: String): Int!`),
+		schema.AddExtraResolver("Cluster", `components(query: String): [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver("Cluster", `componentCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `vulns(query: String): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `vulnCounter: VulnerabilityCounter!`),
@@ -472,8 +472,8 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context) (int32, error) 
 	return imageLoader.CountFromQuery(ctx, resolver.getQuery())
 }
 
-func (resolver *clusterResolver) ImageComponents(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
+func (resolver *clusterResolver) Components(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Comnponents")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -489,8 +489,8 @@ func (resolver *clusterResolver) ImageComponents(ctx context.Context, args rawQu
 	return components(ctx, resolver.root, nested)
 }
 
-func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args rawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponentsCount")
+func (resolver *clusterResolver) ComponentCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComponentCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}

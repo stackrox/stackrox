@@ -15,7 +15,7 @@ import {
 const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
         query getComponent($id: ID!) {
-            result: imageComponent(id: $id) {
+            result: component(id: $id) {
                 id
                 name
                 version
@@ -35,7 +35,7 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
         query getComponentSubEntity${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
             entityListType
         )}) {
-            result: imageComponent(id: $id) {
+            result: component(id: $id) {
                 id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
             }

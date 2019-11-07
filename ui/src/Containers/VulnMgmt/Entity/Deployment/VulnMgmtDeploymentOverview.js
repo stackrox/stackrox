@@ -39,7 +39,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         annotations,
         failingPolicyCount,
         imageCount,
-        imageComponentCount,
+        componentCount,
         vulnCount,
         vulnerabilities
     } = data;
@@ -72,7 +72,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     function getCountData(entityType) {
         switch (entityType) {
             case entityTypes.COMPONENT:
-                return imageComponentCount;
+                return componentCount;
             case entityTypes.CVE:
                 return vulnCount;
             case entityTypes.IMAGE:

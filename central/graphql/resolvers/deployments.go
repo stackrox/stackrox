@@ -38,8 +38,8 @@ func init() {
 		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
 		schema.AddExtraResolver("Deployment", `images(query: String): [Image!]!`),
 		schema.AddExtraResolver("Deployment", `imageCount: Int!`),
-		schema.AddExtraResolver("Deployment", `imageComponents(query: String): [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("Deployment", `imageComponentCount(query: String): Int!`),
+		schema.AddExtraResolver("Deployment", `components(query: String): [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver("Deployment", `componentCount(query: String): Int!`),
 		schema.AddExtraResolver("Deployment", `vulns(query: String): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Deployment", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Deployment", `vulnCounter: VulnerabilityCounter!`),
@@ -332,33 +332,40 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 
 func (resolver *deploymentResolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+	if !resolver.hasImages() {
+		return nil, nil
+	}
 
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-
-	imageShas := resolver.getImageShas(ctx)
-	imageShaQuery := search.NewQueryBuilder().AddDocIDs(imageShas...).ProtoQuery()
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	return resolver.root.wrapImages(imageLoader.FromQuery(ctx, search.NewConjunctionQuery(imageShaQuery, q)))
+	return resolver.root.wrapImages(imageLoader.FromQuery(ctx, search.NewConjunctionQuery(resolver.getImageQuery(ctx), q)))
 }
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCount")
-
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
 	imageShas := resolver.getImageShas(ctx)
 	return int32(len(imageShas)), nil
 }
 
-func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
+func (resolver *deploymentResolver) Components(ctx context.Context, args rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Components")
 	if err := readImages(ctx); err != nil {
 		return nil, err
+	}
+	if !resolver.hasImages() {
+		return nil, nil
 	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -371,10 +378,13 @@ func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args ra
 	return components(ctx, resolver.root, nested)
 }
 
-func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args rawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponentsCount")
+func (resolver *deploymentResolver) ComponentCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComponentCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
+	}
+	if !resolver.hasImages() {
+		return 0, nil
 	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -396,6 +406,9 @@ func (resolver *deploymentResolver) Vulns(ctx context.Context, args rawQuery) ([
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
+	if !resolver.hasImages() {
+		return nil, nil
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -411,6 +424,9 @@ func (resolver *deploymentResolver) VulnCount(ctx context.Context, args rawQuery
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
+	}
+	if !resolver.hasImages() {
+		return 0, nil
 	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -456,6 +472,15 @@ func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args rawQu
 		return "fail", nil
 	}
 	return "pass", nil
+}
+
+func (resolver *deploymentResolver) hasImages() bool {
+	for _, c := range resolver.data.GetContainers() {
+		if c.GetImage().GetId() != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func (resolver *deploymentResolver) getImageShas(ctx context.Context) []string {

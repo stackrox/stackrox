@@ -47,7 +47,7 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
                 vulnCount
                 deploymentCount
                 imageCount
-                imageComponentCount
+                componentCount
                 vulnerabilities: vulns {
                     ...cveFields
                 }

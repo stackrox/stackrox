@@ -128,7 +128,7 @@ export const defaultComponentSort = [
 const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
         query getComponents($query: String) {
-            results: imageComponents(query: $query) {
+            results: components(query: $query) {
                 ...componentFields
             }
         }
