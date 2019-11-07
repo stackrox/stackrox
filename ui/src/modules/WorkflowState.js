@@ -158,15 +158,14 @@ export class WorkflowState {
     reset(useCase, entityType, entityId, search, sort, paging) {
         const newUseCase = useCase || this.useCase;
         const newStateStack = baseStateStack(entityType, entityId);
-        const newSearch = search || this.search;
-        return new WorkflowState(newUseCase, newStateStack, newSearch, sort, paging);
+        return new WorkflowState(newUseCase, newStateStack, search, sort, paging);
     }
 
     resetPage(type, id) {
         const newStateStack = [new WorkflowEntity(type, id)];
 
-        const { useCase, search, sort, paging } = this;
-        return new WorkflowState(useCase, newStateStack, search, sort, paging);
+        const { useCase } = this;
+        return new WorkflowState(useCase, newStateStack);
     }
 
     // sets the stateStack to base state when returning from side panel
@@ -176,14 +175,16 @@ export class WorkflowState {
         const entityTab = stateStack[1] && !stateStack[1].entityId;
         const newStateStack =
             baseEntity.entityId && entityTab ? stateStack.slice(0, 2) : [baseEntity];
-        const newSearch = { [searchParams.page]: search[searchParams.page] };
-        return new WorkflowState(useCase, newStateStack, newSearch, sort, paging);
+        const newSearch = search ? { [searchParams.page]: search[searchParams.page] } : null;
+        const newSort = sort ? { [searchParams.page]: sort[searchParams.page] } : null;
+        const newPaging = paging ? { [searchParams.page]: paging[searchParams.page] } : null;
+        return new WorkflowState(useCase, newStateStack, newSearch, newSort, newPaging);
     }
 
     // sets statestack to only the first item
     base() {
-        const { useCase, stateStack, search, sort, paging } = this;
-        return new WorkflowState(useCase, stateStack.slice(0, 1), search, sort, paging);
+        const { useCase, stateStack } = this;
+        return new WorkflowState(useCase, stateStack.slice(0, 1));
     }
 
     // Adds a list of entityType related to the current workflowState

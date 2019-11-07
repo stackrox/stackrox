@@ -149,8 +149,8 @@ export function getImageTableColumns(workflowState) {
 
 const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
-        query getImages {
-            results: images {
+        query getImages($query: String) {
+            results: images(query: $query) {
                 ...imageFields
             }
         }

@@ -204,8 +204,8 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
     // TODO: change query line to `query getCves($query: String) {`
     //   after API starts accepting empty string ('') for query
     const CVES_QUERY = gql`
-        query getCves {
-            results: vulnerabilities {
+        query getCves($query: String) {
+            results: vulnerabilities(query: $query) {
                 ...cveFields
             }
         }

@@ -30,6 +30,7 @@ const CLUSTER_WITH_MOST_K8S_VULNERABILTIES = gql`
 `;
 
 const processData = (data, workflowState) => {
+    if (!data.results) return [];
     const stacked = data.results.length < 4;
     const results = data.results.map(({ id, name, k8sVulns }) => {
         const cveCount = k8sVulns.length;
