@@ -12,7 +12,7 @@ function Button(props) {
                 onClick={props.onEdit}
                 disabled={props.disabled}
             >
-                Edit provider
+                {props.text}
             </button>
         );
     return (
@@ -26,6 +26,7 @@ function Button(props) {
 }
 
 Button.propTypes = {
+    text: PropTypes.string.isRequired,
     isEditing: PropTypes.bool.isRequired,
     onEdit: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,

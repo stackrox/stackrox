@@ -16,7 +16,8 @@ class Form extends Component {
         handleSubmit: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
         initialValues: PropTypes.shape({
-            type: PropTypes.string
+            type: PropTypes.string,
+            active: PropTypes.bool
         }),
         selectedAuthProvider: PropTypes.shape({}),
         roles: PropTypes.arrayOf(
@@ -66,10 +67,11 @@ class Form extends Component {
                     <CollapsibleCard
                         title="1. Configuration"
                         titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
+                        open={!initialValues.active}
                     >
-                        <div className="w-full h-full px-4 py-3 pb-0">
+                        <div className="w-full h-full px-4 py-3">
                             {fields.map((field, index) => (
-                                <Field key={index} {...field} />
+                                <Field key={index} disabled={initialValues.active} {...field} />
                             ))}
                         </div>
                     </CollapsibleCard>

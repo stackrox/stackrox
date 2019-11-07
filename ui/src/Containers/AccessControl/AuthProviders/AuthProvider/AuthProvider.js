@@ -117,13 +117,14 @@ class AuthProvider extends Component {
             headerText = selectedAuthProvider.name
                 ? `"${selectedAuthProvider.name}" Auth Provider`
                 : `Create New ${selectedAuthProvider.type} Auth Provider`;
+            const buttonText = selectedAuthProvider.active ? 'Edit Roles' : 'Edit Provider';
             headerComponents = (
                 <Button
+                    text={buttonText}
                     isEditing={isEditing}
                     onEdit={onEdit}
                     onSave={onSave}
                     onCancel={onCancel}
-                    disabled={selectedAuthProvider.active}
                 />
             );
         }

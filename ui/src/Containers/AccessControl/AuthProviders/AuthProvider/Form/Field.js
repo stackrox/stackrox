@@ -7,11 +7,23 @@ import ReduxSelectCreatableField from 'Components/forms/ReduxSelectCreatableFiel
 import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
 
 const Field = props => {
-    const { label, jsonPath, placeholder, type, options, html, customComponents, styles } = props;
+    const {
+        label,
+        jsonPath,
+        placeholder,
+        type,
+        options,
+        html,
+        customComponents,
+        styles,
+        disabled
+    } = props;
     let field = null;
     switch (type) {
         case 'text':
-            field = <ReduxTextField name={jsonPath} placeholder={placeholder} />;
+            field = (
+                <ReduxTextField name={jsonPath} placeholder={placeholder} disabled={disabled} />
+            );
             break;
         case 'select':
             field = (
@@ -21,6 +33,7 @@ const Field = props => {
                     placeholder={placeholder}
                     customComponents={customComponents}
                     styles={styles}
+                    disabled={disabled}
                 />
             );
             break;
@@ -31,11 +44,14 @@ const Field = props => {
                     options={options}
                     placeholder={placeholder}
                     styles={styles}
+                    disabled={disabled}
                 />
             );
             break;
         case 'textarea':
-            field = <ReduxTextAreaField name={jsonPath} placeholder={placeholder} />;
+            field = (
+                <ReduxTextAreaField name={jsonPath} placeholder={placeholder} disabled={disabled} />
+            );
             break;
         case 'html':
             return <div className="w-full mb-5">{html}</div>;
@@ -64,7 +80,8 @@ Field.propTypes = {
     ),
     html: PropTypes.element,
     customComponents: PropTypes.shape({}),
-    styles: PropTypes.shape({})
+    styles: PropTypes.shape({}),
+    disabled: PropTypes.bool
 };
 
 Field.defaultProps = {
@@ -74,7 +91,8 @@ Field.defaultProps = {
     options: [],
     html: <div />,
     customComponents: {},
-    styles: {}
+    styles: {},
+    disabled: false
 };
 
 export default Field;

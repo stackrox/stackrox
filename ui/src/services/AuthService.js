@@ -53,6 +53,9 @@ export function fetchLoginAuthProviders() {
  * @returns {Promise} promise which is fullfilled when the request is complete
  */
 export function saveAuthProvider(authProvider) {
+    if (authProvider.active) {
+        return authProvider.id;
+    }
     return authProvider.id
         ? axios.put(`${authProvidersUrl}/${authProvider.id}`, authProvider)
         : axios.post(authProvidersUrl, authProvider);

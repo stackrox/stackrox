@@ -23,7 +23,9 @@ export const selectMenuOnTopStyles = {
 const Control = ({ className, ...props }) => (
     <selectComponents.Control
         {...props}
-        className={`${className} bg-base-100 h-full cursor-text border-2 leading-normal min-h-10 border-base-300 flex items-center items-center font-600 shadow-none overflow-auto hover:border-base-400`}
+        className={`${className} ${
+            props.isDisabled ? 'bg-base-200' : 'bg-base-100'
+        } h-full cursor-text border-2 leading-normal min-h-10 border-base-300 flex items-center items-center font-600 shadow-none overflow-auto hover:border-base-400`}
     />
 );
 
