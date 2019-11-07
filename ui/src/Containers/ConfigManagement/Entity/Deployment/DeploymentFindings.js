@@ -10,6 +10,7 @@ const DeploymentFindings = ({ entityContext = {}, deploymentID }) => {
             <ViolationsAcrossThisDeployment
                 deploymentID={deploymentID}
                 policyID={entityContext[entityTypes.POLICY]}
+                message="No policies failed across this deployment"
             />
         );
     }

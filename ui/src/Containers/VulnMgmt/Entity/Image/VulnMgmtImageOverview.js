@@ -105,7 +105,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
 
     return (
         <div className="flex h-full">
-            <div className="flex flex-col flex-grow">
+            <div className="flex flex-col flex-grow min-w-0">
                 <CollapsibleSection title="Image Summary">
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">

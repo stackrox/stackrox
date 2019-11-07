@@ -6,6 +6,8 @@ import removeEmptyFields from 'utils/removeEmptyFields';
 import fieldsMap from 'Containers/Policies/Wizard/Details/descriptors';
 
 const PolicyConfigurationFields = ({ fields, ...rest }) => {
+    if (!fields) return null;
+
     const paredFields = removeEmptyFields(fields);
     const fieldKeys = Object.keys(paredFields);
 

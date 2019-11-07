@@ -10,6 +10,8 @@ import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
+// TO DO: factor this out from config management
+import ViolationsAcrossThisDeployment from 'Containers/ConfigManagement/Entity/widgets/ViolationsAcrossThisDeployment';
 import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
@@ -82,7 +84,10 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         },
         {
             key: 'Enforcement',
-            value: enforcementActions || enforcementActions.length ? 'Yes' : 'No'
+            value:
+                enforcementActions || (enforcementActions && enforcementActions.length)
+                    ? 'Yes'
+                    : 'No'
         },
         {
             key: 'Lifecycle',
@@ -126,9 +131,42 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
 
     const newEntityContext = { ...entityContext, [entityTypes.POLICY]: id };
 
+    let policyFindingsContent = null;
+    if (entityContext[entityTypes.DEPLOYMENT]) {
+        policyFindingsContent = (
+            <ViolationsAcrossThisDeployment
+                deploymentID={entityContext[entityTypes.DEPLOYMENT]}
+                policyID={id}
+                message="No policies failed across this deployment"
+            />
+        );
+    } else {
+        policyFindingsContent = (
+            <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                <TableWidget
+                    header={`${failingDeployments.length} ${pluralize(
+                        entityTypes.DEPLOYMENT,
+                        failingDeployments.length
+                    )} have failed across this policy`}
+                    rows={failingDeployments}
+                    entityType={entityTypes.DEPLOYMENT}
+                    noDataText="No deployments have failed across this policy"
+                    className="bg-base-100"
+                    columns={getDeploymentTableColumns(workflowState)}
+                    defaultSorted={[
+                        {
+                            id: 'priority',
+                            desc: false
+                        }
+                    ]}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="flex h-full">
-            <div className="flex flex-col flex-grow">
+            <div className="flex flex-col flex-grow min-w-0">
                 <CollapsibleSection title="Policy summary">
                     <div className="flex mb-4 pdf-page">
                         <Widget
@@ -175,7 +213,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                     </div>
                     <div className="flex mb-4 pdf-page">
                         <PolicyConfigurationFields
-                            className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                            className="flex-1 mr-2 min-w-48 bg-base-100 h-48 mb-4 ml-4"
                             fields={fields}
                         />
                         <Metadata
@@ -191,20 +229,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Policy Findings">
-                    <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                        <TableWidget
-                            header={`${failingDeployments.length} ${pluralize(
-                                entityTypes.DEPLOYMENT,
-                                failingDeployments.length
-                            )} have failed across this policy`}
-                            rows={failingDeployments}
-                            entityType={entityTypes.DEPLOYMENT}
-                            noDataText="No deployments have failed across this policy"
-                            className="bg-base-100"
-                            columns={getDeploymentTableColumns(workflowState)}
-                            idAttribute="cve"
-                        />
-                    </div>
+                    {policyFindingsContent}
                 </CollapsibleSection>
             </div>
             <RelatedEntitiesSideList

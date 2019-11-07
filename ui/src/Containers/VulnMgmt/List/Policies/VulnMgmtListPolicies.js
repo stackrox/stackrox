@@ -146,6 +146,10 @@ export function getPolicyTableColumns(workflowState) {
 
 export const defaultPolicySort = [
     {
+        id: 'policyStatus',
+        desc: false
+    },
+    {
         id: 'name',
         desc: false
     }

@@ -61,7 +61,7 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
                     />
                 </Widget>
             ) : (
-                <NoResultsMessage message={noDataText} className="p-6" />
+                <NoResultsMessage message={noDataText} className="p-6" icon="info" />
             )}
         </>
     );
@@ -70,10 +70,12 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
 TableWidget.propTypes = {
     header: PropTypes.oneOfType([PropTypes.element, PropTypes.string]).isRequired,
     history: ReactRouterPropTypes.history.isRequired,
+    idAttribute: PropTypes.string,
     entityType: PropTypes.string
 };
 
 TableWidget.defaultProps = {
+    idAttribute: 'id',
     entityType: ''
 };
 export default withRouter(TableWidget);
