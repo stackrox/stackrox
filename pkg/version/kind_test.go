@@ -45,6 +45,18 @@ func TestGetVersionKind(t *testing.T) {
 			versionStr:   "2.4.20.0-2-g5dc32e196c-dirty",
 			expectedKind: DevelopmentKind,
 		},
+		{
+			versionStr:   "2.5.33.x-71-g1f24b194f0",
+			expectedKind: DevelopmentKind,
+		},
+		{
+			versionStr:   "2.5.33.x-71-g1f24b194f0-dirty",
+			expectedKind: DevelopmentKind,
+		},
+		{
+			versionStr:   "2.5.33.x-nightly-20191107",
+			expectedKind: RCKind,
+		},
 	}
 
 	for _, testCase := range cases {

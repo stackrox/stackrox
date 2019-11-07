@@ -2657,6 +2657,41 @@ jobs:
             git checkout "$CIRCLE_BRANCH"
             scripts/ci/create-dev-license-update-pr.sh "roxbot/regenerate-dev-license-${CIRCLE_BUILD_NUM}"
 
+  trigger-nightly-build:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - checkout
+
+      - run:
+          name: Configure git
+          command: |
+            git config user.email "roxbot@stackrox.com"
+            git config user.name "RoxBot"
+
+      - add_ssh_keys:
+          fingerprints:
+            - "b0:90:e9:6f:77:d5:fe:b6:8c:1a:a5:3f:a4:e3:41:e5"
+
+      - run:
+          name: Add SSH key of github.com
+          command: |
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+      - run:
+          name: Create a commit and tag for nightly build
+          command: |
+            # Add an empty commit to diverge from master
+            git commit --allow-empty -m "Nightly build $(date)"
+            NIGHTLY_TAG="$(git describe --tags --abbrev=0)-nightly-$(date '+%Y%m%d')"
+            git tag "$NIGHTLY_TAG"
+            cci-export NIGHTLY_TAG "$NIGHTLY_TAG"
+
+      - run:
+          name: Push nightly tag to remote
+          command: |
+            git push "$NIGHTLY_TAG"
+
   roxctl-windows-test:
     <<: *defaults
 
@@ -2688,22 +2723,6 @@ jobs:
 
 workflows:
   version: 2
-
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 1 * * *"
-          filters:
-            branches:
-              only: master
-
-    jobs:
-      - provision-cluster-scale-nightly:
-          context: docker-io-pull
-      - scale-nightly:
-          context: docker-io-pull
-          requires:
-            - provision-cluster-scale-nightly
 
   build_all:
     jobs:
@@ -2907,7 +2926,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^(?!.*-rc\.\d+$|.*\.x$).*$/
+              only: /^(?!.*-rc\.\d+$|.*\.x$|.*-nightly-.*$).*$/
       - push-release:
           context: docker-io-and-stackrox-io-push
           requires:
@@ -2918,7 +2937,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^(?!.*-rc\.\d+$|.*\.x$).*$/
+              only: /^(?!.*-rc\.\d+$|.*\.x$|.*-nightly-.*$).*$/
 
 
   update_dev_license:
@@ -2932,6 +2951,20 @@ workflows:
     jobs:
       - regenerate-dev-license:
           context: docker-io-pull
+          filters:
+            branches:
+              only: master
+
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 9 * * *"
+          filters:
+            branches:
+              only: master
+
+    jobs:
+      - trigger-nightly-build:
           filters:
             branches:
               only: master

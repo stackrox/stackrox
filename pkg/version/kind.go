@@ -29,7 +29,8 @@ const (
 var (
 	releaseRegex = regexp.MustCompile(`^` + releaseRegexStr + `$`)
 	rcRegex      = regexp.MustCompile(`^` + releaseRegexStr + rcSuffixRegexStr + `$`)
-	devRegex     = regexp.MustCompile(`^` + releaseRegexStr + `(?:` + rcSuffixRegexStr + `)?-\d+-g[0-9a-f]{10}(?:-dirty)?$`)
+	nightlyRegex = regexp.MustCompile(`^.*-nightly-.*$`)
+	devRegex     = regexp.MustCompile(`^` + releaseRegexStr + `(?:` + rcSuffixRegexStr + `|\.x)?-\d+-g[0-9a-f]{10}(?:-dirty)?$`)
 )
 
 // GetVersionKind returns the version kind (release, RC, development) of the given version string.
@@ -37,7 +38,7 @@ func GetVersionKind(versionStr string) Kind {
 	switch {
 	case releaseRegex.MatchString(versionStr):
 		return ReleaseKind
-	case rcRegex.MatchString(versionStr):
+	case rcRegex.MatchString(versionStr), nightlyRegex.MatchString(versionStr):
 		return RCKind
 	case devRegex.MatchString(versionStr):
 		return DevelopmentKind
