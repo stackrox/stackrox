@@ -197,7 +197,7 @@ const NodePage = ({
                                     className={pdfClassName}
                                 />
                                 <ComplianceByStandard
-                                    standardType={entityTypes.CIS_Kubernetes_v1_4_1}
+                                    standardType={entityTypes.CIS_Kubernetes_v1_5}
                                     entityName={name}
                                     entityId={id}
                                     entityType={entityTypes.NODE}

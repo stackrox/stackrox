@@ -7,20 +7,19 @@ import (
 
 func init() {
 	framework.MustRegisterChecks(
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_1", "anonymous-auth", "false", "true", common.Matches),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_2", "authorization-mode", "AlwaysAllow", "AlwaysAllow", common.NotContains),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_3", "client-ca-file", "", "", common.Set),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_4", "read-only-port", "0", "10255/TCP", common.Matches),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_5", "streaming-connection-idle-timeout", "0", "0", common.NotMatches),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_6", "protect-kernel-defaults", "true", "false", common.Matches),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_7", "make-iptables-util-chains", "true", "true", common.Matches),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_8", "host-override", "", "", common.Unset),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_9", "event-qps", "0", "5", common.Set),
-		multipleFlagsSetCheck("CIS_Kubernetes_v1_4_1:2_1_10", "kubelet", "tls-cert-file", "tls-private-key-file"),
-		common.PerNodeDeprecatedCheck("CIS_Kubernetes_v1_4_1:2_1_11", "The --cadvisor-port parameter was deprecated in Kubernetes 1.12."),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_12", "rotate-certificates", "false", "true", common.NotMatches),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_13", "feature-gates", "RotateKubeletServerCertificate=true", "RotateKubeletServerCertificate=false", common.Contains),
-		kubeletCommandLineCheck("CIS_Kubernetes_v1_4_1:2_1_14", "tls-cipher-suites", tlsCiphers, "", common.OnlyContains),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_1", "anonymous-auth", "false", "true", common.Matches),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_2", "authorization-mode", "AlwaysAllow", "AlwaysAllow", common.NotContains),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_3", "client-ca-file", "", "", common.Set),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_4", "read-only-port", "0", "10255/TCP", common.Matches),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_5", "streaming-connection-idle-timeout", "0", "0", common.NotMatches),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_6", "protect-kernel-defaults", "true", "false", common.Matches),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_7", "make-iptables-util-chains", "true", "true", common.Matches),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_8", "host-override", "", "", common.Unset),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_9", "event-qps", "0", "5", common.Set),
+		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:4_2_10", "kubelet", "tls-cert-file", "tls-private-key-file"),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_11", "rotate-certificates", "false", "true", common.NotMatches),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_12", "feature-gates", "RotateKubeletServerCertificate=true", "RotateKubeletServerCertificate=false", common.Contains),
+		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_13", "tls-cipher-suites", tlsCiphers, "", common.OnlyContains),
 	)
 }
 

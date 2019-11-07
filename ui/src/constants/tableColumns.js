@@ -13,9 +13,9 @@ const complianceColumns = [
         Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Docker_v1_2_0)
     },
     {
-        accessor: standardTypes.CIS_Kubernetes_v1_4_1,
+        accessor: standardTypes.CIS_Kubernetes_v1_5,
         Header: 'CIS K8s',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Kubernetes_v1_4_1)
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Kubernetes_v1_5)
     },
     {
         accessor: standardTypes.HIPAA_164,
@@ -98,9 +98,9 @@ const nodeColumns = [
         Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Docker_v1_2_0)
     },
     {
-        accessor: standardTypes.CIS_Kubernetes_v1_4_1,
+        accessor: standardTypes.CIS_Kubernetes_v1_5,
         Header: 'CIS K8s',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Kubernetes_v1_4_1)
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Kubernetes_v1_5)
     },
     {
         accessor: standardTypes.NIST_800_190,
@@ -221,7 +221,7 @@ const entityToColumns = {
     [standardTypes.PCI_DSS_3_2]: getStandardColumns('PCI'),
     [standardTypes.NIST_800_190]: getStandardColumns('NIST'),
     [standardTypes.HIPAA_164]: getStandardColumns('HIPAA'),
-    [standardTypes.CIS_Kubernetes_v1_4_1]: getStandardColumns('CIS Kubernetes'),
+    [standardTypes.CIS_Kubernetes_v1_5]: getStandardColumns('CIS Kubernetes'),
     [standardTypes.CIS_Docker_v1_2_0]: getStandardColumns('CIS Docker'),
     [resourceTypes.NODE]: nodeColumns,
     [resourceTypes.NAMESPACE]: namespaceColumns,

@@ -29,7 +29,7 @@ export const standardTypes = {
     PCI_DSS_3_2: 'PCI_DSS_3_2',
     NIST_800_190: 'NIST_800_190',
     HIPAA_164: 'HIPAA_164',
-    CIS_Kubernetes_v1_4_1: 'CIS_Kubernetes_v1_4_1',
+    CIS_Kubernetes_v1_5: 'CIS_Kubernetes_v1_5',
     CIS_Docker_v1_1_0: 'CIS_Docker_v1_1_0',
     CIS_Docker_v1_2_0: 'CIS_Docker_v1_2_0'
 };
@@ -40,7 +40,7 @@ export const standardBaseTypes = {
     [standardTypes.HIPAA_164]: 'HIPAA',
     [standardTypes.CIS_Docker_v1_1_0]: 'CIS Docker',
     [standardTypes.CIS_Docker_v1_2_0]: 'CIS Docker',
-    [standardTypes.CIS_Kubernetes_v1_4_1]: 'CIS K8s'
+    [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s'
 };
 
 export const searchCategories = {
