@@ -184,6 +184,19 @@ func TestSearchPredicateWithEnums(t *testing.T) {
 			query:       search.NewQueryBuilder().AddStrings(search.LifecycleStage, "<DEPLOY").ProtoQuery(),
 			expectation: false,
 		},
+		{
+			name: "handles any casing",
+			query: &v1.Query{
+				Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: "LifeCYCLE staGE", Value: "<RUNTIME"},
+						},
+					},
+				},
+			},
+			expectation: true,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

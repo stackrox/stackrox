@@ -24,7 +24,7 @@ func mapSearchTagsToFieldPaths(toWalk interface{}) map[string]FieldPath {
 			return
 		}
 
-		fieldMap[searchTag] = fieldPath
+		fieldMap[strings.ToLower(searchTag)] = fieldPath
 	})
 	return fieldMap
 }

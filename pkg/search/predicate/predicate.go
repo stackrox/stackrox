@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
@@ -13,7 +14,7 @@ type Predicate func(instance interface{}) bool
 
 // Factory object stores the specs for each when walking the query.
 type Factory struct {
-	searchFields map[string]FieldPath
+	searchFields FieldMap
 	exampleObj   interface{}
 }
 
@@ -130,8 +131,8 @@ func (tb Factory) matchNone(q *v1.MatchNoneQuery) (internalPredicate, error) {
 }
 
 func (tb Factory) match(q *v1.MatchFieldQuery) (internalPredicate, error) {
-	fp, exists := tb.searchFields[q.GetField()]
-	if !exists {
+	fp := tb.searchFields.Get(strings.ToLower(q.GetField()))
+	if fp == nil {
 		return nil, fmt.Errorf("field %s does not exist", q.GetField())
 	}
 	return tb.createPredicate(fp, q.GetValue())
@@ -141,10 +142,11 @@ func (tb Factory) matchLinked(q *v1.MatchLinkedFieldsQuery) (internalPredicate, 
 	// Find the longest common path with all of the linked fields.
 	var commonPath FieldPath
 	for _, fieldQuery := range q.GetQuery() {
+		path := tb.searchFields.Get(fieldQuery.GetField())
 		if commonPath == nil {
-			commonPath = tb.searchFields[fieldQuery.GetField()]
+			commonPath = path
 		} else {
-			for idx, field := range tb.searchFields[fieldQuery.GetField()] {
+			for idx, field := range path {
 				if commonPath[idx].Name != field.Name {
 					commonPath = commonPath[:idx]
 					break
@@ -156,7 +158,8 @@ func (tb Factory) matchLinked(q *v1.MatchLinkedFieldsQuery) (internalPredicate, 
 	// Produce a predicate for each of the fields. Use the non common path.
 	var preds []internalPredicate
 	for _, fieldQuery := range q.GetQuery() {
-		pred, err := tb.createPredicate(tb.searchFields[fieldQuery.GetField()][len(commonPath):], fieldQuery.GetValue())
+		path := tb.searchFields.Get(fieldQuery.GetField())
+		pred, err := tb.createPredicate(path[len(commonPath):], fieldQuery.GetValue())
 		if err != nil {
 			return nil, err
 		}
