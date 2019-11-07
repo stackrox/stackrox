@@ -554,15 +554,17 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context) (*Vulnerabilit
 		return nil, err
 	}
 
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	vulnsResolvers, err := vulnerabilities(ctx, resolver.root, resolver.getQuery())
 	if err != nil {
 		return nil, err
 	}
-	images, err := imageLoader.FromQuery(ctx, resolver.getQuery())
-	if err != nil {
-		return nil, err
+
+	var vulns []*storage.EmbeddedVulnerability
+	for _, vulnsResolver := range vulnsResolvers {
+		vulns = append(vulns, vulnsResolver.data)
 	}
-	return mapImagesToVulnerabilityCounter(images), nil
+
+	return mapVulnsToVulnerabilityCounter(vulns), nil
 }
 
 func (resolver *clusterResolver) K8sVulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
