@@ -14,8 +14,13 @@ import {
 } from 'react-vis';
 import BarGradient from 'Components/visuals/BarGradient';
 
+const NUM_TICKS = 3;
+
 function getXYPlotHeight(data) {
-    return 36 * data.length; // 36px is allotted per bar to allow the bars to fit inside the XYPlot graph
+    let multiplier = 36;
+    if (data.length < 5) multiplier = 50;
+    if (data.length < 2) multiplier = 90;
+    return multiplier * data.length; // space is allotted per bar to allow the bars to fit inside the XYPlot graph
 }
 
 function getFormattedData(data) {
@@ -39,7 +44,7 @@ function getLabelData(data) {
 }
 
 const LabeledBarGraph = ({ data, title, history }) => {
-    const upperBoundX = max([10, ...data.map(datum => datum.x)]);
+    const upperBoundX = max([...data.map(datum => datum.x)]);
     const formattedData = getFormattedData(data);
     const labelData = getLabelData(formattedData);
 
@@ -54,7 +59,7 @@ const LabeledBarGraph = ({ data, title, history }) => {
             xDomain={[0, upperBoundX]}
             yType="ordinal"
         >
-            <VerticalGridLines tickTotal={upperBoundX / 2} />
+            <VerticalGridLines tickTotal={NUM_TICKS} />
             <GradientDefs>
                 <BarGradient />
             </GradientDefs>
@@ -70,7 +75,7 @@ const LabeledBarGraph = ({ data, title, history }) => {
                 data={formattedData}
                 onValueClick={onValueClickHandler}
             />
-            <XAxis />
+            <XAxis tickTotal={NUM_TICKS} />
             <ChartLabel
                 text={title}
                 className="alt-x-label"

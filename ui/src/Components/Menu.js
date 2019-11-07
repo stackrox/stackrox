@@ -103,15 +103,18 @@ Menu.propTypes = {
     buttonContent: PropTypes.node.isRequired,
     menuClassName: PropTypes.string,
     className: PropTypes.string,
-    options: PropTypes.arrayOf(
-        PropTypes.shape({
-            className: PropTypes.string,
-            icon: PropTypes.object,
-            label: PropTypes.string.isRequired,
-            link: PropTypes.string,
-            onClick: PropTypes.func
-        })
-    ).isRequired,
+    options: PropTypes.oneOfType([
+        PropTypes.arrayOf(
+            PropTypes.shape({
+                className: PropTypes.string,
+                icon: PropTypes.object,
+                label: PropTypes.string.isRequired,
+                link: PropTypes.string,
+                onClick: PropTypes.func
+            })
+        ).isRequired,
+        PropTypes.shape({})
+    ]).isRequired,
     disabled: PropTypes.bool,
     grouped: PropTypes.bool
 };
