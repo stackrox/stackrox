@@ -10,9 +10,9 @@ import isGQLLoading from 'utils/gqlLoading';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 
-export function getDefaultExpandedRows(data) {
-    return data && data.results
-        ? data.results.map((_element, index) => {
+export function getDefaultExpandedRows(results) {
+    return results
+        ? results.map((_element, index) => {
               return { [index]: true };
           })
         : null;
@@ -56,7 +56,7 @@ const WorkflowListPage = ({
     }
 
     const tableColumns = getTableColumns(workflowState);
-    const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(data) : null;
+    const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(displayData) : null;
 
     return (
         <EntityList
