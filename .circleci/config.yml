@@ -2692,7 +2692,7 @@ jobs:
       - run:
           name: Push nightly tag to remote
           command: |
-            git push "$NIGHTLY_TAG"
+            git push origin "$NIGHTLY_TAG"
 
   roxctl-windows-test:
     <<: *defaults
@@ -2967,6 +2967,7 @@ workflows:
 
     jobs:
       - trigger-nightly-build:
+          context: docker-io-pull
           filters:
             branches:
               only: master
