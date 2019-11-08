@@ -6,9 +6,11 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
+	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/gcp"
@@ -43,8 +45,8 @@ func main() {
 		SilenceUsage: true,
 		Use:          os.Args[0],
 	}
-	// Image Commands
-	c.AddCommand(
+
+	commands := []*cobra.Command{
 		central.Command(),
 		cluster.Command(),
 		deployment.Command(),
@@ -52,8 +54,15 @@ func main() {
 		image.Command(),
 		scanner.Command(),
 		sensor.Command(),
-		versionCommand(),
-	)
+	}
+
+	if features.ProbeUpload.Enabled() {
+		commands = append(commands, collector.Command())
+	}
+
+	commands = append(commands, versionCommand())
+
+	c.AddCommand(commands...)
 
 	flags.AddPassword(c)
 	flags.AddConnectionFlags(c)
