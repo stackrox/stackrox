@@ -23,7 +23,7 @@ function ViolationsPage({
 
     // Handle changes in the current table page.
     const [currentPage, setCurrentPage] = useState(0);
-    const [sortOption, setSortOption] = useState({ field: 'Deployment', reversed: false });
+    const [sortOption, setSortOption] = useState({ field: 'Violation Time', reversed: true });
 
     // Handle changes in the currently displayed violations.
     const [currentAlerts, setCurrentAlerts] = useState([]);
