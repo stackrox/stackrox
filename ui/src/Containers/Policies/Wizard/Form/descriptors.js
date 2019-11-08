@@ -4,6 +4,7 @@ import {
     envVarSrcLabels,
     rbacPermissionLabels
 } from 'messages/common';
+import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
 
 const equalityOptions = [
     { label: 'Is greater than', value: 'GREATER_THAN' },
@@ -198,16 +199,16 @@ const policyDetailsFormDescriptor = [
         default: true
     },
     {
-        label: 'Deployments Whitelist',
-        jsonpath: 'deployments',
-        type: 'multiselect-creatable',
+        label: 'Whitelist by Scope',
+        jsonpath: clientOnlyWhitelistFieldNames.WHITELISTED_DEPLOYMENT_SCOPES,
+        type: 'whitelistScope',
         options: [],
         required: false,
         default: true
     },
     {
         label: 'Images Whitelist (Build Lifecycle only)',
-        jsonpath: 'images',
+        jsonpath: clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES,
         type: 'multiselect-creatable',
         options: [],
         required: false,

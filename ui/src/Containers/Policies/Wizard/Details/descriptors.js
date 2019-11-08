@@ -34,6 +34,37 @@ const formatResources = resource => {
     return output.join(', ');
 };
 
+const formatScope = (scope, props) => {
+    if (!scope) return '';
+    const values = [];
+    if (scope.cluster !== '') {
+        let { cluster } = scope;
+        if (props.clustersById[scope.cluster]) {
+            cluster = props.clustersById[scope.cluster].name;
+        }
+        values.push(`Cluster:${cluster}`);
+    }
+    if (scope.namespace !== '') {
+        values.push(`Namespace:${scope.namespace}`);
+    }
+    if (scope.label) {
+        values.push(`Label:${scope.label.key}=${scope.label.value}`);
+    }
+    return values.join('; ');
+};
+
+const formatDeploymentWhitelistScope = (whitelistScope, props) => {
+    const values = [];
+    if (whitelistScope.name !== '') {
+        values.push(`Deployment Name:${whitelistScope.name}`);
+    }
+    const scopeVal = formatScope(whitelistScope.scope, props);
+    if (scopeVal !== '') {
+        values.push(scopeVal);
+    }
+    return values.join('; ');
+};
+
 // JSON value name mapped to formatting for description page.
 const fieldsMap = {
     id: {
@@ -88,23 +119,7 @@ const fieldsMap = {
     scope: {
         label: 'Restricted to Scopes',
         formatValue: (d, props) =>
-            d.map(o => {
-                const values = [];
-                if (o.cluster !== '') {
-                    let { cluster } = o;
-                    if (props.clustersById[o.cluster]) {
-                        cluster = props.clustersById[o.cluster].name;
-                    }
-                    values.push(`Cluster:${cluster}`);
-                }
-                if (o.namespace !== '') {
-                    values.push(`Namespace:${o.namespace}`);
-                }
-                if (o.label) {
-                    values.push(`Label:${o.label.key}=${o.label.value}`);
-                }
-                return values.join('; ');
-            })
+            d && d.length ? d.map(scope => formatScope(scope, props)) : null
     },
     enforcementActions: {
         label: 'Enforcement Action',
@@ -120,13 +135,16 @@ const fieldsMap = {
     },
     whitelists: {
         label: 'Whitelists',
-        formatValue: d => {
+        formatValue: (d, props) => {
             const whitelistObj = {};
-            const deployments = d
-                .filter(obj => obj.deployment && obj.deployment.name !== '')
-                .map(obj => obj.deployment.name);
-            if (deployments.length !== 0) {
-                whitelistObj['Deployment Whitelists'] = deployments;
+            const deploymentWhitelistScopes = d
+                .filter(obj => obj.deployment && (obj.deployment.name || obj.deployment.scope))
+                .map(obj => obj.deployment);
+            if (deploymentWhitelistScopes.length > 0) {
+                whitelistObj['Deployment Whitelists'] = deploymentWhitelistScopes.map(
+                    deploymentWhitelistScope =>
+                        formatDeploymentWhitelistScope(deploymentWhitelistScope, props)
+                );
             }
             const images = d
                 .filter(obj => obj.image && obj.image.name !== '')

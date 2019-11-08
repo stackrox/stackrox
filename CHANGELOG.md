@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [34.0]
+### Fixed
+- Policy whitelists are now shown in the UI. Previously, we only showed whitelisted deployment names, and not the entire structure that was
+actually in the policy object. This means that users can now whitelist by cluster, namespace and labels using the UI.
+
 ## [33.0]
 ### Changed
 - Proxy configuration can now changed at runtime by editing and applying `proxy-config-secret.yaml` where central and scanner run.

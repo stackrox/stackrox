@@ -34,7 +34,7 @@ class Violations extends Component {
                     return (
                         <div>
                             {violations.map(violation => (
-                                <div>- {violation}</div>
+                                <div key={violation}>- {violation}</div>
                             ))}
                             {numExtraViolations > 0 && (
                                 <div>

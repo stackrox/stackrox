@@ -10,7 +10,8 @@ import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxMultiSelectCreatableField from 'Components/forms/ReduxMultiSelectCreatableField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
-import renderScopes from './Scope';
+import RestrictToScope from './RestrictToScope';
+import WhitelistScope from './WhitelistScope';
 
 export default function Field({ field }) {
     if (field === undefined) return null;
@@ -30,6 +31,7 @@ export default function Field({ field }) {
             return (
                 <ReduxToggleField
                     name={field.jsonpath}
+                    key={field.jsonpath}
                     disabled={field.disabled}
                     reverse={field.reverse}
                 />
@@ -53,6 +55,7 @@ export default function Field({ field }) {
             return (
                 <ReduxTextAreaField
                     name={field.jsonpath}
+                    key={field.jsonpath}
                     disabled={field.disabled}
                     placeholder={field.placeholder}
                 />
@@ -69,9 +72,19 @@ export default function Field({ field }) {
                 />
             );
         case 'group':
-            return field.jsonpaths.map(input => <Field field={input} />);
+            return field.jsonpaths.map(input => <Field key={input.jsonpath} field={input} />);
         case 'scope':
-            return <FieldArray name={field.jsonpath} component={renderScopes} />;
+            return (
+                <FieldArray
+                    key={field.jsonpath}
+                    name={field.jsonpath}
+                    component={RestrictToScope}
+                />
+            );
+        case 'whitelistScope':
+            return (
+                <FieldArray key={field.jsonpath} name={field.jsonpath} component={WhitelistScope} />
+            );
         default:
             throw new Error(`Unknown field type: ${field.type}`);
     }

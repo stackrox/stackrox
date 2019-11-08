@@ -1,35 +1,51 @@
 import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
 import removeEmptyFields from 'utils/removeEmptyFields';
+import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
+
+function filterAndMapWhitelists(whitelists, filterFunc, mapFunc) {
+    return whitelists && whitelists.length ? whitelists.filter(filterFunc).map(mapFunc) : [];
+}
 
 export function preFormatWhitelistField(policy) {
     const { whitelists } = policy;
     const clientPolicy = Object.assign({}, policy);
-    clientPolicy.deployments =
-        whitelists && whitelists.length
-            ? whitelists
-                  .filter(o => o.deployment !== undefined && o.deployment.name !== undefined)
-                  .map(o => o.deployment.name)
-            : [];
-    clientPolicy.images =
-        whitelists && whitelists.length
-            ? whitelists
-                  .filter(o => o.image !== undefined && o.image.name !== undefined)
-                  .map(o => o.image.name)
-            : [];
+
+    clientPolicy[clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES] = filterAndMapWhitelists(
+        whitelists,
+        o => o.image && o.image.name,
+        o => o.image.name
+    );
+
+    clientPolicy[
+        clientOnlyWhitelistFieldNames.WHITELISTED_DEPLOYMENT_SCOPES
+    ] = filterAndMapWhitelists(
+        whitelists,
+        o => o.deployment && (o.deployment.name || o.deployment.scope),
+        o => o.deployment
+    );
+
     return clientPolicy;
 }
 
 export function postFormatWhitelistField(policy) {
     const serverPolicy = Object.assign({}, policy);
     serverPolicy.whitelists = [];
-    if (policy.deployments && policy.deployments.length !== 0) {
-        serverPolicy.whitelists = policy.deployments.map(name => ({ deployment: { name } }));
-    }
-    if (policy.images && policy.images.length !== 0) {
+
+    const whitelistedDeploymentScopes =
+        policy[clientOnlyWhitelistFieldNames.WHITELISTED_DEPLOYMENT_SCOPES];
+    if (whitelistedDeploymentScopes && whitelistedDeploymentScopes.length) {
         serverPolicy.whitelists = serverPolicy.whitelists.concat(
-            policy.images.map(name => ({ image: { name } }))
+            whitelistedDeploymentScopes.map(deployment => ({ deployment }))
         );
     }
+
+    const whitelistedImageNames = policy[clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES];
+    if (whitelistedImageNames && whitelistedImageNames.length > 0) {
+        serverPolicy.whitelists = serverPolicy.whitelists.concat(
+            whitelistedImageNames.map(name => ({ image: { name } }))
+        );
+    }
+
     return serverPolicy;
 }
 

@@ -15,6 +15,7 @@ import FormField from 'Components/FormField';
 
 import Field from 'Containers/Policies/Wizard/Form/Field';
 import sortBy from 'lodash/sortBy';
+import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
 
 class FieldGroupCards extends Component {
     static propTypes = {
@@ -176,11 +177,10 @@ const getPolicyFormFields = createSelector(
     [
         selectors.getNotifiers,
         selectors.getClusters,
-        selectors.getDeployments,
         selectors.getImages,
         selectors.getPolicyCategories
     ],
-    (notifiers, clusters, deployments, images, policyCategories) => {
+    (notifiers, clusters, images, policyCategories) => {
         const { descriptor } = policyFormFields.policyDetails;
         const policyDetailsFormFields = descriptor.map(field => {
             const newField = Object.assign({}, field);
@@ -192,13 +192,7 @@ const getPolicyFormFields = createSelector(
                         value: category
                     }));
                     break;
-                case 'deployments':
-                    options = deployments.map(({ deployment }) => ({
-                        label: deployment.name,
-                        value: deployment.name
-                    }));
-                    break;
-                case 'images':
+                case clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES:
                     options = images.map(image => ({
                         label: image.name,
                         value: image.name

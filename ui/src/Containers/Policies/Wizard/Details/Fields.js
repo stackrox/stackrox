@@ -45,7 +45,9 @@ class Fields extends Component {
                                     <div className="mb-4" key={field}>
                                         <div className="text-base-600 font-700">{label}:</div>
                                         {value.map(v => (
-                                            <div className="flex pt-1 leading-normal">{v}</div>
+                                            <div key={v} className="flex pt-1 leading-normal">
+                                                {v}
+                                            </div>
                                         ))}
                                     </div>
                                 );
@@ -57,7 +59,10 @@ class Fields extends Component {
                                             <div className="mb-4" key={field}>
                                                 <div className="text-base-600 font-700">{key}:</div>
                                                 {value[key].map(v => (
-                                                    <div className="flex pt-1 leading-normal">
+                                                    <div
+                                                        key={v}
+                                                        className="flex pt-1 leading-normal"
+                                                    >
                                                         {v}
                                                     </div>
                                                 ))}
