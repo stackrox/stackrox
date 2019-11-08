@@ -146,11 +146,12 @@ const getQueryBySelectedEntity = entityType => {
 
 const getEntitiesByContext = entityContext => {
     const entities = [];
-    if (entityContext === {} || !entityContext[entityTypes.IMAGE]) {
-        entities.push({ label: 'Top Riskiest Images', value: entityTypes.IMAGE });
-    }
     if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
         entities.push({ label: 'Top Riskiest Components', value: entityTypes.COMPONENT });
+    }
+    if (entityContext === {} || !entityContext[entityTypes.IMAGE] || entities.length === 0) {
+        // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
+        entities.unshift({ label: 'Top Riskiest Images', value: entityTypes.IMAGE });
     }
     return entities;
 };
