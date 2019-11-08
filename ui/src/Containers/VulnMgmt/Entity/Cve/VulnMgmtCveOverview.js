@@ -106,7 +106,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                         <Widget
                             header="Details"
                             headerComponents={linkToNVD}
-                            className="ml-4 mr-2 bg-base-100 h-48 mb-4 flex-grow"
+                            className="ml-4 mr-2 bg-base-100 min-h-48 mb-4 flex-grow"
                         >
                             <div className="flex flex-col w-full bg-counts-widget">
                                 <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
@@ -140,16 +140,16 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="p-4">{summary}</div>
+                                <div className="p-4 pb-12">{summary}</div>
                             </div>
                         </Widget>
                         <Metadata
-                            className="mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                            className="mx-2 min-w-48 bg-base-100 min-h-48 mb-4"
                             keyValuePairs={cvssScoreBreakdown}
                             title="CVSS Score Breakdown"
                         />
                         <Metadata
-                            className="mx-2 min-w-48 bg-base-100 h-48 mb-4"
+                            className="mx-2 min-w-48 bg-base-100 min-h-48 mb-4"
                             keyValuePairs={scanningDetails}
                             title="Scanning Details"
                         />
