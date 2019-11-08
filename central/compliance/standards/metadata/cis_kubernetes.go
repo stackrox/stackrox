@@ -533,7 +533,7 @@ var cisKubernetes = Standard{
 				{
 					ID:          "4_2_9",
 					Name:        "4.2.9",
-					Description: "Ensure that the --event-qps argument is set to 0",
+					Description: "Ensure that the --event-qps argument is set to 0 or a level which ensures appropriate event capture",
 				},
 				{
 					ID:          "4_2_10",
