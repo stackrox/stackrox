@@ -1,9 +1,11 @@
 import React, { useState, useContext } from 'react';
+import PropTypes from 'prop-types';
 import gql from 'graphql-tag';
 import pluralize from 'pluralize';
 import { useQuery } from 'react-apollo';
-import queryService from 'modules/queryService';
+import sortBy from 'lodash/sortBy';
 
+import queryService from 'modules/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViewAllButton from 'Components/ViewAllButton';
 import Widget from 'Components/Widget';
@@ -14,7 +16,6 @@ import entityLabels from 'messages/entity';
 import isGQLLoading from 'utils/gqlLoading';
 import { severityColorMap, severityColorLegend } from 'constants/severityColors';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
-import PropTypes from 'prop-types';
 
 const TopRiskyEntitiesByVulnerabilities = ({
     entityContext,
@@ -141,10 +142,21 @@ const TopRiskyEntitiesByVulnerabilities = ({
 
     function getAverageSeverity(vulns) {
         if (vulns.length === 0) return 0;
-        const total = vulns.reduce((acc, curr) => {
+
+        // 1. sort the vulns in reverse CVSS order
+        const sortedVulns = sortBy(vulns, vuln => {
+            return vuln.cvss;
+        }).reverse();
+        const topFiveVulns = sortedVulns.slice(0, 5);
+
+        // 2. grab up to the first 5 vulns (the ones with the highest CVSS)
+        const total = topFiveVulns.reduce((acc, curr) => {
             return acc + parseFloat(curr.cvss);
         }, 0);
-        const avgScore = total / vulns.length;
+
+        // 3. Take the average of those top 5 (or total, if less than 5)
+        const avgScore = total / topFiveVulns.length;
+
         return avgScore.toFixed(1);
     }
 
@@ -156,7 +168,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 (datum.metadata && datum.metadata.name),
             body: (
                 <div>
-                    <div>{`AVG CVSS score: ${datum.avgSeverity}`}</div>
+                    <div>{`Weighted CVSS: ${datum.avgSeverity}`}</div>
                     <div>{`CVEs: ${datum.vulnCount}`}</div>
                 </div>
             ),
@@ -184,6 +196,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
             .sort((a, b) => {
                 return a.vulnCount - b.vulnCount;
             });
+
         return results;
     }
     let results = [];
