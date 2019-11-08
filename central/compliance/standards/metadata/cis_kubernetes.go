@@ -353,7 +353,7 @@ var cisKubernetes = Standard{
 				{
 					ID:          "1_4_2",
 					Name:        "1.4.2",
-					Description: "Ensure that the --profiling argument is set to false",
+					Description: "Ensure that the --bind-address argument is set to 127.0.0.1",
 				},
 			},
 		},
