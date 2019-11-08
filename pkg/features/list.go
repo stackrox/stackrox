@@ -13,5 +13,5 @@ var (
 	VulnMgmtUI = registerFeature("Enable Vulnerability Management UI", "ROX_VULN_MGMT_UI", false)
 
 	// ProbeUpload enables the possibility to upload collector probes to central.
-	ProbeUpload = registerFeature("Enable support for uploading collector probes", "ROX_PROBE_UPLOAD", false)
+	ProbeUpload = registerFeature("Enable support for uploading collector probes", "ROX_PROBE_UPLOAD", true)
 )

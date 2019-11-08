@@ -99,6 +99,9 @@ func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts Options
 	// or 3xx status code.
 	// Note that Golang's HTTP client by default follows redirects.
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return errNotFound
+		}
 		return errors.Errorf("upstream HTTP request returned status %s", resp.Status)
 	}
 

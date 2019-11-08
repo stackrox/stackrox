@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
@@ -126,7 +127,7 @@ type startable interface {
 	Start()
 }
 
-func createKOCacheHandler(centralEndpoint string) (http.Handler, error) {
+func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error) {
 	kernelObjsBaseURL := fmt.Sprintf("https://%s/kernel-objects", centralEndpoint)
 	serverName, _, _, err := netutil.ParseEndpoint(centralEndpoint)
 	if err != nil {
@@ -183,14 +184,15 @@ func (s *Sensor) Start() {
 
 	customRoutes := []routes.CustomRoute{admissionControllerRoute}
 
-	koCacheHandler, err := createKOCacheHandler(s.centralEndpoint)
+	koCacheSource, err := createKOCacheSource(s.centralEndpoint)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "Failed to create kernel object download/caching layer"))
 	} else {
+		probeDownloadHandler := probeupload.NewProbeServerHandler(probeupload.LogCallback(log), koCacheSource)
 		koCacheRoute := routes.CustomRoute{
 			Route:         "/kernel-objects/",
 			Authorizer:    idcheck.CollectorOnly(),
-			ServerHandler: http.StripPrefix("/kernel-objects", koCacheHandler),
+			ServerHandler: http.StripPrefix("/kernel-objects", probeDownloadHandler),
 			Compression:   false, // kernel objects are compressed
 		}
 		customRoutes = append(customRoutes, koCacheRoute)

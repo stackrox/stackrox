@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/sys/unix"
 )
 
@@ -43,6 +44,8 @@ var (
 type manager struct {
 	rootDir           string
 	freeDiskThreshold int64
+
+	fsMutex sync.RWMutex
 }
 
 func newManager(persistenceRoot string) *manager {
@@ -289,6 +292,10 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 	// OK, we're done writing to the temp dir. Now remove the existing directory, if any, and then do an atomic rename.
 	dataDir := filepath.Join(modVerDir, basename)
 
+	// Acquire the mutex to make sure a concurrent reader doesn't erroneously see the file being absent.
+	m.fsMutex.Lock()
+	defer m.fsMutex.Unlock()
+
 	if err := os.RemoveAll(dataDir); err != nil {
 		log.Warn("Failed to remove existing data directory for kernel probe. Atomic rename might fail...")
 	}
@@ -297,4 +304,32 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 	}
 	tempDataDir = ""
 	return nil
+}
+
+func (m *manager) LoadProbe(ctx context.Context, file string) (io.ReadCloser, int64, error) {
+	if !probeupload.IsValidFilePath(file) {
+		return nil, 0, errors.Errorf("%q is not a valid probe file name", file)
+	}
+
+	dataDir := m.getDataDir(file)
+
+	// Acquire the mutex to prevent concurrent deletions.
+	m.fsMutex.RLock()
+	defer m.fsMutex.RUnlock()
+
+	dataFile, err := os.Open(filepath.Join(dataDir, dataFileName))
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+		}
+		return nil, 0, err
+	}
+
+	st, err := dataFile.Stat()
+	if err != nil {
+		_ = dataFile.Close()
+		return nil, 0, errors.Wrap(err, "could not stat opened file")
+	}
+
+	return dataFile, st.Size(), nil
 }

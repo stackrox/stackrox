@@ -2,11 +2,14 @@ package kocache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -18,6 +21,10 @@ const (
 	errorCleanupAge  = 30 * time.Second // clean up error entries after this time
 	cleanupAge       = 5 * time.Minute  // clean up objects that are at least this old
 	cleanupInterval  = 1 * time.Minute
+)
+
+var (
+	errNotFound = errors.New("not found")
 )
 
 // Options controls the behavior of the kernel object cache.
@@ -64,13 +71,13 @@ type koCache struct {
 
 // New returns a new kernel object cache whose lifetime is bound by the given context, using the given
 // HTTP client and base URL for upstream requests.
-func New(ctx context.Context, upstreamClient *http.Client, upstreamBaseURL string, opts Options) http.Handler {
+func New(ctx context.Context, upstreamClient *http.Client, upstreamBaseURL string, opts Options) probeupload.ProbeSource {
 	opts.applyDefaults()
 	cache := &koCache{
 		opts:            opts,
 		entries:         make(map[string]*entry),
 		upstreamClient:  upstreamClient,
-		upstreamBaseURL: upstreamBaseURL,
+		upstreamBaseURL: strings.TrimSuffix(upstreamBaseURL, "/"),
 	}
 
 	go cache.cleanupLoop(ctx)
@@ -99,7 +106,7 @@ func (c *koCache) GetOrAddEntry(path string) *entry {
 
 		e = newEntry()
 		c.entries[path] = e
-		go e.Populate(c.upstreamClient, fmt.Sprintf("%s%s", c.upstreamBaseURL, path), c.opts)
+		go e.Populate(c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
 	}
 
 	e.AcquireRef()

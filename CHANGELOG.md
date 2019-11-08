@@ -1,10 +1,15 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
-## [34.0]
-### Fixed
+## [NEXT RELEASE]
+### Changed
 - Policy whitelists are now shown in the UI. Previously, we only showed whitelisted deployment names, and not the entire structure that was
-actually in the policy object. This means that users can now whitelist by cluster, namespace and labels using the UI.
+  actually in the policy object. This means that users can now whitelist by cluster, namespace and labels using the UI.
+- There now exists a `roxctl collector support-packages upload <file>` command, which can be used to upload files from
+  a Collector runtime support package to Central (e.g., kernel modules, eBPF probes). Assuming that Collectors can talk
+  to Sensor, and Sensor can talk to Central, Collectors can then download these files they require at runtime from
+  Central, even if none of the components has access the internet. Refer to the official documentation or contact
+  StackRox support for information on obtaining a Collector support package.
 
 ## [33.0]
 ### Changed
