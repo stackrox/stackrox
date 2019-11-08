@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -38,6 +39,18 @@ const WorkflowEntityPage = ({
         fieldName = listFieldName;
         query = getListQuery(listFieldName, fragmentName, fragment);
     }
+
+    // TODO: remove this hack after we are able to search for k8s vulns
+    if (
+        queryOptions &&
+        queryOptions.variables &&
+        queryOptions.variables.query &&
+        queryOptions.variables.query.includes('K8S_VULNERABILITY')
+    ) {
+        // eslint-disable-next-line no-param-reassign
+        queryOptions.variables.query = '';
+    }
+
     const { loading, data } = useQuery(query, queryOptions);
     if (isGQLLoading(loading, data)) return <Loader transparent />;
     if (!data || !data.result) return <PageNotFound resourceType={entityType} />;

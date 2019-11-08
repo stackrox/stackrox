@@ -40,7 +40,11 @@ const processData = (data, workflowState) => {
     const results = data.results.map(({ id, name, isGKECluster, k8sVulns }) => {
         const cveCount = k8sVulns.length;
         const fixableCount = k8sVulns.filter(vuln => vuln.isFixable).length;
-        const url = workflowState.pushRelatedEntity(entityTypes.CLUSTER, id).toUrl();
+        const url = workflowState
+            .pushRelatedEntity(entityTypes.CLUSTER, id)
+            .pushList(entityTypes.CVE)
+            .setSearch({ 'Vulnerability Type': 'K8S_VULNERABILITY' })
+            .toUrl();
         const imgComponent = (
             <img src={kubeSVG} alt="kube" className={`${stacked ? 'pl-2' : 'pr-2'}`} />
         );

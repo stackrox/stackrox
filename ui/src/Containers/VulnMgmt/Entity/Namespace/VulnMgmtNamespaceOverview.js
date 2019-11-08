@@ -20,8 +20,29 @@ import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntity
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
+const emptyNamespace = {
+    deploymentCount: 0,
+    componentCount: 0,
+    metadata: {
+        clusterName: '',
+        clusterId: '',
+        priority: 0,
+        labels: [],
+        id: ''
+    },
+    policyStatus: {
+        status: '',
+        failingPolicies: []
+    },
+    vulnCount: 0,
+    vulnerabilities: []
+};
+
 const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
+
+    // guard against incomplete GraphQL-cached data
+    const safeData = { ...emptyNamespace, ...data };
 
     const {
         metadata,
@@ -32,7 +53,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         componentCount,
         vulnCount,
         vulnerabilities
-    } = data;
+    } = safeData;
 
     const { clusterName, clusterId, priority, labels, id } = metadata;
     const { failingPolicies, status } = policyStatus;

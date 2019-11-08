@@ -57,13 +57,16 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
+        // @TODO: remove this hack after we are able to search for k8s vulns
+        const parsedListFieldName =
+            search && search['Vulnerability Type'] ? 'vulns: k8sVulns' : listFieldName;
         return gql`
         query getCluster_${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
             entityListType
         )}) {
             result: cluster(id: $id) {
                 id
-                ${listFieldName}(query: $query) { ...${fragmentName} }
+                ${parsedListFieldName}(query: $query) { ...${fragmentName} }
             }
         }
         ${fragment}

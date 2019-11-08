@@ -22,8 +22,32 @@ import DeploymentsWithMostSeverePolicyViolations from '../../widgets/Deployments
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
+const emptyCluster = {
+    componentCount: 0,
+    deploymentCount: 0,
+    id: '',
+    imageCount: 0,
+    name: '',
+    policyCount: 0,
+    policyStatus: {
+        status: '',
+        failingPolicies: []
+    },
+    priority: 0,
+    status: {
+        orchestratorMetadata: {
+            version: 'N/A'
+        }
+    },
+    vulnCount: 0,
+    vulnerabilities: []
+};
+
 const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
+
+    // guard against incomplete GraphQL-cached data
+    const safeData = { ...emptyCluster, ...data };
 
     const {
         priority,
@@ -39,7 +63,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         vulnCount,
         vulnerabilities,
         id
-    } = data;
+    } = safeData;
 
     const { version = 'N/A' } = orchestratorMetadata;
     const { failingPolicies } = policyStatus;
