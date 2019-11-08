@@ -2228,6 +2228,7 @@ jobs:
       - *benchmarkCompliance
       - *storeComplianceBenchImages
       - *collectK8sLogs
+      - get-and-store-debug-dump
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
