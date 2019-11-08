@@ -111,9 +111,6 @@ spec:
           mountPath: /var/lib/stackrox
         - name: central-config-volume
           mountPath: /etc/stackrox
-        - name: proxy-config-volume
-          mountPath: /run/secrets/stackrox.io/proxy-config/
-          readOnly: true
       {{if .Values.monitoring}}
         - name: monitoring-client-volume
           mountPath: /run/secrets/stackrox.io/monitoring/certs
@@ -194,10 +191,6 @@ spec:
       - name: central-config-volume
         configMap:
           name: central-config
-          optional: true
-      - name: proxy-config-volume
-        secret:
-          secretName: proxy-config
           optional: true
       {{if .Values.monitoring}}
       - name: monitoring-client-volume

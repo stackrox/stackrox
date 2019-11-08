@@ -8,7 +8,6 @@ actually in the policy object. This means that users can now whitelist by cluste
 
 ## [33.0]
 ### Changed
-- Proxy configuration can now changed at runtime by editing and applying `proxy-config-secret.yaml` where central and scanner run.
 - Both the `runAsUser` and `fsGroup` for the central deployment are now 4000.
   This required changes in the the pod security policy, and the OpenShift Security Context Contraint (scc) objects.
   If you are upgrading from a previous version, please refer to the upgrade instructions on how to apply these changes
