@@ -613,10 +613,12 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "send simulation notification"
-        NetworkPolicyService.sendSimulationNotification(
-                notifiers*.id,
-                orchestrator.generateYaml(policy)
-        )
+        withRetry(3, 10) {
+            assert NetworkPolicyService.sendSimulationNotification(
+                    notifiers*.id,
+                    orchestrator.generateYaml(policy)
+            )
+        }
 
         cleanup:
         "delete notifiers"

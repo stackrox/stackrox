@@ -402,7 +402,7 @@ class Services extends BaseService {
     }
 
     static addSlackNotifier(String name) {
-        try {
+        return evaluateWithRetry(3, 10) {
             return getNotifierClient().postNotifier(
                     NotifierOuterClass.Notifier.newBuilder()
                             .setType("slack")
@@ -417,13 +417,11 @@ class Services extends BaseService {
                                     Env.mustGetPort())
                     .build()
             )
-        } catch (Exception e) {
-            println e.toString()
         }
     }
 
     static addTeamsNotifier(String name) {
-        try {
+        return evaluateWithRetry(3, 10) {
             return getNotifierClient().postNotifier(
                     NotifierOuterClass.Notifier.newBuilder()
                             .setType("teams")
@@ -440,13 +438,11 @@ class Services extends BaseService {
                                     Env.mustGetPort())
                             .build()
             )
-        } catch (Exception e) {
-            println e.toString()
         }
     }
 
     static addJiraNotifier(String name) {
-        try {
+        return evaluateWithRetry(3, 10) {
             return getNotifierClient().postNotifier(
                     NotifierOuterClass.Notifier.newBuilder()
                             .setType("jira")
@@ -465,13 +461,11 @@ class Services extends BaseService {
                             )
                             .build()
             )
-        } catch (Exception e) {
-            println e.toString()
         }
     }
 
     static addEmailNotifier(String name, Boolean disableTLS = false, startTLS = false, Integer port = null) {
-        try {
+        return evaluateWithRetry(3, 10) {
             NotifierOuterClass.Notifier.Builder builder =
                     NotifierOuterClass.Notifier.newBuilder()
                             .setEmail(NotifierOuterClass.Email.newBuilder())
@@ -496,8 +490,6 @@ class Services extends BaseService {
                     builder.getEmailBuilder().setServer("smtp.mailgun.org") :
                     builder.getEmailBuilder().setServer("smtp.mailgun.org:" + port)
             return getNotifierClient().postNotifier(builder.build())
-        } catch (Exception e) {
-            println e.toString()
         }
     }
 
