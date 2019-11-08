@@ -4,7 +4,7 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import { VULN_CVE_LIST_FRAGMENT_FOR_IMAGE } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import EntityList from '../../List/VulnMgmtList';
 import VulnMgmtComponentOverview from './VulnMgmtComponentOverview';
 import {
@@ -22,12 +22,16 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
                 priority
                 vulnCount
                 deploymentCount
-                vulns {
+                topVuln {
+                    cvss
+                    scoreVersion
+                }
+                fixableCVEs: vulns(query: "Fixed By:r/.*") {
                     ...cveFields
                 }
             }
         }
-        ${VULN_CVE_LIST_FRAGMENT_FOR_IMAGE}
+        ${VULN_CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

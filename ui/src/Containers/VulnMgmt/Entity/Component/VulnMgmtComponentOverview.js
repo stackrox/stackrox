@@ -17,13 +17,7 @@ import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 function VulnMgmtComponentOverview({ data, entityContext }) {
     const workflowState = useContext(workflowStateContext);
 
-    const { version, priority, vulns, id, vulnCount, deploymentCount } = data;
-    const fixableCVEs = vulns.filter(vuln => vuln.isFixable);
-
-    const topVuln = vulns.reduce((max, curr) => (curr.cvss > max.cvss ? curr : max), {
-        cvss: 0,
-        scoreVersion: null
-    });
+    const { version, priority, topVuln, fixableCVEs, id, vulnCount, deploymentCount } = data;
     const { cvss, scoreVersion } = topVuln;
 
     const metadataKeyValuePairs = [

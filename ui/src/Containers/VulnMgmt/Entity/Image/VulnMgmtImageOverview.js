@@ -36,6 +36,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     if (scan) {
         layers.forEach((layer, i) => {
             layers[i].components = [];
+            layers[i].cvesCount = 0;
         });
         scan.components.forEach(component => {
             component.vulns.forEach(cve => {
@@ -43,13 +44,11 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     cves.push(cve);
                 }
             });
+
             if (component.layerIndex !== undefined && layers[component.layerIndex]) {
                 layers[component.layerIndex].components.push(component);
+                layers[component.layerIndex].cvesCount += component.vulns.length;
             }
-        });
-
-        layers.forEach((layer, i) => {
-            layers[i].cvesCount = layer.components.reduce((cnt, o) => cnt + o.vulns.length, 0);
         });
     }
 

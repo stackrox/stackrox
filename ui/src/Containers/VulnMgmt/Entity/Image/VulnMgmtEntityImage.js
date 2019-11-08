@@ -5,6 +5,7 @@ import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
 import gql from 'graphql-tag';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -81,19 +82,13 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                             }
                         }
                         vulns {
-                            cve
-                            isFixable
-                            lastScanned
-                            impactScore
-                            publishedOn
-                            cvss
-                            link
-                            summary
+                            ...cveFields
                         }
                     }
                 }
             }
         }
+        ${VULN_CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
