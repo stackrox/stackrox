@@ -44,22 +44,28 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         vulnerabilities
     } = data;
 
-    const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
-    const clusterLink = workflowState.pushRelatedEntity(entityTypes.CLUSTER, cluster.id).toUrl();
-    const namespaceLink = workflowState
-        .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
-        .toUrl();
+    const metadataKeyValuePairs = [];
 
-    const metadataKeyValuePairs = [
-        {
+    const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
+
+    if (!entityContext[entityTypes.CLUSTER]) {
+        const clusterLink = workflowState
+            .pushRelatedEntity(entityTypes.CLUSTER, cluster.id)
+            .toUrl();
+        metadataKeyValuePairs.push({
             key: 'Cluster',
             value: cluster && cluster.name && <Link to={clusterLink}>{cluster.name}</Link>
-        },
-        {
+        });
+    }
+    if (!entityContext[entityTypes.NAMESPACE]) {
+        const namespaceLink = workflowState
+            .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
+            .toUrl();
+        metadataKeyValuePairs.push({
             key: 'Namespace',
             value: <Link to={namespaceLink}>{namespace}</Link>
-        }
-    ];
+        });
+    }
 
     const deploymentStats = [
         <RiskScore key="risk-score" score={priority} />,

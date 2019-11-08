@@ -21,8 +21,7 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
                 metadata {
                     priority
                     name
-                    clusterName
-                    clusterId
+                    ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterName clusterId'}
                     id
                     labels {
                         key

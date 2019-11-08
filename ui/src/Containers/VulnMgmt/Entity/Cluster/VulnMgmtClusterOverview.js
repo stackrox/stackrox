@@ -53,7 +53,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         priority,
         policyStatus,
         createdAt,
-        status: { orchestratorMetadata = null },
+        status,
         istioEnabled,
         deploymentCount,
         componentCount,
@@ -65,6 +65,9 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         id
     } = safeData;
 
+    if (!status || !policyStatus) return null;
+
+    const { orchestratorMetadata = null } = status;
     const { version = 'N/A' } = orchestratorMetadata;
     const { failingPolicies } = policyStatus;
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);

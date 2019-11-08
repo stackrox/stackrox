@@ -180,7 +180,7 @@ export function getCveTableColumns(workflowState, linksOn = true) {
     // If the base page is a component or image list, then get rid of the component and image columns
     // This is a different type of logic than found on other pages. We need to erify business rules for this.
     return [entityTypes.COMPONENT, entityTypes.IMAGE].includes(entityType)
-        ? cols.filter(col => ![entityTypes.COMPONENT, entityTypes.IMAGE].includes(col.entityType))
+        ? cols.filter(col => !!col)
         : cols;
 }
 

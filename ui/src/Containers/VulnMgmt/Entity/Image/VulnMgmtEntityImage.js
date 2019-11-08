@@ -30,9 +30,6 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                             value
                         }
                     }
-                    v2 {
-                        digest
-                    }
                 }
                 vulnCount
                 priority
@@ -54,33 +51,6 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                         name
                         layerIndex
                         version
-                        license {
-                            name
-                            type
-                            url
-                        }
-                        vulnCounter {
-                            all {
-                                total
-                                fixable
-                            }
-                            low {
-                                total
-                                fixable
-                            }
-                            medium {
-                                total
-                                fixable
-                            }
-                            high {
-                                total
-                                fixable
-                            }
-                            critical {
-                                total
-                                fixable
-                            }
-                        }
                         vulns {
                             ...cveFields
                         }

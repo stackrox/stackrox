@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
-import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
 import { useQuery } from 'react-apollo';
 import queryService from 'modules/queryService';
@@ -52,7 +51,7 @@ const WorkflowEntityPage = ({
     }
 
     const { loading, data } = useQuery(query, queryOptions);
-    if (isGQLLoading(loading, data)) return <Loader transparent />;
+    if (loading) return <Loader transparent />;
     if (!data || !data.result) return <PageNotFound resourceType={entityType} />;
     const { result } = data;
 

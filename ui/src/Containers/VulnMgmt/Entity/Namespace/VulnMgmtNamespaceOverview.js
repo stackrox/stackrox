@@ -55,17 +55,20 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         vulnerabilities
     } = safeData;
 
+    if (!metadata || !policyStatus) return null;
+
     const { clusterName, clusterId, priority, labels, id } = metadata;
     const { failingPolicies, status } = policyStatus;
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
-    const clusterLink = workflowState.pushRelatedEntity(entityTypes.CLUSTER, clusterId).toUrl();
+    const metadataKeyValuePairs = [];
 
-    const metadataKeyValuePairs = [
-        {
+    if (!entityContext[entityTypes.CLUSTER]) {
+        const clusterLink = workflowState.pushRelatedEntity(entityTypes.CLUSTER, clusterId).toUrl();
+        metadataKeyValuePairs.push({
             key: 'Cluster',
             value: <Link to={clusterLink}>{clusterName}</Link>
-        }
-    ];
+        });
+    }
 
     const namespaceStats = [
         <RiskScore key="risk-score" score={priority} />,
