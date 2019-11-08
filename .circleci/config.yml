@@ -840,6 +840,7 @@ commands:
             while (( ! success && try < 3 )); do
               rm -f openshift/terraform.tfplan || true
 
+              try=$((try + 1))
               success=1
               docker run --rm -t \
                 -v $PWD/openshift:/data \
