@@ -14,6 +14,7 @@ import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
 import { parseCVESearch } from 'utils/vulnerabilityUtils';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const MOST_COMMON_VULNERABILITIES = gql`
     query mostCommonVulnerabilities($query: String) {
@@ -70,8 +71,13 @@ const MostCommonVulnerabilities = ({ entityContext, search }) => {
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
         const processedData = processData(data, workflowState);
-
-        content = <LabeledBarGraph data={processedData} title="Deployments" />;
+        if (!processedData || processedData.length === 0) {
+            content = (
+                <NoResultsMessage message="No vulnerabilities found" className="p-6" icon="info" />
+            );
+        } else {
+            content = <LabeledBarGraph data={processedData} title="Deployments" />;
+        }
     }
 
     return (

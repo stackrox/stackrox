@@ -14,6 +14,7 @@ import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
 import { getVulnerabilityChips, parseCVESearch } from 'utils/vulnerabilityUtils';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const RECENTLY_DETECTED_VULNERABILITIES = gql`
     query recentlyDetectedVulnerabilities($query: String) {
@@ -64,11 +65,17 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
     if (!loading) {
         const processedData = processData(data, workflowState, limit);
 
-        content = (
-            <div className="w-full">
-                <NumberedList data={processedData} />
-            </div>
-        );
+        if (!processedData || processedData.length === 0) {
+            content = (
+                <NoResultsMessage message="No vulnerabilities found" className="p-6" icon="info" />
+            );
+        } else {
+            content = (
+                <div className="w-full">
+                    <NumberedList data={processedData} />
+                </div>
+            );
+        }
     }
 
     return (

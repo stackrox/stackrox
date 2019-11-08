@@ -7,6 +7,8 @@ import sortBy from 'lodash/sortBy';
 
 import queryService from 'modules/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
+import Loader from 'Components/Loader';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import ViewAllButton from 'Components/ViewAllButton';
 import Widget from 'Components/Widget';
 import Scatterplot from 'Components/visuals/Scatterplot';
@@ -204,8 +206,33 @@ const TopRiskyEntitiesByVulnerabilities = ({
         query: queryService.entityContextToQueryString(entityContext)
     };
     const { data, loading } = useQuery(query, { variables });
+
+    let content = <Loader />;
+
     if (!isGQLLoading(loading, data)) {
         results = processData(data);
+        if (!results || results.length === 0) {
+            content = (
+                <NoResultsMessage
+                    message={`No ${pluralize(
+                        selectedEntityType.toLowerCase()
+                    )} with vulnerabilities found`}
+                    className="p-6"
+                    icon="info"
+                />
+            );
+        } else {
+            content = (
+                <Scatterplot
+                    data={results}
+                    xMultiple={10}
+                    yMultiple={10}
+                    yAxisTitle="Average CVSS Score"
+                    xAxisTitle="Critical Vulnerabilities & Exposures"
+                    legendData={!small && severityColorLegend}
+                />
+            );
+        }
     }
 
     return (
@@ -215,14 +242,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
             headerComponents={viewAll}
             bodyClassName="pr-2"
         >
-            <Scatterplot
-                data={results}
-                xMultiple={10}
-                yMultiple={10}
-                yAxisTitle="Average CVSS Score"
-                xAxisTitle="Critical Vulnerabilities & Exposures"
-                legendData={!small && severityColorLegend}
-            />
+            {content}
         </Widget>
     );
 };

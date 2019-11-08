@@ -14,6 +14,7 @@ import Button from 'Components/Button';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const FREQUENTLY_VIOLATED_POLICIES = gql`
     query frequentlyViolatedPolicies($query: String) {
@@ -64,7 +65,17 @@ const FrequentlyViolatedPolicies = ({ entityContext }) => {
     if (!loading) {
         const processedData = processData(data, workflowState);
 
-        content = <LabeledBarGraph data={processedData} title="Failing Deployments" />;
+        if (!processedData || processedData.length === 0) {
+            content = (
+                <NoResultsMessage
+                    message="No deployments with policy violations found"
+                    className="p-6"
+                    icon="info"
+                />
+            );
+        } else {
+            content = <LabeledBarGraph data={processedData} title="Failing Deployments" />;
+        }
     }
 
     return (

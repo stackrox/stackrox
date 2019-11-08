@@ -14,6 +14,7 @@ import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
 import LabelChip from 'Components/LabelChip';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
     query deploymentsWithMostSeverePolicyViolations(
@@ -104,11 +105,17 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
     if (!loading) {
         const processedData = processData(data, workflowState, limit);
 
-        content = (
-            <div className="w-full">
-                <NumberedList data={processedData} />
-            </div>
-        );
+        if (!processedData || processedData.length === 0) {
+            content = (
+                <NoResultsMessage message="No deployments found" className="p-6" icon="info" />
+            );
+        } else {
+            content = (
+                <div className="w-full">
+                    <NumberedList data={processedData} />
+                </div>
+            );
+        }
     }
 
     return (

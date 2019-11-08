@@ -18,6 +18,7 @@ import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { getPercentage } from 'utils/mathUtils';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const passingLinkColor = 'var(--base-500)';
 const passingChartColor = 'var(--base-400)';
@@ -95,9 +96,11 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
 
             if (!sunburstData.length) {
                 content = (
-                    <div className="flex flex-1 items-center justify-center p-4 leading-loose">
-                        No data available.
-                    </div>
+                    <NoResultsMessage
+                        message="No policy violations found"
+                        className="p-6"
+                        icon="info"
+                    />
                 );
             } else {
                 content = (

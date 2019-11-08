@@ -12,6 +12,7 @@ import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import NumberedList from 'Components/NumberedList';
 import Widget from 'Components/Widget';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const MOST_COMMON_VULNERABILITIES = gql`
     query mostCommonVulnerabilitiesInDeployment($query: String) {
@@ -53,11 +54,17 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
     if (!loading) {
         const processedData = processData(data, workflowState, deploymentId, limit);
 
-        content = (
-            <div className="w-full">
-                <NumberedList data={processedData} />
-            </div>
-        );
+        if (!processedData || processedData.length === 0) {
+            content = (
+                <NoResultsMessage message="No vulnerabilities found" className="p-6" icon="info" />
+            );
+        } else {
+            content = (
+                <div className="w-full">
+                    <NumberedList data={processedData} />
+                </div>
+            );
+        }
     }
 
     return (
