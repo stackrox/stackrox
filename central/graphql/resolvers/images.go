@@ -93,7 +93,7 @@ func (resolver *imageResolver) Deployments(ctx context.Context, args rawQuery) (
 		return nil, err
 	}
 
-	imageIDQuery := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).ProtoQuery()
+	imageIDQuery := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, string(resolver.Id(ctx))).ProtoQuery()
 
 	return resolver.root.wrapDeployments(
 		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, search.NewConjunctionQuery(imageIDQuery, q)))
@@ -105,7 +105,7 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context) (int32, erro
 		return 0, err
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, string(resolver.Id(ctx))).ProtoQuery()
 	results, err := resolver.root.DeploymentDataStore.Search(ctx, query)
 	if err != nil {
 		return 0, nil
@@ -116,7 +116,9 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context) (int32, erro
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (resolver *imageResolver) TopVuln(ctx context.Context, args rawQuery) (*EmbeddedVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVulnerability")
-
+	if err := resolver.ensureImage(ctx); err != nil {
+		return nil, err
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -139,7 +141,9 @@ func (resolver *imageResolver) TopVuln(ctx context.Context, args rawQuery) (*Emb
 // Vulns returns all of the vulnerabilities in the image.
 func (resolver *imageResolver) Vulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Vulnerabilities")
-
+	if err := resolver.ensureImage(ctx); err != nil {
+		return nil, err
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -150,7 +154,9 @@ func (resolver *imageResolver) Vulns(ctx context.Context, args rawQuery) ([]*Emb
 // VulnCount returns the number of vulnerabilities the image has.
 func (resolver *imageResolver) VulnCount(ctx context.Context, args rawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCount")
-
+	if err := resolver.ensureImage(ctx); err != nil {
+		return 0, err
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
@@ -164,6 +170,9 @@ func (resolver *imageResolver) VulnCount(ctx context.Context, args rawQuery) (in
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
 func (resolver *imageResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
+	if err := resolver.ensureImage(ctx); err != nil {
+		return nil, err
+	}
 	return mapImagesToVulnerabilityCounter([]*storage.Image{resolver.data}), nil
 }
 
@@ -176,6 +185,23 @@ func (resolver *imageResolver) Components(ctx context.Context, args rawQuery) ([
 		return nil, err
 	}
 	return mapImagesToComponentResolvers(resolver.root, []*storage.Image{resolver.data}, query)
+}
+
+func (resolver *imageResolver) ensureImage(ctx context.Context) error {
+	if resolver.data != nil {
+		return nil
+	}
+
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil
+	}
+	image, err := imageLoader.FromID(ctx, resolver.list.GetId())
+	if err != nil {
+		return nil
+	}
+	resolver.data = image
+	return nil
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {
