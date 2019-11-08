@@ -13,7 +13,11 @@ import Widget from 'Components/Widget';
 import NumberedGrid from 'Components/NumberedGrid';
 import FixableCVECount from 'Components/FixableCVECount';
 
+import { HelpCircle, AlertCircle } from 'react-feather';
+
 import kubeSVG from 'images/kube.svg';
+
+import Tooltip from 'rc-tooltip';
 
 // need to add query for fixable cves for dashboard once it's supported
 const CLUSTER_WITH_MOST_K8S_VULNERABILTIES = gql`
@@ -21,6 +25,7 @@ const CLUSTER_WITH_MOST_K8S_VULNERABILTIES = gql`
         results: clusters {
             id
             name
+            isGKECluster
             k8sVulns {
                 cve
                 isFixable
@@ -32,27 +37,43 @@ const CLUSTER_WITH_MOST_K8S_VULNERABILTIES = gql`
 const processData = (data, workflowState) => {
     if (!data.results) return [];
     const stacked = data.results.length < 4;
-    const results = data.results.map(({ id, name, k8sVulns }) => {
+    const results = data.results.map(({ id, name, isGKECluster, k8sVulns }) => {
         const cveCount = k8sVulns.length;
         const fixableCount = k8sVulns.filter(vuln => vuln.isFixable).length;
         const url = workflowState.pushRelatedEntity(entityTypes.CLUSTER, id).toUrl();
         const imgComponent = (
             <img src={kubeSVG} alt="kube" className={`${stacked ? 'pl-2' : 'pr-2'}`} />
         );
+
+        const indicationTooltipText = isGKECluster
+            ? 'These CVEs might have been patched by GKE. Please check the GKE release notes or security bulletin to find out more.'
+            : 'These CVEs were not patched in the current Kubernetes version of this cluster';
+
+        const indicatorIcon = isGKECluster ? (
+            <HelpCircle className="h-4 w-4 text-warning-700 ml-2" />
+        ) : (
+            <AlertCircle className="h-4 w-4 text-alert-700 ml-2" />
+        );
+
+        const content = (
+            <div className="flex flex-1 items-center justify-left">
+                {!stacked && imgComponent}
+                <FixableCVECount
+                    cves={cveCount}
+                    fixable={fixableCount}
+                    orientation={stacked ? 'horizontal' : 'vertical'}
+                />
+                {stacked && imgComponent}
+                <Tooltip placement="top" overlay={<div>{indicationTooltipText}</div>}>
+                    {indicatorIcon}
+                </Tooltip>
+            </div>
+        );
+
         return {
             text: name,
             url,
-            component: (
-                <div className="flex flex-1 justify-left">
-                    {!stacked && imgComponent}
-                    <FixableCVECount
-                        cves={cveCount}
-                        fixable={fixableCount}
-                        orientation={stacked ? 'horizontal' : 'vertical'}
-                    />
-                    {stacked && imgComponent}
-                </div>
-            )
+            component: content
         };
     });
     return results.slice(0, 8); // @TODO: Remove and add pagination when available

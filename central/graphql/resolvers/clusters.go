@@ -30,7 +30,7 @@ func init() {
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Cluster", `alertCount: Int!`),
-		schema.AddExtraResolver("Cluster", "latestViolation: Time"),
+		schema.AddExtraResolver("Cluster", `latestViolation: Time`),
 		schema.AddExtraResolver("Cluster", `failingPolicyCounter: PolicyCounter`),
 		schema.AddExtraResolver("Cluster", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Cluster", `deploymentCount: Int!`),
@@ -65,11 +65,12 @@ func init() {
 		schema.AddExtraResolver("Cluster", `secrets(query: String): [Secret!]!`),
 		schema.AddExtraResolver("Cluster", `secretCount: Int!`),
 		schema.AddExtraResolver("Cluster", `controlStatus(query: String): String!`),
-		schema.AddExtraResolver("Cluster", "controls(query: String): [ComplianceControl!]!"),
-		schema.AddExtraResolver("Cluster", "failingControls(query: String): [ComplianceControl!]!"),
-		schema.AddExtraResolver("Cluster", "passingControls(query: String): [ComplianceControl!]!"),
-		schema.AddExtraResolver("Cluster", "complianceControlCount(query: String): ComplianceControlCount!"),
+		schema.AddExtraResolver("Cluster", `controls(query: String): [ComplianceControl!]!`),
+		schema.AddExtraResolver("Cluster", `failingControls(query: String): [ComplianceControl!]!`),
+		schema.AddExtraResolver("Cluster", `passingControls(query: String): [ComplianceControl!]!`),
+		schema.AddExtraResolver("Cluster", `complianceControlCount(query: String): ComplianceControlCount!`),
 		schema.AddExtraResolver("Cluster", `risk: Risk`),
+		schema.AddExtraResolver("Cluster", `isGKECluster: Boolean!`),
 	)
 }
 
@@ -885,6 +886,15 @@ func (resolver *clusterResolver) getClusterRisk(ctx context.Context) (*storage.R
 	risk.Id = id
 
 	return risk, true, nil
+}
+
+func (resolver *clusterResolver) IsGKECluster() (bool, error) {
+	version := resolver.data.GetStatus().GetOrchestratorMetadata().GetVersion()
+	ok, err := isGKEVersion(version)
+	if err != nil {
+		return false, err
+	}
+	return ok, nil
 }
 
 func (resolver *clusterResolver) LatestViolation(ctx context.Context) (*graphql.Time, error) {

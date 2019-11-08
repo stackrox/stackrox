@@ -55,6 +55,8 @@ func init() {
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String): [EmbeddedVulnerability!]!"),
+		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability"),
+		schema.AddQuery("k8sVulnerabilities(query: String): [EmbeddedVulnerability!]!"),
 	)
 }
 
@@ -69,6 +71,8 @@ func (resolver *Resolver) Vulnerability(ctx context.Context, args struct{ *graph
 	vulns, err := vulnerabilities(ctx, resolver, query)
 	if err != nil {
 		return nil, err
+	} else if len(vulns) == 0 {
+		return nil, nil
 	} else if len(vulns) > 1 {
 		return nil, fmt.Errorf("multiple vulns matched: %s this should not happen", string(*args.ID))
 	}
@@ -91,32 +95,38 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q rawQuery) ([]*E
 	return vulnerabilities(ctx, resolver, query)
 }
 
-// ClustersK8sVulnerabilities returns the k8s CVEs on a cluster
-func (resolver *Resolver) ClustersK8sVulnerabilities(ctx context.Context) ([]*ClusterWithK8sCVEInfoResolver, error) {
-	var resolvers []*ClusterWithK8sCVEInfoResolver
-	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
+// K8sVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
+func (resolver *Resolver) K8sVulnerability(ctx context.Context, args struct{ *graphql.ID }) (*EmbeddedVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerability")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, string(*args.ID)).ProtoQuery()
+	vulns, err := k8sVulnerabilities(ctx, resolver, query)
+	if err != nil {
+		return nil, err
+	} else if len(vulns) == 0 {
+		return nil, nil
+	} else if len(vulns) > 1 {
+		return nil, fmt.Errorf("multiple k8s vulns matched: %q this should not happen", string(*args.ID))
+	}
+	return vulns[0], nil
+}
+
+// K8sVulnerabilities resolves a set of k8s vulnerabilities based on a query.
+func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, q rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerabilities")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := q.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	for _, cluster := range clusters {
-		r := &ClusterWithK8sCVEInfoResolver{
-			cluster: &clusterResolver{
-				data: cluster,
-				root: resolver,
-			},
-			k8sCVEInfo: &K8sCVEInfoResolver{},
-		}
-		for _, cve := range resolver.k8sCVEManager.GetK8sCves() {
-			if isClusterAffectedByCVE(cluster, cve) {
-				r.k8sCVEInfo.cveIDs = append(r.k8sCVEInfo.cveIDs, cve.CVE.Metadata.CVEID)
-				if isK8sCVEFixable(cve) {
-					r.k8sCVEInfo.fixableCveIDs = append(r.k8sCVEInfo.fixableCveIDs, cve.CVE.Metadata.CVEID)
-				}
-			}
-		}
-		resolvers = append(resolvers, r)
-	}
-	return resolvers, nil
+
+	return k8sVulnerabilities(ctx, resolver, query)
 }
 
 // Helper function that actually runs the queries and produces the resolvers from the images.
@@ -177,9 +187,11 @@ func k8sVulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([
 			if err != nil {
 				return nil, err
 			}
+
 			if !vulnPred(embedded) {
 				continue
 			}
+
 			r := &EmbeddedVulnerabilityResolver{
 				data: embedded,
 				root: root,
@@ -187,7 +199,6 @@ func k8sVulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([
 			ret = append(ret, r)
 			break // No need to continue the clusters loop since the CVE was already added to the list.
 		}
-
 	}
 	return ret, nil
 }
