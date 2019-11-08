@@ -54,7 +54,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
             entityListType
         )}) {
             result: vulnerability(id: $id) {
-                cve
+                id
                 ${listFieldName}(query: $query) { ...${fragmentName} }
             }
         }
