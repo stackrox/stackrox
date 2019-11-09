@@ -22,6 +22,7 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
                 priority
                 vulnCount
                 deploymentCount
+                imageCount
                 topVuln {
                     cvss
                     scoreVersion

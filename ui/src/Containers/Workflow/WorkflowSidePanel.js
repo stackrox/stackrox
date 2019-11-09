@@ -15,9 +15,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
     const pageStack = workflowState.getPageStack();
     const breadCrumbEntities = workflowState.stateStack.slice(pageStack.length);
 
-    const { useCase } = workflowState;
     const firstItem = workflowState.getBaseEntity();
-    const currentItem = workflowState.getCurrentEntity();
     const isList = firstItem.entityType && !firstItem.entityId;
 
     function onClose() {
@@ -29,7 +27,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
         onClose();
     };
 
-    const url = workflowState.reset(useCase, currentItem.entityType, currentItem.entityId).toUrl();
+    const url = workflowState.skimStack().toUrl();
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
             <Link

@@ -302,4 +302,28 @@ describe('WorkflowState', () => {
             [entityTypes.DEPLOYMENT]: entityId2
         });
     });
+
+    it('skims stack properly when slimming side panel for external link generation', () => {
+        // skims to latest entity page
+        let workflowState = new WorkflowState(useCase, [
+            new WorkflowEntity(entityTypes.IMAGE),
+            new WorkflowEntity(entityTypes.IMAGE, entityId1),
+            new WorkflowEntity(entityTypes.DEPLOYMENT),
+            new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2)
+        ]);
+        expect(workflowState.skimStack().stateStack).toEqual([
+            { t: entityTypes.DEPLOYMENT, i: entityId2 }
+        ]);
+
+        // skims to latest entity page + related entity list
+        workflowState = new WorkflowState(useCase, [
+            new WorkflowEntity(entityTypes.IMAGE),
+            new WorkflowEntity(entityTypes.IMAGE, entityId1),
+            new WorkflowEntity(entityTypes.DEPLOYMENT)
+        ]);
+        expect(workflowState.skimStack().stateStack).toEqual([
+            { t: entityTypes.IMAGE, i: entityId1 },
+            { t: entityTypes.DEPLOYMENT }
+        ]);
+    });
 });

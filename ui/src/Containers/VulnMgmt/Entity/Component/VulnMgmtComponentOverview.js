@@ -17,7 +17,8 @@ import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 function VulnMgmtComponentOverview({ data, entityContext }) {
     const workflowState = useContext(workflowStateContext);
 
-    const { version, priority, topVuln, fixableCVEs, id, vulnCount, deploymentCount } = data;
+    const { version, priority, topVuln, fixableCVEs, id } = data;
+    const { vulnCount, deploymentCount, imageCount } = data;
     const { cvss, scoreVersion } = topVuln;
 
     const metadataKeyValuePairs = [
@@ -38,6 +39,8 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                 return deploymentCount;
             case entityTypes.CVE:
                 return vulnCount;
+            case entityTypes.IMAGE:
+                return imageCount;
             default:
                 return 0;
         }

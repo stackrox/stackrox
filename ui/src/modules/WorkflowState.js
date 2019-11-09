@@ -120,7 +120,7 @@ export class WorkflowState {
         return this.stateStack[0];
     }
 
-    // Gets workflow entities related to page level
+    // Returns workflow entities related to page level
     getPageStack() {
         const { stateStack } = this;
         if (stateStack.length < 2) return stateStack;
@@ -139,6 +139,18 @@ export class WorkflowState {
         return this.stateStack.slice(1, 2)[0];
     }
 
+    // Returns skimmed stack for external linking from side panel workflowState
+    getSkimmedStack() {
+        const { stateStack } = this;
+        if (stateStack.length < 2) return stateStack;
+
+        const currentItem = this.getCurrentEntity();
+        // if the last item on the stack is an entity, return the entity
+        if (currentItem.entityId) return [currentItem];
+        // else the last item on the stack is a list, return the previous entity + related list
+        return stateStack.slice(-2);
+    }
+
     getCurrentSearchState() {
         const param = this.sidePanelActive ? searchParams.sidePanel : searchParams.page;
         return this.search[param] || {};
@@ -152,6 +164,13 @@ export class WorkflowState {
     getCurrentPagingState() {
         const param = this.sidePanelActive ? pagingParams.sidePanel : pagingParams.page;
         return this.paging[param] || {};
+    }
+
+    // Returns skimmed stack version of WorkflowState to render into URL
+    skimStack() {
+        const { useCase, search, sort, paging } = this;
+        const newStateStack = this.getSkimmedStack();
+        return new WorkflowState(useCase, newStateStack, search, sort, paging);
     }
 
     // Resets the current state based on minimal parameters
