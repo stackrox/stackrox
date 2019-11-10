@@ -184,15 +184,15 @@ const TopRiskyEntitiesByVulnerabilities = ({
         const results = data.results
             .filter(datum => datum.vulnCount > 0)
             .map(result => {
+                const entityId = result.id || result.metadata.id;
+                const url = workflowState.pushRelatedEntity(selectedEntityType, entityId).toUrl();
                 const avgSeverity = getAverageSeverity(result.vulns);
                 return {
                     x: result.vulnCount,
                     y: +avgSeverity,
                     color: severityColorMap[getSeverityByCvss(avgSeverity)],
                     hint: getHint({ ...result, avgSeverity }),
-                    url: workflowState
-                        .resetPage(selectedEntityType, result.id || result.metadata.id)
-                        .toUrl()
+                    url
                 };
             })
             .sort((a, b) => {
