@@ -30,7 +30,7 @@ func init() {
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Cluster", `alertCount: Int!`),
-		schema.AddExtraResolver("Cluster", `latestViolation: Time`),
+		schema.AddExtraResolver("Cluster", `latestViolation(query: String): Time`),
 		schema.AddExtraResolver("Cluster", `failingPolicyCounter: PolicyCounter`),
 		schema.AddExtraResolver("Cluster", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Cluster", `deploymentCount: Int!`),
@@ -897,8 +897,13 @@ func (resolver *clusterResolver) IsGKECluster() (bool, error) {
 	return ok, nil
 }
 
-func (resolver *clusterResolver) LatestViolation(ctx context.Context) (*graphql.Time, error) {
+func (resolver *clusterResolver) LatestViolation(ctx context.Context, args rawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Latest Violation")
 
-	return getLatestViolationTime(ctx, resolver.root, resolver.getQuery())
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	return getLatestViolationTime(ctx, resolver.root, resolver.getConjunctionQuery(q))
 }

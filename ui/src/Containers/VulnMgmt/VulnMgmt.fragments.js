@@ -38,7 +38,7 @@ export const CLUSTER_LIST_FRAGMENT = gql`
         policyStatus(query: $policyQuery) {
             status
         }
-        latestViolation
+        latestViolation(query: $policyQuery)
         priority
     }
 `;
@@ -108,7 +108,7 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         serviceAccountID
         secretCount
         imageCount
-        latestViolation
+        latestViolation(query: $policyQuery)
         priority
     }
 `;
@@ -235,7 +235,7 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
         policyStatus(query: $policyQuery) {
             status
         }
-        latestViolation
+        latestViolation(query: $policyQuery)
     }
 `;
 
@@ -246,7 +246,7 @@ export const POLICY_LIST_FRAGMENT = gql`
         description
         policyStatus
         lastUpdated
-        latestViolation
+        latestViolation(query: $policyQuery)
         severity
         deploymentCount
         lifecycleStages

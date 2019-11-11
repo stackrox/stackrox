@@ -49,7 +49,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `secretCount: Int!`),
 		schema.AddExtraResolver("Namespace", `deploymentCount: Int!`),
 		schema.AddExtraResolver("Namespace", `risk: Risk`),
-		schema.AddExtraResolver("Namespace", "latestViolation: Time"),
+		schema.AddExtraResolver("Namespace", "latestViolation(query: String): Time"),
 	)
 }
 
@@ -557,8 +557,13 @@ func (resolver *namespaceResolver) getNamespaceRisk(ctx context.Context) (*stora
 	return risk, true, nil
 }
 
-func (resolver *namespaceResolver) LatestViolation(ctx context.Context) (*graphql.Time, error) {
+func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args rawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Latest Violation")
 
-	return getLatestViolationTime(ctx, resolver.root, resolver.getClusterNamespaceQuery())
+	q, err := resolver.getConjunctionQuery(args)
+	if err != nil {
+		return nil, nil
+	}
+
+	return getLatestViolationTime(ctx, resolver.root, q)
 }
