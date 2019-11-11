@@ -189,11 +189,8 @@ export class WorkflowState {
 
     // sets the stateStack to base state when returning from side panel
     removeSidePanelParams() {
-        const { useCase, stateStack, search, sort, paging } = this;
-        const baseEntity = this.getBaseEntity();
-        const entityTab = stateStack[1] && !stateStack[1].entityId;
-        const newStateStack =
-            baseEntity.entityId && entityTab ? stateStack.slice(0, 2) : [baseEntity];
+        const { useCase, search, sort, paging } = this;
+        const newStateStack = this.getPageStack();
         const newSearch = search ? { [searchParams.page]: search[searchParams.page] } : null;
         const newSort = sort ? { [searchParams.page]: sort[searchParams.page] } : null;
         const newPaging = paging ? { [searchParams.page]: paging[searchParams.page] } : null;

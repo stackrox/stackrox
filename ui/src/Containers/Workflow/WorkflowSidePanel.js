@@ -70,7 +70,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
 };
 
 const clickOutsideConfig = {
-    handleClickOutside: () => WorkflowSidePanel.handleClickOutside
+    handleClickOutside: () => () => WorkflowSidePanel.handleClickOutside()
 };
 
 /*
