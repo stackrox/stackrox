@@ -13,6 +13,7 @@ import entityTypes from 'constants/entityTypes';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
+import { truncate } from 'utils/textUtils';
 
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
@@ -184,11 +185,14 @@ export function getCveTableColumns(workflowState, linksOn = true) {
         : cols;
 }
 
+const maxLengthForSummary = 360; // based on showing up to approximately 2 lines before table starts scrolling horizontally
+
 export function renderCveDescription(row) {
     const { original } = row;
+    const truncatedSummary = truncate(original.summary, maxLengthForSummary);
     return (
-        <div className="px-2 pb-4 pt-1 text-base-500">
-            {original.summary || 'No description available.'}
+        <div className="hover:bg-base-100 px-2 pb-4 pt-1 text-base-500">
+            {truncatedSummary || 'No description available.'}
         </div>
     );
 }
