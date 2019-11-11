@@ -121,12 +121,14 @@ const processData = (data, entityType, workflowState, limit) => {
                 text,
                 url,
                 component: (
-                    <CVEStackedPill
-                        vulnCounter={vulnCounter}
-                        url={cvesUrl}
-                        fixableUrl={fixableUrl}
-                        horizontal
-                    />
+                    <div className="flex">
+                        <CVEStackedPill
+                            vulnCounter={vulnCounter}
+                            url={cvesUrl}
+                            fixableUrl={fixableUrl}
+                            horizontal
+                        />
+                    </div>
                 )
             };
         });

@@ -126,21 +126,21 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
                 <CollapsibleSection title="CVE summary">
-                    <div className="flex mb-4 pdf-page">
+                    <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4 pdf-page">
                         <Widget
                             header="Details"
                             headerComponents={linkToNVD}
-                            className="ml-4 mr-2 bg-base-100 min-h-48 mb-4 flex-grow"
+                            className="bg-base-100 min-h-48 lg:s-2"
                         >
                             <div className="flex flex-col w-full bg-counts-widget">
-                                <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
+                                <div className="bg-tertiary-200 text-2xl text-base-500 flex flex-col md:flex-row items-start md:items-center justify-between">
                                     <div className="w-full flex-grow p-4">
-                                        <span>{cve}</span>
+                                        <span className="text-tertiary-800">{cve}</span>
                                     </div>
-                                    <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
+                                    <div className="w-full flex border-t border-base-400 md:border-t-0 justify-end items-center">
                                         {// eslint-disable-next-line eqeqeq
                                         envImpact == Number(envImpact) && (
-                                            <span className="px-4 py-6 border-base-400 border-l whitespace-no-wrap">
+                                            <span className="w-full md:w-auto p-4 border-base-400 text-base-600 border-l whitespace-no-wrap">
                                                 <span>
                                                     {' '}
                                                     {`Env. Impact: ${(envImpact * 100).toFixed(
@@ -149,13 +149,13 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                                 </span>
                                             </span>
                                         )}
-                                        <span className="px-4 py-4 border-base-400 border-l">
+                                        <span className="w-full md:w-auto p-4 border-base-400 border-l">
                                             <LabelChip
                                                 text={`CVSS ${cvss && cvss.toFixed(1)}`}
                                                 type={severityStyle}
                                             />
                                         </span>
-                                        <span className="px-4 py-4 border-base-400 border-l">
+                                        <span className="w-full md:w-auto p-4 border-base-400 border-l">
                                             {isFixable ? (
                                                 <LabelChip text="Fixable" type="success" />
                                             ) : (
@@ -164,16 +164,16 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="p-4 pb-12">{truncatedSummary}</div>
+                                <div className="p-4 pb-12 leading-loose">{truncatedSummary}</div>
                             </div>
                         </Widget>
                         <Metadata
-                            className="mx-2 min-w-48 bg-base-100 min-h-48 mb-4"
+                            className="bg-base-100 min-h-48"
                             keyValuePairs={cvssScoreBreakdown}
                             title="CVSS Score Breakdown"
                         />
                         <Metadata
-                            className="mx-2 min-w-48 bg-base-100 min-h-48 mb-4"
+                            className="bg-base-100 min-h-48 "
                             keyValuePairs={scanningDetails}
                             title="Scanning Details"
                         />

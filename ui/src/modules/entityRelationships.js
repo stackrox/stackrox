@@ -27,10 +27,10 @@ export const useCaseEntityMap = {
     ],
     [useCaseTypes.VULN_MANAGEMENT]: [
         entityTypes.POLICY,
-        entityTypes.IMAGE,
-        entityTypes.COMPONENT,
         entityTypes.CVE,
-        ...baseEntities
+        ...baseEntities,
+        entityTypes.IMAGE,
+        entityTypes.COMPONENT
     ]
 };
 

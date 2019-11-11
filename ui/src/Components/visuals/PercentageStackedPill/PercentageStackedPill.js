@@ -38,7 +38,7 @@ const PercentageStackedPill = ({ data, tooltip }) => {
             mouseLeaveDelay={0}
         >
             <div
-                className="flex rounded-full min-w-24 h-4 border border-base-300 bg-base-200"
+                className="flex rounded-full w-full min-w-10 max-w-24 h-3 border border-base-300 bg-base-200"
                 style={{ boxShadow: 'inset 0 0px 8px 0 hsla(0, 0%, 0%, .10) !important' }}
             >
                 {pills}

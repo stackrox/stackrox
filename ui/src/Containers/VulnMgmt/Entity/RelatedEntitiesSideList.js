@@ -34,7 +34,7 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData, enti
 
     if (!matches.length && !contains.length) return null;
     return (
-        <div className="bg-primary-300 h-full relative">
+        <div className="bg-primary-300 h-full relative border-base-100 border-l w-32">
             {/* TODO: decide if this should be added as custom tailwind class, or a "component" CSS class in app.css */}
             <h2
                 style={{
@@ -42,7 +42,7 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData, enti
                     left: '-0.5rem',
                     width: 'calc(100% + 0.5rem)'
                 }}
-                className="my-4 p-2 bg-primary-700 text-base text-base-100 rounded-l"
+                className="my-4 p-2 bg-primary-700 text-base text-base-100 rounded-l text-lg"
             >
                 Related entities
             </h2>

@@ -5,7 +5,7 @@ import posed from 'react-pose';
 import Button from 'Components/Button';
 import { ChevronDown, ChevronRight } from 'react-feather';
 
-const iconClass = 'bg-base-100 border-2 border-base-400 rounded-full h-4 w-4';
+const iconClass = 'bg-base-100 border-2 border-base-400 rounded-full h-5 w-5';
 
 const Content = posed.div({
     closed: { height: 0 },

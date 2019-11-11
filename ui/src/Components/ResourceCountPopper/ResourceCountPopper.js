@@ -18,7 +18,7 @@ const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName
             disabled={!length}
             placement="bottom"
             reactOutsideClassName={reactOutsideClassName}
-            buttonClass={`rounded border border-base-400 p-1 px-4 text-center text-sm ${length &&
+            buttonClass={`rounded border border-base-400 bg-base-100 p-1 px-4 text-center text-sm ${length &&
                 'hover:bg-base-200'}`}
             buttonContent={`${length} ${pluralize(label, length)}`}
             popperContent={

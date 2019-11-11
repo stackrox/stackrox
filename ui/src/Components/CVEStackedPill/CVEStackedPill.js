@@ -23,10 +23,10 @@ const CVEStackedPill = ({ horizontal, vulnCounter, hideLink, url, fixableUrl }) 
     );
 
     const tooltip = { title: 'Criticality Distribution', body: tooltipBody };
-    const width = horizontal ? '' : 'w-16';
+    const width = horizontal ? '' : 'min-w-16';
     return (
-        <div className="flex items-center">
-            <div className={`mr-4 ${width}`}>
+        <div className="flex items-center w-full">
+            <div className={`mr-2 ${width}`}>
                 <FixableCVECount
                     cves={all.total}
                     fixable={all.fixable}

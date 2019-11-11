@@ -43,8 +43,8 @@ export function getNamespaceTableColumns(workflowState) {
         {
             Header: `CVEs`,
             entityType: entityTypes.CVE,
-            headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, metadata } = original;
                 if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';

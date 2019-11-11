@@ -43,7 +43,7 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: `Description`,
-            headerClassName: `w-1/6 text-center ${defaultHeaderClassName}`,
+            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
             accessor: 'description',
             id: 'description'

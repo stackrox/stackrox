@@ -44,8 +44,8 @@ export function getImageTableColumns(workflowState) {
         {
             Header: `CVEs`,
             entityType: entityTypes.CVE,
-            headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
                 if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
@@ -69,7 +69,7 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: `Top CVSS`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
@@ -117,8 +117,8 @@ export function getImageTableColumns(workflowState) {
         {
             Header: `Deployments`,
             entityType: entityTypes.DEPLOYMENT,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, id } = original;
                 const url = workflowState
@@ -133,8 +133,8 @@ export function getImageTableColumns(workflowState) {
         {
             Header: `Components`,
             entityType: entityTypes.COMPONENT,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { scan, id } = original;
                 if (!scan) return '-';

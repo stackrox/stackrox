@@ -20,11 +20,16 @@ const getClassNameBySize = (className, size) => {
 };
 
 const LabelChip = ({ text, type, size }) => {
-    let className = 'inline-block border rounded font-600 text-center';
+    let className =
+        'inline-block border rounded font-600 text-center whitespace-no-wrap min-h-6 flex justify-center items-center';
     className = getClassNameBySize(className, size);
     const colorType = colorTypes.find(datum => datum === type) || defaultColorType;
     className = `${className} bg-${colorType}-200 border-${colorType}-400 text-${colorType}-800 capitalize`;
-    return <span className={className}>{text}</span>;
+    return (
+        <span className={className}>
+            <span>{text}</span>
+        </span>
+    );
 };
 
 LabelChip.propTypes = {

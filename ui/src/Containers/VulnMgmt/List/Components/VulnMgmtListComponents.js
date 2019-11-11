@@ -46,8 +46,8 @@ export function getComponentTableColumns(workflowState) {
         {
             Header: `CVEs`,
             entityType: entityTypes.CVE,
-            headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
                 if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
@@ -71,8 +71,8 @@ export function getComponentTableColumns(workflowState) {
         },
         {
             Header: `Top CVSS`,
-            headerClassName: `w-1/8 text-center ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
                 if (!topVuln) return '-';
@@ -84,8 +84,8 @@ export function getComponentTableColumns(workflowState) {
         {
             Header: `Images`,
             entityType: entityTypes.IMAGE,
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'imageCount',
             Cell: ({ original, pdf }) => {
                 const { imageCount, id } = original;
@@ -103,8 +103,8 @@ export function getComponentTableColumns(workflowState) {
         {
             Header: `Deployments`,
             entityType: entityTypes.DEPLOYMENT,
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'deploymentCount',
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, id } = original;
@@ -121,8 +121,8 @@ export function getComponentTableColumns(workflowState) {
         },
         {
             Header: `Risk Priority`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'priority'
         }
     ];
