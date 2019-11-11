@@ -45,6 +45,7 @@ export const CLUSTER_LIST_FRAGMENT = gql`
 
 export const VULN_CVE_LIST_FRAGMENT = gql`
     fragment cveFields on EmbeddedVulnerability {
+        id: cve
         cve
         cvss
         scoreVersion

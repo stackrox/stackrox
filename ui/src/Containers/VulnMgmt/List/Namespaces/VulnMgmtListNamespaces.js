@@ -15,6 +15,17 @@ import { NAMESPACE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments'
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 
+export const defaultNamespaceSort = [
+    {
+        id: 'metadata.priority',
+        desc: false
+    },
+    {
+        id: 'metadata.name',
+        desc: false
+    }
+];
+
 export function getNamespaceTableColumns(workflowState) {
     const tableColumns = [
         {
@@ -185,13 +196,6 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
         }
     };
 
-    const defaultNamespaceSort = [
-        {
-            id: 'metadata.priority',
-            desc: false
-        }
-    ];
-
     return (
         <WorkflowListPage
             data={data}
@@ -204,12 +208,15 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
             search={search}
             sort={sort}
             page={page}
-            defaultSorted={defaultNamespaceSort}
+            defaultSorted={sort}
         />
     );
 };
 
 VulnMgmtNamespaces.propTypes = workflowListPropTypes;
-VulnMgmtNamespaces.defaultProps = workflowListDefaultProps;
+VulnMgmtNamespaces.defaultProps = {
+    ...workflowListDefaultProps,
+    sort: defaultNamespaceSort
+};
 
 export default VulnMgmtNamespaces;

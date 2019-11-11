@@ -32,7 +32,7 @@ const MOST_COMMON_VULNERABILITIES = gql`
 `;
 
 const processData = (data, workflowState, deploymentId, limit) => {
-    const results = sortBy(data.results, [datum => datum.imageCount])
+    const results = sortBy(data.results, ['imageCount', 'cvss'])
         .filter(
             // test whether the given deployment appears in the list of vulnerabilities
             cve =>
@@ -67,14 +67,17 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
         }
     }
 
+    const viewAllURL = workflowState
+        .pushList(entityTypes.CVE)
+        .setSort([{ id: 'imageCount', desc: true }, { id: 'cvss', desc: true }])
+        .toUrl();
+
     return (
         <Widget
             className="h-full pdf-page"
             bodyClassName="px-2"
             header="Most Common Vulnerabilities"
-            headerComponents={
-                <ViewAllButton url={workflowState.pushList(entityTypes.CVE).toUrl()} />
-            }
+            headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
         </Widget>

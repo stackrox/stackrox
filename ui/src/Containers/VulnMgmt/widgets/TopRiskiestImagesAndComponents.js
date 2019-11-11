@@ -130,7 +130,7 @@ const processData = (data, entityType, workflowState, limit) => {
                 )
             };
         });
-    const processedData = sortBy(results, [datum => datum.priority]).slice(0, limit); // @TODO: Remove when we have pagination on image components
+    const processedData = sortBy(results, ['priority']).slice(0, limit); // @TODO: Remove when we have pagination on image components
     return processedData;
 };
 
@@ -202,7 +202,11 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
                     </div>
                 );
 
-                const viewAllURL = workflowState.pushList(selectedEntity).toUrl();
+                const viewAllURL = workflowState
+                    .pushList(selectedEntity)
+                    .setSort([{ id: 'priority', desc: false }])
+                    .toUrl();
+
                 headerComponents = <ViewAllButton url={viewAllURL} />;
             } else {
                 content = <NoComponentVulnMessage />;

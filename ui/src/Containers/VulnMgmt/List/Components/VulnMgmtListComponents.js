@@ -14,6 +14,17 @@ import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragm
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 
+export const defaultComponentSort = [
+    {
+        id: 'priority',
+        desc: false
+    },
+    {
+        id: 'name',
+        desc: false
+    }
+];
+
 export function getComponentTableColumns(workflowState) {
     const tableColumns = [
         {
@@ -118,13 +129,6 @@ export function getComponentTableColumns(workflowState) {
     return removeEntityContextColumns(tableColumns, workflowState);
 }
 
-export const defaultComponentSort = [
-    {
-        id: 'priority',
-        desc: false
-    }
-];
-
 const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
         query getComponents($query: String) {
@@ -148,17 +152,19 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
             queryOptions={queryOptions}
             idAttribute="id"
             entityListType={entityTypes.COMPONENT}
-            defaultSorted={defaultComponentSort}
+            defaultSorted={sort}
             getTableColumns={getComponentTableColumns}
             selectedRowId={selectedRowId}
             page={page}
             search={search}
-            sort={sort}
         />
     );
 };
 
 VulnMgmtComponents.propTypes = workflowListPropTypes;
-VulnMgmtComponents.defaultProps = workflowListDefaultProps;
+VulnMgmtComponents.defaultProps = {
+    ...workflowListDefaultProps,
+    sort: defaultComponentSort
+};
 
 export default VulnMgmtComponents;

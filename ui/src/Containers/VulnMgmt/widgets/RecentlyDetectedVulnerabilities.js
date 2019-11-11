@@ -5,7 +5,6 @@ import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import sortBy from 'lodash/sortBy';
-import { getTime } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 
@@ -32,14 +31,10 @@ const RECENTLY_DETECTED_VULNERABILITIES = gql`
 `;
 
 const processData = (data, workflowState, limit) => {
-    let results = data.results
-        .filter(datum => datum.lastScanned)
-        .map(datum => {
-            return { ...datum, lastScanned: getTime(new Date(datum.lastScanned)) };
-        });
-    results = sortBy(results, datum => {
-        return [datum.lastScanned, datum.cve];
-    }).slice(-limit); // @TODO: filter on the client side until we have pagination on Vulnerabilities
+    let results = data.results.filter(datum => datum.lastScanned);
+    results = sortBy(results, ['lastScanned', 'cvss', 'envImpact'])
+        .slice(-limit)
+        .reverse(); // @TODO: filter on the client side until we have pagination on Vulnerabilities
 
     // @TODO: remove JSX generation from processing data and into Numbered List function
     return getVulnerabilityChips(workflowState, results);
@@ -78,13 +73,20 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
         }
     }
 
+    const viewAllURL = workflowState
+        .pushList(entityTypes.CVE)
+        .setSort([
+            { id: 'lastScanned', desc: true },
+            { id: 'cvss', desc: true },
+            { id: 'envImpact', desc: true }
+        ])
+        .toUrl();
+
     return (
         <Widget
             className="h-full pdf-page"
             header="Recently Detected Vulnerabilities"
-            headerComponents={
-                <ViewAllButton url={workflowState.pushList(entityTypes.CVE).toUrl()} />
-            }
+            headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
         </Widget>

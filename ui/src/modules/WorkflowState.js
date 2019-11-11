@@ -282,6 +282,19 @@ export class WorkflowState {
             ...sort,
             [param]: sortProp
         };
+
+        return new WorkflowState(useCase, stateStack, search, newSort, paging);
+    }
+
+    clearSort() {
+        const { useCase, stateStack, search, sort, paging, sidePanelActive } = this;
+        const param = sidePanelActive ? sortParams.sidePanel : sortParams.page;
+
+        const newSort = {
+            ...sort,
+            [param]: undefined
+        };
+
         return new WorkflowState(useCase, stateStack, search, newSort, paging);
     }
 

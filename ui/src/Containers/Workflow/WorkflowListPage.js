@@ -30,7 +30,6 @@ const WorkflowListPage = ({
     SubComponent,
     showSubrows,
     search,
-    sort,
     page
 }) => {
     const workflowState = useContext(workflowStateContext);
@@ -66,7 +65,6 @@ const WorkflowListPage = ({
             tableColumns={tableColumns}
             selectedRowId={selectedRowId}
             search={search}
-            sort={sort}
             page={page}
             SubComponent={SubComponent}
             defaultSorted={defaultSorted}
@@ -88,7 +86,6 @@ WorkflowListPage.propTypes = {
     entityContext: PropTypes.shape({}),
     selectedRowId: PropTypes.string,
     search: PropTypes.shape({}),
-    sort: PropTypes.string,
     page: PropTypes.number,
     SubComponent: PropTypes.func,
     showSubrows: PropTypes.bool,
@@ -103,7 +100,6 @@ WorkflowListPage.defaultProps = {
     entityContext: {},
     selectedRowId: null,
     search: null,
-    sort: null,
     page: 1,
     SubComponent: null,
     showSubrows: false,

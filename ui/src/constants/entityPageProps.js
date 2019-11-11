@@ -73,7 +73,7 @@ export const workflowListPropTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})),
     selectedRowId: PropTypes.string,
     search: PropTypes.shape({}),
-    sort: PropTypes.string,
+    sort: PropTypes.arrayOf(PropTypes.shape({})),
     page: PropTypes.number,
     entityContext: PropTypes.shape({})
 };
@@ -81,7 +81,7 @@ export const workflowListPropTypes = {
 export const workflowListDefaultProps = {
     search: null,
     entityContext: {},
-    sort: null,
+    sort: [],
     page: 1,
     selectedRowId: null,
     data: null
@@ -92,7 +92,7 @@ export const workflowEntityPropTypes = {
     entityListType: PropTypes.string,
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
-    sort: PropTypes.string,
+    sort: PropTypes.arrayOf(PropTypes.shape({})),
     page: PropTypes.number
 };
 
@@ -100,6 +100,6 @@ export const workflowEntityDefaultProps = {
     entityListType: null,
     entityContext: {},
     search: null,
-    sort: null,
+    sort: [],
     page: 1
 };

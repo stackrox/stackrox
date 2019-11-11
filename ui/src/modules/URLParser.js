@@ -44,6 +44,16 @@ function paramsToStateStack(params) {
     return stateArray;
 }
 
+export function parseSort(sort) {
+    if (!sort) return sort;
+    return sort.map(({ id, desc }) => {
+        return {
+            id,
+            desc: desc === 'true'
+        };
+    });
+}
+
 // Convert URL to workflow state and search objects
 // note: this will read strictly from 'location' as 'match' is relative to the closest Route component
 function parseURL(location) {

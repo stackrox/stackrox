@@ -101,7 +101,15 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
-    const viewAllURL = workflowState.pushList(entityTypes.DEPLOYMENT).toUrl();
+    const viewAllURL = workflowState
+        .pushList(entityTypes.DEPLOYMENT)
+        .setSort([
+            { id: 'policyStatus', desc: false },
+            { id: 'failingPolicyCount', desc: true },
+            { id: 'name', desc: false }
+        ])
+        .toUrl();
+
     if (!loading) {
         const processedData = processData(data, workflowState, limit);
 

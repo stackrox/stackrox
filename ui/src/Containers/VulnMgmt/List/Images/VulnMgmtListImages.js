@@ -16,6 +16,17 @@ import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 
+export const defaultImageSort = [
+    {
+        id: 'priority',
+        desc: false
+    },
+    {
+        id: 'name.fullName',
+        desc: false
+    }
+];
+
 export function getImageTableColumns(workflowState) {
     const tableColumns = [
         {
@@ -163,13 +174,6 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
         }
     };
 
-    const defaultImageSort = [
-        {
-            id: 'priority',
-            desc: false
-        }
-    ];
-
     return (
         <WorkflowListPage
             data={data}
@@ -179,14 +183,16 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
             getTableColumns={getImageTableColumns}
             selectedRowId={selectedRowId}
             search={search}
-            sort={sort}
             page={page}
-            defaultSorted={defaultImageSort}
+            defaultSorted={sort}
         />
     );
 };
 
 VulnMgmtImages.propTypes = workflowListPropTypes;
-VulnMgmtImages.defaultProps = workflowListDefaultProps;
+VulnMgmtImages.defaultProps = {
+    ...workflowListDefaultProps,
+    sort: defaultImageSort
+};
 
 export default VulnMgmtImages;

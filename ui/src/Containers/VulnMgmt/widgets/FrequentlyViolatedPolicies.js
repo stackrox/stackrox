@@ -36,8 +36,8 @@ const ViewAllButton = ({ url }) => {
     );
 };
 
-const processData = (data, workflowState) => {
-    const results = sortBy(data.results, [datum => datum.alertCount]).slice(-9); // @TODO: Remove when we have pagination on Policies
+const processData = (data, workflowState, limit) => {
+    const results = sortBy(data.results, ['alertCount']).slice(-limit); // @TODO: Remove when we have pagination on Policies
     return results
         .filter(datum => datum.alertCount)
         .map(({ id, name, enforcementActions, severity, alertCount }) => {
@@ -51,7 +51,7 @@ const processData = (data, workflowState) => {
         });
 };
 
-const FrequentlyViolatedPolicies = ({ entityContext }) => {
+const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
     const { loading, data = {} } = useQuery(FREQUENTLY_VIOLATED_POLICIES, {
         variables: {
             query: `${queryService.entityContextToQueryString(entityContext)}+
@@ -63,7 +63,7 @@ const FrequentlyViolatedPolicies = ({ entityContext }) => {
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState);
+        const processedData = processData(data, workflowState, limit);
 
         if (!processedData || processedData.length === 0) {
             content = (
@@ -78,14 +78,17 @@ const FrequentlyViolatedPolicies = ({ entityContext }) => {
         }
     }
 
+    const viewAllURL = workflowState
+        .pushList(entityTypes.POLICY)
+        .setSort([{ id: 'policyStatus', desc: false }, { id: 'severity', desc: false }])
+        .toUrl();
+
     return (
         <Widget
             className="h-full pdf-page"
             bodyClassName="px-2"
             header="Frequently Violated Policies"
-            headerComponents={
-                <ViewAllButton url={workflowState.pushList(entityTypes.POLICY).toUrl()} />
-            }
+            headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
         </Widget>
@@ -93,11 +96,13 @@ const FrequentlyViolatedPolicies = ({ entityContext }) => {
 };
 
 FrequentlyViolatedPolicies.propTypes = {
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
+    limit: PropTypes.number
 };
 
 FrequentlyViolatedPolicies.defaultProps = {
-    entityContext: {}
+    entityContext: {},
+    limit: 9
 };
 
 export default FrequentlyViolatedPolicies;

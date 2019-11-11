@@ -17,6 +17,17 @@ import { CLUSTER_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 
+export const defaultClusterSort = [
+    {
+        id: 'priority',
+        desc: false
+    },
+    {
+        id: 'name',
+        desc: false
+    }
+];
+
 const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const workflowState = useContext(workflowStateContext);
 
@@ -75,7 +86,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                             hideLink={pdf}
                         />
                     );
-                }
+                },
+                accessor: 'vulnCounter.all.total'
             },
             {
                 Header: `K8S version`,
@@ -215,11 +227,15 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             search={search}
             sort={sort}
             page={page}
+            defaultSorted={sort}
         />
     );
 };
 
 VulnMgmtClusters.propTypes = workflowListPropTypes;
-VulnMgmtClusters.defaultProps = workflowListDefaultProps;
+VulnMgmtClusters.defaultProps = {
+    ...workflowListDefaultProps,
+    sort: defaultClusterSort
+};
 
 export default VulnMgmtClusters;

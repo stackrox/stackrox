@@ -17,6 +17,17 @@ import { truncate } from 'utils/textUtils';
 
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
+export const defaultCveSort = [
+    {
+        id: 'cvss',
+        desc: true
+    },
+    {
+        id: 'cve',
+        desc: false
+    }
+];
+
 export function getCveTableColumns(workflowState, linksOn = true) {
     const { entityType } = workflowState.getBaseEntity();
     const tableColumns = [
@@ -197,13 +208,6 @@ export function renderCveDescription(row) {
     );
 }
 
-export const defaultCveSort = [
-    {
-        id: 'lastScanned',
-        desc: true
-    }
-];
-
 const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
     // TODO: change query line to `query getCves($query: String) {`
     //   after API starts accepting empty string ('') for query
@@ -232,9 +236,8 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
             getTableColumns={getCveTableColumns}
             selectedRowId={selectedRowId}
             search={search}
-            sort={sort}
             page={page}
-            defaultSorted={defaultCveSort}
+            defaultSorted={sort}
             showSubrows
             SubComponent={renderCveDescription}
         />
@@ -242,6 +245,9 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
 };
 
 VulnMgmtCves.propTypes = workflowListPropTypes;
-VulnMgmtCves.defaultProps = workflowListDefaultProps;
+VulnMgmtCves.defaultProps = {
+    ...workflowListDefaultProps,
+    sort: defaultCveSort
+};
 
 export default VulnMgmtCves;

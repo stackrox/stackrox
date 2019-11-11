@@ -74,7 +74,10 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
-    const viewAllURL = workflowState.pushList(entityTypes.CVE).toUrl();
+    const viewAllURL = workflowState
+        .pushList(entityTypes.POLICY)
+        .setSort([{ id: 'policyStatus', desc: true }, { id: 'severity', desc: true }])
+        .toUrl();
 
     if (!loading) {
         if (

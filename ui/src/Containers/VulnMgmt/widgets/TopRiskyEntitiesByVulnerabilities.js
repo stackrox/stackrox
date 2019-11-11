@@ -17,7 +17,11 @@ import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import isGQLLoading from 'utils/gqlLoading';
 import { severityColorMap, severityColorLegend } from 'constants/severityColors';
-import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
+import {
+    getSeverityByCvss,
+    getPriorityFieldByEntity,
+    getNameFieldByEntity
+} from 'utils/vulnerabilityUtils';
 
 const TopRiskyEntitiesByVulnerabilities = ({
     entityContext,
@@ -39,7 +43,16 @@ const TopRiskyEntitiesByVulnerabilities = ({
     // View all button
     const viewAllUrl = workflowState
         .pushList(selectedEntityType)
-        .setSort('risk')
+        .setSort([
+            {
+                id: getPriorityFieldByEntity(selectedEntityType),
+                desc: false
+            },
+            {
+                id: getNameFieldByEntity(selectedEntityType),
+                desc: false
+            }
+        ])
         .toUrl();
 
     const titleComponents = (

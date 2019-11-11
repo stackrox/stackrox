@@ -16,6 +16,17 @@ import removeEntityContextColumns from 'utils/tableUtils';
 
 import { POLICY_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
+export const defaultPolicySort = [
+    {
+        id: 'latestViolation',
+        desc: true
+    },
+    {
+        id: 'policyStatus',
+        desc: false
+    }
+];
+
 export function getPolicyTableColumns(workflowState) {
     const tableColumns = [
         {
@@ -144,17 +155,6 @@ export function getPolicyTableColumns(workflowState) {
     return removeEntityContextColumns(tableColumns, workflowState);
 }
 
-export const defaultPolicySort = [
-    {
-        id: 'policyStatus',
-        desc: false
-    },
-    {
-        id: 'name',
-        desc: false
-    }
-];
-
 const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data }) => {
     const POLICIES_QUERY = gql`
         query getPolicies($policyQuery: String) {
@@ -186,12 +186,15 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data }) => {
             search={search}
             sort={sort}
             page={page}
-            defaultSorted={defaultPolicySort}
+            defaultSorted={sort}
         />
     );
 };
 
 VulnMgmtPolicies.propTypes = workflowListPropTypes;
-VulnMgmtPolicies.defaultProps = workflowListDefaultProps;
+VulnMgmtPolicies.defaultProps = {
+    ...workflowListDefaultProps,
+    sort: defaultPolicySort
+};
 
 export default VulnMgmtPolicies;

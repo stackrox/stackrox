@@ -39,7 +39,10 @@ const CvesByCvssScore = ({ entityContext }) => {
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
-    const viewAllURL = workflowState.pushList(entityTypes.CVE).toUrl();
+    const viewAllURL = workflowState
+        .pushList(entityTypes.CVE)
+        .setSort([{ id: 'cvss', desc: true }])
+        .toUrl();
 
     function getChildren(vulns, severity) {
         return vulns
