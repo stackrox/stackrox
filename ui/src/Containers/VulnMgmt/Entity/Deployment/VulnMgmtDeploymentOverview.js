@@ -24,8 +24,30 @@ import ViolationsAcrossThisDeployment from 'Containers/ConfigManagement/Entity/w
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
+const emptyDeployment = {
+    annotations: [],
+    cluster: {},
+    componentCount: 0,
+    created: '',
+    failingPolicies: [],
+    id: '',
+    imageCount: 0,
+    inactive: false,
+    labels: [],
+    name: '',
+    namespace: '',
+    namespaceId: '',
+    policyStatus: '',
+    priority: 0,
+    vulnCount: 0,
+    vulnerabilities: []
+};
+
 const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
+
+    // guard against incomplete GraphQL-cached data
+    const safeData = { ...emptyDeployment, ...data };
 
     const {
         id,
@@ -42,7 +64,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         componentCount,
         vulnCount,
         vulnerabilities
-    } = data;
+    } = safeData;
 
     const metadataKeyValuePairs = [];
 

@@ -23,10 +23,28 @@ import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntity
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
+const emptyImage = {
+    deploymentCount: 0,
+    id: '',
+    lastUpdated: '',
+    metadata: {
+        layerShas: [],
+        v1: {}
+    },
+    name: {},
+    priority: 0,
+    scan: {},
+    topVuln: {},
+    vulnCount: 0
+};
+
 const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
-    const { metadata, scan, topVuln, deploymentCount, priority, vulnCount } = data;
+    // guard against incomplete GraphQL-cached data
+    const safeData = { ...emptyImage, ...data };
+
+    const { metadata, scan, topVuln, deploymentCount, priority, vulnCount } = safeData;
     const { cvss, scoreVersion } = topVuln;
 
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];

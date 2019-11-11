@@ -17,8 +17,31 @@ import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 import PolicyConfigurationFields from './PolicyConfigurationFields';
 
+const emptyPolicy = {
+    categories: [],
+    deploymentCount: 0,
+    deployments: [],
+    description: '',
+    enforcementActions: [],
+    fields: {},
+    id: '',
+    lastUpdated: '',
+    latestViolation: '',
+    lifecycleStages: [],
+    name: '',
+    policyStatus: '',
+    rationale: '',
+    remediation: '',
+    scope: [],
+    severity: '',
+    whitelists: []
+};
+
 const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
+
+    // guard against incomplete GraphQL-cached data
+    const safeData = { ...emptyPolicy, ...data };
 
     const {
         id,
@@ -38,7 +61,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         scope,
         whitelists,
         deployments
-    } = data;
+    } = safeData;
 
     // @TODO: extract this out to make it re-usable and easier to test
     const failingDeployments = deployments.filter(singleDeploy => {

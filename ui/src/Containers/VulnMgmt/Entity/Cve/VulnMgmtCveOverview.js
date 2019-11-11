@@ -13,8 +13,29 @@ import { getSeverityChipType } from 'utils/vulnerabilityUtils';
 import { truncate } from 'utils/textUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
+const emptyCve = {
+    componentCount: 0,
+    cve: '',
+    cvss: 0,
+    deploymentCount: 0,
+    envImpact: 0,
+    fixedByVersion: '',
+    imageCount: 0,
+    isFixable: false,
+    lastModified: '',
+    lastScanned: '',
+    link: '',
+    publishedOn: '',
+    scoreVersion: '',
+    summary: '',
+    vectors: {}
+};
+
 const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
+
+    // guard against incomplete GraphQL-cached data
+    const safeData = { ...emptyCve, ...data };
 
     const {
         cve,
@@ -31,7 +52,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         componentCount,
         imageCount,
         deploymentCount
-    } = data;
+    } = safeData;
 
     const linkToNVD = (
         <a

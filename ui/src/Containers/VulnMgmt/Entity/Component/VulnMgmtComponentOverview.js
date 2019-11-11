@@ -14,11 +14,34 @@ import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntity
 import TableWidget from '../TableWidget';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
+const emptyComponent = {
+    deploymentCount: 0,
+    fixableCVEs: [],
+    id: '',
+    imageCount: 0,
+    name: '',
+    priority: 0,
+    topVuln: {},
+    version: '',
+    vulnCount: 0
+};
+
 function VulnMgmtComponentOverview({ data, entityContext }) {
     const workflowState = useContext(workflowStateContext);
 
-    const { version, priority, topVuln, fixableCVEs, id } = data;
-    const { vulnCount, deploymentCount, imageCount } = data;
+    // guard against incomplete GraphQL-cached data
+    const safeData = { ...emptyComponent, ...data };
+
+    const {
+        version,
+        priority,
+        topVuln,
+        fixableCVEs,
+        id,
+        vulnCount,
+        deploymentCount,
+        imageCount
+    } = safeData;
     const { cvss, scoreVersion } = topVuln;
 
     const metadataKeyValuePairs = [
