@@ -134,7 +134,7 @@ export function getCveTableColumns(workflowState, linksOn = true) {
                 if (!linksOn) return text;
                 const url = workflowState
                     .pushListItem(cve)
-                    .pushList(entityTypes.IMAGE)
+                    .pushList(entityTypes.DEPLOYMENT)
                     .toUrl();
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
@@ -174,7 +174,7 @@ export function getCveTableColumns(workflowState, linksOn = true) {
                 if (!linksOn) return text;
                 const url = workflowState
                     .pushListItem(cve)
-                    .pushList(entityTypes.IMAGE)
+                    .pushList(entityTypes.COMPONENT)
                     .toUrl();
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
