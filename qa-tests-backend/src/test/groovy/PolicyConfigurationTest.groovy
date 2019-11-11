@@ -33,6 +33,7 @@ import spock.lang.Unroll
 
 class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"
+    static final private String DNS = "qaapachedns"
     static final private String STRUTS = "qadefpolstruts"
     static final private String DEPLOYMENTNGINX_LB = "deploymentnginx-lb"
     static final private String DEPLOYMENTNGINX_NP = "deploymentnginx-np"
@@ -74,6 +75,10 @@ class PolicyConfigurationTest extends BaseSpecification {
             new Deployment()
                     .setName(STRUTS)
                     .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+                    .addLabel("app", "test"),
+            new Deployment()
+                    .setName(DNS)
+                    .setImage("apollo-dtr.rox.systems/legacy-apps/apache-dns:latest")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_LB)
@@ -203,7 +208,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                         .setScanAgeDays(1)
                         .build())
-                        .build()            | STRUTS
+                        .build()            | DNS
 
         "Dockerfile Line"          |
                 Policy.newBuilder()
