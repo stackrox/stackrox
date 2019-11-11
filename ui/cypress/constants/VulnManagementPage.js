@@ -13,6 +13,15 @@ export const url = {
     }
 };
 
+export const listSelectors = {
+    tableHeader: '.rt-thead.-header',
+    tableColumn: '.rt-th.leading-normal > div',
+    tableBodyRows: '.rt-tbody > .rt-tr-group > .rt-tr',
+    tableBodyColumns: '.rt-tbody > .rt-tr-group > .rt-tr > .rt-td.leading-normal',
+    tableColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
+    tableCVEColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > .items-center'
+};
+
 export const dashboardSelectors = {
     widgets: "[data-test-id='widget']",
     tileLinks: "[data-test-id='tile-link']",
@@ -35,5 +44,6 @@ export const dashboardSelectors = {
     viewAllButton: 'button:contains("View All")'
 };
 export const selectors = {
-    ...dashboardSelectors
+    ...dashboardSelectors,
+    ...listSelectors
 };
