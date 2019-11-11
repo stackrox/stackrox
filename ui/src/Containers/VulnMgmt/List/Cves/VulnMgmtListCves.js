@@ -29,7 +29,6 @@ export const defaultCveSort = [
 ];
 
 export function getCveTableColumns(workflowState, linksOn = true) {
-    const { entityType } = workflowState.getBaseEntity();
     const tableColumns = [
         {
             expander: true,
@@ -122,78 +121,69 @@ export function getCveTableColumns(workflowState, linksOn = true) {
             accessor: 'publishedOn',
             id: 'published'
         },
-        entityType !== entityTypes.IMAGE &&
-            entityType !== entityTypes.COMPONENT && {
-                Header: `Deployments`,
-                entityType: entityTypes.DEPLOYMENT,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
+        {
+            Header: `Deployments`,
+            entityType: entityTypes.DEPLOYMENT,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                    const { deploymentCount, cve } = original;
-                    if (deploymentCount === 0) return 'No deployments';
-                    const text = `${deploymentCount} ${pluralize('deployment', deploymentCount)}`;
-                    if (!linksOn) return text;
-                    const url = workflowState
-                        .pushListItem(cve)
-                        .pushList(entityTypes.IMAGE)
-                        .toUrl();
-                    return <TableCellLink pdf={pdf} url={url} text={text} />;
-                },
-                accessor: 'deploymentCount',
-                id: 'deploymentCount'
+                const { deploymentCount, cve } = original;
+                if (deploymentCount === 0) return 'No deployments';
+                const text = `${deploymentCount} ${pluralize('deployment', deploymentCount)}`;
+                if (!linksOn) return text;
+                const url = workflowState
+                    .pushListItem(cve)
+                    .pushList(entityTypes.IMAGE)
+                    .toUrl();
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
-        entityType !== entityTypes.IMAGE &&
-            entityType !== entityTypes.COMPONENT && {
-                Header: `Images`,
-                entityType: entityTypes.IMAGE,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
+            accessor: 'deploymentCount',
+            id: 'deploymentCount'
+        },
+        {
+            Header: `Images`,
+            entityType: entityTypes.IMAGE,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                    const { imageCount, cve } = original;
-                    if (imageCount === 0) return 'No images';
-                    const text = `${imageCount} ${pluralize('image', imageCount)}`;
-                    if (!linksOn) return text;
-                    const url = workflowState
-                        .pushListItem(cve)
-                        .pushList(entityTypes.IMAGE)
-                        .toUrl();
-                    return <TableCellLink pdf={pdf} url={url} text={text} />;
-                },
-                accessor: 'imageCount',
-                id: 'imageCount'
+                const { imageCount, cve } = original;
+                if (imageCount === 0) return 'No images';
+                const text = `${imageCount} ${pluralize('image', imageCount)}`;
+                if (!linksOn) return text;
+                const url = workflowState
+                    .pushListItem(cve)
+                    .pushList(entityTypes.IMAGE)
+                    .toUrl();
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
-        entityType !== entityTypes.IMAGE &&
-            entityType !== entityTypes.COMPONENT && {
-                Header: `Components`,
-                entityType: entityTypes.COMPONENT,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
+            accessor: 'imageCount',
+            id: 'imageCount'
+        },
+        {
+            Header: `Components`,
+            entityType: entityTypes.COMPONENT,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                    const { componentCount, cve } = original;
-                    if (componentCount === 0) return 'No components';
-                    const text = `${componentCount} ${pluralize('component', componentCount)}`;
-                    if (!linksOn) return text;
-                    const url = workflowState
-                        .pushListItem(cve)
-                        .pushList(entityTypes.IMAGE)
-                        .toUrl();
-                    return <TableCellLink pdf={pdf} url={url} text={text} />;
-                },
-                accessor: 'componentCount',
-                id: 'componentCount'
-            }
+                const { componentCount, cve } = original;
+                if (componentCount === 0) return 'No components';
+                const text = `${componentCount} ${pluralize('component', componentCount)}`;
+                if (!linksOn) return text;
+                const url = workflowState
+                    .pushListItem(cve)
+                    .pushList(entityTypes.IMAGE)
+                    .toUrl();
+                return <TableCellLink pdf={pdf} url={url} text={text} />;
+            },
+            accessor: 'componentCount',
+            id: 'componentCount'
+        }
     ];
 
-    const cols = removeEntityContextColumns(tableColumns, workflowState);
-    // TODO: What is this about??
-    // If the base page is a component or image list, then get rid of the component and image columns
-    // This is a different type of logic than found on other pages. We need to erify business rules for this.
-    return [entityTypes.COMPONENT, entityTypes.IMAGE].includes(entityType)
-        ? cols.filter(col => !!col)
-        : cols;
+    return removeEntityContextColumns(tableColumns, workflowState);
 }
 
 const maxLengthForSummary = 360; // based on showing up to approximately 2 lines before table starts scrolling horizontally
