@@ -43,9 +43,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
-
     const { metadata, scan, topVuln, deploymentCount, priority, vulnCount } = safeData;
-    const { cvss, scoreVersion } = topVuln;
 
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
     const cves = [];
@@ -85,10 +83,13 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
         }
     ];
 
-    const imageStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <TopCvssLabel key="top-cvss" cvss={cvss} version={scoreVersion} expanded />
-    ];
+    const imageStats = [<RiskScore key="risk-score" score={priority} />];
+    if (topVuln) {
+        const { cvss, scoreVersion } = topVuln;
+        imageStats.push(
+            <TopCvssLabel key="top-cvss" cvss={cvss} version={scoreVersion} expanded />
+        );
+    }
 
     function renderCVEsTable(row) {
         const layer = row.original;

@@ -199,6 +199,9 @@ func (eicr *EmbeddedImageScanComponentResolver) TopVuln(ctx context.Context) (*E
 			maxCvss = vuln
 		}
 	}
+	if maxCvss == nil {
+		return nil, nil
+	}
 	return eicr.root.wrapEmbeddedVulnerability(maxCvss, nil)
 }
 

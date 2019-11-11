@@ -75,6 +75,7 @@ export function getComponentTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
+                if (!topVuln) return '-';
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },

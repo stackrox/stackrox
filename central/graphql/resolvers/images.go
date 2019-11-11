@@ -135,6 +135,9 @@ func (resolver *imageResolver) TopVuln(ctx context.Context, args rawQuery) (*Emb
 			maxCvss = resolver.data
 		}
 	}
+	if maxCvss == nil {
+		return nil, nil
+	}
 	return resolver.root.wrapEmbeddedVulnerability(maxCvss, nil)
 }
 

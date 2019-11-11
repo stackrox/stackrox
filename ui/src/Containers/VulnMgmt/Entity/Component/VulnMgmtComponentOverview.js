@@ -42,7 +42,6 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         deploymentCount,
         imageCount
     } = safeData;
-    const { cvss, scoreVersion } = topVuln;
 
     const metadataKeyValuePairs = [
         {
@@ -51,10 +50,13 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         }
     ];
 
-    const componentStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <TopCvssLabel key="top-cvss" cvss={cvss} version={scoreVersion} expanded />
-    ];
+    const componentStats = [<RiskScore key="risk-score" score={priority} />];
+    if (topVuln) {
+        const { cvss, scoreVersion } = topVuln;
+        componentStats.push(
+            <TopCvssLabel key="top-cvss" cvss={cvss} version={scoreVersion} expanded />
+        );
+    }
 
     function getCountData(entityType) {
         switch (entityType) {
