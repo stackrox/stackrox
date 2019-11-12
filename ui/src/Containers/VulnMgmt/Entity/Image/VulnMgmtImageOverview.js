@@ -147,7 +147,10 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 </CollapsibleSection>
                 <CollapsibleSection title="Image Findings">
                     <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                        <Tabs hasTabSpacing headers={[{ text: 'CVEs' }, { text: 'Dockerfile' }]}>
+                        <Tabs
+                            hasTabSpacing
+                            headers={[{ text: 'Fixable CVEs' }, { text: 'Dockerfile' }]}
+                        >
                             <TabContent>
                                 <TableWidget
                                     header={`${cves.length} fixable ${pluralize(

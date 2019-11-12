@@ -75,7 +75,12 @@ export function getComponentTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
-                if (!topVuln) return '-';
+                if (!topVuln)
+                    return (
+                        <div className="mx-auto flex flex-col">
+                            <span>–</span>
+                        </div>
+                    );
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },

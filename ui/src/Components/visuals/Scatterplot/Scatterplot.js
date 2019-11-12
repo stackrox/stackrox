@@ -57,6 +57,7 @@ const Scatterplot = ({
                 <VerticalGridLines />
                 <HorizontalGridLines />
                 <MarkSeries
+                    className="cursor-pointer"
                     colorType="literal"
                     data={data}
                     onValueMouseOver={onValueMouseOver}

@@ -42,8 +42,8 @@ export function getDeploymentTableColumns(workflowState) {
         },
         {
             Header: `CVEs`,
-            headerClassName: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/4 lg:w-1/5 xl:w-1/6 ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
             entityType: entityTypes.CVE,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;

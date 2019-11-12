@@ -38,7 +38,7 @@ export function getImageTableColumns(workflowState) {
         {
             Header: `Image`,
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${defaultColumnClassName}`,
+            className: `w-1/6 word-break-all ${defaultColumnClassName}`,
             accessor: 'name.fullName'
         },
         {
@@ -73,7 +73,12 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
-                if (!topVuln) return '-';
+                if (!topVuln)
+                    return (
+                        <div className="mx-auto flex flex-col">
+                            <span>–</span>
+                        </div>
+                    );
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
@@ -85,7 +90,7 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { metadata } = original;
-                if (!metadata || !metadata.v1) return '-';
+                if (!metadata || !metadata.v1) return '–';
                 return <DateTimeField date={metadata.v1.created} />;
             },
             sortMethod: sortDate,
@@ -97,7 +102,7 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { scan } = original;
-                if (!scan) return '-';
+                if (!scan) return '–';
                 return <DateTimeField date={scan.scanTime} />;
             },
             sortMethod: sortDate,
