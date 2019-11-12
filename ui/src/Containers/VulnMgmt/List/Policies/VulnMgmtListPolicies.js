@@ -184,9 +184,8 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data }) => {
             getTableColumns={getPolicyTableColumns}
             selectedRowId={selectedRowId}
             search={search}
-            sort={sort}
             page={page}
-            defaultSorted={sort}
+            defaultSorted={sort || defaultPolicySort}
         />
     );
 };
@@ -194,7 +193,7 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data }) => {
 VulnMgmtPolicies.propTypes = workflowListPropTypes;
 VulnMgmtPolicies.defaultProps = {
     ...workflowListDefaultProps,
-    sort: defaultPolicySort
+    sort: null
 };
 
 export default VulnMgmtPolicies;

@@ -153,7 +153,7 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
             queryOptions={queryOptions}
             idAttribute="id"
             entityListType={entityTypes.COMPONENT}
-            defaultSorted={sort}
+            defaultSorted={sort || defaultComponentSort}
             getTableColumns={getComponentTableColumns}
             selectedRowId={selectedRowId}
             page={page}
@@ -165,7 +165,7 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
 VulnMgmtComponents.propTypes = workflowListPropTypes;
 VulnMgmtComponents.defaultProps = {
     ...workflowListDefaultProps,
-    sort: defaultComponentSort
+    sort: null
 };
 
 export default VulnMgmtComponents;

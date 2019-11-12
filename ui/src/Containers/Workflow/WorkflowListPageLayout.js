@@ -7,7 +7,7 @@ import ExportButton from 'Components/ExportButton';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import entityLabels from 'messages/entity';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
-import parseURL, { parseSort } from 'modules/URLParser';
+import parseURL from 'modules/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { WorkflowState } from 'modules/WorkflowState';
 import { useCaseEntityMap } from 'modules/entityRelationships';
@@ -32,9 +32,7 @@ const WorkflowListPageLayout = ({ location }) => {
     // Page props
     const pageListType = workflowState.getBaseEntity().entityType;
     const pageSearch = workflowState.search[searchParams.page];
-    const pageSort = workflowState.sort[sortParams.page]
-        ? parseSort(workflowState.sort[sortParams.page])
-        : undefined;
+    const pageSort = workflowState.sort[sortParams.page];
     const pagePaging = workflowState.paging[pagingParams.page];
 
     // Sidepanel props
@@ -42,9 +40,7 @@ const WorkflowListPageLayout = ({ location }) => {
         workflowState
     );
     const sidePanelSearch = workflowState.search[searchParams.sidePanel];
-    const sidePanelSort = workflowState.sort[sortParams.sidePanel]
-        ? parseSort(workflowState.sort[sortParams.sidePanel])
-        : undefined;
+    const sidePanelSort = workflowState.sort[sortParams.sidePanel];
     const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
     const selectedRow = workflowState.getSelectedTableRow();
 
@@ -56,6 +52,7 @@ const WorkflowListPageLayout = ({ location }) => {
         const { entityType, entityId } = selectedRow;
         entityContext[entityType] = entityId;
     }
+
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-col relative min-h-full">

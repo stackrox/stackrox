@@ -206,9 +206,8 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
             selectedRowId={selectedRowId}
             idAttribute="metadata.id"
             search={search}
-            sort={sort}
             page={page}
-            defaultSorted={sort}
+            defaultSorted={sort || defaultNamespaceSort}
         />
     );
 };
@@ -216,7 +215,7 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
 VulnMgmtNamespaces.propTypes = workflowListPropTypes;
 VulnMgmtNamespaces.defaultProps = {
     ...workflowListDefaultProps,
-    sort: defaultNamespaceSort
+    sort: null
 };
 
 export default VulnMgmtNamespaces;

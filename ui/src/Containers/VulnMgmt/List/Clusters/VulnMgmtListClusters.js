@@ -225,9 +225,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             getTableColumns={getTableColumns}
             selectedRowId={selectedRowId}
             search={search}
-            sort={sort}
             page={page}
-            defaultSorted={sort}
+            defaultSorted={sort || defaultClusterSort}
         />
     );
 };
@@ -235,7 +234,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
 VulnMgmtClusters.propTypes = workflowListPropTypes;
 VulnMgmtClusters.defaultProps = {
     ...workflowListDefaultProps,
-    sort: defaultClusterSort
+    sort: null
 };
 
 export default VulnMgmtClusters;

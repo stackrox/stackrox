@@ -200,7 +200,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {
             queryOptions={queryOptions}
             entityListType={entityTypes.DEPLOYMENT}
             getTableColumns={getDeploymentTableColumns}
-            defaultSorted={sort}
+            defaultSorted={sort || defaultDeploymentSort}
             selectedRowId={selectedRowId}
             search={search}
             page={page}
@@ -211,7 +211,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {
 VulnMgmtDeployments.propTypes = workflowListPropTypes;
 VulnMgmtDeployments.defaultProps = {
     ...workflowListDefaultProps,
-    sort: defaultDeploymentSort
+    sort: null
 };
 
 export default VulnMgmtDeployments;

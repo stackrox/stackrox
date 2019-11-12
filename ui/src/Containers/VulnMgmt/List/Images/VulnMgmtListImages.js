@@ -185,7 +185,7 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
             selectedRowId={selectedRowId}
             search={search}
             page={page}
-            defaultSorted={sort}
+            defaultSorted={sort || defaultImageSort}
         />
     );
 };
@@ -193,7 +193,7 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
 VulnMgmtImages.propTypes = workflowListPropTypes;
 VulnMgmtImages.defaultProps = {
     ...workflowListDefaultProps,
-    sort: defaultImageSort
+    sort: null
 };
 
 export default VulnMgmtImages;

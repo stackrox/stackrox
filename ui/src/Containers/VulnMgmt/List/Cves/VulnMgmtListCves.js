@@ -227,7 +227,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
             selectedRowId={selectedRowId}
             search={search}
             page={page}
-            defaultSorted={sort}
+            defaultSorted={sort || defaultCveSort}
             showSubrows
             SubComponent={renderCveDescription}
         />
@@ -237,7 +237,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
 VulnMgmtCves.propTypes = workflowListPropTypes;
 VulnMgmtCves.defaultProps = {
     ...workflowListDefaultProps,
-    sort: defaultCveSort
+    sort: null
 };
 
 export default VulnMgmtCves;
