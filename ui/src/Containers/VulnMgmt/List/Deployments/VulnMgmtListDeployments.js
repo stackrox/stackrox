@@ -1,5 +1,4 @@
 import React from 'react';
-import pluralize from 'pluralize';
 import gql from 'graphql-tag';
 
 import queryService from 'modules/queryService';
@@ -7,6 +6,7 @@ import DateTimeField from 'Components/DateTimeField';
 import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
+import TableCountLink from 'Components/workflow/TableCountLink';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { sortDate } from 'sorters/sorters';
@@ -27,6 +27,9 @@ export const defaultDeploymentSort = [
 ];
 
 export function getDeploymentTableColumns(workflowState) {
+    // to determine whether to show the counts as links in the table when not in pure DEPLOYMENT state
+    const inFindingsSection =
+        workflowState.getCurrentEntity().entityType !== entityTypes.DEPLOYMENT;
     const tableColumns = [
         {
             Header: 'Id',
@@ -47,7 +50,8 @@ export function getDeploymentTableColumns(workflowState) {
             entityType: entityTypes.CVE,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id } = original;
-                if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
+                if (!vulnCounter || (vulnCounter.all && vulnCounter.all.total === 0))
+                    return 'No CVEs';
 
                 const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
                 const url = newState.toUrl();
@@ -83,21 +87,15 @@ export function getDeploymentTableColumns(workflowState) {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'failingPolicyCount',
-            Cell: ({ original, pdf }) => {
-                const { failingPolicyCount, id } = original;
-                if (failingPolicyCount === 0) return 'No failing policies';
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.POLICY)
-                    .toUrl();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${failingPolicyCount} ${pluralize('policies', failingPolicyCount)}`}
-                    />
-                );
-            }
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.POLICY}
+                    count={original.failingPolicyCount}
+                    textOnly={inFindingsSection || pdf}
+                    selectedRowId={original.id}
+                    entityTypeText="failing policy"
+                />
+            )
         },
         {
             Header: `Policy Status`,
@@ -124,7 +122,9 @@ export function getDeploymentTableColumns(workflowState) {
                     .pushListItem(id)
                     .pushRelatedEntity(entityTypes.CLUSTER, clusterId)
                     .toUrl();
-                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                return (
+                    <TableCellLink pdf={inFindingsSection || pdf} url={url} text={clusterName} />
+                );
             }
         },
         {
@@ -139,28 +139,21 @@ export function getDeploymentTableColumns(workflowState) {
                     .pushListItem(id)
                     .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
                     .toUrl();
-                return <TableCellLink pdf={pdf} url={url} text={namespace} />;
+                return <TableCellLink pdf={inFindingsSection || pdf} url={url} text={namespace} />;
             }
         },
         {
             Header: `Images`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { imageCount, id } = original;
-                if (imageCount === 0) return 'No images';
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.IMAGE)
-                    .toUrl();
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${imageCount} ${pluralize('image', imageCount)}`}
-                    />
-                );
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.IMAGE}
+                    count={original.imageCount}
+                    textOnly={inFindingsSection || pdf}
+                    selectedRowId={original.id}
+                />
+            ),
             accessor: 'imageCount'
         },
         {

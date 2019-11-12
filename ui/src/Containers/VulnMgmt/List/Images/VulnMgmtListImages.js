@@ -1,10 +1,9 @@
 import React from 'react';
 import gql from 'graphql-tag';
-import pluralize from 'pluralize';
 
 import queryService from 'modules/queryService';
 import TopCvssLabel from 'Components/TopCvssLabel';
-import TableCellLink from 'Components/TableCellLink';
+import TableCountLink from 'Components/workflow/TableCountLink';
 import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
@@ -124,15 +123,14 @@ export function getImageTableColumns(workflowState) {
             entityType: entityTypes.DEPLOYMENT,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { deploymentCount, id } = original;
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.DEPLOYMENT)
-                    .toUrl();
-                const text = `${deploymentCount} ${pluralize('deployment', deploymentCount)}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.DEPLOYMENT}
+                    count={original.deploymentCount}
+                    textOnly={pdf}
+                    selectedRowId={original.id}
+                />
+            ),
             accessor: 'deploymentCount'
         },
         {
@@ -144,12 +142,14 @@ export function getImageTableColumns(workflowState) {
                 const { scan, id } = original;
                 if (!scan) return '-';
                 const { components } = scan;
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.COMPONENT)
-                    .toUrl();
-                const text = `${components.length} ${pluralize('component', components.length)}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
+                return (
+                    <TableCountLink
+                        entityType={entityTypes.COMPONENT}
+                        count={components.length}
+                        textOnly={pdf}
+                        selectedRowId={id}
+                    />
+                );
             },
             accessor: 'scan.components',
             sortMethod: sortValueByLength

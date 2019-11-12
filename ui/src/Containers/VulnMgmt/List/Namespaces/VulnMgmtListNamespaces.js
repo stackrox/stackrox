@@ -1,9 +1,9 @@
 import React from 'react';
 import gql from 'graphql-tag';
-import pluralize from 'pluralize';
 
 import queryService from 'modules/queryService';
 import TableCellLink from 'Components/TableCellLink';
+import TableCountLink from 'Components/workflow/TableCountLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import StatusChip from 'Components/StatusChip';
 import DateTimeField from 'Components/DateTimeField';
@@ -88,19 +88,14 @@ export function getNamespaceTableColumns(workflowState) {
             entityType: entityTypes.DEPLOYMENT,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { deploymentCount, metadata } = original;
-                const url = workflowState
-                    .pushListItem(metadata.id)
-                    .pushList(entityTypes.DEPLOYMENT)
-                    .toUrl();
-
-                const text = `${deploymentCount} ${pluralize(
-                    entityTypes.DEPLOYMENT.toLowerCase(),
-                    deploymentCount
-                )}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.DEPLOYMENT}
+                    count={original.deploymentCount}
+                    textOnly={pdf}
+                    selectedRowId={original.metadata.id}
+                />
+            ),
             accessor: 'deploymentCount'
         },
         {
@@ -108,19 +103,14 @@ export function getNamespaceTableColumns(workflowState) {
             entityType: entityTypes.IMAGE,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { imageCount, metadata } = original;
-                const url = workflowState
-                    .pushListItem(metadata.id)
-                    .pushList(entityTypes.IMAGE)
-                    .toUrl();
-
-                const text = `${imageCount} ${pluralize(
-                    entityTypes.IMAGE.toLowerCase(),
-                    imageCount
-                )}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.IMAGE}
+                    count={original.imageCount}
+                    textOnly={pdf}
+                    selectedRowId={original.metadata.id}
+                />
+            ),
             accessor: 'imageCount'
         },
         {
@@ -128,18 +118,14 @@ export function getNamespaceTableColumns(workflowState) {
             entityType: entityTypes.POLICY,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { policyCount, metadata } = original;
-                const url = workflowState
-                    .pushListItem(metadata.id)
-                    .pushList(entityTypes.POLICY)
-                    .toUrl();
-                const text = `${policyCount} ${pluralize(
-                    entityTypes.POLICY.toLowerCase(),
-                    policyCount
-                )}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.POLICY}
+                    count={original.policyCount}
+                    textOnly={pdf}
+                    selectedRowId={original.metadata.id}
+                />
+            ),
             accessor: 'policyCount'
         },
         {

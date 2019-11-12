@@ -1,13 +1,11 @@
 import React, { useContext } from 'react';
-import pluralize from 'pluralize';
 import gql from 'graphql-tag';
 
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
-import LabelChip from 'Components/LabelChip';
 import StatusChip from 'Components/StatusChip';
-import TableCellLink from 'Components/TableCellLink';
+import TableCountLink from 'Components/workflow/TableCountLink';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -108,24 +106,14 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
-                Cell: ({ original, pdf }) => {
-                    const { namespaceCount } = original;
-                    if (!namespaceCount) {
-                        return <LabelChip text="No Namespaces" type="alert" />;
-                    }
-                    const url = workflowState
-                        .pushListItem(original.id)
-                        .pushList(entityTypes.NAMESPACE)
-                        .toUrl();
-
-                    return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${namespaceCount} ${pluralize('Namespace', namespaceCount)}`}
-                        />
-                    );
-                },
+                Cell: ({ original, pdf }) => (
+                    <TableCountLink
+                        entityType={entityTypes.NAMESPACE}
+                        count={original.namespaceCount}
+                        textOnly={pdf}
+                        selectedRowId={original.id}
+                    />
+                ),
                 accessor: 'namespaceCount'
             },
             {
@@ -134,24 +122,14 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
-                Cell: ({ original, pdf }) => {
-                    const { deploymentCount } = original;
-                    if (!deploymentCount) {
-                        return <LabelChip text="No Deployments" type="alert" />;
-                    }
-                    const url = workflowState
-                        .pushListItem(original.id)
-                        .pushList(entityTypes.DEPLOYMENT)
-                        .toUrl();
-
-                    return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${deploymentCount} ${pluralize('Deployment', deploymentCount)}`}
-                        />
-                    );
-                },
+                Cell: ({ original, pdf }) => (
+                    <TableCountLink
+                        entityType={entityTypes.DEPLOYMENT}
+                        count={original.deploymentCount}
+                        textOnly={pdf}
+                        selectedRowId={original.id}
+                    />
+                ),
                 id: 'deploymentCount',
                 accessor: 'deploymentCount'
             },
@@ -161,24 +139,14 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
-                Cell: ({ original, pdf }) => {
-                    const { policyCount } = original;
-                    if (!policyCount) {
-                        return <LabelChip text="No Policies" type="alert" />;
-                    }
-                    const url = workflowState
-                        .pushListItem(original.id)
-                        .pushList(entityTypes.POLICY)
-                        .toUrl();
-
-                    return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${policyCount} ${pluralize('Policy', policyCount)}`}
-                        />
-                    );
-                },
+                Cell: ({ original, pdf }) => (
+                    <TableCountLink
+                        entityType={entityTypes.POLICY}
+                        count={original.policyCount}
+                        textOnly={pdf}
+                        selectedRowId={original.id}
+                    />
+                ),
                 id: 'policyCount',
                 accessor: 'policyCount'
             },

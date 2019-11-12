@@ -161,7 +161,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     entityType={entityTypes.CVE}
                                     noDataText="No fixable CVEs available in this image"
                                     className="bg-base-100"
-                                    columns={getCveTableColumns(workflowState, false)}
+                                    columns={getCveTableColumns(workflowState)}
                                     idAttribute="cve"
                                 />
                             </TabContent>

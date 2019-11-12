@@ -1,5 +1,4 @@
 import React from 'react';
-import pluralize from 'pluralize';
 import gql from 'graphql-tag';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
@@ -7,7 +6,7 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import CVEStackedPill from 'Components/CVEStackedPill';
-import TableCellLink from 'Components/TableCellLink';
+import TableCountLink from 'Components/workflow/TableCountLink';
 import queryService from 'modules/queryService';
 
 import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -92,18 +91,14 @@ export function getComponentTableColumns(workflowState) {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'imageCount',
-            Cell: ({ original, pdf }) => {
-                const { imageCount, id } = original;
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.IMAGE)
-                    .toUrl();
-                const text = `${imageCount} ${pluralize(
-                    entityTypes.IMAGE.toLowerCase(),
-                    imageCount
-                )}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            }
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.IMAGE}
+                    count={original.imageCount}
+                    textOnly={pdf}
+                    selectedRowId={original.id}
+                />
+            )
         },
         {
             Header: `Deployments`,
@@ -111,18 +106,14 @@ export function getComponentTableColumns(workflowState) {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'deploymentCount',
-            Cell: ({ original, pdf }) => {
-                const { deploymentCount, id } = original;
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.DEPLOYMENT)
-                    .toUrl();
-                const text = `${deploymentCount} ${pluralize(
-                    entityTypes.DEPLOYMENT.toLowerCase(),
-                    deploymentCount
-                )}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            }
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.DEPLOYMENT}
+                    count={original.deploymentCount}
+                    textOnly={pdf}
+                    selectedRowId={original.id}
+                />
+            )
         },
         {
             Header: `Risk Priority`,

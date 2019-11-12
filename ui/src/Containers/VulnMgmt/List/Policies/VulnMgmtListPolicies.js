@@ -1,15 +1,14 @@
 import React from 'react';
-import pluralize from 'pluralize';
 import gql from 'graphql-tag';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import StatusChip from 'Components/StatusChip';
 import SeverityLabel from 'Components/SeverityLabel';
-import TableCellLink from 'Components/TableCellLink';
+import TableCountLink from 'Components/workflow/TableCountLink';
+
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
-import entityLabels from 'messages/entity';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
@@ -28,6 +27,8 @@ export const defaultPolicySort = [
 ];
 
 export function getPolicyTableColumns(workflowState) {
+    // to determine whether to show the counts as links in the table when not in pure POLICY state
+    const inFindingsSection = workflowState.getCurrentEntity().entityType !== entityTypes.POLICY;
     const tableColumns = [
         {
             Header: 'id',
@@ -99,25 +100,14 @@ export function getPolicyTableColumns(workflowState) {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { deploymentCount, id } = original;
-                if (deploymentCount === 0) return 'No deployments';
-                const url = workflowState
-                    .pushListItem(id)
-                    .pushList(entityTypes.DEPLOYMENT)
-                    .toUrl();
-
-                return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${deploymentCount} ${pluralize(
-                            entityLabels.DEPLOYMENT,
-                            deploymentCount
-                        )}`}
-                    />
-                );
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.DEPLOYMENT}
+                    count={original.deploymentCount}
+                    textOnly={inFindingsSection || pdf}
+                    selectedRowId={original.id}
+                />
+            ),
             accessor: 'deploymentCount',
             id: 'deploymentCount'
         },
@@ -126,7 +116,7 @@ export function getPolicyTableColumns(workflowState) {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { lifecycleStages } = original;
                 if (!lifecycleStages || !lifecycleStages.length) return 'No lifecycle stages';
                 const lowercasedLifecycles = lifecycleStages
@@ -143,7 +133,7 @@ export function getPolicyTableColumns(workflowState) {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { enforcementActions } = original;
                 return enforcementActions || enforcementActions.length ? 'Yes' : 'No';
             },

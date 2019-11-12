@@ -137,7 +137,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                             entityType={entityTypes.POLICY}
                             noDataText="No failing policies"
                             className="bg-base-100"
-                            columns={getPolicyTableColumns(workflowState, false)}
+                            columns={getPolicyTableColumns(workflowState)}
                         />
                     </TabContent>
                     <TabContent>
@@ -150,7 +150,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                             entityType={entityTypes.CVE}
                             noDataText="No fixable CVEs available in this deployment"
                             className="bg-base-100"
-                            columns={getCveTableColumns(workflowState, false)}
+                            columns={getCveTableColumns(workflowState)}
                             idAttribute="cve"
                         />
                     </TabContent>

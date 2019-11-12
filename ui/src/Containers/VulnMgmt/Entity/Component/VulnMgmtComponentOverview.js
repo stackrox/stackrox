@@ -103,7 +103,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                             entityType={entityTypes.CVE}
                             noDataText="No fixable CVEs available in this component"
                             className="bg-base-100"
-                            columns={getCveTableColumns(workflowState, false)}
+                            columns={getCveTableColumns(workflowState)}
                             idAttribute="cve"
                         />
                     </div>

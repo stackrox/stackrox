@@ -144,10 +144,11 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                         entityTypes.POLICY,
                                         failingPolicies.length
                                     )} across this namespace`}
+                                    entityType={entityTypes.POLICY}
                                     rows={failingPolicies}
                                     noDataText="No failing policies"
                                     className="bg-base-100"
-                                    columns={getPolicyTableColumns(workflowState, false)}
+                                    columns={getPolicyTableColumns(workflowState)}
                                     idAttribute="id"
                                 />
                             </TabContent>
@@ -161,7 +162,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     entityType={entityTypes.CVE}
                                     noDataText="No fixable CVEs available in this namespace"
                                     className="bg-base-100"
-                                    columns={getCveTableColumns(workflowState, false)}
+                                    columns={getCveTableColumns(workflowState)}
                                     idAttribute="cve"
                                 />
                             </TabContent>

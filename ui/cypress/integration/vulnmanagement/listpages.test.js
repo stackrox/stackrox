@@ -9,7 +9,7 @@ const hasExpectedHeaderColumns = colNames => {
 
 const hasExpectedLinks = colLinks => {
     colLinks.forEach(col => {
-        cy.get(`${selectors.tableColumnLinks}:contains('${col}')`);
+        cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`);
     });
 };
 

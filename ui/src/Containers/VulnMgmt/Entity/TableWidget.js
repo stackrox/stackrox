@@ -71,11 +71,10 @@ TableWidget.propTypes = {
     header: PropTypes.oneOfType([PropTypes.element, PropTypes.string]).isRequired,
     history: ReactRouterPropTypes.history.isRequired,
     idAttribute: PropTypes.string,
-    entityType: PropTypes.string
+    entityType: PropTypes.string.isRequired
 };
 
 TableWidget.defaultProps = {
-    idAttribute: 'id',
-    entityType: ''
+    idAttribute: 'id'
 };
 export default withRouter(TableWidget);

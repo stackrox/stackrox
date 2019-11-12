@@ -1,12 +1,11 @@
 /* eslint-disable react/jsx-no-bind */
 import React from 'react';
-import pluralize from 'pluralize';
 import gql from 'graphql-tag';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
-import TableCellLink from 'Components/TableCellLink';
+import TableCountLink from 'Components/workflow/TableCountLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
@@ -28,7 +27,9 @@ export const defaultCveSort = [
     }
 ];
 
-export function getCveTableColumns(workflowState, linksOn = true) {
+export function getCveTableColumns(workflowState) {
+    // to determine whether to show the counts as links in the table when not in pure CVE state
+    const inFindingsSection = workflowState.getCurrentEntity().entityType !== entityTypes.CVE;
     const tableColumns = [
         {
             expander: true,
@@ -127,17 +128,14 @@ export function getCveTableColumns(workflowState, linksOn = true) {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { deploymentCount, cve } = original;
-                if (deploymentCount === 0) return 'No deployments';
-                const text = `${deploymentCount} ${pluralize('deployment', deploymentCount)}`;
-                if (!linksOn) return text;
-                const url = workflowState
-                    .pushListItem(cve)
-                    .pushList(entityTypes.DEPLOYMENT)
-                    .toUrl();
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.DEPLOYMENT}
+                    count={original.deploymentCount}
+                    textOnly={inFindingsSection || pdf}
+                    selectedRowId={original.cve}
+                />
+            ),
             accessor: 'deploymentCount',
             id: 'deploymentCount'
         },
@@ -147,17 +145,14 @@ export function getCveTableColumns(workflowState, linksOn = true) {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { imageCount, cve } = original;
-                if (imageCount === 0) return 'No images';
-                const text = `${imageCount} ${pluralize('image', imageCount)}`;
-                if (!linksOn) return text;
-                const url = workflowState
-                    .pushListItem(cve)
-                    .pushList(entityTypes.IMAGE)
-                    .toUrl();
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.IMAGE}
+                    count={original.imageCount}
+                    textOnly={inFindingsSection || pdf}
+                    selectedRowId={original.cve}
+                />
+            ),
             accessor: 'imageCount',
             id: 'imageCount'
         },
@@ -167,17 +162,14 @@ export function getCveTableColumns(workflowState, linksOn = true) {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
-                const { componentCount, cve } = original;
-                if (componentCount === 0) return 'No components';
-                const text = `${componentCount} ${pluralize('component', componentCount)}`;
-                if (!linksOn) return text;
-                const url = workflowState
-                    .pushListItem(cve)
-                    .pushList(entityTypes.COMPONENT)
-                    .toUrl();
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.COMPONENT}
+                    count={original.componentCount}
+                    textOnly={inFindingsSection || pdf}
+                    selectedRowId={original.cve}
+                />
+            ),
             accessor: 'componentCount',
             id: 'componentCount'
         }

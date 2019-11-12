@@ -183,9 +183,10 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                         failingPolicies.length
                                     )} across this cluster`}
                                     rows={failingPolicies}
+                                    entityType={entityTypes.POLICY}
                                     noDataText="No failing policies"
                                     className="bg-base-100"
-                                    columns={getPolicyTableColumns(workflowState, false)}
+                                    columns={getPolicyTableColumns(workflowState)}
                                     idAttribute="id"
                                 />
                             </TabContent>
@@ -199,7 +200,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     entityType={entityTypes.CVE}
                                     noDataText="No fixable CVEs available in this cluster"
                                     className="bg-base-100"
-                                    columns={getCveTableColumns(workflowState, false)}
+                                    columns={getCveTableColumns(workflowState)}
                                     idAttribute="cve"
                                 />
                             </TabContent>
