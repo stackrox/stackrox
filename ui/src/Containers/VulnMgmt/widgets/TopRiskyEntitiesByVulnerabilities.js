@@ -162,15 +162,15 @@ const TopRiskyEntitiesByVulnerabilities = ({
         const sortedVulns = sortBy(vulns, vuln => {
             return vuln.cvss;
         }).reverse();
-        const topFiveVulns = sortedVulns.slice(0, 5);
+        const topVulns = sortedVulns.slice(0, 100);
 
         // 2. grab up to the first 5 vulns (the ones with the highest CVSS)
-        const total = topFiveVulns.reduce((acc, curr) => {
+        const total = topVulns.reduce((acc, curr) => {
             return acc + parseFloat(curr.cvss);
         }, 0);
 
         // 3. Take the average of those top 5 (or total, if less than 5)
-        const avgScore = total / topFiveVulns.length;
+        const avgScore = total / topVulns.length;
 
         return avgScore.toFixed(1);
     }
