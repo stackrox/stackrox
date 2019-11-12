@@ -44,12 +44,12 @@ function paramsToStateStack(params) {
     return stateArray;
 }
 
-export function parseSort(sort) {
+function formatSort(sort) {
     if (!sort) return sort;
     return sort.map(({ id, desc }) => {
         return {
             id,
-            desc: desc === 'true'
+            desc: JSON.parse(desc)
         };
     });
 }
@@ -101,8 +101,8 @@ function parseURL(location) {
             [searchParams.sidePanel]: sidePanelSearch
         },
         {
-            [sortParams.page]: pageSort,
-            [sortParams.sidePanel]: sidePanelSort
+            [sortParams.page]: formatSort(pageSort),
+            [sortParams.sidePanel]: formatSort(sidePanelSort)
         },
         {
             [pagingParams.page]: parseInt(pagePaging || 1, 10),
