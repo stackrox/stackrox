@@ -30,7 +30,7 @@ function validateTopRiskyEntities(entityName) {
 describe('Vuln Management Dashboard Page', () => {
     withAuth();
     // TODO re-enable the following test after bug ROX-3571 is fixed
-    it.skip('should show same number of policies between the tile and the policies list', () => {
+    it('should show same number of policies between the tile and the policies list', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.tileLinks)
             .eq(0)
@@ -49,7 +49,7 @@ describe('Vuln Management Dashboard Page', () => {
             });
     });
 
-    it.skip('should show same number of cves between the tile and the cves list', () => {
+    it('should show same number of cves between the tile and the cves list', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.tileLinks)
             .eq(1)
