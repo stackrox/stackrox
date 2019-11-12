@@ -85,7 +85,11 @@ const Details = props => {
                                     </div>
                                     <div className="w-full">
                                         <div className="text-base-600 font-700 pb-2">Value</div>
-                                        <div>{group.props.value}</div>
+                                        <div>
+                                            {group.props.value || (
+                                                <span className="italic">Any value</span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="w-full">
                                         <div className="text-base-600 font-700 pb-2">Role</div>
