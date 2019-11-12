@@ -21,6 +21,7 @@ message CountImagesResponse {
 
 message ScanImageRequest {
     string image_name = 1;
+    bool   force      = 2;
 }
 
 message DeleteImagesRequest {

@@ -2,7 +2,7 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
-### Changed
+### Added
 - Policy whitelists are now shown in the UI. Previously, we only showed whitelisted deployment names, and not the entire structure that was
   actually in the policy object. This means that users can now whitelist by cluster, namespace and labels using the UI.
 - There now exists a `roxctl collector support-packages upload <file>` command, which can be used to upload files from
@@ -10,6 +10,8 @@ All notable changes to this project that require documentation updates will be d
   to Sensor, and Sensor can talk to Central, Collectors can then download these files they require at runtime from
   Central, even if none of the components has access the internet. Refer to the official documentation or contact
   StackRox support for information on obtaining a Collector support package.
+- The `roxctl image scan` command now has a `--force` flag, which causes Central to re-pull the data from the registry and
+  the scanner.
 
 ## [33.0]
 ### Changed

@@ -73,19 +73,21 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 		return false, nil
 	}
 
-	if !ctx.IgnoreExisting && image.GetMetadata() != nil {
+	if ctx.FetchOnlyIfMetadataEmpty() && image.GetMetadata() != nil {
 		return false, nil
 	}
 
 	ref := getRef(image)
-	if metadataValue := e.metadataCache.Get(ref); metadataValue != nil {
-		e.metrics.IncrementMetadataCacheHit()
-		image.Metadata = metadataValue.(*storage.ImageMetadata)
-		return true, nil
+	if ctx.FetchOpt != ForceRefetch {
+		if metadataValue := e.metadataCache.Get(ref); metadataValue != nil {
+			e.metrics.IncrementMetadataCacheHit()
+			image.Metadata = metadataValue.(*storage.ImageMetadata)
+			return true, nil
+		}
+		e.metrics.IncrementMetadataCacheMiss()
 	}
-	e.metrics.IncrementMetadataCacheMiss()
 
-	if ctx.NoExternalMetadata {
+	if ctx.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
 
@@ -123,7 +125,10 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 	return ScanNotDone, errorList.ToError()
 }
 
-func (e *enricherImpl) populateFromCache(image *storage.Image) bool {
+func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, image *storage.Image) bool {
+	if ctx.FetchOpt == ForceRefetch {
+		return false
+	}
 	ref := getRef(image)
 	scanValue := e.scanCache.Get(ref)
 	if scanValue == nil {
@@ -142,15 +147,15 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		return ScanNotDone, nil
 	}
 
-	if !ctx.IgnoreExisting && image.GetScan() != nil {
+	if ctx.FetchOnlyIfMetadataEmpty() && image.GetScan() != nil {
 		return ScanNotDone, nil
 	}
 
-	if e.populateFromCache(image) {
+	if e.populateFromCache(ctx, image) {
 		return ScanSucceeded, nil
 	}
 
-	if ctx.NoExternalMetadata {
+	if ctx.FetchOpt == NoExternalMetadata {
 		return ScanNotDone, nil
 	}
 
@@ -159,7 +164,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	if asyncScanner, ok := scanner.(scannerTypes.AsyncImageScanner); ok && ctx.UseNonBlockingCallsWherePossible {
 		_ = e.asyncRateLimiter.Wait(context.Background())
 
-		if e.populateFromCache(image) {
+		if e.populateFromCache(ctx, image) {
 			return ScanSucceeded, nil
 		}
 
@@ -175,7 +180,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		_ = e.syncSemaphore.Acquire(context.Background(), 1)
 		defer e.syncSemaphore.Release(1)
 
-		if e.populateFromCache(image) {
+		if e.populateFromCache(ctx, image) {
 			return ScanSucceeded, nil
 		}
 
@@ -188,6 +193,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		if scan == nil {
 			return ScanNotDone, nil
 		}
+
 	}
 
 	// Assume:

@@ -12,6 +12,17 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// FetchOption determines what attempts should be made to retrieve the metadata
+type FetchOption int
+
+// These are all the possible fetch options for the enricher
+const (
+	UseCachesIfPossible FetchOption = iota
+	NoExternalMetadata
+	IgnoreExistingImages
+	ForceRefetch
+)
+
 const (
 	maxConcurrentScans = 6
 )
@@ -22,18 +33,21 @@ var (
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
 type EnrichmentContext struct {
-	// NoExternalMetadata runs the enforcement through a "fast-path", skipping any calls to external metadata services.
-	// This includes image registries and scanners.
-	NoExternalMetadata bool
+	// FetchOpt define constraints about using external data
+	FetchOpt FetchOption
+
 	// EnforcementOnly indicates that we don't care about any violations unless they have enforcement enabled.
 	EnforcementOnly bool
-
-	// IgnoreExisting ensures that, if an image has existing metadata or scans, we don't attempt to re-fetch the metadata.
-	IgnoreExisting bool
 
 	// UseNonBlockingCallsWherePossible tells the enricher to make non-blocking calls to image scanners where that is
 	// possible. Note that, if NoExternalMetadata is true, this param is irrelevant since no external calls are made at all.
 	UseNonBlockingCallsWherePossible bool
+}
+
+// FetchOnlyIfMetadataEmpty checks the fetch opts and return whether or not we can used a cached or saved
+// version of the external metadata
+func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
+	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch
 }
 
 // EnrichmentResult denotes possible return values of the EnrichImage function.
