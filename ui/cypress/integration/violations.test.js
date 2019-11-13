@@ -234,4 +234,13 @@ describe('Violations page', () => {
             .eq(1)
             .should('not.be.visible');
     });
+
+    it('should request the alerts in descending time order by default', () => {
+        cy.get('@alerts')
+            .its('url')
+            .should('include', 'pagination.sortOption.field=Violation Time');
+        cy.get('@alerts')
+            .its('url')
+            .should('include', 'pagination.sortOption.reversed=true');
+    });
 });
