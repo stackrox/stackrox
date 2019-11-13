@@ -1,17 +1,32 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 
+import workflowStateContext from 'Containers/workflowStateContext';
 import { getEntityTypesByRelationship } from 'modules/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
+import entityTypes from 'constants/entityTypes';
 import TileList from 'Components/TileList';
 import pluralize from 'pluralize';
 
-const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData, entityContext }) => {
+const defaultCountKeyMap = {
+    [entityTypes.COMPONENT]: 'componentCount',
+    [entityTypes.CVE]: 'vulnCount',
+    [entityTypes.IMAGE]: 'imageCount',
+    [entityTypes.POLICY]: 'policyCount',
+    [entityTypes.DEPLOYMENT]: 'deploymentCount',
+    [entityTypes.NAMESPACE]: 'namespaceCount'
+};
+
+const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
+    const workflowState = useContext(workflowStateContext);
     const { useCase } = workflowState;
+    if (!useCase) return null;
+
+    const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
         .map(matchEntity => {
-            const count = getCountData(matchEntity);
+            const count = data[countKeyMap[matchEntity]];
             return {
                 count,
                 label: pluralize(matchEntity, count),
@@ -22,7 +37,7 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData, enti
         .filter(matchObj => matchObj.count && !entityContext[matchObj.entity]);
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
         .map(containEntity => {
-            const count = getCountData(containEntity);
+            const count = data[countKeyMap[containEntity]];
             return {
                 count,
                 label: pluralize(containEntity, count),
@@ -31,7 +46,6 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData, enti
             };
         })
         .filter(containObj => containObj.count && !entityContext[containObj.entity]);
-
     if (!matches.length && !contains.length) return null;
     return (
         <div className="bg-primary-300 h-full relative border-base-100 border-l w-32">
@@ -54,12 +68,13 @@ const RelatedEntitiesSideList = ({ entityType, workflowState, getCountData, enti
 
 RelatedEntitiesSideList.propTypes = {
     entityType: PropTypes.string.isRequired,
-    workflowState: PropTypes.shape({
-        useCase: PropTypes.string.isRequired,
-        pushList: PropTypes.func.isRequired
-    }).isRequired,
-    getCountData: PropTypes.func.isRequired,
+    data: PropTypes.shape({}).isRequired,
+    altCountKeyMap: PropTypes.shape({}),
     entityContext: PropTypes.shape({}).isRequired
+};
+
+RelatedEntitiesSideList.defaultProps = {
+    altCountKeyMap: {}
 };
 
 export default RelatedEntitiesSideList;

@@ -25,7 +25,9 @@ const ViolationFindings = ({ data, message }) => {
                     <ul className="list-reset leading-loose">
                         {policyViolation.violations.map(violation => {
                             return (
-                                <li className="border-b border-base-300">{violation.message}</li>
+                                <li className="border-b border-base-300" key={violation.message}>
+                                    {violation.message}
+                                </li>
                             );
                         })}
                     </ul>

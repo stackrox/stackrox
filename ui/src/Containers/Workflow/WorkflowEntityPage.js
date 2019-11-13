@@ -90,7 +90,7 @@ WorkflowEntityPage.propTypes = {
     queryOptions: PropTypes.shape({}),
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
-    sort: PropTypes.string,
+    sort: PropTypes.arrayOf(PropTypes.string),
     page: PropTypes.number
 };
 

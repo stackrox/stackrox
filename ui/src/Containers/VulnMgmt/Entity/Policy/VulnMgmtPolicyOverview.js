@@ -57,7 +57,6 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         enforcementActions,
         lifecycleStages,
         fields,
-        deploymentCount,
         scope,
         whitelists,
         deployments
@@ -143,15 +142,6 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         }
     ];
 
-    function getCountData(entityType) {
-        switch (entityType) {
-            case entityTypes.DEPLOYMENT:
-                return deploymentCount;
-            default:
-                return 0;
-        }
-    }
-
     const newEntityContext = { ...entityContext, [entityTypes.POLICY]: id };
 
     let policyFindingsContent = null;
@@ -193,7 +183,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                 <CollapsibleSection title="Policy summary">
                     <div className="flex mb-4 pdf-page">
                         <Widget
-                            header="Description, Rationale, & Remdediation"
+                            header="Description, Rationale, & Remediation"
                             headerComponents={null}
                             className="ml-4 mr-2 bg-base-100 min-h-48 mb-4 w-2/3"
                         >
@@ -257,9 +247,8 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
             </div>
             <RelatedEntitiesSideList
                 entityType={entityTypes.POLICY}
-                workflowState={workflowState}
-                getCountData={getCountData}
                 entityContext={newEntityContext}
+                data={safeData}
             />
         </div>
     );

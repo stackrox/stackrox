@@ -44,16 +44,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyNamespace, ...data };
 
-    const {
-        metadata,
-        policyStatus,
-        policyCount,
-        deploymentCount,
-        imageCount,
-        componentCount,
-        vulnCount,
-        vulnerabilities
-    } = safeData;
+    const { metadata, policyStatus, vulnerabilities } = safeData;
 
     if (!metadata || !policyStatus) return null;
 
@@ -77,23 +68,6 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
             <StatusChip status={status} size="large" />
         </React.Fragment>
     ];
-
-    function getCountData(entityType) {
-        switch (entityType) {
-            case entityTypes.DEPLOYMENT:
-                return deploymentCount;
-            case entityTypes.COMPONENT:
-                return componentCount;
-            case entityTypes.CVE:
-                return vulnCount;
-            case entityTypes.IMAGE:
-                return imageCount;
-            case entityTypes.POLICY:
-                return policyCount;
-            default:
-                return 0;
-        }
-    }
 
     const newEntityContext = { ...entityContext, [entityTypes.NAMESPACE]: id };
 
@@ -173,9 +147,8 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
 
             <RelatedEntitiesSideList
                 entityType={entityTypes.NAMESPACE}
-                workflowState={workflowState}
-                getCountData={getCountData}
                 entityContext={newEntityContext}
+                data={safeData}
             />
         </div>
     );

@@ -22,10 +22,11 @@ function highlightPathData(data, highlightedNames) {
         data.children.map(child => highlightPathData(child, highlightedNames));
     }
     /* eslint-disable */
-    data.style = {
-        ...data.style,
-        fillOpacity: highlightedNames && !highlightedNames.includes(data.name) ? 0.3 : 1
-    };
+  data.style = {
+    ...data.style,
+    fillOpacity:
+      highlightedNames && !highlightedNames.includes(data.name) ? 0.3 : 1
+  };
     /* eslint-enable */
     return data;
 }
@@ -61,7 +62,7 @@ class BasicSunburst extends React.Component {
             })
         ).isRequired,
         totalValue: PropTypes.number.isRequired,
-        legendData: PropTypes.arrayOf(PropTypes.object).isRequired,
+        legendData: PropTypes.arrayOf(PropTypes.object),
         sunburstProps: PropTypes.shape({
             style: PropTypes.string
         }),
@@ -77,6 +78,7 @@ class BasicSunburst extends React.Component {
 
     static defaultProps = {
         sunburstProps: {},
+        legendData: null,
         onValueMouseOver: null,
         onValueMouseOut: null,
         onValueSelect: null,

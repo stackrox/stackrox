@@ -59,10 +59,6 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         failingPolicies,
         labels,
         annotations,
-        failingPolicyCount,
-        imageCount,
-        componentCount,
-        vulnCount,
         vulnerabilities
     } = safeData;
 
@@ -96,21 +92,6 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
             <StatusChip status={policyStatus} />
         </React.Fragment>
     ];
-
-    function getCountData(entityType) {
-        switch (entityType) {
-            case entityTypes.COMPONENT:
-                return componentCount;
-            case entityTypes.CVE:
-                return vulnCount;
-            case entityTypes.IMAGE:
-                return imageCount;
-            case entityTypes.POLICY:
-                return failingPolicyCount;
-            default:
-                return 0;
-        }
-    }
 
     const newEntityContext = { ...entityContext, [entityTypes.DEPLOYMENT]: id };
 
@@ -201,9 +182,9 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
             </div>
             <RelatedEntitiesSideList
                 entityType={entityTypes.DEPLOYMENT}
-                workflowState={workflowState}
-                getCountData={getCountData}
                 entityContext={newEntityContext}
+                data={safeData}
+                altCountKeyMap={{ [entityTypes.POLICY]: 'failingPolicyCount' }}
             />
         </div>
     );

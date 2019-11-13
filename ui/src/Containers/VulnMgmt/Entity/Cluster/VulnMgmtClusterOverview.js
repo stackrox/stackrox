@@ -55,12 +55,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         createdAt,
         status,
         istioEnabled,
-        deploymentCount,
-        componentCount,
-        imageCount,
-        namespaceCount,
-        policyCount,
-        vulnCount,
         vulnerabilities,
         id
     } = safeData;
@@ -101,25 +95,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
             <StatusChip status={policyStatus.status} />
         </React.Fragment>
     ];
-
-    function getCountData(entityType) {
-        switch (entityType) {
-            case entityTypes.DEPLOYMENT:
-                return deploymentCount;
-            case entityTypes.COMPONENT:
-                return componentCount;
-            case entityTypes.CVE:
-                return vulnCount;
-            case entityTypes.IMAGE:
-                return imageCount;
-            case entityTypes.NAMESPACE:
-                return namespaceCount;
-            case entityTypes.POLICY:
-                return policyCount;
-            default:
-                return 0;
-        }
-    }
 
     const newEntityContext = { ...entityContext, [entityTypes.CLUSTER]: id };
 
@@ -210,9 +185,8 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
             </div>
             <RelatedEntitiesSideList
                 entityType={entityTypes.CLUSTER}
-                workflowState={workflowState}
-                getCountData={getCountData}
                 entityContext={newEntityContext}
+                data={safeData}
             />
         </div>
     );

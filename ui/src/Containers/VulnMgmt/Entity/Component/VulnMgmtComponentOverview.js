@@ -32,16 +32,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyComponent, ...data };
 
-    const {
-        version,
-        priority,
-        topVuln,
-        fixableCVEs,
-        id,
-        vulnCount,
-        deploymentCount,
-        imageCount
-    } = safeData;
+    const { version, priority, topVuln, fixableCVEs, id } = safeData;
 
     const metadataKeyValuePairs = [
         {
@@ -56,19 +47,6 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         componentStats.push(
             <TopCvssLabel key="top-cvss" cvss={cvss} version={scoreVersion} expanded />
         );
-    }
-
-    function getCountData(entityType) {
-        switch (entityType) {
-            case entityTypes.DEPLOYMENT:
-                return deploymentCount;
-            case entityTypes.CVE:
-                return vulnCount;
-            case entityTypes.IMAGE:
-                return imageCount;
-            default:
-                return 0;
-        }
     }
 
     const newEntityContext = { ...entityContext, [entityTypes.COMPONENT]: id };
@@ -109,12 +87,10 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                     </div>
                 </CollapsibleSection>
             </div>
-            {/* TO DO: Tabs are dynamic. We shouldn't have to define a count function for every related entity type we expect */}
             <RelatedEntitiesSideList
                 entityType={entityTypes.COMPONENT}
-                workflowState={workflowState}
-                getCountData={getCountData}
                 entityContext={newEntityContext}
+                data={safeData}
             />
         </div>
     );

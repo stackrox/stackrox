@@ -43,7 +43,8 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
-    const { metadata, scan, topVuln, deploymentCount, priority, vulnCount } = safeData;
+    const { metadata, scan, topVuln, priority } = safeData;
+    safeData.componentCount = scan && scan.components && scan.components.length;
 
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
     const cves = [];
@@ -103,20 +104,6 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 className="cve-table my-3 ml-4 px-2 border-0 border-l-4 border-base-300"
             />
         );
-    }
-
-    function getCountData(entityType) {
-        switch (entityType) {
-            case entityTypes.DEPLOYMENT:
-                return deploymentCount;
-            case entityTypes.COMPONENT:
-                if (scan && scan.components) return scan.components.length;
-                return 0;
-            case entityTypes.CVE:
-                return vulnCount;
-            default:
-                return 0;
-        }
     }
 
     const newEntityContext = { ...entityContext, [entityTypes.IMAGE]: data.id };
@@ -185,9 +172,8 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
             </div>
             <RelatedEntitiesSideList
                 entityType={entityTypes.IMAGE}
-                workflowState={workflowState}
-                getCountData={getCountData}
                 entityContext={newEntityContext}
+                data={safeData}
             />
         </div>
     );

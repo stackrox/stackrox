@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { ExternalLink } from 'react-feather';
 import { format } from 'date-fns';
 
@@ -8,7 +8,6 @@ import LabelChip from 'Components/LabelChip';
 import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
-import workflowStateContext from 'Containers/workflowStateContext';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
 import { truncate } from 'utils/textUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
@@ -32,8 +31,6 @@ const emptyCve = {
 };
 
 const VulnMgmtCveOverview = ({ data, entityContext }) => {
-    const workflowState = useContext(workflowStateContext);
-
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCve, ...data };
 
@@ -48,10 +45,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         lastScanned,
         publishedOn,
         lastModified,
-        scoreVersion,
-        componentCount,
-        imageCount,
-        deploymentCount
+        scoreVersion
     } = safeData;
 
     const linkToNVD = (
@@ -103,19 +97,6 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
             value: scoreVersion && `CVSS ${scoreVersion}`
         }
     ];
-
-    function getCountData(entityType) {
-        switch (entityType) {
-            case entityTypes.DEPLOYMENT:
-                return deploymentCount;
-            case entityTypes.IMAGE:
-                return imageCount;
-            case entityTypes.COMPONENT:
-                return componentCount;
-            default:
-                return 0;
-        }
-    }
 
     const severityStyle = getSeverityChipType(cvss);
     const newEntityContext = { ...entityContext, [entityTypes.CVE]: cve };
@@ -182,9 +163,8 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
             </div>
             <RelatedEntitiesSideList
                 entityType={entityTypes.CVE}
-                workflowState={workflowState}
-                getCountData={getCountData}
                 entityContext={newEntityContext}
+                data={safeData}
             />
         </div>
     );
