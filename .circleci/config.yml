@@ -2491,7 +2491,7 @@ jobs:
             # We need to make sure the file ends with a newline so as not to corrupt it when appending.
             [[ ! -f RELEASED_VERSIONS ]] || sed -i'' -e '$a\' RELEASED_VERSIONS
 
-            echo "${collector_version}  # Rox release ${CIRCLE_TAG} by ${CIRCLE_USERNAME} at $(date)" \
+            echo "${collector_version} ${CIRCLE_TAG}  # Rox release ${CIRCLE_TAG} by ${CIRCLE_USERNAME} at $(date)" \
               >>RELEASED_VERSIONS
             git add RELEASED_VERSIONS
             git -c "user.name=roxbot" -c "user.email=roxbot@stackrox.com" commit \
