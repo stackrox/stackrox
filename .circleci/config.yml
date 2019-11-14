@@ -6,6 +6,28 @@ defaults: &defaults
         password: $DOCKER_IO_PULL_PASSWORD
   working_directory: /go/src/github.com/stackrox/rox
 
+runOnAllTags: &runOnAllTags
+  filters:
+    tags:
+      only: /.*/
+
+# This runs a command only on release builds,
+# which is a tagged build with a tag matching the below regex.
+runOnlyOnReleaseBuilds: &runOnlyOnReleaseBuilds
+  filters:
+    tags:
+      only: /^\d+\.\d+\.\d+\.\d+$/
+    branches:
+      ignore: /.*/
+
+runOnAllTagsWithDockerIOPullCtx: &runOnAllTagsWithDockerIOPullCtx
+  <<: *runOnAllTags
+  context: docker-io-pull
+
+runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
+  <<: *runOnAllTags
+  context: docker-io-push
+
 setupGoogleAppCreds: &setupGoogleAppCreds
   run:
     name: Setup GCloud Service Account
@@ -2729,218 +2751,122 @@ workflows:
   build_all:
     jobs:
       - pre-build-ui:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - pre-build-cli:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - pre-build-go-binaries:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - build:
-          context: docker-io-push
+          <<: *runOnAllTagsWithDockerIOPushCtx
           requires:
             - pre-build-ui
             - pre-build-cli
             - pre-build-go-binaries
-          filters:
-            tags:
-              only: /.*/
       - build-rhel:
-          context: docker-io-push
+          <<: *runOnAllTagsWithDockerIOPushCtx
           requires:
             - pre-build-ui
             - pre-build-cli
             - pre-build-go-binaries
-          filters:
-            tags:
-              only: /.*/
       - build-deployer:
-          context: docker-io-push
+          <<: *runOnAllTagsWithDockerIOPushCtx
           requires:
             - pre-build-cli
-          filters:
-            tags:
-              only: /.*/
       - build-scale-monitoring-and-mock-server:
-          context: docker-io-push
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPushCtx
       - unit-tests:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - style-checks:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - check-generated-files-up-to-date:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - integration-unit-tests:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - provision-cluster-k8s-tests:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - k8s-tests:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
             - provision-cluster-k8s-tests
-          filters:
-            tags:
-              only: /.*/
       - provision-cluster-qa-tests:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - qa-tests:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
             - provision-cluster-qa-tests
-          filters:
-            tags:
-              only: /.*/
       - provision-cluster-qa-tests-kernel-module:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - qa-tests-kernel-module:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
             - provision-cluster-qa-tests-kernel-module
-          filters:
-            tags:
-              only: /.*/
       - provision-cluster-upgrade-test:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - upgrade-test:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
             - provision-cluster-upgrade-test
-          filters:
-            tags:
-              only: /.*/
       - provision-cluster-scale:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - scale:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
             - provision-cluster-scale
-          filters:
-            tags:
-              only: /.*/
       - provision-openshift:
-          context: docker-io-pull
-          filters:
-            tags:
-              only:
-              - /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - provision-openshift-crio:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - openshift-tests:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - provision-openshift
-          filters:
-            tags:
-              only:
-              - /.*/
       - openshift-crio-tests:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - provision-openshift-crio
-          filters:
-            tags:
-              only: /.*/
       - provision-kops:
-          context: docker-io-pull
-          filters:
-            tags:
-              only: /.*/
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - kops-tests:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - provision-kops
-          filters:
-            tags:
-              only: /.*/
       - roxctl-windows-test:
-          context: docker-io-pull
+          <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - pre-build-cli
-          filters:
-            tags:
-              only: /.*/
-      # Push release only on tags.
-      # Skip tags that end in -rc.# or .x
       - mark-collector-release:
+          <<: *runOnlyOnReleaseBuilds
           context: docker-io-pull
           requires:
             - build
             - unit-tests
             - push-release
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^(?!.*-rc\.\d+$|.*\.x$|.*-nightly-.*$).*$/
+
       - push-release:
+          <<: *runOnlyOnReleaseBuilds
           context: docker-io-and-stackrox-io-push
           requires:
             - build
             - build-deployer
             - unit-tests
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^(?!.*-rc\.\d+$|.*\.x$|.*-nightly-.*$).*$/
-
 
   update_dev_license:
     triggers:
