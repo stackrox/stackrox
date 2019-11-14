@@ -5,6 +5,8 @@ option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
 import "storage/risk.proto";
+// TODO: Remove when migration is in place
+import "storage/cve.proto";
 import "protobuf/gogoproto/gogo.proto";
 
 package storage;
@@ -17,12 +19,16 @@ message Image {
     ImageMetadata  metadata                = 2;
     ImageScan      scan                    = 3;
 
+    // TODO: Remove when migration is in place, we should get this from relationship instead
     oneof set_components {
         int32 components                   = 7 [(gogoproto.moretags) = "search:\"Component Count,store\""];
     }
+
+    // TODO: Remove when migration is in place, we should get this from relationship instead
     oneof set_cves {
         int32 cves                         = 8 [(gogoproto.moretags) = "search:\"CVE Count,store\""];
     }
+    // TODO: Remove when migration is in place, we should get this from relationship instead
     oneof set_fixable {
         int32 fixable_cves                 = 9 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store\""];
     }
@@ -40,6 +46,7 @@ message ImageScan {
     repeated EmbeddedImageScanComponent components = 2;
 }
 
+// TODO: Remove when migration is in place
 message EmbeddedImageScanComponent {
     string                         name     = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
     string                         version  = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
@@ -57,6 +64,7 @@ message License {
     string url  = 3;
 }
 
+// TODO: Remove when migration is in place
 message EmbeddedVulnerability {
     enum ScoreVersion {
         V2 = 0; // No unset for automatic backwards compatibility
@@ -82,98 +90,6 @@ message EmbeddedVulnerability {
     google.protobuf.Timestamp published_on  = 9;
     google.protobuf.Timestamp last_modified = 10;
     VulnerabilityType vulnerability_type    = 11;
-}
-
-message CVSSV2 {
-    enum Impact {
-        IMPACT_NONE     = 0;
-        IMPACT_PARTIAL  = 1;
-        IMPACT_COMPLETE = 2;
-    }
-    enum AttackVector {
-        ATTACK_LOCAL    = 0;
-        ATTACK_ADJACENT = 1;
-        ATTACK_NETWORK  = 2;
-    }
-    enum AccessComplexity {
-        ACCESS_HIGH   = 0;
-        ACCESS_MEDIUM = 1;
-        ACCESS_LOW    = 2;
-    }
-    enum Authentication {
-        AUTH_MULTIPLE = 0;
-        AUTH_SINGLE   = 1;
-        AUTH_NONE     = 2;
-    }
-    string           vector               = 1;
-    AttackVector     attack_vector        = 2;
-    AccessComplexity access_complexity    = 3;
-    Authentication   authentication       = 4;
-    Impact           confidentiality      = 5;
-    Impact           integrity            = 6;
-    Impact           availability         = 7;
-    float            exploitability_score = 8;
-    float            impact_score         = 9;
-    float            score                = 10;
-    Severity         severity             = 11;
-    enum Severity   {
-        UNKNOWN  = 0;
-        LOW      = 1;
-        MEDIUM   = 2;
-        HIGH     = 3;
-    }
-}
-
-message CVSSV3 {
-    enum Impact {
-        IMPACT_NONE = 0;
-        IMPACT_LOW  = 1;
-        IMPACT_HIGH = 2;
-    }
-    enum AttackVector {
-        ATTACK_LOCAL    = 0;
-        ATTACK_ADJACENT = 1;
-        ATTACK_NETWORK  = 2;
-        ATTACK_PHYSICAL = 3;
-    }
-    enum Complexity {
-        COMPLEXITY_LOW    = 0;
-        COMPLEXITY_HIGH   = 1;
-    }
-    enum Privileges {
-        PRIVILEGE_NONE = 0;
-        PRIVILEGE_LOW  = 1;
-        PRIVILEGE_HIGH = 2;
-    }
-    enum UserInteraction {
-        UI_NONE     = 0;
-        UI_REQUIRED = 1;
-    }
-    enum Scope {
-        UNCHANGED = 0;
-        CHANGED   = 1;
-    }
-    string           vector               = 1;
-    float            exploitability_score = 2;
-    float            impact_score         = 3;
-    AttackVector     attack_vector        = 4;
-    Complexity       attack_complexity    = 5;
-    Privileges       privileges_required  = 6;
-    UserInteraction  user_interaction     = 7;
-    Scope            scope                = 8;
-    Impact           confidentiality      = 9;
-    Impact           integrity            = 10;
-    Impact           availability         = 11;
-    float            score                = 12;
-    Severity         severity             = 13;
-    enum Severity   {
-        UNKNOWN  = 0;
-        NONE     = 1;
-        LOW      = 2;
-        MEDIUM   = 3;
-        HIGH     = 4;
-        CRITICAL = 5;
-    }
 }
 
 message ImageMetadata {

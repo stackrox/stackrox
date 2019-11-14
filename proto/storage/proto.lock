@@ -606,13 +606,24 @@
               {
                 "id": 8,
                 "name": "validated",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 9,
                 "name": "extra_ui_endpoints",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "active",
+                "type": "bool"
               }
             ],
             "maps": [
@@ -915,6 +926,16 @@
             ]
           },
           {
+            "name": "TolerationsConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "disabled",
+                "type": "bool"
+              }
+            ]
+          },
+          {
             "name": "DynamicClusterConfig",
             "fields": [
               {
@@ -1019,6 +1040,16 @@
                 "id": 18,
                 "name": "dynamic_config",
                 "type": "DynamicClusterConfig"
+              },
+              {
+                "id": 19,
+                "name": "tolerations_config",
+                "type": "TolerationsConfig"
+              },
+              {
+                "id": 20,
+                "name": "priority",
+                "type": "int64"
               }
             ],
             "reserved_ids": [
@@ -1749,6 +1780,545 @@
       }
     },
     {
+      "protopath": "cve.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "CVE.ScoreVersion",
+            "enum_fields": [
+              {
+                "name": "V2"
+              },
+              {
+                "name": "V3",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "CVE.CVEType",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN_CVE"
+              },
+              {
+                "name": "IMAGE_CVE",
+                "integer": 1
+              },
+              {
+                "name": "K8S_CVE",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2.Impact",
+            "enum_fields": [
+              {
+                "name": "IMPACT_NONE"
+              },
+              {
+                "name": "IMPACT_PARTIAL",
+                "integer": 1
+              },
+              {
+                "name": "IMPACT_COMPLETE",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2.AttackVector",
+            "enum_fields": [
+              {
+                "name": "ATTACK_LOCAL"
+              },
+              {
+                "name": "ATTACK_ADJACENT",
+                "integer": 1
+              },
+              {
+                "name": "ATTACK_NETWORK",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2.AccessComplexity",
+            "enum_fields": [
+              {
+                "name": "ACCESS_HIGH"
+              },
+              {
+                "name": "ACCESS_MEDIUM",
+                "integer": 1
+              },
+              {
+                "name": "ACCESS_LOW",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2.Authentication",
+            "enum_fields": [
+              {
+                "name": "AUTH_MULTIPLE"
+              },
+              {
+                "name": "AUTH_SINGLE",
+                "integer": 1
+              },
+              {
+                "name": "AUTH_NONE",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2.Severity",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "LOW",
+                "integer": 1
+              },
+              {
+                "name": "MEDIUM",
+                "integer": 2
+              },
+              {
+                "name": "HIGH",
+                "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "CVSSV3.Impact",
+            "enum_fields": [
+              {
+                "name": "IMPACT_NONE"
+              },
+              {
+                "name": "IMPACT_LOW",
+                "integer": 1
+              },
+              {
+                "name": "IMPACT_HIGH",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV3.AttackVector",
+            "enum_fields": [
+              {
+                "name": "ATTACK_LOCAL"
+              },
+              {
+                "name": "ATTACK_ADJACENT",
+                "integer": 1
+              },
+              {
+                "name": "ATTACK_NETWORK",
+                "integer": 2
+              },
+              {
+                "name": "ATTACK_PHYSICAL",
+                "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "CVSSV3.Complexity",
+            "enum_fields": [
+              {
+                "name": "COMPLEXITY_LOW"
+              },
+              {
+                "name": "COMPLEXITY_HIGH",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "CVSSV3.Privileges",
+            "enum_fields": [
+              {
+                "name": "PRIVILEGE_NONE"
+              },
+              {
+                "name": "PRIVILEGE_LOW",
+                "integer": 1
+              },
+              {
+                "name": "PRIVILEGE_HIGH",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV3.UserInteraction",
+            "enum_fields": [
+              {
+                "name": "UI_NONE"
+              },
+              {
+                "name": "UI_REQUIRED",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "CVSSV3.Scope",
+            "enum_fields": [
+              {
+                "name": "UNCHANGED"
+              },
+              {
+                "name": "CHANGED",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "CVSSV3.Severity",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "NONE",
+                "integer": 1
+              },
+              {
+                "name": "LOW",
+                "integer": 2
+              },
+              {
+                "name": "MEDIUM",
+                "integer": 3
+              },
+              {
+                "name": "HIGH",
+                "integer": 4
+              },
+              {
+                "name": "CRITICAL",
+                "integer": 5
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "CVE",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "cvss",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVSS,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "type",
+                "type": "CVEType",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Type,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "summary",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "link",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "published_on",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "last_modified",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "references",
+                "type": "Reference",
+                "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "fixable",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Fixable,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 11,
+                "name": "score_version",
+                "type": "ScoreVersion"
+              },
+              {
+                "id": 12,
+                "name": "cvss_v2",
+                "type": "CVSSV2"
+              },
+              {
+                "id": 13,
+                "name": "cvss_v3",
+                "type": "CVSSV3"
+              },
+              {
+                "id": 14,
+                "name": "relationship",
+                "type": "CVERelationship"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Reference",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "URI",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "tags",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "vector",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "attack_vector",
+                "type": "AttackVector"
+              },
+              {
+                "id": 3,
+                "name": "access_complexity",
+                "type": "AccessComplexity"
+              },
+              {
+                "id": 4,
+                "name": "authentication",
+                "type": "Authentication"
+              },
+              {
+                "id": 5,
+                "name": "confidentiality",
+                "type": "Impact"
+              },
+              {
+                "id": 6,
+                "name": "integrity",
+                "type": "Impact"
+              },
+              {
+                "id": 7,
+                "name": "availability",
+                "type": "Impact"
+              },
+              {
+                "id": 8,
+                "name": "exploitability_score",
+                "type": "float"
+              },
+              {
+                "id": 9,
+                "name": "impact_score",
+                "type": "float"
+              },
+              {
+                "id": 10,
+                "name": "score",
+                "type": "float"
+              },
+              {
+                "id": 11,
+                "name": "severity",
+                "type": "Severity"
+              }
+            ]
+          },
+          {
+            "name": "CVSSV3",
+            "fields": [
+              {
+                "id": 1,
+                "name": "vector",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "exploitability_score",
+                "type": "float"
+              },
+              {
+                "id": 3,
+                "name": "impact_score",
+                "type": "float"
+              },
+              {
+                "id": 4,
+                "name": "attack_vector",
+                "type": "AttackVector"
+              },
+              {
+                "id": 5,
+                "name": "attack_complexity",
+                "type": "Complexity"
+              },
+              {
+                "id": 6,
+                "name": "privileges_required",
+                "type": "Privileges"
+              },
+              {
+                "id": 7,
+                "name": "user_interaction",
+                "type": "UserInteraction"
+              },
+              {
+                "id": 8,
+                "name": "scope",
+                "type": "Scope"
+              },
+              {
+                "id": 9,
+                "name": "confidentiality",
+                "type": "Impact"
+              },
+              {
+                "id": 10,
+                "name": "integrity",
+                "type": "Impact"
+              },
+              {
+                "id": 11,
+                "name": "availability",
+                "type": "Impact"
+              },
+              {
+                "id": 12,
+                "name": "score",
+                "type": "float"
+              },
+              {
+                "id": 13,
+                "name": "severity",
+                "type": "Severity"
+              }
+            ]
+          },
+          {
+            "name": "CVERelationship",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "cve_component_relationship",
+                "type": "CVEComponentRelationship",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "fixable_cve_component_relationship",
+                "type": "FixableCVEComponentRelationship",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "CVEComponentRelationship",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "FixableCVEComponentRelationship",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Fixed By,store\\"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
       "protopath": "deployment.proto",
       "def": {
         "enums": [
@@ -1988,6 +2558,17 @@
                 "name": "ports",
                 "type": "PortConfig",
                 "is_repeated": true
+              },
+              {
+                "id": 27,
+                "name": "state_timestamp",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "hash:\\\"ignore\\"
+                  }
+                ]
               }
             ],
             "maps": [
@@ -2921,65 +3502,29 @@
       "def": {
         "enums": [
           {
-            "name": "CVSSV2.Impact",
+            "name": "EmbeddedVulnerability.ScoreVersion",
             "enum_fields": [
               {
-                "name": "IMPACT_NONE"
+                "name": "V2"
               },
               {
-                "name": "IMPACT_PARTIAL",
+                "name": "V3",
                 "integer": 1
-              },
-              {
-                "name": "IMPACT_COMPLETE",
-                "integer": 2
               }
             ]
           },
           {
-            "name": "CVSSV2.AttackVector",
+            "name": "EmbeddedVulnerability.VulnerabilityType",
             "enum_fields": [
               {
-                "name": "ATTACK_LOCAL"
+                "name": "UNKNOWN_VULNERABILITY"
               },
               {
-                "name": "ATTACK_ADJACENT",
+                "name": "IMAGE_VULNERABILITY",
                 "integer": 1
               },
               {
-                "name": "ATTACK_NETWORK",
-                "integer": 2
-              }
-            ]
-          },
-          {
-            "name": "CVSSV2.AccessComplexity",
-            "enum_fields": [
-              {
-                "name": "ACCESS_HIGH"
-              },
-              {
-                "name": "ACCESS_MEDIUM",
-                "integer": 1
-              },
-              {
-                "name": "ACCESS_LOW",
-                "integer": 2
-              }
-            ]
-          },
-          {
-            "name": "CVSSV2.Authentication",
-            "enum_fields": [
-              {
-                "name": "AUTH_MULTIPLE"
-              },
-              {
-                "name": "AUTH_SINGLE",
-                "integer": 1
-              },
-              {
-                "name": "AUTH_NONE",
+                "name": "K8S_VULNERABILITY",
                 "integer": 2
               }
             ]
@@ -3063,6 +3608,17 @@
                 "id": 10,
                 "name": "not_pullable",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "priority",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Priority\\\" hash:\\\"ignore\\"
+                  }
+                ]
               }
             ],
             "reserved_ids": [
@@ -3131,6 +3687,11 @@
                 "id": 5,
                 "name": "layer_index",
                 "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "priority",
+                "type": "int64"
               }
             ]
           },
@@ -3201,49 +3762,34 @@
                 ]
               },
               {
+                "id": 8,
+                "name": "score_version",
+                "type": "ScoreVersion"
+              },
+              {
                 "id": 6,
                 "name": "cvss_v2",
                 "type": "CVSSV2"
-              }
-            ]
-          },
-          {
-            "name": "CVSSV2",
-            "fields": [
-              {
-                "id": 1,
-                "name": "vector",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "attack_vector",
-                "type": "AttackVector"
-              },
-              {
-                "id": 3,
-                "name": "access_complexity",
-                "type": "AccessComplexity"
-              },
-              {
-                "id": 4,
-                "name": "authentication",
-                "type": "Authentication"
-              },
-              {
-                "id": 5,
-                "name": "confidentiality",
-                "type": "Impact"
-              },
-              {
-                "id": 6,
-                "name": "integrity",
-                "type": "Impact"
               },
               {
                 "id": 7,
-                "name": "availability",
-                "type": "Impact"
+                "name": "cvss_v3",
+                "type": "CVSSV3"
+              },
+              {
+                "id": 9,
+                "name": "published_on",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "last_modified",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 11,
+                "name": "vulnerability_type",
+                "type": "VulnerabilityType"
               }
             ]
           },
@@ -3491,6 +4037,11 @@
                 "id": 8,
                 "name": "last_updated",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "priority",
+                "type": "int64"
               }
             ],
             "reserved_ids": [
@@ -3502,6 +4053,139 @@
           {
             "path": "google/protobuf/timestamp.proto"
           },
+          {
+            "path": "storage/risk.proto"
+          },
+          {
+            "path": "storage/cve.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "image_component.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "ImageComponent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component ID,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component Name,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "version",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component Version,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "license",
+                "type": "License"
+              },
+              {
+                "id": 5,
+                "name": "priority",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Priority\\\" hash:\\\"ignore\\"
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "relationship",
+                "type": "ComponentRelationship"
+              }
+            ],
+            "messages": [
+              {
+                "name": "License",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "url",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComponentRelationship",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "image_id",
+                "type": "ComponentImageRelationship",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ComponentImageRelationship",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "layer_index",
+                "type": "int32"
+              }
+            ]
+          }
+        ],
+        "imports": [
           {
             "path": "protobuf/gogoproto/gogo.proto"
           }
@@ -3610,6 +4294,11 @@
                 "type": "ScannerV2Config"
               },
               {
+                "id": 20,
+                "name": "ibm",
+                "type": "IBMRegistryConfig"
+              },
+              {
                 "id": 15,
                 "name": "autogenerated",
                 "type": "bool"
@@ -3623,6 +4312,27 @@
                 "id": 18,
                 "name": "skip_test_integration",
                 "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "IBMRegistryConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "api_key",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"always\\"
+                  }
+                ]
               }
             ]
           },
@@ -4029,6 +4739,11 @@
                 "id": 6,
                 "name": "creation_time",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "priority",
+                "type": "int64"
               }
             ],
             "maps": [
@@ -4595,6 +5310,11 @@
                 "id": 13,
                 "name": "joined_at",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 15,
+                "name": "kubelet_version",
+                "type": "string"
               }
             ],
             "maps": [
@@ -5211,6 +5931,11 @@
                 "name": "notifiers",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 15,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -5253,6 +5978,11 @@
                 "name": "notifiers",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -5742,6 +6472,17 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "search:\\\"Deployment ID,store,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 10,
+                "name": "deployment_state_ts",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Deployment State TS,hidden\\"
                   }
                 ]
               },
@@ -6508,6 +7249,10 @@
               {
                 "name": "IMAGE",
                 "integer": 4
+              },
+              {
+                "name": "IMAGE_COMPONENT",
+                "integer": 6
               },
               {
                 "name": "SERVICEACCOUNT",

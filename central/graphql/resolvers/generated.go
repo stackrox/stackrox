@@ -72,6 +72,35 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"serviceAccount: String!",
 		"sourceId: String!",
 	}))
+	utils.Must(builder.AddType("CVE", []string{
+		"cvss: Float!",
+		"cvssV2: CVSSV2",
+		"cvssV3: CVSSV3",
+		"fixable: Boolean!",
+		"id: ID!",
+		"lastModified: Time",
+		"link: String!",
+		"publishedOn: Time",
+		"references: [CVE_Reference]!",
+		"relationship: CVERelationship",
+		"scoreVersion: CVE_ScoreVersion!",
+		"summary: String!",
+		"type: CVE_CVEType!",
+	}))
+	utils.Must(builder.AddType("CVEComponentRelationship", []string{
+		"id: ID!",
+	}))
+	utils.Must(builder.AddType("CVERelationship", []string{
+		"cveComponentRelationship: [CVEComponentRelationship]!",
+		"fixableCveComponentRelationship: [FixableCVEComponentRelationship]!",
+		"id: ID!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_CVEType(0)))
+	utils.Must(builder.AddType("CVE_Reference", []string{
+		"tags: [String!]!",
+		"uRI: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_ScoreVersion(0)))
 	utils.Must(builder.AddType("CVSSV2", []string{
 		"accessComplexity: CVSSV2_AccessComplexity!",
 		"attackVector: CVSSV2_AttackVector!",
@@ -295,6 +324,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"version: String!",
 	}))
+	utils.Must(builder.AddType("ComponentImageRelationship", []string{
+		"id: ID!",
+	}))
+	utils.Must(builder.AddType("ComponentRelationship", []string{
+		"id: ID!",
+		"imageId: [ComponentImageRelationship]!",
+	}))
 	utils.Must(builder.AddType("Container", []string{
 		"config: ContainerConfig",
 		"id: ID!",
@@ -391,6 +427,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_VulnerabilityType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
+	utils.Must(builder.AddType("FixableCVEComponentRelationship", []string{
+		"id: ID!",
+	}))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
 		"token: String!",
@@ -432,6 +471,19 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notPullable: Boolean!",
 		"priority: Int!",
 		"scan: ImageScan",
+	}))
+	utils.Must(builder.AddType("ImageComponent", []string{
+		"id: ID!",
+		"license: ImageComponent_License",
+		"name: String!",
+		"priority: Int!",
+		"relationship: ComponentRelationship",
+		"version: String!",
+	}))
+	utils.Must(builder.AddType("ImageComponent_License", []string{
+		"name: String!",
+		"type: String!",
+		"url: String!",
 	}))
 	utils.Must(builder.AddType("ImageLayer", []string{
 		"author: String!",
@@ -1415,6 +1467,229 @@ func (resolver *cSCCResolver) ServiceAccount(ctx context.Context) string {
 func (resolver *cSCCResolver) SourceId(ctx context.Context) string {
 	value := resolver.data.GetSourceId()
 	return value
+}
+
+type cVEResolver struct {
+	root *Resolver
+	data *storage.CVE
+}
+
+func (resolver *Resolver) wrapCVE(value *storage.CVE, ok bool, err error) (*cVEResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVEResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapCVEs(values []*storage.CVE, err error) ([]*cVEResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVEResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVEResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *cVEResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *cVEResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
+	value := resolver.data.GetCvssV2()
+	return resolver.root.wrapCVSSV2(value, true, nil)
+}
+
+func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error) {
+	value := resolver.data.GetCvssV3()
+	return resolver.root.wrapCVSSV3(value, true, nil)
+}
+
+func (resolver *cVEResolver) Fixable(ctx context.Context) bool {
+	value := resolver.data.GetFixable()
+	return value
+}
+
+func (resolver *cVEResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *cVEResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastModified()
+	return timestamp(value)
+}
+
+func (resolver *cVEResolver) Link(ctx context.Context) string {
+	value := resolver.data.GetLink()
+	return value
+}
+
+func (resolver *cVEResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetPublishedOn()
+	return timestamp(value)
+}
+
+func (resolver *cVEResolver) References(ctx context.Context) ([]*cVE_ReferenceResolver, error) {
+	value := resolver.data.GetReferences()
+	return resolver.root.wrapCVE_References(value, nil)
+}
+
+func (resolver *cVEResolver) Relationship(ctx context.Context) (*cVERelationshipResolver, error) {
+	value := resolver.data.GetRelationship()
+	return resolver.root.wrapCVERelationship(value, true, nil)
+}
+
+func (resolver *cVEResolver) ScoreVersion(ctx context.Context) string {
+	value := resolver.data.GetScoreVersion()
+	return value.String()
+}
+
+func (resolver *cVEResolver) Summary(ctx context.Context) string {
+	value := resolver.data.GetSummary()
+	return value
+}
+
+func (resolver *cVEResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+type cVEComponentRelationshipResolver struct {
+	root *Resolver
+	data *storage.CVEComponentRelationship
+}
+
+func (resolver *Resolver) wrapCVEComponentRelationship(value *storage.CVEComponentRelationship, ok bool, err error) (*cVEComponentRelationshipResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVEComponentRelationshipResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapCVEComponentRelationships(values []*storage.CVEComponentRelationship, err error) ([]*cVEComponentRelationshipResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVEComponentRelationshipResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVEComponentRelationshipResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *cVEComponentRelationshipResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+type cVERelationshipResolver struct {
+	root *Resolver
+	data *storage.CVERelationship
+}
+
+func (resolver *Resolver) wrapCVERelationship(value *storage.CVERelationship, ok bool, err error) (*cVERelationshipResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVERelationshipResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapCVERelationships(values []*storage.CVERelationship, err error) ([]*cVERelationshipResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVERelationshipResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVERelationshipResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *cVERelationshipResolver) CveComponentRelationship(ctx context.Context) ([]*cVEComponentRelationshipResolver, error) {
+	value := resolver.data.GetCveComponentRelationship()
+	return resolver.root.wrapCVEComponentRelationships(value, nil)
+}
+
+func (resolver *cVERelationshipResolver) FixableCveComponentRelationship(ctx context.Context) ([]*fixableCVEComponentRelationshipResolver, error) {
+	value := resolver.data.GetFixableCveComponentRelationship()
+	return resolver.root.wrapFixableCVEComponentRelationships(value, nil)
+}
+
+func (resolver *cVERelationshipResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func toCVE_CVEType(value *string) storage.CVE_CVEType {
+	if value != nil {
+		return storage.CVE_CVEType(storage.CVE_CVEType_value[*value])
+	}
+	return storage.CVE_CVEType(0)
+}
+
+func toCVE_CVETypes(values *[]string) []storage.CVE_CVEType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVE_CVEType, len(*values))
+	for i, v := range *values {
+		output[i] = toCVE_CVEType(&v)
+	}
+	return output
+}
+
+type cVE_ReferenceResolver struct {
+	root *Resolver
+	data *storage.CVE_Reference
+}
+
+func (resolver *Resolver) wrapCVE_Reference(value *storage.CVE_Reference, ok bool, err error) (*cVE_ReferenceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVE_ReferenceResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapCVE_References(values []*storage.CVE_Reference, err error) ([]*cVE_ReferenceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVE_ReferenceResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVE_ReferenceResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *cVE_ReferenceResolver) Tags(ctx context.Context) []string {
+	value := resolver.data.GetTags()
+	return value
+}
+
+func (resolver *cVE_ReferenceResolver) URI(ctx context.Context) string {
+	value := resolver.data.GetURI()
+	return value
+}
+
+func toCVE_ScoreVersion(value *string) storage.CVE_ScoreVersion {
+	if value != nil {
+		return storage.CVE_ScoreVersion(storage.CVE_ScoreVersion_value[*value])
+	}
+	return storage.CVE_ScoreVersion(0)
+}
+
+func toCVE_ScoreVersions(values *[]string) []storage.CVE_ScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVE_ScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toCVE_ScoreVersion(&v)
+	}
+	return output
 }
 
 type cVSSV2Resolver struct {
@@ -3156,6 +3431,67 @@ func (resolver *componentResolver) Version(ctx context.Context) string {
 	return value
 }
 
+type componentImageRelationshipResolver struct {
+	root *Resolver
+	data *storage.ComponentImageRelationship
+}
+
+func (resolver *Resolver) wrapComponentImageRelationship(value *storage.ComponentImageRelationship, ok bool, err error) (*componentImageRelationshipResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &componentImageRelationshipResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComponentImageRelationships(values []*storage.ComponentImageRelationship, err error) ([]*componentImageRelationshipResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*componentImageRelationshipResolver, len(values))
+	for i, v := range values {
+		output[i] = &componentImageRelationshipResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *componentImageRelationshipResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+type componentRelationshipResolver struct {
+	root *Resolver
+	data *storage.ComponentRelationship
+}
+
+func (resolver *Resolver) wrapComponentRelationship(value *storage.ComponentRelationship, ok bool, err error) (*componentRelationshipResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &componentRelationshipResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComponentRelationships(values []*storage.ComponentRelationship, err error) ([]*componentRelationshipResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*componentRelationshipResolver, len(values))
+	for i, v := range values {
+		output[i] = &componentRelationshipResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *componentRelationshipResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *componentRelationshipResolver) ImageId(ctx context.Context) ([]*componentImageRelationshipResolver, error) {
+	value := resolver.data.GetImageId()
+	return resolver.root.wrapComponentImageRelationships(value, nil)
+}
+
 type containerResolver struct {
 	root *Resolver
 	data *storage.Container
@@ -3910,6 +4246,34 @@ func toEnforcementActions(values *[]string) []storage.EnforcementAction {
 	return output
 }
 
+type fixableCVEComponentRelationshipResolver struct {
+	root *Resolver
+	data *storage.FixableCVEComponentRelationship
+}
+
+func (resolver *Resolver) wrapFixableCVEComponentRelationship(value *storage.FixableCVEComponentRelationship, ok bool, err error) (*fixableCVEComponentRelationshipResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &fixableCVEComponentRelationshipResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapFixableCVEComponentRelationships(values []*storage.FixableCVEComponentRelationship, err error) ([]*fixableCVEComponentRelationshipResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*fixableCVEComponentRelationshipResolver, len(values))
+	for i, v := range values {
+		output[i] = &fixableCVEComponentRelationshipResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *fixableCVEComponentRelationshipResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
 type generateTokenResponseResolver struct {
 	root *Resolver
 	data *v1.GenerateTokenResponse
@@ -4253,6 +4617,97 @@ func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, er
 	resolver.ensureData(ctx)
 	value := resolver.data.GetScan()
 	return resolver.root.wrapImageScan(value, true, nil)
+}
+
+type imageComponentResolver struct {
+	root *Resolver
+	data *storage.ImageComponent
+}
+
+func (resolver *Resolver) wrapImageComponent(value *storage.ImageComponent, ok bool, err error) (*imageComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageComponentResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapImageComponents(values []*storage.ImageComponent, err error) ([]*imageComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageComponentResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *imageComponentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *imageComponentResolver) License(ctx context.Context) (*imageComponent_LicenseResolver, error) {
+	value := resolver.data.GetLicense()
+	return resolver.root.wrapImageComponent_License(value, true, nil)
+}
+
+func (resolver *imageComponentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *imageComponentResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	return int32(value)
+}
+
+func (resolver *imageComponentResolver) Relationship(ctx context.Context) (*componentRelationshipResolver, error) {
+	value := resolver.data.GetRelationship()
+	return resolver.root.wrapComponentRelationship(value, true, nil)
+}
+
+func (resolver *imageComponentResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
+}
+
+type imageComponent_LicenseResolver struct {
+	root *Resolver
+	data *storage.ImageComponent_License
+}
+
+func (resolver *Resolver) wrapImageComponent_License(value *storage.ImageComponent_License, ok bool, err error) (*imageComponent_LicenseResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageComponent_LicenseResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapImageComponent_Licenses(values []*storage.ImageComponent_License, err error) ([]*imageComponent_LicenseResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageComponent_LicenseResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageComponent_LicenseResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *imageComponent_LicenseResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *imageComponent_LicenseResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value
+}
+
+func (resolver *imageComponent_LicenseResolver) Url(ctx context.Context) string {
+	value := resolver.data.GetUrl()
+	return value
 }
 
 type imageLayerResolver struct {

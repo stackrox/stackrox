@@ -26,6 +26,8 @@ var (
 			reflect.TypeOf((*storage.ListDeployment)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
+			reflect.TypeOf((*storage.ImageComponent)(nil)),
+			reflect.TypeOf((*storage.CVE)(nil)),
 			reflect.TypeOf((*storage.ListImage)(nil)),
 			reflect.TypeOf((*v1.Metadata)(nil)),
 			reflect.TypeOf((*v1.Namespace)(nil)),
