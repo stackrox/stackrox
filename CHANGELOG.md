@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
-## [NEXT RELEASE]
+## [34.0]
 ### Added
 - Policy whitelists are now shown in the UI. Previously, we only showed whitelisted deployment names, and not the entire structure that was
   actually in the policy object. This means that users can now whitelist by cluster, namespace and labels using the UI.
