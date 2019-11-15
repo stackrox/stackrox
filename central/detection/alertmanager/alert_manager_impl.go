@@ -64,11 +64,12 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
 	for _, existingAlert := range alertsToMark {
-		errList.AddError(d.alerts.MarkAlertStale(ctx, existingAlert.GetId()))
-		if errList.ToError() == nil {
+		err := d.alerts.MarkAlertStale(ctx, existingAlert.GetId())
+		if err == nil {
 			// run notifier for all the resolved alerts
 			d.notifier.ProcessAlert(existingAlert)
 		}
+		errList.AddError(err)
 	}
 	return errList.ToError()
 }
@@ -233,7 +234,10 @@ func (d *alertManagerImpl) mergeManyAlerts(ctx context.Context, presentAlerts []
 			continue
 		}
 		if matchingOld := findAlert(alert, previousAlerts); matchingOld != nil {
-			updatedAlerts = append(updatedAlerts, mergeAlerts(matchingOld, alert))
+			mergedAlert := mergeAlerts(matchingOld, alert)
+			if mergedAlert != matchingOld && !proto.Equal(mergedAlert, matchingOld) {
+				updatedAlerts = append(updatedAlerts, mergedAlert)
+			}
 			continue
 		}
 
@@ -248,8 +252,10 @@ func (d *alertManagerImpl) mergeManyAlerts(ctx context.Context, presentAlerts []
 		}
 
 		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME && d.inactiveDeploymentAlert(alert) {
-			alert.Deployment.Inactive = true
-			updatedAlerts = append(updatedAlerts, alert)
+			if !alert.Deployment.Inactive {
+				alert.Deployment.Inactive = true
+				updatedAlerts = append(updatedAlerts, alert)
+			}
 		}
 	}
 	return

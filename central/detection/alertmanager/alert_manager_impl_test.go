@@ -121,12 +121,10 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 	alerts := getAlerts()
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
-	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[0]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[1]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[2]).Return(nil)
+	// No updates should be attempted
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts)
-	suite.True(modified)
+	suite.False(modified)
 	suite.NoError(err, "update should succeed")
 }
 
@@ -135,9 +133,7 @@ func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 
 	suite.alertsMock.EXPECT().MarkAlertStale(suite.ctx, alerts[0].GetId()).Return(nil)
 
-	// Next two should be updates with exactly the same values put in.
-	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[1]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[2]).Return(nil)
+	// Unchanged alerts should not be updated.
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 	// We should get a notification for the new alert.
@@ -152,10 +148,8 @@ func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	alerts := getAlerts()
 
-	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
+	// Only the new alert will be updated.
 	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[0]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[1]).Return(nil)
-	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[2]).Return(nil)
 
 	// We should get a notification for the new alert.
 	suite.notifierMock.EXPECT().ProcessAlert(alerts[0]).Return()
