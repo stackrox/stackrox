@@ -2613,6 +2613,23 @@ jobs:
               gsutil cp scripts/offline-bundle/image-collector-bundle.tgz gs://sr-roxc/${release}/image-collector-bundle.tgz
             done
 
+  retrigger-master-workflow:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Maybe retrigger master workflow
+          command: |
+            [[ -n "${CIRCLE_TAG}" ]] # Assert that this job is only run on tags
+            # If the tag was pushed on master, then retrigger the workflow!
+            # We do this because the output of `make tag` changes in this case, and we want to rerun the master workflow
+            # in order to produce new images with the updated version of `make tag`.
+            # Note that Circle changes the local master ref to point to the tag, so we need to check against origin/master.
+            if git branch -a --contains "${CIRCLE_TAG}" | grep -qx '[[:space:]]*remotes/origin/master$'; then
+              curl -sS --fail -X POST -u "${CIRCLE_TOKEN_ROXBOT}:" "https://circleci.com/api/v1.1/project/github/stackrox/rox/build" -d '{"branch": "master"}'
+            fi
+
   regenerate-dev-license:
     <<: *defaults
     resource_class: small
@@ -2867,6 +2884,14 @@ workflows:
             - build
             - build-deployer
             - unit-tests
+
+      - retrigger-master-workflow:
+          context: docker-io-pull
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
 
   update_dev_license:
     triggers:
