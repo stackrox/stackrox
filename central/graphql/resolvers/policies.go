@@ -25,7 +25,7 @@ func init() {
 		schema.AddExtraResolver("Policy", `deployments(query: String): [Deployment!]!`),
 		schema.AddExtraResolver("Policy", `deploymentCount: Int!`),
 		schema.AddExtraResolver("Policy", `policyStatus: String!`),
-		schema.AddExtraResolver("Policy", "latestViolation(query: String): Time"),
+		schema.AddExtraResolver("Policy", "latestViolation: Time"),
 	)
 }
 
@@ -165,23 +165,9 @@ func (resolver *policyResolver) anyActiveDeployAlerts(ctx context.Context) (bool
 	return len(results) != 0, err
 }
 
-func (resolver *policyResolver) LatestViolation(ctx context.Context, args rawQuery) (*graphql.Time, error) {
+func (resolver *policyResolver) LatestViolation(ctx context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "Latest Violation")
 
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
-	return getLatestViolationTime(ctx, resolver.root, resolver.getConjunctionQuery(q))
-}
-
-func (resolver *policyResolver) getConjunctionQuery(q *v1.Query) *v1.Query {
-	q1 := search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).ProtoQuery()
-
-	if q == search.EmptyQuery() {
-		return q1
-	}
-
-	return search.NewConjunctionQuery(q, q1)
+	return getLatestViolationTime(ctx, resolver.root,
+		search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).ProtoQuery())
 }

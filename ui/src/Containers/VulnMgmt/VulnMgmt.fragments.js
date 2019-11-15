@@ -247,7 +247,7 @@ export const POLICY_LIST_FRAGMENT = gql`
         description
         policyStatus
         lastUpdated
-        latestViolation(query: $policyQuery)
+        latestViolation
         severity
         deploymentCount
         lifecycleStages
