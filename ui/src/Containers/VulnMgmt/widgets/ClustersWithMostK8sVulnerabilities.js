@@ -44,11 +44,11 @@ const processData = (data, workflowState, limit) => {
         .map(({ id, name, isGKECluster, k8sVulns }) => {
             const cveCount = k8sVulns.length;
             const fixableCount = k8sVulns.filter(vuln => vuln.isFixable).length;
-            const url = workflowState
+            const targetState = workflowState
                 .pushRelatedEntity(entityTypes.CLUSTER, id)
                 .pushList(entityTypes.CVE)
-                .setSearch({ 'Vulnerability Type': 'K8S_VULNERABILITY' })
-                .toUrl();
+                .setSearch({ 'Vulnerability Type': 'K8S_VULNERABILITY' });
+
             const imgComponent = (
                 <img src={kubeSVG} alt="kube" className={`${stacked ? 'pl-2' : 'pr-2'}`} />
             );
@@ -63,11 +63,18 @@ const processData = (data, workflowState, limit) => {
                 <AlertCircle className="h-4 w-4 text-alert-700 ml-2" />
             );
 
+            const url = targetState.toUrl();
+            const fixableUrl = targetState
+                .setSearch({ 'Fixed By': 'r/.*', 'Vulnerability Type': 'K8S_VULNERABILITY' })
+                .toUrl();
+
             const content = (
                 <div className="flex flex-1 items-center justify-left">
                     {!stacked && imgComponent}
                     <FixableCVECount
                         cves={cveCount}
+                        url={url}
+                        fixableUrl={fixableUrl}
                         fixable={fixableCount}
                         orientation={stacked ? 'horizontal' : 'vertical'}
                     />

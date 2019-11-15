@@ -47,7 +47,10 @@ const WorkflowEntityPage = ({
         queryOptions.variables.query.includes('K8S_VULNERABILITY')
     ) {
         // eslint-disable-next-line no-param-reassign
-        queryOptions.variables.query = '';
+        queryOptions.variables.query = queryOptions.variables.query.replace(
+            /\+?Vulnerability Type:K8S_VULNERABILITY\+?/,
+            ''
+        );
     }
 
     const { loading, data } = useQuery(query, queryOptions);
