@@ -162,6 +162,14 @@ function formatStandardData(data) {
     return formattedData;
 }
 
+function canFilterByComplianceState(filterQuery, complianceStateKey) {
+    return (
+        filterQuery[complianceStateKey] &&
+        (!Array.isArray(filterQuery[complianceStateKey]) ||
+            filterQuery[complianceStateKey].length <= 1)
+    );
+}
+
 const ListTable = ({
     searchComponent,
     entityType,
@@ -174,8 +182,7 @@ const ListTable = ({
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
     function filterByComplianceState(data, filterQuery, isControlList) {
         const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
-        if (!filterQuery[complianceStateKey] || filterQuery[complianceStateKey].length > 1)
-            return data.results;
+        if (!canFilterByComplianceState(filterQuery, complianceStateKey)) return data.results;
         const val = filterQuery[complianceStateKey].toLowerCase();
         const isPassing = val === 'pass';
         const isFailing = val === 'fail';

@@ -18,10 +18,6 @@ describe('Integrations page', () => {
         });
     });
 
-    it('should have selected item in nav bar', () => {
-        cy.get(selectors.configure).should('have.class', 'bg-primary-700');
-    });
-
     it('should allow integration with Slack', () => {
         cy.get('div.ReactModalPortal').should('not.exist');
 

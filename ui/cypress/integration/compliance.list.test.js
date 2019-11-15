@@ -5,6 +5,28 @@ import withAuth from '../helpers/basicAuth';
 describe('Compliance list page', () => {
     withAuth();
 
+    it('should filter the table with passing controls', () => {
+        cy.visit(url.list.namespaces);
+        cy.get(selectors.search.input)
+            .type('Compliance State:')
+            .type('{enter}');
+        cy.get(selectors.search.input)
+            .type('Pass')
+            .type('{enter}');
+        cy.get(selectors.table.rows).should('not.exist');
+    });
+
+    it('should filter the table with failing controls', () => {
+        cy.visit(url.list.namespaces);
+        cy.get(selectors.search.input)
+            .type('Compliance State:')
+            .type('{enter}');
+        cy.get(selectors.search.input)
+            .type('Fail')
+            .type('{enter}');
+        cy.get(selectors.table.rows);
+    });
+
     it('should open/close side panel when clicking on a table row', () => {
         cy.visit(url.list.clusters);
         cy.get(ComplianceSelectors.list.table.firstRowName)
