@@ -15,7 +15,7 @@ import NumberedList from 'Components/NumberedList';
 import { getVulnerabilityChips, parseCVESearch } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
-const RECENTLY_DETECTED_VULNERABILITIES = gql`
+export const RECENTLY_DETECTED_VULNERABILITIES = gql`
     query recentlyDetectedVulnerabilities($query: String) {
         results: vulnerabilities(query: $query) {
             id: cve
@@ -31,7 +31,7 @@ const RECENTLY_DETECTED_VULNERABILITIES = gql`
 `;
 
 const processData = (data, workflowState, limit) => {
-    let results = data.results.filter(datum => datum.lastScanned);
+    let results = data && data.results && data.results.filter(datum => datum.lastScanned);
     results = sortBy(results, ['lastScanned', 'cvss', 'envImpact'])
         .slice(-limit)
         .reverse(); // @TODO: filter on the client side until we have pagination on Vulnerabilities

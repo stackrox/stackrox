@@ -8,5 +8,5 @@ export const selectors = {
     panelHeader: 'div[data-test-id="panel-header"]',
     viewDeploymentsButton: 'button:contains("View Deployments")',
     matchedHeader: 'div[data-test-id="filtered-header"] > div > div',
-    noResults: 'div[data-test-id="results-message"]'
+    noResults: 'div[data-testid="results-message"]'
 };
