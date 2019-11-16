@@ -1,33 +1,39 @@
 import capitalize from 'lodash/capitalize';
-import { url, selectors, controlStatus } from '../../constants/ConfigManagementPage';
+
+import {
+    url,
+    selectors as configManagementSelectors,
+    controlStatus
+} from '../../constants/ConfigManagementPage';
+import selectors from '../../selectors/index';
 import withAuth from '../../helpers/basicAuth';
 
 // specifying an "entityName" will try to select that row in the table
 const renderListAndSidePanel = (entity, entityName = null) => {
     cy.visit(url.list[entity]);
     cy.wait(1000);
-    cy.get(`${selectors.tableRows}${entityName ? `:contains(${entityName})` : ''}`)
-        .find(selectors.tableCells)
+    cy.get(`${configManagementSelectors.tableRows}${entityName ? `:contains(${entityName})` : ''}`)
+        .find(configManagementSelectors.tableCells)
         .eq(1)
         .click({ force: true });
     cy.wait(500);
-    cy.get(selectors.widgets, { timeout: 7000 });
+    cy.get(configManagementSelectors.widgets, { timeout: 7000 });
 };
 
 const navigateToSingleEntityPage = entity => {
-    cy.get(selectors.externalLink).click();
+    cy.get(configManagementSelectors.externalLink).click();
     cy.url().should('contain', url.single[entity]);
 };
 
 const hasCountWidgetsFor = entities => {
     entities.forEach(entity => {
-        cy.get(`${selectors.countWidgetTitle}:contains('${entity}')`);
+        cy.get(`${configManagementSelectors.countWidgetTitle}:contains('${entity}')`);
     });
 };
 
 const clickOnCountWidget = (entity, type) => {
-    cy.get(`${selectors.countWidgets}:contains('${capitalize(entity)}')`)
-        .find(selectors.countWidgetValue)
+    cy.get(`${configManagementSelectors.countWidgets}:contains('${capitalize(entity)}')`)
+        .find(configManagementSelectors.countWidgetValue)
         .click({ force: true });
 
     if (type === 'side-panel') {
@@ -37,17 +43,21 @@ const clickOnCountWidget = (entity, type) => {
     }
 
     if (type === 'entityList') {
-        cy.get(`${selectors.groupedTabs}:contains('${entity}')`);
+        cy.get(`${configManagementSelectors.groupedTabs}:contains('${entity}')`);
         cy.get('li.bg-base-100').contains(entity);
     }
 };
 
 const clickOnEntityWidget = (entity, type) => {
-    cy.get(`${selectors.relatedEntityWidgets}:contains('${capitalize(entity)}')`)
-        .find(selectors.relatedEntityWidgetValue)
+    cy.get(`${configManagementSelectors.relatedEntityWidgets}:contains('${capitalize(entity)}')`)
+        .find(configManagementSelectors.relatedEntityWidgetValue)
         .invoke('text')
         .then(value => {
-            cy.get(`${selectors.relatedEntityWidgets}:contains('${capitalize(entity)}')`).click();
+            cy.get(
+                `${configManagementSelectors.relatedEntityWidgets}:contains('${capitalize(
+                    entity
+                )}')`
+            ).click();
             cy.wait(500); // it takes time to load the page
             if (type === 'side-panel') {
                 cy.get('[data-test-id="side-panel"]')
@@ -59,9 +69,9 @@ const clickOnEntityWidget = (entity, type) => {
 
 const clickOnRowEntity = (entity, subEntity, isNotCapitalized) => {
     cy.visit(url.list[entity]);
-    cy.get(selectors.tableRows)
+    cy.get(configManagementSelectors.tableRows)
         .find(
-            `${selectors.tableCells} a:contains('${
+            `${configManagementSelectors.tableCells} a:contains('${
                 isNotCapitalized ? subEntity : capitalize(subEntity)
             }')`
         )
@@ -75,13 +85,13 @@ const clickOnRowEntity = (entity, subEntity, isNotCapitalized) => {
 
 const clickOnSingleEntity = (entity, subEntity) => {
     cy.visit(url.list[entity]);
-    cy.get(selectors.tableRows)
-        .find(`${selectors.tableCells} a[href*='/${subEntity}']`)
+    cy.get(configManagementSelectors.tableRows)
+        .find(`${configManagementSelectors.tableCells} a[href*='/${subEntity}']`)
         .eq(0)
         .invoke('text')
         .then(value => {
-            cy.get(selectors.tableRows)
-                .find(`${selectors.tableCells} a[href*='/${subEntity}']`)
+            cy.get(configManagementSelectors.tableRows)
+                .find(`${configManagementSelectors.tableCells} a[href*='/${subEntity}']`)
                 .eq(0)
                 .click({ force: true });
             cy.wait(500); // it takes time to load the page
@@ -93,24 +103,24 @@ const clickOnSingleEntity = (entity, subEntity) => {
 
 const hasTabsFor = entities => {
     entities.forEach(entity => {
-        cy.get(selectors.groupedTabs)
+        cy.get(configManagementSelectors.groupedTabs)
             .find('div')
             .contains(entity);
     });
 };
 
 const hasRelatedEntityFor = entity => {
-    cy.get(`${selectors.relatedEntityWidgetTitle}:contains('${entity}')`);
+    cy.get(`${configManagementSelectors.relatedEntityWidgetTitle}:contains('${entity}')`);
 };
 
 const entityCountMatchesTableRows = (listEntity, context) => {
     const contextSelector = `[data-test-id="${context === 'Page' ? 'panel' : 'side-panel'}"]`;
-    cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
-        .find(selectors.countWidgetValue)
+    cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
+        .find(configManagementSelectors.countWidgetValue)
         .invoke('text')
         .then(count => {
             if (count === '0') return;
-            cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
+            cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
                 .find('button')
                 .invoke('attr', 'disabled', false)
                 .click();
@@ -133,12 +143,12 @@ const sidePanelEntityCountMatchesTableRows = listEntity => {
 };
 
 const entityListCountMatchesTableLinkCount = entities => {
-    cy.get(selectors.tableLinks)
+    cy.get(configManagementSelectors.tableLinks)
         .contains(entities)
         .invoke('text')
         .then(value => {
             const numEntities = parseInt(value, 10);
-            cy.get(selectors.tableLinks)
+            cy.get(configManagementSelectors.tableLinks)
                 .contains(entities)
                 .click();
             cy.get('[data-test-id="side-panel"] [data-test-id="panel-header"]')
@@ -148,6 +158,21 @@ const entityListCountMatchesTableLinkCount = entities => {
                 });
         });
 };
+
+describe('Config Management Entity Page', () => {
+    withAuth();
+
+    it('should not modify the URL when clicking the Overview tab when in the Overview section', () => {
+        renderListAndSidePanel('controls');
+        navigateToSingleEntityPage('control');
+
+        cy.get(selectors.tab.activeTab)
+            .contains('Overview')
+            .click();
+
+        cy.get(selectors.tab.activeTab).contains('Overview');
+    });
+});
 
 describe('Config Management Entities', () => {
     withAuth();
@@ -238,21 +263,21 @@ describe('Config Management Entities', () => {
         it('should show no failing nodes in the control findings section of a passing control', () => {
             cy.visit(url.list.controls);
             cy.wait(5000);
-            cy.get(selectors.tableNextPage).click();
-            cy.get(selectors.tableCells)
+            cy.get(configManagementSelectors.tableNextPage).click();
+            cy.get(configManagementSelectors.tableCells)
                 .contains(controlStatus.pass)
                 .eq(0)
                 .click({ force: true });
-            cy.get(selectors.failingNodes).should('have.length', 0);
+            cy.get(configManagementSelectors.failingNodes).should('have.length', 0);
         });
 
         it('should show failing nodes in the control findings section of a failing control', () => {
             cy.visit(url.list.controls);
-            cy.get(selectors.tableCells)
+            cy.get(configManagementSelectors.tableCells)
                 .contains(controlStatus.fail)
                 .eq(0)
                 .click({ force: true });
-            cy.get(selectors.failingNodes).should('not.have.length', 0);
+            cy.get(configManagementSelectors.failingNodes).should('not.have.length', 0);
         });
     });
 
@@ -706,8 +731,8 @@ describe('Config Management Entities', () => {
 
         it('should render the deployments link and open the side panel when a row is clicked', () => {
             cy.visit(url.list.secrets);
-            cy.get(selectors.tableRows)
-                .find(`${selectors.tableCells} a[data-test-id='deployment']`)
+            cy.get(configManagementSelectors.tableRows)
+                .find(`${configManagementSelectors.tableCells} a[data-test-id='deployment']`)
                 .eq(0)
                 .click({ force: true })
                 .invoke('text')

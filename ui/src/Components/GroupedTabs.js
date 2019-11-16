@@ -8,7 +8,7 @@ const Tab = ({ text, index, active, to }) => (
             active ? 'bg-base-100 text-primary-700' : ''
         } ${index !== 0 ? 'border-l border-base-400' : ''}`}
     >
-        <Link to={to} data-test-id="tab" className="w-full no-underline">
+        <Link to={to} data-test-id="tab" className={`w-full no-underline ${active && 'active'}`}>
             <div
                 className={`${
                     active ? 'text-primary-700' : 'text-base-500 hover:text-base-600'

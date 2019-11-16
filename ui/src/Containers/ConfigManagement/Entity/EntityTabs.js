@@ -61,8 +61,12 @@ const EntityTabs = ({ match, location, entityType, entityListType, pageEntityId 
     const entityTabs = relationships.map(relationship => getTab(relationship, entityType));
     const groups = Object.values(TAB_GROUPS);
 
+    const overviewURL = URLService.getURL(match, location)
+        .base(entityType, pageEntityId)
+        .url();
+
     const tabs = [
-        { group: TAB_GROUPS.OVERVIEW, value: '', text: 'Overview', to: '.' },
+        { group: TAB_GROUPS.OVERVIEW, value: '', text: 'Overview', to: overviewURL },
         ...entityTabs
     ];
     return <GroupedTabs groups={groups} tabs={tabs} activeTab={entityListType || ''} />;
