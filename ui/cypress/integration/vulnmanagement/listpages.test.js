@@ -19,6 +19,36 @@ const hasExpectedCVELinks = colCVELinks => {
     });
 };
 
+function validateSort(selector) {
+    let current;
+    let prev;
+    prev = -1000;
+    cy.get(selector).each($el => {
+        cy.log(`priority value ${$el.text()}`);
+        current = parseInt($el.text(), 10);
+        const sortOrderStatus = current >= prev;
+        expect(sortOrderStatus).to.equals(true, 'sort order is as expected');
+        prev = current;
+    });
+}
+
+function validateSortForCVE(selector) {
+    let current;
+    let prev;
+    let sortOrderStatus = false;
+    prev = 1000;
+    cy.get(selector).each($el => {
+        cy.log(`priority value ${$el.text()}`);
+        current = parseFloat($el.text(), 10.0);
+        // eslint-disable-next-line no-restricted-globals
+        if (!isNaN(prev) && !isNaN(current)) {
+            sortOrderStatus = current <= prev;
+            expect(sortOrderStatus).to.equals(true, 'sort order is as expected');
+            prev = current;
+        }
+    });
+}
+
 describe('Entities list Page', () => {
     withAuth();
     it('should display all the columns and links expected in clusters list page', () => {
@@ -36,6 +66,7 @@ describe('Entities list Page', () => {
         ]);
         hasExpectedLinks(['Namespace', 'Deployment']);
         hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateSort(selectors.riskScoreCol);
     });
 
     it('should display all the columns and links expected in namespaces list page', () => {
@@ -53,6 +84,7 @@ describe('Entities list Page', () => {
         ]);
         hasExpectedLinks(['image', 'deployment']);
         hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateSort(selectors.riskScoreCol);
     });
 
     it('should display all the columns and links expected in deployments list page', () => {
@@ -70,6 +102,7 @@ describe('Entities list Page', () => {
         ]);
         hasExpectedLinks(['image']);
         hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateSort(selectors.riskScoreCol);
     });
 
     it('should display all the columns and links expected in images list page', () => {
@@ -87,6 +120,7 @@ describe('Entities list Page', () => {
         ]);
         hasExpectedLinks(['deployment', 'component']);
         hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateSort(selectors.riskScoreCol);
     });
 
     it('should display all the columns expected in components list page', () => {
@@ -101,6 +135,7 @@ describe('Entities list Page', () => {
         ]);
         hasExpectedLinks(['deployment', 'image']);
         hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateSort(selectors.componentsRiskScoreCol);
     });
 
     it('should display all the columns and links  expected in cves list page', () => {
@@ -116,5 +151,6 @@ describe('Entities list Page', () => {
             'Deployments'
         ]);
         hasExpectedLinks(['image', 'deployment', 'component']);
+        validateSortForCVE(selectors.cvesCvssScoreCol);
     });
 });

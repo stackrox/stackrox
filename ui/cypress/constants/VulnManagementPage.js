@@ -14,6 +14,9 @@ export const url = {
 };
 
 export const listSelectors = {
+    riskScoreCol: '.rt-table > .rt-tbody > div > div > div:nth-child(10)',
+    componentsRiskScoreCol: '.rt-table > .rt-tbody >div > div > div:nth-child(7)',
+    cvesCvssScoreCol: '.rt-table > .rt-tbody > div > .rt-tr.-odd > div:nth-child(4) > div > span',
     tableColumn: '.rt-th.leading-normal > div',
     tableColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
     tableCVEColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > .items-center'
