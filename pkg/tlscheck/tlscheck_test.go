@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,12 +17,30 @@ func TestTLS(t *testing.T) {
 	httpServer := httptest.NewServer(http.HandlerFunc(handler))
 	defer httpServer.Close()
 
-	tls, err := CheckTLS(httpServer.Listener.Addr().String())
+	tls, err := checkTLSWithRetry(httpServer)
 	require.NoError(t, err)
 	assert.False(t, tls)
 
 	httpsServer := httptest.NewTLSServer(http.HandlerFunc(handler))
-	tls, err = CheckTLS(httpsServer.Listener.Addr().String())
+	defer httpsServer.Close()
+	tls, err = checkTLSWithRetry(httpsServer)
 	require.NoError(t, err)
 	assert.False(t, tls)
+}
+
+func checkTLSWithRetry(server *httptest.Server) (bool, error) {
+	var tls bool
+	// Retry the test a few times, sometimes in CircleCI this takes longer than the timeout
+	err := retry.WithRetry(
+		func() error {
+			var err error
+			tls, err = CheckTLS(server.Listener.Addr().String())
+			return err
+		},
+		retry.Tries(3),
+		retry.BetweenAttempts(func(_ int) {
+			time.Sleep(1 * time.Second)
+		}),
+	)
+	return tls, err
 }
