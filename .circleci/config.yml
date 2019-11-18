@@ -614,17 +614,24 @@ commands:
     parameters:
       cluster-id:
         type: string
+      num-nodes:
+        type: integer
+        default: 3
 
     steps:
       - setup-gcp:
           docker-login: false
 
       - run:
-          name: Assign cluster name
+          name: Assign environment variables
           command: |
             CLUSTER_NAME="rox-ci-<< parameters.cluster-id >>-${CIRCLE_BUILD_NUM}"
             cci-export CLUSTER_NAME "$CLUSTER_NAME"
             echo "Assigned cluster name is $CLUSTER_NAME"
+
+            NUM_NODES="<< parameters.num-nodes >>"
+            cci-export NUM_NODES "$NUM_NODES"
+            echo "Number of nodes for cluster is $NUM_NODES"
 
       - create-gke:
           wait: false
@@ -1194,6 +1201,7 @@ jobs:
           label: ci-no-k8s-tests
       - provision-gke-cluster:
           cluster-id: k8s-tests
+          num-nodes: 2
 
   pre-build-ui:
     <<: *defaults
