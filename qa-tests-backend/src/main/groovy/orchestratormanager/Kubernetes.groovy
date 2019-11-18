@@ -222,7 +222,7 @@ class Kubernetes implements OrchestratorMain {
                 this.deployments.inNamespace(deployment.namespace).withName(deployment.name).delete()
                 break
             } catch (KubernetesClientException ex) {
-                println "Failed to delete deployment: ${ex.status.message}"
+                println "Failed to delete deployment: ${ex.toString()}"
             }
         }
         println "removing the deployment: ${deployment.name}"
