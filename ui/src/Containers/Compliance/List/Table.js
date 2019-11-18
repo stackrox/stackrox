@@ -301,7 +301,7 @@ const ListTable = ({
                             />
                         );
                     }
-                    headerComponent = (
+                    headerComponent = isControlList ? null : (
                         <>
                             <div className="flex flex-1 justify-start">{searchComponent}</div>
                             <TablePagination page={page} dataLength={totalRows} setPage={setPage} />
