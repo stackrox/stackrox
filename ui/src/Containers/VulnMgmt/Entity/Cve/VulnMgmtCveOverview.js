@@ -48,14 +48,15 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         scoreVersion
     } = safeData;
 
-    const linkToNVD = (
+    const linkToMoreInfo = (
         <a
             href={link}
             className="btn-sm btn-base no-underline p-1"
             target="_blank"
             rel="noopener noreferrer nofollow"
+            data-testid="more-info-link"
         >
-            <span className="pr-1">View on NVD Website</span>
+            <span className="pr-1">View Full CVE Description</span>
             <ExternalLink size={16} />
         </a>
     );
@@ -110,7 +111,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                     <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4 pdf-page">
                         <Widget
                             header="Details"
-                            headerComponents={linkToNVD}
+                            headerComponents={linkToMoreInfo}
                             className="bg-base-100 min-h-48 lg:s-2"
                         >
                             <div className="flex flex-col w-full bg-counts-widget">

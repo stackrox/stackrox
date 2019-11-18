@@ -3,7 +3,6 @@ import { MockedProvider } from '@apollo/react-testing';
 import { waitForElement } from '@testing-library/react';
 import { CLUSTER_VERSION_QUERY } from 'queries/cluster';
 import renderWithRouter from 'test-utils/renderWithRouter';
-import '@testing-library/jest-dom/extend-expect';
 import ClusterVersion from './ClusterVersion';
 
 const clusterId = '1234';
@@ -36,13 +35,15 @@ const mocks = [
     }
 ];
 
-it('renders without error', async () => {
-    const { getByTestId } = renderWithRouter(
-        <MockedProvider mocks={mocks} addTypename={false}>
-            <ClusterVersion clusterId={clusterId} entityType="CLUSTER" />
-        </MockedProvider>,
-        { route: '/some-route' }
-    );
-    await waitForElement(() => getByTestId('cluster-version'));
-    expect(getByTestId('cluster-version')).toHaveTextContent('v1.12.8-gke.10');
+describe('Compliance ClusterVersion widget', () => {
+    it('renders without error', async () => {
+        const { getByTestId } = renderWithRouter(
+            <MockedProvider mocks={mocks} addTypename={false}>
+                <ClusterVersion clusterId={clusterId} entityType="CLUSTER" />
+            </MockedProvider>,
+            { route: '/some-route' }
+        );
+        await waitForElement(() => getByTestId('cluster-version'));
+        expect(getByTestId('cluster-version')).toHaveTextContent('v1.12.8-gke.10');
+    });
 });
