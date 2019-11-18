@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -16,11 +17,27 @@ const (
 	timeFormat = "2006-01-02T15:04Z"
 )
 
+// CveType is the type of a CVE fetched by fetcher
+type CveType int32
+
+// K8s is type for k8s CVEs, Istio is type for istio CVEs
+const (
+	K8s = iota
+	Istio
+)
+
 // NvdCveToEmbeddedVulnerability converts a nvd.CVEEntry object to an EmbeddedVulnerability which is used elsewhere.
-func NvdCveToEmbeddedVulnerability(cve *nvd.CVEEntry) (*storage.EmbeddedVulnerability, error) {
+func NvdCveToEmbeddedVulnerability(cve *nvd.CVEEntry, ct CveType) (*storage.EmbeddedVulnerability, error) {
 	ev := &storage.EmbeddedVulnerability{
-		Cve:               cve.CVE.Metadata.CVEID,
-		VulnerabilityType: storage.EmbeddedVulnerability_K8S_VULNERABILITY,
+		Cve: cve.CVE.Metadata.CVEID,
+	}
+
+	if ct == K8s {
+		ev.VulnerabilityType = storage.EmbeddedVulnerability_K8S_VULNERABILITY
+	} else if ct == Istio {
+		ev.VulnerabilityType = storage.EmbeddedVulnerability_ISTIO_VULNERABILITY
+	} else {
+		return nil, fmt.Errorf("unknown CVE type: %d", ct)
 	}
 
 	cvssv2, err := nvdCvssv2ToProtoCvssv2(cve.Impact.BaseMetricV2)
@@ -127,10 +144,10 @@ func nvdCvssv3ToProtoCvssv3(nvdCVSSv3 nvd.BaseMetricV3) (*storage.CVSSV3, error)
 }
 
 // NvdCVEsToEmbeddedVulnerabilities converts  NVD cves to EmbeddedVulnerabilities
-func NvdCVEsToEmbeddedVulnerabilities(cves []*nvd.CVEEntry) ([]*storage.EmbeddedVulnerability, error) {
+func NvdCVEsToEmbeddedVulnerabilities(cves []*nvd.CVEEntry, ct CveType) ([]*storage.EmbeddedVulnerability, error) {
 	evs := make([]*storage.EmbeddedVulnerability, 0, len(cves))
 	for _, cve := range cves {
-		ev, err := NvdCveToEmbeddedVulnerability(cve)
+		ev, err := NvdCveToEmbeddedVulnerability(cve, ct)
 		if err != nil {
 			return nil, err
 		}

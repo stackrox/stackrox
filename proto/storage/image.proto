@@ -75,6 +75,7 @@ message EmbeddedVulnerability {
         UNKNOWN_VULNERABILITY = 0;
         IMAGE_VULNERABILITY = 1;
         K8S_VULNERABILITY = 2;
+        ISTIO_VULNERABILITY = 3;
     }
 
     string cve                              = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];

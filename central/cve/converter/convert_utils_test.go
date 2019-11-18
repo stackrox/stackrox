@@ -236,7 +236,7 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 		assert.Nil(t, err)
 		expectedVul.LastModified = protoconv.ConvertTimeToTimestamp(ts)
 
-		actualVul, err := NvdCveToEmbeddedVulnerability(&cves[i])
+		actualVul, err := NvdCveToEmbeddedVulnerability(&cves[i], K8s)
 		assert.Nil(t, err)
 		assert.Equal(t, actualVul, expectedVul)
 	}

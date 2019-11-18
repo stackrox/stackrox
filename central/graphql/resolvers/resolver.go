@@ -67,7 +67,7 @@ type Resolver struct {
 	SecretsDataStore            secretDataStore.DataStore
 	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
-	k8sCVEManager               fetcher.K8sCveManager
+	k8sIstioCVEManager          fetcher.K8sIstioCveManager
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -98,7 +98,7 @@ func New() *Resolver {
 		SecretsDataStore:            secretDataStore.Singleton(),
 		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
 		ViolationsDataStore:         violationsDatastore.Singleton(),
-		k8sCVEManager:               fetcher.SingletonManager(),
+		k8sIstioCVEManager:          fetcher.SingletonManager(),
 	}
 	return resolver
 }

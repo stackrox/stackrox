@@ -17,7 +17,10 @@ RUN apk update && \
 
 RUN mkdir -p /stackrox-data/cve/k8s && \
     wget -O /stackrox-data/cve/k8s/checksum "https://definitions.stackrox.io/cve/k8s/checksum" && \
-    wget -O /stackrox-data/cve/k8s/cve-list.json "https://definitions.stackrox.io/cve/k8s/cve-list.json"
+    wget -O /stackrox-data/cve/k8s/cve-list.json "https://definitions.stackrox.io/cve/k8s/cve-list.json" && \
+    mkdir -p /stackrox-data/cve/istio && \
+    wget -O /stackrox-data/cve/istio/checksum "https://definitions.stackrox.io/cve/istio/checksum" && \
+    wget -O /stackrox-data/cve/istio/cve-list.json "https://definitions.stackrox.io/cve/istio/cve-list.json"
 
 COPY ./policies/files /stackrox-data/policies/files
 COPY ./docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json

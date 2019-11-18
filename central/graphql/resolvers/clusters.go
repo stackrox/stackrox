@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -59,6 +60,8 @@ func init() {
 		schema.AddExtraResolver("Cluster", `vulnCounter: VulnerabilityCounter!`),
 		schema.AddExtraResolver("Cluster", `k8sVulns(query: String): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `k8sVulnCount(query: String): Int!`),
+		schema.AddExtraResolver("Cluster", `istioVulns(query: String): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Cluster", `istioVulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policyStatus(query: String): PolicyStatus!`),
@@ -570,40 +573,51 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context) (*Vulnerabilit
 
 func (resolver *clusterResolver) K8sVulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sVulns")
-	if err := readImages(ctx); err != nil {
-		return nil, err
-	}
 
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
-	if err != nil {
-		return nil, err
-	}
-	return k8sVulnerabilities(ctx, resolver.root, nested)
+	return k8sIstioVulns(ctx, resolver, args, converter.K8s)
 }
 
 func (resolver *clusterResolver) K8sVulnCount(ctx context.Context, args rawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sVulnCount")
-	if err := readImages(ctx); err != nil {
-		return 0, err
-	}
 
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return 0, err
-	}
-	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
-	if err != nil {
-		return 0, err
-	}
-	vulns, err := k8sVulnerabilities(ctx, resolver.root, nested)
+	vulns, err := k8sIstioVulns(ctx, resolver, args, converter.K8s)
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(vulns)), nil
+}
+
+func (resolver *clusterResolver) IstioVulns(ctx context.Context, args rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioVulns")
+
+	return k8sIstioVulns(ctx, resolver, args, converter.Istio)
+}
+
+func (resolver *clusterResolver) IstioVulnCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioVulnCount")
+
+	vulns, err := k8sIstioVulns(ctx, resolver, args, converter.Istio)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(vulns)), nil
+}
+
+func k8sIstioVulns(ctx context.Context, resolver *clusterResolver, args rawQuery, ct converter.CveType) ([]*EmbeddedVulnerabilityResolver, error) {
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	nested, err := search.AddAsConjunction(resolver.getQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+
+	return k8sIstioVulnerabilities(ctx, resolver.root, nested, ct)
 }
 
 func (resolver *clusterResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {

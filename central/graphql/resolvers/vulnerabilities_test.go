@@ -7,6 +7,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/cve/converter"
+	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -107,35 +110,35 @@ func TestIfSpecificVersionCVEAffectsCluster(t *testing.T) {
 		},
 	}
 
-	ret := isClusterAffectedByCVE(cluster, &cve1)
+	ret := isClusterAffectedByK8sCVE(context.Background(), cluster, &cve1)
 	assert.Equal(t, true, ret)
-	ret = isClusterAffectedByCVE(cluster, &cve2)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve2)
 	assert.Equal(t, false, ret)
-	ret = isClusterAffectedByCVE(cluster, &cve3)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve3)
 	assert.Equal(t, false, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.15.3+build1"
-	ret = isClusterAffectedByCVE(cluster, &cve1)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve1)
 	assert.Equal(t, true, ret)
-	ret = isClusterAffectedByCVE(cluster, &cve2)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve2)
 	assert.Equal(t, false, ret)
-	ret = isClusterAffectedByCVE(cluster, &cve3)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve3)
 	assert.Equal(t, false, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.15.3-alpha1"
-	ret = isClusterAffectedByCVE(cluster, &cve1)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve1)
 	assert.Equal(t, true, ret)
-	ret = isClusterAffectedByCVE(cluster, &cve2)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve2)
 	assert.Equal(t, false, ret)
-	ret = isClusterAffectedByCVE(cluster, &cve3)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve3)
 	assert.Equal(t, true, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.15.3-alpha1+build1"
-	ret = isClusterAffectedByCVE(cluster, &cve1)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve1)
 	assert.Equal(t, true, ret)
-	ret = isClusterAffectedByCVE(cluster, &cve2)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve2)
 	assert.Equal(t, false, ret)
-	ret = isClusterAffectedByCVE(cluster, &cve3)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve3)
 	assert.Equal(t, true, ret)
 }
 
@@ -237,39 +240,39 @@ func TestMultipleVersionCVEAffectsCluster(t *testing.T) {
 		},
 	}
 
-	ret := isClusterAffectedByCVE(cluster, &cve1)
+	ret := isClusterAffectedByK8sCVE(context.Background(), cluster, &cve1)
 	assert.Equal(t, false, ret)
 
-	ret = isClusterAffectedByCVE(cluster, &cve2)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve2)
 	assert.Equal(t, true, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.15.1-beta1"
-	ret = isClusterAffectedByCVE(cluster, &cve1)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve1)
 	assert.Equal(t, false, ret)
 
-	ret = isClusterAffectedByCVE(cluster, &cve2)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve2)
 	assert.Equal(t, true, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.15.9"
-	ret = isClusterAffectedByCVE(cluster, &cve1)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve1)
 	assert.Equal(t, false, ret)
 
-	ret = isClusterAffectedByCVE(cluster, &cve2)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve2)
 	assert.Equal(t, false, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.15.1"
-	ret = isClusterAffectedByCVE(cluster, &cve1)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve1)
 	assert.Equal(t, false, ret)
 
-	ret = isClusterAffectedByCVE(cluster, &cve2)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve2)
 	assert.Equal(t, true, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.16.4"
-	ret = isClusterAffectedByCVE(cluster, &cve3)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve3)
 	assert.Equal(t, false, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.17.4"
-	ret = isClusterAffectedByCVE(cluster, &cve3)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve3)
 	assert.Equal(t, true, ret)
 }
 
@@ -320,19 +323,19 @@ func TestSingleAndMultipleVersionCVEAffectsCluster(t *testing.T) {
 		},
 	}
 
-	ret := isClusterAffectedByCVE(cluster, &cve)
+	ret := isClusterAffectedByK8sCVE(context.Background(), cluster, &cve)
 	assert.Equal(t, true, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.10.3-alpha1"
-	ret = isClusterAffectedByCVE(cluster, &cve)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve)
 	assert.Equal(t, true, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.10.3-beta1"
-	ret = isClusterAffectedByCVE(cluster, &cve)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve)
 	assert.Equal(t, true, ret)
 
 	cluster.Status.OrchestratorMetadata.Version = "v1.10.3-rc1"
-	ret = isClusterAffectedByCVE(cluster, &cve)
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cve)
 	assert.Equal(t, true, ret)
 }
 
@@ -437,7 +440,7 @@ func TestCountCVEsAffectsCluster(t *testing.T) {
 
 	var countAffectedClusters, countFixableCVEs int
 	for _, cve := range cves {
-		if isClusterAffectedByCVE(cluster, &cve) {
+		if isClusterAffectedByK8sCVE(context.Background(), cluster, &cve) {
 			countAffectedClusters++
 		}
 		if isK8sCVEFixable(&cve) {
@@ -541,9 +544,9 @@ func TestNonK8sCPEMatch(t *testing.T) {
 		},
 	}
 
-	ret := isClusterAffectedByCVE(cluster, &cves[0])
+	ret := isClusterAffectedByK8sCVE(context.Background(), cluster, &cves[0])
 	assert.Equal(t, false, ret)
-	ret = isClusterAffectedByCVE(cluster, &cves[1])
+	ret = isClusterAffectedByK8sCVE(context.Background(), cluster, &cves[1])
 	assert.Equal(t, true, ret)
 }
 
@@ -780,8 +783,201 @@ func TestK8sCVEEnvImpact(t *testing.T) {
 	}
 
 	for i, cve := range cves {
-		actual, err := resolver.getAffectedClusterPercentage(context.Background(), &cve)
+		actual, err := resolver.getAffectedClusterPercentage(context.Background(), &cve, converter.K8s)
 		assert.Nil(t, err)
 		assert.Equal(t, actual, expected[i])
+	}
+}
+
+func TestIstioCVEImpactsCluster(t *testing.T) {
+
+	expected := []bool{true, true, true, false}
+
+	clusters := []*storage.Cluster{
+		{
+			Id:   "test_cluster_id1",
+			Name: "cluster1",
+			Status: &storage.ClusterStatus{
+				OrchestratorMetadata: &storage.OrchestratorMetadata{
+					Version: "v1.14.2",
+				},
+			},
+		},
+	}
+
+	namespaces := []*storage.NamespaceMetadata{
+		{
+			Id:          "test_namespace1",
+			Name:        "istio-system",
+			ClusterId:   "test_cluster_id1",
+			ClusterName: "cluster1",
+		},
+	}
+
+	images := []*storage.Image{
+		{
+			Id: "test_image_id1",
+			Name: &storage.ImageName{
+				Tag:      "1.2.6",
+				Remote:   "istio/proxyv2",
+				Registry: "docker.io",
+				FullName: "docker.io/istio/proxyv2:1.2.6",
+			},
+		},
+		{
+			Id: "test_image_id2",
+			Name: &storage.ImageName{
+				Tag:      "1.4.4",
+				Remote:   "istio/node-agent-k8s",
+				Registry: "docker.io",
+				FullName: "docker.io/istio/node-agent-k8s:1.4.4",
+			},
+		},
+		{
+			Id: "test_image_id3",
+			Name: &storage.ImageName{
+				Tag:      "v1.13.11-gke.14",
+				Remote:   "kube-proxy",
+				Registry: "gke.gcr.io",
+				FullName: "gke.gcr.io/kube-proxy:v1.13.11-gke.14",
+			},
+		},
+		{
+			Id: "test_image_id4",
+			Name: &storage.ImageName{
+				Tag:      "v0.11.0",
+				Remote:   "jetstack/cert-manager-controller",
+				Registry: "quay.io",
+				FullName: "quay.io/jetstack/cert-manager-controller:v0.11.0",
+			},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	clusterDataStore := clusterMocks.NewMockDataStore(ctrl)
+	clusterDataStore.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
+
+	imageDataStore := imageMocks.NewMockDataStore(ctrl)
+	imageDataStore.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return(images, nil).AnyTimes()
+
+	namespaceDataStore := namespaceMocks.NewMockDataStore(ctrl)
+	namespaceDataStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(namespaces, nil).AnyTimes()
+
+	resolver := &Resolver{
+		ClusterDataStore:   clusterDataStore,
+		ImageDataStore:     imageDataStore,
+		NamespaceDataStore: namespaceDataStore,
+	}
+
+	ok, err := resolver.isIstioRunning(context.Background(), clusters[0])
+	assert.Nil(t, err)
+	assert.Equal(t, ok, true)
+
+	istioCVEs := []*nvd.CVEEntry{
+		{
+			CVE: nvd.CVE{
+				Metadata: nvd.CVEMetadata{
+					CVEID: "CVE-2019-1",
+				},
+			},
+			Configurations: nvd.Configuration{
+				Nodes: []nvd.Node{
+					{
+						Operator: "OR",
+						CPEMatch: []nvd.CPEMatch{
+							{
+								Vulnerable:            true,
+								CPE23Uri:              "cpe:2.3:a:istio:istio:*:*:*:*:*:*:*:*",
+								VersionStartIncluding: "",
+								VersionEndIncluding:   "",
+								VersionEndExcluding:   "1.1.13",
+							},
+							{
+								Vulnerable:            true,
+								CPE23Uri:              "cpe:2.3:a:istio:istio:*:*:*:*:*:*:*:*",
+								VersionStartIncluding: "1.2.0",
+								VersionEndIncluding:   "",
+								VersionEndExcluding:   "1.2.8",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			CVE: nvd.CVE{
+				Metadata: nvd.CVEMetadata{
+					CVEID: "CVE-2019-2",
+				},
+			},
+			Configurations: nvd.Configuration{
+				Nodes: []nvd.Node{
+					{
+						Operator: "OR",
+						CPEMatch: []nvd.CPEMatch{
+							{
+								Vulnerable:            true,
+								CPE23Uri:              "cpe:2.3:a:istio:istio:*:*:*:*:*:*:*:*",
+								VersionStartIncluding: "1.4.1",
+								VersionEndIncluding:   "",
+								VersionEndExcluding:   "1.4.9",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			CVE: nvd.CVE{
+				Metadata: nvd.CVEMetadata{
+					CVEID: "CVE-2019-3",
+				},
+			},
+			Configurations: nvd.Configuration{
+				Nodes: []nvd.Node{
+					{
+						Operator: "OR",
+						CPEMatch: []nvd.CPEMatch{
+							{
+								Vulnerable:            true,
+								CPE23Uri:              "cpe:2.3:a:istio:istio:1.4.4:*:*:*:*:*:*:*",
+								VersionStartIncluding: "",
+								VersionEndIncluding:   "",
+								VersionEndExcluding:   "",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			CVE: nvd.CVE{
+				Metadata: nvd.CVEMetadata{
+					CVEID: "CVE-2019-4",
+				},
+			},
+			Configurations: nvd.Configuration{
+				Nodes: []nvd.Node{
+					{
+						Operator: "OR",
+						CPEMatch: []nvd.CPEMatch{
+							{
+								Vulnerable:            true,
+								CPE23Uri:              "cpe:2.3:a:istio:istio:*:*:*:*:*:*:*:*",
+								VersionStartIncluding: "1.3.1",
+								VersionEndIncluding:   "",
+								VersionEndExcluding:   "1.3.9",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for i, cve := range istioCVEs {
+		actual, err := resolver.isClusterAffectedByIstioCVE(context.Background(), clusters[0], cve)
+		assert.Nil(t, err)
+		assert.Equal(t, expected[i], actual)
 	}
 }
