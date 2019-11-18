@@ -81,6 +81,7 @@ const DashboardTile = ({ match, location, entityType, position }) => {
                     <EntityTileLink
                         count={value}
                         entityType={entityType}
+                        subText="(Scanned)"
                         url={url}
                         loading={loading}
                         position={position}
