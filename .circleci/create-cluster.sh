@@ -33,7 +33,7 @@ create-cluster() {
           --machine-type n1-standard-4 \
           --num-nodes "${NUM_NODES}" \
           --disk-type=pd-standard \
-          --disk-size=10GB \
+          --disk-size=20GB \
           --create-subnetwork range=/28 \
           --cluster-ipv4-cidr=/20 \
           --services-ipv4-cidr=/24 \
