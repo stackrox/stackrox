@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-config
+  namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
+data:
+  config.yaml: |-
+    # The values specified here are the default values that the Scanner uses if no configuration file is specified or if the keys are not defined.
+    scanner:
+      database:
+        # Database driver
+        type: pgsql
+        options:
+          # PostgreSQL Connection string
+          # https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
+          source: host=127.0.0.1 port=5432 user=postgres sslmode=disable statement_timeout=60000
+
+          # Number of elements kept in the cache
+          # Values unlikely to change (e.g. namespaces) are cached in order to save prevent needless roundtrips to the database.
+          cachesize: 16384
+
+      api:
+        httpsPort: 8080
+        grpcPort: 8081
+
+      updater:
+        # Frequency the database will be updated with vulnerabilities from the default data sources
+        # The value 0 disables the updater entirely.
+        interval: 2h
+
+      logLevel: {{ .Values.logLevel }}

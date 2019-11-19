@@ -43,6 +43,7 @@ func generate(outputDir string, values *Values) error {
 			CommonConfig: renderer.CommonConfig{
 				MainImage:       values.MainImage,
 				ScannerImage:    values.ScannerImage,
+				ScannerDBImage:  values.ScannerImage,
 				MonitoringImage: values.MonitoringImage,
 			},
 			ConfigType:       v1.DeploymentFormat_HELM,

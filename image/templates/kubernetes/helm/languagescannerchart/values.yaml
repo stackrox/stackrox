@@ -1,0 +1,21 @@
+
+clusterType: {{.ClusterType.String}}
+
+namespace: stackrox
+
+image: {{.K8sConfig.ScannerImage}}
+
+dbImage: {{.K8sConfig.ScannerDBImage}}
+
+scannerSecretName: {{.K8sConfig.ScannerSecretName}}
+
+offlineMode: {{.K8sConfig.OfflineMode}}
+
+logLevel: INFO
+
+secrets:
+  tls:
+    data:
+      cert.pem: {{index .SecretsBase64Map "scanner-cert.pem"}}
+      key.pem: {{index .SecretsBase64Map "scanner-key.pem"}}
+      ca.pem: {{index .SecretsBase64Map "ca.pem"}}

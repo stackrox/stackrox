@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/roxctl/scanner/clustertype"
 	"github.com/stackrox/rox/roxctl/scanner/generate/run"
 	v2 "github.com/stackrox/rox/roxctl/scanner/generate/v2"
@@ -30,7 +31,9 @@ func Command() *cobra.Command {
 		"it doesn't reach out to the internet for updates)")
 	c.Flags().StringVar(&params.ScannerImage, "scanner-image", "", "Scanner image to use (leave blank to use server default)")
 
-	c.AddCommand(v2.Command())
+	if !features.LanguageScanner.Enabled() {
+		c.AddCommand(v2.Command())
+	}
 
 	return c
 }

@@ -1,0 +1,12 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: scanner
+        resources:
+          requests:
+            memory: "1500Mi"
+            cpu: "1000m"
+          limits:
+            memory: "2500Mi"
+            cpu: "2000m"

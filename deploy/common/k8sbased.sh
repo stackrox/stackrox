@@ -164,6 +164,11 @@ function launch_central {
         echo "Deploying Scanning..."
         $unzip_dir/scanner/scripts/setup.sh
         launch_service $unzip_dir scanner
+
+        if [[ -n "$CI" ]]; then
+          ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat $k8s_dir/scanner-patch.yaml)"
+        fi
+
         echo
     fi
 

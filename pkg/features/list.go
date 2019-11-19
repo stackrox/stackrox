@@ -14,4 +14,7 @@ var (
 
 	// ProbeUpload enables the possibility to upload collector probes to central.
 	ProbeUpload = registerFeature("Enable support for uploading collector probes", "ROX_PROBE_UPLOAD", true)
+
+	// LanguageScanner enables the deployment of the language scanner
+	LanguageScanner = registerFeature("Enable support for the version of the image scanner that detects on languages", "ROX_LANGUAGE_SCANNER", false)
 )

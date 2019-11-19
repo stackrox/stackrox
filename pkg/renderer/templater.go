@@ -49,6 +49,7 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 type CommonConfig struct {
 	MainImage        string
 	ScannerImage     string
+	ScannerDBImage   string
 	ScannerV2Image   string
 	ScannerV2DBImage string
 	MonitoringImage  string

@@ -9,4 +9,5 @@ func TestNoChartPanic(t *testing.T) {
 	GetCentralChart()
 	GetMonitoringChart()
 	GetScannerChart()
+	GetLanguageScannerChart()
 }

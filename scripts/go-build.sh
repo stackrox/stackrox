@@ -43,7 +43,6 @@ while read -r line || [[ -n "$line" ]]; do
 		x_defs+=(-X "\"${go_package}.${go_var}=${!varname}\"")
 	fi
 done < <(git grep -n '//XDef:' -- '*.go')
-
 if [[ "${#x_def_errors[@]}" -gt 0 ]]; then
 	printf >&2 "%s\n" "${x_def_errors[@]}"
 	exit 1

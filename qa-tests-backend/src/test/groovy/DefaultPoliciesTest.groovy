@@ -1,6 +1,8 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 
+import io.stackrox.proto.storage.AlertOuterClass
+import services.ImageService
 import spock.lang.Shared
 import services.AlertService
 import services.FeatureFlagService
@@ -165,7 +167,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                     !Constants.VIOLATIONS_WHITELIST.get(deploymentName).contains(policyName)
         }
         for (ListAlert violation: unexpectedViolations) {
-            print AlertService.getViolation(violation.getId())
+            def fullViolation = AlertService.getViolation(violation.getId())
+            print fullViolation
+            for (AlertOuterClass.Alert.Deployment.Container container:
+                    fullViolation.getDeployment().getContainersList()) {
+                print ImageService.getImage(container.getImage().getId())
+            }
         }
         unexpectedViolations == []
     }

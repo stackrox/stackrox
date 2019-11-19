@@ -10,6 +10,9 @@ export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
+if [[ "${ROX_LANGUAGE_SCANNER}" == "true" ]]; then
+  SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
+fi
 if [[ -z "${SCANNER_IMAGE}" ]]; then
   SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 fi

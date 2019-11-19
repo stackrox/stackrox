@@ -14,6 +14,7 @@ type Values struct {
 
 	MainImage       string `yaml:"main-image"`
 	ScannerImage    string `yaml:"scanner-image"`
+	ScannerDBImage  string `yaml:"scanner-db-image"`
 	MonitoringImage string `yaml:"monitoring-image"`
 
 	License            string `yaml:"license"`

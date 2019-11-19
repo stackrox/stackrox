@@ -1841,6 +1841,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ROX_BADGER_DB: true
+      - ROX_LANGUAGE_SCANNER: true
 
     steps:
       - run-qa-tests:

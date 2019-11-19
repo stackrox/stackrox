@@ -11,6 +11,7 @@ import (
 type Scanner struct {
 	ClusterType      string                   `json:"clusterType"`
 	ScannerImage     string                   `json:"scannerImage"`
+	ScannerDBImage   string                   `json:"scannerDBImage"`
 	OfflineMode      bool                     `json:"offlineMode"`
 	ScannerV2Config  renderer.ScannerV2Config `json:"scannerV2Config,omitempty"`
 	ScannerV2Image   string                   `json:"scannerV2Image"`

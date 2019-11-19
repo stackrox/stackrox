@@ -3,6 +3,7 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -185,7 +186,9 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		}
 
 		var err error
+		scanStartTime := time.Now()
 		scan, err = scanner.GetScan(image)
+		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 
 		if err != nil {
 			return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
