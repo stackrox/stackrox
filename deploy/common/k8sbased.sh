@@ -56,6 +56,12 @@ function launch_central {
     	EXTRA_ARGS+=("$(realpath "$1")")
     }
 
+    is_local_dev="false"
+    if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
+      is_local_dev="true"
+      echo "Running in local dev mode. Will patch resources down"
+    fi
+
     if [[ "$MONITORING_SUPPORT" == "false" ]]; then
     	add_args "--monitoring-type=none"
     else
@@ -135,7 +141,7 @@ function launch_central {
         launch_service $unzip_dir monitoring
         echo
 
-        if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
+        if [[ "${is_local_dev}" == "true" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment monitoring --patch "$(cat $k8s_dir/monitoring-resources-patch.yaml)"
         fi
     fi
@@ -150,8 +156,8 @@ function launch_central {
     launch_service $unzip_dir central
     echo
 
-    if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
-        kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"2Gi"}}}]}}}}'
+    if [[ "${is_local_dev}" == "true" ]]; then
+        kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
     fi
 
     if [[ "$SCANNER_V2_SUPPORT" == "true" ]]; then
@@ -167,6 +173,8 @@ function launch_central {
 
         if [[ -n "$CI" ]]; then
           ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat $k8s_dir/scanner-patch.yaml)"
+        elif [[ "${is_local_dev}" == "true" ]]; then
+          ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat $k8s_dir/scanner-local-patch.yaml)"
         fi
 
         echo
