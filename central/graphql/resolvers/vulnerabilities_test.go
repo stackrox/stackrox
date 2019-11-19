@@ -869,7 +869,7 @@ func TestIstioCVEImpactsCluster(t *testing.T) {
 		NamespaceDataStore: namespaceDataStore,
 	}
 
-	ok, err := resolver.isIstioRunning(context.Background(), clusters[0])
+	ok, err := resolver.isIstioControlPlaneRunning(context.Background())
 	assert.Nil(t, err)
 	assert.Equal(t, ok, true)
 
