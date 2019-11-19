@@ -33,7 +33,12 @@ const TileLink = ({ text, superText, subText, icon, url, loading, isError, posit
     ) : (
         <div className="flex flex-col text-center">
             {superText && (
-                <div className="text-3xl tracking-widest pb-1 text-base-600">{superText}</div>
+                <div
+                    className="text-3xl tracking-widest pb-1 text-base-600"
+                    data-testid="tileLinkSuperText"
+                >
+                    {superText}
+                </div>
             )}
             <div
                 className="flex items-center font-600 font-condensed text-base-600 uppercase justify-center"

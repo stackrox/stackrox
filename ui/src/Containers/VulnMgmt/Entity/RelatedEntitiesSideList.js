@@ -31,7 +31,10 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                 count,
                 label: pluralize(matchEntity, count),
                 entity: matchEntity,
-                url: workflowState.pushList(matchEntity).toUrl()
+                url: workflowState
+                    .pushList(matchEntity)
+                    .setSearch('')
+                    .toUrl()
             };
         })
         .filter(matchObj => matchObj.count && !entityContext[matchObj.entity]);
@@ -42,7 +45,10 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                 count,
                 label: pluralize(containEntity, count),
                 entity: containEntity,
-                url: workflowState.pushList(containEntity).toUrl()
+                url: workflowState
+                    .pushList(containEntity)
+                    .setSearch('')
+                    .toUrl()
             };
         })
         .filter(containObj => containObj.count && !entityContext[containObj.entity]);

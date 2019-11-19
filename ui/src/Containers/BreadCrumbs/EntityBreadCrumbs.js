@@ -15,6 +15,7 @@ function getBackLink(workflowState, enabled) {
         <Link
             className="flex items-center justify-center text-base-600 border-r border-base-300 px-4 mr-4 h-full hover:bg-primary-200 w-16"
             to={url}
+            data-testid="sidepanelBackButton"
         >
             <ArrowLeft className="h-6 w-6 text-600" />
         </Link>

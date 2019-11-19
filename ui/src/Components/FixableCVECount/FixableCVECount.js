@@ -31,9 +31,10 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     const cveText = (
         <span className={`${classes} ${individualClasses}`}>{`${count} ${pluralized}`}</span>
     );
+    const testId = fixable ? 'fixableCvesLink' : 'allCvesLink';
 
     return url && !hideLink ? (
-        <Link to={url} onClick={stopPropagation} className="w-full">
+        <Link to={url} onClick={stopPropagation} className="w-full" data-testid={testId}>
             {cveText}
         </Link>
     ) : (
