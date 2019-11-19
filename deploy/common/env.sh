@@ -31,6 +31,9 @@ echo "CLUSTER set to $CLUSTER"
 export STORAGE="${STORAGE:-none}"
 echo "STORAGE set to ${STORAGE}"
 
+export STORAGE_SIZE="10"
+echo "STORAGE_SIZE set to ${STORAGE_SIZE}"
+
 export OUTPUT_FORMAT="${OUTPUT_FORMAT:-kubectl}"
 echo "OUTPUT_FORMAT set to ${OUTPUT_FORMAT}"
 

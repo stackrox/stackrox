@@ -32,6 +32,8 @@ create-cluster() {
       timeout 420 gcloud beta container clusters create \
           --machine-type n1-standard-4 \
           --num-nodes "${NUM_NODES}" \
+          --disk-type=pd-standard \
+          --disk-size=10GB \
           --create-subnetwork range=/28 \
           --cluster-ipv4-cidr=/20 \
           --services-ipv4-cidr=/24 \
