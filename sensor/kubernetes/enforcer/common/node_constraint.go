@@ -8,7 +8,7 @@ import (
 
 // Label key used for unsatisfiable node constraint enforcement.
 const (
-	UnsatisfiableNodeConstraintKey = `BlockedByStackRoxNext`
+	UnsatisfiableNodeConstraintKey = `BlockedByStackRox`
 )
 
 // ApplyNodeConstraintToObj modifies some input type (Assuming it has a spec field) and updates it to have an
