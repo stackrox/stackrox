@@ -9,7 +9,8 @@ export const url = {
         deployments: `${baseURL}/deployments`,
         images: `${baseURL}/images`,
         components: `${baseURL}/components`,
-        cves: `${baseURL}/cves`
+        cves: `${baseURL}/cves`,
+        image: `${baseURL}/image`
     }
 };
 
@@ -38,7 +39,18 @@ export const dashboardSelectors = {
     getWidget: title => {
         return `[data-test-id="widget"]:contains('${title}')`;
     },
-    viewAllButton: 'button:contains("View All")'
+    getTileLink: title => {
+        return `[data-test-id="tile-link"]:contains('${title}')`;
+    },
+    getClickableTileLink: title => {
+        return `#capture-dashboard-stretch > div > .h-full > div:nth-child(2) > ul > li > a > div > div > div:contains('${title}')`;
+    },
+    viewAllButton: 'button:contains("View All")',
+    dataRowLink: '.flex.h-full > div > ul > li > a > span',
+    entityPageHeader: '[data-test-id="header-text"]',
+    tabLinks: '[data-test-id="tab"]',
+    allTileLinks: '#capture-dashboard-stretch > div > .h-full > div > ul > li',
+    tabHeader: '[data-test-id="panel-header"]'
 };
 
 const linkSelectors = {
