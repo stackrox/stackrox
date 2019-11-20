@@ -48,9 +48,10 @@ const BreadCrumbLinks = ({ workflowEntities }) => {
     const breadCrumbLinks = workflowEntities.map((workflowEntity, i, { length }) => {
         const icon = i !== length - 1 ? Icon : null;
         const url = getUrl(workflowState, length - i);
+        const { entityType, entityId } = workflowEntity;
 
         return (
-            <div key={`${workflowEntity.entityId}`} className={`flex ${maxWidthClass} truncate`}>
+            <div key={`${entityType}-${entityId}`} className={`flex ${maxWidthClass} truncate`}>
                 <EntityBreadCrumb workflowEntity={workflowEntity} url={url} />
                 <span className="flex items-center">{icon}</span>
             </div>

@@ -27,7 +27,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
         onClose();
     };
 
-    const url = workflowState.skimStack().toUrl();
+    const url = workflowState.getSkimmedStack().toUrl();
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
             <Link

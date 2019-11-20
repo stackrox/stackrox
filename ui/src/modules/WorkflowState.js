@@ -1,7 +1,9 @@
-import entityRelationships from 'modules/entityRelationships';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import cloneDeep from 'lodash/cloneDeep';
+import uniqBy from 'lodash/uniqBy';
+
+import entityRelationships from 'modules/entityRelationships';
 import generateURL from 'modules/URLGenerator';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 
 // An item in the workflow stack
 export class WorkflowEntity {
@@ -26,35 +28,60 @@ export class WorkflowEntity {
 
 // Returns true if stack provided makes sense
 export function isStackValid(stack) {
-    if (stack.length < 2) return true;
+    const existingEntityTypes = uniqBy(stack, 'entityType');
+
+    // if the stack is smaller or equal to two entity types, it is always valid
+    if (Object.keys(existingEntityTypes).length <= 2) return true;
 
     // stack is invalid when the stack is in one of three states:
     //
     // 1) entity -> (entity parent list) -> entity parent -> nav away
     // 2) entity -> (entity matches list) -> match entity -> nav away
-    // 3) entity -> (entity contains-inferred list) -> contains-inferred entity -> nav away
+    // 3) entity -> ... -> same entity (nav away)
 
     let isParentState;
     let isMatchState;
-    let isInferredState;
+    let isDuplicateState;
+
+    const entityTypeMap = {};
 
     stack.forEach((entity, i) => {
-        const { entityType } = entity;
-        if (i > 0 && i !== stack.length - 1) {
+        const { entityType, entityId } = entity;
+
+        if (entityTypeMap[entityType]) {
+            isDuplicateState = !!entityTypeMap[entityType];
+        }
+        if (i > 0) {
+            entityTypeMap[entityType] = entityId;
             const { entityType: prevType } = stack[i - 1];
-            if (!isParentState) {
-                isParentState = entityRelationships.isParent(entityType, prevType);
-            }
-            if (!isMatchState) {
-                isMatchState = entityRelationships.isMatch(entityType, prevType);
-            }
-            if (!isInferredState) {
-                isInferredState = entityRelationships.isContainedInferred(prevType, entityType);
+            if (prevType !== entityType) {
+                if (!isParentState) {
+                    // this checks if the current type on the stack is a parent of the previous type
+                    const isParent = entityRelationships.isContained(entityType, prevType);
+                    isParentState = i !== stack.length - 1 && isParent;
+                }
+                if (!isMatchState) {
+                    const isContained = entityRelationships.isContained(prevType, entityType);
+                    // if prev entity type contains current entity type, match state doesn't matter and stack is valid
+                    if (!isContained) {
+                        // extended matches navigate away
+                        const isExtendedMatch = entityRelationships.isExtendedMatch(
+                            prevType,
+                            entityType
+                        );
+                        const upMatch = entityRelationships.isPureMatch(prevType, entityType);
+                        const downMatch = entityRelationships.isPureMatch(entityType, prevType);
+                        // reflexive matches navigate away if it's not the last relationship on stack
+                        const isReflexiveMatchState =
+                            i !== stack.length - 1 && upMatch && downMatch;
+                        isMatchState = isReflexiveMatchState || isExtendedMatch;
+                    }
+                }
             }
         }
         return false;
     });
-    return !isParentState && !isMatchState && !isInferredState;
+    return !isParentState && !isMatchState && !isDuplicateState;
 }
 
 // Resets the current state based on minimal parameters
@@ -62,21 +89,22 @@ function baseStateStack(entityType, entityId) {
     return [new WorkflowEntity(entityType, entityId)];
 }
 
-// Checks state stack for overflow state/invalid state and returns a valid trimmed version
+// Returns skimmed stack for stack to navigate away to
+function skimStack(stack) {
+    if (stack.length < 2) return stack;
+
+    const currentItem = stack.slice(-1)[0];
+    // if the last item on the stack is an entity, return the entity
+    if (currentItem.entityId) return [currentItem];
+    // else the last item on the stack is a list, return the previous entity + related list
+    return stack.slice(-2);
+}
+
+// Checks state stack for overflow state/invalid state and returns a valid skimmed version
 function trimStack(stack) {
     // Navigate away if:
     // If there's no more "room" in the stack
-
-    // if the top entity is a parent of the entity before that then navigate away
-    // List navigates to: Top single -> selected list
-    // Entity navigates to : Entity page (maybe not)
-    if (isStackValid(stack)) return stack;
-    const { entityType: lastItemType, entityId: lastItemId } = stack.slice(-1)[0];
-    if (!lastItemId) {
-        const { entityType, entityId } = stack.slice(-2)[0];
-        return [...baseStateStack(entityType, entityId), new WorkflowEntity(lastItemType)];
-    }
-    return baseStateStack(lastItemType, lastItemId);
+    return isStackValid(stack) ? stack : skimStack(stack);
 }
 
 /**
@@ -139,18 +167,6 @@ export class WorkflowState {
         return this.stateStack.slice(1, 2)[0];
     }
 
-    // Returns skimmed stack for external linking from side panel workflowState
-    getSkimmedStack() {
-        const { stateStack } = this;
-        if (stateStack.length < 2) return stateStack;
-
-        const currentItem = this.getCurrentEntity();
-        // if the last item on the stack is an entity, return the entity
-        if (currentItem.entityId) return [currentItem];
-        // else the last item on the stack is a list, return the previous entity + related list
-        return stateStack.slice(-2);
-    }
-
     getCurrentSearchState() {
         const param = this.sidePanelActive ? searchParams.sidePanel : searchParams.page;
         return this.search[param] || {};
@@ -167,9 +183,9 @@ export class WorkflowState {
     }
 
     // Returns skimmed stack version of WorkflowState to render into URL
-    skimStack() {
-        const { useCase, search, sort, paging } = this;
-        const newStateStack = this.getSkimmedStack();
+    getSkimmedStack() {
+        const { useCase, stateStack, search, sort, paging } = this;
+        const newStateStack = skimStack(stateStack);
         return new WorkflowState(useCase, newStateStack, search, sort, paging);
     }
 

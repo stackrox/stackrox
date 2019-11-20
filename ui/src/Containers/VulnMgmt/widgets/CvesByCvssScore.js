@@ -37,6 +37,7 @@ const CvesByCvssScore = ({ entityContext }) => {
     });
 
     let content = <Loader />;
+    let header;
 
     const workflowState = useContext(workflowStateContext);
     const viewAllURL = workflowState
@@ -96,6 +97,7 @@ const CvesByCvssScore = ({ entityContext }) => {
         } else {
             const sunburstData = getSunburstData(data.results);
             const sidePanelData = getSidePanelData(data.results);
+            header = <ViewAllButton url={viewAllURL} />;
             content = (
                 <Sunburst
                     data={sunburstData}
@@ -109,11 +111,7 @@ const CvesByCvssScore = ({ entityContext }) => {
     }
 
     return (
-        <Widget
-            className="h-full pdf-page"
-            header="CVEs by CVSS Score"
-            headerComponents={<ViewAllButton url={viewAllURL} />}
-        >
+        <Widget className="h-full pdf-page" header="CVEs by CVSS Score" headerComponents={header}>
             {content}
         </Widget>
     );

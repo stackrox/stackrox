@@ -114,7 +114,8 @@ const entityRelationshipMap = {
     [entityTypes.COMPONENT]: {
         children: [entityTypes.CVE],
         parents: [],
-        matches: [entityTypes.IMAGE]
+        matches: [entityTypes.IMAGE],
+        extendedMatches: [entityTypes.DEPLOYMENT]
     },
     [entityTypes.CVE]: {
         children: [],
@@ -158,13 +159,8 @@ const entityRelationshipMap = {
 const getChildren = entityType => entityRelationshipMap[entityType].children;
 const getParents = entityType => entityRelationshipMap[entityType].parents;
 const getPureMatches = entityType => entityRelationshipMap[entityType].matches;
-const getMatches = entityType => {
-    const relationships = [];
-    if (entityRelationshipMap[entityType].extendedMatches)
-        relationships.push(...entityRelationshipMap[entityType].extendedMatches);
-    relationships.push(...entityRelationshipMap[entityType].matches);
-    return relationships;
-};
+const getExtendedMatches = entityType => entityRelationshipMap[entityType].extendedMatches || [];
+const getMatches = entityType => [...getPureMatches(entityType), ...getExtendedMatches(entityType)];
 
 // function to recursively get inclusive 'contains' relationships (inferred)
 // this includes all generations of children AND inferred (matches of children down the chain) relationships
@@ -187,6 +183,10 @@ const isChild = (parent, child) => !!getChildren(parent).find(c => c === child);
 const isParent = (parent, child) => !!getParents(child).find(p => p === parent);
 const isMatch = (entityType1, entityType2) =>
     !!getMatches(entityType1).find(m => m === entityType2);
+const isPureMatch = (entityType1, entityType2) =>
+    !!getPureMatches(entityType1).find(m => m === entityType2);
+const isExtendedMatch = (entityType1, entityType2) =>
+    !!getExtendedMatches(entityType1).find(m => m === entityType2);
 const isContained = (entityType1, entityType2) =>
     !!getContains(entityType1).find(c => c === entityType2);
 const isContainedInferred = (entityType1, entityType2) =>
@@ -220,6 +220,8 @@ export default {
     isChild,
     isParent,
     isMatch,
+    isPureMatch,
+    isExtendedMatch,
     isContained,
     isContainedInferred
 };
