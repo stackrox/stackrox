@@ -49,16 +49,47 @@ export const withLinks = () => {
 };
 
 export const withFlexibleHeight = () => {
-    const largerDataSet = [];
-    for (let i = 0; i < 14; i += 1) {
-        largerDataSet.push({
-            x: Math.floor(Math.random() * 100),
-            y: `CVE-2019-${i} / CVSS 5.0 (v3.0)`
-        });
-    }
+    const withHint = false;
+    const largerDataSet = getLargerDataSet(withHint);
+
     return (
         <MemoryRouter>
             <LabeledBarGraph data={largerDataSet} title="Deployments" />
         </MemoryRouter>
     );
 };
+
+export const withTooltip = () => {
+    const withHint = true;
+    const largerDataSet = getLargerDataSet(withHint);
+
+    return (
+        <MemoryRouter>
+            <div className="relative">
+                <LabeledBarGraph data={largerDataSet} title="Deployments" />
+            </div>
+        </MemoryRouter>
+    );
+};
+
+function getLargerDataSet(withHint) {
+    const largerDataSet = [];
+    for (let i = 0; i < 14; i += 1) {
+        const randomX = Math.floor(Math.random() * 100);
+        const name = `CVE-2019-${i} / CVSS 5.0 (v3.0)`;
+
+        largerDataSet.push({
+            x: randomX,
+            y: name,
+            hint: withHint
+                ? {
+                      title: `CVE-2019-${i}`,
+                      body:
+                          'Echo ethernet floating-point analog in computer plasma indeterminate integral interface inversion element.'
+                  }
+                : null
+        });
+    }
+
+    return largerDataSet;
+}

@@ -6,6 +6,7 @@ import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import queryService from 'modules/queryService';
 import sortBy from 'lodash/sortBy';
+import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 
@@ -13,8 +14,9 @@ import Button from 'Components/Button';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
-import { parseCVESearch } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import { parseCVESearch } from 'utils/vulnerabilityUtils';
 
 const MOST_COMMON_VULNERABILITIES = gql`
     query mostCommonVulnerabilities($query: String) {
@@ -26,6 +28,9 @@ const MOST_COMMON_VULNERABILITIES = gql`
             imageCount
             isFixable
             deploymentCount
+            summary
+            imageCount
+            lastScanned
         }
     }
 `;
@@ -40,16 +45,48 @@ const ViewAllButton = ({ url }) => {
 
 const processData = (data, workflowState, limit) => {
     const results = sortBy(data.results, ['deploymentCount', 'cvss', 'envImpact']).slice(-limit); // @TODO: Remove when we have pagination on Vulnerabilities
-    return results.map(({ id, cve, cvss, scoreVersion, isFixable, deploymentCount }) => {
-        const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
-        return {
-            x: deploymentCount,
-            y: `${cve} / CVSS: ${cvss.toFixed(1)} (${scoreVersion}) ${
-                isFixable ? ' / Fixable' : ''
-            }`,
-            url
-        };
-    });
+    return results.map(
+        ({
+            id,
+            cve,
+            cvss,
+            summary,
+            scoreVersion,
+            isFixable,
+            deploymentCount,
+            imageCount,
+            lastScanned
+        }) => {
+            const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
+            const tooltipHeader = lastScanned ? format(lastScanned, dateTimeFormat) : 'N/A';
+            const tooltipBody = (
+                <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+                    <li className="py-1 flex flex-col" key="description">
+                        <span className="text-base-600 font-700 mr-2">Description:</span>
+                        <span className="font-600">{summary}</span>
+                    </li>
+                    <li className="py-1 flex flex-col" key="latestViolation">
+                        <span className="text-base-600 font-700 mr-2">Impact:</span>
+                        <span className="font-600">{`${deploymentCount} deployments, ${imageCount} images`}</span>
+                    </li>
+                </ul>
+            );
+            const tooltipFooter = `Scored using CVSS ${scoreVersion}`;
+
+            return {
+                x: deploymentCount,
+                y: `${cve} / CVSS: ${cvss.toFixed(1)} (${scoreVersion}) ${
+                    isFixable ? ' / Fixable' : ''
+                }`,
+                url,
+                hint: {
+                    title: tooltipHeader,
+                    body: tooltipBody,
+                    footer: tooltipFooter
+                }
+            };
+        }
+    );
 };
 
 const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {

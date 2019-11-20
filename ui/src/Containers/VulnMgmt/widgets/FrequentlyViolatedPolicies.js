@@ -1,12 +1,10 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
-import { severityLabels } from 'messages/common';
 import sortBy from 'lodash/sortBy';
+import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 
@@ -15,6 +13,10 @@ import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import entityTypes from 'constants/entityTypes';
+import { severityLabels } from 'messages/common';
+import queryService from 'modules/queryService';
 
 const FREQUENTLY_VIOLATED_POLICIES = gql`
     query frequentlyViolatedPolicies($query: String) {
@@ -24,6 +26,9 @@ const FREQUENTLY_VIOLATED_POLICIES = gql`
             enforcementActions
             severity
             alertCount
+            categories
+            description
+            latestViolation
         }
     }
 `;
@@ -40,13 +45,43 @@ const processData = (data, workflowState, limit) => {
     const results = sortBy(data.results, ['alertCount']).slice(-limit); // @TODO: Remove when we have pagination on Policies
     return results
         .filter(datum => datum.alertCount)
-        .map(({ id, name, enforcementActions, severity, alertCount }) => {
+        .map(datum => {
+            const {
+                id,
+                name,
+                description,
+                enforcementActions,
+                severity,
+                alertCount,
+                latestViolation,
+                categories
+            } = datum;
             const url = workflowState.pushRelatedEntity(entityTypes.POLICY, id).toUrl();
             const isEnforced = enforcementActions.length ? 'Yes' : 'No';
+            const categoriesStr = categories.join(', ');
+
+            const tooltipBody = (
+                <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+                    <li className="py-1" key="categories">
+                        <span className="text-base-600 font-700 mr-2">Category:</span>
+                        <span className="font-600">{categoriesStr}</span>
+                    </li>
+                    <li className="py-1" key="description">
+                        <span className="text-base-600 font-700 mr-2">Description:</span>
+                        <span className="font-600">{description}</span>
+                    </li>
+                    <li className="py-1" key="latestViolation">
+                        <span className="text-base-600 font-700 mr-2">Last violated:</span>
+                        <span className="font-600">{format(latestViolation, dateTimeFormat)}</span>
+                    </li>
+                </ul>
+            );
+
             return {
                 x: alertCount,
                 y: `${name} / Enforced: ${isEnforced} / Severity: ${severityLabels[severity]}`,
-                url
+                url,
+                hint: { title: name, body: tooltipBody }
             };
         });
 };
