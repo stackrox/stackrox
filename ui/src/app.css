@@ -559,12 +559,13 @@ h6 {
 }
 
 .rc-tooltip-inner {
-    background-color: hsla(230, 13%, 34%, 1) !important;
+    background-color: rgb(234,245, 255) !important;
+    color: hsla(225, 14%, 43%, 1) !important;
     text-align: inherit !important;
 }
 
 .rc-tooltip-arrow {
-    border-top-color: hsla(230, 13%, 34%, 1) !important;
+    border-top-color: rgb(234,245, 255) !important;
 }
 
 .recharts-responsive-container .recharts-tooltip-cursor {
