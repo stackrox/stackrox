@@ -42,8 +42,9 @@ export const dashboardSelectors = {
     getTileLink: title => {
         return `[data-test-id="tile-link"]:contains('${title}')`;
     },
-    getClickableTileLink: title => {
-        return `#capture-dashboard-stretch > div > .h-full > div:nth-child(2) > ul > li > a > div > div > div:contains('${title}')`;
+
+    getAllClickableTileLinks: title => {
+        return `#capture-dashboard-stretch > div > .h-full > div > ul > li > a > div > div > div:contains('${title}')`;
     },
     viewAllButton: 'button:contains("View All")',
     dataRowLink: '.flex.h-full > div > ul > li > a > span',

@@ -12,6 +12,7 @@ function validateRelatedEntitiesValuesWithTabsHeaders(entityName) {
         .invoke('text')
         .then(value => {
             cy.get(selectors.getClickableTileLink(entityName)).click();
+
             cy.get(selectors.tabHeader)
                 .invoke('text')
                 .then(text => {
@@ -57,6 +58,15 @@ describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', 
                     'CVE'
                 ]);
                 validateRelatedEntitiesValuesWithTabsHeaders('DEPLOYMENT');
+
+                cy.get(selectors.tabLinks)
+                    .find(`:contains('Overview')`)
+                    .click();
+                validateRelatedEntitiesValuesWithTabsHeaders('CVE');
+                cy.get(selectors.tabLinks)
+                    .find(`:contains('Overview')`)
+                    .click();
+                validateRelatedEntitiesValuesWithTabsHeaders('COMPONENT');
             });
     });
 });
