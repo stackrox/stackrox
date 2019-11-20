@@ -102,7 +102,7 @@ setupHelm: &setupHelm
          kubectl -n kube-system get pod
        done
 
-       if [[ "${SUCCESS}" -eq 0 ]]; then
+       if (( ! SUCCESS )); then
          echo "Failed to connect to helm"
          exit 1
        fi
@@ -966,7 +966,19 @@ commands:
             pwd
             ls -lh $PWD/openshift
             export KUBECONFIG=$PWD/openshift/config
-            oc get nodes
+            SUCCESS=0
+            for i in {1..30}; do
+             if oc get nodes; then
+               SUCCESS=1
+               break
+             fi
+             echo "Failed sanity check OpenShift. Retrying in 5 seconds"
+             sleep 5
+            done
+            if (( !SUCCESS )); then
+              echo "Sanity check failed"
+              exit 1
+            fi
 
       - *setupRoxctl
 
@@ -1407,30 +1419,30 @@ jobs:
       - run:
           name: Login to RedHat registry
           command: |
-            success="false"
+            success=0
             for i in {1..10}; do
               if docker login -u "$REDHAT_REGISTRY_USERNAME" -p "$REDHAT_REGISTRY_PASSWORD" https://registry.redhat.io; then
-                success="true"
+                success=1
                 break
               fi
               sleep $(( 2 ** i ))
             done
 
-            if [[ $success == "false" ]]; then
+            if (( ! success )); then
               echo "Failed to login to RHEL registry"
               exit 1
             fi
 
-            success="false"
+            success=0
             for i in {1..10}; do
               if docker pull registry.access.redhat.com/ubi7/ubi-minimal; then
-                success="true"
+                success=1
                 break
               fi
               sleep $(( 2 ** i ))
             done
 
-            if [[ $success == "false" ]]; then
+            if (( ! success )); then
               echo "Failed to pull RHEL image"
               exit 1
             fi
