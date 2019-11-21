@@ -228,9 +228,21 @@ class K8sRbacTest extends BaseSpecification {
 
         expect:
         "SR should have the same bindings"
-        def stackroxBindings = RbacService.getRoleBindings()
+        // Wait until all roles have arrived so that all the role bindings role refs will be valid
+        def stackroxRoles = RbacService.getRoles()
+        def orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
         Timer t = new Timer(15, 2)
-        while (t.IsValid() && stackroxBindings.size() != orchestratorBindings.size()) {
+        while (t.IsValid() && stackroxRoles.size() != orchestratorRoles.size()) {
+            stackroxRoles = RbacService.getRoles()
+            orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
+        }
+        assert stackroxRoles.size() == orchestratorRoles.size()
+
+        // Wait until all role bindings arrive
+        def stackroxBindings = RbacService.getRoleBindings()
+        // I'll be back
+        Timer t2 = new Timer(15, 2)
+        while (t2.IsValid() && stackroxBindings.size() != orchestratorBindings.size()) {
             stackroxBindings = RbacService.getRoleBindings()
             orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
         }
