@@ -11,8 +11,7 @@ function validateRelatedEntitiesValuesWithTabsHeaders(entityName) {
     cy.get(selectors.getTileLink(entityName))
         .invoke('text')
         .then(value => {
-            cy.get(selectors.getClickableTileLink(entityName)).click();
-
+            cy.get(selectors.getAllClickableTileLinks(entityName)).click();
             cy.get(selectors.tabHeader)
                 .invoke('text')
                 .then(text => {
@@ -36,14 +35,12 @@ describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', 
                 // trim the first 3 chars from the front of the text, to get the image name to compare in the detail view
                 //   e.g., "1. k8s.gcr.io/coredns:1.3.1" trimmed becomes "k8s.gcr.io/coredns:1.3.1"
                 const imageName = value.slice(3, value.length - 1);
-
                 cy.get(selectors.getWidget('Top Riskiest Images'))
                     .find(selectors.dataRowLink)
                     .eq(0)
                     .click();
                 cy.url().should('contain', url.list.image);
                 cy.get('[data-test-id="header-text"]').should('have.text', imageName);
-
                 validatePresenceOfTabsAndLinks(selectors.tabLinks, [
                     'Overview',
                     'deployments',
@@ -58,7 +55,6 @@ describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', 
                     'CVE'
                 ]);
                 validateRelatedEntitiesValuesWithTabsHeaders('DEPLOYMENT');
-
                 cy.get(selectors.tabLinks)
                     .find(`:contains('Overview')`)
                     .click();
