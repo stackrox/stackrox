@@ -1,6 +1,11 @@
 import featureFlags from 'utils/featureFlags';
+import entityTypes from 'constants/entityTypes';
 
 export const nonIsolated = node => node.nonIsolatedIngress && node.nonIsolatedEgress;
+
+export const isDeployment = node => node && node.type === entityTypes.DEPLOYMENT;
+
+export const isNamespace = node => node && node.type === entityTypes.NAMESPACE;
 
 /**
  * Iterates through a list of nodes and returns only links in the same namespace

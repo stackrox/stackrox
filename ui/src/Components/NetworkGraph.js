@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
-
 import { actions as graphActions } from 'reducers/network/graph';
 
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
@@ -17,8 +16,9 @@ import { uniq, throttle, flatMap } from 'lodash';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import { filterModes } from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
-import { getLinks, nonIsolated } from 'utils/networkGraphUtils';
+import { getLinks, nonIsolated, isNamespace } from 'utils/networkGraphUtils';
 import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
+import entityTypes from 'constants/entityTypes';
 
 function getClasses(map) {
     return Object.entries(map)
@@ -351,7 +351,8 @@ const NetworkGraph = ({
                 data: {
                     id: namespace,
                     name: `${active ? '\ue901' : ''} ${namespace}`,
-                    active
+                    active,
+                    type: entityTypes.NAMESPACE
                 },
                 classes
             };
@@ -656,6 +657,12 @@ const NetworkGraph = ({
             setSelectedNodeInGraph(node[0].data);
             setSelectedNode(node[0].data);
             onNodeClick(node[0].data);
+        }
+        if (selectedNode && isNamespace(selectedNode)) {
+            onNamespaceClick({
+                id: selectedNode.id,
+                deployments: namespacesWithDeployments[selectedNode.id] || []
+            });
         }
     }
 
