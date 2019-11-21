@@ -25,7 +25,10 @@ const EntityTabs = ({ entityType, activeTab }) => {
             group: entityGroupMap[tabType],
             value: tabType,
             text: `${failingText}${pluralize(entityLabels[tabType])}`,
-            to: workflowState.pushList(tabType).toUrl()
+            to: workflowState
+                .pushList(tabType)
+                .setSearch('')
+                .toUrl()
         };
     }
 
@@ -51,7 +54,10 @@ const EntityTabs = ({ entityType, activeTab }) => {
             group: entityGroups.OVERVIEW,
             value: '',
             text: 'Overview',
-            to: workflowState.base().toUrl()
+            to: workflowState
+                .base()
+                .setSearch('')
+                .toUrl()
         },
         ...entityTabs
     ];
