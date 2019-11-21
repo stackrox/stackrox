@@ -200,7 +200,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
             if (processedData.length) {
                 content = (
                     <div className="w-full">
-                        <NumberedList data={processedData} />
+                        <NumberedList data={processedData} linkLeftOnly />
                     </div>
                 );
 

@@ -1,13 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
-import { severityValues, severities } from 'constants/severities';
-import queryService from 'modules/queryService';
-import sortBy from 'lodash/sortBy';
-
-import workflowStateContext from 'Containers/workflowStateContext';
 
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
@@ -15,6 +9,10 @@ import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
 import LabelChip from 'Components/LabelChip';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import entityTypes from 'constants/entityTypes';
+import workflowStateContext from 'Containers/workflowStateContext';
+import queryService from 'modules/queryService';
+import { getPolicySeverityCounts, sortDeploymentsByPolicyViolations } from 'utils/policyUtils';
 
 const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
     query deploymentsWithMostSeverePolicyViolations(
@@ -33,40 +31,19 @@ const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
     }
 `;
 
-const getPolicySeverityCounts = failingPolicies => {
-    const counts = failingPolicies.reduce(
-        (acc, curr) => {
-            acc[curr.severity] += 1;
-            return acc;
-        },
-        {
-            [severities.CRITICAL_SEVERITY]: 0,
-            [severities.HIGH_SEVERITY]: 0,
-            [severities.MEDIUM_SEVERITY]: 0,
-            [severities.LOW_SEVERITY]: 0
-        }
-    );
-    return {
-        critical: counts.CRITICAL_SEVERITY,
-        high: counts.HIGH_SEVERITY,
-        medium: counts.MEDIUM_SEVERITY,
-        low: counts.LOW_SEVERITY
-    };
-};
-
-const sortBySevereViolations = datum => {
-    return datum.failingPolicies.reduce((acc, curr) => {
-        return acc + severityValues[curr.severity];
-    }, 0);
-};
-
 const processData = (data, workflowState, limit) => {
-    const results = sortBy(data.results, [sortBySevereViolations])
-        .slice(-limit)
-        .reverse(); // @TODO: Remove when we have pagination on Policies
-    return results.map(({ id, name, failingPolicies }) => {
+    const results = data.results.map(deployment => {
+        const policySeverityCounts = getPolicySeverityCounts(deployment.failingPolicies);
+
+        return { ...deployment, policySeverityCounts };
+    });
+
+    // @TODO, remove the chained .slice() call after backend pagination is available
+    const sortedDeployments = sortDeploymentsByPolicyViolations(results).slice(0, limit);
+
+    return sortedDeployments.map(({ id, name, policySeverityCounts }) => {
         const text = name;
-        const { critical, high, medium, low } = getPolicySeverityCounts(failingPolicies);
+        const { critical, high, medium, low } = policySeverityCounts;
         return {
             text,
             url: workflowState.pushRelatedEntity(entityTypes.DEPLOYMENT, id).toUrl(),
