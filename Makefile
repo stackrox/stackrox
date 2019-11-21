@@ -271,7 +271,7 @@ deps: go.mod proto-generated-srcs
 	@go mod tidy
 	@$(MAKE) download-deps
 ifdef CI
-	@git diff --exit-code -- go.mod || { echo "go.mod file was updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
+	@git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif
 	@touch deps
