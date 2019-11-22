@@ -158,8 +158,8 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         "CVE-2016-0682" | STRUTS_DEP.getImage()
     }
 
-    private GraphQLService.Response waitForImagesTobeFetched(String cveId , int iterations = 30, int interval = 4) {
-        Timer t = new Timer(iterations, interval)
+    private GraphQLService.Response waitForImagesTobeFetched(String cveId , int retries = 30, int interval = 4) {
+        Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             def result2Ret = gqlService.Call(GET_IMAGE_INFO_FROM_VULN_QUERY, [id: cveId])
             assert result2Ret.getCode() == 200
@@ -169,7 +169,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
                 return result2Ret
             }
         }
-        println "Unable to fetch images for $cveId in ${iterations * interval} seconds"
+        println "Unable to fetch images for $cveId in ${t.SecondsSince()} seconds"
         return null
     }
 
@@ -202,8 +202,8 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         return numCVEs
     }
 
-    private String waitForValidImageID(String depID, int iterations = 30, int interval = 2) {
-        Timer t = new Timer(iterations, interval)
+    private String waitForValidImageID(String depID, int retries = 30, int interval = 2) {
+        Timer t = new Timer(retries, interval)
         String imageID
         while (t.IsValid()) {
             imageID = getImageIDFromDepId(depID)
@@ -213,7 +213,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
             }
             println "imageID not found for ${depID} yet "
         }
-        println "could not find  imageID from  ${depID} in ${iterations * interval} seconds"
+        println "could not find  imageID from  ${depID} in ${t.SecondsSince()} seconds"
         return ""
     }
 }

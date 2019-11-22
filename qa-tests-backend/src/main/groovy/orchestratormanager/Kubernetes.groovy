@@ -152,10 +152,10 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    def waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int iterations = 30, int intervalSeconds = 5) {
+    def waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int retries = 30, int intervalSeconds = 5) {
         LabelSelector selector = new LabelSelector()
         selector.matchLabels = labels
-        Timer t = new Timer(iterations, intervalSeconds)
+        Timer t = new Timer(retries, intervalSeconds)
         PodList list
         while (t.IsValid()) {
             list = client.pods().inNamespace(ns).withLabelSelector(selector).list()
@@ -186,8 +186,8 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    def waitForDeploymentDeletion(Deployment deploy, int iterations = 30, int intervalSeconds = 5) {
-        Timer t = new Timer(iterations, intervalSeconds)
+    def waitForDeploymentDeletion(Deployment deploy, int retries = 30, int intervalSeconds = 5) {
+        Timer t = new Timer(retries, intervalSeconds)
 
         K8sDeployment d
         while (t.IsValid()) {
@@ -1479,9 +1479,9 @@ class Kubernetes implements OrchestratorMain {
         client.namespaces().withName(ns).delete()
     }
 
-    def waitForNamespaceDeletion(String ns, int iterations = 20, int intervalSeconds = 3) {
+    def waitForNamespaceDeletion(String ns, int retries = 20, int intervalSeconds = 3) {
         println "Waiting for namespace ${ns} to be deleted"
-        Timer t = new Timer(iterations, intervalSeconds)
+        Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             if (client.namespaces().withName(ns).get() == null ) {
                 println "K8s found that namespace ${ns} was deleted"

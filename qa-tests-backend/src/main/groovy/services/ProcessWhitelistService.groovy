@@ -13,7 +13,7 @@ class ProcessWhitelistService extends BaseService {
     }
     static  ProcessWhitelistOuterClass.ProcessWhitelist getProcessWhitelist(
             String clusterId, Deployment deployment, String containerName = null,
-            int iterations = 20, int interval = 6) {
+            int retries = 20, int interval = 6) {
         String namespace = deployment.getNamespace()
         String deploymentId = deployment.getDeploymentUid()
         String cName = containerName ?: deployment.getName()
@@ -25,7 +25,7 @@ class ProcessWhitelistService extends BaseService {
                         .setDeploymentId(deploymentId)
                         .setContainerName(cName).build())
                 .build()
-        Timer t = new Timer(iterations, interval)
+        Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             def whitelist = getWhitelistProcesses(request)
             if (whitelist) {
@@ -39,7 +39,7 @@ class ProcessWhitelistService extends BaseService {
         }
         println "SR has not found whitelisted  process for the key in - " +
                 "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
-                "${iterations * interval} seconds"
+                "${t.SecondsSince()} seconds"
         return null
     }
 

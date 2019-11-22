@@ -124,8 +124,8 @@ class Services extends BaseService {
 
     static waitForSuspiciousProcessInRiskIndicators(String deploymentId, int timeoutSeconds = 30) {
         int intervalSeconds = 3
-        int iterations = timeoutSeconds / intervalSeconds
-        Timer t = new Timer(iterations, intervalSeconds)
+        int retries = timeoutSeconds / intervalSeconds
+        Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             RiskOuterClass.Risk risk = Services.getDeploymentWithRisk(deploymentId).risk
             RiskOuterClass.Risk.Result result = risk.resultsList
@@ -145,9 +145,9 @@ class Services extends BaseService {
 
     private static getViolationsHelper(String query, String policyName, int timeoutSeconds) {
         int intervalSeconds = 3
-        int iterations = timeoutSeconds / intervalSeconds
+        int retries = timeoutSeconds / intervalSeconds
 
-        Timer t = new Timer(iterations, intervalSeconds)
+        Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
                     .setQuery(query).build())
@@ -599,7 +599,7 @@ class Services extends BaseService {
         return disappearedFromStackRox
     }
 
-    static waitForDeployment(objects.Deployment deployment, int iterations = 30, int interval = 2) {
+    static waitForDeployment(objects.Deployment deployment, int retries = 30, int interval = 2) {
         if (deployment.deploymentUid == null) {
             println "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"
             deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)
@@ -609,7 +609,7 @@ class Services extends BaseService {
             }
         }
 
-        Timer t = new Timer(iterations, interval)
+        Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             if (roxDetectedDeployment(deployment.deploymentUid, deployment.getName())) {
                 println "SR found deployment ${deployment.name} within ${t.SecondsSince()}s"
@@ -617,13 +617,13 @@ class Services extends BaseService {
             }
             println "SR has not found deployment ${deployment.name} yet"
         }
-        println "SR did not detect the deployment ${deployment.name} in ${iterations * interval} seconds"
+        println "SR did not detect the deployment ${deployment.name} in ${t.SecondsSince()} seconds"
         return false
     }
 
-    static waitForImage(objects.Deployment deployment, int iterations = 30, int interval = 2) {
+    static waitForImage(objects.Deployment deployment, int retries = 30, int interval = 2) {
         def imageName = deployment.image.contains(":") ? deployment.image : deployment.image + ":latest"
-        Timer t = new Timer(iterations, interval)
+        Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             if (ImageService.getImages().find { it.name.endsWith(imageName) }) {
                 println "SR found image ${imageName} within ${t.SecondsSince()}s"
@@ -631,7 +631,7 @@ class Services extends BaseService {
             }
             println "SR has not found image ${imageName} yet"
         }
-        println "SR did not detect the image ${imageName} in ${iterations * interval} seconds"
+        println "SR did not detect the image ${imageName} in ${t.SecondsSince()} seconds"
         return false
     }
 

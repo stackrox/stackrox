@@ -6,8 +6,9 @@ class Timer {
     private final Integer delayMilliseconds
     private final long startTime
 
-    Timer(Integer iterations, Integer delaySeconds) {
-        this.iterations = iterations
+    Timer(Integer retries, Integer delaySeconds) {
+        // iterations = retries + 1 because the first attempt happens immediately
+        this.iterations = retries + 1
         this.delayMilliseconds = delaySeconds * 1000
         this.startTime = System.currentTimeMillis()
     }
