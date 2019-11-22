@@ -20,7 +20,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Command checks the image against image build lifecycle policies
+// Command checks the deployment against deploy time system policies
 func Command() *cobra.Command {
 	var (
 		file string
@@ -28,8 +28,8 @@ func Command() *cobra.Command {
 	)
 	c := &cobra.Command{
 		Use:   "check",
-		Short: "Check images for build time policy violations.",
-		Long:  "Check images for build time policy violations.",
+		Short: "Check deployments for deploy time policy violations.",
+		Long:  "Check deployments for deploy time policy violations.",
 		RunE: func(c *cobra.Command, _ []string) error {
 			if file == "" {
 				return errors.New("--file must be set")
@@ -38,7 +38,7 @@ func Command() *cobra.Command {
 		},
 	}
 
-	c.Flags().StringVarP(&file, "file", "f", "", "file to send to Central to evaluate policies against")
+	c.Flags().StringVarP(&file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
 	return c
 }
