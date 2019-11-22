@@ -12,18 +12,26 @@ const NumberedList = ({ data, linkLeftOnly }) => {
         } ${url ? 'hover:bg-base-200' : ''}`;
         let leftSide = (
             <>
-                {i + 1}.{text}&nbsp;
+                {i + 1}.&nbsp;{text}&nbsp;
                 {subText && <span className="text-base-500 text-xs">{subText}</span>}
             </>
         );
         if (url && linkLeftOnly) {
             leftSide = (
-                <Link className={`${leftSideClasses} no-underline w-full`} to={url}>
+                <Link
+                    data-testid="numbered-list-item-name"
+                    className={`${leftSideClasses} no-underline w-full`}
+                    to={url}
+                >
                     {leftSide}
                 </Link>
             );
         } else {
-            leftSide = <span className={leftSideClasses}>{leftSide}</span>;
+            leftSide = (
+                <span data-testid="numbered-list-item-name" className={leftSideClasses}>
+                    {leftSide}
+                </span>
+            );
         }
         let content = (
             <>

@@ -97,6 +97,7 @@ const Scatterplot = ({
                     left={hint.x}
                     title={hint.data.title}
                     body={hint.data.body}
+                    subtitle={hint.data.subtitle}
                 />
             )}
         </>

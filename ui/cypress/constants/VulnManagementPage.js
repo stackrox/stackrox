@@ -46,7 +46,7 @@ export const dashboardSelectors = {
         return `#capture-dashboard-stretch > div > .h-full > div > ul > li > a > div > div > div:contains('${title}')`;
     },
     viewAllButton: 'button:contains("View All")',
-    dataRowLink: '.flex.h-full > div > ul > li > a > span',
+    dataRowLink: '[data-testid="numbered-list-item-name"]',
     entityPageHeader: '[data-test-id="header-text"]',
     tabLinks: '[data-test-id="tab"]',
     allTileLinks: '#capture-dashboard-stretch > div > .h-full > div > ul > li',

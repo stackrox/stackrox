@@ -12,6 +12,7 @@ import Button from 'Components/Button';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
+import HoverHintListItem from 'Components/visuals/HoverHintListItem';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
@@ -62,18 +63,13 @@ const processData = (data, workflowState, limit) => {
 
             const tooltipBody = (
                 <ul className="flex-1 list-reset border-base-300 overflow-hidden">
-                    <li className="py-1" key="categories">
-                        <span className="text-base-600 font-700 mr-2">Category:</span>
-                        <span className="font-600">{categoriesStr}</span>
-                    </li>
-                    <li className="py-1" key="description">
-                        <span className="text-base-600 font-700 mr-2">Description:</span>
-                        <span className="font-600">{description}</span>
-                    </li>
-                    <li className="py-1" key="latestViolation">
-                        <span className="text-base-600 font-700 mr-2">Last violated:</span>
-                        <span className="font-600">{format(latestViolation, dateTimeFormat)}</span>
-                    </li>
+                    <HoverHintListItem key="categories" label="Category" value={categoriesStr} />
+                    <HoverHintListItem key="description" label="Description" value={description} />
+                    <HoverHintListItem
+                        key="latestViolation"
+                        label="Last violated"
+                        value={format(latestViolation, dateTimeFormat)}
+                    />
                 </ul>
             );
 

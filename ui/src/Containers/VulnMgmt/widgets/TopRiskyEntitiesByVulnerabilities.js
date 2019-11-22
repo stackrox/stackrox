@@ -12,11 +12,17 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import ViewAllButton from 'Components/ViewAllButton';
 import Widget from 'Components/Widget';
 import Scatterplot from 'Components/visuals/Scatterplot';
+import HoverHintListItem from 'Components/visuals/HoverHintListItem';
 import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
+import { severityLabels } from 'messages/common';
 import isGQLLoading from 'utils/gqlLoading';
-import { severityColorMap, severityColorLegend } from 'constants/severityColors';
+import {
+    severityColorMap,
+    severityTextColorMap,
+    severityColorLegend
+} from 'constants/severityColors';
 import {
     getSeverityByCvss,
     getPriorityFieldByEntity,
@@ -76,7 +82,13 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 name
                 clusterName
                 namespaceName: namespace
-                vulnCount
+                priority
+                vulnCounter {
+                    all {
+                        total
+                        fixable
+                    }
+                }
                 vulns {
                     ...vulnFields
                 }
@@ -90,7 +102,13 @@ const TopRiskyEntitiesByVulnerabilities = ({
             results: clusters(query: $query) {
                 id
                 name
-                vulnCount
+                priority
+                vulnCounter {
+                    all {
+                        total
+                        fixable
+                    }
+                }
                 vulns {
                     ...vulnFields
                 }
@@ -106,8 +124,14 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     clusterName
                     name
                     id
+                    priority
                 }
-                vulnCount
+                vulnCounter {
+                    all {
+                        total
+                        fixable
+                    }
+                }
                 vulns {
                     ...vulnFields
                 }
@@ -123,7 +147,13 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 name {
                     fullName
                 }
-                vulnCount
+                priority
+                vulnCounter {
+                    all {
+                        total
+                        fixable
+                    }
+                }
                 vulns {
                     ...vulnFields
                 }
@@ -137,7 +167,13 @@ const TopRiskyEntitiesByVulnerabilities = ({
             results: components(query: $query) {
                 id
                 name
-                vulnCount
+                priority
+                vulnCounter {
+                    all {
+                        total
+                        fixable
+                    }
+                }
                 vulns {
                     ...vulnFields
                 }
@@ -176,34 +212,70 @@ const TopRiskyEntitiesByVulnerabilities = ({
     }
 
     function getHint(datum) {
+        let subtitle = '';
+        if (selectedEntityType === entityTypes.DEPLOYMENT) {
+            subtitle = `${datum.clusterName} / ${datum.namespaceName}`;
+        } else if (selectedEntityType === entityTypes.NAMESPACE) {
+            subtitle = `${datum.metadata && datum.metadata.clusterName}`;
+        }
+        const riskPriority =
+            selectedEntityType === entityTypes.NAMESPACE
+                ? datum.metadata && datum.metadata.priority
+                : datum.priority;
+        const severityKey = getSeverityByCvss(datum.avgSeverity);
+        const severityTextColor = severityTextColorMap[severityKey];
+        const severityText = severityLabels[severityKey];
+
         return {
             title:
                 (datum.name && datum.name.fullName) ||
                 datum.name ||
                 (datum.metadata && datum.metadata.name),
             body: (
-                <div>
-                    <div>{`Weighted CVSS: ${datum.avgSeverity}`}</div>
-                    <div>{`CVEs: ${datum.vulnCount}`}</div>
-                </div>
+                <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+                    <HoverHintListItem
+                        key="severity"
+                        label="Severity"
+                        value={<span style={{ color: severityTextColor }}>{severityText}</span>}
+                    />
+                    <HoverHintListItem
+                        key="riskPriority"
+                        label="Risk Priority"
+                        value={riskPriority}
+                    />
+                    <HoverHintListItem
+                        key="weightedCvss"
+                        label="Weighted CVSS"
+                        value={datum.avgSeverity}
+                    />
+                    <HoverHintListItem
+                        key="cves"
+                        label="CVEs"
+                        value={`${datum.vulnCounter.all.total} total / ${
+                            datum.vulnCounter.all.fixable
+                        } fixable`}
+                    />
+                </ul>
             ),
-            clusterName: datum.clusterName || (datum.metadata && datum.metadata.clusterName),
-            namespaceName: datum.namespaceName
+            subtitle
         };
     }
     function processData(data) {
         if (!data || !data.results) return [];
 
         const results = data.results
-            .filter(datum => datum.vulnCount > 0)
+            .filter(datum => datum.vulnCounter.all.total > 0)
             .map(result => {
                 const entityId = result.id || result.metadata.id;
+                const vulnCount = result.vulnCounter.all.total;
                 const url = workflowState.pushRelatedEntity(selectedEntityType, entityId).toUrl();
                 const avgSeverity = getAverageSeverity(result.vulns);
+                const color = severityColorMap[getSeverityByCvss(avgSeverity)];
+
                 return {
-                    x: result.vulnCount,
+                    x: vulnCount,
                     y: +avgSeverity,
-                    color: severityColorMap[getSeverityByCvss(avgSeverity)],
+                    color,
                     hint: getHint({ ...result, avgSeverity }),
                     url
                 };
