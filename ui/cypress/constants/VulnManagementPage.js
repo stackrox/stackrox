@@ -10,7 +10,10 @@ export const url = {
         images: `${baseURL}/images`,
         components: `${baseURL}/components`,
         cves: `${baseURL}/cves`,
-        image: `${baseURL}/image`
+        image: `${baseURL}/image`,
+        cve: `${baseURL}/cve`,
+        policy: `${baseURL}/policy`,
+        deployment: `${baseURL}/deployment`
     }
 };
 
@@ -21,7 +24,8 @@ export const listSelectors = {
     tableRows: '.rt-tr',
     tableColumn: '.rt-th.leading-normal > div',
     tableColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
-    tableCVEColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > .items-center'
+    tableCVEColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > .items-center',
+    numCVEColLink: '.rt-tr > .rt-td'
 };
 
 export const dashboardSelectors = {
@@ -47,7 +51,15 @@ export const dashboardSelectors = {
     },
     viewAllButton: 'button:contains("View All")',
     dataRowLink: '[data-testid="numbered-list-item-name"]',
+    topMostRowMCV:
+        '#capture-dashboard > div > div > div > .h-full > div > div > svg > g > text:nth-child(20)',
+    topMostRowFVP:
+        '#capture-dashboard > div > div:nth-child(3) > div > .h-full > div > div > svg > g > text:nth-child(2)',
     entityPageHeader: '[data-test-id="header-text"]',
+    topMostRowRDV:
+        '#capture-dashboard > div > div:nth-child(4) > div > .h-full > div > ul > li:nth-child(1) > a > span',
+    topMostRowMSPV:
+        '#capture-dashboard > div > div:nth-child(6) > div > .h-full > div > ul > li:nth-child(1) > a > span',
     tabLinks: '[data-test-id="tab"]',
     allTileLinks: '#capture-dashboard-stretch > div > .h-full > div > ul > li',
     tabHeader: '[data-test-id="panel-header"]'
